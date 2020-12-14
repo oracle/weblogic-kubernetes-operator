@@ -6,12 +6,17 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
@@ -19,11 +24,11 @@ import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
-import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -43,11 +48,12 @@ import org.joda.time.DateTime;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAINZIP_HASH;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SECRETS_MD_5;
-import static oracle.kubernetes.operator.IntrospectorConfigMapKeys.SIT_CONFIG_FILE_PREFIX;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
@@ -144,12 +150,12 @@ public class ConfigMapHelper {
   }
 
   /**
-   * Returns the standard name for the generated domain config map.
+   * Returns the standard name for the introspector config map.
    * @param domainUid the unique ID of the domain
    * @return map name
    */
   public static String getIntrospectorConfigMapName(String domainUid) {
-    return domainUid + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+    return IntrospectorConfigMapConstants.getIntrospectorConfigMapName(domainUid, 0);
   }
 
   abstract static class ConfigMapComparator {
@@ -225,6 +231,10 @@ public class ConfigMapHelper {
      * @param configMap the final config map
      */
     void recordCurrentMap(Packet packet, V1ConfigMap configMap) {
+    }
+
+    void setContentValue(String key, String value) {
+      contents.put(key, value);
     }
 
     protected String getName() {
@@ -352,7 +362,7 @@ public class ConfigMapHelper {
 
         return new CallBuilder()
             .patchConfigMapAsync(name, namespace,
-                getDomainUidLabel(Optional.ofNullable(currentMap).map(V1ConfigMap::getMetadata).orElse(null)),
+                getDomainUidLabel(Optional.of(currentMap).map(V1ConfigMap::getMetadata).orElse(null)),
                 new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
 
@@ -488,6 +498,7 @@ public class ConfigMapHelper {
   }
 
   static class IntrospectionLoader {
+
     private final Packet packet;
     private final Step conflictStep;
     private final DomainPresenceInfo info;
@@ -509,7 +520,7 @@ public class ConfigMapHelper {
       LOGGER.fine(data.toString());
       LOGGER.fine("================");
 
-      wlsDomainConfig = Optional.ofNullable(data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML))
+      wlsDomainConfig = Optional.ofNullable(data.get(IntrospectorConfigMapConstants.TOPOLOGY_YAML))
             .map(this::getDomainTopology)
             .map(DomainTopology::getDomain)
             .orElse(null);
@@ -532,16 +543,42 @@ public class ConfigMapHelper {
 
     private Step createIntrospectionVersionUpdateStep() {
       return DomainValidationSteps.createValidateDomainTopologyStep(
-            createIntrospectorConfigMapContext(conflictStep).patchOnly().verifyConfigMap(conflictStep.getNext()));
+            createIntrospectorConfigMapContext().patchOnly().verifyConfigMap(conflictStep.getNext()));
     }
 
     private Step createValidationStep() {
-      return DomainValidationSteps.createValidateDomainTopologyStep(
-            createIntrospectorConfigMapContext(conflictStep).verifyConfigMap(conflictStep.getNext()));
+      return Step.chain(
+            DomainValidationSteps.createValidateDomainTopologyStep(null),
+            new IntrospectionConfigMapStep(data, conflictStep.getNext()));
     }
 
-    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Step conflictStep) {
-      return new IntrospectorConfigMapContext(conflictStep, info.getDomain(), data, info);
+    private class IntrospectionConfigMapStep extends Step {
+      private final Map<String, String> data;
+      private final ConfigMapSplitter<IntrospectorConfigMapContext> splitter;
+
+      IntrospectionConfigMapStep(Map<String, String> data, Step next) {
+        super(next);
+        this.splitter = new ConfigMapSplitter<>(IntrospectionLoader.this::createIntrospectorConfigMapContext);
+        this.data = data;
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        Collection<StepAndPacket> startDetails = splitter.split(data).stream()
+              .map(c -> c.createStepAndPacket(packet))
+              .collect(Collectors.toList());
+        packet.put(NUM_CONFIG_MAPS, Integer.toString(startDetails.size()));
+        return doForkJoin(getNext(), packet, startDetails);
+      }
+
+    }
+
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext() {
+      return createIntrospectorConfigMapContext(data, 0);
+    }
+
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Map<String, String> data, int index) {
+      return new IntrospectorConfigMapContext(conflictStep, info, data, index);
     }
 
     private String getModelInImageSpecHash() {
@@ -604,19 +641,33 @@ public class ConfigMapHelper {
     }
   }
 
-  public static class IntrospectorConfigMapContext extends ConfigMapContext {
-    final String domainUid;
+  public static class IntrospectorConfigMapContext extends ConfigMapContext implements SplitterTarget {
+
+    private static final Pattern ENCODED_ZIP_PATTERN = Pattern.compile("([A-Za-z_]+)\\.secure");
+
     private boolean patchOnly;
 
-    IntrospectorConfigMapContext(
-          Step conflictStep,
-          Domain domain,
-          Map<String, String> data,
-          DomainPresenceInfo info) {
-      super(conflictStep, getIntrospectorConfigMapName(domain.getDomainUid()), domain.getNamespace(), data, info);
+    IntrospectorConfigMapContext(Step conflictStep, DomainPresenceInfo info, Map<String, String> data, int index) {
+      super(conflictStep, getConfigMapName(info, index), info.getNamespace(), data, info);
 
-      this.domainUid = domain.getDomainUid();
-      addLabel(LabelConstants.DOMAINUID_LABEL, domainUid);
+      addLabel(LabelConstants.DOMAINUID_LABEL, info.getDomainUid());
+    }
+
+    private static String getConfigMapName(DomainPresenceInfo info, int index) {
+      return IntrospectorConfigMapConstants.getIntrospectorConfigMapName(info.getDomainUid(), index);
+    }
+
+    @Override
+    public void recordNumTargets(int numTargets) {
+      setContentValue(NUM_CONFIG_MAPS, Integer.toString(numTargets));
+    }
+
+    private boolean isEncodedZip(String key) {
+      return ENCODED_ZIP_PATTERN.matcher(key).matches();
+    }
+
+    private String createRangeName(String key) {
+      return key + ".range";
     }
 
     IntrospectorConfigMapContext patchOnly() {
@@ -643,6 +694,9 @@ public class ConfigMapHelper {
       return key.startsWith(SIT_CONFIG_FILE_PREFIX);
     }
 
+    public Step.StepAndPacket createStepAndPacket(Packet packet) {
+      return new Step.StepAndPacket(verifyConfigMap(null), packet.clone());
+    }
   }
 
   /**
@@ -654,17 +708,82 @@ public class ConfigMapHelper {
    * @return the created step
    */
   public static Step deleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
-    return new DeleteIntrospectorConfigMapStep(domainUid, namespace, next);
+    return new DeleteIntrospectorConfigMapsStep(domainUid, namespace, next);
+  }
+
+  private static class DeleteIntrospectorConfigMapsStep extends Step {
+    private final String domainUid;
+    private final String namespace;
+
+    private DeleteIntrospectorConfigMapsStep(String domainUid, String namespace, Step next) {
+      super(next);
+      this.domainUid = domainUid;
+      this.namespace = namespace;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      Step step = new CallBuilder()
+            .withLabelSelectors(LabelConstants.getCreatedbyOperatorSelector())
+            .listConfigMapsAsync(namespace, new SelectConfigMapsToDeleteStep(domainUid, namespace));
+
+      return doNext(step, packet);
+    }
+  }
+
+  private static class SelectConfigMapsToDeleteStep extends DefaultResponseStep<V1ConfigMapList> {
+    private final String domainUid;
+    private final String namespace;
+
+    public SelectConfigMapsToDeleteStep(String domainUid, String namespace) {
+      this.domainUid = domainUid;
+      this.namespace = namespace;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
+      final List<String> configMapNames = getIntrospectorConfigMapNames(callResponse.getResult());
+      if (configMapNames.isEmpty()) {
+        return doNext(packet);
+      } else {
+        Collection<StepAndPacket> startDetails = new ArrayList<>();
+        for (String configMapName : configMapNames) {
+          startDetails.add(new StepAndPacket(
+                new DeleteIntrospectorConfigMapStep(domainUid, namespace, configMapName), packet));
+        }
+        return doForkJoin(getNext(), packet, startDetails);
+      }
+    }
+
+    @Nonnull
+    protected List<String> getIntrospectorConfigMapNames(V1ConfigMapList list) {
+      return list.getItems().stream()
+            .map(this::getName)
+            .filter(this::isIntrospectorConfigMapName)
+            .collect(Collectors.toList());
+    }
+
+    private boolean isIntrospectorConfigMapName(String name) {
+      return name.startsWith(IntrospectorConfigMapConstants.getIntrospectorConfigMapNamePrefix(domainUid));
+    }
+
+    @Nonnull
+    private String getName(V1ConfigMap configMap) {
+      return Optional.ofNullable(configMap.getMetadata())
+            .map(V1ObjectMeta::getName).orElse("");
+    }
   }
 
   private static class DeleteIntrospectorConfigMapStep extends Step {
     private final String domainUid;
     private final String namespace;
+    private final String configMapName;
 
-    DeleteIntrospectorConfigMapStep(String domainUid, String namespace, Step next) {
-      super(next);
+
+    DeleteIntrospectorConfigMapStep(String domainUid, String namespace, String configMapName) {
       this.domainUid = domainUid;
       this.namespace = namespace;
+      this.configMapName = configMapName;
     }
 
     @Override
@@ -682,9 +801,8 @@ public class ConfigMapHelper {
 
     private Step deleteIntrospectorConfigMap(Step next) {
       logConfigMapDeleted();
-      String configMapName = getIntrospectorConfigMapName(this.domainUid);
       return new CallBuilder()
-          .deleteConfigMapAsync(configMapName, namespace, this.domainUid,
+          .deleteConfigMapAsync(configMapName, namespace, domainUid,
               new V1DeleteOptions(), new DefaultResponseStep<>(next));
     }
   }
@@ -718,6 +836,7 @@ public class ConfigMapHelper {
       copyMapEntryToPacket(result, packet, DOMAINZIP_HASH);
       copyMapEntryToPacket(result, packet, DOMAIN_RESTART_VERSION);
       copyMapEntryToPacket(result, packet, DOMAIN_INPUTS_HASH);
+      copyMapEntryToPacket(result, packet, NUM_CONFIG_MAPS);
 
       DomainTopology domainTopology =
             Optional.ofNullable(result)
@@ -735,7 +854,7 @@ public class ConfigMapHelper {
     }
 
     private String getTopologyYaml(Map<String, String> data) {
-      return data.get(IntrospectorConfigMapKeys.TOPOLOGY_YAML);
+      return data.get(IntrospectorConfigMapConstants.TOPOLOGY_YAML);
     }
 
     private void recordTopology(Packet packet, DomainPresenceInfo info, DomainTopology domainTopology) {

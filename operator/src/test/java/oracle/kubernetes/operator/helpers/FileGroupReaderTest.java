@@ -10,21 +10,12 @@ import java.util.Map;
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.helpers.ConfigMapHelperTest.SCRIPT_NAMES;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class FileGroupReaderTest {
 
-  private static InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
-  private final FileGroupReader scriptReader = ConfigMapHelper.getScriptReader();
-
-  @Test
-  public void afterLoadScriptsFromClasspath_haveScriptNamesAsKeys() {
-    Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-    assertThat(scripts.keySet(), containsInAnyOrder(SCRIPT_NAMES));
-  }
+  private static final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
 
   @Test
   public void loadFilesFromMemory() throws IOException {
@@ -34,7 +25,7 @@ public class FileGroupReaderTest {
     Path p = fileSystem.getPath("group");
     Map<String, String> map = FileGroupReader.loadContents(p);
 
-    assertThat(map, hasEntry("group/a.b", "1234"));
-    assertThat(map, hasEntry("group/x/c.d", "5678"));
+    assertThat(map, hasEntry("a.b", "1234"));
+    assertThat(map, hasEntry("c.d", "5678"));
   }
 }

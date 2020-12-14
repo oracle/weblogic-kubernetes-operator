@@ -158,10 +158,11 @@
 
       <plugin>
         <groupId>${project.groupId}</groupId>
-        <artifactId>jsonschema-maven-plugin</artifactId>
+        <artifactId>operator-build-maven-plugin</artifactId>
         <version>${project.version}</version>
         <executions>
           <execution>
+            <id>generate-schema</id>
             <phase>process-classes</phase>
             <goals>
               <goal>generate</goal>
@@ -170,6 +171,16 @@
               <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
               <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-cli</id>
+            <phase>test</phase>
+            <goals>
+              <goal>shunit2</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>src/main/resources/scripts</sourceDirectory>
             </configuration>
           </execution>
         </executions>
