@@ -8,6 +8,7 @@
 source ${SCRIPTPATH}/utils.sh
 
 WDT_MINIMUM_VERSION="1.7.3"
+OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
 INTROSPECTCM_PASSPHRASE_MD5="/weblogic-operator/introspectormii/inventory_passphrase.md5"
@@ -15,7 +16,6 @@ INTROSPECTCM_MERGED_MODEL="/weblogic-operator/introspectormii/merged_model.json"
 INTROSPECTCM_WLS_VERSION="/weblogic-operator/introspectormii/wls.version"
 INTROSPECTCM_JDK_PATH="/weblogic-operator/introspectormii/jdk.path"
 INTROSPECTCM_SECRETS_AND_ENV_MD5="/weblogic-operator/introspectormii/secrets_and_env.md5"
-DOMAIN_ZIPPED="/weblogic-operator/introspectormii/domainzip.secure"
 PRIMORDIAL_DOMAIN_ZIPPED="/weblogic-operator/introspectormii/primordial_domainzip.secure"
 INTROSPECTJOB_IMAGE_MD5="/tmp/inventory_image.md5"
 INTROSPECTJOB_CM_MD5="/tmp/inventory_cm.md5"
@@ -25,6 +25,7 @@ LOCAL_PRIM_DOMAIN_TAR="/tmp/prim_domain.tar"
 NEW_MERGED_MODEL="/tmp/new_merged_model.json"
 WDT_CONFIGMAP_ROOT="/weblogic-operator/wdt-config-map"
 RUNTIME_ENCRYPTION_SECRET_PASSWORD="/weblogic-operator/model-runtime-secret/password"
+
 # we export the opss password file location because it's also used by introspectDomain.py
 export OPSS_KEY_PASSPHRASE="/weblogic-operator/opss-walletkey-secret/walletPassword"
 OPSS_KEY_B64EWALLET="/weblogic-operator/opss-walletfile-secret/walletFile"
@@ -513,6 +514,31 @@ function createModelDomain() {
 
   trace "Exiting createModelDomain"
 }
+
+
+# Expands into the root directory the MII domain configuration, stored in one or more config maps
+function restoreDomainConfig() {
+  restoreEncodedTar "domainzip.secure" || return 1
+
+  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+}
+
+# Expands into the root directory the MII primordial domain, stored in one or more config maps
+function restorePrimordialDomain() {
+  restoreEncodedTar "primordial_domainzip.secure" || return 1
+}
+
+# Restores the specified directory, targz'ed and stored in one or more config maps after base 64 encoding
+# args:
+# $1 the name of the encoded file in the config map
+function restoreEncodedTar() {
+  cd / || return 1
+  cat ${OPERATOR_ROOT}/introspector*/${1} > /tmp/domain.secure
+  base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
+
+  tar -xzf /tmp/domain.tar.gz || return 1
+}
+
 
 function diff_model() {
   trace "Entering diff_model"

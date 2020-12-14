@@ -63,9 +63,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.OP_CONFIG_SERVICE_A
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -160,12 +158,6 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
-  }
-
-  @Test
-  public void mainHasAccessToBuildProperties() {
-    assertThat(Main.getBuildProperties(), allOf(
-          hasKey(GIT_BRANCH_KEY), hasKey(GIT_COMMIT_KEY), hasKey(GIT_BUILD_TIME_KEY), hasKey(GIT_BUILD_VERSION_KEY)));
   }
 
   @Test

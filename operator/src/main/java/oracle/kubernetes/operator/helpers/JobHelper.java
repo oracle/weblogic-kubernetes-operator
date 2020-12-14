@@ -19,7 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -113,7 +113,7 @@ public class JobHelper {
   }
 
   private static String getIntrospectionImageSpecHash(Packet packet) {
-    return (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH);
+    return (String) packet.get(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH);
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {

@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import oracle.kubernetes.mojosupport.FileSystem;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -26,12 +27,21 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 public class JsonSchemaMojo extends AbstractMojo {
 
   private static final String DOT = "\\.";
+
+  @SuppressWarnings("FieldMayBeFinal") // must be non-final so unit tests can set it
   private static Main main = new MainImpl();
+
+  @SuppressWarnings("FieldMayBeFinal") // must be non-final so unit tests can set it
   private static FileSystem fileSystem = FileSystem.LIVE_FILE_SYSTEM;
+
+  @SuppressWarnings("unused") // set by Maven
   @Parameter(defaultValue = "${project.compileClasspathElements}", readonly = true, required = true)
   private List<String> compileClasspathElements;
+
+  @SuppressWarnings("unused") // set by Maven
   @Parameter(defaultValue = "${project.build.outputDirectory}/schema")
   private String targetDir;
+
   @Parameter private String kubernetesVersion;
   @Parameter private final List<ExternalSchema> externalSchemas = Collections.emptyList();
   @Parameter(required = true)
