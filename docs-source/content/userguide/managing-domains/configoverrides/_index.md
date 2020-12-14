@@ -451,8 +451,8 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 * The operator runtime:
   * Reads the expanded configuration overrides files or errors from the introspector.
   * And, if the introspector reported no errors, it:
-      * Puts configuration overrides files in a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`.
-      * Mounts this ConfigMap into the WebLogic Server instance Pods.
+      * Puts configuration overrides files in one or more ConfigMaps whose names start with `DOMAIN_UID-weblogic-domain-introspect-cm`.
+      * Mounts these ConfigMaps into the WebLogic Server instance Pods.
   * Otherwise, if the introspector reported errors, it:
       * Logs warning, error, or severe messages.
       * Will not start WebLogic Server instance Pods; however, any already running Pods are preserved.
