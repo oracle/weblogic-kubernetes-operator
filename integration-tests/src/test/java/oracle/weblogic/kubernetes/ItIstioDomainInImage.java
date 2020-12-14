@@ -107,7 +107,7 @@ class ItIstioDomainInImage {
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);

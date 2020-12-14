@@ -167,7 +167,7 @@ public class ItIstioCrossDomainTransaction {
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);

@@ -115,7 +115,7 @@ class ItIstioTwoDomainsInImage {
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace1,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace2,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     logger.info("Namespaces [{0}, {1}, {2}] labeled with istio-injection",
          opNamespace, domainNamespace1, domainNamespace2);

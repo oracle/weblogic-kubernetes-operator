@@ -135,7 +135,7 @@ public class ItIstioDomainInPV  {
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
