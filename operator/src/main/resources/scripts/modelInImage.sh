@@ -647,8 +647,9 @@ function createPrimordialDomain() {
     cannot_perform_online_update=$(contain_returncode ${diff_rc} ${NOT_FOR_ONLINE_UPDATE})
 
     if [ ${cannot_perform_online_update} == "true" ] ; then
-      trace SEVERE "Domain resource specified online update, but model changes cannot use online update, such as:  " \
-      " Changing ListenPort, ListenAddress, SSL, top level Topology attributes, " \
+      trace SEVERE "Model in image online update failed because of forbidden changes:  Domain resource specified " \
+      " 'spec.configuration.model.onlineUpdate=true', but the model changes cannot use online update - such as: " \
+      " changing ListenPort, ListenAddress, SSL, changing top level Topology attributes, " \
       " deleting a ServerTemplate or Server."
       trace SEVERE $(cat /tmp/diffed_model.json)
       exitOrLoop
