@@ -6,13 +6,13 @@ currdate=`date`
 echo "### $currdate ###" >> scalingAction.log
 
 # script parameters
-scaling_action="scaleUp"
-wls_domain_uid="sample-domain1"
-wls_cluster_name="cluster-1"
-wls_domain_namespace="sample-domain1-ns"
+scaling_action=""
+wls_domain_uid=""
+wls_cluster_name=""
+wls_domain_namespace="default"
 operator_service_name="internal-weblogic-operator-svc"
-operator_namespace="sample-weblogic-operator-ns"
-operator_service_account="sample-weblogic-operator-sa"
+operator_namespace="weblogic-operator"
+operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
@@ -152,12 +152,6 @@ if [ $? -ne 0 ]
     exit 1
 fi
 
-if [ -x "$(command -v jq)" ]; then
-  echo "DOMAIN: $(echo ${DOMAIN} | jq .)" >> scalingAction.log
-else
-  echo "DOMAIN: $DOMAIN" >> scalingAction.log
-fi
-
 # Verify if cluster is defined in clusters
 if [ -x "$(command -v jq)" ]; then
   inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
@@ -263,9 +257,7 @@ fi
 # Operator Service REST URL for scaling
 operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
 
-##OFSS handling##
 echo "$currdate | domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url " >> scalingAction.log
-####
 
 # send REST request to Operator
 if [ -e $pem_filename ]
