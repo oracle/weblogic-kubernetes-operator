@@ -24,7 +24,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -393,7 +392,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
-  @Disabled
+  @Test
   @Order(4)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
@@ -554,15 +553,13 @@ class ItMiiDynamicUpdate {
   private String getPodNameFromJobName(String namespace, String jobName) {
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(namespace, labelSelector, jobName));
-    assertNotNull(introspectorPod);
-    assertNotNull(introspectorPod.getMetadata());
+    assertNotNull(introspectorPod, "introspectorPod is null");
+    assertNotNull(introspectorPod.getMetadata(), introspectorPod + " medadata is null");
     return introspectorPod.getMetadata().getName();
   }
 
   private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
-
     String introspectPodName = getPodNameFromJobName(namespace, introspectJobName);
-
     String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectPodName, namespace));
     logger.info("introspector log: {0}", introspectorLog);
     return introspectorLog.contains(errormsg);
