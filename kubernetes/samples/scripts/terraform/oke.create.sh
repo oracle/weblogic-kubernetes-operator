@@ -40,12 +40,11 @@ function setupTerraform () {
 #setup terraform#curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip#unzip -o terraform_0.11.8_linux_amd64.zip -d ${WORKSPACE}/bin/#rm terraform_0.11.8_linux_amd64.zip#chmod +x ${WORKSPACE}/bin/terraform
        curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
        unzip -o terraform_0.11.8_linux_amd64.zip -d ${terraformDir}
-       chmod +x ${terraformDir}/bin/terraform
     else
        echo "Unsupported OS"
     fi
-    chmod +x ${terraformDir}/bin/terraform
-    export PATH=${terraformDir}/bin:${PATH}
+    chmod +x ${terraformDir}/terraform
+    export PATH=${terraformDir}:${PATH}
 
 }
 
