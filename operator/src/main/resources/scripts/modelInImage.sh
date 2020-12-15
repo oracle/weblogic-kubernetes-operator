@@ -533,7 +533,7 @@ function restorePrimordialDomain() {
 # $1 the name of the encoded file in the config map
 function restoreEncodedTar() {
   cd / || return 1
-  cat ${OPERATOR_ROOT}/introspector*/${1} > /tmp/domain.secure
+  LC_COLLATE=C LC_ALL=C cat ${OPERATOR_ROOT}/introspector*/${1} > /tmp/domain.secure
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
 
   tar -xzf /tmp/domain.tar.gz || return 1

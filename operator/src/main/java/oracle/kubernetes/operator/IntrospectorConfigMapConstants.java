@@ -61,6 +61,13 @@ public interface IntrospectorConfigMapConstants {
    */
   @Nonnull
   static String getIntrospectorVolumePath(int index) {
-    return "/weblogic-operator/introspector" + suffix(index);
+    return "/weblogic-operator/introspector" + mountSuffix(index);
   }
+
+  /**  A (possibly empty) suffix for introspector volume paths. */
+  static String mountSuffix(int index) {
+    return index == 0 ? "" : "_" + String.format("%03d", index);
+  }
+
+
 }
