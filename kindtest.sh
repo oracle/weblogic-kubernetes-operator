@@ -6,7 +6,7 @@
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.8.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -39,7 +39,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 function usage {
   echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
+  echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
   echo "  -o Output directory (optional) "
@@ -62,7 +62,7 @@ function usage {
   exit $1
 }
 
-k8s_version="1.15.11"
+k8s_version="1.16"
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
@@ -111,10 +111,21 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
 done
 
 function versionprop {
-  grep "${1}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
+  grep "${1}_${2}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
-kind_image=$(versionprop "${k8s_version}")
+kind_version=$(kind version)
+kind_series="0.9"
+case "${kind_version}" in
+  "kind v0.7."*)
+    kind_series="0.7"
+    ;;
+  "kind v0.8."*)
+    kind_series="0.8"
+    ;;
+esac
+
+kind_image=$(versionprop "${kind_series}" "${k8s_version}")
 if [ -z "${kind_image}" ]; then
   echo "Unsupported Kubernetes version: ${k8s_version}"
   exit 1
@@ -124,7 +135,7 @@ echo "Using Kubernetes version: ${k8s_version}"
 
 disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
-  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
+  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.12" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
     echo "Calico CNI is not supported with Kubernetes versions below 1.16."
     exit 1
   fi
@@ -156,7 +167,6 @@ echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 echo 'Remove old cluster (if any)...'
 kind delete cluster --name ${kind_name} --kubeconfig "${RESULT_ROOT}/kubeconfig"
 
-kind_version=$(kind version)
 kind_network='kind'
 reg_name='kind-registry'
 reg_port='5000'
