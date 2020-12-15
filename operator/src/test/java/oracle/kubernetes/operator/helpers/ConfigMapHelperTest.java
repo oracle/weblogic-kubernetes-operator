@@ -3,12 +3,15 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -21,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
@@ -77,6 +81,8 @@ public class ConfigMapHelperTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
+  private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
+  private final Function<URI, Path> pathFunction = fileSystem::getPath;
 
 
   @SuppressWarnings("SameParameterValue")
@@ -108,10 +114,6 @@ public class ConfigMapHelperTest {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
   @Before
   public void setUp() throws Exception {
     mementos.add(
@@ -120,17 +122,21 @@ public class ConfigMapHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(TestComparator.install());
+    mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
+
+    defineInMemoryFiles(SCRIPT_NAMES);
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
+  private void defineInMemoryFiles(String... scriptNames) {
+    final String scriptRoot = getClass().getResource("/scripts/").getPath();
+    for (String scriptName : scriptNames) {
+      fileSystem.defineFile(scriptRoot + scriptName, "");
+    }
+  }
+
   @After
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }

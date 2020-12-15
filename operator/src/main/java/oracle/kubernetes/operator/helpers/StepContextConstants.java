@@ -11,7 +11,7 @@ public interface StepContextConstants {
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
   static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
-  static final String SIT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-cm-volume";
+  static final String INTROSPECTOR_VOLUME = "weblogic-domain-introspect-cm-volume";
   static final String WDT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-wdt-cm-volume";
   static final String RUNTIME_ENCRYPTION_SECRET_VOLUME = "weblogic-domain-runtime-encryption-volume";
   static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";

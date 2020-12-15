@@ -66,6 +66,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -163,7 +164,9 @@ public class DomainProcessorTest {
   }
 
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
+    testSupport.throwOnCompletionFailure();
+
     mementos.forEach(Memento::revert);
   }
 
@@ -558,7 +561,7 @@ public class DomainProcessorTest {
 
   private static final String OLD_INTROSPECTION_STATE = "123";
   private static final String NEW_INTROSPECTION_STATE = "124";
-  private static final String INTROSPECTOR_MAP_NAME = UID + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+  private static final String INTROSPECTOR_MAP_NAME = UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 
   @Test
   public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
@@ -635,8 +638,8 @@ public class DomainProcessorTest {
   private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
     return new V1ConfigMap()
           .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
-          .data(new HashMap<>(Map.of(IntrospectorConfigMapKeys.TOPOLOGY_YAML, defineTopology(),
-                                     IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
+          .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML, defineTopology(),
+                                     IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
   }
 
   private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
@@ -823,7 +826,7 @@ public class DomainProcessorTest {
           .filter(this::isIntrospectorConfigMap)
           .findFirst()
           .map(V1ConfigMap::getData)
-          .ifPresent(data -> data.put(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH, "changedHash"));
+          .ifPresent(data -> data.put(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, "changedHash"));
   }
 
   private boolean isIntrospectorConfigMap(V1ConfigMap map) {
