@@ -51,6 +51,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
 
   private static final String TEST_SCRIPT = "shunit2";
   private static final String OS_NAME_PROPERTY = "os.name";
+  private static final String SKIP_UNIT_TESTS_PROPERTY = "skip.unit.tests";
   private static final String[] INSTALLED_OSX_BASH_VERSION = {
       "GNU bash, version 3.2.57(1)-release (x86_64-apple-darwin19)",
       "Copyright (C) 2007 Free Software Foundation, Inc."
@@ -89,6 +90,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
     mementos.add(StaticStubSupport.install(ShUnit2Mojo.class, "fileSystem", fileSystem));
     mementos.add(StaticStubSupport.install(ShUnit2Mojo.class, "builderFunction", builderFunction));
     mementos.add(SystemPropertySupport.install(OS_NAME_PROPERTY, "Linux"));
+    mementos.add(SystemPropertySupport.install(SKIP_UNIT_TESTS_PROPERTY, ""));
 
     setMojoParameter("outputDirectory", TEST_CLASSES_DIRECTORY);
     setMojoParameter("sourceDirectory", SOURCE_DIRECTORY);
@@ -170,6 +172,15 @@ public class ShUnit2MojoTest extends MojoTestBase {
     fileSystem.defineFileContents(TEST_CLASSES_DIRECTORY, "");
 
     executeMojo();
+  }
+
+  @Test
+  public void ifSkipUnitTestSet_skipTesting() throws MojoFailureException, MojoExecutionException {
+    System.setProperty(SKIP_UNIT_TESTS_PROPERTY, "true");
+
+    executeMojo();
+
+    assertThat(getInfoLines(), empty());
   }
 
   @Test
