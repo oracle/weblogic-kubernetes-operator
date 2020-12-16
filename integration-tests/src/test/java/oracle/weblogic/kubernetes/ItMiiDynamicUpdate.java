@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToCha
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMaxThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMinThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchReplicaCountAtSpecLevel;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -68,6 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the following scenarios
@@ -386,6 +388,7 @@ class ItMiiDynamicUpdate {
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
   @Disabled
+  @Order(4)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 
@@ -443,15 +446,88 @@ class ItMiiDynamicUpdate {
 
   }
 
+  /**
+   * Recreate configmap containing new cluster config.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify servers in the newly added cluster are started.
+   */
+
+  @Test
+  @Order(5)
+  @DisplayName("Add cluster in MII domain using mii dynamic update")
+  public void testMiiAddCluster() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
+
+    // write sparse yaml to file
+    Path pathToAddClusterYaml = Paths.get(WORK_DIR + "/addcluster.yaml");
+    String yamlToAddCluster = "topology:\n"
+        + "    Cluster:\n"
+        + "        \"cluster-2\":\n"
+        + "            DynamicServers:\n"
+        + "                ServerTemplate:  \"cluster-2-template\"\n"
+        + "                ServerNamePrefix: \"dynamic-server\"\n"
+        + "                DynamicClusterSize: 4\n"
+        + "                MinDynamicClusterSize: 2\n"
+        + "                MaxDynamicClusterSize: 4\n"
+        + "                CalculatedListenPorts: false\n"
+        + "    ServerTemplate:\n"
+        + "        \"cluster-2-template\":\n"
+        + "            Cluster: \"cluster-2\"\n"
+        + "            ListenPort : 8001";
+
+    assertDoesNotThrow(() -> Files.write(pathToAddClusterYaml, yamlToAddCluster.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString()), withStandardRetryPolicy);
+
+    // change replica to have the servers running in the newly added cluster
+    assertTrue(patchReplicaCountAtSpecLevel(domainUid, domainNamespace, replicaCount),
+        "failed to patch the replicas at spec level");
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // check the servers are started in newly added cluster and the server services and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server services and pods are created in namespace {0}",
+          domainNamespace);
+      checkPodReadyAndServiceExists(domainUid + "-dynamic-server" + i, domainUid, domainNamespace);
+    }
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+  }
+
 
 
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectPodName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodName, domainUid, domainNamespace);
+    String introspectJobName = getIntrospectJobName(domainUid);
+    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
+
 
   private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {
     for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
@@ -563,4 +639,6 @@ class ItMiiDynamicUpdate {
           MII_APP_RESPONSE_V1 + i);
     }
   }
+
+
 }
