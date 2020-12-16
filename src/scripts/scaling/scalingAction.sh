@@ -248,6 +248,20 @@ function create_ssl_certificate_file() {
   fi
 }
 
+# Create request body for scaling request
+# args:
+# $1 replica count
+function get_request_body() {
+local new_ms="$1"
+local request_body=$(cat <<EOF
+{
+    "managedServerCount": $new_ms
+}
+EOF
+)
+echo "$request_body"
+}
+
 #### Main ####
 
 # Parse arguments/parameters
@@ -306,25 +320,30 @@ then
   print_usage
 fi
 
+# Initialize the client access token
 initialize_access_token
 
+# Log the script input parameters for debugging
 logScalingParameters
 
+# Retrieve the operator's REST endpoint port
 port=$(get_operator_internal_rest_port)
 echo "port: $port" >> scalingAction.log
 
+# Retrieve the api version of the deployed CRD
 domain_api_version=$(get_domain_api_version)
 echo "domain_api_version: $domain_api_version" >> scalingAction.log
 
+# Retrieve the Domain configuration
 DOMAIN=$(get_custom_resource_domain)
 
+# Determine if WLS cluster has configuration in CRD
 in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
 
 # Retrieve replica count, of WebLogic Cluster, from Domain Custom Resource
 # depending on whether the specified cluster is defined in clusters
 # or not.
 current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-
 echo "$currdate current number of managed servers is $current_replica_count" >> scalingAction.log
 
 # Cleanup cmds-$$.py
@@ -333,12 +352,8 @@ echo "$currdate current number of managed servers is $current_replica_count" >> 
 # Calculate new managed server count
 new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
 
-request_body=$(cat <<EOF
-{
-    "managedServerCount": $new_ms 
-}
-EOF
-)
+# Create the scaling request body
+request_body=$(get_replica_count "$new_ms")
 
 content_type="Content-Type: application/json"
 accept_resp_type="Accept: application/json"
