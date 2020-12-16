@@ -1158,8 +1158,13 @@ public class CommonTestUtils {
    *
    * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
    * @param domainNamespace namespace in which the domain will be created
+   * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain, String domainNamespace) {
+  public static void createDomainAndVerify(Domain domain, 
+                                           String domainNamespace,
+                                           String... domVersion) {
+    String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
+
     LoggingFacade logger = getLogger();
     // create the domain CR
     assertNotNull(domain, "domain is null");
@@ -1168,7 +1173,7 @@ public class CommonTestUtils {
 
     logger.info("Creating domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);
-    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain),
+    assertTrue(assertDoesNotThrow(() -> createDomainCustomResource(domain, domainVersion),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
             domainUid, domainNamespace)),
         String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
@@ -1184,7 +1189,7 @@ public class CommonTestUtils {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+        .until(domainExists(domainUid, domainVersion, domainNamespace));
   }
 
   /**
@@ -1655,7 +1660,7 @@ public class CommonTestUtils {
    * @param domainName Name of domain to which cluster belongs
    * @param namespace cluster's namespace
    * @param replicaCount replica count value to match
-   * @return true, if the cluster's replica count matches the input parameter value.
+   * @return true if matches false if not
    */
   public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
                                                         String namespace, Integer replicaCount) throws ApiException {
