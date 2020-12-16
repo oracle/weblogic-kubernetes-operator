@@ -152,7 +152,7 @@ echo 'Remove old cluster (if any)...'
 
 
 echo 'Create a OKE cluster'
-mkdir -m777 "${WORKSPACE}/terraform"
+mkdir -p "${WORKSPACE}/terraform"
 cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
 cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
 mkdir -p ${WORKSPACE}/terraform/terraforminstall
