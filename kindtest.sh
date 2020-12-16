@@ -79,13 +79,11 @@ wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
 maven_profile_name="integration-tests"
 skip_tests=false
 
-while getopts ":h:n:o:t:v:c:x:p:d:i:m:s" opt; do
+while getopts "v:n:o:t:c:x:p:d:i:m:sh" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
     n) kind_name="${OPTARG}"
-    ;;
-    s) skip_tests=true
     ;;
     o) outdir="${OPTARG}"
     ;;
@@ -103,11 +101,9 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:s" opt; do
     ;;
     m) maven_profile_name="${OPTARG}"
     ;;
+    s) skip_tests=true
+    ;;
     h) usage 0
-    ;;
-    d) echo "Ignoring -d=${OPTARG}"
-    ;;
-    i) echo "Ignoring -i=${OPTARG}"
     ;;
     *) usage 1
     ;;
