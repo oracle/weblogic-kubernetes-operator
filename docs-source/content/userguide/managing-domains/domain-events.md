@@ -29,7 +29,7 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
- *  `InvalidReplicasValue`:  An invalid replicas value is found in a `Cluster` inside a domain resource. Please update the domain resource with a replicas value that is supported by the cluster whose name is specified in the event.
+ *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
 
 #### Operator-generated event details
 

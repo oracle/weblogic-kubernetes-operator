@@ -49,7 +49,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static oracle.kubernetes.operator.EventConstants.INVALID_REPLICAS_VALUE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithInvolvedObject;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
@@ -637,7 +637,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), INVALID_REPLICAS_VALUE_EVENT, UID, NS), is(true));
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
   }
 
   @Test
@@ -678,7 +678,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), INVALID_REPLICAS_VALUE_EVENT, UID, NS), is(true));
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
   }
 
   @Test
@@ -702,7 +702,7 @@ public class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), INVALID_REPLICAS_VALUE_EVENT, UID, NS), is(true));
+        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
   }
 
   @Test

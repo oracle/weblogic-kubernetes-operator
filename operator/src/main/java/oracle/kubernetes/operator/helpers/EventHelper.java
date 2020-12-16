@@ -37,10 +37,10 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
-import static oracle.kubernetes.operator.EventConstants.INVALID_REPLICAS_VALUE_EVENT;
-import static oracle.kubernetes.operator.EventConstants.INVALID_REPLICAS_VALUE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -256,7 +256,7 @@ public class EventHelper {
       }
 
     },
-    INVALID_REPLICAS_VALUE {
+    DOMAIN_VALIDATION_ERROR {
       @Override
       public String getType() {
         return EVENT_WARNING;
@@ -264,17 +264,17 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return INVALID_REPLICAS_VALUE_EVENT;
+        return DOMAIN_VALIDATION_ERROR_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return INVALID_REPLICAS_VALUE_PATTERN;
+        return DOMAIN_VALIDATION_ERROR_PATTERN;
       }
 
       @Override
       public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(INVALID_REPLICAS_VALUE_PATTERN,
+        return String.format(DOMAIN_VALIDATION_ERROR_PATTERN,
             info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
       }
     },

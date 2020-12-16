@@ -288,7 +288,7 @@ public class ManagedServersUpStep extends Step {
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
-        addInvalidReplicasValueEventAndWarning(message);
+        addValidationErrorEventAndWarning(message);
       }
     }
 
@@ -304,7 +304,7 @@ public class ManagedServersUpStep extends Step {
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
-        addInvalidReplicasValueEventAndWarning(message);
+        addValidationErrorEventAndWarning(message);
 
         // Reset current replica count so we don't scale down less than minimum
         // dynamic cluster size
@@ -312,10 +312,10 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addInvalidReplicasValueEventAndWarning(String message) {
+    private void addValidationErrorEventAndWarning(String message) {
       LOGGER.warning(message);
       if (!skipEventCreation) {
-        eventStep = createEventStep(new EventData(EventItem.INVALID_REPLICAS_VALUE, message));
+        eventStep = createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, message));
       }
       info.addValidationWarning(message);
     }
