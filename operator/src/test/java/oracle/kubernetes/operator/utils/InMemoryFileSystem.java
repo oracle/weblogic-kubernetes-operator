@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.utils;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -40,12 +41,12 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
   @Nonnull
   public Path getPath(@Nonnull String first, @Nonnull String... more) {
-    return createStrictStub(PathStub.class, createPathString(first, more));
+    return PathStub.createPathStub(createPathString(first, more));
   }
 
   @Nonnull
   public Path getPath(@Nonnull URI uri) {
-    return createStrictStub(PathStub.class, createPathString(uri.getPath(), new String[0]));
+    return PathStub.createPathStub(createPathString(uri.getPath(), new String[0]));
   }
 
   private String createPathString(String first, String[] more) {
@@ -91,6 +92,10 @@ public abstract class InMemoryFileSystem extends FileSystem {
       this.filePath = filePath;
     }
 
+    static PathStub createPathStub(String pathString) {
+      return createStrictStub(PathStub.class, pathString);
+    }
+
     @Override
     @Nonnull public FileSystem getFileSystem() {
       return instance;
@@ -98,7 +103,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
     @Override
     public Path getFileName() {
-      return this;
+      return createPathStub(getLastElement());
+    }
+
+    @Nonnull
+    protected String getLastElement() {
+      final int beginIndex = filePath.lastIndexOf(File.separatorChar);
+      return beginIndex < 0 ? filePath : filePath.substring(beginIndex + 1);
     }
 
     @Override
@@ -190,7 +201,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
     public DirectoryStreamStub(FileSystemProviderStub parent, String root) {
       for (String key : parent.fileContents.keySet()) {
         if (key.startsWith(root + "/")) {
-          paths.add(createStrictStub(PathStub.class, key));
+          paths.add(PathStub.createPathStub(key));
         }
       }
     }

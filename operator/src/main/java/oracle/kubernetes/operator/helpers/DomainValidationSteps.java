@@ -101,7 +101,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
       return doNext(step, packet);
     }
 
@@ -129,7 +129,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
       return doNext(step, packet);
     }
 
@@ -242,7 +242,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailedStep(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
       return doNext(step, packet);
     }
 

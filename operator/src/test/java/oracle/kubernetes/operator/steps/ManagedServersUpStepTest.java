@@ -22,6 +22,7 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
@@ -603,10 +604,13 @@ public class ManagedServersUpStepTest {
   }
 
   private static Step skipProgressingStep(Step step) {
-    if (step instanceof DomainStatusUpdater.ProgressingStep) {
-      return step.getNext();
+    Step stepLocal = step;
+    while (stepLocal instanceof EventHelper.CreateEventStep
+        || stepLocal instanceof DomainStatusUpdater.ProgressingStep) {
+      stepLocal = stepLocal.getNext();
     }
-    return step;
+
+    return stepLocal;
   }
 
   private void assertStoppingServers(Step step, String... servers) {
