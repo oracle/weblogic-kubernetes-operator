@@ -480,7 +480,9 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    String expectedErrorMsg = "name is not one of the attribute names allowed in model location topology";
+    String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
+    verifyIntrospectorFails(expectedErrorMsg);
+    expectedErrorMsg = "[SEVERE] { \"topology\" : { \"Name\" : \"newdomainname\" }";
     verifyIntrospectorFails(expectedErrorMsg);
 
     // verify the domain status message contains the error msg
@@ -499,8 +501,6 @@ class ItMiiDynamicUpdate {
     // delete introspector job
     assertDoesNotThrow(() -> deleteJob(getIntrospectJobName(domainUid), domainNamespace),
         "Exception thrown when delete introspector job");
-    // wait until the introspector pod was deleted
-    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -533,6 +533,8 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
+    verifyIntrospectorFails(expectedErrorMsg);
+    expectedErrorMsg = "[SEVERE] { \"topology\" : { \"Server\" : { \"admin-server\" : { \"ListenPort\" : 7003 } } }";
     verifyIntrospectorFails(expectedErrorMsg);
 
     // verify the domain status message contains the error msg

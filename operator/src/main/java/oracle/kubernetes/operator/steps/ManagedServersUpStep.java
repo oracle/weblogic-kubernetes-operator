@@ -36,7 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -71,7 +71,7 @@ public class ManagedServersUpStep extends Step {
 
     if (!serversToStop.isEmpty()) {
       insert(steps,
-          Step.chain(createProgressingStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+          Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
           null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 

@@ -74,10 +74,11 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.9.5}
+WDT_VERSION=${WDT_VERSION:-1.9.7}
 
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
@@ -150,6 +151,8 @@ function run_wdt {
   # - WDT_VAR_FILE & WDT_MODEL_FILE will be copied to WDT_DIR.
   #
 
+  local action="${1}"
+
   # Input files and directories.
 
   local inputs_orig="$WDT_VAR_FILE"
@@ -157,6 +160,12 @@ function run_wdt {
   local oracle_home="$ORACLE_HOME"
   local wdt_bin_dir="$WDT_DIR/weblogic-deploy/bin"
   local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
+
+  if [ ${action} = "create" ]; then
+    local wdt_domain_script="$wdt_bin_dir/createDomain.sh"
+  else
+    local wdt_domain_script="$wdt_bin_dir/updateDomain.sh"
+  fi
 
   local domain_home_dir="$DOMAIN_HOME_DIR"
   if [ -z "${domain_home_dir}" ]; then
@@ -172,10 +181,14 @@ function run_wdt {
 
   local inputs_final=$WDT_DIR/$(basename "$inputs_orig")
   local model_final=$WDT_DIR/$(basename "$model_orig")
-  local out_file=$WDT_DIR/createDomain.sh.out
+  if [ ${action} = "create" ]; then
+    local out_file=$WDT_DIR/createDomain.sh.out
+  else
+    local out_file=$WDT_DIR/updateDomain.sh.out
+  fi
   local wdt_log_dir="$WDT_DIR/weblogic-deploy/logs"
 
-  echo @@ "Info:  About to run WDT createDomain.sh"
+  echo @@ "Info:  About to run WDT ${wdt_domain_script}"
 
   for directory in wdt_bin_dir SCRIPTPATH WDT_DIR oracle_home; do
     if [ ! -d "${!directory}" ]; then
@@ -197,9 +210,9 @@ function run_wdt {
   local save_dir=`pwd`
   cd $WDT_DIR || return 1
 
-  echo @@ "Info:  WDT createDomain.sh output will be in $out_file and $wdt_log_dir"
+  echo @@ "Info:  WDT $wdt_domain_script output will be in $out_file and $wdt_log_dir"
 
-  $wdt_createDomain_script \
+  $wdt_domain_script \
      -oracle_home $oracle_home \
      -domain_type WLS \
      -domain_home $domain_home_dir \
@@ -211,22 +224,79 @@ function run_wdt {
   cd $save_dir
 
   if [ $wdt_res -ne 0 ]; then
-    cat $WDT_DIR/createDomain.sh.out
-    echo @@ "Info:  WDT createDomain.sh output is in $out_file and $wdt_log_dir"
-    echo @@ "Error:  WDT createDomain.sh failed." 
+    if [ ${action} = "create" ]; then
+      cat $WDT_DIR/createDomain.sh.out
+      echo @@ "Info:  WDT createDomain.sh output is in $out_file and $wdt_log_dir"
+      echo @@ "Error:  WDT createDomain.sh failed."
+      return 1
+    else
+      cat $WDT_DIR/updateDomain.sh.out
+      echo @@ "Info:  WDT updateDomain.sh output is in $out_file and $wdt_log_dir"
+      echo @@ "Error:  WDT updateDomain.sh failed."
+      return 1
+    fi
+  fi
+
+  cd $WDT_DIR || return 1
+
+  echo @@ "Info:  WDT extractDomainResource.sh output will be in extract${action}.out and $wdt_log_dir"
+
+  $wdt_bin_dir/extractDomainResource.sh \
+     -oracle_home $oracle_home \
+     -domain_resource_file domain${action}.yaml \
+     -domain_home $domain_home_dir \
+     -model_file $model_final \
+     -variable_file $inputs_final > extract${action}.out 2>&1
+
+  local wdt_res=$?
+
+  cd $save_dir
+
+  if [ $wdt_res -ne 0 ]; then
+    cat $WDT_DIR/extract${action}.out
+    echo @@ "Info:  WDT extractDomainResource output is in extract${action}.out and $wdt_log_dir"
+    echo @@ "Error:  WDT createDomain.sh failed."
     return 1
   fi
 
-  chmod -R g+w $domain_home_dir || return 1
+  if [ ${action} = "create" ]; then
+    chmod -R g+w $domain_home_dir || return 1
+    echo @@ "Info:  WDT createDomain.sh succeeded."
+  else
+    echo @@ "Info:  WDT updateDomain.sh succeeded."
+  fi
 
-  echo @@ "Info:  WDT createDomain.sh succeeded."
   return 0
 }
 
 # Run
 
-setup_wdt_shared_dir || exit 1
+if [ $# -gt 0 ]; then
+  echo "command line contains $# arguments"
+else
+  echo "command line contains no arguments"
+fi
+
+action=$1
+
+echo @@ "Info: action is $action"
+
+if [ "$action" = "create" ]; then
+   setup_wdt_shared_dir || exit 1
+fi
 
 install_wdt || exit 1
 
-run_wdt || exit 1
+if [ "${action}" = "update" ]; then
+   run_wdt "update"|| exit 1
+else
+   run_wdt "create" || exit 1
+fi
+
+echo "Does ${WDT_DIR}/doneExtract exist?"
+while [ ! -f "${WDT_DIR}/doneExtract" ]; do
+   echo @@ "${WDT_DIR}/doneExtract does not exist yet"
+   sleep 20
+done
+echo "Found it and removing the doneExtract file"
+rm -rf ${WDT_DIR}/doneExtract || exit 1
