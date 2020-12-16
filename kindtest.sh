@@ -6,7 +6,7 @@
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.8.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -37,11 +37,12 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
+  echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
+  echo "  -s Skip tests. If this option is specified then the cluster is created, but no tests are run. "
   echo "  -o Output directory (optional) "
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -t Test filter (optional) "
@@ -62,7 +63,7 @@ function usage {
   exit $1
 }
 
-k8s_version="1.15.11"
+k8s_version="1.16"
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
@@ -76,8 +77,9 @@ threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
 maven_profile_name="integration-tests"
+skip_tests=false
 
-while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
+while getopts "v:n:o:t:c:x:p:d:i:m:sh" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -99,11 +101,9 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
     ;;
     m) maven_profile_name="${OPTARG}"
     ;;
+    s) skip_tests=true
+    ;;
     h) usage 0
-    ;;
-    d) echo "Ignoring -d=${OPTARG}"
-    ;;
-    i) echo "Ignoring -i=${OPTARG}"
     ;;
     *) usage 1
     ;;
@@ -111,10 +111,21 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
 done
 
 function versionprop {
-  grep "${1}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
+  grep "${1}_${2}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
-kind_image=$(versionprop "${k8s_version}")
+kind_version=$(kind version)
+kind_series="0.9"
+case "${kind_version}" in
+  "kind v0.7."*)
+    kind_series="0.7"
+    ;;
+  "kind v0.8."*)
+    kind_series="0.8"
+    ;;
+esac
+
+kind_image=$(versionprop "${kind_series}" "${k8s_version}")
 if [ -z "${kind_image}" ]; then
   echo "Unsupported Kubernetes version: ${k8s_version}"
   exit 1
@@ -124,7 +135,7 @@ echo "Using Kubernetes version: ${k8s_version}"
 
 disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
-  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
+  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.12" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
     echo "Calico CNI is not supported with Kubernetes versions below 1.16."
     exit 1
   fi
@@ -156,7 +167,6 @@ echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 echo 'Remove old cluster (if any)...'
 kind delete cluster --name ${kind_name} --kubeconfig "${RESULT_ROOT}/kubeconfig"
 
-kind_version=$(kind version)
 kind_network='kind'
 reg_name='kind-registry'
 reg_port='5000'
@@ -232,10 +242,29 @@ if [ "${kind_network}" != "bridge" ]; then
   fi
 fi
 
+# Document the local registry
+# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-registry-hosting
+  namespace: kube-public
+data:
+  localRegistryHosting.v1: |
+    host: "localhost:${reg_port}"
+    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
+EOF
+
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
+
+if [ "$skip_tests" = true ] ; then
+  echo 'Cluster created. Skipping tests.'
+  exit 0
+fi
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
