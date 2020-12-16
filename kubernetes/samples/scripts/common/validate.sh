@@ -351,6 +351,17 @@ function validateDomainSecret {
 }
 
 #
+# function to validate if we will be using wdt or wlst to create the domain
+#
+function validateDomainFilesDir {
+  useWdt=true
+  if [ -z "${createDomainFilesDir}" ] || [ "${createDomainFilesDir}" == "wlst" ]; then
+    useWdt=false
+  fi
+  echo useWdt is ${useWdt}
+}
+
+#
 # Function to validate the common input parameters
 #
 function validateCommonInputs {
@@ -393,6 +404,7 @@ function validateCommonInputs {
   validateWeblogicImagePullPolicy
   validateWeblogicImagePullSecretName
   validateFmwDomainType
+  validateDomainFilesDir
   # Below three validate methods are used for MII integration testing
   validateWdtDomainType
   validateWdtModelFile

@@ -35,7 +35,9 @@ public interface KubernetesConstants {
 
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";
-  String INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX = "-weblogic-domain-introspect-cm";
 
   String GRACEFUL_SHUTDOWNTYPE = ShutdownType.Graceful.name();
+
+  String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
+  String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";
 }

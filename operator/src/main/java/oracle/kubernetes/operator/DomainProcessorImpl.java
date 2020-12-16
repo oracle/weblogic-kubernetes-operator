@@ -34,6 +34,9 @@ import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -68,9 +71,12 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 
 public class DomainProcessorImpl implements DomainProcessor {
@@ -417,17 +423,26 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void handleAddedDomain(Domain domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().withExplicitRecheck().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain))
+        .interrupt()
+        .withExplicitRecheck()
+        .withEventData(EventItem.DOMAIN_CREATED, null)
+        .execute();
   }
 
   private void handleModifiedDomain(Domain domain) {
     LOGGER.fine(MessageKeys.WATCH_DOMAIN, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain))
+        .interrupt()
+        .withEventData(EventItem.DOMAIN_CHANGED, null)
+        .execute();
   }
 
   private void handleDeletedDomain(Domain domain) {
     LOGGER.info(MessageKeys.WATCH_DOMAIN_DELETED, domain.getDomainUid());
-    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck().execute();
+    createMakeRightOperation(new DomainPresenceInfo(domain)).interrupt().forDeletion().withExplicitRecheck()
+        .withEventData(EventItem.DOMAIN_DELETED, null)
+        .execute();
   }
 
   private void scheduleDomainStatusUpdating(DomainPresenceInfo info) {
@@ -506,14 +521,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     return new MakeRightDomainOperationImpl(liveInfo);
   }
 
-  public Step createPopulatePacketServerMapsStep(oracle.kubernetes.operator.work.Step next) {
-    return new PopulatePacketServerMapsStep(next);
+  public Step createPopulatePacketServerMapsStep() {
+    return new PopulatePacketServerMapsStep();
   }
 
   public static class PopulatePacketServerMapsStep extends Step {
-    public PopulatePacketServerMapsStep(Step next) {
-      super(next);
-    }
 
     @Override
     public NextAction apply(Packet packet) {
@@ -559,6 +571,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean deleting;
     private boolean willInterrupt;
     private boolean inspectionRun;
+    private EventData eventData;
 
     /**
      * Create the operation.
@@ -575,6 +588,17 @@ public class DomainProcessorImpl implements DomainProcessor {
     @Override
     public MakeRightDomainOperation withExplicitRecheck() {
       explicitRecheck = true;
+      return this;
+    }
+
+    /**
+     * Set the event data that is associated with this operation.
+     * @param eventItem event data
+     * @param message event message
+     * @return the updated factory
+     */
+    public MakeRightDomainOperation withEventData(EventItem eventItem, String message) {
+      this.eventData = new EventData(eventItem).message(message);
       return this;
     }
 
@@ -616,10 +640,10 @@ public class DomainProcessorImpl implements DomainProcessor {
           return;
         }
 
-        if (isShouldContinue()) {
+        if (shouldContinue()) {
           internalMakeRightDomainPresence();
         } else {
-          LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
+          logNotStartingDomain();
         }
       }
     }
@@ -634,7 +658,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return inspectionRun;
     }
 
-    private boolean isShouldContinue() {
+    private boolean shouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
@@ -653,57 +677,116 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
 
-      if (cachedInfo == null || cachedInfo.getDomain() == null) {
+      if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (exceededFailureRetryCount && !isVersionsChanged) {
-        LOGGER.severe("Stop introspection retry - exceeded configured domainPresenceFailureRetryMaxCount: "
-            + DomainPresence.getDomainPresenceFailureRetryMaxCount()
-            + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
-            + " by adding it to the weblogic-operator-cm configmap.");
+      } else if (shouldReportAbortedEvent()) {
+        return true;
+      } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
+        LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
         return false;
-      } else if (existingError != null && existingError.contains("FatalIntrospectorError")) {
-        LOGGER.fine("Stop introspection retry - MII Fatal Error: "
-            + existingError);
+      } else if (isFatalIntrospectorError(existingError)) {
+        LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
         return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
-      } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
-        DomainSourceType domainSourceType = Optional.ofNullable(liveInfo)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getDomainHomeSourceType)
-            .orElse(DomainSourceType.Image);
+      } else if (shouldRecheck(cachedInfo)) {
+        disableOnlineUpdateIfSpecChgNotCompatible(cachedInfo);
 
-        // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves more than introspectVersion
-        // and onlineUpdate, disable online update ??
-
-        if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
-          LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
-              + "introspectVersion, overridden to use offline");
-          Optional.ofNullable(liveInfo)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getSpec)
-              .map(DomainSpec::getConfiguration)
-              .map(Configuration::getModel)
-              .map(Model::getOnlineUpdate)
-              .ifPresent(o -> o.setEnabled(false));
+        if (hasExceededRetryCount()) {
+          resetIntrospectorJobFailureCount();
         }
-        if (exceededFailureRetryCount) {
-          Optional.ofNullable(liveInfo)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(o -> o.resetIntrospectJobFailureCount());
-        }
-
-        if (currentIntrospectFailureRetryCount > 0) {
-          LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-              currentIntrospectFailureRetryCount,
-              DomainPresence.getDomainPresenceFailureRetryMaxCount());
+        if (getCurrentIntrospectFailureRetryCount() > 0) {
+          logRetryCount(cachedInfo);
+          ensureRetryingEventPresent();
         }
 
         return true;
       }
       cachedInfo.setDomain(getDomain());
       return false;
+    }
+
+    private boolean shouldReportAbortedEvent() {
+      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
+    }
+
+    private void ensureRetryingEventPresent() {
+      if (eventData == null) {
+        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
+      }
+    }
+
+    private void resetIntrospectorJobFailureCount() {
+      Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(o -> o.resetIntrospectJobFailureCount());
+    }
+
+    private boolean hasExceededRetryCount() {
+      return getCurrentIntrospectFailureRetryCount()
+          >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
+    private void disableOnlineUpdateIfSpecChgNotCompatible(DomainPresenceInfo cachedInfo) {
+      DomainSourceType domainSourceType = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getDomainHomeSourceType)
+          .orElse(DomainSourceType.Image);
+
+      // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves more than introspectVersion
+      // and onlineUpdate, disable online update ??
+
+      if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
+        LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
+            + "introspectVersion, overridden to use offline");
+        Optional.ofNullable(liveInfo)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getSpec)
+            .map(DomainSpec::getConfiguration)
+            .map(Configuration::getModel)
+            .map(Model::getOnlineUpdate)
+            .ifPresent(o -> o.setEnabled(false));
+      }
+
+    }
+
+    private String getExistingError() {
+      return Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+    }
+
+    private Integer getCurrentIntrospectFailureRetryCount() {
+      return Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getIntrospectJobFailureCount)
+          .orElse(0);
+    }
+
+    private void logRetryCount(DomainPresenceInfo cachedInfo) {
+      LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
+          getCurrentIntrospectFailureRetryCount(),
+          DomainPresence.getDomainPresenceFailureRetryMaxCount());
+    }
+
+    private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
+      return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+    }
+
+    private boolean isFatalIntrospectorError(String existingError) {
+      return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
+    }
+
+    private boolean isNewDomain(DomainPresenceInfo cachedInfo) {
+      return cachedInfo == null || cachedInfo.getDomain() == null;
+    }
+
+    private void logNotStartingDomain() {
+      LOGGER.fine(MessageKeys.NOT_STARTING_DOMAINUID_THREAD, getDomainUid());
     }
 
     private void internalMakeRightDomainPresence() {
@@ -728,9 +811,20 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
+      if (containsAbortedEventData()) {
+        return new StepAndPacket(Step.chain(createEventStep(eventData), new TailStep()), packet);
+      }
+
       return new StepAndPacket(
-          createPopulatePacketServerMapsStep(createSteps()),
-          packet);
+          getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
+    }
+
+    private Step getEventStep(Step next) {
+      return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
+    }
+
+    private boolean containsAbortedEventData() {
+      return Optional.ofNullable(eventData).map(EventData::isProcessingAbortedEvent).orElse(false);
     }
 
     private Domain getDomain() {
@@ -789,53 +883,32 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    String liveIntrospectVersion = Optional.ofNullable(liveInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
-        .map(DomainSpec::getIntrospectVersion)
-        .orElse(null);
+    return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
+        || !Objects.equals(getRestartVersion(liveInfo), getRestartVersion(cachedInfo))
+        || !Objects.equals(getIntrospectImage(liveInfo), getIntrospectImage(cachedInfo));
+  }
 
-    String cachedIntropectVersion = Optional.ofNullable(cachedInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getSpec)
-        .map(DomainSpec::getIntrospectVersion)
-        .orElse(null);
-
-    if (!Objects.equals(liveIntrospectVersion, cachedIntropectVersion)) {
-      return true;
-    }
-
-    String liveRestartVersion = Optional.ofNullable(liveInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
-        .orElse(null);
-
-    String cachedRestartVersion = Optional.ofNullable(cachedInfo)
-        .map(DomainPresenceInfo::getDomain)
-        .map(Domain::getRestartVersion)
-        .orElse(null);
-
-    if (!Objects.equals(liveRestartVersion, cachedRestartVersion)) {
-      return true;
-    }
-
-    String liveIntrospectImage = Optional.ofNullable(liveInfo)
+  private static String getIntrospectImage(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
         .map(DomainSpec::getImage)
         .orElse(null);
+  }
 
-    String cachedIntrospectImage = Optional.ofNullable(cachedInfo)
+  private static String getRestartVersion(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getRestartVersion)
+        .orElse(null);
+  }
+
+  private static String getIntrospectVersion(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
         .map(DomainPresenceInfo::getDomain)
         .map(Domain::getSpec)
-        .map(DomainSpec::getImage)
+        .map(DomainSpec::getIntrospectVersion)
         .orElse(null);
-
-    if (!Objects.equals(liveIntrospectImage, cachedIntrospectImage)) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
@@ -866,7 +939,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailedStep(throwable, null),
+                DomainStatusUpdater.createFailureRelatedSteps(throwable, null),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -896,7 +969,11 @@ public class DomainProcessorImpl implements DomainProcessor {
                                   + " is now: "
                                   + retryCount);
                           if (retryCount <= DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                            createMakeRightOperation(existing).withDeleting(isDeleting).withExplicitRecheck().execute();
+                            createMakeRightOperation(existing)
+                                .withDeleting(isDeleting)
+                                .withExplicitRecheck()
+                                .withEventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null)
+                                .execute();
                           } else {
                             LOGGER.severe(
                                 MessageKeys.CANNOT_START_DOMAIN_AFTER_MAX_RETRIES,
@@ -904,6 +981,14 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 ns,
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
+                            createMakeRightOperation(existing)
+                                .withEventData(DOMAIN_PROCESSING_ABORTED,
+                                    String.format(
+                                        "Unable to start domain %s after %s attempts due to exception: %s",
+                                        domainUid,
+                                        DomainPresence.getDomainPresenceFailureRetryMaxCount(),
+                                        throwable))
+                                .execute();
                           }
                         }
                       }
@@ -921,7 +1006,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   Step createDomainUpPlan(DomainPresenceInfo info) {
-    Step managedServerStrategy = bringManagedServersUp(DomainStatusUpdater.createEndProgressingStep(new TailStep()));
+    Step managedServerStrategy = Step.chain(
+        bringManagedServersUp(null),
+        DomainStatusUpdater.createEndProgressingStep(null),
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
+        new TailStep());
 
     Step domainUpStrategy =
         Step.chain(
@@ -937,6 +1026,18 @@ public class DomainProcessorImpl implements DomainProcessor {
           DomainPresenceStep.createDomainPresenceStep(info.getDomain(), domainUpStrategy, managedServerStrategy));
   }
 
+  private Step createEventStep(EventData eventData) {
+    return EventHelper.createEventStep(eventData);
+  }
+
+  private Step createEventStep(EventItem eventItem) {
+    return createEventStep(eventItem, "");
+  }
+
+  private Step createEventStep(EventItem eventItem, String message) {
+    return EventHelper.createEventStep(new EventData(eventItem, message));
+  }
+
   Step createDomainUpInitialStep(DomainPresenceInfo info) {
     return new UpHeadStep(info);
   }
@@ -947,7 +1048,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
-        new UnregisterStep(info));
+        new UnregisterStep(info),
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
   }
 
   private static class UnregisterStep extends Step {
@@ -1109,7 +1211,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       switch (podStatus) {
         case PHASE_FAILED:
           delegate.runSteps(
-                  DomainStatusUpdater.createFailedStep(
+                  DomainStatusUpdater.createFailureRelatedSteps(
                           info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
           break;
         case WAITING_NON_NULL_MESSAGE:
@@ -1118,7 +1220,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerState::getWaiting)
                   .ifPresent(waiting ->
                     delegate.runSteps(
-                            DomainStatusUpdater.createFailedStep(
+                            DomainStatusUpdater.createFailureRelatedSteps(
                                     info, waiting.getReason(), waiting.getMessage(), null)));
           break;
         case TERMINATED_ERROR_REASON:
@@ -1126,14 +1228,14 @@ public class DomainProcessorImpl implements DomainProcessor {
                   .map(V1ContainerStatus::getState)
                   .map(V1ContainerState::getTerminated)
                   .ifPresent(terminated -> delegate.runSteps(
-                          DomainStatusUpdater.createFailedStep(
+                          DomainStatusUpdater.createFailureRelatedSteps(
                                   info, terminated.getReason(), terminated.getMessage(), null)));
           break;
         case UNSCHEDULABLE:
           Optional.ofNullable(getMatchingPodCondition())
                   .ifPresent(condition ->
                           delegate.runSteps(
-                                  DomainStatusUpdater.createFailedStep(
+                                  DomainStatusUpdater.createFailureRelatedSteps(
                                           info, condition.getReason(), condition.getMessage(), null)));
           break;
         case SUCCESS:

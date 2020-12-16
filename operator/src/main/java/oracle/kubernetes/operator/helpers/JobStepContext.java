@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -285,7 +286,7 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
             .addVolumesItem(
                 new V1Volume()
-                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .name("mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
     if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
@@ -350,7 +351,7 @@ public abstract class JobStepContext extends BasePodStepContext {
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
           volumeMount(
-              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
               "/weblogic-operator/introspectormii")
               .readOnly(false));
 
@@ -454,7 +455,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
     V1ConfigMapVolumeSource result =
         new V1ConfigMapVolumeSource()
-            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .name(getDomainUid() + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
             .defaultMode(ALL_READ_AND_EXECUTE);
     result.setOptional(true);
     return result;
@@ -483,7 +484,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
+      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
     }
 
     @Override
