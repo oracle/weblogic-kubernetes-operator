@@ -38,6 +38,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
+import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -65,7 +66,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -135,7 +139,7 @@ public class ItIstioDomainInPV  {
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -255,6 +259,10 @@ public class ItIstioDomainInPV  {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
+            .addManagedServersItem(new ManagedServer()
+                .serverName("managed-server2")
+                .serverStartPolicy("IF_NEEDED")
+                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
@@ -324,6 +332,49 @@ public class ItIstioDomainInPV  {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
 
+    // Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86407
+    // Stop and Start the managed server in absense of administration server
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/adminServer/serverStartPolicy", "NEVER"),
+         "Can't patch adminServer's serverStartPolicy to NEVER");
+    logger.info("Domain is patched to shutdown administration server");
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Administration server shutdown success");
+
+    boolean scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("Scaling down cluster cluster-1 of domain %s in namespace %s failed",
+        domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+    logger.info("Cluster is scaled down in absense of administration server");
+    checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    logger.info("Managed Server stopped in absense of administration server");
+
+    scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, "cluster-1", 2),
+        String.format("Scaling up cluster cluster-1 of domain %s in namespace %s failed",
+        domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+    logger.info("Cluster is scaled up in absense of administration server");
+    checkServiceExists(managedServerPodNamePrefix + "2", domainNamespace);
+    checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    logger.info("Managed Server started in absense of administration server");
+  }
+
+  private void checkPodDeleted(String podName, String domainUid, String domNamespace) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                podName,
+                domNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
+            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
+                podName, domNamespace)));
   }
 
   /**
