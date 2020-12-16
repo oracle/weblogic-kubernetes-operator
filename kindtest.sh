@@ -37,11 +37,12 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
+  echo "  -s Skip tests. If this option is specified then the cluster is created, but no tests are run. "
   echo "  -o Output directory (optional) "
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -t Test filter (optional) "
@@ -76,12 +77,15 @@ threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
 maven_profile_name="integration-tests"
+skip_tests=false
 
-while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
+while getopts ":h:n:o:t:v:c:x:p:d:i:m:s" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
     n) kind_name="${OPTARG}"
+    ;;
+    s) skip_tests=true
     ;;
     o) outdir="${OPTARG}"
     ;;
@@ -260,6 +264,11 @@ echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
+
+if [ "$skip_tests" = true ] ; then
+  echo 'Cluster created. Skipping tests.'
+  exit 0
+fi
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
