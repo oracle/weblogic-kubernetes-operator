@@ -69,6 +69,58 @@ function createCluster () {
     terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
 }
 
+function createRoleBindings () {
+kubectl -n kube-system create serviceaccount $okeclustername-sa
+kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
+TOKENNAME=`kubectl -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
+TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
+kubectl config set-credentials $okeclustername-sa --token=$TOKEN
+kubectl config set-context --current --user=$okeclustername-sa
+}
+
+function checkClusterRunning () {
+
+echo 'Confirm we have kubectl working...'
+
+myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
+status="NotReady"
+max=50
+count=1
+
+privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.2
+myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+echo $myline
+status=$myline
+max=100
+count=1
+while [ "$myline" != "Ready" -a $count -le $max ] ; do
+  echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
+  sleep 10
+  myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+  NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+  [[ ${myline} -eq "Ready"  ]]
+  echo "Status is ${myline} Iter [$count/$max]"
+  count=`expr $count + 1`
+done
+
+NODES=`kubectl get nodes -o wide | grep "${privateIP}" | wc -l`
+if [ "$NODES" == "1" ]; then
+  echo '- looks good'
+else
+  echo '- could not talk to cluster, aborting'
+  exit 1
+fi
+
+
+if [ $count -gt $max ] ; then
+   echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
+   cd ${terraformVarDir}
+   terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+   exit 1
+fi
+}
+
 #MAIN
 propsFile=${1:-$PWD/oci.props}
 terraformVarDir=${2:-$PWD}
@@ -107,4 +159,7 @@ chmod 600 ${ocipk_path}
 
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
+#check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
+checkClusterRunning
+createRoleBindings
