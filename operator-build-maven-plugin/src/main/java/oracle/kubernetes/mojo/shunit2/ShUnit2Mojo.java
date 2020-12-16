@@ -99,7 +99,7 @@ public class ShUnit2Mojo extends AbstractMojo {
 
   @Override
   public void execute() throws MojoFailureException, MojoExecutionException {
-    if (isEnvironmentNotSupported()) {
+    if (isEnvironmentNotSupported() || isSkipTestsRequested()) {
       return;
     }
     
@@ -110,6 +110,10 @@ public class ShUnit2Mojo extends AbstractMojo {
     if ((totalNumFailures() + totalNumErrors()) != 0) {
       throw new MojoFailureException(String.format("%d failures, %d errors", totalNumFailures(), totalNumErrors()));
     }
+  }
+
+  private boolean isSkipTestsRequested() {
+    return "true".equalsIgnoreCase(System.getProperty("skip.unit.tests"));
   }
 
   private boolean isEnvironmentNotSupported() throws MojoExecutionException {
