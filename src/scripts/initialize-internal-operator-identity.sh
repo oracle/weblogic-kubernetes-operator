@@ -39,6 +39,9 @@ function generateInternalIdentity {
   OP_KEY_PEM="${TEMP_DIR}/${OP_PREFIX}.key.pem"
 
   # generate a keypair for the operator's internal service
+  # openssl v1.1.1 is the required minimum to use 'addext' option for
+  # speciifying "Subject Alternative Names (SANS)" thus the following
+  # configuration cannot be used on Oracle Linux 7-slim.
   openssl \
     req \
     -newkey rsa:2048 \
