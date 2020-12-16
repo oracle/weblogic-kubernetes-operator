@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Helper class for Kubernetes Events checking.
  */
 public class K8sEvents {
+  private static LoggingFacade logger = getLogger();
 
   /**
    * Checks if a given event is logged by the operator.
@@ -36,7 +37,6 @@ public class K8sEvents {
    */
   public static void checkDomainEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason, String type) {
-    LoggingFacade logger = getLogger();
     logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
     boolean eventLogged = false;
     try {
@@ -61,13 +61,17 @@ public class K8sEvents {
   }
 
   private static void verifyOperatorDetails(V1Event event, String opNamespace, String domainUid) throws ApiException {
+    logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
-    assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION));
+    assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
+        "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
     //verify reporting component to be operator release
-    assertTrue(event.getReportingComponent().equals(OPERATOR_RELEASE_NAME));
+    assertTrue(event.getReportingComponent().equals(OPERATOR_RELEASE_NAME),
+        "Didn't get reporting component as " + OPERATOR_RELEASE_NAME);
     //verify reporting instance to be operator instance
-    assertTrue(event.getReportingInstance().equals(operatorPodName));
+    assertTrue(event.getReportingInstance().equals(operatorPodName),
+        "Didn't get reporting instance as " + operatorPodName);
     //verify the event was created by operator
     Map<String, String> labels = event.getMetadata().getLabels();
     assertTrue(labels.containsKey("weblogic.createdByOperator")
