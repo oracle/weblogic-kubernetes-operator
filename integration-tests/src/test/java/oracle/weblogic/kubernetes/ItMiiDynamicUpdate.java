@@ -24,7 +24,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -395,7 +394,6 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
-  @Disabled
   @Test
   @Order(4)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
@@ -754,6 +752,5 @@ class ItMiiDynamicUpdate {
           MII_APP_RESPONSE_V1 + i);
     }
   }
-
 
 }
