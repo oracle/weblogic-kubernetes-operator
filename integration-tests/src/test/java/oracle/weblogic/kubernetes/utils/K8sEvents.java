@@ -67,8 +67,8 @@ public class K8sEvents {
     assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
         "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
     //verify reporting component to be operator release
-    assertTrue(event.getReportingComponent().equals(OPERATOR_RELEASE_NAME),
-        "Didn't get reporting component as " + OPERATOR_RELEASE_NAME);
+    assertTrue(event.getReportingComponent().equals("weblogic.operator"),
+        "Didn't get reporting component as " + "weblogic.operator");
     //verify reporting instance to be operator instance
     assertTrue(event.getReportingInstance().equals(operatorPodName),
         "Didn't get reporting instance as " + operatorPodName);
