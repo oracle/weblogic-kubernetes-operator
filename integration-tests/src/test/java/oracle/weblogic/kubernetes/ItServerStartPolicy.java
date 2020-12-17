@@ -429,8 +429,7 @@ class ItServerStartPolicy {
     result = executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     assertTrue(result.contains("No changes needed"), "stopDomain.sh shouldn't make changes");
 
-    // verify managed server instances can not be started while 
-    // spec.serverStartPolicy is NEVER 
+    // managed server instances can't be started while domain is stopped
     result =  assertDoesNotThrow(() ->
        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
        String.format("Failed to run %s", START_SERVER_SCRIPT));

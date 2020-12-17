@@ -38,7 +38,6 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
-import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -139,11 +138,10 @@ public class ItIstioDomainInPV  {
     labelMap.put("istio-injection", "enabled");
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
-    // assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-
   }
 
   /**
@@ -258,10 +256,6 @@ public class ItIstioDomainInPV  {
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .addManagedServersItem(new ManagedServer()
-                .serverName("managed-server2")
-                .serverStartPolicy("IF_NEEDED")
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .istio(new Istio()
