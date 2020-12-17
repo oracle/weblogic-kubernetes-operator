@@ -57,7 +57,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToCha
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMaxThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMinThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchReplicaCountAtSpecLevel;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -505,7 +505,7 @@ class ItMiiDynamicUpdate {
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString()), withStandardRetryPolicy);
 
     // change replica to have the servers running in the newly added cluster
-    assertTrue(patchReplicaCountAtSpecLevel(domainUid, domainNamespace, replicaCount),
+    assertTrue(patchDomainResourceWithNewReplicaCountAtSpecLevel(domainUid, domainNamespace, replicaCount),
         "failed to patch the replicas at spec level");
 
     // Patch a running domain with introspectVersion.

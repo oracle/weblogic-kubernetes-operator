@@ -207,7 +207,8 @@ public class CommonPatchTestUtils {
    * @param replicaCount the replica count to patch with
    * @return true if successful, false otherwise
    */
-  public static boolean patchReplicaCountAtSpecLevel(String domainUid, String domainNamespace, int replicaCount) {
+  public static boolean patchDomainResourceWithNewReplicaCountAtSpecLevel(
+      String domainUid, String domainNamespace, int replicaCount) {
     LoggingFacade logger = getLogger();
     StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append(" \"op\": \"replace\",")
@@ -217,8 +218,6 @@ public class CommonPatchTestUtils {
         .append(" }]");
     logger.info("Replicas patch string: {0}", patchStr);
 
-    V1Patch patch = new V1Patch(new String(patchStr));
-    return patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json");
-
+    return patchDomainResource(domainUid, domainNamespace, patchStr);
   }
 }
