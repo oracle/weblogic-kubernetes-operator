@@ -21,47 +21,30 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
-//import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-//import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-//import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
-//import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-//import static oracle.weblogic.kubernetes.utils.DbUtils.checkDbReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getNewSuffixCount;
-//import static oracle.weblogic.kubernetes.utils.DbUtils.getPodNameOfDb;
-//import static oracle.weblogic.kubernetes.utils.DbUtils.podIsReady;
-//import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -158,7 +141,7 @@ public class ItFmwSample {
   public void testJrfDomainInPvUsingWlst() {
     setupSample();
     // create persistent volume and persistent volume claims used by the samples
-    //createPvPvc(domainUid);
+    createPvPvc(domainUid);
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
@@ -167,10 +150,10 @@ public class ItFmwSample {
     createRcuSecretWithUsernamePassword(domainUid + "-rcu-credentials", domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
-    /*Path sampleBase = Paths.get(tempSamplePath.toString(),
+    Path sampleBase = Paths.get(tempSamplePath.toString(),
         "scripts/create-fmw-infrastructure-domain/domain-home-on-pv");
 
-    // update create-domain-inputs.yaml with the values from this test
+    //update create-domain-inputs.yaml with the values from this test
     updateDomainInputsFile(domainUid, sampleBase);
 
     // change image name
@@ -178,10 +161,10 @@ public class ItFmwSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "image: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-    })
+    });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
-    createDomainAndVerify(domainUid, sampleBase);*/
+    createDomainAndVerify(domainUid, sampleBase);
 
   }
 
@@ -235,6 +218,8 @@ public class ItFmwSample {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
+
+    checkAccessToEMconsole(adminServerPodName);
   }
 
   private void createPvPvc(String domainUid) {
@@ -254,18 +239,12 @@ public class ItFmwSample {
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       Files.createDirectories(pvHostPath);
-      /*String command1  = "chmod -R 777 " + pvHostPath + "/..";
-      String command2 = "chmod -R 777 " + pvHostPath;
-      logger.info("Command1 to be executed: " + command1); //TODO
+      String command1  = "chmod -R 777 " + PV_ROOT;
+      logger.info("Command1 to be executed: " + command1);
       assertTrue(new Command()
           .withParams(new CommandParams()
             .command(command1))
-          .execute(), "Failed to chmod pvHostPath");
-      logger.info("Command2 to be executed: " + command2); //TODO
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-            .command(command2))
-          .execute(), "Failed to chmod pvHostPath");*/
+          .execute(), "Failed to chmod " + PV_ROOT);
 
       // set the pvHostPath in create-pv-pvc-inputs.yaml
       replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
@@ -334,7 +313,7 @@ public class ItFmwSample {
     assertDoesNotThrow(() -> {
       // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
-      Files.createDirectories(tempSamplePath);
+      //Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
       Files.createDirectories(tempSamplePath);
 
@@ -363,6 +342,8 @@ public class ItFmwSample {
               "t3ChannelPort: 30012", "t3ChannelPort: " + t3ChannelPort);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "exposeAdminT3Channel: false", "exposeAdminT3Channel: true");
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+              "exposeAdminNodePort: false", "exposeAdminNodePort: true");
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -469,5 +450,20 @@ public class ItFmwSample {
 
   }
 
+  private void checkAccessToEMconsole(String adminServerPodName) {
+    //check access to the em console: http://hostname:port/em
+    int nodePort = getServiceNodePort(
+           domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertTrue(nodePort != -1,
+          "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
+        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+        + "/em --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd1);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
+    logger.info("EM console is accessible thru default service");
+
+  }
 
 }
