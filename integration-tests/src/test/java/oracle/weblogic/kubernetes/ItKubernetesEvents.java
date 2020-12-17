@@ -340,10 +340,6 @@ public class ItKubernetesEvents {
     checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
     checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
 
-    // verify the 3rd server pod comes up
-    checkServiceExists(managedServerPodNamePrefix + 3, domainNamespace);
-    checkPodReady(managedServerPodNamePrefix + 3, domainUid, domainNamespace);
-
     // verify existing managed server services are not affected
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
