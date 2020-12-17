@@ -329,7 +329,7 @@ public class ItKubernetesEvents {
         "Failed to patch domain");
 
     // verify the DomainCreated event is generated
-    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CHANGED, "Normal");
+    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CREATED, "Normal");
     // verify the DomainProcessing Starting/Completed event is generated
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
         K8sEvents.DOMAIN_PROCESSING_STARTING, "Normal");
