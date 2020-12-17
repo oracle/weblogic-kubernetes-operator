@@ -87,7 +87,7 @@ status="NotReady"
 max=50
 count=1
 
-privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.2
+privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
 myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
 NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
 echo $myline
