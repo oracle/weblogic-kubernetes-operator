@@ -24,6 +24,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -461,6 +462,7 @@ class ItMiiDynamicUpdate {
    * Verify servers in the newly added cluster are started and other servers are not rolled.
    * This test fails intermittently - https://jira.oraclecorp.com/jira/browse/OWLS-86584.
    */
+  @Disabled
   @Test
   @Order(5)
   @DisplayName("Add cluster in MII domain using mii dynamic update")
