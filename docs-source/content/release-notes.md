@@ -35,7 +35,7 @@ draft: false
 
 #### Operator 3.1.1
 
-* Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters.
+* Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters ([#2109](https://github.com/oracle/weblogic-kubernetes-operator/pull/2109)).
 
 #### Operator 3.1.0
 
