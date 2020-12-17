@@ -117,7 +117,7 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.1.0 \
+  --set image=oracle/weblogic-kubernetes-operator:3.1.1 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \
