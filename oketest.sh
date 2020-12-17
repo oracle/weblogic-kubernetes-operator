@@ -158,6 +158,11 @@ EOF
 
 echo 'Set up test running ENVVARs...'
 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
+if [ -z "$NODE_IP" ]; then
+	echo "retry get node ip ";
+    sleep 15;
+    NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
+fi
 
 export K8S_NODEPORT_HOST=$NODE_IP
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
