@@ -978,7 +978,7 @@ class ItServerStartPolicy {
   /**
    * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
-   * server from scratch if it has never been started eralier with
+   * server from scratch if it has never been started earlier with
    * administration Server. Once the administration server is stopped, the 
    * managed server can only be started in MSI (managed server independence) 
    * mode. To start a managed server in MSI mode, the pre-requisite is that the
