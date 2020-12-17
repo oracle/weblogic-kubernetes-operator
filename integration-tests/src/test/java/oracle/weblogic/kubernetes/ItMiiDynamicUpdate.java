@@ -500,8 +500,7 @@ class ItMiiDynamicUpdate {
 
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
-            pathToChangeTargetYaml.toString(), pathToAddClusterYaml.toString()), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString()), withStandardRetryPolicy);
 
     // change replica to have the servers running in the newly added cluster
     assertTrue(patchReplicaCountAtSpecLevel(domainUid, domainNamespace, replicaCount),
