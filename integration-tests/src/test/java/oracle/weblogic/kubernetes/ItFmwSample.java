@@ -235,13 +235,15 @@ public class ItFmwSample {
     // create pv and pvc
     assertDoesNotThrow(() -> {
       // when tests are running in local box the PV directories need to exist
+      Path pvHostPathBase;
+      pvHostPathBase = Files.createDirectories(Paths.get(PV_ROOT, this.getClass().getSimpleName()));
       Path pvHostPath;
       pvHostPath = Files.createDirectories(Paths.get(PV_ROOT, this.getClass().getSimpleName(), pvName));
 
       logger.info("Creating PV directory host path {0}", pvHostPath);
       deleteDirectory(pvHostPath.toFile());
       Files.createDirectories(pvHostPath);
-      String command1  = "chmod -R 777 " + PV_ROOT;
+      String command1  = "chmod -R 777 " + pvHostPathBase;
       logger.info("Command1 to be executed: " + command1);
       assertTrue(new Command()
           .withParams(new CommandParams()
