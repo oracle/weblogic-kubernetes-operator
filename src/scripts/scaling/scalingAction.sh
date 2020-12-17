@@ -33,7 +33,7 @@ function timestamp() {
 }
 
 function trace() {
-  echo "@[$(timestamp)][INFO]" "$@"
+  echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> scalingAction.log
 }
 
 function print_usage() {
@@ -61,14 +61,14 @@ function initialize_access_token() {
 }
 
 function logScalingParameters() {
-  trace "scaling_action: $scaling_action" >> scalingAction.log
-  trace "wls_domain_uid: $wls_domain_uid" >> scalingAction.log
-  trace "wls_cluster_name: $wls_cluster_name" >> scalingAction.log
-  trace "wls_domain_namespace: $wls_domain_namespace" >> scalingAction.log
-  trace "operator_service_name: $operator_service_name" >> scalingAction.log
-  trace "operator_service_account: $operator_service_account" >> scalingAction.log
-  trace "operator_namespace: $operator_namespace" >> scalingAction.log
-  trace "scaling_size: $scaling_size" >> scalingAction.log
+  trace "scaling_action: $scaling_action"
+  trace "wls_domain_uid: $wls_domain_uid"
+  trace "wls_cluster_name: $wls_cluster_name"
+  trace "wls_domain_namespace: $wls_domain_namespace"
+  trace "operator_service_name: $operator_service_name"
+  trace "operator_service_account: $operator_service_account"
+  trace "operator_namespace: $operator_namespace"
+  trace "scaling_size: $scaling_size"
 }
 
 # Query WebLogic Operator Service Port
@@ -80,8 +80,8 @@ function get_operator_internal_rest_port() {
     -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
   if [ $? -ne 0 ]
   then
-    trace "Failed to retrieve status of $operator_service_name in name space: $operator_namespace" >> scalingAction.log
-    trace "STATUS: $STATUS" >> scalingAction.log
+    trace "Failed to retrieve status of $operator_service_name in name space: $operator_namespace"
+    trace "STATUS: $STATUS"
     exit 1
   fi
 
@@ -112,8 +112,8 @@ function get_domain_api_version() {
     $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle)
   if [ $? -ne 0 ]
     then
-      trace "Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
-      trace "CRD: $CRD" >> scalingAction.log
+      trace "Failed to retrieve Custom Resource Definition for WebLogic domain"
+      trace "CRD: $CRD"
       exit 1
   fi
 
@@ -139,7 +139,7 @@ function get_custom_resource_domain() {
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
     $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid)
   if [ $? -ne 0 ]; then
-    trace "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
+    trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
     exit 1
   fi
   echo "$DOMAIN"
@@ -222,6 +222,24 @@ INPUT
   echo "$num_ms"
 }
 
+#
+# Function to get minimum replica count for cluster
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Return value containing minimum replica count
+#
+function get_min_replicas {
+  local domainJson=$1
+  local clusterName=$2
+  local __result=$3
+
+  eval $__result=0
+  minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    | .minimumReplicas"
+  minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  eval $__result=${minReplicas}
+}
+
 # Get the current replica count for the WLS cluster if defined in the CRD's Cluster
 # configuration.  If WLS cluster is not defined in the CRD then return the Domain
 # scoped replica value, if present.  Returns replica count = 0 if no replica count found.
@@ -234,10 +252,10 @@ function get_replica_count() {
   local num_ms
   if [ "$in_cluster_startup" == "True" ]
   then
-    trace "$wls_cluster_name defined in clusters" >> scalingAction.log
+    trace "$wls_cluster_name defined in clusters"
     num_ms=$(get_num_ms_in_cluster "$DOMAIN")
   else
-    trace "$wls_cluster_name NOT defined in clusters" >> scalingAction.log
+    trace "$wls_cluster_name NOT defined in clusters"
     num_ms=$(get_num_ms_domain_scope "$DOMAIN")
   fi
   echo "$num_ms"
@@ -265,6 +283,25 @@ function calculate_new_ms_count() {
   echo "$new_ms"
 }
 
+# Verify if requested managed server scaling count is less than the configured
+# minimum replica count for the cluster.
+# args:
+# $1 Managed server count
+# $2 Custom Resource Domain
+# $3 Cluster name
+function verify_minimum_ms_count_for_cluster() {
+  local new_ms="$1"
+  local domainJson="$2"
+  local clusterName="$3"
+  # check if replica count is less than minimum replicas
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  if [ "${new_ms}" -lt "${minReplicas}" ]; then
+    trace "Scaling request to new managed server count $new_ms is less than configured minimum \
+    replica count $minReplicas"
+    exit 1
+  fi
+}
+
 # Create the REST endpoint CA certificate in PEM format
 # args:
 # $1 certificate file name to create
@@ -274,7 +311,7 @@ function create_ssl_certificate_file() {
   then
     echo ${INTERNAL_OPERATOR_CERT} | base64 --decode >  $pem_filename
   else
-    trace "Operator Cert File not found" >> scalingAction.log
+    trace "Operator Cert File not found"
     exit 1
   fi
 }
@@ -359,11 +396,11 @@ logScalingParameters
 
 # Retrieve the operator's REST endpoint port
 port=$(get_operator_internal_rest_port)
-trace "port: $port" >> scalingAction.log
+trace "port: $port"
 
 # Retrieve the api version of the deployed CRD
 domain_api_version=$(get_domain_api_version)
-trace "domain_api_version: $domain_api_version" >> scalingAction.log
+trace "domain_api_version: $domain_api_version"
 
 # Retrieve the Domain configuration
 DOMAIN=$(get_custom_resource_domain)
@@ -375,13 +412,17 @@ in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
 # depending on whether the specified cluster is defined in clusters
 # or not.
 current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-trace "current number of managed servers is $current_replica_count" >> scalingAction.log
+trace "current number of managed servers is $current_replica_count"
 
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py
 
 # Calculate new managed server count
 new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
+
+# Verify the requested new managed server count is not less than
+# configured minimum replica count for the cluster
+verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
 
 # Create the scaling request body
 request_body=$(get_request_body "$new_ms")
@@ -398,7 +439,7 @@ create_ssl_certificate_file "$pem_filename"
 # Operator Service REST URL for scaling
 operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
 
-trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url " >> scalingAction.log
+trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url "
 
 # send REST request to Operator
 if [ -e $pem_filename ]
@@ -413,14 +454,14 @@ then
     -d "$request_body" \
     $operator_url)
 else
-  trace "Operator PEM formatted file not found" >> scalingAction.log
+  trace "Operator PEM formatted file not found"
   exit 1
 fi
 
 if [ $? -ne 0 ]
 then
-  trace "Failed scaling request to WebLogic Operator" >> scalingAction.log
-  trace "$result" >> scalingAction.log
+  trace "Failed scaling request to WebLogic Operator"
+  trace "$result"
   exit 1
 fi
 
