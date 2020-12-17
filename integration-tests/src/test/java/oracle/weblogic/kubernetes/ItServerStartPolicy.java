@@ -897,7 +897,7 @@ class ItServerStartPolicy {
   /**
    * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
-   * server from scrtach if it has never been started eralier with 
+   * server from scratch if it has never been started eralier with 
    * administration server. Once the administration server is stopped, 
    * the managed server can only be started in MSI (managed server independence)
    * mode. To start a managed server in MSI mode, the pre-requisite is that 
@@ -906,7 +906,7 @@ class ItServerStartPolicy {
    * server. In this case of MII and DomainInImage model, the server 
    * state/configuration  is not saved once the server is shutdown unless we 
    * use domain-on-pv model. So in MII case, startServer.sh script update the 
-   * replica count but the server startup is defered till we re-start the 
+   * replica count but the server startup is deferred till we re-start the 
    * adminserver. Here the operator tries to start the managed server but it 
    * will keep on failing  until administration server is available.   
    */
@@ -979,7 +979,7 @@ class ItServerStartPolicy {
   /**
    * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
-   * server from scrtach if it has never been started eralier with
+   * server from scratch if it has never been started eralier with
    * administration Server. Once the administration server is stopped, the 
    * managed server can only be started in MSI (managed server independence) 
    * mode. To start a managed server in MSI mode, the pre-requisite is that the
@@ -988,7 +988,7 @@ class ItServerStartPolicy {
    * server. In this case of MII and DomainInImage model, the server 
    * state/configuration is lost once the server is shutdown unless we use 
    * domain-on-pv model. So in MII case, startServer.sh script update the 
-   * replica count but the server startup is defered till we re-start the 
+   * replica count but the server startup is deferred till we re-start the 
    * administration server. Here the operator tries to start the managed 
    * server but it will keep on failing  until administration server is 
    * available.   
