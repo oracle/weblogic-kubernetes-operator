@@ -45,7 +45,7 @@ function usage {
 }
 
 function prop {
-    grep "${1}" ${propsFile}| grep -v "#" | cut -d'=' -f2
+    grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
 function cleanupLB {
