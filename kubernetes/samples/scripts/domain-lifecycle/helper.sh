@@ -693,8 +693,6 @@ function timestamp() {
   local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
   # convert nano to milli
   local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
   local timezone="`echo $timestamp | awk '{ print $4 }'`"
   echo "${ymdhms}.${milli} ${timezone}"
 }
