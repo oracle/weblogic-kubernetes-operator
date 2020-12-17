@@ -244,7 +244,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "NEVER"),
-         "Can't patch adminServer's serverStartPolicy to NEVER");
+         "Failed to patch adminServer's serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown administration server");
 
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
@@ -272,7 +272,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-         "Can't patch adminServer's serverStartPolicy to IF_NEEDED");
+         "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
     logger.info("Domain is patched to start administration server");
 
     logger.info("Check admin service/pod {0} is created in namespace {1}",
@@ -442,7 +442,7 @@ class ItServerStartPolicy {
     // Here only Administration server pod should come up
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/serverStartPolicy", "ADMIN_ONLY"),
-         "Can't patch domain's serverStartPolicy to ADMIN_ONLY");
+         "Failed to patch domain's serverStartPolicy to ADMIN_ONLY");
     logger.info("Domain is patched to start only administrative server");
 
     checkPodReadyAndServiceExists(adminServerPodName, 
@@ -503,7 +503,7 @@ class ItServerStartPolicy {
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/1/serverStartPolicy", "ALWAYS"),
-         "Can't patch config managedServers's serverStartPolicy to ALWAYS");
+         "Failed to patch config managedServers's serverStartPolicy to ALWAYS");
     logger.info("Configured managed server is patched to set the serverStartPolicy to ALWAYS");
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
@@ -512,7 +512,7 @@ class ItServerStartPolicy {
     // Stop the server by changing the serverStartPolicy to IF_NEEDED
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/1/serverStartPolicy", "IF_NEEDED"),
-         "Can't patch config managedServers's serverStartPolicy to IF_NEEDED");
+         "Failed to patch config managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain resource patched to shutdown the second managed server in configured cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -544,7 +544,7 @@ class ItServerStartPolicy {
     
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/2/serverStartPolicy", "ALWAYS"),
-         "Can't patch dynamic managedServers's serverStartPolicy to ALWAYS");
+         "Failed to patch dynamic managedServers's serverStartPolicy to ALWAYS");
     logger.info("Dynamic managed server is patched to set the serverStartPolicy to ALWAYS");
     checkPodReadyAndServiceExists(serverPodName, 
           domainUid, domainNamespace);
@@ -553,7 +553,7 @@ class ItServerStartPolicy {
     // Stop the server by changing the serverStartPolicy to IF_NEEDED
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/2/serverStartPolicy", "IF_NEEDED"),
-         "Can't patch dynamic managedServers's serverStartPolicy to IF_NEEDED");
+         "Failed to patch dynamic managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain resource patched to shutdown the second managed server in dynamic cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -674,7 +674,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-         "Can't patch Standalone managedServers's serverStartPolicy to NEVER");
+         "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -682,7 +682,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/0/serverStartPolicy", "ALWAYS"),
-         "Can't patch Standalone managedServers's serverStartPolicy to ALWAYS");
+         "Failed to patch Standalone managedServers's serverStartPolicy to ALWAYS");
     logger.info("Domain is patched to start standalone managed server");
 
     checkPodReadyAndServiceExists(serverPodName,
@@ -714,7 +714,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/0/serverStartPolicy", "NEVER"),
-         "Can't patch Standalone managedServers's serverStartPolicy to NEVER");
+         "Failed to patch Standalone managedServers's serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown standalone managed server");
 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
@@ -722,7 +722,7 @@ class ItServerStartPolicy {
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/managedServers/0/serverStartPolicy", "IF_NEEDED"),
-         "Can't patch Standalone managedServers's serverStartPolicy to IF_NEEDED");
+         "Failed to patch Standalone managedServers's serverStartPolicy to IF_NEEDED");
     logger.info("Domain is patched to start standalone managed server");
     checkPodReadyAndServiceExists(serverPodName,
         domainUid, domainNamespace);
@@ -928,7 +928,7 @@ class ItServerStartPolicy {
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
            "/spec/adminServer/serverStartPolicy", "NEVER"),
-           "Can't patch adminServer's serverStartPolicy to NEVER");
+           "Failed to patch adminServer's serverStartPolicy to NEVER");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
@@ -958,7 +958,7 @@ class ItServerStartPolicy {
       // (re)Start Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
             "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-             "Can't patch adminServer's serverStartPolicy to IF_NEEDED");
+             "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       checkPodReadyAndServiceExists(
              adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
@@ -969,7 +969,7 @@ class ItServerStartPolicy {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
             "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-            "Can't patch adminServer's serverStartPolicy to IF_NEEDED");
+            "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -1011,7 +1011,7 @@ class ItServerStartPolicy {
       // shutdown the admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
             "/spec/adminServer/serverStartPolicy", "NEVER"),
-            "Can't patch adminServer's serverStartPolicy to NEVER");
+            "Failed to patch adminServer's serverStartPolicy to NEVER");
       logger.info("Domain is patched to shutdown administration server");
       checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
       logger.info("Administration server shutdown success");
@@ -1041,7 +1041,7 @@ class ItServerStartPolicy {
       // (re)Start the admin
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
               "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-              "Can't patch adminServer's serverStartPolicy to IF_NEEDED");
+              "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       checkPodReadyAndServiceExists(
              adminServerPodName, domainUid, domainNamespace);
       logger.info("administration server restart success");
@@ -1052,7 +1052,7 @@ class ItServerStartPolicy {
       // restart admin server
       assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
             "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-            "Can't patch adminServer's serverStartPolicy to IF_NEEDED");
+            "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
       logger.info("Check admin service/pod {0} is created in namespace {1}",
           adminServerPodName, domainNamespace);
       checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);

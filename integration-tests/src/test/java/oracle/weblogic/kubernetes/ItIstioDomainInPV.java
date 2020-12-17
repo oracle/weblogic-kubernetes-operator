@@ -336,7 +336,7 @@ public class ItIstioDomainInPV  {
     // Stop and Start the managed server in absense of administration server
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "NEVER"),
-         "Can't patch adminServer's serverStartPolicy to NEVER");
+         "Failed to patch administrationi server serverStartPolicy to NEVER");
     logger.info("Domain is patched to shutdown administration server");
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
