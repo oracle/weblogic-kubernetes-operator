@@ -109,6 +109,8 @@ if [ "$NODES" == "1" ]; then
   echo '- looks good'
 else
   echo '- could not talk to cluster, aborting'
+  cd ${terraformVarDir}
+  terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
   exit 1
 fi
 

@@ -188,7 +188,6 @@ EOF
 
 echo 'Set up test running ENVVARs...'
 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
-status="NotReady"
 
 
 if [ -z "$NODE_IP" ]; then
@@ -209,7 +208,7 @@ if [ "${maven_profile_name}" = "oke-cert" ]; then
 echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
 mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 elseif [ "${parallel_run}" = "false" ]; then
-  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"mvn -Dit.test="${IT_TEST}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
   mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${MVN_PROFILE} verify"
