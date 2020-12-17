@@ -157,8 +157,9 @@ cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
 cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
 mkdir -p ${WORKSPACE}/terraform/terraforminstall
 
-sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform
-
+if ! sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform ; then
+sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+fi
 OKE_CLUSTER_NAME=$(prop 'okeclustername')
 
 export KUBECONFIG=${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}_kubeconfig
@@ -189,7 +190,6 @@ EOF
 echo 'Set up test running ENVVARs...'
 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
 
-
 if [ -z "$NODE_IP" ]; then
 	echo "retry get node ip ";
     sleep 15;
@@ -204,6 +204,7 @@ rm -rf "${RESULT_ROOT:?}/*"
 cd ${WORKSPACE}
 
 echo 'Run tests...'
+
 if [ "${maven_profile_name}" = "oke-cert" ]; then
 echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
 mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
@@ -213,17 +214,9 @@ else
   mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${MVN_PROFILE} verify"
-    #mvn -Dit.test="${IT_TEST}" -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -DPARALLEL_CLASSES="${PARALLEL_RUN}" -DNUMBER_OF_THREADS="2" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
      mvn -Dit.test="${test_filter}, !ItTwoDomainsLoadBalancers, !ItExternalRmiTunneling, !ItMiiSample, !ItSamples, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="2" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   fi
 fi
 
-echo 'Deleting cluster'
 
-cleanupLB Subnet01
-cleanupLB Subnet02
-cd ${WORKSPACE}/terraform
-terraform init -var-file=${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}.tfvars
-terraform plan -var-file=${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}.tfvars
-terraform destroy -auto-approve -var-file=${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}.tfvars
 
