@@ -37,8 +37,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
-import oracle.weblogic.kubernetes.utils.DeployUtil;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,22 +57,18 @@ import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERV
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
@@ -83,8 +77,6 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -289,7 +281,13 @@ public class ItOpUpgradeFmwDomainInPV {
 
     if (useHelmUpgrade) {
       // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(externalServiceNameSuffix);
+      deployAndAccessApplication(externalServiceNameSuffix,
+                                 domainNamespace,
+                                 domainUid,
+                                 clusterName,
+                                 adminServerPodName,
+                                 managedServerPodNamePrefix,
+                                 replicaCount);
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
@@ -299,6 +297,7 @@ public class ItOpUpgradeFmwDomainInPV {
           new Thread(
               () -> {
                 collectAppAvailability(
+                    domainNamespace,
                     opNamespace1,
                     appAvailability,
                     managedServerPodNamePrefix,
@@ -364,51 +363,6 @@ public class ItOpUpgradeFmwDomainInPV {
     }
   }
 
-  private void deployAndAccessApplication(String externalServiceNameSuffix) {
-    logger.info("Getting node port for admin server default channel");
-    int serviceNodePort = assertDoesNotThrow(() ->
-        getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName,
-            externalServiceNameSuffix), "default"),
-            "Getting admin server node port failed");
-    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
-
-    // deploy the app
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying application {0} to domain {1} cluster target {2} in namespace {3}",
-        archivePath, domainUid, clusterName, domainNamespace);
-    ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(serviceNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        clusterName, archivePath, null, "testwebapp");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
-    // check if the application is accessible inside of a server pod using quick retry policy
-    logger.info("Check and wait for the application to become ready");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppIsRunning(withQuickRetryPolicy, domainNamespace, managedServerPodNamePrefix + i,
-          "8001", "testwebapp/index.jsp", managedServerPodNamePrefix + i);
-    }
-  }
-
-  private Callable<Boolean> getOpContainerImageName() {
-    return () -> {
-      String imageName = getOperatorContainerImageName(opNamespace1);
-      if (imageName != null) {
-        if (!imageName.equals(latestOperatorImageName)) {
-          logger.info("Operator image name {0} doesn't match with latest image {1}",
-              imageName, latestOperatorImageName);
-          return false;
-        } else {
-          logger.info("Operator image name {0}", imageName);
-          return true;
-        }
-      }
-      return false;
-    };
-  }
-
   private void createFmwDomainAndVerify(String domainVersion) {
     final String pvName = domainUid + "-pv";
     final String pvcName = domainUid + "-pvc";
@@ -457,52 +411,6 @@ public class ItOpUpgradeFmwDomainInPV {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
-  }
-
-  private File createWlstPropertyFile(int t3ChannelPort) {
-    //get ENV variable from the image
-    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME"),
-        "envVar ORACLE_HOME from image is null");
-    oracle_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME");
-    logger.info("ORACLE_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, oracle_home);
-    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME"),
-        "envVar JAVA_HOME from image is null");
-    java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
-    logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
-
-    // create wlst property file object
-    Properties p = new Properties();
-    p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
-    p.setProperty("javaHome", java_home); //default $JAVA_HOME
-    p.setProperty("domainParentDir", "/shared/domains/");
-    p.setProperty("domainName", domainUid);
-    p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("rcuDb", dbUrl);
-    p.setProperty("rcuSchemaPrefix", RCUSCHEMAPREFIX);
-    p.setProperty("rcuSchemaPassword", RCUSCHEMAPASSWORD);
-    p.setProperty("adminListenPort", "7001");
-    p.setProperty("adminName", adminServerName);
-    p.setProperty("managedNameBase", managedServerNameBase);
-    p.setProperty("managedServerPort", Integer.toString(managedServerPort));
-    p.setProperty("prodMode", "true");
-    p.setProperty("managedCount", "4");
-    p.setProperty("clusterName", clusterName);
-    p.setProperty("t3ChannelPublicAddress", K8S_NODEPORT_HOST);
-    p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
-    p.setProperty("exposeAdminT3Channel", "true");
-
-    // create a temporary WebLogic domain property file
-    File domainPropertiesFile = assertDoesNotThrow(() ->
-        File.createTempFile("domain", "properties"),
-        "Failed to create domain properties file");
-
-    // create the property file
-    assertDoesNotThrow(() ->
-        p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
-        "Failed to write domain properties file");
-
-    return domainPropertiesFile;
   }
 
   private void createDomainCrAndVerify(String domainVersion,
@@ -600,39 +508,67 @@ public class ItOpUpgradeFmwDomainInPV {
         domainNamespace, jobCreationContainer);
   }
 
-  private static void collectAppAvailability(String operatorNamespace,
-                                             List<Integer> appAvailability,
-                                             String managedServerPrefix,
-                                             int replicaCount,
-                                             String internalPort,
-                                             String appPath) {
-    // Access the pod periodically to check application's availability while upgrade is happening
-    // and after upgrade is complete.
-    // appAccessedAfterUpgrade is used to access the app once after upgrade is complete
-    boolean appAccessedAfterUpgrade = false;
-    while (!appAccessedAfterUpgrade) {
-      boolean isUpgradeComplete = checkHelmReleaseRevision(OPERATOR_RELEASE_NAME, operatorNamespace, "2");
-      // upgrade is not complete or app is not accessed after upgrade
-      if (!isUpgradeComplete || !appAccessedAfterUpgrade) {
-        for (int i = 1; i <= replicaCount; i++) {
-          if (appAccessibleInPod(domainNamespace,
-              managedServerPrefix + i,
-              internalPort,
-              appPath,
-              managedServerPrefix + i)) {
-            appAvailability.add(1);
-            logger.fine("application is accessible in pod " + managedServerPrefix + i);
-          } else {
-            appAvailability.add(0);
-            logger.fine("application is not accessible in pod " + managedServerPrefix + i);
-          }
+  private File createWlstPropertyFile(int t3ChannelPort) {
+    //get ENV variable from the image
+    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME"),
+        "envVar ORACLE_HOME from image is null");
+    oracle_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "ORACLE_HOME");
+    logger.info("ORACLE_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, oracle_home);
+    assertNotNull(getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME"),
+        "envVar JAVA_HOME from image is null");
+    java_home = getImageEnvVar(FMWINFRA_IMAGE_TO_USE_IN_SPEC, "JAVA_HOME");
+    logger.info("JAVA_HOME in image {0} is: {1}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, java_home);
+
+    // create wlst property file object
+    Properties p = new Properties();
+    p.setProperty("oracleHome", oracle_home); //default $ORACLE_HOME
+    p.setProperty("javaHome", java_home); //default $JAVA_HOME
+    p.setProperty("domainParentDir", "/shared/domains/");
+    p.setProperty("domainName", domainUid);
+    p.setProperty("domainUser", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("domainPassword", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("rcuDb", dbUrl);
+    p.setProperty("rcuSchemaPrefix", RCUSCHEMAPREFIX);
+    p.setProperty("rcuSchemaPassword", RCUSCHEMAPASSWORD);
+    p.setProperty("adminListenPort", "7001");
+    p.setProperty("adminName", adminServerName);
+    p.setProperty("managedNameBase", managedServerNameBase);
+    p.setProperty("managedServerPort", Integer.toString(managedServerPort));
+    p.setProperty("prodMode", "true");
+    p.setProperty("managedCount", "4");
+    p.setProperty("clusterName", clusterName);
+    p.setProperty("t3ChannelPublicAddress", K8S_NODEPORT_HOST);
+    p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
+    p.setProperty("exposeAdminT3Channel", "true");
+
+    // create a temporary WebLogic domain property file
+    File domainPropertiesFile = assertDoesNotThrow(() ->
+        File.createTempFile("domain", "properties"),
+        "Failed to create domain properties file");
+
+    // create the property file
+    assertDoesNotThrow(() ->
+        p.store(new FileOutputStream(domainPropertiesFile), "FMW wlst properties file"),
+        "Failed to write domain properties file");
+
+    return domainPropertiesFile;
+  }
+
+  private Callable<Boolean> getOpContainerImageName() {
+    return () -> {
+      String imageName = getOperatorContainerImageName(opNamespace1);
+      if (imageName != null) {
+        if (!imageName.equals(latestOperatorImageName)) {
+          logger.info("Operator image name {0} doesn't match with latest image {1}",
+              imageName, latestOperatorImageName);
+          return false;
+        } else {
+          logger.info("Operator image name {0}", imageName);
+          return true;
         }
       }
-      if (isUpgradeComplete) {
-        logger.info("Upgrade is complete and app is accessed after upgrade");
-        appAccessedAfterUpgrade = true;
-      }
-    }
+      return false;
+    };
   }
 
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {

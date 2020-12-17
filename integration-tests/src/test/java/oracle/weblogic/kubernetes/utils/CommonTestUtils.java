@@ -86,6 +86,8 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
@@ -146,6 +148,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -194,6 +197,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
@@ -230,7 +234,9 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -3443,5 +3449,104 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
             String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
                 podName, domNamespace)));
+  }
+
+  /**
+   * Deploy application and access the application once to make sure the app is accessible.
+   * @param externalServiceNameSuffix external service name suffix
+   * @param domainNamespace namespace where domain exists
+   * @param domainUid the domain to which the cluster belongs
+   * @param clusterName the WebLogic cluster name that the app deploys to
+   * @param adminServerPodName WebLogic admin pod prefix
+   * @param managedServerPodNamePrefix WebLogic managed server pod prefix
+   * @param replicaCount replica count of the cluster
+   */
+  public static void deployAndAccessApplication(String externalServiceNameSuffix,
+                                         String domainNamespace,
+                                         String domainUid,
+                                         String clusterName,
+                                         String adminServerPodName,
+                                         String managedServerPodNamePrefix,
+                                         int replicaCount) {
+    final LoggingFacade logger = getLogger();
+    logger.info("Getting node port for admin server default channel");
+    int serviceNodePort = assertDoesNotThrow(() ->
+        getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName,
+            externalServiceNameSuffix), "default"),
+            "Getting admin server node port failed");
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
+    // deploy the app
+    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    logger.info("Deploying application {0} to domain {1} cluster target {2} in namespace {3}",
+        archivePath, domainUid, clusterName, domainNamespace);
+    ExecResult result =
+        DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+                                   String.valueOf(serviceNodePort),
+                                   ADMIN_USERNAME_DEFAULT,
+                                   ADMIN_PASSWORD_DEFAULT,
+                                   clusterName,
+                                   archivePath,
+                                   null,
+                                   "testwebapp");
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+
+    // check if the application is accessible inside of a server pod using quick retry policy
+    logger.info("Check and wait for the application to become ready");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppIsRunning(withQuickRetryPolicy, domainNamespace, managedServerPodNamePrefix + i,
+          "8001", "testwebapp/index.jsp", managedServerPodNamePrefix + i);
+    }
+  }
+
+  /**
+   * Check application availability while the operator upgrade is happening and once the ugprade is complete
+   * by accessing the application inside the managed server pods.
+   * @param domainNamespace namespace where domain exists
+   * @param operatorNamespace namespace where operator exists
+   * @param appAvailability application's availability
+   * @param managedServerPodNamePrefix WebLogic managed server pod prefix
+   * @param replicaCount replica count of the cluster
+   * @param internalPort admin server's internal port
+   * @param appPath application path
+   */
+  public static void collectAppAvailability(String domainNamespace,
+                                            String operatorNamespace,
+                                            List<Integer> appAvailability,
+                                            String managedServerPodNamePrefix,
+                                            int replicaCount,
+                                            String internalPort,
+                                            String appPath) {
+    final LoggingFacade logger = getLogger();
+
+    // Access the pod periodically to check application's availability while upgrade is happening
+    // and after upgrade is complete.
+    // appAccessedAfterUpgrade is used to access the app once after upgrade is complete
+    boolean appAccessedAfterUpgrade = false;
+    while (!appAccessedAfterUpgrade) {
+      boolean isUpgradeComplete = checkHelmReleaseRevision(OPERATOR_RELEASE_NAME, operatorNamespace, "2");
+      // upgrade is not complete or app is not accessed after upgrade
+      if (!isUpgradeComplete || !appAccessedAfterUpgrade) {
+        for (int i = 1; i <= replicaCount; i++) {
+          if (appAccessibleInPod(domainNamespace,
+                        managedServerPodNamePrefix + i,
+                                 internalPort,
+                                 appPath,
+                                managedServerPodNamePrefix + i)) {
+            appAvailability.add(1);
+            logger.fine("application is accessible in pod " + managedServerPodNamePrefix + i);
+          } else {
+            appAvailability.add(0);
+            logger.fine("application is not accessible in pod " + managedServerPodNamePrefix + i);
+          }
+        }
+      }
+      if (isUpgradeComplete) {
+        logger.info("Upgrade is complete and app is accessed after upgrade");
+        appAccessedAfterUpgrade = true;
+      }
+    }
   }
 }
