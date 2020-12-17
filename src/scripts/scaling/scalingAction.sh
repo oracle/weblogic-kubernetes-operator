@@ -2,10 +2,6 @@
 # Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-currdate=`date`
-
-echo "### $currdate ###" >> scalingAction.log
-
 # script parameters
 scaling_action="scaleUp"
 wls_domain_uid="sample-domain1"
@@ -17,6 +13,28 @@ operator_service_account="sample-weblogic-operator-sa"
 scaling_size=1
 access_token=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+
+# timestamp
+#   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
+#   example:  20181001T14:00:00.001 UTC
+function timestamp() {
+  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
+  if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
+    # old shell versions don't support %N or --utc
+    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"
+  fi
+  local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
+  # convert nano to milli
+  local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
+  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
+  local millis_since_opoch="${secs_since_epoch}${milli}"
+  local timezone="`echo $timestamp | awk '{ print $4 }'`"
+  echo "${ymdhms}.${milli} ${timezone}"
+}
+
+function trace() {
+  echo "@[$(timestamp)][INFO]" "$@"
+}
 
 function print_usage() {
   echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1]"
@@ -43,23 +61,27 @@ function initialize_access_token() {
 }
 
 function logScalingParameters() {
-  echo "scaling_action: $scaling_action" >> scalingAction.log
-  echo "wls_domain_uid: $wls_domain_uid" >> scalingAction.log
-  echo "wls_cluster_name: $wls_cluster_name" >> scalingAction.log
-  echo "wls_domain_namespace: $wls_domain_namespace" >> scalingAction.log
-  echo "operator_service_name: $operator_service_name" >> scalingAction.log
-  echo "operator_service_account: $operator_service_account" >> scalingAction.log
-  echo "operator_namespace: $operator_namespace" >> scalingAction.log
-  echo "scaling_size: $scaling_size" >> scalingAction.log
+  trace "scaling_action: $scaling_action" >> scalingAction.log
+  trace "wls_domain_uid: $wls_domain_uid" >> scalingAction.log
+  trace "wls_cluster_name: $wls_cluster_name" >> scalingAction.log
+  trace "wls_domain_namespace: $wls_domain_namespace" >> scalingAction.log
+  trace "operator_service_name: $operator_service_name" >> scalingAction.log
+  trace "operator_service_account: $operator_service_account" >> scalingAction.log
+  trace "operator_namespace: $operator_namespace" >> scalingAction.log
+  trace "scaling_size: $scaling_size" >> scalingAction.log
 }
 
 # Query WebLogic Operator Service Port
 function get_operator_internal_rest_port() {
-  local STATUS=$(curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
+  local STATUS=$(curl \
+    -v \
+    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    -X GET $kubernetes_master/api/v1/namespaces/$operator_namespace/services/$operator_service_name/status)
   if [ $? -ne 0 ]
   then
-    echo "$currdate Failed to retrieve status of $operator_service_name in name space: $operator_namespace" >> scalingAction.log
-    echo "$currdate STATUS: $STATUS" >> scalingAction.log
+    trace "Failed to retrieve status of $operator_service_name in name space: $operator_namespace" >> scalingAction.log
+    trace "STATUS: $STATUS" >> scalingAction.log
     exit 1
   fi
 
@@ -82,11 +104,16 @@ port=$(echo "${STATUS}" | python cmds-$$.py)
 # Retrieve the api version of the deployed Custom Resource Domain
 function get_domain_api_version() {
   # Retrieve Custom Resource Definition for WebLogic domain
-  local CRD=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" -X GET $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle`
+  local CRD=$(curl \
+    -v \
+    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    -X GET \
+    $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle)
   if [ $? -ne 0 ]
     then
-      echo "$currdate Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
-      echo "$currdate CRD: $CRD" >> scalingAction.log
+      trace "Failed to retrieve Custom Resource Definition for WebLogic domain" >> scalingAction.log
+      trace "CRD: $CRD" >> scalingAction.log
       exit 1
   fi
 
@@ -106,9 +133,13 @@ domain_api_version=`echo ${CRD} | python cmds-$$.py`
 
 # Retrieve Custom Resource Domain
 function get_custom_resource_domain() {
-  local DOMAIN=`curl -v --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid`
+  local DOMAIN=$(curl \
+    -v \
+    --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+    -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
+    $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid)
   if [ $? -ne 0 ]; then
-    echo "$currdate Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
+    trace "Failed to retrieve WebLogic Domain Custom Resource Definition" >> scalingAction.log
     exit 1
   fi
   echo "$DOMAIN"
@@ -203,10 +234,10 @@ function get_replica_count() {
   local num_ms
   if [ "$in_cluster_startup" == "True" ]
   then
-    echo "$currdate $wls_cluster_name defined in clusters" >> scalingAction.log
+    trace "$wls_cluster_name defined in clusters" >> scalingAction.log
     num_ms=$(get_num_ms_in_cluster "$DOMAIN")
   else
-    echo "$currdate $wls_cluster_name NOT defined in clusters" >> scalingAction.log
+    trace "$wls_cluster_name NOT defined in clusters" >> scalingAction.log
     num_ms=$(get_num_ms_domain_scope "$DOMAIN")
   fi
   echo "$num_ms"
@@ -243,7 +274,7 @@ function create_ssl_certificate_file() {
   then
     echo ${INTERNAL_OPERATOR_CERT} | base64 --decode >  $pem_filename
   else
-    echo "$currdate Operator Cert File not found" >> scalingAction.log
+    trace "Operator Cert File not found" >> scalingAction.log
     exit 1
   fi
 }
@@ -328,11 +359,11 @@ logScalingParameters
 
 # Retrieve the operator's REST endpoint port
 port=$(get_operator_internal_rest_port)
-echo "port: $port" >> scalingAction.log
+trace "port: $port" >> scalingAction.log
 
 # Retrieve the api version of the deployed CRD
 domain_api_version=$(get_domain_api_version)
-echo "domain_api_version: $domain_api_version" >> scalingAction.log
+trace "domain_api_version: $domain_api_version" >> scalingAction.log
 
 # Retrieve the Domain configuration
 DOMAIN=$(get_custom_resource_domain)
@@ -344,7 +375,7 @@ in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
 # depending on whether the specified cluster is defined in clusters
 # or not.
 current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
-echo "$currdate current number of managed servers is $current_replica_count" >> scalingAction.log
+trace "current number of managed servers is $current_replica_count" >> scalingAction.log
 
 # Cleanup cmds-$$.py
 [ -e cmds-$$.py ] && rm cmds-$$.py
@@ -353,7 +384,7 @@ echo "$currdate current number of managed servers is $current_replica_count" >> 
 new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
 
 # Create the scaling request body
-request_body=$(get_replica_count "$new_ms")
+request_body=$(get_request_body "$new_ms")
 
 content_type="Content-Type: application/json"
 accept_resp_type="Accept: application/json"
@@ -367,21 +398,29 @@ create_ssl_certificate_file "$pem_filename"
 # Operator Service REST URL for scaling
 operator_url="https://$operator_service_name.$operator_namespace.svc.cluster.local:$port/operator/v1/domains/$wls_domain_uid/clusters/$wls_cluster_name/scale"
 
-echo "$currdate | domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url " >> scalingAction.log
+trace "domainName: $wls_domain_uid | clusterName: $wls_cluster_name | action: $scaling_action | port: $port | apiVer: $domain_api_version | inClusterPresent: $in_cluster_startup | oldReplica: $num_ms | newReplica: $new_ms | operator_url: $operator_url " >> scalingAction.log
 
 # send REST request to Operator
 if [ -e $pem_filename ]
 then
-  result=$(curl -v --cacert $pem_filename -X POST -H "$content_type" -H "$requested_by" -H "$authorization" -d "$request_body" $operator_url)
+  result=$(curl \
+    -v \
+    --cacert $pem_filename \
+    -X POST \
+    -H "$content_type" \
+    -H "$requested_by" \
+    -H "$authorization" \
+    -d "$request_body" \
+    $operator_url)
 else
-  echo "$currdate Operator PEM formatted file not found" >> scalingAction.log
+  trace "Operator PEM formatted file not found" >> scalingAction.log
   exit 1
 fi
 
 if [ $? -ne 0 ]
 then
-  echo "$currdate Failed scaling request to WebLogic Operator" >> scalingAction.log
-  echo "$currdate $result" >> scalingAction.log
+  trace "Failed scaling request to WebLogic Operator" >> scalingAction.log
+  trace "$result" >> scalingAction.log
   exit 1
 fi
 
