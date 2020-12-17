@@ -133,8 +133,9 @@ public class ItFmwSample {
   }
 
   /**
-   * Test domain on pv samples using domains created by wlst and wdt.
-   *
+   * Test JRF domain on pv samples using domains created by wlst.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
+   * Verify EM console is accessible.
    */
   @Test
   @DisplayName("Test JRF domain on PV sample")
@@ -164,6 +165,7 @@ public class ItFmwSample {
     });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
+    //verify EM console is accessible
     createDomainAndVerify(domainUid, sampleBase);
 
   }
