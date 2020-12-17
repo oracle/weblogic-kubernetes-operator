@@ -94,10 +94,11 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     if (!work.isEmpty()) {
-      return doForkJoin(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet, work);
+      return doForkJoin(DomainStatusUpdater.createStatusUpdateStep(
+              new ManagedServerUpAfterStep(getNext())), packet, work);
     }
 
-    return doNext(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet);
+    return doNext(DomainStatusUpdater.createStatusUpdateStep(new ManagedServerUpAfterStep(getNext())), packet);
   }
 
 
@@ -167,7 +168,7 @@ public class ManagedServerUpIteratorStep extends Step {
     public NextAction apply(Packet packet) {
 
       if (startDetailsQueue.isEmpty()) {
-        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+        return doNext(getNext(), packet);
       } else if (hasServerAvailableToStart(packet.getSpi(DomainPresenceInfo.class))) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));
