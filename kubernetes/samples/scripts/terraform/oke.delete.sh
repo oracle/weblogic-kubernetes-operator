@@ -2,41 +2,12 @@
 # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-# This script deletes provisioned OKE Kubernetes cluster using terraform (https://www.terraform.io/) 
+# This script deletes provisioned OKE Kubernetes cluster using terraform (https://www.terraform.io/)
 #
 #
 
 set -o errexit
 set -o pipefail
-
-script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
-
-function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
-  echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
-  echo "  -n Kind cluster name (optional) "
-  echo "      (default: kind) "
-  echo "  -o Output directory (optional) "
-  echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
-  echo "  -t Test filter (optional) "
-  echo "      (default: **/It*) "
-  echo "  -c CNI implementation (optional) "
-  echo "      (default: kindnet, supported values: kindnet, calico) "
-  echo "  -p Run It classes in parallel"
-  echo "      (default: false) "
-  echo "  -x Number of threads to run the classes in parallel"
-  echo "      (default: 2) "
-  echo "  -d WDT download URL"
-  echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
-  echo "  -i WIT download URL"
-  echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
-  echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
-  echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
-  echo "  -h Help"
-  exit $1
-}
 
 function prop {
     grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
