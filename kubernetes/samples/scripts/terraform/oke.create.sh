@@ -163,3 +163,4 @@ createCluster
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
 checkClusterRunning
 createRoleBindings
+echo "$okeclustername is up and running"

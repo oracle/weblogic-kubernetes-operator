@@ -160,8 +160,8 @@ mkdir -p ${WORKSPACE}/terraform/terraforminstall
 sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform
 
 OKE_CLUSTER_NAME=$(prop 'okeclustername')
-cp -rf ${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}_kubeconfig ${WORKSPACE}/kubeconfig
-export KUBECONFIG=${WORKSPACE}/kubeconfig
+
+export KUBECONFIG=${WORKSPACE}/terraform/${OKE_CLUSTER_NAME}_kubeconfig
 export PATH=${WORKSPACE}/terraform/terraforminstall:$PATH
 
 echo "creating storage class to setup OFSS ..."
