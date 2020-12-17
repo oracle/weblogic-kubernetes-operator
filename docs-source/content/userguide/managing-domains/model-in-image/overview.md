@@ -47,7 +47,7 @@ When you deploy a Model in Image Domain YAML file:
     - Packages the domain home and passes it to the operator.
 
   - After the introspector job completes:
-    - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm` and puts the packaged domain home in it.
+    - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm` (possibly with some additional maps distinguished serial names) and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 

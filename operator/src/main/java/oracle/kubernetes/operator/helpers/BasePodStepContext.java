@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -104,6 +105,18 @@ public abstract class BasePodStepContext extends StepContextBase {
     vars.add(new V1EnvVar().name(name).value(value));
   }
 
+  private void addEnvVar(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
+    if ((value != null) && (!value.isEmpty())) {
+      addEnvVar(vars, name, value);
+    } else {
+      addEnvVarWithValueFrom(vars, name, valueFrom);
+    }
+  }
+
+  private void addEnvVarWithValueFrom(List<V1EnvVar> vars, String name, V1EnvVarSource valueFrom) {
+    vars.add(new V1EnvVar().name(name).valueFrom(valueFrom));
+  }
+
   protected void addEnvVarIfTrue(boolean condition, List<V1EnvVar> vars, String name) {
     if (condition) {
       addEnvVar(vars, name, "true");
@@ -117,6 +130,12 @@ public abstract class BasePodStepContext extends StepContextBase {
       }
     }
     return false;
+  }
+
+  protected void addIfMissing(List<V1EnvVar> vars, String name, String value, V1EnvVarSource valueFrom) {
+    if (!hasEnvVar(vars, name)) {
+      addEnvVar(vars, name, value, valueFrom);
+    }
   }
 
   protected void addDefaultEnvVarIfMissing(List<V1EnvVar> vars, String name, String value) {

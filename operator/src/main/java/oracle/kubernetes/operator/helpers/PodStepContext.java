@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -35,7 +37,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -54,11 +56,13 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -72,6 +76,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String READINESS_PATH = "/weblogic/ready";
 
   final WlsServerConfig scan;
+  @Nonnull
+  private final Packet packet;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
@@ -83,10 +89,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     super(packet.getSpi(DomainPresenceInfo.class));
     this.conflictStep = conflictStep;
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
-    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
-    domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
+    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapConstants.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapConstants.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
+    this.packet = packet;
   }
 
   private static boolean isPatchableItem(Map.Entry<String, String> entry) {
@@ -115,6 +122,22 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   String getNamespace() {
     return info.getNamespace();
+  }
+
+  private int getNumIntrospectorConfigMaps() {
+    return Optional.ofNullable(getSpecifiedNumConfigMaps()).orElse(1);
+  }
+
+  private Integer getSpecifiedNumConfigMaps() {
+    return Optional.ofNullable(packet.<String>getValue(NUM_CONFIG_MAPS)).map(this::parseOrNull).orElse(null);
+  }
+
+  private Integer parseOrNull(String count) {
+    try {
+      return Integer.parseInt(count);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   // ------------------------ data methods ----------------------------
@@ -369,7 +392,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
 
     return new CallBuilder()
-            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
@@ -588,12 +611,21 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
         .readinessGates(getReadinessGates())
-        .initContainers(getServerSpec().getInitContainers());
+        .initContainers(getServerSpec().getInitContainers().stream()
+                .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
     return podSpec;
+  }
+
+  private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    getEnvironmentVariables(tuningParameters).forEach(envVar ->
+            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    return initContainerEnvVars;
   }
 
   // ---------------------- model methods ------------------------------
@@ -604,7 +636,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private List<V1Volume> getVolumes(String domainUid) {
-    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
+    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
     volumes.addAll(getServerSpec().getAdditionalVolumes());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
@@ -647,7 +679,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
-    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
+    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
@@ -855,7 +887,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .ifPresent(a -> a.resetIntrospectJobFailureCount());
+          .ifPresent(DomainStatus::resetIntrospectJobFailureCount);
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
@@ -893,7 +925,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(DomainStatusUpdater.createFailedStep(callResponse, null), packet);
+      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
     }
   }
 

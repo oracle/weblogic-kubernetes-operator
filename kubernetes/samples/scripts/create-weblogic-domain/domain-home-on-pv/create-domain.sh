@@ -27,6 +27,7 @@ function usage {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
+  echo "  -m model file name, optional."
   echo "  -e Also create the resources in the generated yaml files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -h Help"
@@ -38,11 +39,13 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "evhi:o:" opt; do
+while getopts "evhm:i:o:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
     o) outputDir="${OPTARG}"
+    ;;
+    m) modelFile="${OPTARG}"
     ;;
     v) doValidation=true
     ;;
@@ -78,7 +81,6 @@ function initOutputDir {
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
 
-  removeFileIfExists ${domainOutputDir}/${valuesInputFile}
   removeFileIfExists ${domainOutputDir}/create-domain-inputs.yaml
   removeFileIfExists ${domainOutputDir}/create-domain-job.yaml
   removeFileIfExists ${domainOutputDir}/delete-domain-job.yaml
@@ -98,9 +100,7 @@ function initialize {
   if [ -z "${valuesInputFile}" ]; then
     validationError "You must use the -i option to specify the name of the inputs parameter file (a modified copy of kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml)."
   else
-    if [ ! -f ${valuesInputFile} ]; then
-      validationError "Unable to locate the input parameters file ${valuesInputFile}"
-    fi
+    checkInputFiles
   fi
 
   if [ -z "${outputDir}" ]; then
@@ -131,6 +131,7 @@ function initialize {
 
 # create domain configmap using what is in the createDomainFilesDir
 function createDomainConfigmap {
+
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -152,10 +153,21 @@ function createDomainConfigmap {
   # domain in the job.
   echo domainName: $domainName >> ${externalFilesTmpDir}/create-domain-inputs.yaml
 
-  if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
-   bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+  # If the user specifies a model file, use that. Otherwise, use the one in wdt directory
+  if [ -z ${modelFile} ]; then
+    if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
+       bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir}
+    fi
+  else
+    cp ${modelFile} ${externalFilesTmpDir}/wdt_model.yaml
   fi
+
+
  
+  # Now that we have the model file in the domainoutputdir/tmp,
+  # we can add the kubernetes section to the model file. 
+  updateModelFile
+
   # create the configmap and label it properly
   local cmName=${domainUID}-create-weblogic-sample-domain-job-cm
   kubectl create configmap ${cmName} -n $namespace --from-file $externalFilesTmpDir --dry-run -o yaml | kubectl apply -f -
@@ -169,6 +181,7 @@ function createDomainConfigmap {
   kubectl label configmap ${cmName} -n $namespace weblogic.domainUID=$domainUID weblogic.domainName=$domainName
 
   rm -rf $externalFilesTmpDir
+  rm -f domain.properties
 }
 
 #
@@ -186,6 +199,38 @@ function createDomainHome {
 
   echo Creating the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
+
+  # When using WDT to create a domain, a job to create a domain is started. It then creates
+  # a pod which will run a script that creates a domain. The script then will extract the domain
+  # resource using  WDT's extractDomainResource tool. So, the following code loops until the
+  # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
+
+  if [ "$useWdt" = true ]; then
+    POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+    echo "Waiting for results to be available from $POD_NAME"
+    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
+    #echo "Fetching results"
+    sleep 30
+    max=30
+    count=0
+    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    while [ $? -eq 1 -a $count -lt $max ]; do
+      sleep 5
+      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+      count=`expr $count + 1`
+      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    done
+    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+
+    # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
+    # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
+    # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
+
+    touch doneExtract
+    kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+    rm -rf doneExtract
+  fi
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
@@ -259,4 +304,3 @@ function printSummary {
 
 # Perform the sequence of steps to create a domain
 createDomain false
-

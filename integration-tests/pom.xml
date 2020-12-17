@@ -250,7 +250,7 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
             </properties>
         </profile>
         <profile>
@@ -258,6 +258,15 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>**/ItMiiSample.java,**/ItJrfDomainInPV.java</includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>oke-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,
+                    **/ItStickySession.java,**/ItSessionMigration.java,**/ItIstioTwoDomainsInImage,**/ItPodsRestart,**/ItUsabilityOperatorHelmChart,**/ItInitContainers,**/ItOperatorUpgrade,**/ItOperatorRestart,
+                    **/ItPodsShutdownOption,**/ItManageNs</includes-failsafe>
             </properties>
         </profile>
     </profiles>

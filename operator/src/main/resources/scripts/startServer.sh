@@ -8,7 +8,11 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
-SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+if [ -z ${SCRIPTPATH+x} ]; then
+  SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+fi
+
+echo "script path is ${SCRIPTPATH}"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
@@ -183,9 +187,7 @@ function prepareMIIServer() {
   fi
 
   trace "Model-in-Image: Restoring primordial domain"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
+  restorePrimordialDomain || return 1
 
   trace "Model-in-Image: Restore domain secret"
   # decrypt the SerializedSystemIni first
@@ -201,10 +203,7 @@ function prepareMIIServer() {
   # restore the config zip
   #
   trace "Model-in-Image: Restore domain config"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+  restoreDomainConfig || return 1
 
   # restore the archive apps and libraries
   #
@@ -215,28 +214,37 @@ function prepareMIIServer() {
     trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
     return 1
   fi
+  local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
 
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
         cd ${DOMAIN_HOME}/lib || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} ${WLSDEPLOY_DOMAINLIB}
 
         if [ $? -ne 0 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
 
+        # Flatten the jars to the domain lib root
+
+        if [ -d ${WLSDEPLOY_DOMAINLIB} ] && [ "$(ls -A ${WLSDEPLOY_DOMAINLIB})" ] ; then
+          mv ${WLSDEPLOY_DOMAINLIB}/* .
+        fi
+        rm -fr wlsdeploy/
+
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path
 
         cd ${DOMAIN_HOME} || return 1
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
-
         if [ $? -ne 0 ] ; then
           trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
           return 1
         fi
+        # No need to have domainLibraries in domain home
+        rm -fr ${WLSDEPLOY_DOMAINLIB}
     done
   return 0
 }
