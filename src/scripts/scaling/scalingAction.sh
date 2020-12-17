@@ -3,13 +3,13 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # script parameters
-scaling_action="scaleUp"
-wls_domain_uid="sample-domain1"
-wls_cluster_name="cluster-1"
-wls_domain_namespace="sample-domain1-ns"
+scaling_action=""
+wls_domain_uid=""
+wls_cluster_name=""
+wls_domain_namespace="default"
 operator_service_name="internal-weblogic-operator-svc"
-operator_namespace="sample-weblogic-operator-ns"
-operator_service_account="sample-weblogic-operator-sa"
+operator_namespace="weblogic-operator"
+operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
