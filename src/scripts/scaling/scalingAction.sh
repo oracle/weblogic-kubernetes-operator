@@ -26,8 +26,6 @@ function timestamp() {
   local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
   # convert nano to milli
   local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
   local timezone="`echo $timestamp | awk '{ print $4 }'`"
   echo "${ymdhms}.${milli} ${timezone}"
 }
@@ -177,7 +175,10 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
 }
 
 # Gets the current replica count of the cluster
+# args:
+# $1 Custom Resource Domain
 function get_num_ms_in_cluster() {
+  local DOMAIN="$1"
   local num_ms
   if [ -x "$(command -v jq)" ]; then
   local numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
@@ -202,7 +203,10 @@ INPUT
 }
 
 # Gets the replica count at the Domain level
+# args:
+# $1 Custom Resource Domain
 function get_num_ms_domain_scope() {
+  local DOMAIN="$1"
   local num_ms
   if [ -x "$(command -v jq)" ]; then
     num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' )
@@ -216,6 +220,7 @@ INPUT
   fi
 
   if [ "${num_ms}" == "null" ]; then
+    # if not defined then default to 0
     num_ms=0
   fi
 
@@ -234,9 +239,21 @@ function get_min_replicas {
   local __result=$3
 
   eval $__result=0
-  minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
-    | .minimumReplicas"
-  minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  if [ -x "$(command -v jq)" ]; then
+    minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+      | .minimumReplicas"
+    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  else
+cat > cmds-$$.py << INPUT
+import sys, json
+for i in json.load(sys.stdin)["items"]:
+  j = i["status"]["clusters"]
+  for index, cs in enumerate(j):
+    if j[index]["clusterName"] == "$clusterName"
+      print j[index]["minimumReplicas"]
+INPUT
+  minReplicas=`echo ${DOMAIN} | python cmds-$$.py`
+  fi
   eval $__result=${minReplicas}
 }
 
@@ -258,6 +275,13 @@ function get_replica_count() {
     trace "$wls_cluster_name NOT defined in clusters"
     num_ms=$(get_num_ms_domain_scope "$DOMAIN")
   fi
+
+  get_min_replicas "${DOMAIN}" "${wls_cluster_name}" minReplicas
+  if [ "${num_ms}" -lt "${minReplicas}" ]; then
+    # Reset managed server count to minimum replicas
+    num_ms=${minReplicas}
+  fi
+
   echo "$num_ms"
 }
 
@@ -294,7 +318,7 @@ function verify_minimum_ms_count_for_cluster() {
   local domainJson="$2"
   local clusterName="$3"
   # check if replica count is less than minimum replicas
-  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  get_min_replicas "${domainJson}" "${clusterName}" minReplicas
   if [ "${new_ms}" -lt "${minReplicas}" ]; then
     trace "Scaling request to new managed server count $new_ms is less than configured minimum \
     replica count $minReplicas"
