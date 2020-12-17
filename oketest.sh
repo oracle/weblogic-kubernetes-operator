@@ -3,7 +3,8 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script provisions a OKE Kubernetes cluster using terraform (https://www.terraform.io/) and runs the new
-# integration test suite against that cluster.
+# integration test suite against that cluster. Blog https://blogs.oracle.com/weblogicserver/easily-create-an-oci-container-engine-for-kubernetes-cluster-with-terraform-installer-to-run-weblogic-server
+# provides detailed explanation for OCI properties file creation.
 #
 #
 # As of May 6, 2020, the tests are clean on Kubernetes 1.16 with the following JDK workarounds:
