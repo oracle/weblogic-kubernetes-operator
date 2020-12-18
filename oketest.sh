@@ -184,6 +184,3 @@ else
     mvn -Dit.test="${test_filter}, !ItTwoDomainsLoadBalancers, !ItExternalRmiTunneling, !ItMiiSample, !ItSamples, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="2" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   fi
 fi
-
-
-
