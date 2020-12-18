@@ -188,6 +188,8 @@ public class ItKubernetesEvents {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
+    DateTime timestamp = new DateTime(System.currentTimeMillis());
+
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = new Domain()
@@ -236,20 +238,8 @@ public class ItKubernetesEvents {
                 .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
 
-    DateTime timestamp = new DateTime(System.currentTimeMillis());
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
-
-    // verify the DomainCreated event is generated
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_CREATED,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
 
     // verify the admin server service created
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
@@ -260,6 +250,16 @@ public class ItKubernetesEvents {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
+    
+    // verify the DomainCreated event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_CREATED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -267,7 +267,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_PROCESSING_STARTING,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
@@ -278,7 +277,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_PROCESSING_COMPLETED,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
@@ -299,7 +297,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_CHANGED,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
@@ -311,7 +308,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_PROCESSING_RETRYING,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
@@ -323,7 +319,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_PROCESSING_ABORTED,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
