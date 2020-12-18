@@ -44,7 +44,8 @@ public class K8sEvents {
       List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (V1Event event : events) {
         logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
-        if (event.getReason().contains(reason) && event.getEventTime().isAfter(timestamp.getMillis())) {
+        if (event.getReason().contains(reason)
+            && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify reason
           logger.info("Verifying domain event {0}", reason);
