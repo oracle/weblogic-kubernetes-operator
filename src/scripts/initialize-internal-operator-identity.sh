@@ -34,56 +34,24 @@ function generateInternalIdentity {
   host="internal-weblogic-operator-svc"
   SANS="DNS:${host},DNS:${host}.${NAMESPACE},DNS:${host}.${NAMESPACE}.svc,DNS:${host}.${NAMESPACE}.svc.cluster.local"
   DAYS_VALID="3650"
-  TEMP_PW="temp_password"
   OP_PREFIX="weblogic-operator"
-  OP_ALIAS="${OP_PREFIX}-alias"
-  OP_JKS="${TEMP_DIR}/${OP_PREFIX}.jks"
-  OP_PKCS12="${TEMP_DIR}/${OP_PREFIX}.p12"
-  OP_CSR="${TEMP_DIR}/${OP_PREFIX}.csr"
   OP_CERT_PEM="${TEMP_DIR}/${OP_PREFIX}.cert.pem"
   OP_KEY_PEM="${TEMP_DIR}/${OP_PREFIX}.key.pem"
-  KEYTOOL=${JAVA_HOME}/bin/keytool
 
-  # generate a keypair for the operator's internal service, putting it in a keystore
-  $KEYTOOL \
-    -genkey \
-    -keystore ${OP_JKS} \
-    -alias ${OP_ALIAS} \
-    -storepass ${TEMP_PW} \
-    -keypass ${TEMP_PW} \
-    -keysize 2048 \
-    -keyalg RSA \
-    -validity ${DAYS_VALID} \
-    -dname "CN=weblogic-operator" \
-    -ext KU=digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment,keyAgreement \
-    -ext SAN="${SANS}"
-
-  # extract the cert to a pem file
-  $KEYTOOL \
-    -exportcert \
-    -keystore ${OP_JKS} \
-    -storepass ${TEMP_PW} \
-    -alias ${OP_ALIAS} \
-    -rfc \
-    > ${OP_CERT_PEM}
-
-  # convert the keystore to a pkcs12 file
-  $KEYTOOL \
-    -importkeystore \
-    -srckeystore ${OP_JKS} \
-    -srcstorepass ${TEMP_PW} \
-    -destkeystore ${OP_PKCS12} \
-    -deststorepass ${TEMP_PW} \
-    -deststoretype PKCS12
-
-  # extract the private key from the pkcs12 file to a pem file
+  # generate a keypair for the operator's internal service
+  # openssl v1.1.1 is the required minimum to use 'addext' option for
+  # speciifying "Subject Alternative Names (SANS)" thus the following
+  # configuration cannot be used on Oracle Linux 7-slim.
   openssl \
-    pkcs12 \
-    -in ${OP_PKCS12} \
-    -passin pass:${TEMP_PW} \
+    req \
+    -newkey rsa:2048 \
     -nodes \
-    -nocerts \
-    -out ${OP_KEY_PEM}
+    -keyout ${OP_KEY_PEM} \
+    -x509 \
+    -days ${DAYS_VALID} \
+    -out ${OP_CERT_PEM} \
+    -subj "/C=US/ST=CALIFORNIA/L=REDWOOD CITY/O=WebLogic/OU=Development/CN=weblogic-operator" \
+    -addext "subjectAltName = ${SANS}"
 
   # copy the certificate and key to the locations the operator runtime expects
   base64 -i ${OP_CERT_PEM} | tr -d '\n' > ${INTERNAL_CERT_BASE64_PEM}
