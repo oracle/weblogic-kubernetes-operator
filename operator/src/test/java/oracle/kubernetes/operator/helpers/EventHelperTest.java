@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -313,10 +314,16 @@ public class EventHelperTest {
             String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")), is(true));
   }
 
-  private V1Event getEventMatchesReason(List<V1Event> events, String reason) {
-    return (V1Event) Optional.ofNullable(events).get()
+  private static V1Event getEventMatchesReason(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
         .stream()
         .filter(e -> EventHelperTest.reasonMatches(e, reason)).findFirst().orElse(null);
+  }
+
+  private static Stream<V1Event> getEventsMatchesReason(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
+        .stream()
+        .filter(e -> EventHelperTest.reasonMatches(e, reason));
   }
 
   private Object containsEventWithNamespace(List<V1Event> events, String reason) {
@@ -327,11 +334,18 @@ public class EventHelperTest {
         .equals(NS);
   }
 
-  private Object containsEventWithMessage(List<V1Event> events, String reason, String message) {
-    return Optional.ofNullable(getEventMatchesReason(events, reason))
+  /**
+   * Returns true if an event in the provided list matches the given reason and message.
+   *
+   * @param events A List of events to be checked
+   * @param reason Reason of the event to be matched
+   * @param message message of the involved object in the event to be matched
+   * @return true if an event in the provided list matches the given conditions.
+   */
+  public static boolean containsEventWithMessage(List<V1Event> events, String reason, String message) {
+    return getEventsMatchesReason(events, reason)
         .map(V1Event::getMessage)
-        .orElse("")
-        .equals(message);
+        .anyMatch(eventMessage -> message.equals(eventMessage));
   }
 
   private Object containsEventWithComponent(List<V1Event> events, String reason) {
@@ -347,7 +361,8 @@ public class EventHelperTest {
         .orElse(""));
   }
 
-  private Object containsEventWithInvolvedObject(List<V1Event> events, String reason, String name, String namespace) {
+  private boolean containsEventWithInvolvedObject(List<V1Event> events, String reason,
+      String name, String namespace) {
     return referenceMatches(Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getInvolvedObject)
         .orElse(null), name, namespace);
@@ -359,7 +374,7 @@ public class EventHelperTest {
         .orElse(null));
   }
 
-  private Object referenceMatches(V1ObjectReference reference, String name, String namespace) {
+  private static boolean referenceMatches(V1ObjectReference reference, String name, String namespace) {
     return reference != null && name.equals(reference.getName()) && namespace.equals(reference.getNamespace());
   }
 
