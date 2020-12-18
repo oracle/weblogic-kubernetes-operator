@@ -379,7 +379,8 @@ public class ItKubernetesEvents {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"nonexistingimage\"}]";
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret\", "
+        + "\"value\": \"nonexistingimage\"}]";
     logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr.toString());
 
     patch = new V1Patch(patchStr);
