@@ -57,14 +57,12 @@ clusterName=$(prop 'okeclustername')
 compartment_ocid=$(prop 'compartment.ocid')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
 export KUBECONFIG=${terraform_script_dir}/${clusterName}_kubeconfig
-export PATH={terraform_script_dir}/terraforminstall:$PATH
+export PATH=${terraform_script_dir}/terraforminstall:$PATH
+
 
 echo 'Deleting cluster'
 
 #check and cleanup any left over running Load Balancers
 cleanupLB Subnet01
 cleanupLB Subnet02
-cd ${terraform_script_dir}
-terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars
-terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars
-terraform destroy -auto-approve -var-file=${terraform_script_dir}/${clusterName}.tfvars
+deleteOKE
