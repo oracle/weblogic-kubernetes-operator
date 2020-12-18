@@ -37,7 +37,6 @@ function setupTerraform () {
       curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_darwin_amd64.zip
       unzip terraform_0.11.10_darwin_amd64.zip
     elif [[ "${OSTYPE}" == "linux"* ]]; then
-#setup terraform#curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip#unzip -o terraform_0.11.8_linux_amd64.zip -d ${WORKSPACE}/bin/#rm terraform_0.11.8_linux_amd64.zip#chmod +x ${WORKSPACE}/bin/terraform
        curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
        unzip -o terraform_0.11.8_linux_amd64.zip -d ${terraformDir}
     else
@@ -70,57 +69,57 @@ function createCluster () {
 }
 
 function createRoleBindings () {
-kubectl -n kube-system create serviceaccount $okeclustername-sa
-kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
-TOKENNAME=`kubectl -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
-TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
-kubectl config set-credentials $okeclustername-sa --token=$TOKEN
-kubectl config set-context --current --user=$okeclustername-sa
+    kubectl -n kube-system create serviceaccount $okeclustername-sa
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
+    TOKENNAME=`kubectl -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
+    TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
+    kubectl config set-credentials $okeclustername-sa --token=$TOKEN
+    kubectl config set-context --current --user=$okeclustername-sa
 }
 
 function checkClusterRunning () {
 
-echo 'Confirm we have kubectl working...'
+    echo 'Confirm we have kubectl working...'
 
-myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
-status="NotReady"
-max=50
-count=1
+    myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
+    status="NotReady"
+    max=50
+    count=1
 
-privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
-myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
-NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-echo $myline
-status=$myline
-max=100
-count=1
-while [ "$myline" != "Ready" -a $count -le $max ] ; do
-  echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
-  sleep 10
-  myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
-  NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
-  [[ ${myline} -eq "Ready"  ]]
-  echo "Status is ${myline} Iter [$count/$max]"
-  count=`expr $count + 1`
-done
+    privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
+    myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+    NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+    echo $myline
+    status=$myline
+    max=100
+    count=1
+    while [ "$myline" != "Ready" -a $count -le $max ] ; do
+      echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
+      sleep 10
+      myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+      NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+      [[ ${myline} -eq "Ready"  ]]
+      echo "Status is ${myline} Iter [$count/$max]"
+      count=`expr $count + 1`
+    done
 
-NODES=`kubectl get nodes -o wide | grep "${privateIP}" | wc -l`
-if [ "$NODES" == "1" ]; then
-  echo '- looks good'
-else
-  echo '- could not talk to cluster, aborting'
-  cd ${terraformVarDir}
-  terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-  exit 1
-fi
+    NODES=`kubectl get nodes -o wide | grep "${privateIP}" | wc -l`
+    if [ "$NODES" == "1" ]; then
+      echo '- looks good'
+    else
+      echo '- could not talk to cluster, aborting'
+      cd ${terraformVarDir}
+      terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+      exit 1
+    fi
 
 
-if [ $count -gt $max ] ; then
-   echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
-   cd ${terraformVarDir}
-   terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
-   exit 1
-fi
+    if [ $count -gt $max ] ; then
+       echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
+       cd ${terraformVarDir}
+       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+       exit 1
+    fi
 }
 
 #MAIN

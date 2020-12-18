@@ -4,40 +4,39 @@
 #
 # This script deletes provisioned OKE Kubernetes cluster using terraform (https://www.terraform.io/)
 #
-#
 
 set -o errexit
 set -o pipefail
 
 function prop {
-    grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
+  grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
 function cleanupLB {
   echo 'Clean up left over LB'
-myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
-declare -a vcnidarray
-vcnidarray=(${myvcn_id// /})
-myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
-mysubnets=`oci network subnet list --vcn-id=${vcnidarray[0]} --display-name=${clusterName}-LB-${1} --compartment-id $compartment_ocid | jq -r '.data[] | .id'`
+  myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
+  declare -a vcnidarray
+  vcnidarray=(${myvcn_id// /})
+  myip=`oci lb load-balancer list --compartment-id $compartment_ocid |jq -r '.data[] | .id'`
+  mysubnets=`oci network subnet list --vcn-id=${vcnidarray[0]} --display-name=${clusterName}-LB-${1} --compartment-id $compartment_ocid | jq -r '.data[] | .id'`
 
-declare -a iparray
-declare -a mysubnetsidarray
-mysubnetsidarray=(${mysubnets// /})
+  declare -a iparray
+  declare -a mysubnetsidarray
+  mysubnetsidarray=(${mysubnets// /})
 
-iparray=(${myip// /})
-vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
-for k in "${mysubnetsidarray[@]}"
-do
-for i in "${iparray[@]}"
- do
-  lb=`oci lb load-balancer get --load-balancer-id=$i`
-  if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
-     echo "deleting lb with id $i"
-     oci lb load-balancer delete --load-balancer-id=$i --force || true
-  fi
-done
-done
+  iparray=(${myip// /})
+  vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
+  for k in "${mysubnetsidarray[@]}"
+    do
+      for i in "${iparray[@]}"
+         do
+            lb=`oci lb load-balancer get --load-balancer-id=$i`
+            if [[ (-z "${lb##*$vcn_cidr_prefix*}") || (-z "${lb##*$k*}") ]] ;then
+               echo "deleting lb with id $i"
+               oci lb load-balancer delete --load-balancer-id=$i --force || true
+            fi
+        done
+    done
 
 }
 

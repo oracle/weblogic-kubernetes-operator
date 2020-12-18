@@ -96,7 +96,6 @@ done
 k8s_version=$(prop 'k8s.version')
 echo "Using Kubernetes version: ${k8s_version}"
 
-
 mkdir -m777 -p "${outdir}"
 export RESULT_ROOT="${outdir}/wl_k8s_test_results"
 if [ -d "${RESULT_ROOT}" ]; then
@@ -124,9 +123,8 @@ cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terra
 chmod 777 ${WORKSPACE}/terraform/*.sh
 mkdir -p ${WORKSPACE}/terraform/terraforminstall
 
-
 if ! sh ${WORKSPACE}/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform ; then
-sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+  sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
 fi
 
 clusterName=$(prop 'okeclustername')
@@ -139,15 +137,12 @@ echo "creating storage class to setup OFSS ..."
 echo "getting MountTarget ID"
 compartment_ocid=$(prop 'compartment.ocid')
 mount_target_id=`oci fs mount-target  list --compartment-id=$compartment_ocid  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | .id'`
-#export mount_target_id=$mount_target_id
 mt_privateip_id=`oci fs mount-target  list --compartment-id=$compartment_ocid  --display-name=${clusterName}-mt --availability-domain=${availability_domain} | jq -r '.data[] | ."private-ip-ids"[]'`
-
 mt_private_ip=`oci network private-ip get --private-ip-id $mt_privateip_id | jq -r '.data | ."ip-address"'`
+
 export NFS_SERVER=$mt_private_ip
 echo "Using NFS Server ${NFS_SERVER}"
-
 echo "Creating Storage Class to mount OFSS"
-
 cat << EOF | kubectl apply -f -
 kind: StorageClass
 apiVersion: storage.k8s.io/v1beta1
@@ -163,8 +158,8 @@ echo 'Set up test running ENVVARs...'
 NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
 if [ -z "$NODE_IP" ]; then
 	echo "retry get node ip ";
-    sleep 15;
-    NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
+  sleep 15;
+  NODE_IP=`kubectl get nodes -o wide| awk '{print $7}'| tail -n+3`
 fi
 
 export K8S_NODEPORT_HOST=$NODE_IP
@@ -178,15 +173,15 @@ cd ${WORKSPACE}
 echo 'Run tests...'
 
 if [ "${maven_profile_name}" = "oke-cert" ]; then
-echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+  mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 else
   if [ "${parallel_run}" = "false" ]; then
-  echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
-  mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P integration-tests verify"
+    mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${MVN_PROFILE} verify"
-     mvn -Dit.test="${test_filter}, !ItTwoDomainsLoadBalancers, !ItExternalRmiTunneling, !ItMiiSample, !ItSamples, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="2" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+    mvn -Dit.test="${test_filter}, !ItTwoDomainsLoadBalancers, !ItExternalRmiTunneling, !ItMiiSample, !ItSamples, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="2" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
   fi
 fi
 
