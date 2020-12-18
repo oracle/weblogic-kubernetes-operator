@@ -273,11 +273,12 @@ public class ItKubernetesEvents {
                 .replicas(replicaCount)
                 .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
+    DateTime timestamp = new DateTime(System.currentTimeMillis());
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);
 
     // verify the DomainCreated event is generated
-    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CREATED, "Normal");
+    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CREATED, "Normal", timestamp);
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, domainNamespace);
@@ -301,9 +302,9 @@ public class ItKubernetesEvents {
 
     // verify the DomainProcessing Starting/Completed event is generated
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
-        K8sEvents.DOMAIN_PROCESSING_STARTING, "Normal");
+        K8sEvents.DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
-        K8sEvents.DOMAIN_PROCESSING_COMPLETED, "Normal");
+        K8sEvents.DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -325,14 +326,15 @@ public class ItKubernetesEvents {
 
     logger.info("Updating replicas in cluster {0} using patch string: {1}", clusterName, patchStr);
     V1Patch patch = new V1Patch(patchStr);
+    timestamp = new DateTime(System.currentTimeMillis());
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
     // verify the DomainCreated event is generated
-    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CREATED, "Normal");
+    K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid, K8sEvents.DOMAIN_CREATED, "Normal", timestamp);
     // verify the DomainProcessing Starting/Completed event is generated
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
-        K8sEvents.DOMAIN_PROCESSING_STARTING, "Normal");
+        K8sEvents.DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
 
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -356,8 +358,9 @@ public class ItKubernetesEvents {
 
     //verify domain processing completed
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
-        K8sEvents.DOMAIN_PROCESSING_COMPLETED, "Normal");
+        K8sEvents.DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
 
+    timestamp = new DateTime(System.currentTimeMillis());
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
@@ -365,7 +368,7 @@ public class ItKubernetesEvents {
 
     //verify domain deleted event
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
-        K8sEvents.DOMAIN_DELETED, "Normal");
+        K8sEvents.DOMAIN_DELETED, "Normal", timestamp);
 
   }
 
