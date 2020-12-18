@@ -198,4 +198,33 @@ public class CommonPatchTestUtils {
     V1Patch patch = new V1Patch(new String(patchStr));
     return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
+
+  /**
+   * Patch the domain with the given string.
+   *
+   * @param domainUid unique domain identifier
+   * @param domainNamespace the Kubernetes namespace where the domain is
+   * @param patchPath the string for patching
+   * @param policy the ServerStartPolicy
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchServerStartPolicy(
+         String domainUid, String domainNamespace, 
+         String patchPath, String policy) {
+    LoggingFacade logger = getLogger();
+    logger.info("Updating the for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchPath.toString());
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"")
+        .append(patchPath)
+        .append("\",")
+        .append(" \"value\":  \"")
+        .append(policy)
+        .append("\"")
+        .append(" }]");
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
 }
