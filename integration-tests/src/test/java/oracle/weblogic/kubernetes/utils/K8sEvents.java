@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,31 +38,34 @@ public class K8sEvents {
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
    */
-  public static void checkDomainEvent(
+  public static Callable<Boolean> checkDomainEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
-    logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
-    try {
-      List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-      for (V1Event event : events) {
-        logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
-        if (event.getReason().contains(reason)
-            && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
-          verifyOperatorDetails(event, opNamespace, domainUid);
-          //verify reason
-          logger.info("Verifying domain event {0}", reason);
-          assertTrue(event.getReason().equals(reason));
-          //verify messages
-          logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
-          assertTrue(event.getMessage().equals(getDomainEventMessage(reason, domainUid)));
-          //verify type
-          logger.info("Verifying domain event type {0}", type);
-          assertTrue(event.getType().equals(type));
-          return;
+    return () -> {
+      logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
+      try {
+        List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        for (V1Event event : events) {
+          logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
+          if (event.getReason().contains(reason)
+              && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
+            verifyOperatorDetails(event, opNamespace, domainUid);
+            //verify reason
+            logger.info("Verifying domain event {0}", reason);
+            assertTrue(event.getReason().equals(reason));
+            //verify messages
+            logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
+            assertTrue(event.getMessage().equals(getDomainEventMessage(reason, domainUid)));
+            //verify type
+            logger.info("Verifying domain event type {0}", type);
+            assertTrue(event.getType().equals(type));
+            return true;
+          }
         }
+      } catch (ApiException ex) {
+        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
-    } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
-    }
+      return false;
+    };
   }
 
   private static void verifyOperatorDetails(V1Event event, String opNamespace, String domainUid) throws ApiException {
