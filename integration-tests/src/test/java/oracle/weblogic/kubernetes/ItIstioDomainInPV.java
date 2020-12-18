@@ -67,9 +67,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -150,6 +150,8 @@ public class ItIstioDomainInPV  {
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress Port.
+   * Additionally, the test verifies that WebLogic cluster can be scaled down
+   * and scaled up in the absence of Administration server.
    */
   @Test
   @DisplayName("Create WebLogic domain in PV with Istio")
@@ -355,20 +357,6 @@ public class ItIstioDomainInPV  {
     checkServiceExists(managedServerPodNamePrefix + "2", domainNamespace);
     checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
     logger.info("Managed Server started in absense of administration server");
-  }
-
-  private void checkPodDeleted(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
   }
 
   /**

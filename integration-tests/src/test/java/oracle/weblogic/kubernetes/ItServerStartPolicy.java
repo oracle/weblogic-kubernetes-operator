@@ -62,8 +62,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
@@ -896,7 +896,7 @@ class ItServerStartPolicy {
   /**
    * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
-   * server from scratch if it has never been started eralier with 
+   * server from scratch if it has never been started earlier with 
    * administration server. Once the administration server is stopped, 
    * the managed server can only be started in MSI (managed server independence)
    * mode. To start a managed server in MSI mode, the pre-requisite is that 
@@ -1152,20 +1152,6 @@ class ItServerStartPolicy {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
-  }
-
-  private void checkPodDeleted(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
   }
 
   /*
