@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Helper class for Kubernetes Events checking.
  */
 public class K8sEvents {
+
   private static LoggingFacade logger = getLogger();
 
   /**
@@ -46,6 +47,9 @@ public class K8sEvents {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
           logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
+          logger.info("TIMESTAMPS: EVENT_CREATIONTIMESTAMP:{0} should be after EXPECTED:"
+              + "{1}",
+              event.getMetadata().getCreationTimestamp(), timestamp);
           if (event.getReason().contains(reason)
               && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
             verifyOperatorDetails(event, opNamespace, domainUid);
