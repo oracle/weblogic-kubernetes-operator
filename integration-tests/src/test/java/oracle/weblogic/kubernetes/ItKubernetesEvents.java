@@ -375,7 +375,7 @@ public class ItKubernetesEvents {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/image\", value\": \"nonexistingimage:v1\"}]";
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"nonexistingimage:v1\"}]";
     logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
 
     patch = new V1Patch(patchStr);
