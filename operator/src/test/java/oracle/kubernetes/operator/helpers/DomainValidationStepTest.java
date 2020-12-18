@@ -9,10 +9,15 @@ import java.util.Optional;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Step;
@@ -28,7 +33,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithMessage;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
@@ -36,6 +45,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -189,6 +199,54 @@ public class DomainValidationStepTest {
         stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
   }
 
+  @Test
+  public void whenServerDoesNotExistInDomain_createEvent() {
+    consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertContainsEventWithMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server");
+  }
+
+  @Test
+  public void whenClusterDoesNotExistInDomain_createEvent() {
+    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
+    domain.getSpec().withCluster(createCluster("no-such-cluster"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertContainsEventWithMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
+  }
+
+  @Test
+  public void whenBothServerAndClusterDoNotExistInDomain_createEventWithBothWarnings() {
+    consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
+    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
+    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
+    domain.getSpec().withCluster(createCluster("no-such-cluster"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertContainsEventWithFormattedMessage(getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster")
+        + "\n" + getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server"));
+  }
+
+  @Test
+  public void whenIsExplictRecheck_doNotCreateEvent() {
+    consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
+    setExplicitRecheck();
+    domain.getSpec().withCluster(createCluster("no-such-cluster"));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertThat(getEvents(), empty());
+  }
+
   private Cluster createCluster(String clusterName) {
     Cluster cluster = new Cluster();
     cluster.setClusterName(clusterName);
@@ -197,4 +255,45 @@ public class DomainValidationStepTest {
     return cluster;
   }
 
+  private List<V1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
+    assertContainsEventWithFormattedMessage(getFormattedMessage(msgId, messageParams));
+  }
+
+  private void assertContainsEventWithFormattedMessage(String message) {
+    assertThat(
+        "Expected Event with message was not created: " + getExpectedValidationEventMessage(message)
+            + ".\nThere are " + getEvents().size() + " event.\nEvents: " + getEvents(),
+        containsEventWithMessage(
+            getEvents(),
+            DOMAIN_VALIDATION_ERROR_EVENT,
+            getExpectedValidationEventMessage(message)),
+        is(true));
+  }
+
+  private String getFormattedMessage(String msgId, Object... params) {
+    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
+    return logger.formatMessage(msgId, params);
+  }
+
+  private String getExpectedValidationEventMessage(String message) {
+    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
+  }
+
+  private void setExplicitRecheck() {
+    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
+        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
+  }
+
+  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements
+      MakeRightDomainOperation {
+
+    @Override
+    public boolean isExplicitRecheck() {
+      return true;
+    }
+  }
 }
