@@ -65,8 +65,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -139,7 +142,6 @@ public class ItIstioDomainInPV  {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-
   }
 
   /**
@@ -148,6 +150,8 @@ public class ItIstioDomainInPV  {
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress Port.
+   * Additionally, the test verifies that WebLogic cluster can be scaled down
+   * and scaled up in the absence of Administration server.
    */
   @Test
   @DisplayName("Create WebLogic domain in PV with Istio")
@@ -324,6 +328,35 @@ public class ItIstioDomainInPV  {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
 
+    // Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86407
+    // Stop and Start the managed server in absense of administration server
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/adminServer/serverStartPolicy", "NEVER"),
+         "Failed to patch administrationi server serverStartPolicy to NEVER");
+    logger.info("Domain is patched to shutdown administration server");
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    logger.info("Administration server shutdown success");
+
+    boolean scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("Scaling down cluster cluster-1 of domain %s in namespace %s failed",
+        domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+    logger.info("Cluster is scaled down in absense of administration server");
+    checkPodDeleted(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    logger.info("Managed Server stopped in absense of administration server");
+
+    scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, "cluster-1", 2),
+        String.format("Scaling up cluster cluster-1 of domain %s in namespace %s failed",
+        domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+    logger.info("Cluster is scaled up in absense of administration server");
+    checkServiceExists(managedServerPodNamePrefix + "2", domainNamespace);
+    checkPodReady(managedServerPodNamePrefix + "2", domainUid, domainNamespace);
+    logger.info("Managed Server started in absense of administration server");
   }
 
   /**
