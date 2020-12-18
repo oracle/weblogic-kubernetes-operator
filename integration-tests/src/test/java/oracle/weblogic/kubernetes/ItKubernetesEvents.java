@@ -13,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -57,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -359,6 +362,40 @@ public class ItKubernetesEvents {
     //verify domain processing completed
     K8sEvents.checkDomainEvent(opNamespace, domainNamespace, domainUid,
         K8sEvents.DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
+
+    // get the original domain resource before update
+    Domain domaincr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domaincr, "Got null domain resource");
+    assertNotNull(domaincr.getSpec(), domainUid + " /spec is null");
+
+    //print out the original image name
+    String imageName = domaincr.getSpec().getImage();
+    logger.info("Currently the image name used for the domain is: {0}", imageName);
+
+    //change image name to imageUpdate
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/image\", value\": \"nonexistingimage:v1\"}]";
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "patchDomainCustomResource(imageUpdate) failed");
+
+    domaincr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domaincr, "Got null domain resource after patching");
+    assertNotNull(domaincr.getSpec(), domainUid + " /spec is null");
+
+    //print out image name in the new patched domain
+    logger.info("In the new patched domain image name is: {0}", domaincr.getSpec().getImage());
+
+    try {
+      Thread.sleep(1000 * 120);
+    } catch (InterruptedException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
 
     timestamp = new DateTime(System.currentTimeMillis());
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
