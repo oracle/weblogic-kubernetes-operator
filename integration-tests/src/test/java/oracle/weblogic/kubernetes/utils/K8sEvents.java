@@ -44,20 +44,18 @@ public class K8sEvents {
       List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (V1Event event : events) {
         logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
-        if (event.getEventTime().isAfter(timestamp.getMillis())) {
-          if (event.getReason().contains(reason)) {
-            verifyOperatorDetails(event, opNamespace, domainUid);
-            //verify reason
-            logger.info("Verifying domain event {0}", reason);
-            assertTrue(event.getReason().equals(reason));
-            //verify messages
-            logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
-            assertTrue(event.getMessage().equals(getDomainEventMessage(reason, domainUid)));
-            //verify type
-            logger.info("Verifying domain event type {0}", type);
-            assertTrue(event.getType().equals(type));
-            return;
-          }
+        if (event.getReason().contains(reason) && event.getEventTime().isAfter(timestamp.getMillis())) {
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify reason
+          logger.info("Verifying domain event {0}", reason);
+          assertTrue(event.getReason().equals(reason));
+          //verify messages
+          logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
+          assertTrue(event.getMessage().equals(getDomainEventMessage(reason, domainUid)));
+          //verify type
+          logger.info("Verifying domain event type {0}", type);
+          assertTrue(event.getType().equals(type));
+          return;
         }
       }
     } catch (ApiException ex) {
