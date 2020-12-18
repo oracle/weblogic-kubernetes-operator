@@ -62,10 +62,27 @@ public class EventHelper {
     return new CreateEventStep(eventData);
   }
 
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
+   * @param eventData event item
+   * @param next next step
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(
+      EventData eventData, Step next) {
+    return new CreateEventStep(eventData, next);
+  }
+
   public static class CreateEventStep extends Step {
     private final EventData eventData;
 
     CreateEventStep(EventData eventData) {
+      this(eventData, null);
+    }
+
+    CreateEventStep(EventData eventData, Step next) {
+      super(next);
       this.eventData = eventData;
     }
 

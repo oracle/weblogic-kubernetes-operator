@@ -30,6 +30,8 @@ import oracle.kubernetes.operator.helpers.EventHelper.CreateEventStep;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -50,8 +52,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithInvolvedObject;
+import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithMessage;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
@@ -636,8 +639,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
+    assertContainsEventWithMessage(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT, 0, 2, "cluster1");
   }
 
   @Test
@@ -677,8 +679,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
+    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
   }
 
   @Test
@@ -701,8 +702,7 @@ public class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertThat("Event involved object",
-        containsEventWithInvolvedObject(getEvents(), DOMAIN_VALIDATION_ERROR_EVENT, UID, NS), is(true));
+    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
   }
 
   @Test
@@ -942,5 +942,26 @@ public class ManagedServersUpStepTest {
     public boolean isExplicitRecheck() {
       return true;
     }
+  }
+
+  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
+    String formattedMessage = formatMessage(msgId, messageParams);
+    assertThat(
+        "Expected Event with message "
+            + getExpectedValidationEventMessage(formattedMessage) + " was not created",
+        containsEventWithMessage(
+            getEvents(),
+            DOMAIN_VALIDATION_ERROR_EVENT,
+            getExpectedValidationEventMessage(formattedMessage)),
+        is(true));
+  }
+
+  private String formatMessage(String msgId, Object... params) {
+    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
+    return logger.formatMessage(msgId, params);
+  }
+
+  private String getExpectedValidationEventMessage(String message) {
+    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
   }
 }

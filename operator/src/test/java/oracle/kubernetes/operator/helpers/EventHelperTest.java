@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -319,6 +320,12 @@ public class EventHelperTest {
         .filter(e -> EventHelperTest.reasonMatches(e, reason)).findFirst().orElse(null);
   }
 
+  private static Stream<V1Event> getEventsMatchesReason(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
+        .stream()
+        .filter(e -> EventHelperTest.reasonMatches(e, reason));
+  }
+
   private Object containsEventWithNamespace(List<V1Event> events, String reason) {
     return Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getMetadata)
@@ -327,11 +334,18 @@ public class EventHelperTest {
         .equals(NS);
   }
 
-  private Object containsEventWithMessage(List<V1Event> events, String reason, String message) {
-    return Optional.ofNullable(getEventMatchesReason(events, reason))
+  /**
+   * Returns true if an event in the provided list matches the given reason and message.
+   *
+   * @param events A List of events to be checked
+   * @param reason Reason of the event to be matched
+   * @param message message of the involved object in the event to be matched
+   * @return true if an event in the provided list matches the given conditions.
+   */
+  public static boolean containsEventWithMessage(List<V1Event> events, String reason, String message) {
+    return getEventsMatchesReason(events, reason)
         .map(V1Event::getMessage)
-        .orElse("")
-        .equals(message);
+        .anyMatch(eventMessage -> message.equals(eventMessage));
   }
 
   private Object containsEventWithComponent(List<V1Event> events, String reason) {
@@ -347,17 +361,7 @@ public class EventHelperTest {
         .orElse(""));
   }
 
-  /**
-   * Returns true if an event in the provided list matches the given reason, name, and
-   * namespace.
-   *
-   * @param events A List of events to be checked
-   * @param reason Reason of the event to be matched
-   * @param name name of the involved object in the event to be matched
-   * @param namespace namespace of the involved object in the event to be matched
-   * @return true if an event in the provided list matches the given conditions.
-   */
-  public static boolean containsEventWithInvolvedObject(List<V1Event> events, String reason,
+  private boolean containsEventWithInvolvedObject(List<V1Event> events, String reason,
       String name, String namespace) {
     return referenceMatches(Optional.ofNullable(getEventMatchesReason(events, reason))
         .map(V1Event::getInvolvedObject)

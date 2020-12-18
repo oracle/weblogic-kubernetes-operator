@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -13,8 +14,11 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -29,6 +33,7 @@ import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_DOMAIN;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
 public class DomainValidationSteps {
@@ -144,9 +149,9 @@ public class DomainValidationSteps {
     }
 
 
-    private void logAndAddWarning(DomainPresenceInfo info, String messageKey, Object... params) {
-      LOGGER.warning(messageKey, params);
-      info.addValidationWarning(LOGGER.formatMessage(messageKey, params));
+    private void logAndAddValidationWarning(DomainPresenceInfo info, String msgId, Object... messageParams) {
+      LOGGER.warning(msgId, messageParams);
+      info.addValidationWarning(LOGGER.formatMessage(msgId, messageParams));
     }
 
     private void validate(DomainPresenceInfo info, WlsDomainConfig wlsDomainConfig) {
@@ -157,35 +162,44 @@ public class DomainValidationSteps {
       // log warnings for each cluster that is specified in domain resource but not configured
       // in the WebLogic domain
       domainSpec.getClusters().forEach(
-          c -> logAndAddWarningIfClusterDoesNotExist(wlsDomainConfig, c.getClusterName(), info));
+          c -> warnIfClusterDoesNotExist(wlsDomainConfig, c.getClusterName(), info));
 
       // log warnings for each managed server that is specified in domain resource but not configured
       // in the WebLogic domain
       domainSpec.getManagedServers().forEach(
-          s -> logAndAddWarningIfServerDoesNotExist(wlsDomainConfig, s.getServerName(), info));
+          s -> warnIfServerDoesNotExist(wlsDomainConfig, s.getServerName(), info));
     }
 
-    private void logAndAddWarningIfClusterDoesNotExist(WlsDomainConfig domainConfig, String clusterName,
-        DomainPresenceInfo info) {
+    private void warnIfClusterDoesNotExist(WlsDomainConfig domainConfig,
+        String clusterName, DomainPresenceInfo info) {
       if (!domainConfig.containsCluster(clusterName)) {
-        logAndAddWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, clusterName);
+        logAndAddValidationWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, clusterName);
       }
     }
 
-    private void logAndAddWarningIfServerDoesNotExist(WlsDomainConfig domainConfig, String serverName,
-        DomainPresenceInfo info) {
+    private void warnIfServerDoesNotExist(WlsDomainConfig domainConfig,
+        String serverName, DomainPresenceInfo info) {
       if (!domainConfig.containsServer(serverName)) {
-        logAndAddWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, serverName);
+        logAndAddValidationWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, serverName);
       }
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      boolean isExplicitRecheck = MakeRightDomainOperation.isExplicitRecheck(packet);
       WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       validate(info, wlsDomainConfig);
 
-      return doNext(packet);
+      return doNext(getNextStep(info.getValidationWarningsAsString(), isExplicitRecheck, getNext()), packet);
+    }
+
+    private Step getNextStep(String message, boolean skipCreateEvent, Step next) {
+      return skipCreateEvent
+          ? next
+          : Optional.ofNullable((message))
+              .map(m -> createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, m), next))
+              .orElse(next);
     }
   }
 

@@ -279,32 +279,20 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        LOGGER.warning(
-            MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
-        String message = LOGGER.formatMessage(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
-            domain.getReplicaCount(clusterName),
-            clusterConfig.getMaxDynamicClusterSize(),
-            clusterName);
-        addValidationErrorEventAndWarning(message);
       }
     }
 
     private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        LOGGER.warning(
-                MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
-                domain.getReplicaCount(clusterName),
-                clusterConfig.getMinDynamicClusterSize(),
-                clusterName);
-        String message = LOGGER.formatMessage(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
-        addValidationErrorEventAndWarning(message);
 
         // Reset current replica count so we don't scale down less than minimum
         // dynamic cluster size
@@ -312,8 +300,9 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addValidationErrorEventAndWarning(String message) {
-      LOGGER.warning(message);
+    private void addValidationErrorEventAndWarning(String msgId, Object... messageParams) {
+      LOGGER.warning(msgId, messageParams);
+      String message = LOGGER.formatMessage(msgId, messageParams);
       if (!skipEventCreation) {
         eventStep = createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, message));
       }
