@@ -11,7 +11,6 @@ function generateTFVarFile {
     rm -f ${tfVarsFiletfVarsFile}
     cp ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
     chmod 777 ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
-
     sed -i -e "s:@TENANCYOCID@:${tenancy_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@USEROCID@:${user_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@COMPARTMENTOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
@@ -27,7 +26,6 @@ function generateTFVarFile {
     sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
-
 }
 
 function setupTerraform () {
@@ -44,7 +42,6 @@ function setupTerraform () {
     fi
     chmod +x ${terraformDir}/terraform
     export PATH=${terraformDir}:${PATH}
-
 }
 
 function deleteOlderVersionTerraformOCIProvider() {

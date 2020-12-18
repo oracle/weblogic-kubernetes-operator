@@ -49,13 +49,11 @@ function deleteOKE {
 #MAIN
 oci_property_file=${1:-$PWD/oci.props}
 terraform_script_dir=${2:-$PWD}
-
 clusterName=$(prop 'okeclustername')
 compartment_ocid=$(prop 'compartment.ocid')
 vcn_cidr_prefix=$(prop 'vcn.cidr.prefix')
 export KUBECONFIG=${terraform_script_dir}/${clusterName}_kubeconfig
 export PATH=${terraform_script_dir}/terraforminstall:$PATH
-
 echo 'Deleting cluster'
 #check and cleanup any left over running Load Balancers
 cleanupLB Subnet01
