@@ -120,10 +120,13 @@ echo 'Create a OKE cluster'
 mkdir -p "${WORKSPACE}/terraform"
 cp -rf ${terraform_script_dir_name}/*.tf ${WORKSPACE}/terraform/.
 cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/template.tfvars ${WORKSPACE}/terraform/.
+cp -rf ${WORKSPACE}/kubernetes/samples/scripts/terraform/*.sh ${WORKSPACE}/terraform/.
+chmod 777 ${WORKSPACE}/terraform/*.sh
 mkdir -p ${WORKSPACE}/terraform/terraforminstall
 
-if ! sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform ; then
-sh ${WORKSPACE}/kubernetes/samples/scripts/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
+
+if ! sh ${WORKSPACE}/terraform/oke.create.sh ${oci_property_file} ${WORKSPACE}/terraform ; then
+sh ${WORKSPACE}/terraform/oke.delete.sh ${oci_property_file} ${WORKSPACE}/terraform
 fi
 
 clusterName=$(prop 'okeclustername')
