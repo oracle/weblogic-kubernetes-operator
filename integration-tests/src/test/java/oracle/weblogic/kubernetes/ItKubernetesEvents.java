@@ -379,12 +379,12 @@ public class ItKubernetesEvents {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/image\", \"value\": \"nonexistingimage:v1\"}]";
-    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/webLogicCredentialsSecret\", \"value\": \"nonexistingimage\"}]";
+    logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr.toString());
 
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "patchDomainCustomResource(imageUpdate) failed");
+        "patchDomainCustomResource failed");
 
     domaincr = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
