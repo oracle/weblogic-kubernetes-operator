@@ -80,7 +80,6 @@ function createRoleBindings () {
 function checkClusterRunning () {
 
     echo 'Confirm we have kubectl working...'
-
     myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
     status="NotReady"
     max=50
@@ -112,7 +111,6 @@ function checkClusterRunning () {
       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
       exit 1
     fi
-
 
     if [ $count -gt $max ] ; then
        echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
