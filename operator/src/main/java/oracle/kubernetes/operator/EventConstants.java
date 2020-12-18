@@ -14,6 +14,7 @@ public interface EventConstants {
   String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
   String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetrying";
   String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
+  String DOMAIN_VALIDATION_ERROR_EVENT = "DomainValidationError";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
@@ -31,4 +32,6 @@ public interface EventConstants {
       = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
       = "Aborting the processing of domain resource %s permanently due to: %s";
+  String DOMAIN_VALIDATION_ERROR_PATTERN
+      = "Validation error in domain resource %s: %s";
 }
