@@ -244,11 +244,11 @@ Type:    Warning
 Events:  <none>
 
 ```
-Example of a `InvalidReplicasValue` event:
+Example of a `DomainValidationError` event:
 
 ```none
 
-Name:             sample-domain1.InvalidReplicasValue.1607639075047
+Name:             sample-domain1.DomainValidationError.1608160013145
 Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
                   weblogic.domainUID=sample-domain1
@@ -262,16 +262,16 @@ Involved Object:
   Name:          sample-domain1
   Namespace:     sample-domain1-ns
 Kind:            Event
-Last Timestamp:  2020-12-10T22:24:35Z
-Message:         Invalid replicas value in domain resource sample-domain1: Replica request of 5 exceeds the maximum dynamic server count of 2 configured for cluster cluster-1
+Last Timestamp:  2020-12-16T23:06:53Z
+Message:         Validation error in domain resource domain1: Replica request of 5 exceeds the maximum dynamic server count of 2 configured for cluster cluster-1
 Metadata:
-  Creation Timestamp:  2020-12-10T22:24:35Z
-  Resource Version:    10071657
-  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.InvalidReplicasValue.1607639075047
-  UID:                 8a9a4396-509b-4314-b634-376ed9245896
-Reason:                InvalidReplicasValue
+  Creation Timestamp:  2020-12-16T23:06:53Z
+  Resource Version:    11222690
+  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainValidationError.1608160013145
+  UID:                 cd4e6a2f-8ddb-4902-90a7-d993bceb567d
+Reason:                DomainValidationError
 Reporting Component:   weblogic.operator
-Reporting Instance:    weblogic-operator-67c75bc4bf-8m4sb
+Reporting Instance:    weblogic-operator-67c75bc4bf-d4flw
 Source:
 Type:    Warning
 Events:  <none>
