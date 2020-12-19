@@ -320,7 +320,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_ABORTED, "Warning ", timestamp));
+            DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
 
     timestamp = new DateTime(System.currentTimeMillis());
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
