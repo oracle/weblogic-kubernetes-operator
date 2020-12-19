@@ -147,6 +147,8 @@ public class ItKubernetesEvents {
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
+    DateTime timestamp = new DateTime(System.currentTimeMillis());
+
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
@@ -185,9 +187,6 @@ public class ItKubernetesEvents {
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
-
-    DateTime timestamp = new DateTime(System.currentTimeMillis() + 1000);
-
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -323,7 +322,7 @@ public class ItKubernetesEvents {
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning ", timestamp));
 
-    timestamp = new DateTime(System.currentTimeMillis() + 1000);
+    timestamp = new DateTime(System.currentTimeMillis());
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
