@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.ItKubernetesEvents;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -52,6 +53,7 @@ public class K8sEvents {
               event.getMetadata().getCreationTimestamp(), timestamp);
           if (event.getReason().contains(reason)
               && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
+            logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify reason
             logger.info("Verifying domain event {0}", reason);
