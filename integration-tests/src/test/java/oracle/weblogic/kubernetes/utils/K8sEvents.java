@@ -58,7 +58,7 @@ public class K8sEvents {
             assertTrue(event.getReason().equals(reason));
             //verify messages
             logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
-            assertTrue(event.getMessage().equals(getDomainEventMessage(reason, domainUid)));
+            assertTrue(event.getMessage().contains(getDomainEventMessage(reason, domainUid)));
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
