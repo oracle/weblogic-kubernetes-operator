@@ -126,7 +126,7 @@ public class K8sEvents {
         message = "Retrying the processing of domain resource " + domainUid + " after one or more failed attempts";
         break;
       case DOMAIN_PROCESSING_ABORTED:
-        message = "Aborting the processing of domain resource " + domainUid + " permanently due to: %s";
+        message = "Aborting the processing of domain resource " + domainUid + " permanently due to:";
         break;
       default:
         message = "None matched";
