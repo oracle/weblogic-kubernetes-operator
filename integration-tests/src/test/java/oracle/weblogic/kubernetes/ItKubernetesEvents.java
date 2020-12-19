@@ -186,7 +186,7 @@ public class ItKubernetesEvents {
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
         pvName, pvcName, domainNamespace);
 
-    DateTime timestamp = new DateTime(System.currentTimeMillis() - 1000);
+    DateTime timestamp = new DateTime(System.currentTimeMillis() + 1000);
 
 
     // create a domain custom resource configuration object
@@ -323,7 +323,7 @@ public class ItKubernetesEvents {
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning ", timestamp));
 
-    timestamp = new DateTime(System.currentTimeMillis() - 1000);
+    timestamp = new DateTime(System.currentTimeMillis() + 1000);
     TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
