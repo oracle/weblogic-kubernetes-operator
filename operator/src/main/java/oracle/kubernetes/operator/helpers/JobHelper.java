@@ -296,7 +296,6 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
       addEnvVar(vars, IntrospectorJobEnvVars.MII_CANCEL_CHANGES_IFRESTART_REQUIRED,
           Boolean.toString(isCancelChangesIfRestartRequire()));
-
       addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_ACTIVATE_TIMEOUT,
           getDomain().getWDTActivateTimeout());
       addEnvVarIfLongNotNull(vars, IntrospectorJobEnvVars.WDT_CONNECT_TIMEOUT,

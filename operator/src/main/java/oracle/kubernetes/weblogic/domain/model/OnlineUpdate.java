@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -16,13 +17,20 @@ public class OnlineUpdate {
   @Description("Enable online update.")
   private Boolean enabled = false;
 
-  @Description("If set to true, it will cancel all the changes if the update require domain restart. "
-      + "All changes are canceled, the domain continues to run without interruption. "
-      + "It is the user responsibility to revert the content changes in the configmap specified in "
+  @Description("Controlling non-dynamic changes behavior in online update.If set to CancelUpdate, it will cancel "
+      + " all the changes if the update include non-dynamic changes that "
+      + " require domain restart. All changes are canceled, the domain continues to run without interruption. "
+      + " Note: It is the user responsibility to revert the content changes in the configmap specified in "
       +     "`domain.spec.configuration.model.configmap` or secrets. User can detect the changes have been "
       +     "rolled back when describing the domain `kubectl -n <ns> describe domain <domain name>"
-      +     " under the condition `OnlineUpdateRolledback`")
-  private Boolean cancelChangesIfRestartRequired = false;
+      +     " under the condition `OnlineUpdateRolledback`"
+      +     " If set to CommitUpdateAndRoll, it will commit all changes, if there are non-dynamic changes involved, "
+      + " the domain will rolling restart and the effect of the changes will be effective once the restart in complete "
+      + " If set to CommitUpdateOnly, it will commit all changes, but the domain "
+      + " will not restart even if there are non-dynamic changes involved, the changes will become effective only if "
+      + " the domain is restarted"
+    )
+  private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateAndRoll;
 
   @Description("WLST deploy application or libraries timout in milliseconds. Default: 180000.")
   private Long deployTimeoutMilliSeconds = 180000L;
@@ -61,16 +69,16 @@ public class OnlineUpdate {
     return this;
   }
 
-  public Boolean getCancelChangesIfRestartRequired() {
-    return cancelChangesIfRestartRequired;
+  public MIINonDynamicChangesMethod getOnNonDynamicChanges() {
+    return onNonDynamicChanges;
   }
 
-  public void setCancelChangesIfRestartRequired(boolean cancelChangesIfRestartRequired) {
-    this.cancelChangesIfRestartRequired = cancelChangesIfRestartRequired;
+  public void setOnNonDynamicChanges(MIINonDynamicChangesMethod onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
   }
 
-  public OnlineUpdate withCancelChangesIfRestartRequired(boolean cancelChangesIfRestartRequired) {
-    this.cancelChangesIfRestartRequired = cancelChangesIfRestartRequired;
+  public OnlineUpdate withOnNonDynamicChanges(MIINonDynamicChangesMethod onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
     return this;
   }
 
@@ -182,7 +190,7 @@ public class OnlineUpdate {
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(enabled)
-        .append(cancelChangesIfRestartRequired)
+        .append(onNonDynamicChanges)
         .append(deployTimeoutMilliSeconds)
         .append(redeployTimeoutMilliSeconds)
         .append(undeployTimeoutMilliSeconds)
@@ -207,7 +215,7 @@ public class OnlineUpdate {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
-            .append(cancelChangesIfRestartRequired, rhs.cancelChangesIfRestartRequired)
+            .append(onNonDynamicChanges, rhs.onNonDynamicChanges)
             .append(deployTimeoutMilliSeconds, rhs.deployTimeoutMilliSeconds)
             .append(redeployTimeoutMilliSeconds, rhs.redeployTimeoutMilliSeconds)
             .append(undeployTimeoutMilliSeconds, rhs.undeployTimeoutMilliSeconds)

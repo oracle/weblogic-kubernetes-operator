@@ -23,6 +23,7 @@ import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -774,11 +775,13 @@ public class DomainSpec extends BaseConfiguration {
    * @return true or false
    */
   boolean isCancelChangesIfRestartRequire() {
-    return Optional.ofNullable(configuration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getCancelChangesIfRestartRequired)
-        .orElse(false);
+
+    return MIINonDynamicChangesMethod.CancelUpdate.equals(
+        Optional.ofNullable(configuration)
+            .map(Configuration::getModel)
+            .map(Model::getOnlineUpdate)
+            .map(OnlineUpdate::getOnNonDynamicChanges)
+            .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
   }
 
   /**
@@ -989,7 +992,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(getImagePullPolicy(), rhs.getImagePullPolicy())
             .append(imagePullSecrets, rhs.imagePullSecrets)
             .append(adminServer, rhs.adminServer)
-            .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)

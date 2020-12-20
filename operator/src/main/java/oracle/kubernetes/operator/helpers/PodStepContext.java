@@ -40,6 +40,7 @@ import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -55,11 +56,14 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -937,16 +941,13 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if ("104".equals(dynamicUpdateResult)) {
+      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED.equals(dynamicUpdateResult)) {
         // We got here because the introspectVersion changed and cancel changes return code from WDT
         // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
         //
-        if (Objects.equals("104", dynamicUpdateResult)) {
-          return returnCancelUpdateStep(packet);
-        }
         return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (Objects.equals("0", dynamicUpdateResult)) {
+        if (shouldNotRestartAfterSuccessOnlineUpdate(dynamicUpdateResult)) {
           if (miiDomainZipHash != null) {
             LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
             logPodExists();
@@ -958,8 +959,25 @@ public abstract class PodStepContext extends BasePodStepContext {
                   updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
             updatedPod.setMetadata(updatedMetaData);
-            updateDomainConditions("Online update successful. No restart necessary",
-                DomainConditionType.OnlineUpdateComplete);
+
+            if (onlineUpdateUserManualRestart()) {
+
+              String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+                  ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+                  .orElse("");
+
+              updateDomainConditions("Online update completed successfully, but the changes require "
+                      + "restart and the domain resource specified "
+                      + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
+                      + " The changes are committed but the domain require manually restart to "
+                      + " make the changes effective. The changes are: "
+                      + dynamicUpdateRollBackFile,
+                  DomainConditionType.OnlineUpdateComplete);
+
+            } else {
+              updateDomainConditions("Online update successful. No restart necessary",
+                  DomainConditionType.OnlineUpdateComplete);
+            }
             return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
           }
         }
@@ -976,12 +994,44 @@ public abstract class PodStepContext extends BasePodStepContext {
       }
     }
 
+    private boolean shouldNotRestartAfterSuccessOnlineUpdate(String dynamicUpdateResult) {
+      boolean result = false;
+      if (ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
+        result = true;
+      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
+        result = MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
+            Optional.ofNullable(info)
+             .map(DomainPresenceInfo::getDomain)
+             .map(Domain::getSpec)
+             .map(DomainSpec::getConfiguration)
+             .map(Configuration::getModel)
+             .map(Model::getOnlineUpdate)
+             .map(OnlineUpdate::getOnNonDynamicChanges)
+             .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
+      }
+      LOGGER.fine("PodStepContext: shouldRestartAfterSuccessUpdate " + result);
+      return result;
+    }
+
+    private boolean onlineUpdateUserManualRestart() {
+      return MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
+          Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getSpec)
+              .map(DomainSpec::getConfiguration)
+              .map(Configuration::getModel)
+              .map(Model::getOnlineUpdate)
+              .map(OnlineUpdate::getOnNonDynamicChanges)
+              .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
+    }
+
     private NextAction returnCancelUpdateStep(Packet packet) {
       String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
           ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-          .orElse(null);
+          .orElse("");
       updateDomainConditions("Online update completed successfully, but the changes require restart and "
-              + "the domain resource specified option to cancel all changes if restart require. The changes are: "
+              + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'"
+              + " option to cancel all changes if restart require. The changes are: "
               + dynamicUpdateRollBackFile,
           DomainConditionType.OnlineUpdateCanceled);
 
