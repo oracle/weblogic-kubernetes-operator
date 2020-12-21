@@ -27,7 +27,7 @@ It enables:
  - Embedding model files and archives in a custom Docker image, and using the WebLogic Image Tool (WIT) to generate this image.
  - Supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
- - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
+ - Updating WDT model files at runtime. For example, you can add a data source to a running domain. See [Runtime updates](#runtime-updates) for details.
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 

@@ -30,7 +30,7 @@ If you want to make a configuration change to a running Model in Image domain, a
 
 After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain using a rolling upgrade by altering the Domain YAML file's `image` or `restartVersion` attribute. 
 
-Alternatively, for changes changes that only affect WebLogic configuration mbean attributes that are fully dynamic, you can tell the operator to attempt online updates that don't require a rolling upgrade.  See [Dynamic updates of a running domain](#Updating-a-running-domain).
+Alternatively, for changes that only affect WebLogic configuration mbean attributes that are fully dynamic, you can tell the operator to attempt online updates that don't require a rolling upgrade.  See [Dynamic updates of a running domain](#Updating-a-running-domain).
 
 #### Important notes
 
