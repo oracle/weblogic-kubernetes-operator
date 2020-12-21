@@ -138,11 +138,10 @@ public class ItKubernetesEvents {
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEvents() {
+    DateTime timestamp = new DateTime(System.currentTimeMillis());
     logger.info("Creating domain");
     createDomain();
-
-    DateTime timestamp = new DateTime(System.currentTimeMillis());
-
+    
     // verify the DomainCreated event is generated
     withStandardRetryPolicy
         .conditionEvaluationListener(
