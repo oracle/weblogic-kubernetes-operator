@@ -40,7 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
+//import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -138,7 +138,7 @@ class ItMiiDynamicUpdate {
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, 0, 0, domainNamespace);
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -482,8 +482,6 @@ class ItMiiDynamicUpdate {
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
     verifyIntrospectorFails(expectedErrorMsg);
-    expectedErrorMsg = "[SEVERE] { \"topology\" : { \"Name\" : \"newdomainname\" }";
-    verifyIntrospectorFails(expectedErrorMsg);
 
     // verify the domain status message contains the error msg
     logger.info("verifying the domain status message contains the expected error msg");
@@ -499,8 +497,8 @@ class ItMiiDynamicUpdate {
         String.format("domain status condition does not contain error msg %s", expectedErrorMsg));
 
     // delete introspector job
-    assertDoesNotThrow(() -> deleteJob(getIntrospectJobName(domainUid), domainNamespace),
-        "Exception thrown when delete introspector job");
+    //assertDoesNotThrow(() -> deleteJob(getIntrospectJobName(domainUid), domainNamespace),
+    //    "Exception thrown when delete introspector job");
   }
 
   /**
@@ -533,8 +531,6 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFails(expectedErrorMsg);
-    expectedErrorMsg = "[SEVERE] { \"topology\" : { \"Server\" : { \"admin-server\" : { \"ListenPort\" : 7003 } } }";
     verifyIntrospectorFails(expectedErrorMsg);
 
     // verify the domain status message contains the error msg

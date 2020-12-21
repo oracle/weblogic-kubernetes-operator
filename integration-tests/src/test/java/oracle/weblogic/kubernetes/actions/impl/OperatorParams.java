@@ -31,6 +31,8 @@ public class OperatorParams {
   private static final String DOMAIN_NS_LABEL_SELECTOR = "domainNamespaceLabelSelector";
   private static final String DOMAIN_NS_REG_EXP = "domainNamespaceRegExp";
   private static final String ENABLE_CLUSTER_ROLE_BINDING = "enableClusterRoleBinding";
+  private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
+  private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -51,6 +53,8 @@ public class OperatorParams {
   private String domainNamespaceSelectionStrategy;
   private String domainNamespaceLabelSelector;
   private String domainNamespaceRegExp;
+  private int domainPresenceFailureRetryMaxCount = 5;
+  private int domainPresenceFailureRetrySeconds = 10;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -142,6 +146,16 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams domainPresenceFailureRetryMaxCount(int domainPresenceFailureRetryMaxCount) {
+    this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
+    return this;
+  }
+
+  public OperatorParams domainPresenceFailureRetrySeconds(int domainPresenceFailureRetrySeconds) {
+    this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -191,6 +205,13 @@ public class OperatorParams {
     if (domainNamespaceRegExp != null) {
       values.put(DOMAIN_NS_REG_EXP, domainNamespaceRegExp);
     }
+    if (domainPresenceFailureRetryMaxCount >= 0) {
+      values.put(DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT,  domainPresenceFailureRetryMaxCount);
+    }
+    if (domainPresenceFailureRetrySeconds > 0) {
+      values.put(DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS, domainPresenceFailureRetrySeconds);
+    }
+
     values.values().removeIf(Objects::isNull);
     return values;
   }
