@@ -31,4 +31,9 @@ public interface EventConstants {
       = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
       = "Aborting the processing of domain resource %s permanently due to: %s";
+
+  String NAMESPACE_WATCHING_STARTING_EVENT = "NamespaceWatchingStarting";
+  String NAMESPACE_WATCHING_STARTING_PATTERN = "Starting watching namespace %s";
+  String NAMESPACE_WATCHING_STOPPING_EVENT = "NamespaceWatchingStopping";
+  String NAMESPACE_WATCHING_STOPPING_PATTERN = "Stopping watching namespace %s";
 }

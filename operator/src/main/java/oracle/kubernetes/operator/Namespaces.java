@@ -6,14 +6,17 @@ package oracle.kubernetes.operator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -38,12 +41,6 @@ public class Namespaces {
    * The key in a Packet of the collection of existing namespaces that are designated as domain namespaces.
    */
   static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
-
-  boolean isFullRecheck;
-
-  public Namespaces(boolean isFullRecheck) {
-    this.isFullRecheck = isFullRecheck;
-  }
 
   /**
    * Returns true if the specified string is the name of a domain namespace.
@@ -231,8 +228,51 @@ public class Namespaces {
     public NextAction apply(Packet packet) {
       NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
       getNonNullConfiguredDomainNamespaces().forEach(validationContext::validateConfiguredNamespace);
+      List<StepAndPacket> nsStopEventSteps =
+          domainNamespaces.getNamespaces().stream()
+              .filter(validationContext::isNoLongerActiveDomainNamespace)
+              .map(n -> createNSStopEventDetails(packet, n)).collect(Collectors.toList());
       stopRemovedNamespaces(validationContext);
-      return doNext(packet);
+      return doNext(Step.chain(createNamespaceWatchStopEventsStep(nsStopEventSteps), getNext()), packet);
+    }
+
+    private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
+      return new StepAndPacket(
+          EventHelper.createEventStep(
+              new EventHelper.EventData(
+                  EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING)
+                  .resourceName(namespace).namespace(namespace)),
+          createPacket(namespace, packet));
+    }
+
+    private Packet createPacket(String namespace, Packet packet) {
+      Packet p = packet.clone();
+      p.put(ProcessingConstants.NAMESPACE, namespace);
+      return p;
+    }
+
+    private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
+      return new NamespaceWatchStopEventsStep(nsStopEventDetails);
+    }
+
+    static class NamespaceWatchStopEventsStep extends Step {
+      final List<StepAndPacket> nsStopeventDetails;
+
+      NamespaceWatchStopEventsStep(List<StepAndPacket> nsStopeventDetails) {
+        this.nsStopeventDetails = nsStopeventDetails;
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        if (nsStopeventDetails.isEmpty()) {
+          return doNext(getNext(), packet);
+        } else {
+          return doForkJoin(getNext(), packet, nsStopeventDetails);
+        }
+      }
+
+
+
     }
 
     @Nonnull
