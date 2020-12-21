@@ -61,9 +61,19 @@ public class IntrospectorJobEnvVars {
   public static final String MII_USE_ONLINE_UPDATE = "MII_USE_ONLINE_UPDATE";
 
   /**
-   * MII cancel changes if restart require.
+   * MII MII dynamic update on non-dynamic changes cancelUpdate.
    */
   public static final String MII_CANCEL_CHANGES_IFRESTART_REQUIRED = "MII_CANCEL_CHANGES_IFRESTART_REQ";
+
+  /**
+   * MII dynamic update on non-dynamic changes CommitUpdateAndRoll.
+   */
+  public static final String MII_COMMIT_AND_ROLL = "MII_UPD_COMMIT_AND_ROLL";
+
+  /**
+   * MII cancel changes on non-dynamic changes CommitUpdateOnly.
+   */
+  public static final String MII_COMMIT_ONLY = "MII_UPD_COMMIT_ONLY";
 
   /**
    * WDT CONNECT TIMEOUT.

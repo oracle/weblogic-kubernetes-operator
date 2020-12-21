@@ -30,7 +30,7 @@ If you want to make a configuration change to a running Model in Image domain, a
 
 After the changes are in place, you can tell the operator to apply the changes and propagate them to a running domain using a rolling upgrade by altering the Domain YAML file's `image` or `restartVersion` attribute. 
 
-Alternatively, for changes changes that only affect WebLogic configuration mbean attributes that are fully dynamic, you can tell the operator to attempt online updates that don't require a rolling upgrade.  See [Dynamic updates of a running domain](#Updating-a-running-domain).
+Alternatively, for changes that only affect WebLogic configuration mbean attributes that are fully dynamic, you can tell the operator to attempt online updates that don't require a rolling upgrade.  See [Dynamic updates of a running domain](#Updating-a-running-domain).
 
 #### Important notes
 
@@ -237,13 +237,23 @@ in the Model in Image sample.
 
 For configuration changes that only modify dynamic WebLogic mbean attributes (subject to the exceptions listed in section support/unsupported TBD), you can initiate an online update to a running domain managed by the Operator by doing the following:
 
- - Modifying contents of secret that are referenced by WDT model(s) and/or modifying the contents of `domain.spec.configuration.model.configMap`.
- - Setting `domain.spec.configuration.model.onLineUpdate.enabled` to `true`
+ - Modifying contents of the secrets that are referenced by WDT model(s) and/or modifying the contents of `domain.spec.configuration.model.configMap`.
+ - Setting `domain.spec.configuration.model.onlineUpdate.enabled` to `true`
  - Changing `domain.spec.configuration.introspectVersion`.
 
-> **Warning:** If any non-dynamic WebLogic mbean attribute is changed as part of the above actions and `domain.spec.configuration.model.onLineUpdate.cancelChangesfRestartRequired` is set to `false` (the default), then the operator will immediately perform any dynamic changes that were specified, and also **the operator will roll the domain (restart each server in the domain) in order to propagate the non-dynamic changes**.
->If this attribute value is 'true', then the Operator will cancel all changes before committing them, and the introspector job will complete successfully with message set in domain status listing the non-dynamic attributes changed but rolled back because `domain.spec.configuration.model.onLineUpdate.cancelChangesfRestartRequired` equals to `true` . 
->This gives the opportunity for the user to whether to correct un-intentional changes or try it again at a different time allowing domain restart. 
+If any non-dynamic WebLogic mbean attribute is changed as part of the above actions.  Since the non-dynamic changes require 
+domain restart, the default behavior of the Operator is commit all changes but the user has to manually restart the domain.  You can control
+this behavior by setting the attribute `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to one of these values: 
+    
+ | OnNonDynamicChanges Value | Behavior | 
+    |---------------------|-------------|
+    | CommitUpdateOnly | Default or if not set.  All changes are committed, but if there are non-dynamic mbean changes. The domain needs to restart manually. |
+    | CommitUpdateAndRoll |  All changes are committed, but if there are non-dynamic mbean changes, the domain will rolling restart automatically; if not, no restart is necessary |
+    | CancelUpdate | If there are non-dynamic mbean changes, all changes are canceled before they are committed. The domain will continue to run, but changes to the configmap and resources in the domain resource YAML should be reverted manually, otherwise in the next introspection will still use the same content in the changed configmap |
+
+{{% notice warning %}}
+When updating a domain with non-dynamic mbean changes with the behavior `CommitUpdateOnly`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will be running in an inconsistent state. 
+{{% /notice %}}
 
 Sample domain resource YAML:
 
@@ -266,27 +276,31 @@ spec:
       onlineUpdate:
         # enable the update to use dynamic update method which does not require restart for dynamic attributes
         enabled: true
-        # If set to true, and the changes of non-dynamic attributes are involved;  this will cancel all changes to the domain
-        # It is the user to revert the wdt configmap, domain resource YAML changes.
-        cancelChangesfRestartRequired: false
+        # Control the restart behavior of the domain when non-dynamic changes are involved in the onlineupdate
+        # 
+        # CommitUpdateOnly (Default):  All changes are committed. If the changes involve non-dynamic mbean attributes 
+        #                              User has to restart the domain manually, use `kubectl describe domain <domain uid> to view the condition afater the update.
+        # CommitUpdateAndRoll:   All changes are cmmitted. If the changes involve non-dynamic mbean attribues, the Operator will restart the domain automatically.
+        # CancelChanges:  If the changes involve non-dynamic mbean attributes, no changes will be applied, the introspector job will not retry.  User should revert the changes to the config map or resources manually, otherwise
+        #                 if someone tries to trigger the introspector job again, the changes to the configmap and resources will be applied.
+        OnNonDynamicChanges: "CommitUpdateAndRoll"
 ```
 
-During an online update, the Operator will rerun the introspector job which will attempt online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
+During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
 
-Once the job finished, you can check the domain status to view the status of the online update: `kubectl -n <namespace> describe domain <domain uid>`. Upon success, each WebLogic pod will have an `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
+Once the job is completed, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
 
-Below is a general description about how online update works and the expected outcome.
-
-TBD/WIP: The implementation treats configMap (using a different configmap) as 'offline' changes, but idealy these should be treated as 'online' if the net resulting change is solely dynamic mbeans changes...
+Below is a general description of how online update works and the expected outcome.
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a dynamic attribute|Changes are committed in the running domain and effective immediately| No action required|
-  |Changing a non-dynamic attribute|If `domain.spec.model.onlineUpdates.cancelChangesfRestartRequired` is `false`, then changes are committed and domain pods are restarted (rolled). If `cancelChangesfRestartRequired` is `false`, the introspector job will not perform any changes, the introspector job will not retry, and the `domain.status` will report the problem. | No action required|
+  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`, then changes are committed and domain pods are restarted (rolled). | No action required|
+  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`, then changes are committed but the changes will not be effective until the domain is manually restarted. | Manually restart the domain|
   |Changing domain resource YAML other than `domain.spec.introspectVersion` and the fields in `spec.configuration.model.onlineUpdate` | No online update is attempted by the introspector job, and changes are treated the same as offline updates (which may result in restarts/roll after job success). | No action required|
-  |Changing any mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspect job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
+  |Changing any mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspector job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
   |Errors in the model|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
-  |Other errors while updating the domain|Error in the introspect job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
+  |Other errors while updating the domain|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
   
 
   
@@ -314,22 +328,12 @@ Non dynamic attributes examples:
 
 Unsupported Changes:
 
-For any of these unsupported changes, the introspector job will fail and automatically retry up to 6 times.  You can either cancel the job, correct the problem, and wait for the job retry interval.
+For any of these unsupported changes, the introspector job will fail and automatically retry up to maximum limit times.  You can either cancel the job, correct the problem, or wait for the job retry interval.
 
-- Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate. The introspection job will fail and automatically retry periodically until maximum limit is reached.
-- Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to 6 times
-- There is a bug in WDT when setting topology:/Server/ServerDebug/DebugScope/* - DebugScope is not recognized.
-- There is a bug in WDT related to single level properties (e.g. in MailSession, ODL Handler) will fail
-
-Preventing domain restart 
-
-In general, changes to a mission-critical production running domain should be tested, and changes do not require restart of the domain. It is strongly recommended the changes using online update must be tested 
-in a non-production environment first.
-
-If you set domain.spec.configuration.cancelChangesfRestartRequired` to `true`, then the operator will rollback all changes if changes require restart (i.e. involving non dynamic changes) 
-The changes in your configmap and domain resources need to be reverted manually, the introspection job will not retry and the domain will remain unchanged.   
-If the changes do not require restart then all changes are effective immediately. 
-
+- Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate; top level Toplogy attributes.  Any changes to these attributes will result in an error. . The introspection job will fail and automatically retry up to maximum retries.
+- Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to maximum retries.
+- Security related changes in the model including in `domainInfo.Admin*`, `domainInfo.RCUDbinfo.*`, `topology.Security.*`, `toplogy.SecurityConfiguration.*`.  Any changes in these sections will automatically switched to use offline update.
+ 
 Checking online update status
 
 When the introspection job finished, the domain status will be updated according to the result.
@@ -364,11 +368,11 @@ Status:
     Last Transition Time:        2020-11-18T15:19:11.867Z
     Reason:                      ServersReady
     Status:                      True
-    Type:                        Available
+    Type:                        OnlineUpdateComplete
 
 ```
 
-If the changes will result in restart but you have specified 'cacelIfRestartRequired' under `onlineUpdate`, you will see this
+If the changes involve non-dynamic mbean attributes, and you have specified 'CancelUpdate' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges`, you will see this
 
 ```
   Conditions:
@@ -384,13 +388,30 @@ Attributes changed : Value
     Type:                        OnlineUpdateCanceled
 
 ```
- 
 
+If the changes involve non-dynamic mbean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
+      
+```
+  Conditions:
+    Last Transition Time:  2020-11-20T17:13:00.170Z
+    Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to 
+                                 make the changes effective. The changes are:
+
+The following non-dynamic attribute(s) have been changed on MBeans 
+that require server re-start:
+MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
+Attributes changed : Value
+    Reason:                      Online update applied, introspectVersion updated to 67
+    Status:                      True
+    Type:                        OnlineUpdateComplete
+
+```
+       
 Error Recovery
 
-- When updating a domain with `cancelChangesfRestartRequired` is set to true, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoids the mismatch between the models in the configmap and the domain's configuration.   
+- When updating a domain with `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is set to `CancelUpdate`, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoids the mismatch between the models in the configmap and the domain's configuration.   
 - Changes to the image, configmap, and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates. 
-- In case of any failure in online updates, no changes will be made to running domain.  However, since the introspect job runs periodically against the domain resources up to 6 times.
+- In case of any failure in online updates, no changes will be made to running domain.  However, since the introspector job runs periodically against the domain resources up to 6 times.
 You can delete the introspection job, correct the error and re-apply the changes; or just correct the error and wait for the next introspection job retry.
 
 Specifying timeout

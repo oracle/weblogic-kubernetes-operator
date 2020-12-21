@@ -113,16 +113,29 @@ spec:
                           type: number
                           description: 'WLST set server groups timout in milliseconds.
                             Default: 180000.'
-                        cancelChangesIfRestartRequired:
-                          type: boolean
-                          description: If set to true, it will cancel all the changes
-                            if the update require domain restart. All changes are
-                            canceled, the domain continues to run without interruption.
+                        onNonDynamicChanges:
+                          type: string
+                          description: 'Controlling non-dynamic changes behavior in
+                            online update.If set to CancelUpdate, it will cancel  all
+                            the changes if the update include non-dynamic changes
+                            that  require domain restart. All changes are canceled,
+                            the domain continues to run without interruption.  Note:
                             It is the user responsibility to revert the content changes
                             in the configmap specified in `domain.spec.configuration.model.configmap`
                             or secrets. User can detect the changes have been rolled
                             back when describing the domain `kubectl -n <ns> describe
                             domain <domain name> under the condition `OnlineUpdateRolledback`
+                            If set to CommitUpdateAndRoll, it will commit all changes,
+                            if there are non-dynamic changes involved,  the domain
+                            will rolling restart and the effect of the changes will
+                            be effective once the restart in complete  If set to CommitUpdateOnly,
+                            it will commit all changes, but the domain  will not restart
+                            even if there are non-dynamic changes involved, the changes
+                            will become effective only if  the domain is restarted'
+                          enum:
+                          - CancelUpdate
+                          - CommitUpdateAndRoll
+                          - CommitUpdateOnly
                         enabled:
                           type: boolean
                           description: Enable online update.

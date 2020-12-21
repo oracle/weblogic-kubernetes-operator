@@ -164,7 +164,6 @@ public class Model {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
-            .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 

@@ -64,7 +64,14 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
-
+echo "PRINTING CONTENTS 1"
+if [ -d /weblogic-operator/secrets ] ; then
+  ls -l /weblogic-operator/secrets
+fi
+echo "PRINTING CONTENTS 2"
+if [ -d /weblogic-operator/config-overrides-secrets ] ; then
+  ls -l /weblogic-operator/config-overrides-secrets
+fi
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -712,7 +719,8 @@ function createPrimordialDomain() {
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
     if [  "true" == "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [  ${recreate_domain} -eq 1  ] ; then
-      trace SEVERE "Non dynamic security changes detected and 'cancelChangesIfRestartRequired=true', will not perform " \
+      trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
+        "onlineUpdate.onNonDynamicChanges=CancelUpdate', will not perform " \
         "update. You can use offline update to update the domain by setting " \
         "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
       exit 1
@@ -1002,7 +1010,7 @@ function wdtHandleOnlineUpdate() {
   # note: using yes seems to et a 141 return code, switch to echo seems to be ok
   # the problem is likely due to how wdt closing the input stream
   #TODO remove this when ready
-  cat /tmp/diffed_model.json
+  cat /tmp/diffed_model.yaml
 
   local admin_url
   if [ -z "${ADMIN_PORT_SECURE}" ] ; then
@@ -1021,9 +1029,6 @@ function wdtHandleOnlineUpdate() {
   if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
     trace ">>>  updatedomainResult=${ret}"
   elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
-    trace "Online update completed but all changes are canceled. This is because the changes involved non-dynamic " \
-      "mbean attributes and 'domain.spec.configuration.model.cancelChangesIfRestartRequried=ture'.  Following is " \
-      "the output from WDT updateDomain command."
     trace ">>>  updatedomainResult=${ret}"
     if [ -f /tmp/rollback.file ] ; then
       echo ">>> /tmp/rollback.file"
