@@ -505,7 +505,9 @@ public class ConfigMapHelper {
     private final DomainPresenceInfo info;
     private Map<String, String> data;
     private WlsDomainConfig wlsDomainConfig;
+    // TODO: either one
     private final String rollbackFileKey = "rollback.file";
+    private final String nonDynamicChangesFileKey = "non_dynamic_changes.file";
 
     IntrospectionLoader(Packet packet, Step conflictStep) {
       this.packet = packet;
@@ -531,10 +533,16 @@ public class ConfigMapHelper {
       if (updateDomainResult != null) {
         LOGGER.fine("ConfigMapHelper.apply: MII Dynamic update result " + updateDomainResult);
         packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
+        // TODO: either one of these blocks
         if (data.containsKey(rollbackFileKey)) {
           String rollbackFileContent = data.get(rollbackFileKey);
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE, rollbackFileContent);
           data.remove(rollbackFileKey);
+        }
+        if (data.containsKey(nonDynamicChangesFileKey)) {
+          String rollbackFileContent = data.get(nonDynamicChangesFileKey);
+          packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE, rollbackFileContent);
+          data.remove(nonDynamicChangesFileKey);
         }
         // remove this, there is no need to store it in the configmap
         data.remove(UPDATEDOMAINRESULT);

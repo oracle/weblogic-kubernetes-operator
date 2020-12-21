@@ -1065,10 +1065,16 @@ function write_updatedresult() {
 }
 
 function write_non_dynamic_changes_text_file() {
-      # Containing text regarding the non dynmaic mbean details
+    # Containing text regarding the non dynmaic mbean details
     if [ -f /tmp/rollback.file ] ; then
       echo ">>> /tmp/rollback.file"
       cat /tmp/rollback.file
+      echo ">>> EOF"
+    fi
+    # TODO: either one of these block wait for WDT release
+    if [ -f /tmp/non_dynamic_changes.file ] ; then
+      echo ">>> /tmp/non_dynamic_changes.file"
+      cat /tmp/non_dynamic_changes.file
       echo ">>> EOF"
     fi
 }
