@@ -684,8 +684,6 @@ function createPrimordialDomain() {
       " 'spec.configuration.model.onlineUpdate=true', but the model changes cannot use online update - such as: " \
       " changing ListenPort, ListenAddress, SSL, changing top level Topology attributes, " \
       " deleting a ServerTemplate or Server."
-      # TODO: security risk
-      trace SEVERE $(cat /tmp/diffed_model.json)
       exitOrLoop
     fi
 
