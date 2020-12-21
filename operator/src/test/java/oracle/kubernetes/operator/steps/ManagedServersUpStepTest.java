@@ -14,22 +14,28 @@ import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.CreateEventStep;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -45,11 +51,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithMessage;
+import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
+import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getPreCreateServers;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServerStartupInfo;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStepTest.TestStepFactory.getServers;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_IF_NEEDED;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
@@ -57,12 +70,15 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
@@ -83,7 +99,7 @@ public class ManagedServersUpStepTest {
   private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
   private Step nextStep = new TerminalStep();
-  private FiberTestSupport testSupport = new FiberTestSupport();
+  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private List<Memento> mementos = new ArrayList<>();
   private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
   private ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
@@ -128,6 +144,7 @@ public class ManagedServersUpStepTest {
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
+    mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
@@ -597,6 +614,141 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
+  public void whenReplicasLessThanMinDynClusterSize_logMessage() {
+    List<LogRecord> messages = new ArrayList<>();
+    consoleHandlerMemento.withLogLevel(Level.WARNING)
+        .collectLogMessages(messages, REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT);
+
+    startNoServers();
+    setCluster1Replicas(0);
+    setCluster1AllowReplicasBelowMinDynClusterSize(false);
+
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(messages, containsWarning(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT));
+  }
+
+  @Test
+  public void whenReplicasLessThanDynClusterSize_createsEvent() {
+    startNoServers();
+    setCluster1Replicas(0);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+    setCluster1AllowReplicasBelowMinDynClusterSize(false);
+
+    invokeStep();
+
+    assertContainsEventWithMessage(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT, 0, 2, "cluster1");
+  }
+
+  @Test
+  public void whenReplicasLessThanDynClusterSize_addValidationWarning() {
+    startNoServers();
+    setCluster1Replicas(0);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+    setCluster1AllowReplicasBelowMinDynClusterSize(false);
+
+    invokeStep();
+
+    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
+        stringContainsInOrder("0", "less than",  "minimum dynamic server", "2", "cluster1"));
+  }
+
+  @Test
+  public void whenReplicasExceedsMaxDynClusterSize_logMessage() {
+    List<LogRecord> messages = new ArrayList<>();
+    consoleHandlerMemento.withLogLevel(Level.WARNING)
+        .collectLogMessages(messages, REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT);
+
+    startNoServers();
+    setCluster1Replicas(10);
+
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(messages, containsWarning(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT));
+  }
+
+  @Test
+  public void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
+    startNoServers();
+    setCluster1Replicas(10);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
+  }
+
+  @Test
+  public void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
+    startNoServers();
+    setCluster1Replicas(10);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
+        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
+  }
+
+  @Test
+  public void whenReplicasExceedsMaxDynClusterSize_andStartNoServers_createsEvent() {
+    startNoServers();
+    setCluster1Replicas(10);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
+  }
+
+  @Test
+  public void withInvalidReplicasDuringExplicitRecheck_addValidationWarning() {
+    setExplicitRecheck();
+    setCluster1Replicas(10);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
+        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
+  }
+
+  @Test
+  public void withInvalidReplicasDuringExplicitRecheck_createsNoEvent() {
+    setExplicitRecheck();
+    setCluster1Replicas(10);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getEvents(), empty());
+  }
+
+  @Test
+  public void withValidReplicas_noEventsCreated() {
+    setCluster1Replicas(2);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(getEvents(), empty());
+  }
+
+  @Test
+  public void withValidReplicas_noValidationWarnings() {
+    setCluster1Replicas(2);
+    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
+
+    invokeStep();
+
+    assertThat(domainPresenceInfo.getValidationWarningsAsString(), emptyOrNullString());
+  }
+
+  @Test
   public void whenDomainToplogyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
@@ -629,7 +781,7 @@ public class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domain);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domain, domainPresenceInfo, false);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
@@ -771,7 +923,45 @@ public class ManagedServersUpStepTest {
       TestStepFactory.servers = factory.servers;
       TestStepFactory.preCreateServers = factory.preCreateServers;
       TestStepFactory.next = next;
-      return new TerminalStep();
+      return (next instanceof CreateEventStep) ? next : new TerminalStep();
     }
+  }
+
+  private List<V1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  private void setExplicitRecheck() {
+    testSupport.addToPacket(MAKE_RIGHT_DOMAIN_OPERATION,
+        Stub.createStub(ExplicitRecheckMakeRightDomainOperationStub.class));
+  }
+
+  abstract static class ExplicitRecheckMakeRightDomainOperationStub implements MakeRightDomainOperation {
+
+    @Override
+    public boolean isExplicitRecheck() {
+      return true;
+    }
+  }
+
+  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
+    String formattedMessage = formatMessage(msgId, messageParams);
+    assertThat(
+        "Expected Event with message "
+            + getExpectedValidationEventMessage(formattedMessage) + " was not created",
+        containsEventWithMessage(
+            getEvents(),
+            DOMAIN_VALIDATION_ERROR_EVENT,
+            getExpectedValidationEventMessage(formattedMessage)),
+        is(true));
+  }
+
+  private String formatMessage(String msgId, Object... params) {
+    LoggingFacade logger = LoggingFactory.getLogger("Operator", "Operator");
+    return logger.formatMessage(msgId, params);
+  }
+
+  private String getExpectedValidationEventMessage(String message) {
+    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
   }
 }

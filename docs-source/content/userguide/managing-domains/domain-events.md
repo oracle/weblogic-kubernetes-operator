@@ -29,6 +29,7 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
+ *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
 
 #### Operator-generated event details
 
@@ -238,6 +239,39 @@ Metadata:
 Reason:                DomainProcessingAborted
 Reporting Component:   weblogic.operator
 Reporting Instance:    weblogic-operator-7c5577bb75-vflcq
+Source:
+Type:    Warning
+Events:  <none>
+
+```
+Example of a `DomainValidationError` event:
+
+```none
+
+Name:             sample-domain1.DomainValidationError.1608160013145
+Namespace:        sample-domain1-ns
+Labels:           weblogic.createdByOperator=true
+                  weblogic.domainUID=sample-domain1
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  API Version:   weblogic.oracle/v8
+  Kind:          Domain
+  Name:          sample-domain1
+  Namespace:     sample-domain1-ns
+Kind:            Event
+Last Timestamp:  2020-12-16T23:06:53Z
+Message:         Validation error in domain resource domain1: Replica request of 5 exceeds the maximum dynamic server count of 2 configured for cluster cluster-1
+Metadata:
+  Creation Timestamp:  2020-12-16T23:06:53Z
+  Resource Version:    11222690
+  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainValidationError.1608160013145
+  UID:                 cd4e6a2f-8ddb-4902-90a7-d993bceb567d
+Reason:                DomainValidationError
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-67c75bc4bf-d4flw
 Source:
 Type:    Warning
 Events:  <none>
