@@ -100,19 +100,6 @@ public class ItOperatorUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.5.0 to latest.
-   * Install 2.5.0 release Operator from GitHub chart repository and create a domain.
-   * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 2.5.0 to latest")
-  public void testOperatorUpgradeFrom2_5_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("2.5.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, false);
-  }
-
-  /**
    * Operator upgrade from 2.6.0 to latest.
    * Install 2.6.0 Operator from GitHub chart repository and create a domain.
    * Delete Operator and install latest Operator and verify CRD version is updated
@@ -171,7 +158,6 @@ public class ItOperatorUpgrade {
     upgradeOperator("3.0.2", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
-
   /**
    * Operator upgrade from 3.0.3 to latest.
    * Install 3.0.3 Operator from GitHub chart repository and create a domain.
@@ -185,6 +171,21 @@ public class ItOperatorUpgrade {
   public void testOperatorUpgradeFrom3_0_3(@Namespaces(3) List<String> namespaces) {
     this.namespaces = namespaces;
     upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.0.4 to latest.
+   * Install 3.0.4 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  public void testOperatorUpgradeFrom3_0_4(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -259,16 +260,16 @@ public class ItOperatorUpgrade {
         domainNamespace, operatorVersion, externalServiceNameSuffix);
 
     if (useHelmUpgrade) {
-      // application high availability check only for 3.x releases and later
       // deploy application and access the application once to make sure the app is accessible
-      //deployAndAccessApplication(domainNamespace, externalServiceNameSuffix);
-      deployAndAccessApplication(externalServiceNameSuffix,
-                                 domainNamespace,
+      deployAndAccessApplication(domainNamespace,
                                  domainUid,
                                 "cluster-1",
+                                "admin-server",
                                  adminServerPodName,
                                  managedServerPodNamePrefix,
-                                 replicaCount);
+                                 replicaCount,
+                                "7001",
+                                "8001");
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
@@ -281,8 +282,10 @@ public class ItOperatorUpgrade {
                     domainNamespace,
                     opNamespace1,
                     appAvailability,
+                    adminServerPodName,
                     managedServerPodNamePrefix,
                     replicaCount,
+                    "7001",
                     "8001",
                     "testwebapp/index.jsp");
               });
@@ -325,11 +328,11 @@ public class ItOperatorUpgrade {
           } catch (InterruptedException ie) {
             // do nothing
           }
-          // check the application availability data that we have collected, and see if
+          // check the app availability data that we have collected, and see if
           // the application has been available all the time during the upgrade
-          logger.info("Verify that the application was available when the operator was being upgraded");
+          logger.info("Verify that application was available during upgrade");
           assertTrue(appAlwaysAvailable(appAvailability),
-              "Application was not always available when the operator was getting upgraded");
+              "Application was not always available during operator upgrade");
         }
       }
     } else {

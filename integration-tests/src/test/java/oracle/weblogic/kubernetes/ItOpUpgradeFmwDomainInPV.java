@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContaine
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
@@ -72,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessAp
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -93,6 +95,7 @@ public class ItOpUpgradeFmwDomainInPV {
   private static String opNamespace1 = null;
   private static String opNamespace2 = null;
   private static String domainNamespace = null;
+  private static String dbNamespace = null;
   private static String oracle_home = null;
   private static String java_home = null;
   private List<String> namespaces;
@@ -108,16 +111,16 @@ public class ItOpUpgradeFmwDomainInPV {
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
-  private final String domainUid = "fmwdomain-inpv";
-  private final String clusterName = "cluster-fmwdomain-inpv";
-  private final String adminServerName = "wlst-admin-server";
-  private final String managedServerNameBase = "wlst-ms-";
-  private final String adminServerPodName = domainUid + "-" + adminServerName;
-  private final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+  private static final String domainUid = "fmwdomain-inpv";
+  private static final String clusterName = "cluster-fmwdomain-inpv";
+  private static final String adminServerName = "admin-server";
+  private static final String managedServerNameBase = "managed-server";
+  private static final String adminServerPodName = domainUid + "-" + adminServerName;
+  private static final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   private final int managedServerPort = 8001;
   private final String wlSecretName = domainUid + "-weblogic-credentials";
   private final String rcuSecretName = domainUid + "-rcu-credentials";
-  private final int replicaCount = 2;
+  private static final int replicaCount = 2;
 
   private static String latestOperatorImageName;
 
@@ -154,7 +157,7 @@ public class ItOpUpgradeFmwDomainInPV {
 
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    final String dbNamespace = namespaces.get(0);
+    dbNamespace = namespaces.get(0);
     dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     logger.info("Assign a unique namespace for operator1");
@@ -186,9 +189,14 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @AfterEach
   public void tearDown() {
+    //assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
+
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+
+      assertDoesNotThrow(() -> deleteDb(dbNamespace), String.format("Failed to delete DB %s", dbNamespace));
+
       CleanupUtil.cleanup(namespaces);
       new Command()
           .withParams(new CommandParams()
@@ -219,6 +227,63 @@ public class ItOpUpgradeFmwDomainInPV {
   @DisplayName("Upgrade Operator from 3.0.0 to latest with FMW domain in PV")
   public void testOperatorUpgradeFrom300FmwDomainInPv() {
     installAndUpgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.0.1 to latest.
+   * Install 3.0.1 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.1 to latest")
+  public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    installAndUpgradeOperator("3.0.1", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+
+  /**
+   * Operator upgrade from 3.0.2 to latest.
+   * Install 3.0.2 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.2 to latest")
+  public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    installAndUpgradeOperator("3.0.2", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.0.3 to latest.
+   * Install 3.0.3 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.3 to latest")
+  public void testOperatorUpgradeFrom3_0_3(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.0.4 to latest.
+   * Install 3.0.4 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  public void testOperatorUpgradeFrom3_0_4(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -278,16 +343,19 @@ public class ItOpUpgradeFmwDomainInPV {
                                         HelmParams opHelmParams,
                                         boolean useHelmUpgrade) {
     String opServiceAccount = opNamespace1 + "-sa";
+    String appName = "testwebapp.war";
 
     if (useHelmUpgrade) {
       // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(externalServiceNameSuffix,
-                                 domainNamespace,
+      deployAndAccessApplication(domainNamespace,
                                  domainUid,
                                  clusterName,
+                                 adminServerName,
                                  adminServerPodName,
                                  managedServerPodNamePrefix,
-                                 replicaCount);
+                                 replicaCount,
+                                 "7001",
+                                 "8001");
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
@@ -300,8 +368,10 @@ public class ItOpUpgradeFmwDomainInPV {
                     domainNamespace,
                     opNamespace1,
                     appAvailability,
+                    adminServerPodName,
                     managedServerPodNamePrefix,
                     replicaCount,
+                    "7001",
                     "8001",
                     "testwebapp/index.jsp");
               });
@@ -364,8 +434,8 @@ public class ItOpUpgradeFmwDomainInPV {
   }
 
   private void createFmwDomainAndVerify(String domainVersion) {
-    final String pvName = domainUid + "-pv";
-    final String pvcName = domainUid + "-pvc";
+    final String pvName = domainUid + "-" + domainNamespace + "-pv";
+    final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
     final int t3ChannelPort = getNextFreePort(30000, 32767);
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
@@ -592,6 +662,23 @@ public class ItOpUpgradeFmwDomainInPV {
     }
 
     return apiVersion;
+  }
+
+  private static void verifyPodNotRunning(String domainNamespace) {
+    // check that admin server pod doesn't exists in the domain namespace
+    logger.info("Checking that admin server pod {0} doesn't exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+
+    // check for managed server pods existence in the domain namespace
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPodNamePrefix + i;
+
+      // check that managed server pod doesn't exists in the domain namespace
+      logger.info("Checking that managed server pod {0} doesn't exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodDoesNotExist(managedServerPodName, domainUid, domainNamespace);
+    }
   }
 }
 
