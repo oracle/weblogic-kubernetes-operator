@@ -28,10 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class K8sEvents {
 
-  private static LoggingFacade logger = getLogger();
+  private static final LoggingFacade logger = getLogger();
 
   /**
-   * Checks if a given event is logged by the operator.
+   * Check if a given event is logged by the operator.
    *
    * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
@@ -47,10 +47,6 @@ public class K8sEvents {
       try {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
-          logger.info("PROCESSING EVENT+++++++:{0}", event.getMessage());
-          logger.info("TIMESTAMPS: EVENT_CREATIONTIMESTAMP:{0} should be after EXPECTED:"
-              + "{1}",
-              event.getMetadata().getCreationTimestamp(), timestamp);
           if (event.getReason().contains(reason)
               && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
             logger.info(Yaml.dump(event));
@@ -74,6 +70,7 @@ public class K8sEvents {
     };
   }
 
+  // Verify the operator instance details are correct
   private static void verifyOperatorDetails(V1Event event, String opNamespace, String domainUid) throws ApiException {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);

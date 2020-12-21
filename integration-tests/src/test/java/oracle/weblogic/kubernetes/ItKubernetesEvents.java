@@ -28,7 +28,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -36,10 +35,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -50,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -77,17 +74,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to introspectVersion attribute.
+ * Tests related to Domain events logged by operator.
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify the introspectVersion runs the introspector")
+@DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
 public class ItKubernetesEvents {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
 
-  private static final String domainUid = "myintrodomain";
+  final String clusterName = "mycluster";
+  final String adminServerName = "admin-server";
+  final String adminServerPodName = domainUid + "-" + adminServerName;
+  final String managedServerNameBase = "ms-";
+  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+  final int managedServerPort = 8001;
+  int replicaCount = 2;
+
+  private static final String domainUid = "k8seventsdomain";
   private final String wlSecretName = "weblogic-credentials";
 
   // create standard, reusable retry/backoff policy
@@ -123,31 +127,119 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Test domain status gets updated when introspectVersion attribute is added under domain.spec. Test Creates a domain
-   * in persistent volume using WLST. Updates the cluster configuration; cluster size using online WLST. Patches the
-   * domain custom resource with introSpectVersion. Verifies the introspector runs and the cluster maximum replica is
-   * updated under domain status. Verifies that the new pod comes up and sample application deployment works.
+   * Test domain events are logged when domain resource goes through various life cycle stages.
+   * Verifies DomainCreated is logged when domain resource is created.
+   * Verifies DomainProcessingStarting is logged when operator processes the domain resource.
+   * Verifies DomainProcessingCompleted is logged when operator done processes the domain resource.
+   * Verifies DomainChanged is logged when operator processes the domain resource changes.
+   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
+   * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
    */
-  @Order(1)
   @Test
-  @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDomainDefaultEvents() {
-
-    final String clusterName = "mycluster";
-
-    final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
-
-    final String managedServerNameBase = "ms-";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int managedServerPort = 8001;
-
-    int replicaCount = 2;
-
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+  @DisplayName("Test domain events for various domain life cycle changes")
+  public void testDomainK8SEvents() {
+    logger.info("Creating domain");
+    createDomain();
 
     DateTime timestamp = new DateTime(System.currentTimeMillis());
+
+    // verify the DomainCreated event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_CREATED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
+
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_STARTING,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_COMPLETED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+
+    // remove the webLogicCredentialsSecret to verify the events
+    // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
+    String patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
+    logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "patchDomainCustomResource failed");
+
+    //verify domain changed event is logged
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_CHANGED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_CHANGED, "Normal", timestamp));
+
+    //verify domain processing retrying event
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_RETRYING,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_PROCESSING_RETRYING, "Normal", timestamp));
+
+    //verify domain processing aborted event
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_ABORTED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
+
+    timestamp = new DateTime(System.currentTimeMillis());
+
+    deleteDomainCustomResource(domainUid, domainNamespace);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
+
+    //verify domain deleted event
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_DELETED,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_DELETED, "Normal", timestamp));
+  }
+
+  // Create and start a WebLogic domain in PV
+  private void createDomain() {
+    final String pvName = domainUid + "-pv"; // name of the persistent volume
+    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,
@@ -249,96 +341,6 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
-    // verify the DomainCreated event is generated
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_CREATED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
-
-    // verify the DomainProcessing Starting/Completed event is generated
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_STARTING,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
-
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_COMPLETED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
-
-    // remove the webLogicCredentialsSecret to verify the events
-    // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
-    String patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
-    logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
-
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "patchDomainCustomResource failed");
-
-    //verify domain changed event is logged
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_CHANGED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_CHANGED, "Normal", timestamp));
-
-    //verify domain processing retrying event
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_RETRYING,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_RETRYING, "Normal", timestamp));
-
-    //verify domain processing aborted event
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_ABORTED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
-
-    timestamp = new DateTime(System.currentTimeMillis());
-    TestActions.deleteDomainCustomResource(domainUid, domainNamespace);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
-
-    //verify domain deleted event
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_DELETED,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_DELETED, "Normal", timestamp));
   }
 
   /**
