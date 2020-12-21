@@ -9,6 +9,7 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -39,6 +40,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -105,36 +107,29 @@ public class EventHelper {
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    eventData.namespace(Optional.ofNullable(info)
+        .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace));
+    eventData.resourceName(eventData.eventItem.calculateResourceName(info, eventData.namespace));
     return new V1Event()
-        .metadata(createMetadata(info, eventData.eventItem.getReason()))
+        .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())
         .lastTimestamp(eventData.eventItem.getLastTimestamp())
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
-        .message(eventData.eventItem.getMessage(info, eventData))
-        .involvedObject(createInvolvedObject(info));
-  }
-
-  private static V1ObjectReference createInvolvedObject(DomainPresenceInfo info) {
-    return new V1ObjectReference()
-        .name(info.getDomainUid())
-        .namespace(info.getNamespace())
-        .kind(KubernetesConstants.DOMAIN)
-        .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
+        .message(eventData.eventItem.getMessage(eventData.getResourceName(), eventData))
+        .involvedObject(eventData.eventItem.createInvolvedObject(eventData));
   }
 
   private static V1ObjectMeta createMetadata(
-      DomainPresenceInfo info,
-      String reason) {
+      EventData eventData) {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
-            .name(String.format("%s.%s.%s", info.getDomainUid(), reason, System.currentTimeMillis()))
-            .namespace(info.getNamespace());
+            .name(String.format("%s.%s.%s",
+                eventData.getResourceName(), eventData.eventItem, System.currentTimeMillis()))
+            .namespace(eventData.getNamespace());
 
-    metadata
-        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, info.getDomainUid())
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    eventData.eventItem.addLabels(metadata, eventData);
 
     return metadata;
   }
@@ -214,9 +209,9 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
+      public String getMessage(String resourceName, EventData eventData) {
         return String.format(DOMAIN_PROCESSING_FAILED_PATTERN,
-            info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
+            resourceName, Optional.ofNullable(eventData.message).orElse(""));
       }
 
     },
@@ -248,45 +243,121 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(DomainPresenceInfo info, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, info.getDomainUid(),
+      public String getMessage(String resourceName, EventData eventData) {
+        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, resourceName,
             Optional.ofNullable(eventData.message).orElse(""));
       }
 
     },
-    EMPTY {
+    NAMESPACE_WATCHING_STARTING {
       @Override
-      protected String getPattern() {
-        return null;
+      public String getReason() {
+        return EventConstants.NAMESPACE_WATCHING_STARTING_EVENT;
       }
 
       @Override
+      protected String getPattern() {
+        return EventConstants.NAMESPACE_WATCHING_STARTING_PATTERN;
+      }
+
+      @Override
+      public String getMessage(String resourceName, EventData eventData) {
+        return String.format(NAMESPACE_WATCHING_STARTING_PATTERN, resourceName);
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        metadata
+            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return new V1ObjectReference()
+            .name(eventData.getResourceName())
+            .kind(KubernetesConstants.NAMESPACE);
+      }
+
+      @Override
+      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
+        return namespace;
+      }
+    },
+    NAMESPACE_WATCHING_STOPPING {
+      @Override
       public String getReason() {
-        return "";
+        return EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT;
+      }
+
+      @Override
+      protected String getPattern() {
+        return EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN;
+      }
+
+      @Override
+      public String getMessage(String resourceName, EventData eventData) {
+        return String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, resourceName);
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        metadata
+            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return new V1ObjectReference()
+            .name(eventData.getResourceName())
+            .kind(KubernetesConstants.NAMESPACE);
+      }
+
+      @Override
+      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
+        return namespace;
       }
     };
 
-    public String getMessage(DomainPresenceInfo info, EventData eventData) {
-      return String.format(getPattern(), info.getDomainUid());
+    String getMessage(String resourceName, EventData eventData) {
+      return String.format(getPattern(), resourceName);
     }
 
-    public DateTime getLastTimestamp() {
+    DateTime getLastTimestamp() {
       return DateTime.now();
     }
 
-    protected abstract String getPattern();
+    void addLabels(V1ObjectMeta metadata, EventData eventData) {
+      metadata
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, eventData.getResourceName())
+          .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    }
 
-    public abstract String getReason();
+    V1ObjectReference createInvolvedObject(EventData eventData) {
+      return new V1ObjectReference()
+          .name(eventData.getResourceName())
+          .namespace(eventData.getNamespace())
+          .kind(KubernetesConstants.DOMAIN)
+          .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
+    }
+
+    String calculateResourceName(DomainPresenceInfo info, String namespace) {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
+    }
 
     String getType() {
       return EVENT_NORMAL;
     }
 
+    abstract String getPattern();
+
+    abstract String getReason();
   }
 
   public static class EventData {
     private EventItem eventItem;
     private String message;
+    private String namespace;
+    private String resourceName;
 
     public EventData(EventItem eventItem) {
       this(eventItem, "");
@@ -297,13 +368,18 @@ public class EventHelper {
       this.message = message;
     }
 
-    public EventData eventItem(EventItem item) {
-      this.eventItem = item;
+    public EventData message(String message) {
+      this.message = message;
       return this;
     }
 
-    public EventData message(String message) {
-      this.message = message;
+    public EventData namespace(String namespace) {
+      this.namespace = namespace;
+      return this;
+    }
+
+    public EventData resourceName(String resourceName) {
+      this.resourceName = resourceName;
       return this;
     }
 
@@ -313,6 +389,14 @@ public class EventHelper {
 
     public String getMessage() {
       return message;
+    }
+
+    public String getNamespace() {
+      return namespace;
+    }
+
+    String getResourceName() {
+      return resourceName;
     }
 
     @Override

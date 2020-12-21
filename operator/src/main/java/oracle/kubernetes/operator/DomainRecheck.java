@@ -19,6 +19,9 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -206,8 +209,14 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
+      packet.put(ProcessingConstants.NAMESPACE, ns);
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
-      if (fullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
+      boolean starting = !nss.isNamespaceStarting().getAndSet(true);
+      if (starting) {
+        return doNext(Step.chain(
+            EventHelper.createEventStep(new EventData(EventItem.NAMESPACE_WATCHING_STARTING).namespace(ns)), getNext()),
+            packet);
+      } else if (fullRecheck) {
         return doNext(packet);
       } else {
         return doEnd(packet);
