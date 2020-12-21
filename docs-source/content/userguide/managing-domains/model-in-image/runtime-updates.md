@@ -251,6 +251,10 @@ this behavior by setting the attribute `domain.spec.configuration.model.onlineUp
     | CommitUpdateAndRoll |  All changes are committed, but if there are non-dynamic mbean changes, the domain will rolling restart automatically; if not, no restart is necessary |
     | CancelUpdate | If there are non-dynamic mbean changes, all changes are canceled before they are committed. The domain will continue to run, but changes to the configmap and resources in the domain resource YAML should be reverted manually, otherwise in the next introspection will still use the same content in the changed configmap |
 
+{{% notice warning %}}
+When updating a domain with non-dynamic mbean changes with the behavior `CommitUpdateOnly`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will be running in an inconsistent state. 
+{{% /notice %}}
+
 Sample domain resource YAML:
 
 ```
@@ -284,7 +288,7 @@ spec:
 
 During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
 
-Once the job is finished, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
+Once the job is completed, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
 
 Below is a general description of how online update works and the expected outcome.
 
