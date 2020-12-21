@@ -83,6 +83,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -265,6 +267,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
+        logger.info("Installing istio before any test suites are run");
+        installIstio();
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
@@ -306,6 +310,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
+      logger.info("Uninstall istio after all test suites are run");
+      uninstallIstio();
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
         Files.deleteIfExists(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
