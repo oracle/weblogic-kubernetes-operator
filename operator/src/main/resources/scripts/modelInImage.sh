@@ -1007,11 +1007,15 @@ function wdtHandleOnlineUpdate() {
 
   local ROLLBACK_FLAG=""
   if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
-      #ROLLBACK_FLAG="-rollback_if_require_restart"
       ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
   # DEBUG only
   #cat /tmp/diffed_model.yaml
+
+  if [ -z ${AS_SERVICE_NAME} ] || [ -z ${ADMIN_PORT} ] ; then
+    trace SEVERE "Cannot find admin service name or port"
+    exitOrLoop
+  fi
 
   local admin_url
   if [ -z "${ADMIN_PORT_SECURE}" ] ; then
