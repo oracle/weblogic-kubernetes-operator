@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Introduction to Model in Image, description of its runtime behavior, and references."
 +++
 
-#### Content
+#### Contents
 
  - [Introduction](#introduction)
  - [WebLogic Deploy Tool models](#weblogic-deploy-tool-models)
