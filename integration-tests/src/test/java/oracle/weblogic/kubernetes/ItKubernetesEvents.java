@@ -141,7 +141,7 @@ public class ItKubernetesEvents {
     DateTime timestamp = new DateTime(System.currentTimeMillis());
     logger.info("Creating domain");
     createDomain();
-    
+
     // verify the DomainCreated event is generated
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -215,7 +215,7 @@ public class ItKubernetesEvents {
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
 
-    timestamp = new DateTime(System.currentTimeMillis());
+    timestamp = new DateTime(System.currentTimeMillis() - 2000);
 
     deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
