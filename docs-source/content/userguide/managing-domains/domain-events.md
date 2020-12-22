@@ -29,13 +29,15 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
+ *  `NamespaceWatchingStarting`: The operator has started to watch for domains in a namespace.
+ *  `NamespaceWatchingStopping`: The operator has stopped to watch for domains in a namespace.
 
 #### Operator-generated event details
 
 Each operator-generated event contains the following fields:
  *  `metadata`
     *  `namespace`:  Same as the domain resource namespace.
-    *  `labels`:   `weblogic.createdByOperator=true` and `weblogic.domainUID=<domainUID>`.
+    *  `labels`:   `weblogic.createdByOperator=true` and, for domain resource events,`weblogic.domainUID=<domainUID>`.
  *  `type`:  String field that describes the type of the event. Possible values are `Normal` or `Warning`.
  *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
  *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
@@ -43,10 +45,10 @@ Each operator-generated event contains the following fields:
  *  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
  *  `message`:  String that describes the details of the event.
  *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
-    *  `name`:  String that describes the name of the domain resource, which is the `domainUID`.
-    *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource.
-    *  `kind`:  String that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for all operator-generated events.
-    *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`.
+    *  `name`:  String that describes the name of the resource, either a domain resource, which is the `domainUID`, or a namespace, which is the name of the namespace.
+    *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource for a domain event.
+    *  `kind`:  String that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for a domain event, and "Namespace" for a namespace event.
+    *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`, for a domain event, is the current version of a Kubernetes namespace resource.
 
 #### How to access the events
 
