@@ -259,8 +259,9 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // istio constants
-  public static final String ISTIO_VERSION = "1.7.3";
+  // Default ISTIO version is 1.7.3
+  public static final String ISTIO_VERSION = 
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.7.3");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";

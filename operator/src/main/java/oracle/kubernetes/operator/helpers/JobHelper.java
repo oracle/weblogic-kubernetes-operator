@@ -356,7 +356,7 @@ public class JobHelper {
               packet);
       }
 
-      return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
+      return doNext(packet);
     }
   }
 

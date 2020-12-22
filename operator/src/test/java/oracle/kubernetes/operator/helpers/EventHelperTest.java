@@ -311,7 +311,6 @@ public class EventHelperTest extends EventTestUtils {
   @Test
   public void whenCreateEventStepCalledWithNSStartingEvent_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTING).namespace(NS).resourceName(NS)));
-
     assertThat("Event NAMESPACE_WATCHING_STARTING message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTING_EVENT,
