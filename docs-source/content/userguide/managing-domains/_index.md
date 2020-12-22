@@ -88,11 +88,11 @@ The following features are **not** certified or supported in this release:
 For up-to-date information about the features of WebLogic Server that are supported in Kubernetes environments, see My Oracle Support Doc ID 2349228.1.
 
 ### Meet Kubernetes resource name restrictions
-          
+
 Kubernetes requires that the names of some resource types follow the DNS label standard as defined in [DNS Label Names](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names) and [RFC 1123](https://tools.ietf.org/html/rfc1123). This requirement restricts the characters that are allowed in the names of these resources, and also limits the length of these names to no more than 63 characters.
 
 The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
-          
+
 * A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
 * A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
 * A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
@@ -100,8 +100,8 @@ The following is a list of such Kubernetes resources that the operator generates
 
 The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
 * All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lower case and substitute a hyphen (`-`) for each underscore (`_`).
-* A `domainUID` is required to be no more than 45 characters. 
-* WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits. 
+* A `domainUID` is required to be no more than 45 characters.
+* WebLogic domain configuration names, such as the cluster names, Administration Server name, and Managed Server names must be kept to a legal length so that the resultant resource names do not exceed Kubernetes' limits.
 
 When a domain resource or WebLogic domain configuration violates the limits, the domain startup will fail, and actual validation errors are reported in the domain resource's status.
 
@@ -148,7 +148,7 @@ See [Starting and stopping]({{< relref "/userguide/managing-domains/domain-lifec
 
 The operator let's you initiate scaling of clusters in various ways:
 
-* [Using kubectl to edit the Domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-resource-directly" >}})
+* [Using kubectl to edit the Domain resource]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#on-demand-updating-the-domain-directly" >}})
 * [Using the operator's REST APIs]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#calling-the-operators-rest-scale-api" >}})
 * [Using WLDF policies]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-wldf-policy-rule-and-script-action-to-call-the-operators-rest-scale-api" >}})
 * [Using a Prometheus action]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling#using-a-prometheus-alert-action-to-call-the-operators-rest-scale-api" >}})

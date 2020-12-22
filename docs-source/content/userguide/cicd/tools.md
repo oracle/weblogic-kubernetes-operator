@@ -30,7 +30,7 @@ that you supply a domain home.
 Other than the tools themselves, there are three components to the WDT tools:  
 
 - *The Domain Model* - Metadata model describing the desired domain.  
-  The metadata domain model can be written in YAML or JSON and is documented [here](https://github.com/oracle/weblogic-deploy-tooling#the-metadata-model).
+  The metadata domain model can be written in YAML or JSON and is documented [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md).
 - *The Archive ZIP* - Binaries to supplement the model.  
   All binaries needed to supplement the model must be specified in an archive
   file, which is just a ZIP file with a specific directory structure. Optionally,

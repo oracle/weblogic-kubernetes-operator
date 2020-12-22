@@ -166,7 +166,7 @@ Note that some Kubernetes environments may not allow changing the CPU management
 #### Measuring JVM heap, Pod CPU, and Pod memory
 You can monitor JVM heap, Pod CPU, and Pod memory using Prometheus and Grafana. Also, see [Tools for Monitoring Resources](https://kubernetes.io/docs/tasks/debug-application-cluster/resource-usage-monitoring/) in the Kubernetes documentation.
 
-#### References:
+#### References
 1. [Managing Resources for Containers](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/) in the Kubernetes documentation.
 1. [Assign Memory Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource) in the Kubernetes documentation.
 1. [Assign CPU Resources to Containers and Pods](https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/) in the Kubernetes documentation.
