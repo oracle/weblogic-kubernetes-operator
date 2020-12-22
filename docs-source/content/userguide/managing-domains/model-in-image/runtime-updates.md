@@ -252,7 +252,7 @@ this behavior by setting the attribute `domain.spec.configuration.model.onlineUp
     | CancelUpdate | If there are non-dynamic mbean changes, all changes are canceled before they are committed. The domain will continue to run, but changes to the configmap and resources in the domain resource YAML should be reverted manually, otherwise in the next introspection will still use the same content in the changed configmap |
 
 {{% notice warning %}}
-When updating a domain with non-dynamic mbean changes with the behavior `CommitUpdateOnly`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will be running in an inconsistent state. 
+When updating a domain with non-dynamic mbean changes with `onNonDynamicUpdates=CommitUpdateOnly (Default if not set)`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will be running in an inconsistent state. 
 {{% /notice %}}
 
 Sample domain resource YAML:
@@ -295,14 +295,14 @@ Below is a general description of how online update works and the expected outco
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a dynamic attribute|Changes are committed in the running domain and effective immediately| No action required|
-  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`, then changes are committed and domain pods are restarted (rolled). | No action required|
-  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`, then changes are committed but the changes will not be effective until the domain is manually restarted. | Manually restart the domain|
+  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`, changes are committed and domain pods are restarted (rolled). | No action required|
+  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`, changes are committed but the changes will not be effective until the domain is manually restarted. | Manually restart the domain|
+  |Changing a non-dynamic attribute|If `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CancelUpdate`, no changes will be committed. | User must manually make the necessary changes to the configmap and resources to prevent future introspector job rerun with the same changes again. |
   |Changing domain resource YAML other than `domain.spec.introspectVersion` and the fields in `spec.configuration.model.onlineUpdate` | No online update is attempted by the introspector job, and changes are treated the same as offline updates (which may result in restarts/roll after job success). | No action required|
-  |Changing any mbean attribute that is unsupported (TBD link to unsupported section)|Expected behavior is undefined. In some cases there will be helpful error in the introspector job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
+  |Changing any mbean attribute that is unsupporte [Unsupported Changes](#Unsupported-Changes))|Expected behavior is undefined. In some cases there will be helpful error in the introspector job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
   |Errors in the model|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
   |Other errors while updating the domain|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
   
-
   
 Sample use cases:
 
@@ -409,9 +409,9 @@ Attributes changed : Value
        
 Error Recovery
 
-- When updating a domain with `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is set to `CancelUpdate`, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoids the mismatch between the models in the configmap and the domain's configuration.   
+- When updating a domain with `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is set to `CancelUpdate`, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoid future introspector job re-run with the same changes again.
 - Changes to the image, configmap, and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates. 
-- In case of any failure in online updates, no changes will be made to running domain.  However, since the introspector job runs periodically against the domain resources up to 6 times.
+- In case of any failure in online updates, no changes will be made to running domain.  However, since the introspector job runs periodically against the domain resources up to maximum retry times.
 You can delete the introspection job, correct the error and re-apply the changes; or just correct the error and wait for the next introspection job retry.
 
 Specifying timeout

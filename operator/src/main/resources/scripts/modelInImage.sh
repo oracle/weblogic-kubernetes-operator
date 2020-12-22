@@ -684,7 +684,6 @@ function createPrimordialDomain() {
       " 'spec.configuration.model.onlineUpdate=true', but the model changes cannot use online update - such as: " \
       " changing ListenPort, ListenAddress, SSL, changing top level Topology attributes, " \
       " deleting a ServerTemplate or Server."
-      trace SEVERE $(cat /tmp/diffed_model.json)
       exitOrLoop
     fi
 
@@ -950,6 +949,10 @@ function wdtUpdateModelDomain() {
 
 function wdtHandleOnlineUpdate() {
 
+  trace "Entering wdtHandleOnlineUpdate"
+  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+  stop_trap
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
     trace "Not using online update"
@@ -1003,14 +1006,15 @@ function wdtHandleOnlineUpdate() {
 
   local ROLLBACK_FLAG=""
   if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
-      #ROLLBACK_FLAG="-rollback_if_require_restart"
       ROLLBACK_FLAG="-rollback_if_restart_required"
   fi
-  # no need for encryption phrase because the diffed model has real value
-  # note: using yes seems to et a 141 return code, switch to echo seems to be ok
-  # the problem is likely due to how wdt closing the input stream
-  #TODO remove this when ready
-  cat /tmp/diffed_model.yaml
+  # DEBUG only
+  #cat /tmp/diffed_model.yaml
+
+  if [ -z ${AS_SERVICE_NAME} ] || [ -z ${ADMIN_PORT} ] ; then
+    trace SEVERE "Cannot find admin service name or port"
+    exitOrLoop
+  fi
 
   local admin_url
   if [ -z "${ADMIN_PORT_SECURE}" ] ; then
@@ -1021,29 +1025,26 @@ function wdtHandleOnlineUpdate() {
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
    /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
-   -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT}
+   -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT} 2>&1
 
   local ret=$?
 
   trace "Completed online update="${ret}
   if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
-    trace ">>>  updatedomainResult=${ret}"
+    write_updatedresult ${ret}
+    write_non_dynamic_changes_text_file
   elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
-    trace ">>>  updatedomainResult=${ret}"
-    if [ -f /tmp/rollback.file ] ; then
-      echo ">>> /tmp/rollback.file"
-      cat /tmp/rollback.file
-      echo ">>> EOF"
-    fi
+    write_updatedresult ${ret}
+    write_non_dynamic_changes_text_file
     MII_UPDATE_CANCELED=true
   elif [ ${ret} -ne 0 ] ; then
     trace SEVERE "Online update failed. Check error in the logs " \
        "Note: Changes in the optional configmap and/or image may needs to be corrected"
     cat ${WDT_OUTPUT}
-    trace ">>>  updatedomainResult=${ret}"
+    write_updatedresult ${ret}
     exitOrLoop
   else
-    trace ">>>  updatedomainResult=${ret}"
+    write_updatedresult ${ret}
   fi
 
   # Restore encrypted merge model otherwise the on in the domain will be the diffed model
@@ -1053,8 +1054,28 @@ function wdtHandleOnlineUpdate() {
   trace "wrote updateResult"
 
   start_trap
-  trace "Exiting wdtUpdateModelDomain"
+  trace "Exiting wdtHandleOnlineUpdate"
 
+}
+
+function write_updatedresult() {
+    # The >>> updatedomainResult is used in the operator code
+    trace ">>>  updatedomainResult=${1}"
+}
+
+function write_non_dynamic_changes_text_file() {
+    # Containing text regarding the non dynmaic mbean details
+    if [ -f /tmp/rollback.file ] ; then
+      echo ">>> /tmp/rollback.file"
+      cat /tmp/rollback.file
+      echo ">>> EOF"
+    fi
+    # TODO: either one of these block wait for WDT release
+    if [ -f /tmp/non_dynamic_changes.file ] ; then
+      echo ">>> /tmp/non_dynamic_changes.file"
+      cat /tmp/non_dynamic_changes.file
+      echo ">>> EOF"
+    fi
 }
 
 function contain_returncode() {

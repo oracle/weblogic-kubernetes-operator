@@ -30,7 +30,7 @@ public class OnlineUpdate {
       + " will not restart even if there are non-dynamic changes involved, the changes will become effective only if "
       + " the domain is restarted"
     )
-  private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateAndRoll;
+  private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateOnly;
 
   @Description("WLST deploy application or libraries timout in milliseconds. Default: 180000.")
   private Long deployTimeoutMilliSeconds = 180000L;
