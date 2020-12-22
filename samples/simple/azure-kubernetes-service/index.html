@@ -12,18 +12,18 @@
     <title>Azure Kubernetes Service :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1608237082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1608237082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1608673582" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1608673582" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1608237082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1608673582"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1608237082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1608237082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1608673582"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1608673582"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1608237082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1608673582"></script>
 
     
   </div>
@@ -1123,13 +1123,13 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/" title="Manage FMW Domains" class="dd-item 
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/" title="Manage FMW domains" class="dd-item 
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/">
-          Manage FMW Domains
+          Manage FMW domains
           
       </a>
       
@@ -2908,7 +2908,7 @@
 <li><a href="#useful-links">Useful links</a></li>
 </ul>
 <h4 id="prerequisites">Prerequisites</h4>
-<p>This sample assumes the following prerequisite environment setup.</p>
+<p>This sample assumes the following prerequisite environment setup:</p>
 <ul>
 <li>Operating System: GNU/Linux, macOS or <a href="https://docs.microsoft.com/windows/wsl/install-win10">WSL for Windows 10</a>.</li>
 <li><a href="https://git-scm.com/downloads">Git</a>, use <code>git --version</code> to test if <code>git</code> works.  This document was tested with version 2.17.1.</li>
@@ -2935,7 +2935,7 @@ $ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 </code></pre></div><p>If you see an error similar to the following:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Found an existing application instance of <span style="color:#e6db74">&#34;5pn2s201-nq4q-43n1-z942-p9r9571qr3rp&#34;</span>. We will patch it
 Insufficient privileges to complete the operation.
-</code></pre></div><p>The problem may be a pre-existing service principal with the same name.  Either delete the other Service Principal or pick a different name.</p>
+</code></pre></div><p>The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.</p>
 <p>Successful output will look like the following:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;appId&#34;</span>: <span style="color:#e6db74">&#34;r3qnq743-61s9-4758-8163-4qpo87s72s54&#34;</span>,
@@ -3559,11 +3559,11 @@ $ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -e
 <p><img src="screenshot-deploy-test-app.png" alt="Deploy Application"></p>
 <p>Next you will need to start the application:</p>
 <ol>
-<li>Go to Deployments</li>
-<li>Select Control</li>
-<li>Select testwebapp</li>
-<li>Select Start</li>
-<li>Select Servicing all requests</li>
+<li>Go to Deployments.</li>
+<li>Select Control.</li>
+<li>Select <code>testwebapp</code>.</li>
+<li>Select Start.</li>
+<li>Select Servicing all requests.</li>
 <li>Select Yes.</li>
 </ol>
 <p>After the successful deployment, go to the application through the domain1-cluster-1-lb external IP.</p>
@@ -3573,7 +3573,7 @@ domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   80
 </code></pre></div><p>In the example, the application address is: <code>http://52.224.248.40:8001/testwebapp</code>.</p>
 <p>The test application will list the server host and server IP on the page.</p>
 <h4 id="access-weblogic-server-logs">Access WebLogic Server logs</h4>
-<p>The logs are stored in the Azure file share. Follow these steps to access the log:</p>
+<p>The logs are stored in the Azure file share. Follow these steps to access the logs:</p>
 <ol>
 <li>
 <p>Go to the <a href="https://ms.portal.azure.com">Azure Portal</a>.</p>
@@ -3588,15 +3588,13 @@ domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   80
 <p>In the &ldquo;File service&rdquo; section of the left panel, select File shares.</p>
 </li>
 <li>
-<p>Select the file share name (e.g. weblogic in this example).</p>
+<p>Select the file share name (for example, <code>weblogic</code> in this example).</p>
 </li>
 <li>
 <p>Select logs.</p>
 </li>
 <li>
 <p>Select domain1.</p>
-</li>
-<li>
 <p>WebLogic Server logs are listed in the folder.</p>
 <p><img src="screenshot-logs.png" alt="WebLogic Server Logs"></p>
 </li>
@@ -3695,8 +3693,8 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
 <p>Some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed are found in the section on <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">debugging</a>.</p>
 </li>
 </ol>
-<h4 id="clean-up-resources">Clean Up Resources</h4>
-<p>The output from the <code>create-domain-on-aks.sh</code> script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.</p>
+<h4 id="clean-up-resources">Clean up resources</h4>
+<p>The output from the <code>create-domain-on-aks.sh</code> script includes a statement about the Azure resources created by the script.  To delete the cluster and free all the related resources, simply delete the resource groups.  The output will list the resource groups, such as:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">The following Azure Resouces have been created:
   Resource groups: ejb8191resourcegroup1597641911, MC_ejb8191resourcegroup1597641911_ejb8191akscluster1597641911_eastus
 </code></pre></div><p>Given the above output, the following Azure CLI commands will delete the resource groups.</p>
@@ -5702,19 +5700,19 @@ az group delete --yes --no-wait --name MC_ejb8191resourcegroup1597641911_ejb8191
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1608237082"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1608673582"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1608237082"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1608237082"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1608673582"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1608673582"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1608237082" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1608237082"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1608673582" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1608673582"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
