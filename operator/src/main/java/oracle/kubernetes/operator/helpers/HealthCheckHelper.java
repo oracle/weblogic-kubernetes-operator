@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
@@ -205,9 +204,10 @@ public final class HealthCheckHelper {
     LOGGER.fine(MessageKeys.VERIFY_K8S_MIN_VERSION);
 
     try {
-      return createAndValidateKubernetesVersion(new CallBuilder().readVersionCode());
-    } catch (ApiException ae) {
-      LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, ae);
+      CallBuilder cb = new CallBuilder();
+      return createAndValidateKubernetesVersion(cb.executeSynchronousCallWithRetry(() -> cb.readVersionCode(), 5));
+    } catch (Throwable t) {
+      LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;
     }
   }
