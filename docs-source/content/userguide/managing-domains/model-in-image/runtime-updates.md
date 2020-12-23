@@ -256,6 +256,69 @@ this behavior by setting the attribute `domain.spec.configuration.model.onlineUp
 When updating a domain with non-dynamic mbean changes with `onNonDynamicUpdates=CommitUpdateOnly (Default if not set)`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will then be running in an inconsistent state if other servers are not restarted. 
 {{% /notice %}}
 
+The primary use case for online update is for adding or changing non-dynamic mbean attributes, deletion can be problematic. 
+
+In each update, the Operator generates a single merged model from the image and configmap, this model is used to compare with what is previously deployed. The differences between the models are used for the online update.  
+For example, if you have an application in model under `appDeployments` in the configmap, then you updated this configmap and removed the `appDeployment`,
+the Operator will generate a model to delete the application, and online update will delete the application from the domain. 
+The newly merged model (without the application) will be stored by the Operator for future use.
+
+Note: There are known issue when completely remove a top level section.  For example, if you have in the original configmap a model with
+
+```
+resources:
+  SelfTuning:
+    WorkManager:
+      newWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Count: 10
+```
+ 
+then you updated the model in the configmap and completely removed the `SelfTuning` section, the Operator generates the delta for update domain as 
+
+```
+resources:
+    SelfTuning:
+        '!WorkManager':
+        '!MinThreadsConstraint':
+        '!MaxThreadsConstraint':
+```
+
+which will result in an error since you cannot delete the top-level tree under `SelfTuning`.  Even if you specify the model in the configmap as
+
+```
+resources:
+    SelfTuning:
+        WorkManager:
+        MinThreadsConstraint:
+        MaxThreadsConstraint:
+
+```
+and the Operator generates this delta to update the domain.
+
+```
+resources:
+    SelfTuning:
+        MaxThreadsConstraint:
+            '!SampleMaxThreads':
+        WorkManager:
+            '!newWM':
+        MinThreadsConstraint:
+            '!SampleMinThreads':
+```
+
+This will also result in error during online update because of dependency.
+ 
+In general, drastic deletion is best handled by offline mode.  
+
+
 Sample domain resource YAML:
 
 ```
