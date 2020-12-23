@@ -9,7 +9,7 @@ The operator uses Helm to create the necessary resources and
 then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade,
 and uninstall the operator.
 
-#### Content
+#### Contents
 
  - [Install the operator Helm chart](#install-the-operator-helm-chart)
  - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
