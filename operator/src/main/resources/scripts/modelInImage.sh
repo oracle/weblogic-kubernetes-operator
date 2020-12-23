@@ -104,7 +104,7 @@ function sort_files() {
 # WDT artifacts MD5s
 #
 # If there are any differences, set WDT_ARTIFACTS_CHANGED=1
-# If there are any WDT archives changed set ARCHIVE_ZIP_CHANGED=1 (for online update) (TODO)
+# If there are any WDT archives changed set ARCHIVE_ZIP_CHANGED=1 (for online update)
 #
 
 function compareArtifactsMD5() {
@@ -1006,7 +1006,7 @@ function wdtHandleOnlineUpdate() {
 
   local ROLLBACK_FLAG=""
   if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
-      ROLLBACK_FLAG="-rollback_if_restart_required"
+      ROLLBACK_FLAG="-cancel_changes_if_restart_required"
   fi
   # DEBUG only
   #cat /tmp/diffed_model.yaml
@@ -1065,12 +1065,6 @@ function write_updatedresult() {
 
 function write_non_dynamic_changes_text_file() {
     # Containing text regarding the non dynmaic mbean details
-    if [ -f /tmp/rollback.file ] ; then
-      echo ">>> /tmp/rollback.file"
-      cat /tmp/rollback.file
-      echo ">>> EOF"
-    fi
-    # TODO: either one of these block wait for WDT release
     if [ -f /tmp/non_dynamic_changes.file ] ; then
       echo ">>> /tmp/non_dynamic_changes.file"
       cat /tmp/non_dynamic_changes.file
