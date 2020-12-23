@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -54,6 +53,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
@@ -87,7 +87,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
  * servers should be running.
  */
 @SuppressWarnings({"ConstantConditions", "SameParameterValue"})
-public class ManagedServersUpStepTest extends EventTestUtils {
+public class ManagedServersUpStepTest {
 
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace";

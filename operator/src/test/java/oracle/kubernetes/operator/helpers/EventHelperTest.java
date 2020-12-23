@@ -14,7 +14,6 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
-import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
@@ -39,6 +38,14 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithComponent;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInstance;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
+import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -57,7 +64,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class EventHelperTest extends EventTestUtils {
+public class EventHelperTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
 
