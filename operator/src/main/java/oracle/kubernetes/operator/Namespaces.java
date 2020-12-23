@@ -242,13 +242,7 @@ public class Namespaces {
               new EventHelper.EventData(
                   EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING)
                   .resourceName(namespace).namespace(namespace)),
-          createPacket(namespace, packet));
-    }
-
-    private Packet createPacket(String namespace, Packet packet) {
-      Packet p = packet.clone();
-      p.put(ProcessingConstants.NAMESPACE, namespace);
-      return p;
+          packet.clone());
     }
 
     private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
@@ -256,18 +250,18 @@ public class Namespaces {
     }
 
     static class NamespaceWatchStopEventsStep extends Step {
-      final List<StepAndPacket> nsStopeventDetails;
+      final List<StepAndPacket> nsStopEventDetails;
 
       NamespaceWatchStopEventsStep(List<StepAndPacket> nsStopeventDetails) {
-        this.nsStopeventDetails = nsStopeventDetails;
+        this.nsStopEventDetails = nsStopeventDetails;
       }
 
       @Override
       public NextAction apply(Packet packet) {
-        if (nsStopeventDetails.isEmpty()) {
+        if (nsStopEventDetails.isEmpty()) {
           return doNext(getNext(), packet);
         } else {
-          return doForkJoin(getNext(), packet, nsStopeventDetails);
+          return doForkJoin(getNext(), packet, nsStopEventDetails);
         }
       }
 

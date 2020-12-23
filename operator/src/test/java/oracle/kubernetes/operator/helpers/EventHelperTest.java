@@ -51,6 +51,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -350,9 +351,31 @@ public class EventHelperTest extends EventTestUtils {
   }
 
   @Test
+  public void whenCreateEventStepCalledWithNSStartingEvent_eventCreatedWithExpectedInvolvedObject() {
+    testSupport.runSteps(createEventStep(
+        new EventData(NAMESPACE_WATCHING_STARTING).namespace(NS).resourceName(NS)));
+
+    assertThat("Event NAMESPACE_WATCHING_STARTING message",
+        containsEventWithInvolvedObject(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STARTING_EVENT, NS, NS), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithNSStoppingEvent_eventCreatedWithExpectedLabels() {
+    testSupport.runSteps(createEventStep(
+        new EventData(NAMESPACE_WATCHING_STOPPING).namespace(NS).resourceName(NS)));
+
+    Map<String, String> expectedLabels = new HashMap();
+    expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    assertThat("Event EventConstants.NAMESPACE_WATCHING_STOPPING",
+        containsEventWithLabels(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT, expectedLabels), is(true));
+  }
+
+  @Test
   public void whenCreateEventStepCalledWithNSStoppingEvent_eventCreatedWithExpectedInvolvedObject() {
     testSupport.runSteps(createEventStep(
-        new EventData(EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING).namespace(NS).resourceName(NS)));
+        new EventData(NAMESPACE_WATCHING_STOPPING).namespace(NS).resourceName(NS)));
 
     assertThat("Event NAMESPACE_WATCHING_STOPPING message",
         containsEventWithInvolvedObject(getEvents(testSupport),

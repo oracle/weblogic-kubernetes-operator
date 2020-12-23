@@ -316,6 +316,7 @@ public class EventHelper {
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return new V1ObjectReference()
             .name(eventData.getResourceName())
+            .namespace(eventData.getNamespace())
             .kind(KubernetesConstants.NAMESPACE);
       }
 
