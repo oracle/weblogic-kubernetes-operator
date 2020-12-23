@@ -295,7 +295,7 @@ resources:
         '!MaxThreadsConstraint':
 ```
 
-which will result in an error since you cannot delete the top-level tree under `SelfTuning`.  Even if you specify the model in the configmap as
+which will result in an error since you cannot delete the entire tree under `SelfTuning`, and there is no equivalent construct in WebLogic to delete all `WorkManagers`.   Even if you specify the model in the configmap as
 
 ```
 resources:
@@ -305,7 +305,7 @@ resources:
         MaxThreadsConstraint:
 
 ```
-and the Operator generates this delta to update the domain.
+and the Operator generates this delta to update the domain. Note: in reality, the model is likely to have multiple `WorkManagers` and constraints.
 
 ```
 resources:
@@ -318,7 +318,7 @@ resources:
             '!SampleMinThreads':
 ```
 
-This will also result in error during online update because the child dependency of deletion is required and there is no easy way to determine the order of dependency currently.
+This will also result in error during online update because deletion needs to follow the child dependency order and there is no easy way to determine the order of dependency currently.
  
 In general, drastic deletion is best handled by offline update, that will recreate the domain in each update.  
 
