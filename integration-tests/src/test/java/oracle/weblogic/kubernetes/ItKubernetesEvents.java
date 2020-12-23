@@ -150,7 +150,7 @@ public class ItKubernetesEvents {
                 DOMAIN_CREATED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, null, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -161,7 +161,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+            DOMAIN_PROCESSING_STARTING,  null, "Normal", timestamp));
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -171,7 +171,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+            DOMAIN_PROCESSING_COMPLETED,  null, "Normal", timestamp));
 
     // remove the webLogicCredentialsSecret to verify the events
     // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
@@ -191,7 +191,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_CHANGED, "Normal", timestamp));
+            DOMAIN_CHANGED,  null, "Normal", timestamp));
 
     //verify domain processing retrying event
     withStandardRetryPolicy
@@ -202,7 +202,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_RETRYING, "Normal", timestamp));
+            DOMAIN_PROCESSING_RETRYING,  null, "Normal", timestamp));
 
     //verify domain processing aborted event
     withStandardRetryPolicy
@@ -212,8 +212,10 @@ public class ItKubernetesEvents {
                 DOMAIN_PROCESSING_ABORTED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_ABORTED,
+            "because the return value of "
+                + "\"oracle.kubernetes.weblogic.domain.model.DomainSpec.getWebLogicCredentialsSecret()",
+            "Warning", timestamp));
 
     timestamp = new DateTime(System.currentTimeMillis() - 2000);
 
@@ -232,7 +234,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_DELETED, "Normal", timestamp));
+            DOMAIN_DELETED, null, "Normal", timestamp));
   }
 
   // Create and start a WebLogic domain in PV
