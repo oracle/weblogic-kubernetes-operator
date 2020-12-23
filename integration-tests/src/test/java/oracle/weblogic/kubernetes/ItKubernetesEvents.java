@@ -150,7 +150,7 @@ public class ItKubernetesEvents {
                 DOMAIN_CREATED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, null, "Normal", timestamp));
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -161,7 +161,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_STARTING,  null, "Normal", timestamp));
+            DOMAIN_PROCESSING_STARTING,  "Normal", timestamp));
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -171,7 +171,7 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            DOMAIN_PROCESSING_COMPLETED,  null, "Normal", timestamp));
+            DOMAIN_PROCESSING_COMPLETED,  "Normal", timestamp));
 
     // remove the webLogicCredentialsSecret to verify the events
     // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged

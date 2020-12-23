@@ -89,46 +89,6 @@ public class K8sEvents {
         && labels.get("weblogic.domainUID").equals(domainUid));
   }
 
-  /**
-   * Returns the description for different event types.
-   *
-   * @param reason event to check for Created, Changed, deleted, processing etc
-   * @param domainUid UID of the domain
-   * @return String containing the complete description
-   */
-  public static String getDomainEventMessage(String reason, String domainUid) {
-    String message = "";
-    switch (reason) {
-      case DOMAIN_CREATED:
-        message = "Domain resource " + domainUid + " was created";
-        break;
-      case DOMAIN_DELETED:
-        message = "Domain resource " + domainUid + " was deleted";
-        break;
-      case DOMAIN_CHANGED:
-        message = "Domain resource " + domainUid + " was changed";
-        break;
-      case DOMAIN_PROCESSING_STARTING:
-        message = "Creating or updating Kubernetes presence for WebLogic Domain with UID " + domainUid;
-        break;
-      case DOMAIN_PROCESSING_COMPLETED:
-        message = "Successfully completed processing domain resource " + domainUid;
-        break;
-      case DOMAIN_PROCESSING_FAILED:
-        message = "Failed to process domain resource " + domainUid
-            + " due to xxxx, the processing  will be retried if required";
-        break;
-      case DOMAIN_PROCESSING_RETRYING:
-        message = "Retrying the processing of domain resource " + domainUid + " after one or more failed attempts";
-        break;
-      case DOMAIN_PROCESSING_ABORTED:
-        message = "Aborting the processing of domain resource " + domainUid + " permanently due to:";
-        break;
-      default:
-        message = "None matched";
-    }
-    return message;
-  }
 
   public static final String DOMAIN_CREATED = "DomainCreated";
   public static final String DOMAIN_DELETED = "DomainDeleted";
