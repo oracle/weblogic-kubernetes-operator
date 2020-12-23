@@ -644,7 +644,7 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void withNamespaceLabelselector_onCreateStartNamespacesStep_nsWatchStartingEventCreated() {
+  public void withNamespaceLabelSelector_onCreateStartNamespacesStep_nsWatchStartingEventCreated() {
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
@@ -666,6 +666,9 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withNamespaceLabelSelector_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
     domainNamespaces.isStopping("NS3");
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
+        NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
@@ -703,8 +706,11 @@ public class MainTest extends ThreadFactoryTestBase {
 
 
   @Test
-  public void withNamespaceRegExp_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
+  public void withNamespaceRegExp_onReadExistingNamespaces_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
     domainNamespaces.isStopping("NS3");
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
+        NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+
     defineSelectionStrategy(SelectionStrategy.RegExp);
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
@@ -712,6 +718,7 @@ public class MainTest extends ThreadFactoryTestBase {
     MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING",
         containsEvent(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT), is(true));
+
     MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING message",
         EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
