@@ -104,7 +104,12 @@ public class EventTestUtils extends ThreadFactoryTestBase {
 
   static boolean involvedObjectMatches(@NotNull V1Event event, String name, String namespace) {
     return getInvolvedObjectName(event).equals(name)
-        && getInvolvedObjectNamespace(event).equals(namespace);
+        && getInvolvedObjectNamespace(event).equals(namespace)
+        && getNamespace(event).equals(getInvolvedObjectNamespace(event));
+  }
+
+  static String getNamespace(@NotNull V1Event event) {
+    return Optional.ofNullable(event.getMetadata()).map(V1ObjectMeta::getNamespace).orElse("");
   }
 
   static String getInvolvedObjectNamespace(@NotNull V1Event event) {

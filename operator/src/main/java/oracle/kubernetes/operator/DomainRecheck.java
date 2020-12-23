@@ -209,12 +209,13 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.put(ProcessingConstants.NAMESPACE, ns);
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
       boolean starting = !nss.isNamespaceStarting().getAndSet(true);
       if (starting) {
         return doNext(Step.chain(
-            EventHelper.createEventStep(new EventData(EventItem.NAMESPACE_WATCHING_STARTING).namespace(ns)), getNext()),
+            EventHelper.createEventStep(
+                new EventData(EventItem.NAMESPACE_WATCHING_STARTING).namespace(ns).resourceName(ns)),
+            getNext()),
             packet);
       } else if (fullRecheck) {
         return doNext(packet);
