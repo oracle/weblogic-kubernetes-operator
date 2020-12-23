@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
@@ -13,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
 public class EventTestUtils extends ThreadFactoryTestBase {
@@ -21,13 +22,23 @@ public class EventTestUtils extends ThreadFactoryTestBase {
     return events.stream().filter(event -> reasonMatches(event, reason)).collect(Collectors.toList());
   }
 
-  protected boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason) {
-    return NS.equals(getEventsMatchesReason(events, reason).stream()
-        .filter(e -> namespaceMatches(e, NS))
+  protected boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
+    return namespace.equals(getEventsMatchesReason(events, reason).stream()
+        .filter(e -> namespaceMatches(e, namespace))
         .findFirst()
         .map(V1Event::getMetadata)
         .map(V1ObjectMeta::getNamespace)
         .orElse(""));
+  }
+
+  protected boolean containsEventWithLabels(@NotNull List<V1Event> events, String reason, Map<String, String> labels) {
+    return !getEventsMatchesReason(events, reason)
+        .stream()
+        .filter(e -> labelsMatches(e, labels))
+        .findFirst()
+        .map(V1Event::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .orElse(Collections.emptyMap()).isEmpty();
   }
 
   protected boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
@@ -73,6 +84,10 @@ public class EventTestUtils extends ThreadFactoryTestBase {
 
   static boolean namespaceMatches(V1Event event, String namespace) {
     return namespace.equals(event.getMetadata().getNamespace());
+  }
+
+  private boolean labelsMatches(V1Event e, Map<String, String> labels) {
+    return labels.equals(e.getMetadata().getLabels());
   }
 
   static boolean reportingInstanceMatches(V1Event event, String instance) {
