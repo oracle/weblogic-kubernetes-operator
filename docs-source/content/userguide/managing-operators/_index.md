@@ -27,7 +27,7 @@ the API version in the data (weblogic.oracle/v2) does not match the expected API
 
 Helm manages releases (installations) of your charts. For detailed instructions on installing Helm, see https://github.com/helm/helm.
 
-### Operator's Helm Chart Configuration
+### Operator's Helm chart configuration
 
 The operator Helm chart is pre-configured with default values for the configuration of the operator.
 
