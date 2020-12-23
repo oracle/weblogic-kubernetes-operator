@@ -280,6 +280,67 @@ Events:  <none>
 
 ```
 
+Example of a `NamespaceWatchingStarting` event:
+
+```none
+Name:             sample-domain1-ns.NamespaceWatchingStarting.1608734146651
+Namespace:        sample-domain1-ns
+Labels:           weblogic.createdByOperator=true
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  Kind:          Namespace
+  Name:          sample-domain1-ns
+  Namespace:     sample-domain1-ns
+Kind:            Event
+Last Timestamp:  2020-12-23T14:35:46Z
+Message:         Starting watching namespace sample-domain1-ns
+Metadata:
+  Creation Timestamp:  2020-12-23T14:35:46Z
+  Resource Version:    1330665
+  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1-ns.NamespaceWatchingStarting.1608734146651
+  UID:                 aaa5b073-56cf-4f9b-8c2b-0e471b2303ef
+Reason:                NamespaceWatchingStarting
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-7c5577bb75-9nz59
+Source:
+Type:    Normal
+Events:  <none>
+
+```
+
+Example of a `NamespaceWatchingStopping` event:
+```none
+Name:             sample-domain2-ns.NamespaceWatchingStopping.1608742207204
+Namespace:        sample-domain2-ns
+Labels:           weblogic.createdByOperator=true
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  Kind:          Namespace
+  Name:          sample-domain2-ns
+  Namespace:     sample-domain2-ns
+Kind:            Event
+Last Timestamp:  2020-12-23T16:50:07Z
+Message:         Stopping watching namespace sample-domain2-ns
+Metadata:
+  Creation Timestamp:  2020-12-23T16:50:07Z
+  Resource Version:    1340607
+  Self Link:           /api/v1/namespaces/sample-domain2-ns/events/sample-domain2-ns.NamespaceWatchingStopping.1608742207204
+  UID:                 d7c2ebb2-c8a0-4387-a30e-91caeae86c0e
+Reason:                NamespaceWatchingStopping
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-568fbd78bb-2gx9w
+Source:
+Type:    Normal
+Events:  <none>
+
+```
+
 Example of domain processing completed after failure and retries:
 
 The scenario is that the operator initially failed to process the domain resource because the specified image was missing, and then completed the processing during a retry after the image was recreated.

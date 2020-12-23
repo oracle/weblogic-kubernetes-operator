@@ -17,12 +17,20 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
-public class EventTestUtils extends ThreadFactoryTestBase {
-  private List<V1Event> getEventsMatchesReason(@NotNull List<V1Event> events, String reason) {
+public class EventTestUtils {
+  private static List<V1Event> getEventsMatchesReason(@NotNull List<V1Event> events, String reason) {
     return events.stream().filter(event -> reasonMatches(event, reason)).collect(Collectors.toList());
   }
 
-  protected boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
+  /**
+   * Whether an there is an event matches the given reason and namespace.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @param namespace the namespace to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
     return namespace.equals(getEventsMatchesReason(events, reason).stream()
         .filter(e -> namespaceMatches(e, namespace))
         .findFirst()
@@ -31,7 +39,16 @@ public class EventTestUtils extends ThreadFactoryTestBase {
         .orElse(""));
   }
 
-  protected boolean containsEventWithLabels(@NotNull List<V1Event> events, String reason, Map<String, String> labels) {
+  /**
+   * Whether an there is an event matches the given set of labels.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @param labels the set of labels to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithLabels(
+      @NotNull List<V1Event> events, String reason, Map<String, String> labels) {
     return !getEventsMatchesReason(events, reason)
         .stream()
         .filter(e -> labelsMatches(e, labels))
@@ -41,40 +58,72 @@ public class EventTestUtils extends ThreadFactoryTestBase {
         .orElse(Collections.emptyMap()).isEmpty();
   }
 
-  protected boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
+  /**
+   * Whether an there is an event matches the given reason and message.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @param message the message to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
     return message.equals(getEventsMatchesReason(events, reason).stream()
         .filter(e -> messageMatches(e, message)).findFirst().map(V1Event::getMessage).orElse(""));
   }
 
-  protected boolean containsEventWithComponent(@NotNull List<V1Event> events, String reason) {
+  /**
+   * Whether an there is an event matches the given reason and reporting component is WebLogic Operator.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithComponent(@NotNull List<V1Event> events, String reason) {
     return WEBLOGIC_OPERATOR_COMPONENT.equals(getEventsMatchesReason(events, reason).stream()
         .filter(e -> reportingComponentMatches(e, WEBLOGIC_OPERATOR_COMPONENT))
         .findFirst().map(V1Event::getReportingComponent)
         .orElse(""));
   }
 
-  protected boolean containsEventWithInstance(@NotNull List<V1Event> events, String reason, String opName) {
+  /**
+   * Whether an there is an event matches the given reason and operator pod name.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @param opName the pod name of the operator to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithInstance(@NotNull List<V1Event> events, String reason, String opName) {
     return opName.equals(getEventsMatchesReason(events, reason).stream()
         .filter(e -> reportingInstanceMatches(e, opName)).findFirst().map(V1Event::getReportingInstance)
         .orElse(""));
   }
 
-  protected boolean containsEventWithInvolvedObject(
+  /**
+   * Whether an there is an event matches the given reason and involved object.
+   *
+   * @param events a list of events
+   * @param reason the reason to match
+   * @param name the name of the involved object to match
+   * @param namespace the namespace to match
+   * @return true if there is a matching event
+   */
+  public static boolean containsEventWithInvolvedObject(
       @NotNull List<V1Event> events, String reason, String name, String namespace) {
     return referenceMatches(getEventsMatchesReason(events, reason).stream()
         .filter(e -> involvedObjectMatches(e, name, namespace)).findFirst().map(V1Event::getInvolvedObject)
         .orElse(null), name, namespace);
   }
 
-  private boolean referenceMatches(V1ObjectReference reference, String name, String namespace) {
+  private static boolean referenceMatches(V1ObjectReference reference, String name, String namespace) {
     return reference != null && name.equals(reference.getName()) && namespace.equals(reference.getNamespace());
   }
 
-  protected List<V1Event> getEvents(KubernetesTestSupport testSupport) {
+  public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  protected boolean containsEvent(List<V1Event> events, String reason) {
+  public static boolean containsEvent(List<V1Event> events, String reason) {
     return getEventsMatchesReason(events, reason).size() != 0;
   }
 
@@ -86,7 +135,7 @@ public class EventTestUtils extends ThreadFactoryTestBase {
     return namespace.equals(event.getMetadata().getNamespace());
   }
 
-  private boolean labelsMatches(V1Event e, Map<String, String> labels) {
+  private static boolean labelsMatches(V1Event e, Map<String, String> labels) {
     return labels.equals(e.getMetadata().getLabels());
   }
 

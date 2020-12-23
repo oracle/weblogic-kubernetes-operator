@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
-import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -36,6 +35,7 @@ import org.junit.Test;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -52,7 +52,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainValidationStepTest extends EventTestUtils {
+public class DomainValidationStepTest {
   private Domain domain = DomainProcessorTestSetup.createTestDomain();
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private TerminalStep terminalStep = new TerminalStep();

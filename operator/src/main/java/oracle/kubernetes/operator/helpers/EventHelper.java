@@ -145,7 +145,7 @@ public class EventHelper {
     final V1ObjectMeta metadata =
         new V1ObjectMeta()
             .name(String.format("%s.%s.%s",
-                eventData.getResourceName(), eventData.eventItem, System.currentTimeMillis()))
+                eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis()))
             .namespace(eventData.getNamespace());
 
     eventData.eventItem.addLabels(metadata, eventData);

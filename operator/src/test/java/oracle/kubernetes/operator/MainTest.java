@@ -50,6 +50,8 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
+import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
@@ -75,7 +77,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class MainTest extends EventTestUtils {
+public class MainTest extends ThreadFactoryTestBase {
 
   /** More than one chunk's worth of namespaces. */
   private static final int MULTICHUNK_LAST_NAMESPACE_NUM = DEFAULT_CALL_LIMIT + 1;
@@ -601,14 +603,14 @@ public class MainTest extends EventTestUtils {
 
     for (String ns: namespaces) {
       MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTING message",
-          containsEventWithMessage(getEvents(testSupport),
+          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
               NAMESPACE_WATCHING_STARTING_EVENT,
               String.format(NAMESPACE_WATCHING_STARTING_PATTERN,ns)), is(true));
     }
   }
 
   @Test
-  public void whenConfiguredDomainNamespaceMissing_noEventCreated() {
+  public void withNamespaceList_whenConfiguredDomainNamespaceMissing_noEventCreated() {
     defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
@@ -623,7 +625,7 @@ public class MainTest extends EventTestUtils {
 
 
   @Test
-  public void whenConfiguredDomainNamespaceAreReduced_nsStoppingEventCreated() {
+  public void withNamespaceList_whenConfiguredDomainNamespaceAreReduced_nsStoppingEventCreated() {
     domainNamespaces.isStopping("NS3");
     defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS2";
@@ -636,7 +638,82 @@ public class MainTest extends EventTestUtils {
         containsEvent(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT), is(true));
     MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING message",
-        containsEventWithMessage(getEvents(testSupport),
+        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
+            String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, "NS3")), is(true));
+  }
+
+  @Test
+  public void withNamespaceLabelselector_onCreateStartNamespacesStep_nsWatchStartingEventCreated() {
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
+        NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+
+    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+
+    List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
+    testSupport.runSteps(
+        createDomainRecheck().createStartNamespacesStep(namespaces));
+
+    for (String ns: namespaces) {
+      MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTING message",
+          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
+              NAMESPACE_WATCHING_STARTING_EVENT,
+              String.format(NAMESPACE_WATCHING_STARTING_PATTERN,ns)), is(true));
+    }
+  }
+
+  @Test
+  public void withNamespaceLabelSelector_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
+    domainNamespaces.isStopping("NS3");
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING",
+        containsEvent(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT), is(true));
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING message",
+        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
+            String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, "NS3")), is(true));
+  }
+
+
+  @Test
+  public void withNamespaceRegExp_onCreateStartNamespacesStep_nsWatchStartingEventCreated() {
+    defineSelectionStrategy(SelectionStrategy.RegExp);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
+        NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+
+    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+
+    List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
+    testSupport.runSteps(
+        createDomainRecheck().createStartNamespacesStep(namespaces));
+
+    for (String ns: namespaces) {
+      MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTING message",
+          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
+              NAMESPACE_WATCHING_STARTING_EVENT,
+              String.format(NAMESPACE_WATCHING_STARTING_PATTERN,ns)), is(true));
+    }
+  }
+
+
+  @Test
+  public void withNamespaceRegExp_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
+    domainNamespaces.isStopping("NS3");
+    defineSelectionStrategy(SelectionStrategy.RegExp);
+    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING",
+        containsEvent(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT), is(true));
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPING message",
+        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, "NS3")), is(true));
   }
