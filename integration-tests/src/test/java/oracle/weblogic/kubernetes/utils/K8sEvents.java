@@ -41,8 +41,7 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkDomainEvent(
-      String opNamespace, String domainNamespace, String domainUid, String reason,
-      String errorMessage, String type, DateTime timestamp) {
+      String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
@@ -55,13 +54,6 @@ public class K8sEvents {
             //verify reason
             logger.info("Verifying domain event {0}", reason);
             assertTrue(event.getReason().equals(reason));
-            //verify messages
-            logger.info("Verifying domain event message {0}", getDomainEventMessage(reason, domainUid));
-            assertTrue(event.getMessage().contains(getDomainEventMessage(reason, domainUid)));
-            //verify cause in message
-            if (errorMessage != null) {
-              assertTrue(event.getMessage().contains(errorMessage));
-            }
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
