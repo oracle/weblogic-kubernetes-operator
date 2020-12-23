@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.EventTestUtils;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Step;
@@ -100,12 +101,24 @@ public class EventHelperTest extends EventTestUtils {
   }
 
   @Test
+  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedLabels() {
+    makeRightOperation.execute();
+
+    Map<String, String> expectedLabels = new HashMap();
+    expectedLabels.put(LabelConstants.DOMAINUID_LABEL, UID);
+    expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    assertThat("Event DOMAIN_PROCESSING_STARTED message",
+        containsEventWithLabels(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT, expectedLabels), is(true));
+  }
+
+  @Test
   public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedNamespace() {
     makeRightOperation.execute();
 
     assertThat("Event DOMAIN_PROCESSING_STARTED message",
         containsEventWithNamespace(getEvents(testSupport),
-            DOMAIN_PROCESSING_STARTING_EVENT), is(true));
+            DOMAIN_PROCESSING_STARTING_EVENT, NS), is(true));
   }
 
   @Test
@@ -318,14 +331,33 @@ public class EventHelperTest extends EventTestUtils {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSStoppingEvent_eventCreatedWithExpectedMessage() {
+  public void whenCreateEventStepCalledWithNSStartingEvent_eventCreatedWithExpectedNamespace() {
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTING).namespace(NS).resourceName(NS)));
+    assertThat("Event NAMESPACE_WATCHING_STARTING message",
+        containsEventWithNamespace(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STARTING_EVENT, NS), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithNSStartingEvent_eventCreatedWithExpectedLabels() {
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTING).namespace(NS).resourceName(NS)));
+
+    Map<String, String> expectedLabels = new HashMap();
+    expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    assertThat("Event EventConstants.NAMESPACE_WATCHING_STARTING",
+        containsEventWithLabels(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STARTING_EVENT, expectedLabels), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithNSStoppingEvent_eventCreatedWithExpectedInvolvedObject() {
     testSupport.runSteps(createEventStep(
         new EventData(EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING).namespace(NS).resourceName(NS)));
 
     assertThat("Event NAMESPACE_WATCHING_STOPPING message",
-        containsEventWithMessage(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, NS)), is(true));
+        containsEventWithInvolvedObject(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT, NS, NS), is(true));
   }
+
 
 }
