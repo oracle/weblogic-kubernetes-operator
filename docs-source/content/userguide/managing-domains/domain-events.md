@@ -348,13 +348,6 @@ Note that this is not a full list of events; some of the events that are generat
 
 ```none
 sample-domain1-ns             13m         Normal    NamespaceWatchingStarted    namespace/sample-domain1-ns               Started watching namespace sample-domain1-ns
-kube-system                   13m         Normal    Pulling                     pod/coredns-5d4dd4b4db-qxs7l              Pulling image "k8s.gcr.io/coredns:1.3.1"
-kube-system                   13m         Normal    Pulled                      pod/coredns-5d4dd4b4db-qxs7l              Successfully pulled image "k8s.gcr.io/coredns:1.3.1"
-kube-system                   13m         Normal    Created                     pod/coredns-5d4dd4b4db-qxs7l              Created container coredns
-kube-system                   13m         Normal    Started                     pod/coredns-5d4dd4b4db-qxs7l              Started container coredns
-kube-system                   13m         Normal    Created                     pod/coredns-5d4dd4b4db-d4m4g              Created container coredns
-kube-system                   13m         Normal    Pulled                      pod/coredns-5d4dd4b4db-d4m4g              Successfully pulled image "k8s.gcr.io/coredns:1.3.1"
-kube-system                   13m         Normal    Started                     pod/coredns-5d4dd4b4db-d4m4g              Started container coredns
 sample-domain2-ns             8m35s       Normal    NamespaceWatchingStarted    namespace/sample-domain2-ns               Started watching namespace sample-domain2-ns
 sample-domain1-ns             8m8s        Normal    DomainProcessingStarting    domain/sample-domain1                     Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
 sample-domain1-ns             8m8s        Normal    Scheduled                   pod/sample-domain1-introspector-hjrxz     Successfully assigned sample-domain1-ns/sample-domain1-introspector-hjrxz to doxiao-1
