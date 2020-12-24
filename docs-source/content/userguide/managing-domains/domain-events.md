@@ -38,7 +38,7 @@ The operator generates these event types, which indicate the following:
 Each operator-generated event contains the following fields:
  *  `metadata`
     *  `namespace`:  Same as the domain resource namespace.
-    *  `labels`:   `weblogic.createdByOperator=true` and, for domain resource events, `weblogic.domainUID=<domainUID>`.
+    *  `labels`:   `weblogic.createdByOperator=true` and, for a domain event, `weblogic.domainUID=<domainUID>`.
  *  `type`:  String field that describes the type of the event. Possible values are `Normal` or `Warning`.
  *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
  *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.

@@ -577,11 +577,11 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenOperatorStartedWithListStrategy_startManagingNamespaceEventIsCreated() {
+  public void withNamespaceList_whenOperatorStarted_nsWatchStartingEventIsCreated() {
+    Main main = new Main(createStrictStub(MainDelegateStub.class, testSupport, new DomainNamespaces()));
     defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(1);
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1);
 
     main.startOperator(null);
 
@@ -610,7 +610,7 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void withNamespaceList_whenConfiguredDomainNamespaceMissing_noEventCreated() {
+  public void withNamespaceList_onReadExistingNamespaces_whenConfiguredDomainNamespaceMissing_noEventCreated() {
     defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
@@ -625,7 +625,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
 
   @Test
-  public void withNamespaceList_whenConfiguredDomainNamespaceAreReduced_nsStoppingEventCreated() {
+  public void withNamespaceList_onReadExistingNamespaces_whenDomainNamespaceRemoved_nsStoppingEventCreated() {
     domainNamespaces.isStopping("NS3");
     defineSelectionStrategy(SelectionStrategy.List);
     String namespaceString = "NS1,NS2";
@@ -641,6 +641,19 @@ public class MainTest extends ThreadFactoryTestBase {
         EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, "NS3")), is(true));
+  }
+
+  @Test
+  public void withNamespaceLabelSelector_whenOperatorStarted_nsWatchStartingEventIsCreated() {
+    Main main = new Main(createStrictStub(MainDelegateStub.class, testSupport, new DomainNamespaces()));
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1);
+    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+
+    main.startOperator(null);
+
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTING",
+        containsEvent(getEvents(testSupport), EventConstants.NAMESPACE_WATCHING_STARTING_EVENT), is(true));
   }
 
   @Test
@@ -664,7 +677,7 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void withNamespaceLabelSelector_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
+  public void withNamespaceLabelSelector_onReadExistingNamespaces_whenNamespaceLabelRemoved_nsStoppingEventCreated() {
     domainNamespaces.isStopping("NS3");
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
@@ -683,6 +696,19 @@ public class MainTest extends ThreadFactoryTestBase {
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, "NS3")), is(true));
   }
 
+  @Test
+  public void withNamespaceRegExp_whenOperatorStarted_nsWatchStartingEventIsCreated() {
+    Main main = new Main(createStrictStub(MainDelegateStub.class, testSupport, new DomainNamespaces()));
+    defineSelectionStrategy(SelectionStrategy.RegExp);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC2);
+
+    TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
+
+    main.startOperator(null);
+
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTING",
+        containsEvent(getEvents(testSupport), EventConstants.NAMESPACE_WATCHING_STARTING_EVENT), is(true));
+  }
 
   @Test
   public void withNamespaceRegExp_onCreateStartNamespacesStep_nsWatchStartingEventCreated() {
