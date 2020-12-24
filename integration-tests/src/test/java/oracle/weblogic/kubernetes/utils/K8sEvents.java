@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
@@ -48,8 +49,7 @@ public class K8sEvents {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
           if (event.getReason().contains(reason)
-              && (event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
-                  || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis()))) {
+              && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify reason
@@ -79,19 +79,13 @@ public class K8sEvents {
   public static Callable<Boolean> checkPodEventLoggedOnce(
           String domainNamespace, String serverName, String reason, DateTime timestamp) {
     return () -> {
-      logger.info("Verifying {0} event is logged once in the domain namespace {1}", reason, domainNamespace);
+      logger.info("Verifying {0} event is logged for {1} pod in the domain namespace {2}",
+              reason, serverName, domainNamespace);
       try {
-        List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-        int count = 0;
-        for (V1Event event : events) {
-          if (event.getInvolvedObject().getName().equals(serverName)
-                  && (event.getReason().contains(reason))
-                  && (event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
-                  || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis()))) {
-            count++;
-          }
-        }
-        return isEventLoggedOnce(serverName, count);
+        return isEventLoggedOnce(serverName, Kubernetes.listNamespacedEvents(domainNamespace).stream()
+                .filter(e -> e.getInvolvedObject().getName().equals(serverName))
+                .filter(e -> e.getReason().contains(reason))
+                .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
       } catch (ApiException ex) {
         Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
@@ -99,14 +93,19 @@ public class K8sEvents {
     };
   }
 
+  private static boolean isEqualOrAfter(DateTime timestamp, V1Event event) {
+    return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
+            || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
+  }
+
   private static Boolean isEventLoggedOnce(String serverName, int count) {
-    if (count == 1) {
-      return true;
-    } else {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
-              "Pod " + serverName + " restarted " + count + " times");
-      return false;
-    }
+    return count == 1 ? true : logErrorAndFail(serverName, count);
+  }
+
+  private static Boolean logErrorAndFail(String serverName, int count) {
+    Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
+            "Pod " + serverName + " restarted " + count + " times");
+    return false;
   }
 
   // Verify the operator instance details are correct

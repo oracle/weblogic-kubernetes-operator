@@ -158,9 +158,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
+ * Also verify the rolling restart behavior in a multi-cluster MII domain.
  */
-@DisplayName("Verify scaling the clusters in the domain with different domain types and "
-    + "the sample application can be accessed via NGINX ingress controller")
+@DisplayName("Verify scaling the clusters in the domain with different domain types, "
+        + "rolling restart behavior in a multi-cluster MII domain and "
+        + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
 class ItParameterizedDomain {
 
@@ -600,7 +602,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
-  public void testMultiClusterRollingRestartByChangingImagePullPolicy() {
+  public void testRollingRestartBehaviorInMultiClusterMiiDomainByChangingImagePullPolicy() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
 
     // get the original domain resource before update
@@ -611,14 +613,12 @@ class ItParameterizedDomain {
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
+    StringBuffer patchStr = new StringBuffer("[{")
+            .append("\"op\": \"replace\",")
             .append(" \"path\": \"/spec/imagePullPolicy\",")
             .append("\"value\": \"")
             .append("Never")
             .append("\"}]");
-    logger.info("PatchStr for imagePullPolicy: {0}", patchStr.toString());
 
     boolean cmPatched = patchDomainResource(miiDomainUid, miiDomainNamespace, patchStr);
     assertTrue(cmPatched, "patchDomainCustomResource(imagePullPolicy) failed");
@@ -666,7 +666,7 @@ class ItParameterizedDomain {
             .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
                     DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
 
-    // check that pod termination and started events are logged only once for each managed server in each cluster
+    // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
