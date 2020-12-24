@@ -78,7 +78,7 @@ It is worth providing some background information on why this approach was adopt
 
 The external state approach allows the operator to treat the Docker images as essentially immutable, read-only, binary images.  This means that the image needs to be pulled only once, and that many domains can share the same image.  This helps to minimize the amount of bandwidth and storage needed for WebLogic Server Docker images.
 
-This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database back end. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
+This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
 
 When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched Docker image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers.
 
