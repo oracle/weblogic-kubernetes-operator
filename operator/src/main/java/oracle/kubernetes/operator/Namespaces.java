@@ -230,12 +230,15 @@ public class Namespaces {
     public NextAction apply(Packet packet) {
       NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
       getNonNullConfiguredDomainNamespaces().forEach(validationContext::validateConfiguredNamespace);
-      List<StepAndPacket> nsStopEventSteps =
-          domainNamespaces.getNamespaces().stream()
-              .filter(validationContext::isNoLongerActiveDomainNamespace)
-              .map(n -> createNSStopEventDetails(packet, n)).collect(Collectors.toList());
+      List<StepAndPacket> nsStopEventSteps = getCreateNSStopEventSteps(packet, validationContext);
       stopRemovedNamespaces(validationContext);
       return doNext(Step.chain(createNamespaceWatchStopEventsStep(nsStopEventSteps), getNext()), packet);
+    }
+
+    private List<StepAndPacket> getCreateNSStopEventSteps(Packet packet, NamespaceValidationContext validationContext) {
+      return domainNamespaces.getNamespaces().stream()
+          .filter(validationContext::isNoLongerActiveDomainNamespace)
+          .map(n -> createNSStopEventDetails(packet, n)).collect(Collectors.toList());
     }
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {

@@ -212,21 +212,25 @@ class DomainRecheck {
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
       if (fullRecheck) {
         return doNext(packet);
+      } else if (isNamespaceStarting(nss)) {
+        return doNext(addEventStep(), packet);
+      } else {
+        return doEnd(packet);
       }
+    }
 
-      if (!nss.isNamespaceStarting().getAndSet(true)) {
-        return doNext(Step.chain(
-            EventHelper.createEventStep(
-                new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
-            getNext()),
-            packet);
-      }
+    private Step addEventStep() {
+      return Step.chain(
+          EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          getNext());
+    }
 
-      return doEnd(packet);
+    private boolean isNamespaceStarting(NamespaceStatus nss) {
+      return !nss.isNamespaceStarting().getAndSet(true);
     }
   }
 
-  /**
+    /**
    * Given a list of namespace names and a method that creates steps for the namespace,
    * will create the appropriate steps and run them in parallel, waiting for all to complete
    * before proceeding.
