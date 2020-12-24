@@ -34,7 +34,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given set of labels.
+   * Whether there is an event matches the given set of labels.
    *
    * @param events a list of events
    * @param reason the reason to match
@@ -47,7 +47,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given reason and message.
+   * Whether there is an event matches the given reason and message.
    *
    * @param events a list of events
    * @param reason the reason to match
@@ -59,7 +59,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given reason and reporting component is WebLogic Operator.
+   * Whether there is an event matches the given reason and reporting component is WebLogic Operator.
    *
    * @param events a list of events
    * @param reason the reason to match
@@ -72,7 +72,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given reason and operator pod name.
+   * Whether there is an event matches the given reason and operator pod name.
    *
    * @param events a list of events
    * @param reason the reason to match
@@ -85,7 +85,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given reason and involved object.
+   * Whether there is an event matches the given reason and involved object.
    *
    * @param events a list of events
    * @param reason the reason to match
