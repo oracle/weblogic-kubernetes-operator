@@ -230,7 +230,7 @@ class DomainRecheck {
     }
   }
 
-    /**
+  /**
    * Given a list of namespace names and a method that creates steps for the namespace,
    * will create the appropriate steps and run them in parallel, waiting for all to complete
    * before proceeding.
