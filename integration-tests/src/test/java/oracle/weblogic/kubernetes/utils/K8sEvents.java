@@ -73,7 +73,7 @@ public class K8sEvents {
    *
    * @param domainNamespace namespace in which the domain exists
    * @param serverName server pod name for which event is checked
-   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param reason event to check for Started, Killing etc
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkPodEventLoggedOnce(
