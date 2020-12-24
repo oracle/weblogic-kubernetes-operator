@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -27,6 +27,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /**
@@ -238,10 +240,7 @@ public class Namespaces {
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
       return new StepAndPacket(
-          EventHelper.createEventStep(
-              new EventHelper.EventData(
-                  EventHelper.EventItem.NAMESPACE_WATCHING_STOPPING)
-                  .resourceName(namespace).namespace(namespace)),
+          createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
           packet.clone());
     }
 

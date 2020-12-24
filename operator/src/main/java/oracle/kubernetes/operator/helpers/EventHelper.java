@@ -42,7 +42,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
-import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -290,20 +290,20 @@ public class EventHelper {
             resourceName, Optional.ofNullable(eventData.message).orElse(""));
       }
     },
-    NAMESPACE_WATCHING_STARTING {
+    NAMESPACE_WATCHING_STARTED {
       @Override
       public String getReason() {
-        return EventConstants.NAMESPACE_WATCHING_STARTING_EVENT;
+        return EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
       }
 
       @Override
       protected String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STARTING_PATTERN;
+        return EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
       }
 
       @Override
       public String getMessage(String resourceName, EventData eventData) {
-        return String.format(NAMESPACE_WATCHING_STARTING_PATTERN, resourceName);
+        return String.format(NAMESPACE_WATCHING_STARTED_PATTERN, resourceName);
       }
 
       @Override
@@ -325,20 +325,20 @@ public class EventHelper {
         return namespace;
       }
     },
-    NAMESPACE_WATCHING_STOPPING {
+    NAMESPACE_WATCHING_STOPPED {
       @Override
       public String getReason() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPING_EVENT;
+        return EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
       }
 
       @Override
       protected String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN;
+        return EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN;
       }
 
       @Override
       public String getMessage(String resourceName, EventData eventData) {
-        return String.format(EventConstants.NAMESPACE_WATCHING_STOPPING_PATTERN, resourceName);
+        return String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, resourceName);
       }
 
       @Override

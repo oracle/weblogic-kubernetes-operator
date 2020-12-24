@@ -21,7 +21,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -33,6 +32,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 class DomainRecheck {
@@ -217,7 +217,7 @@ class DomainRecheck {
       if (!nss.isNamespaceStarting().getAndSet(true)) {
         return doNext(Step.chain(
             EventHelper.createEventStep(
-                new EventData(EventItem.NAMESPACE_WATCHING_STARTING).namespace(ns).resourceName(ns)),
+                new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
             getNext()),
             packet);
       }

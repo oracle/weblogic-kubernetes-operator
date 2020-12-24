@@ -34,8 +34,8 @@ public interface EventConstants {
       = "Aborting the processing of domain resource %s permanently due to: %s";
   String DOMAIN_VALIDATION_ERROR_PATTERN
       = "Validation error in domain resource %s: %s";
-  String NAMESPACE_WATCHING_STARTING_EVENT = "NamespaceWatchingStarting";
-  String NAMESPACE_WATCHING_STARTING_PATTERN = "Starting watching namespace %s";
-  String NAMESPACE_WATCHING_STOPPING_EVENT = "NamespaceWatchingStopping";
-  String NAMESPACE_WATCHING_STOPPING_PATTERN = "Stopping watching namespace %s";
+  String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
+  String NAMESPACE_WATCHING_STARTED_PATTERN = "Started watching namespace %s";
+  String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
+  String NAMESPACE_WATCHING_STOPPED_PATTERN = "Stopped watching namespace %s";
 }
