@@ -212,20 +212,20 @@ class DomainRecheck {
       NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
       if (fullRecheck) {
         return doNext(packet);
-      } else if (isNamespaceStarting(nss)) {
-        return doNext(addEventStep(), packet);
+      } else if (isNamespaceStartingChangedToTrue(nss)) {
+        return doNext(addNSWatchingStartingEventStep(), packet);
       } else {
         return doEnd(packet);
       }
     }
 
-    private Step addEventStep() {
+    private Step addNSWatchingStartingEventStep() {
       return Step.chain(
           EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
           getNext());
     }
 
-    private boolean isNamespaceStarting(NamespaceStatus nss) {
+    private boolean isNamespaceStartingChangedToTrue(NamespaceStatus nss) {
       return !nss.isNamespaceStarting().getAndSet(true);
     }
   }
