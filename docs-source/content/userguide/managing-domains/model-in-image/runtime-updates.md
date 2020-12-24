@@ -256,6 +256,73 @@ this behavior by setting the attribute `domain.spec.configuration.model.onlineUp
 When updating a domain with non-dynamic mbean changes with `onNonDynamicUpdates=CommitUpdateOnly (Default if not set)`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will then be running in an inconsistent state if other servers are not restarted. 
 {{% /notice %}}
 
+It is crucial to understand the merged model in the image and configmap will always to be source of truth. The update to the model in the configmap is not the delta to update the domain.
+In each update, the Operator generates a merged model from the models in the image and configmap, this model is used to compare with what is previously deployed. The differences between the models are used for the online update. This delta may include additions, changes, and deletions depending on the models.  
+
+#### Examples of online updates
+
+The primary use case for online update is for making small addition or changing non-dynamic mbean attributes, deletion can be problematic. 
+
+For example, if you have an application in the model under `appDeployments` in the configmap, then you updated this configmap and removed from the `appDeployment` section,
+the Operator will generate a model to delete the application, and online update will delete the application from the domain. 
+The newly merged model (without the application) will be stored by the Operator for future use. While this will work but in other case like the following will be problematic.
+
+For example, if you have in the current configmap a model with
+
+```
+resources:
+  SelfTuning:
+    WorkManager:
+      newWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Count: 10
+```
+ 
+then you updated the model in the configmap and completely removed the `SelfTuning` section, the Operator generates the delta for update domain as 
+
+```
+resources:
+    SelfTuning:
+        '!WorkManager':
+        '!MinThreadsConstraint':
+        '!MaxThreadsConstraint':
+```
+
+which will result in an error since you cannot delete the entire tree under `SelfTuning`, and there is no equivalent construct in WebLogic to delete all `WorkManagers`.   Even if you specify the model in the configmap as
+
+```
+resources:
+    SelfTuning:
+        WorkManager:
+        MinThreadsConstraint:
+        MaxThreadsConstraint:
+
+```
+and the Operator generates this delta to update the domain. Note: in reality, the model is likely to have multiple `WorkManagers` and constraints.
+
+```
+resources:
+    SelfTuning:
+        MaxThreadsConstraint:
+            '!SampleMaxThreads':
+        WorkManager:
+            '!newWM':
+        MinThreadsConstraint:
+            '!SampleMinThreads':
+```
+
+This will also result in error during online update because deletion needs to follow the child dependency order and there is no easy way to determine the order of dependency currently.
+ 
+In general, drastic deletion is best handled by offline update, that will recreate the domain in each update.  
+
+
 Sample domain resource YAML:
 
 ```
