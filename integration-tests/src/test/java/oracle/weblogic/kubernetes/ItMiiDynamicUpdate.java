@@ -41,7 +41,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
@@ -552,10 +551,10 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed with the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErroMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map without any files
+    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
     // there is an issue that the application SourcePath can not be found when the target is removed
     // https://jira.oraclecorp.com/jira/browse/WDT-535
     Path pathToAppDeploymentYaml = Paths.get(WORK_DIR + "/appdeployment.yaml");
@@ -589,7 +588,6 @@ class ItMiiDynamicUpdate {
         + "  Server:\n"
         + "    'admin-server':\n"
         + "      ListenPort: 7003";
-
     assertDoesNotThrow(() -> Files.write(pathToChangeListenPortYaml, yamlToChangeListenPort.getBytes()));
 
     // Replace contents of an existing configMap
@@ -602,10 +600,10 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErroMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map without any files
+    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -642,10 +640,10 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErroMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map without any files
+    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -671,7 +669,6 @@ class ItMiiDynamicUpdate {
         + "    'cluster-1-template':\n"
         + "      SSL:\n"
         + "         ListenPort: 8103";
-
     assertDoesNotThrow(() -> Files.write(pathToChangeSSLYaml, yamlToChangeSSL.getBytes()));
 
     // Replace contents of an existing configMap
@@ -684,10 +681,10 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErroMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map without any files
+    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -703,7 +700,7 @@ class ItMiiDynamicUpdate {
     checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
 
-  private void verifyIntrospectorFailsWithExpectedErroMsg(String expectedErrorMsg) {
+  private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
     // verify the introspector pod is created
     logger.info("Verifying introspector pod is created");
     String introspectJobName = getIntrospectJobName(domainUid);
