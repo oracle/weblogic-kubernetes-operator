@@ -577,18 +577,6 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void withNamespaceList_whenOperatorStarted_nsWatchStartedEventIsCreated() {
-    defineSelectionStrategy(SelectionStrategy.List);
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
-    testSupport.defineResources(NAMESPACE_WEBLOGIC1);
-
-    main.startOperator(null);
-
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED",
-        containsEvent(getEvents(testSupport), EventConstants.NAMESPACE_WATCHING_STARTED_EVENT), is(true));
-  }
-
-  @Test
   public void withNamespaceList_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
     defineSelectionStrategy(SelectionStrategy.List);
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES,
