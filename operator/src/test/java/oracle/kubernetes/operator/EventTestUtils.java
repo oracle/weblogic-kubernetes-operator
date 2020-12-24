@@ -22,7 +22,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether an there is an event matches the given reason and namespace.
+   * Whether there is an event matches the given reason and namespace.
    *
    * @param events a list of events
    * @param reason the reason to match
