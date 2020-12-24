@@ -48,7 +48,8 @@ public class K8sEvents {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
           if (event.getReason().contains(reason)
-              && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
+              && (event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
+                  || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis()))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify reason
@@ -65,6 +66,47 @@ public class K8sEvents {
       }
       return false;
     };
+  }
+
+  /**
+   * Check if a given event is logged only once for the given pod.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param serverName server pod name for which event is checked
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkPodEventLoggedOnce(
+          String domainNamespace, String serverName, String reason, DateTime timestamp) {
+    return () -> {
+      logger.info("Verifying {0} event is logged once in the domain namespace {1}", reason, domainNamespace);
+      try {
+        List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        int count = 0;
+        for (V1Event event : events) {
+          if (event.getInvolvedObject().getName().equals(serverName)
+                  && (event.getReason().contains(reason))
+                  && (event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
+                  || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis()))) {
+            count++;
+          }
+        }
+        return isEventLoggedOnce(serverName, count);
+      } catch (ApiException ex) {
+        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      return false;
+    };
+  }
+
+  private static Boolean isEventLoggedOnce(String serverName, int count) {
+    if (count == 1) {
+      return true;
+    } else {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
+              "Pod " + serverName + " restarted " + count + " times");
+      return false;
+    }
   }
 
   // Verify the operator instance details are correct
@@ -98,5 +140,7 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String POD_TERMINATED = "Killing";
+  public static final String POD_STARTED = "Started";
 
 }
