@@ -237,13 +237,12 @@ in the Model in Image sample.
 
 For configuration changes that only modify dynamic WebLogic mbean attributes (subject to the exceptions listed in section support/unsupported), you can initiate an online update to a running domain managed by the Operator by doing the following:
 
- - Modifying contents of the secrets that are referenced by WDT model(s) and/or modifying the contents of `domain.spec.configuration.model.configMap`.
+ - Modifying contents of the secrets that are referenced by WDT model(s) and/or modifying the contents of `domain.spec.configuration.model.configMap`.  You will update them in the same manner as for offline updates.
  - Setting `domain.spec.configuration.model.onlineUpdate.enabled` to `true`
- - Setting `domain.spec.configuration.model.onlineUpdate.onNonDynmaicChanges` to the desired behavior (see below)
+ - Setting `domain.spec.configuration.model.onlineUpdate.onNonDynmaicChanges` to the desired behavior for non-dynamic changes
  - Changing `domain.spec.configuration.introspectVersion`.
 
-If any non-dynamic WebLogic mbean attribute is also changed as part of the above actions.  Since the non-dynamic changes require 
-domain restart, the default behavior of the Operator is commit all changes and let the user manually restart the domain when ready.  You can control
+For any non-dynamic WebLogic mbean attribute added or changed, it requires a restart of the domain.  The default behavior of the Operator is commit all changes and let the user manually restart the domain when ready.  You can control
 this behavior by setting the attribute `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to one of these values: 
     
  | OnNonDynamicChanges Value | Behavior | 
@@ -251,77 +250,6 @@ this behavior by setting the attribute `domain.spec.configuration.model.onlineUp
     | CommitUpdateOnly | Default or if not set.  All changes are committed, but if there are non-dynamic mbean changes. The domain needs to restart manually. |
     | CommitUpdateAndRoll |  All changes are committed, but if there are non-dynamic mbean changes, the domain will rolling restart automatically; if not, no restart is necessary |
     | CancelUpdate | If there are non-dynamic mbean changes, all changes are canceled before they are committed. The domain will continue to run, but changes to the configmap and resources in the domain resource YAML should be reverted manually, otherwise in the next introspection will still use the same content in the changed configmap |
-
-{{% notice warning %}}
-When updating a domain with non-dynamic mbean changes with `onNonDynamicUpdates=CommitUpdateOnly (Default if not set)`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will then be running in an inconsistent state if other servers are not restarted. 
-{{% /notice %}}
-
-It is crucial to understand the merged model in the image and configmap will always to be source of truth. The update to the model in the configmap is not the delta to update the domain.
-In each update, the Operator generates a merged model from the models in the image and configmap, this model is used to compare with what is previously deployed. The differences between the models are used for the online update. This delta may include additions, changes, and deletions depending on the models.  
-
-#### Examples of online updates
-
-The primary use case for online update is for making small addition or changing non-dynamic mbean attributes, deletion can be problematic. 
-
-For example, if you have an application in the model under `appDeployments` in the configmap, then you updated this configmap and removed from the `appDeployment` section,
-the Operator will generate a model to delete the application, and online update will delete the application from the domain. 
-The newly merged model (without the application) will be stored by the Operator for future use. While this will work but in other case like the following will be problematic.
-
-For example, if you have in the current configmap a model with
-
-```
-resources:
-  SelfTuning:
-    WorkManager:
-      newWM:
-        Target: 'cluster-1'
-        MinThreadsConstraint: 'SampleMinThreads'
-        MaxThreadsConstraint: 'SampleMaxThreads'
-    MinThreadsConstraint:
-      SampleMinThreads:
-        Count: 1
-    MaxThreadsConstraint:
-      SampleMaxThreads:
-        Count: 10
-```
- 
-then you updated the model in the configmap and completely removed the `SelfTuning` section, the Operator generates the delta for update domain as 
-
-```
-resources:
-    SelfTuning:
-        '!WorkManager':
-        '!MinThreadsConstraint':
-        '!MaxThreadsConstraint':
-```
-
-which will result in an error since you cannot delete the entire tree under `SelfTuning`, and there is no equivalent construct in WebLogic to delete all `WorkManagers`.   Even if you specify the model in the configmap as
-
-```
-resources:
-    SelfTuning:
-        WorkManager:
-        MinThreadsConstraint:
-        MaxThreadsConstraint:
-
-```
-and the Operator generates this delta to update the domain. Note: in reality, the model is likely to have multiple `WorkManagers` and constraints.
-
-```
-resources:
-    SelfTuning:
-        MaxThreadsConstraint:
-            '!SampleMaxThreads':
-        WorkManager:
-            '!newWM':
-        MinThreadsConstraint:
-            '!SampleMinThreads':
-```
-
-This will also result in error during online update because deletion needs to follow the child dependency order and there is no easy way to determine the order of dependency currently.
- 
-In general, drastic deletion is best handled by offline update, that will recreate the domain in each update.  
-
 
 Sample domain resource YAML:
 
@@ -354,11 +282,86 @@ spec:
         OnNonDynamicChanges: "CommitUpdateAndRoll"
 ```
 
-During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
+{{% notice warning %}}
+When updating a domain with non-dynamic mbean changes with `onNonDynamicUpdates=CommitUpdateOnly (Default if not set)`, the changes are not effective until the domain is restarted. However, if you scale up the domain simultaneously, the new server(s) will start with the new changes, and the cluster will then be running in an inconsistent state if other servers are not restarted. 
+{{% /notice %}}
 
-Once the job is completed, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
+#### Online Update Mechanism
 
-Below is a general description of how online update works and the expected outcome.
+It is crucial to understand the Operator always use the merged model in the image and configmap as the source of truth. The updated configmap is not the delta to update the running domain.
+In each update, the Operator generates a merged model from the models in the image and configmap, this model is used to compare with what is previously deployed and stored by the operator. The differences between the models are then used for the online update using `WebLogic Deploy Tool`. This delta may include additions, changes, and deletions depending on the models.  
+
+ | Original Model | New Model | Delta | 
+    |---------------------|-------------|-----|
+    | MBean A | MBean B, MBean A | Add MBean B|
+    | MBean A | Modify Attributes or add new attributes of A | New attributes of A and updated attributes of A|
+    | MBean A, MBean B | MBean A | Delete MBean B |
+
+The primary use case for online update is to make small addition or changing non-dynamic mbean attributes, deletion can be problematic for the current release. 
+
+For example, if you have an application in the model under `appDeployments` in the configmap, then you updated the configmap and removed from the `appDeployment` section,
+the Operator generates a model to delete the application, and online update will delete the application from the domain. 
+The newly merged model (without the application) will be stored by the Operator for future use. While this work but in other case like the following will be problematic.
+
+For example, if you have a model in the current configmap:
+
+```
+resources:
+  SelfTuning:
+    WorkManager:
+      newWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Count: 10
+```
+ 
+then you updated the model in the configmap and completely removed the `SelfTuning` section, the Operator generates the delta for update domain as 
+
+```
+resources:
+    SelfTuning:
+        '!WorkManager':
+        '!MinThreadsConstraint':
+        '!MaxThreadsConstraint':
+```
+
+which will result in an error since you cannot delete the entire mbean trees under `SelfTuning`, there is no equivalent construct in WebLogic to delete all `WorkManagers`.   Even if you specify the model in the configmap as
+
+```
+resources:
+    SelfTuning:
+        WorkManager:
+        MinThreadsConstraint:
+        MaxThreadsConstraint:
+
+```
+and the Operator generates this delta to update the domain. 
+
+```
+resources:
+    SelfTuning:
+        MaxThreadsConstraint:
+            '!SampleMaxThreads':
+        WorkManager:
+            '!newWM':
+        MinThreadsConstraint:
+            '!SampleMinThreads':
+```
+
+This will also result in error during online update because deletion needs to delete all referenced `Contraints` first before deleting the actual `WorkManager`. Note: in reality, the model is likely to have multiple `WorkManagers` and `Constraints`, making the deletion order more complicated.
+This is not a supported operation in the current release of `WebLogic Deploy Tool`.
+ 
+In general, complex deletion should be done by offline update, that will recreate the domain in each update.  
+
+#### Sample online update use cases
+
+High level descriptions:
 
 |Scenarios|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
@@ -370,11 +373,8 @@ Below is a general description of how online update works and the expected outco
   |Changing any mbean attribute that is unsupported [Unsupported Changes](#Unsupported-Changes))|Expected behavior is undefined. In some cases there will be helpful error in the introspector job, and the job will periodically retry until the error is corrected or its maximum error count exceeded.|Use offline updates or recreate the domain|
   |Errors in the model|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Correct the model|
   |Other errors while updating the domain|Error in the introspector job, it will retry periodically until the error is corrected or until maximum error count exceeded|Check the introspection job or domain status|
-  
-  
-Sample use cases:
-
-Dynamic attributes examples:
+    
+Dynamic attributes update examples:
 
 |Use case|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
@@ -401,9 +401,12 @@ For any of these unsupported changes, the introspector job will fail and automat
 - Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate; top level Toplogy attributes.  Any changes to these attributes will result in an error. . The introspection job will fail and automatically retry up to maximum retries.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to maximum retries.
 - Security related changes in the model including in `domainInfo.Admin*`, `domainInfo.RCUDbinfo.*`, `topology.Security.*`, `toplogy.SecurityConfiguration.*`.  Any changes in these sections will automatically switched to use offline update and the domain will be rolled.
- 
-Checking online update status
 
+#### Checking online update status
+
+During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
+Once the job is completed, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
+ 
 When the introspector job finished, the domain status will be updated according to the result.
 
 You can use the command to display the domain status
@@ -474,15 +477,15 @@ Attributes changed : Value
     Type:                        OnlineUpdateComplete
 
 ```
-       
-Error Recovery
+
+#### Online updates error recovery       
 
 - When updating a domain with `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is set to `CancelUpdate`, if the changes involve non-dynamic changes, all changes are canceled. User must correct the models immediately or use offline update instead. This avoid future introspector job re-run with the same changes again.
 - Changes to the image, configmap, and domain resource YAML are under user control.  The operator cannot revert the changes automatically just like offline updates. 
 - In case of any failure in online updates, no changes will be made to running domain.  However, since the introspector job runs periodically against the domain resources up to maximum retry times.
 You can delete the introspection job, correct the error and re-apply the changes; or just correct the error and wait for the next introspection job retry.
 
-Specifying timeout
+#### Specifying timeout for online updates
 
 In a rare case if the WDT online update command timeout results in error in the operator log, you can specify the following attributes under `onlineUpdate` to override the default value:
 
