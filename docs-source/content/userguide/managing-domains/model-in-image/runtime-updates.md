@@ -242,7 +242,7 @@ For configuration changes that only modify dynamic WebLogic mbean attributes (su
  - Setting `domain.spec.configuration.model.onlineUpdate.onNonDynmaicChanges` to the desired behavior for non-dynamic changes
  - Changing `domain.spec.configuration.introspectVersion`.
 
-For any non-dynamic WebLogic mbean attribute added or changed, it requires a restart of the domain.  The default behavior of the Operator is commit all changes and let the user manually restart the domain when ready.  You can control
+For any non-dynamic WebLogic mbean attribute added or changed, it requires a restart of the domain.  The Operator's default behavior is to commit all changes and let the user manually restart the domain when ready.  You can control
 this behavior by setting the attribute `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to one of these values: 
     
  | OnNonDynamicChanges Value | Behavior | 
@@ -276,9 +276,9 @@ spec:
         # 
         # CommitUpdateOnly (Default):  All changes are committed. If the changes involve non-dynamic mbean attributes 
         #                              User has to restart the domain manually, use `kubectl describe domain <domain uid> to view the condition afater the update.
-        # CommitUpdateAndRoll:   All changes are cmmitted. If the changes involve non-dynamic mbean attribues, the Operator will restart the domain automatically.
-        # CancelChanges:  If the changes involve non-dynamic mbean attributes, no changes will be applied, the introspector job will not retry.  User should revert the changes to the config map or resources manually, otherwise
-        #                 if someone tries to trigger the introspector job again, the changes to the configmap and resources will be applied.
+        # CommitUpdateAndRoll:   All changes are committed. If the changes involve non-dynamic mbean attribues, the Operator will restart the domain automatically.
+        # CancelChanges:  If the changes involve non-dynamic mbean attributes, no changes will be applied, the introspector job will not retry.  User should revert the changes to the config map or resources manually.
+        #                 The Operator cannot revert the changes to the configmap and resources done by the user.
         OnNonDynamicChanges: "CommitUpdateAndRoll"
 ```
 
@@ -301,7 +301,7 @@ The primary use case for online update is to make small addition or changing non
 
 For example, if you have an application in the model under `appDeployments` in the configmap, then you updated the configmap and removed from the `appDeployment` section,
 the Operator generates a model to delete the application, and online update will delete the application from the domain. 
-The newly merged model (without the application) will be stored by the Operator for future use. While this work but in other case like the following will be problematic.
+The Operator will store the newly merged model (without the application) for future use. While this work but in other cases like the following will be problematic.
 
 For example, if you have a model in the current configmap:
 
@@ -321,8 +321,9 @@ resources:
         Count: 10
 ```
  
-then you updated the model in the configmap and completely removed the `SelfTuning` section, the Operator generates the delta for update domain as 
-
+then you updated the model in the configmap and completely removed the `SelfTuning` section. The Operator generates the delta for update domain as 
+which will result in an error since you cannot delete the entire mbean trees under `SelfTuning`, there is no equivalent construct in WebLogic to delete all `WorkManagers`.
+  
 ```
 resources:
     SelfTuning:
@@ -331,7 +332,7 @@ resources:
         '!MaxThreadsConstraint':
 ```
 
-which will result in an error since you cannot delete the entire mbean trees under `SelfTuning`, there is no equivalent construct in WebLogic to delete all `WorkManagers`.   Even if you specify the model in the configmap as
+Even if you specify the model in the configmap as
 
 ```
 resources:
@@ -341,7 +342,8 @@ resources:
         MaxThreadsConstraint:
 
 ```
-and the Operator generates this delta to update the domain. 
+
+The Operator will then use this delta to update the domain. 
 
 ```
 resources:
