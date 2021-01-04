@@ -1,5 +1,5 @@
 /*
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
 variable "cluster_kubernetes_version" { default = "v1.15.7" }

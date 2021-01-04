@@ -41,7 +41,7 @@
     </module>
 
     <module name="RegexpHeader">
-        <property name="header" value="^// Copyright \(c\) (\d\d\d\d, )+Oracle Corporation and\/or its affiliates\.$\n^// Licensed under the Universal Permissive License v 1\.0 as shown at https://oss\.oracle\.com/licenses/upl\.$"/>
+        <property name="header" value="^// Copyright \(c\) (\d\d\d\d, )+Oracle and\/or its affiliates\.$\n^// Licensed under the Universal Permissive License v 1\.0 as shown at https://oss\.oracle\.com/licenses/upl\.$"/>
         <property name="fileExtensions" value="java"/>
     </module>
 
