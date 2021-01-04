@@ -37,6 +37,8 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
@@ -60,10 +62,27 @@ public class EventHelper {
     return new CreateEventStep(eventData);
   }
 
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
+   * @param eventData event item
+   * @param next next step
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(
+      EventData eventData, Step next) {
+    return new CreateEventStep(eventData, next);
+  }
+
   public static class CreateEventStep extends Step {
     private final EventData eventData;
 
     CreateEventStep(EventData eventData) {
+      this(eventData, null);
+    }
+
+    CreateEventStep(EventData eventData, Step next) {
+      super(next);
       this.eventData = eventData;
     }
 
@@ -253,6 +272,28 @@ public class EventHelper {
             Optional.ofNullable(eventData.message).orElse(""));
       }
 
+    },
+    DOMAIN_VALIDATION_ERROR {
+      @Override
+      public String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return DOMAIN_VALIDATION_ERROR_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_VALIDATION_ERROR_PATTERN;
+      }
+
+      @Override
+      public String getMessage(DomainPresenceInfo info, EventData eventData) {
+        return String.format(DOMAIN_VALIDATION_ERROR_PATTERN,
+            info.getDomainUid(), Optional.ofNullable(eventData.message).orElse(""));
+      }
     },
     EMPTY {
       @Override

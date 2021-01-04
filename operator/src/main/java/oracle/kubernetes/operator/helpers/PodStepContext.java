@@ -1051,11 +1051,6 @@ public abstract class PodStepContext extends BasePodStepContext {
           .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
           .withStatus("True");
 
-      DomainStatus x =  Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .orElse(null);
-
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)

@@ -658,6 +658,11 @@ public class DomainProcessorImpl implements DomainProcessor {
       return inspectionRun;
     }
 
+    @Override
+    public boolean isExplicitRecheck() {
+      return explicitRecheck;
+    }
+
     private boolean shouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
       int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
