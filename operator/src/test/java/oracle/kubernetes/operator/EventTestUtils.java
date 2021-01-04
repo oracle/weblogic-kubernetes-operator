@@ -30,11 +30,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
-    return getEventsWithReason(events, reason)
-        .stream()
-        .filter(e -> namespaceMatches(e, namespace))
-        .findFirst()
-        .isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(e -> namespaceMatches(e, namespace));
   }
 
   /**
@@ -47,7 +43,7 @@ public class EventTestUtils {
    */
   public static boolean containsEventWithLabels(
       @NotNull List<V1Event> events, String reason, Map<String, String> labels) {
-    return getEventsWithReason(events, reason).stream().filter(e -> labelsMatches(e, labels)).findFirst().isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(e -> labelsMatches(e, labels));
   }
 
   /**
@@ -59,7 +55,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
-    return getEventsWithReason(events, reason).stream().filter(e -> messageMatches(e, message)).findFirst().isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(e -> messageMatches(e, message));
   }
 
   /**
@@ -70,11 +66,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithComponent(@NotNull List<V1Event> events, String reason) {
-    return getEventsWithReason(events, reason)
-        .stream()
-        .filter(e -> reportingComponentMatches(e, WEBLOGIC_OPERATOR_COMPONENT))
-        .findFirst()
-        .isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(EventTestUtils::reportingComponentMatches);
   }
 
   /**
@@ -86,11 +78,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithInstance(@NotNull List<V1Event> events, String reason, String opName) {
-    return getEventsWithReason(events, reason)
-        .stream()
-        .filter(e -> reportingInstanceMatches(e, opName))
-        .findFirst()
-        .isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(e -> reportingInstanceMatches(e, opName));
   }
 
   /**
@@ -104,11 +92,7 @@ public class EventTestUtils {
    */
   public static boolean containsEventWithInvolvedObject(
       @NotNull List<V1Event> events, String reason, String name, String namespace) {
-    return getEventsWithReason(events, reason)
-        .stream()
-        .filter(e -> involvedObjectMatches(e, name, namespace))
-        .findFirst()
-        .isPresent();
+    return getEventsWithReason(events, reason).stream().anyMatch(e -> involvedObjectMatches(e, name, namespace));
   }
 
   public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
@@ -119,11 +103,11 @@ public class EventTestUtils {
     return getEventsWithReason(events, reason).size() != 0;
   }
 
-  static boolean reasonMatches(V1Event event, String eventReason) {
+  private static boolean reasonMatches(V1Event event, String eventReason) {
     return eventReason.equals(event.getReason());
   }
 
-  static boolean namespaceMatches(V1Event event, String namespace) {
+  private static boolean namespaceMatches(V1Event event, String namespace) {
     return namespace.equals(event.getMetadata().getNamespace());
   }
 
@@ -131,33 +115,33 @@ public class EventTestUtils {
     return labels.equals(e.getMetadata().getLabels());
   }
 
-  static boolean reportingInstanceMatches(V1Event event, String instance) {
+  private static boolean reportingInstanceMatches(V1Event event, String instance) {
     return instance.equals(event.getReportingInstance());
   }
 
-  static boolean reportingComponentMatches(V1Event event, String component) {
-    return component.equals(event.getReportingComponent());
+  private static boolean reportingComponentMatches(V1Event event) {
+    return WEBLOGIC_OPERATOR_COMPONENT.equals(event.getReportingComponent());
   }
 
-  static boolean messageMatches(V1Event event, String message) {
+  private static boolean messageMatches(V1Event event, String message) {
     return message.equals(event.getMessage());
   }
 
-  static boolean involvedObjectMatches(@NotNull V1Event event, String name, String namespace) {
+  private static boolean involvedObjectMatches(@NotNull V1Event event, String name, String namespace) {
     return getInvolvedObjectName(event).equals(name)
         && getInvolvedObjectNamespace(event).equals(namespace)
         && getNamespace(event).equals(getInvolvedObjectNamespace(event));
   }
 
-  static String getNamespace(@NotNull V1Event event) {
+  private static String getNamespace(@NotNull V1Event event) {
     return Optional.ofNullable(event.getMetadata()).map(V1ObjectMeta::getNamespace).orElse("");
   }
 
-  static String getInvolvedObjectNamespace(@NotNull V1Event event) {
+  private static String getInvolvedObjectNamespace(@NotNull V1Event event) {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getNamespace).orElse("");
   }
 
-  static String getInvolvedObjectName(@NotNull V1Event event) {
+  private static String getInvolvedObjectName(@NotNull V1Event event) {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getName).orElse("");
   }
 }
