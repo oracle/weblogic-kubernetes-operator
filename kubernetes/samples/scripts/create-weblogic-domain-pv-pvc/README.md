@@ -73,7 +73,7 @@ The create script will verify that the PV and PVC were created, and will report 
 The content of the generated `weblogic-sample-pvc.yaml`:
 
 ```
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
@@ -92,7 +92,7 @@ metadata:
 
 The content of the generated `weblogic-sample-pv.yaml`:
 ```
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
@@ -121,7 +121,7 @@ spec:
 The content of the generated `domain1-weblogic-sample-pvc.yaml` when `domainUID` is set to `domain1`:
 
 ```
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
@@ -142,7 +142,7 @@ spec:
 
 The content of the generated `domain1-weblogic-sample-pv.yaml` when `domainUID` is set to `domain1`:
 ```
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
