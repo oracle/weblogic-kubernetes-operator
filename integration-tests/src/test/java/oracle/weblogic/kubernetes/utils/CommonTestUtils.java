@@ -2542,7 +2542,6 @@ public class CommonTestUtils {
         .repoUrl(GRAFANA_REPO_URL)
         .repoName(GRAFANA_REPO_NAME)
         .chartName("grafana")
-        //.chartDir("stable/grafana")
         .chartValuesFile(grafanaValueFile);
 
     if (grafanaVersion != null) {
