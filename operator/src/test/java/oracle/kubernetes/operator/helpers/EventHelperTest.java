@@ -101,117 +101,117 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreated() {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreated() {
     makeRightOperation.execute();
 
-    assertThat("Event DOMAIN_PROCESSING_STARTED",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event",
         containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedLabels() {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedLabels() {
     makeRightOperation.execute();
 
     Map<String, String> expectedLabels = new HashMap();
     expectedLabels.put(LabelConstants.DOMAINUID_LABEL, UID);
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    assertThat("Event DOMAIN_PROCESSING_STARTED message",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
             DOMAIN_PROCESSING_STARTING_EVENT, expectedLabels), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedNamespace() {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedNamespace() {
     makeRightOperation.execute();
 
-    assertThat("Event DOMAIN_PROCESSING_STARTED message",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
             DOMAIN_PROCESSING_STARTING_EVENT, NS), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithExpectedMessage() {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedMessage() {
     makeRightOperation.execute();
 
-    assertThat("Event DOMAIN_PROCESSING_STARTED message",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_PROCESSING_STARTING_EVENT,
             String.format(DOMAIN_PROCESSING_STARTING_PATTERN, UID)), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithInvolvedObject()
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject()
       throws Exception {
     makeRightOperation.execute();
 
-    assertThat("Event involved object",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected involved object",
         containsEventWithInvolvedObject(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT, UID, NS), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingComponent()
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent()
       throws Exception {
     makeRightOperation.execute();
 
-    assertThat("Event reporting component",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected reporting component",
         containsEventWithComponent(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartedEventCreatedWithReportingInstance()
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingInstance()
       throws Exception {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
 
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)));
 
-    assertThat("Operator namespace ",
+    assertThat("Operator namespace is correct",
         namespaceFromHelm, equalTo(OP_NS));
 
-    assertThat("Event reporting instance",
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected reporting instance",
         containsEventWithInstance(getEvents(testSupport),
             DOMAIN_PROCESSING_STARTING_EVENT, OPERATOR_POD_NAME), is(true));
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingSucceededEventCreated() {
+  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
-    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
+    assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingSucceededEventCreatedWithExpectedMessage() {
+  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
-    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED message",
+    assertThat("Found DOMAIN_PROCESSING_COMPLETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT,
             String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)), is(true));
   }
 
   @Test
-  public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingSucceededEventNotCreated() {
+  public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingCompletedEventNotCreated() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
-    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
+    assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(false));
   }
 
   @Test
-  public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingSucceededEventCreated() {
+  public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingCompletedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_RETRYING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
     );
 
-    assertThat("Event DOMAIN_PROCESSING_SUCCEEDED",
+    assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
@@ -219,7 +219,7 @@ public class EventHelperTest {
   public void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreated() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
 
-    assertThat("Event DOMAIN_PROCESSING_FAILED",
+    assertThat("Found DOMAIN_PROCESSING_FAILED event",
         containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_FAILED_EVENT), is(true));
   }
 
@@ -227,7 +227,7 @@ public class EventHelperTest {
   public void whenCreateEventStepCalledwithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test this failure", new TerminalStep()));
 
-    assertThat("Event DOMAIN_PROCESSING_FAILED message",
+    assertThat("Found DOMAIN_PROCESSING_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_PROCESSING_FAILED_EVENT,
             String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")), is(true));
@@ -237,7 +237,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreated() {
     makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
-    assertThat("Event DOMAIN_PROCESSING_RETRYING",
+    assertThat("Found DOMAIN_PROCESSING_RETRYING event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT), is(true));
   }
 
@@ -245,7 +245,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
-    assertThat("Event DOMAIN_PROCESSING_RETRYING message",
+    assertThat("Found DOMAIN_PROCESSING_RETRYING event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT,
             String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID)), is(true));
@@ -255,7 +255,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
-    assertThat("Event DOMAIN_CREATED",
+    assertThat("Found DOMAIN_CREATED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_CREATED_EVENT), is(true));
   }
 
@@ -263,7 +263,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
-    assertThat("Event DOMAIN_CREATED message",
+    assertThat("Found DOMAIN_CREATED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_CREATED_EVENT,
             String.format(DOMAIN_CREATED_PATTERN, UID)), is(true));
@@ -273,7 +273,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
-    assertThat("Event DOMAIN_CHANGED",
+    assertThat("Found DOMAIN_CHANGED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_CHANGED_EVENT), is(true));
   }
 
@@ -281,7 +281,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
-    assertThat("Event DOMAIN_CHANGED message",
+    assertThat("Found DOMAIN_CHANGED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_CHANGED_EVENT,
             String.format(DOMAIN_CHANGED_PATTERN, UID)), is(true));
@@ -291,7 +291,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
-    assertThat("Event DOMAIN_DELETED",
+    assertThat("Found DOMAIN_DELETED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_DELETED_EVENT), is(true));
   }
 
@@ -299,7 +299,7 @@ public class EventHelperTest {
   public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
-    assertThat("Event DOMAIN_DELETED message",
+    assertThat("Found DOMAIN_DELETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_DELETED_EVENT,
             String.format(DOMAIN_DELETED_PATTERN, UID)), is(true));
@@ -312,7 +312,7 @@ public class EventHelperTest {
         createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
     );
 
-    assertThat("Event DOMAIN_PROCESSING_FAILED",
+    assertThat("Found DOMAIN_PROCESSING_ABORTED event",
         containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT), is(true));
   }
 
@@ -323,7 +323,7 @@ public class EventHelperTest {
         createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
     );
 
-    assertThat("Event DOMAIN_PROCESSING_ABORTED message",
+    assertThat("Found DOMAIN_PROCESSING_ABORTED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT,
             String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")), is(true));
@@ -332,7 +332,7 @@ public class EventHelperTest {
   @Test
   public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
-    assertThat("Event NAMESPACE_WATCHING_STARTED message",
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTED_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN, NS)), is(true));
@@ -341,7 +341,7 @@ public class EventHelperTest {
   @Test
   public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedNamespace() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
-    assertThat("Event NAMESPACE_WATCHING_STARTED namespace",
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, NS), is(true));
   }
@@ -352,7 +352,7 @@ public class EventHelperTest {
 
     Map<String, String> expectedLabels = new HashMap();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    assertThat("Event NAMESPACE_WATCHING_STARTED labels",
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, expectedLabels), is(true));
   }
@@ -362,7 +362,7 @@ public class EventHelperTest {
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
 
-    assertThat("Event NAMESPACE_WATCHING_STARTED involvedObject",
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected involvedObject",
         containsEventWithInvolvedObject(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, NS, NS), is(true));
   }
@@ -374,7 +374,7 @@ public class EventHelperTest {
 
     Map<String, String> expectedLabels = new HashMap();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    assertThat("Event NAMESPACE_WATCHING_STOPPED labels",
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT, expectedLabels), is(true));
   }
@@ -384,7 +384,7 @@ public class EventHelperTest {
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    assertThat("Event NAMESPACE_WATCHING_STOPPED involvedObject",
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
         containsEventWithInvolvedObject(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT, NS, NS), is(true));
   }

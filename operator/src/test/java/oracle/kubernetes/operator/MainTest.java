@@ -588,7 +588,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
         EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
               NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
@@ -602,7 +602,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("No event",
+    MatcherAssert.assertThat("Found no event",
         containsEvent(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED_EVENT), is(false));
   }
@@ -618,10 +618,10 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event",
         containsEvent(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
         EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
@@ -639,7 +639,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
         EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
@@ -655,10 +655,10 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event",
         containsEvent(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
         EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
@@ -676,7 +676,7 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
         EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
@@ -696,7 +696,7 @@ public class MainTest extends ThreadFactoryTestBase {
         containsEvent(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED message",
+    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
         EventTestUtils.containsEventWithMessage(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
             String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
