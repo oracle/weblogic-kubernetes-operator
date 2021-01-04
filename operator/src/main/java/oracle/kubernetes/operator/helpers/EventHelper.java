@@ -361,7 +361,7 @@ public class EventHelper {
       }
     };
 
-    String getMessage(String resourceName, EventData eventData) {
+    public String getMessage(String resourceName, EventData eventData) {
       return String.format(getPattern(), resourceName);
     }
 
@@ -393,7 +393,7 @@ public class EventHelper {
 
     abstract String getPattern();
 
-    abstract String getReason();
+    public abstract String getReason();
   }
 
   public static class EventData {

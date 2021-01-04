@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2021, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,6 +12,8 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
@@ -22,11 +24,11 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given reason and namespace.
+   * Whether there is an event that matches the given reason and namespace.
    *
-   * @param events a list of events
-   * @param reason the reason to match
-   * @param namespace the namespace to match
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param namespace namespace to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
@@ -34,11 +36,11 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given set of labels.
+   * Whether there is an event that matches the given set of labels.
    *
-   * @param events a list of events
-   * @param reason the reason to match
-   * @param labels the set of labels to match
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param labels set of labels to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithLabels(
@@ -47,11 +49,11 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given reason and message.
+   * Whether there is an event that matches the given reason and message.
    *
-   * @param events a list of events
-   * @param reason the reason to match
-   * @param message the message to match
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param message message to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
@@ -59,10 +61,10 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given reason and reporting component is WebLogic Operator.
+   * Whether there is an event that matches the given reason and reporting component is WebLogic Operator.
    *
-   * @param events a list of events
-   * @param reason the reason to match
+   * @param events list of events to check
+   * @param reason reason to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithComponent(@NotNull List<V1Event> events, String reason) {
@@ -70,11 +72,11 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given reason and operator pod name.
+   * Whether there is an event that matches the given reason and operator pod name.
    *
-   * @param events a list of events
-   * @param reason the reason to match
-   * @param opName the pod name of the operator to match
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param opName pod name of the operator to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithInstance(@NotNull List<V1Event> events, String reason, String opName) {
@@ -82,12 +84,12 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether there is an event matches the given reason and involved object.
+   * Whether there is an event that matches the given reason and involved object.
    *
-   * @param events a list of events
-   * @param reason the reason to match
-   * @param name the name of the involved object to match
-   * @param namespace the namespace to match
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param name name of the involved object to match
+   * @param namespace namespace to match
    * @return true if there is a matching event
    */
   public static boolean containsEventWithInvolvedObject(
@@ -95,6 +97,26 @@ public class EventTestUtils {
     return getEventsWithReason(events, reason).stream().anyMatch(e -> involvedObjectMatches(e, name, namespace));
   }
 
+  /**
+   * Whether there is an event that matches the reason and message of the given event item for each of the namespaces
+   * in the list.
+   *
+   * @param events list of events to check
+   * @param eventItem event item to match
+   * @param namespaces list of namespaces
+   * @return true if there is a matching event for each namespace
+   */
+  public static boolean containsEventWithMessageForNamespaces(
+      List<V1Event> events, EventItem eventItem, List<String> namespaces) {
+    for (String ns : namespaces) {
+      if (!EventTestUtils.containsEventWithMessage(events, eventItem.getReason(),
+          eventItem.getMessage(ns, (EventHelper.EventData)null))) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
   public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
@@ -144,4 +166,5 @@ public class EventTestUtils {
   private static String getInvolvedObjectName(@NotNull V1Event event) {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getName).orElse("");
   }
+
 }

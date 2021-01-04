@@ -49,7 +49,6 @@ import org.junit.Test;
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -58,6 +57,7 @@ import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
@@ -588,12 +588,9 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    for (String ns: namespaces) {
-      MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
-          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-              NAMESPACE_WATCHING_STARTED_EVENT,
-              String.format(NAMESPACE_WATCHING_STARTED_PATTERN,ns)), is(true));
-    }
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
+              NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
   @Test
@@ -642,12 +639,9 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    for (String ns: namespaces) {
-      MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
-          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-              NAMESPACE_WATCHING_STARTED_EVENT,
-              String.format(NAMESPACE_WATCHING_STARTED_PATTERN,ns)), is(true));
-    }
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
   @Test
@@ -682,12 +676,9 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    for (String ns: namespaces) {
-      MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
-          EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-              NAMESPACE_WATCHING_STARTED_EVENT,
-              String.format(NAMESPACE_WATCHING_STARTED_PATTERN,ns)), is(true));
-    }
+    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STARTED message",
+        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
 

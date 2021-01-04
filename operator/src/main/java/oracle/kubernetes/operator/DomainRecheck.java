@@ -209,10 +209,9 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
       if (fullRecheck) {
         return doNext(packet);
-      } else if (isNamespaceStartingChangedToTrue(nss)) {
+      } else if (domainNamespaces.shouldStartNamespace(ns)) {
         return doNext(addNSWatchingStartingEventStep(), packet);
       } else {
         return doEnd(packet);
@@ -223,10 +222,6 @@ class DomainRecheck {
       return Step.chain(
           EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
           getNext());
-    }
-
-    private boolean isNamespaceStartingChangedToTrue(NamespaceStatus nss) {
-      return !nss.isNamespaceStarting().getAndSet(true);
     }
   }
 
