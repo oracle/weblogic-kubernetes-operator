@@ -620,8 +620,8 @@ public class CallBuilder {
         if (cause instanceof ApiException) {
           LOGGER.warning(MessageKeys.EXCEPTION, cause);
         }
-      } catch (ApiException ae) {
-        LOGGER.warning(MessageKeys.EXCEPTION, ae);
+      } catch (Throwable t) {
+        LOGGER.warning(MessageKeys.EXCEPTION, t);
       }
 
       if (complete) {

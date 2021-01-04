@@ -13,6 +13,7 @@ import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -205,7 +206,9 @@ public final class HealthCheckHelper {
 
     try {
       CallBuilder cb = new CallBuilder();
-      return createAndValidateKubernetesVersion(cb.executeSynchronousCallWithRetry(() -> cb.readVersionCode(), 5));
+      return createAndValidateKubernetesVersion(
+          cb.executeSynchronousCallWithRetry(() -> cb.readVersionCode(),
+          TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
     } catch (Throwable t) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;
