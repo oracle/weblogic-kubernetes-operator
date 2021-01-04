@@ -2872,7 +2872,7 @@ usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
 <p>The create script will verify that the PV and PVC were created, and will report a failure if there was any error.  However, it may be desirable to manually verify the PV and PVC, even if just to gain familiarity with the various Kubernetes objects that were created by the script.</p>
 <h5 id="generated-yaml-files-with-the-default-inputs">Generated YAML files with the default inputs</h5>
 <p>The content of the generated <code>weblogic-sample-pvc.yaml</code>:</p>
-<pre><code># Copyright 2018, 2020, Oracle Corporation and/or its affiliates.
+<pre><code># Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
@@ -2890,7 +2890,7 @@ metadata:
     requests:
       storage: 10Gi
 </code></pre><p>The content of the generated <code>weblogic-sample-pv.yaml</code>:</p>
-<pre><code># Copyright 2018, 2020, Oracle Corporation and/or its affiliates.
+<pre><code># Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
@@ -2915,7 +2915,7 @@ spec:
 
 </code></pre><h5 id="generated-yaml-files-for-dedicated-pv-and-pvc">Generated YAML files for dedicated PV and PVC</h5>
 <p>The content of the generated <code>domain1-weblogic-sample-pvc.yaml</code> when <code>domainUID</code> is set to <code>domain1</code>:</p>
-<pre><code># Copyright 2018, 2020, Oracle Corporation and/or its affiliates.
+<pre><code># Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 kind: PersistentVolumeClaim
@@ -2934,7 +2934,7 @@ spec:
     requests:
       storage: 10Gi
 </code></pre><p>The content of the generated <code>domain1-weblogic-sample-pv.yaml</code> when <code>domainUID</code> is set to <code>domain1</code>:</p>
-<pre><code># Copyright 2018, 2020, Oracle Corporation and/or its affiliates.
+<pre><code># Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
 apiVersion: v1
