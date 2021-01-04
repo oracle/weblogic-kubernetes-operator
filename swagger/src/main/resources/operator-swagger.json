@@ -2,7 +2,7 @@
     "swagger":"2.0",
     "info":{
         "title":"Oracle WebLogic Server Kubernetes Operator REST interface",
-        "description":"<p>RESTful Management Interface for the Oracle WebLogic Server Kubernetes Operator.</p><p>Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.</p><p>Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</p>",
+        "description":"<p>RESTful Management Interface for the Oracle WebLogic Server Kubernetes Operator.</p><p>Copyright (c) 2017, 2021, Oracle and/or its affiliates.</p><p>Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.</p>",
         "version":"v1"
     },
     "schemes":[
