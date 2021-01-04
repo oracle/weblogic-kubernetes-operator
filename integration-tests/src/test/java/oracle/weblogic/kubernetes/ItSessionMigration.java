@@ -165,7 +165,7 @@ class ItSessionMigration {
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
     Map<String, String> httpDataInfo =
-        getServerAndSessionInfoAndVerify(serverName, webServiceSetUrl, " -D ");
+        getServerAndSessionInfoAndVerify(serverName, webServiceSetUrl, " -c ");
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
     String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
@@ -395,15 +395,15 @@ class ItSessionMigration {
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
   }
 
-  private static String buildCurlCommand(String podName,
-                                         String curlUrlPath,
+  private static String buildCurlCommand(String curlUrlPath,
                                          String headerOption) {
-    logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
-        podName, curlUrlPath, headerOption);
     final String httpHeaderFile = "/u01/oracle/header";
+    final String clusterAddress = domainUid + "-cluster-" + clusterName;
+    logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
+        clusterAddress, curlUrlPath, headerOption);
 
     StringBuffer curlCmd = new StringBuffer("curl --silent --show-error http://");
-    curlCmd.append(podName)
+    curlCmd.append(clusterAddress)
         .append(":")
         .append(managedServerPort)
         .append("/")
@@ -422,7 +422,7 @@ class ItSessionMigration {
     Map<String, String> httpAttrInfo = new HashMap<String, String>();
 
     // build curl command
-    String curlCmd = buildCurlCommand(serverName, curlUrlPath, headerOption);
+    String curlCmd = buildCurlCommand(curlUrlPath, headerOption);
     logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
 
     // set HTTP request and get HTTP response
