@@ -15,7 +15,7 @@ pre = "<b> </b>"
 
 #### Overview
 
-This document describes Kubernetes events that the operator generates about domain resources that it manages, during key points of its domain processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
+This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
 #### Operator-generated event types
 
