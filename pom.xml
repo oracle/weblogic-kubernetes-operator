@@ -271,7 +271,7 @@
               <author>false</author>
               <notimestamp>true</notimestamp>
               <bottom>
-                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle</a> and/or its affiliates. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
               <doctitle>Oracle WebLogic Server Kubernetes Operator API</doctitle>
             </configuration>
           </execution>
