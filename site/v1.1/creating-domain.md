@@ -190,7 +190,7 @@ The script will create a Kubernetes YAML file that is then used to create a Kube
 Here is the first part of that YAML file:
 
 ```
-# Copyright (c) 2017, 2018, Oracle Corporation and/or its affiliates.  All rights reserved.
+# Copyright (c) 2017, 2018, Oracle and/or its affiliates.  All rights reserved.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 apiVersion: batch/v1
 kind: Job
