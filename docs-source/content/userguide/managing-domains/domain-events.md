@@ -30,8 +30,8 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
  *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
- *  `NamespaceWatchingStarted`: The operator has started to watch for domains in a namespace.
- *  `NamespaceWatchingStopped`: The operator has stopped to watch for domains in a namespace.
+ *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
+ *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace.
 
 #### Operator-generated event details
 
@@ -48,7 +48,7 @@ Each operator-generated event contains the following fields:
  *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
     *  `name`:  String that describes the name of the resource, either a domain resource, in which case the name is the `domainUID`, or a namespace, in which case the name is the name of the namespace.
     *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource for a domain event.
-    *  `kind`:  String that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for a domain event, and `Namespace` for a namespace event.
+    *  `kind`:  String that represents the REST resource this object represents. The value is `Domain` for a domain event, and `Namespace` for a namespace event.
     *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`, for a domain event, and is not set for a namespace event.
 
 #### How to access the events
