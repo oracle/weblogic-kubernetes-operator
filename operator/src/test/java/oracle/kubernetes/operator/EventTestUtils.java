@@ -30,7 +30,11 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithNamespace(@NotNull List<V1Event> events, String reason, String namespace) {
-    return getEventsWithReason(events, reason).stream().filter(e -> namespaceMatches(e, namespace)).findFirst() != null;
+    return getEventsWithReason(events, reason)
+        .stream()
+        .filter(e -> namespaceMatches(e, namespace))
+        .findFirst()
+        .isPresent();
   }
 
   /**
@@ -43,7 +47,7 @@ public class EventTestUtils {
    */
   public static boolean containsEventWithLabels(
       @NotNull List<V1Event> events, String reason, Map<String, String> labels) {
-    return getEventsWithReason(events, reason).stream().filter(e -> labelsMatches(e, labels)).findFirst() != null;
+    return getEventsWithReason(events, reason).stream().filter(e -> labelsMatches(e, labels)).findFirst().isPresent();
   }
 
   /**
@@ -55,7 +59,7 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithMessage(@NotNull List<V1Event> events, String reason, String message) {
-    return getEventsWithReason(events, reason).stream().filter(e -> messageMatches(e, message)).findFirst() != null;
+    return getEventsWithReason(events, reason).stream().filter(e -> messageMatches(e, message)).findFirst().isPresent();
   }
 
   /**
@@ -66,9 +70,11 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithComponent(@NotNull List<V1Event> events, String reason) {
-    return getEventsWithReason(events, reason).stream()
+    return getEventsWithReason(events, reason)
+        .stream()
         .filter(e -> reportingComponentMatches(e, WEBLOGIC_OPERATOR_COMPONENT))
-        .findFirst() != null;
+        .findFirst()
+        .isPresent();
   }
 
   /**
@@ -80,8 +86,11 @@ public class EventTestUtils {
    * @return true if there is a matching event
    */
   public static boolean containsEventWithInstance(@NotNull List<V1Event> events, String reason, String opName) {
-    return getEventsWithReason(events, reason).stream()
-        .filter(e -> reportingInstanceMatches(e, opName)).findFirst() != null;
+    return getEventsWithReason(events, reason)
+        .stream()
+        .filter(e -> reportingInstanceMatches(e, opName))
+        .findFirst()
+        .isPresent();
   }
 
   /**
@@ -95,8 +104,11 @@ public class EventTestUtils {
    */
   public static boolean containsEventWithInvolvedObject(
       @NotNull List<V1Event> events, String reason, String name, String namespace) {
-    return getEventsWithReason(events, reason).stream()
-        .filter(e -> involvedObjectMatches(e, name, namespace)).findFirst() != null;
+    return getEventsWithReason(events, reason)
+        .stream()
+        .filter(e -> involvedObjectMatches(e, name, namespace))
+        .findFirst()
+        .isPresent();
   }
 
   public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
