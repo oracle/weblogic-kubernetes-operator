@@ -554,13 +554,15 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     // there is an issue that the application SourcePath can not be found when the target is removed
     // https://jira.oraclecorp.com/jira/browse/WDT-535
     Path pathToAppDeploymentYaml = Paths.get(WORK_DIR + "/appdeployment.yaml");
     String yamlToAppDeployment = "appDeployments:\n"
         + "  Application:\n"
-        + "    !myear:";
+        + "    myear:\n"
+        + "      Target: 'cluster-1'";
+
     assertDoesNotThrow(() -> Files.write(pathToAppDeploymentYaml, yamlToAppDeployment.getBytes()));
 
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -603,7 +605,7 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -643,7 +645,7 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -684,7 +686,7 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
 
     // clean failed introspector
-    // replace WDT config map with model.config.wm.yaml because we change delete the entire WM tree
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
