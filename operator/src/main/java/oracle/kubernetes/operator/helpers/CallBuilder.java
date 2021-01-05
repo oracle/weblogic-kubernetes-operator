@@ -609,6 +609,19 @@ public class CallBuilder {
    * @throws Exception Exception types other than ApiException, which will cause failure
    */
   public <T> T executeSynchronousCallWithRetry(Callable<T> call, int retryDelaySeconds) throws Exception {
+    /*
+     * Implementation Note: synchronous calls are only allowed during operator initialization.
+     * All make-right work must be done with the asynchronous calling pattern. Therefore, since
+     * we know that this method will only be invoked during operator initialization, we've chosen
+     * not to put a limit on the number of retries. This is acceptable because the liveness probe will
+     * eventually kill the operator if the initialization sequence does not complete.
+     *
+     * This call was specifically added to address the Istio-related use case where the operator attempts
+     * to initialize prior to the Istio Envoy sidecar completing its initialization as described in this
+     * Istio bug: https://github.com/istio/istio/issues/11130. However, the pattern will also work for
+     * use cases where the Kubernetes master happens to temporarily unavailable just as the operator is
+     * starting.
+     */
     T result = null;
     boolean complete = false;
     do {
@@ -630,6 +643,7 @@ public class CallBuilder {
 
       Thread.sleep(retryDelaySeconds * 1000L);
 
+      // We are intentionally not limiting the number of retries as described in the implementation note above.
     } while (true);
     return result;
   }
