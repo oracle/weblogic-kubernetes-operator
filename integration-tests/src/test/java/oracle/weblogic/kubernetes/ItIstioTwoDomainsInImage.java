@@ -280,10 +280,11 @@ class ItIstioTwoDomainsInImage {
     logger.info("WebLogic console on domain1 is accessible");
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
+    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
+        targets, archivePath, domainNamespace1 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed on domain1");
     logger.info("Application deployment on domain1 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
@@ -296,10 +297,11 @@ class ItIstioTwoDomainsInImage {
     checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
     assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
     logger.info("WebLogic console on domain2 is accessible");
+    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
+        targets, archivePath, domainNamespace2 + ".org", "testwebapp");
     assertNotNull(result, "Application deployment on domain2 failed");
     logger.info("Application deployment on domain2 returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");

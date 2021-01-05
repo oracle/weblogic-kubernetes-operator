@@ -315,10 +315,11 @@ public class ItIstioDomainInPV  {
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
+    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        clusterName, archivePath, domainNamespace + ".org", "testwebapp");
+        targets, archivePath, domainNamespace + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Application deployed successfully");
