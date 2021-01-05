@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -76,7 +76,7 @@ public class ItFmwSample {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static String dbUrl = null;
-  // in general the node port range has to be between 30,000 to 32,767
+  // in general the node port range has to be between 30,172 to 32,767
   // to avoid port conflict because of the delay in using it, the port here
   // starts with 30100
   final int t3ChannelPort = getNextFreePort(30172, 32767);
@@ -92,7 +92,7 @@ public class ItFmwSample {
   /**
    * Start DB service and create RCU schema.
    * Assigns unique namespaces for operator and domains.
-   * Pull FMW image and Oracle DB image if running tests in Kind cluster.
+   * Pull FMW image and Oracle DB image if needed.
    * Installs operator.
    *
    * @param namespaces injected by JUnit
@@ -139,7 +139,7 @@ public class ItFmwSample {
    */
   @Test
   @DisplayName("Test JRF domain on PV sample")
-  public void testJrfDomainInPvUsingWlst() {
+  public void testFmwDomainInPvUsingWlst() {
     setupSample();
     // create persistent volume and persistent volume claims used by the samples
     createPvPvc(domainUid);
@@ -173,6 +173,7 @@ public class ItFmwSample {
   private void createDomainAndVerify(String domainName, Path sampleBase) {
 
     // run create-domain.sh to create domain.yaml file
+    logger.info("Run create-domain.sh to create domain.yaml file");
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
             + Paths.get(sampleBase.toString(), "create-domain.sh").toString()
@@ -180,7 +181,6 @@ public class ItFmwSample {
             + " -o "
             + Paths.get(sampleBase.toString()));
 
-    logger.info("Run create-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
@@ -192,7 +192,6 @@ public class ItFmwSample {
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
-    logger.info("Run create-domain.sh to create the domain");
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
@@ -315,9 +314,7 @@ public class ItFmwSample {
   // copy samples directory to a temporary location
   private static void setupSample() {
     assertDoesNotThrow(() -> {
-      // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
-      //Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
       Files.createDirectories(tempSamplePath);
 
@@ -414,7 +411,7 @@ public class ItFmwSample {
 
     // sleep for a while to make sure the DB pod is created
     try {
-      Thread.sleep(2 * 1000);
+      Thread.sleep(10 * 1000);
     } catch (InterruptedException ie) {
         // ignore
     }
