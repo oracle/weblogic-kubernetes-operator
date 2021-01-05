@@ -15,7 +15,7 @@ pre = "<b> </b>"
 
 #### Overview
 
-This document describes Kubernetes events that the operator generates about domain resources that it manages, during key points of its domain processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
+This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
 #### Operator-generated event types
 
@@ -30,13 +30,15 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
  *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
+ *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
+ *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace.
 
 #### Operator-generated event details
 
 Each operator-generated event contains the following fields:
  *  `metadata`
     *  `namespace`:  Same as the domain resource namespace.
-    *  `labels`:   `weblogic.createdByOperator=true` and `weblogic.domainUID=<domainUID>`.
+    *  `labels`:   `weblogic.createdByOperator=true` and, for a domain event, `weblogic.domainUID=<domainUID>`.
  *  `type`:  String field that describes the type of the event. Possible values are `Normal` or `Warning`.
  *  `reportingComponent`:  String that describes the component that reports the event. The value is `weblogic.operator` for all operator-generated events.
  *  `reportingInstance`:  String that describes the instance that reports the event. The value is the Kubernetes pod name of the operator instance that generates the event.
@@ -44,10 +46,10 @@ Each operator-generated event contains the following fields:
  *  `reason`:  Short, machine understandable string that gives the reason for the transition to the object's current status.
  *  `message`:  String that describes the details of the event.
  *  `involvedObject`:  `V1ObjectReference` object that describes the Kubernetes resources with which this event is associated.
-    *  `name`:  String that describes the name of the domain resource, which is the `domainUID`.
-    *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource.
-    *  `kind`:  String that describes the kind of the Kubernetes resource with which this event is associated. The value is `Domain` for all operator-generated events.
-    *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`.
+    *  `name`:  String that describes the name of the resource, either a domain resource, in which case the name is the `domainUID`, or a namespace, in which case the name is the name of the namespace.
+    *  `namespace`:  String that describes the namespace of the event, which is the namespace of the domain resource for a domain event.
+    *  `kind`:  String that represents the REST resource this object represents. The value is `Domain` for a domain event, and `Namespace` for a namespace event.
+    *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v8`, for a domain event, and is not set for a namespace event.
 
 #### How to access the events
 
@@ -278,65 +280,110 @@ Events:  <none>
 
 ```
 
+Example of a `NamespaceWatchingStarted` event:
+
+```none
+Name:             sample-domain1-ns.NamespaceWatchingStarted.1608734146651
+Namespace:        sample-domain1-ns
+Labels:           weblogic.createdByOperator=true
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  Kind:          Namespace
+  Name:          sample-domain1-ns
+  Namespace:     sample-domain1-ns
+Kind:            Event
+Last Timestamp:  2020-12-23T14:35:46Z
+Message:         Started watching namespace sample-domain1-ns
+Metadata:
+  Creation Timestamp:  2020-12-23T14:35:46Z
+  Resource Version:    1330665
+  Self Link:           /api/v1/namespaces/sample-domain1-ns/events/sample-domain1-ns.NamespaceWatchingStarted.1608734146651
+  UID:                 aaa5b073-56cf-4f9b-8c2b-0e471b2303ef
+Reason:                NamespaceWatchingStarted
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-7c5577bb75-9nz59
+Source:
+Type:    Normal
+Events:  <none>
+
+```
+
+Example of a `NamespaceWatchingStopped` event:
+```none
+Name:             sample-domain2-ns.NamespaceWatchingStopped.1608742207204
+Namespace:        sample-domain2-ns
+Labels:           weblogic.createdByOperator=true
+Annotations:      <none>
+API Version:      v1
+Event Time:       <nil>
+First Timestamp:  <nil>
+Involved Object:
+  Kind:          Namespace
+  Name:          sample-domain2-ns
+  Namespace:     sample-domain2-ns
+Kind:            Event
+Last Timestamp:  2020-12-23T16:50:07Z
+Message:         Stopped watching namespace sample-domain2-ns
+Metadata:
+  Creation Timestamp:  2020-12-23T16:50:07Z
+  Resource Version:    1340607
+  Self Link:           /api/v1/namespaces/sample-domain2-ns/events/sample-domain2-ns.NamespaceWatchingStopped.1608742207204
+  UID:                 d7c2ebb2-c8a0-4387-a30e-91caeae86c0e
+Reason:                NamespaceWatchingStopped
+Reporting Component:   weblogic.operator
+Reporting Instance:    weblogic-operator-568fbd78bb-2gx9w
+Source:
+Type:    Normal
+Events:  <none>
+
+```
+
 Example of domain processing completed after failure and retries:
 
 The scenario is that the operator initially failed to process the domain resource because the specified image was missing, and then completed the processing during a retry after the image was recreated.
 Note that this is not a full list of events; some of the events that are generated by the Kubernetes server have been removed to make the list less cluttered.
 
 ```none
-
-LAST SEEN   TYPE      REASON                      OBJECT                                  MESSAGE
-5m30s       Normal    DomainProcessingStarting    domain/sample-domain1                   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
-5m30s       Normal    Scheduled                   pod/sample-domain1-introspector-jlxsj   Successfully assigned sample-domain1-ns/sample-domain1-introspector-jlxsj to doxiao-1
-5m27s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-5m14s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-5m2s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-4m50s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-4m50s       Normal    Pulling                     pod/sample-domain1-introspector-jlxsj   Pulling image "domain-home-in-image:12.2.1.4"
-4m49s       Warning   Failed                      pod/sample-domain1-introspector-jlxsj   Error: ErrImagePull
-4m49s       Warning   Failed                      pod/sample-domain1-introspector-jlxsj   Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
-4m34s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-4m20s       Normal    BackOff                     pod/sample-domain1-introspector-jlxsj   Back-off pulling image "domain-home-in-image:12.2.1.4"
-4m20s       Warning   Failed                      pod/sample-domain1-introspector-jlxsj   Error: ImagePullBackOff
-4m20s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-3m49s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-3m36s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-2m30s       Warning   DeadlineExceeded            job/sample-domain1-introspector         Job was active longer than specified deadline
-2m30s       Normal    SuccessfulDelete            job/sample-domain1-introspector         Deleted pod: sample-domain1-introspector-jlxsj
-2m30s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-2m29s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 180 seconds. The job was started 180 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries., the processing will be retried if required
-2m20s       Normal    DomainProcessingRetrying    domain/sample-domain1                   Retrying the processing of domain resource sample-domain1 after one or more failed attempts
-2m18s       Normal    Scheduled                   pod/sample-domain1-introspector-6227v   Successfully assigned sample-domain1-ns/sample-domain1-introspector-6227v to doxiao-1
-2m18s       Normal    SuccessfulCreate            job/sample-domain1-introspector         Created pod: sample-domain1-introspector-6227v
-2m18s       Normal    DomainProcessingStarting    domain/sample-domain1                   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
-2m15s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-2m1s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if required
-2m1s        Normal    Pulling                     pod/sample-domain1-introspector-6227v   Pulling image "domain-home-in-image:12.2.1.4"
-2m          Warning   Failed                      pod/sample-domain1-introspector-6227v   Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
-2m          Warning   Failed                      pod/sample-domain1-introspector-6227v   Error: ErrImagePull
-107s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-107s        Warning   Failed                      pod/sample-domain1-introspector-6227v   Error: ImagePullBackOff
-107s        Normal    BackOff                     pod/sample-domain1-introspector-6227v   Back-off pulling image "domain-home-in-image:12.2.1.4"
-103s        Normal    DomainChanged               domain/sample-domain1                   Domain resource sample-domain1 was changed
-102s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if required
-99s         Normal    Scheduled                   pod/sample-domain1-introspector-fqzjv   Successfully assigned sample-domain1-ns/sample-domain1-introspector-fqzjv to doxiao-1
-99s         Normal    DomainProcessingStarting    domain/sample-domain1                   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
-99s         Normal    SuccessfulCreate            job/sample-domain1-introspector         Created pod: sample-domain1-introspector-fqzjv
-98s         Normal    Created                     pod/sample-domain1-introspector-fqzjv   Created container sample-domain1-introspector
-98s         Normal    Pulled                      pod/sample-domain1-introspector-fqzjv   Container image "domain-home-in-image:12.2.1.4" already present on machine
-98s         Normal    Started                     pod/sample-domain1-introspector-fqzjv   Started container sample-domain1-introspector
-78s         Normal    Scheduled                   pod/sample-domain1-admin-server         Successfully assigned sample-domain1-ns/sample-domain1-admin-server to doxiao-1
-77s         Normal    Created                     pod/sample-domain1-admin-server         Created container weblogic-server
-77s         Normal    Started                     pod/sample-domain1-admin-server         Started container weblogic-server
-77s         Normal    Pulled                      pod/sample-domain1-admin-server         Container image "domain-home-in-image:12.2.1.4" already present on machine
-45s         Normal    DomainProcessingCompleted   domain/sample-domain1                   Successfully completed processing domain resource sample-domain1
-45s         Normal    Scheduled                   pod/sample-domain1-managed-server2      Successfully assigned sample-domain1-ns/sample-domain1-managed-server2 to doxiao-1
-45s         Normal    Scheduled                   pod/sample-domain1-managed-server1      Successfully assigned sample-domain1-ns/sample-domain1-managed-server1 to doxiao-1
-44s         Normal    Started                     pod/sample-domain1-managed-server2      Started container weblogic-server
-44s         Normal    Started                     pod/sample-domain1-managed-server1      Started container weblogic-server
-44s         Normal    Created                     pod/sample-domain1-managed-server2      Created container weblogic-server
-44s         Normal    Pulled                      pod/sample-domain1-managed-server2      Container image "domain-home-in-image:12.2.1.4" already present on machine
-44s         Normal    Pulled                      pod/sample-domain1-managed-server1      Container image "domain-home-in-image:12.2.1.4" already present on machine
-44s         Normal    Created                     pod/sample-domain1-managed-server1      Created container weblogic-server
+sample-domain1-ns             13m         Normal    NamespaceWatchingStarted    namespace/sample-domain1-ns               Started watching namespace sample-domain1-ns
+sample-domain2-ns             8m35s       Normal    NamespaceWatchingStarted    namespace/sample-domain2-ns               Started watching namespace sample-domain2-ns
+sample-domain1-ns             8m8s        Normal    DomainProcessingStarting    domain/sample-domain1                     Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
+sample-domain1-ns             8m8s        Normal    Scheduled                   pod/sample-domain1-introspector-hjrxz     Successfully assigned sample-domain1-ns/sample-domain1-introspector-hjrxz to doxiao-1
+sample-domain1-ns             8m8s        Normal    SuccessfulCreate            job/sample-domain1-introspector           Created pod: sample-domain1-introspector-hjrxz
+sample-domain1-ns             8m8s        Normal    DomainCreated               domain/sample-domain1                     Domain resource sample-domain1 was created
+sample-domain1-ns             4m1s        Normal    DomainProcessingStarting    domain/sample-domain1                     Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
+sample-domain1-ns             4m1s        Normal    DomainCreated               domain/sample-domain1                     Domain resource sample-domain1 was created
+sample-domain1-ns             8m5s        Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
+sample-domain1-ns             7m52s       Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if needed
+sample-domain1-ns             7m40s       Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
+sample-domain1-ns             7m26s       Normal    Pulling                     pod/sample-domain1-introspector-hjrxz     Pulling image "domain-home-in-image:12.2.1.4"
+sample-domain1-ns             7m25s       Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if needed
+sample-domain1-ns             7m24s       Warning   Failed                      pod/sample-domain1-introspector-hjrxz     Error: ErrImagePull
+sample-domain1-ns             7m24s       Warning   Failed                      pod/sample-domain1-introspector-hjrxz     Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
+sample-domain1-ns             7m13s       Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
+sample-domain1-ns             7m          Normal    BackOff                     pod/sample-domain1-introspector-hjrxz     Back-off pulling image "domain-home-in-image:12.2.1.4"
+sample-domain1-ns             7m          Warning   Failed                      pod/sample-domain1-introspector-hjrxz     Error: ImagePullBackOff
+sample-domain1-ns             7m          Warning   DomainProcessingFailed      domain/sample-domain1                     Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if needed
+sample-domain1-ns             4m1s        Normal    Scheduled                   pod/sample-domain1-introspector-g5j7j     Successfully assigned sample-domain1-ns/sample-domain1-introspector-g5j7j to doxiao-1
+sample-domain1-ns             4m          Normal    Pulled                      pod/sample-domain1-introspector-g5j7j     Container image "domain-home-in-image:12.2.1.4" already present on machine
+sample-domain1-ns             4m          Normal    Started                     pod/sample-domain1-introspector-g5j7j     Started container sample-domain1-introspector
+sample-domain1-ns             4m          Normal    Created                     pod/sample-domain1-introspector-g5j7j     Created container sample-domain1-introspector
+sample-domain1-ns             3m42s       Normal    Killing                     pod/sample-domain1-introspector-g5j7j     Stopping container sample-domain1-introspector
+sample-domain1-ns             3m41s       Normal    Scheduled                   pod/sample-domain1-admin-server           Successfully assigned sample-domain1-ns/sample-domain1-admin-server to doxiao-1
+sample-domain1-ns             3m40s       Normal    Started                     pod/sample-domain1-admin-server           Started container weblogic-server
+sample-domain1-ns             3m40s       Normal    Created                     pod/sample-domain1-admin-server           Created container weblogic-server
+sample-domain1-ns             3m40s       Normal    Pulled                      pod/sample-domain1-admin-server           Container image "domain-home-in-image:12.2.1.4" already present on machine
+sample-domain1-ns             3m4s        Normal    Scheduled                   pod/sample-domain1-managed-server2        Successfully assigned sample-domain1-ns/sample-domain1-managed-server2 to doxiao-1
+sample-domain1-ns             3m4s        Normal    Scheduled                   pod/sample-domain1-managed-server1        Successfully assigned sample-domain1-ns/sample-domain1-managed-server1 to doxiao-1
+sample-domain1-ns             3m4s        Normal    DomainProcessingCompleted   domain/sample-domain1                     Successfully completed processing domain resource sample-domain1
+sample-domain1-ns             3m3s        Normal    Created                     pod/sample-domain1-managed-server1        Created container weblogic-server
+sample-domain1-ns             3m3s        Normal    Started                     pod/sample-domain1-managed-server1        Started container weblogic-server
+sample-domain1-ns             3m3s        Normal    Pulled                      pod/sample-domain1-managed-server2        Container image "domain-home-in-image:12.2.1.4" already present on machine
+sample-domain1-ns             3m3s        Normal    Pulled                      pod/sample-domain1-managed-server1        Container image "domain-home-in-image:12.2.1.4" already present on machine
+sample-domain1-ns             3m3s        Normal    Created                     pod/sample-domain1-managed-server2        Created container weblogic-server
+sample-domain1-ns             3m3s        Normal    Started                     pod/sample-domain1-managed-server2        Started container weblogic-server
+sample-domain2-ns             18s         Normal    NamespaceWatchingStopped    namespace/sample-domain2-ns               Stopped watching namespace sample-domain2-ns
 
 ```

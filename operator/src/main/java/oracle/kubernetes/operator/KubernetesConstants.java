@@ -40,4 +40,5 @@ public interface KubernetesConstants {
 
   String OPERATOR_NAMESPACE_ENV = "OPERATOR_NAMESPACE";
   String OPERATOR_POD_NAME_ENV = "OPERATOR_POD_NAME";
+  String NAMESPACE = "Namespace";
 }
