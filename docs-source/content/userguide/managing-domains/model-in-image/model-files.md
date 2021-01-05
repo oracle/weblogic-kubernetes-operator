@@ -90,7 +90,7 @@ For a description of model file macro references to secrets and environment vari
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model, and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
+During domain home creation, model, and property files are first loaded from the `configuration.models.modelHome` directory within the image, which defaults to `/u01/wdt/models`, and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
@@ -103,7 +103,7 @@ The loading order within each of these locations is first determined using the c
 
 If an image file and ConfigMap file both have the same name, then both files are loaded.
 
-For example, if you have these files in the image directory `/u01/model_home/models`:
+For example, if you have these files in the model home directory `/u01/wdt/models`:
 
 ```
 jdbc.20.yaml
