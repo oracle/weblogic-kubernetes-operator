@@ -217,7 +217,7 @@ class ItIstioDomainInImage {
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
+    String targets = "{identity:[clusters,'cluster-1']}";
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 

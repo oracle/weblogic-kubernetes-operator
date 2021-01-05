@@ -378,14 +378,14 @@ public class ItIntrospectVersion {
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
     ExecResult result = null;
-    String targets = "{ identity: [ clusters, 'mycluster' ] }, { identity: [ servers, 'admin-server' ] }";
+    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
     result = deployUsingRest(K8S_NODEPORT_HOST,
         Integer.toString(serviceNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         targets, clusterViewAppPath, null, "clusterview");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Application deployed successfully");
+    assertEquals("202", result.stdout(), "Application deploymen failed with wrong HTTP status code");
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
