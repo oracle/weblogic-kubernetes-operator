@@ -126,6 +126,7 @@ public class VersionCheckTest {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS);
     mementos.add(consoleControl);
     mementos.add(ClientFactoryStub.install());
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
