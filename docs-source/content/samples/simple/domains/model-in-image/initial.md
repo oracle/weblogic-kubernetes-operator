@@ -60,7 +60,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 {{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 
 ```
-<%-- Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates. --%>
+<%-- Copyright (c) 2019, 2021, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
 <%@ page import="javax.naming.InitialContext" %>
 <%@ page import="javax.management.*" %>
@@ -510,7 +510,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
   {{%expand "Click here to view the JRF Domain YAML file." %}}
   ```
-  # Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+  # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
   # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
   #
   # This is an example of how to define a Domain resource.
