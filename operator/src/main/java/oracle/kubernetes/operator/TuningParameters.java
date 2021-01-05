@@ -31,6 +31,7 @@ public interface TuningParameters extends Map<String, String> {
   public PodTuning getPodTuning();
 
   public static class MainTuning {
+    public final int initializationRetryDelaySeconds;
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
     public final int domainPresenceRecheckIntervalSeconds;
@@ -43,6 +44,7 @@ public interface TuningParameters extends Map<String, String> {
 
     /**
      * create main tuning.
+     * @param initializationRetryDelaySeconds initialization retry delay
      * @param domainPresenceFailureRetrySeconds domain presence failure retry
      * @param domainPresenceFailureRetryMaxCount domain presence failure retry max count
      * @param domainPresenceRecheckIntervalSeconds domain presence recheck interval
@@ -54,6 +56,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param eventualLongDelay eventual long delay
      */
     public MainTuning(
+          int initializationRetryDelaySeconds,
           int domainPresenceFailureRetrySeconds,
           int domainPresenceFailureRetryMaxCount,
           int domainPresenceRecheckIntervalSeconds,
@@ -63,6 +66,7 @@ public interface TuningParameters extends Map<String, String> {
           int stuckPodRecheckSeconds,
           long initialShortDelay,
           long eventualLongDelay) {
+      this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
       this.domainPresenceRecheckIntervalSeconds = domainPresenceRecheckIntervalSeconds;

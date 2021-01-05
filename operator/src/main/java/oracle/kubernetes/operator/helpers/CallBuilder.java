@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
@@ -66,6 +67,9 @@ import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -77,6 +81,8 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
 public class CallBuilder {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   /** HTTP status code for "Not Found". */
   public static final int NOT_FOUND = 404;
 
@@ -592,6 +598,54 @@ public class CallBuilder {
   private <T> T executeSynchronousCall(
       RequestParams requestParams, SynchronousCallFactory<T> factory) throws ApiException {
     return DISPATCHER.execute(factory, requestParams, helper);
+  }
+
+  /**
+   * Execute a synchronous call with a retry on failure.
+   * @param call The call
+   * @param retryDelaySeconds Retry delay in seconds
+   * @param <T> Call return type
+   * @return Results of operation, if successful
+   * @throws Exception Exception types other than ApiException, which will cause failure
+   */
+  public <T> T executeSynchronousCallWithRetry(Callable<T> call, int retryDelaySeconds) throws Exception {
+    /*
+     * Implementation Note: synchronous calls are only allowed during operator initialization.
+     * All make-right work must be done with the asynchronous calling pattern. Therefore, since
+     * we know that this method will only be invoked during operator initialization, we've chosen
+     * not to put a limit on the number of retries. This is acceptable because the liveness probe will
+     * eventually kill the operator if the initialization sequence does not complete.
+     *
+     * This call was specifically added to address the Istio-related use case where the operator attempts
+     * to initialize prior to the Istio Envoy sidecar completing its initialization as described in this
+     * Istio bug: https://github.com/istio/istio/issues/11130. However, the pattern will also work for
+     * use cases where the Kubernetes master happens to temporarily unavailable just as the operator is
+     * starting.
+     */
+    T result = null;
+    boolean complete = false;
+    do {
+      try {
+        result = call.call();
+        complete = true;
+      } catch (RuntimeException re) {
+        Throwable cause = re.getCause();
+        if (cause instanceof ApiException) {
+          LOGGER.warning(MessageKeys.EXCEPTION, cause);
+        }
+      } catch (Throwable t) {
+        LOGGER.warning(MessageKeys.EXCEPTION, t);
+      }
+
+      if (complete) {
+        break;
+      }
+
+      Thread.sleep(retryDelaySeconds * 1000L);
+
+      // We are intentionally not limiting the number of retries as described in the implementation note above.
+    } while (true);
+    return result;
   }
 
   /**
