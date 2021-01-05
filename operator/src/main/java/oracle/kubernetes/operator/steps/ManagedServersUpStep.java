@@ -218,7 +218,6 @@ public class ManagedServersUpStep extends Step {
         addServerToStart(serverConfig, clusterName, server);
       } else if (shouldPrecreateServerService(server)) {
         preCreateServers.add(serverName);
-
         addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, true));
       } else {
         addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, false));
