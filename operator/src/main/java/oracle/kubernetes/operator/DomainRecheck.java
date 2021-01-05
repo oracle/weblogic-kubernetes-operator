@@ -19,6 +19,8 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -30,6 +32,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 class DomainRecheck {
@@ -206,12 +209,19 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
-      if (fullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
+      if (fullRecheck) {
         return doNext(packet);
+      } else if (domainNamespaces.shouldStartNamespace(ns)) {
+        return doNext(addNSWatchingStartingEventStep(), packet);
       } else {
         return doEnd(packet);
       }
+    }
+
+    private Step addNSWatchingStartingEventStep() {
+      return Step.chain(
+          EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          getNext());
     }
   }
 

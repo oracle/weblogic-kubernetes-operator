@@ -14,10 +14,7 @@ public class Prometheus {
    * @return true on success, false otherwise
    */
   public static boolean install(PrometheusParams params) {
-    HelmParams hp = params.getHelmParams();
-    hp.repoUrl("https://charts.helm.sh/stable/");
-    hp.repoName("stable");
-    return Helm.install(hp, params.getValues());
+    return Helm.install(params.getHelmParams(), params.getValues());
   }
 
   /**

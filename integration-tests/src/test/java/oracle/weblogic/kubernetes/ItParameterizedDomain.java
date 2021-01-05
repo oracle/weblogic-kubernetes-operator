@@ -9,6 +9,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,6 +59,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -101,6 +103,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRole;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBinding;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -111,6 +114,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyF
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -131,6 +135,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkPodEventLoggedOnce;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -147,9 +158,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
+ * Also verify the rolling restart behavior in a multi-cluster MII domain.
  */
-@DisplayName("Verify scaling the clusters in the domain with different domain types and "
-    + "the sample application can be accessed via NGINX ingress controller")
+@DisplayName("Verify scaling the clusters in the domain with different domain types, "
+        + "rolling restart behavior in a multi-cluster MII domain and "
+        + "the sample application can be accessed via NGINX ingress controller")
 @IntegrationTest
 class ItParameterizedDomain {
 
@@ -177,8 +190,11 @@ class ItParameterizedDomain {
   private static Domain domainInImage = null;
   private static Domain domainOnPV = null;
   private static int t3ChannelPort = 0;
+  private static String miiDomainNamespace = null;
+  private static final String miiDomainUid = "miidomain";
 
   private String curlCmd = null;
+
 
   /**
    * Install operator and NGINX.
@@ -205,7 +221,7 @@ class ItParameterizedDomain {
     // get unique namespaces for three different type of domains
     logger.info("Getting unique namespaces for three different type of domains");
     assertNotNull(namespaces.get(2));
-    String miiDomainNamespace = namespaces.get(2);
+    miiDomainNamespace = namespaces.get(2);
     assertNotNull(namespaces.get(3));
     String domainOnPVNamespace = namespaces.get(3);
     assertNotNull(namespaces.get(4));
@@ -228,7 +244,7 @@ class ItParameterizedDomain {
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
     // create model in image domain with multiple clusters
-    miiDomain = createMiiDomainWithMultiClusters(miiDomainNamespace);
+    miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
     // create domain in image
     domainInImage = createAndVerifyDomainInImageUsingWdt(domainInImageNamespace);
     // create domain in pv
@@ -580,6 +596,109 @@ class ItParameterizedDomain {
   }
 
   /**
+   * Test rolling restart for a multi-clusters domain and make sure pods are restarted only once.
+   * Verify all pods are terminated and restarted only once.
+   * Rolling restart triggered by changing: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+   */
+  @Test
+  @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
+  public void testRollingRestartBehaviorInMultiClusterMiiDomainByChangingImagePullPolicy() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(miiDomainUid, miiDomainNamespace),
+            String.format("getDomainCustomResource failed with ApiException when tried to get domain %s "
+                    + "in namespace %s", miiDomainUid, miiDomainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    //change imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+    StringBuffer patchStr = new StringBuffer("[{")
+            .append("\"op\": \"replace\",")
+            .append(" \"path\": \"/spec/imagePullPolicy\",")
+            .append("\"value\": \"")
+            .append("Never")
+            .append("\"}]");
+
+    boolean cmPatched = patchDomainResource(miiDomainUid, miiDomainNamespace, patchStr);
+    assertTrue(cmPatched, "patchDomainCustomResource(imagePullPolicy) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(miiDomainUid, miiDomainNamespace),
+            String.format("getDomainCustomResource failed with ApiException when tried to get domain %s "
+                    + "in namespace %s", miiDomainUid, miiDomainNamespace));
+    assertNotNull(domain1, "Got null domain resource after patching");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    ConditionFactory withStandardRetryPolicy
+            = with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(10, MINUTES).await();
+
+    //verify domain changed event is logged
+    withStandardRetryPolicy
+            .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for domain event {0} to be logged "
+                                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                            DOMAIN_CHANGED,
+                            condition.getElapsedTimeInMS(),
+                            condition.getRemainingTimeInMS()))
+            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+                    DOMAIN_CHANGED, "Normal", timestamp));
+
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+            .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for domain event {0} to be logged "
+                                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                            DOMAIN_PROCESSING_STARTING,
+                            condition.getElapsedTimeInMS(),
+                            condition.getRemainingTimeInMS()))
+            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+                    DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+
+    withStandardRetryPolicy
+            .conditionEvaluationListener(
+                    condition -> logger.info("Waiting for domain event {0} to be logged "
+                                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                            DOMAIN_PROCESSING_COMPLETED,
+                            condition.getElapsedTimeInMS(),
+                            condition.getRemainingTimeInMS()))
+            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+                    DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+
+    // Verify that pod termination and started events are logged only once for each managed server in each cluster
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+                miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        logger.info("Checking that managed server pod {0} is terminated and restarted once in namespace {1}",
+                managedServerPodName, miiDomainNamespace);
+        withStandardRetryPolicy
+                .conditionEvaluationListener(
+                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                                        + "(elapsed time {2}ms, remaining time {3}ms)",
+                                POD_TERMINATED,
+                                managedServerPodName,
+                                condition.getElapsedTimeInMS(),
+                                condition.getRemainingTimeInMS()))
+                .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                        managedServerPodName, POD_TERMINATED, timestamp));
+        withStandardRetryPolicy
+                .conditionEvaluationListener(
+                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                                        + "(elapsed time {2}ms, remaining time {3}ms)",
+                                POD_STARTED,
+                                managedServerPodName,
+                                condition.getElapsedTimeInMS(),
+                                condition.getRemainingTimeInMS()))
+                .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                        managedServerPodName, POD_STARTED, timestamp));
+      }
+    }
+  }
+
+  /**
    * Generate a steam of Domain objects used in parameterized tests.
    * @return stream of oracle.weblogic.domain.Domain objects
    */
@@ -740,9 +859,8 @@ class ItParameterizedDomain {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createMiiDomainWithMultiClusters(String domainNamespace) {
+  private static Domain createMiiDomainWithMultiClusters(String domainUid, String domainNamespace) {
 
-    final String domainUid = "miidomain";
     final String miiImageName = "mii-image";
     final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
 

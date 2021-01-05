@@ -18,8 +18,11 @@ other components and services that have tracing enabled.
 
 The current support for Istio has these limitations:
 
-* It is tested with Istio 1.4.2 and later (up to 1.5.4), however, it is tested with both single and
+* It is tested with Istio 1.4.2 and later (up to 1.7.x); it is tested with both single and
   multicluster installations of Istio.
+
+  **NOTE**: The WebLogic Server Kubernetes Operator creates Kubernetes headless Services for the domain; Istio 1.6.x does not work with headless Services. See [Headless service broken in 1.6.0](https://github.com/istio/istio/issues/24082). Instead, use Istio version 1.7 and higher. 
+
 * You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
 * If the `istio-ingressgateway` service in your environment does not have an `EXTERNAL-IP` defined,
 in order to use WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` in your Domain YAML file

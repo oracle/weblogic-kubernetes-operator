@@ -19,4 +19,8 @@ public class NamespaceStatus {
   public AtomicReference<V1SubjectRulesReviewStatus> getRulesReviewStatus() {
     return rulesReviewStatus;
   }
+
+  boolean shouldStartNamespace() {
+    return !isNamespaceStarting.getAndSet(true);
+  }
 }
