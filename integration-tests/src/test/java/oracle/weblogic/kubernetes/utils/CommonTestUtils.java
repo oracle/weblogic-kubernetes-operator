@@ -103,6 +103,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -2537,7 +2539,9 @@ public class CommonTestUtils {
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
         .namespace(grafanaNamespace)
-        .chartDir("stable/grafana")
+        .repoUrl(GRAFANA_REPO_URL)
+        .repoName(GRAFANA_REPO_NAME)
+        .chartName("grafana")
         .chartValuesFile(grafanaValueFile);
 
     if (grafanaVersion != null) {
