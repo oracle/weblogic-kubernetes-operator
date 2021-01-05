@@ -45,7 +45,9 @@ Notes:
 
   - The `/u01/wdt/models` directory is the Model in Image _model home_; for advanced use cases, you can customize its location using the Domain YAML file `configuration.model.modelHome` field.
 
-  - Model YAML and variable files are optional in a Model in Image image model home directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the Domain YAML file `spec.model.configMap` field. Application archives, if any, must be supplied in the model home.  Application archives are not supported in a `spec.model.configMap`.
+  - Model YAML and variable files are optional in a Model in Image image model home directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the Domain YAML file `spec.model.configMap` field.
+
+  - Application archives, if any, must be supplied in the model home. Application archives are not supported in a `spec.model.configMap`.
 
 There are three methods for layering Model in Image artifacts on top of a base image:
 
