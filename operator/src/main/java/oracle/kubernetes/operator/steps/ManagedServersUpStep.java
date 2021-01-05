@@ -74,18 +74,28 @@ public class ManagedServersUpStep extends Step {
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      insert(steps,
-          Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-          null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+      if (isServiceOnlyServers(serversToStop)) {
+        steps.add(new ServerDownIteratorStep(factory.shutdownInfos, null));
+      } else {
+        insert(steps,
+                Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+                        null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+      }
     }
 
     return Step.chain(steps.toArray(new Step[0]));
   }
 
+  private static boolean isServiceOnlyServers(List<ServerShutdownInfo> serversToStop) {
+    List<ServerShutdownInfo> list = serversToStop.stream()
+            .filter(ssi -> !ssi.isServiceOnly()).collect(Collectors.toList());
+    return list.isEmpty();
+  }
+
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> info.getServerNames().contains(ssi.getServerName())).collect(Collectors.toList());
+            .filter(ssi -> info.getServerPod(ssi.getServerName()) != null).collect(Collectors.toList());
   }
 
   private static Step createAvailableHookStep() {
@@ -208,6 +218,7 @@ public class ManagedServersUpStep extends Step {
         addServerToStart(serverConfig, clusterName, server);
       } else if (shouldPrecreateServerService(server)) {
         preCreateServers.add(serverName);
+
         addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, true));
       } else {
         addShutdownInfo(new ServerShutdownInfo(serverConfig, clusterName, server, false));
