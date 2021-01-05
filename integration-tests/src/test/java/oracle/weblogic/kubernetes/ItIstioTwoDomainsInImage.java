@@ -297,7 +297,6 @@ class ItIstioTwoDomainsInImage {
     checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
     assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
     logger.info("WebLogic console on domain2 is accessible");
-    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
