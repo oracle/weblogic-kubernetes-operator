@@ -76,9 +76,9 @@ public class ItFmwSample {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static String dbUrl = null;
-  // in general the node port range has to be between 30,172 to 32,767
+  // in general the node port range has to be between 30,100 to 32,767
   // to avoid port conflict because of the delay in using it, the port here
-  // starts with 30100
+  // starts with 30172
   final int t3ChannelPort = getNextFreePort(30172, 32767);
 
   // create standard, reusable retry/backoff policy
@@ -138,7 +138,7 @@ public class ItFmwSample {
    * Verify EM console is accessible.
    */
   @Test
-  @DisplayName("Test JRF domain on PV sample")
+  @DisplayName("Test FMW domain on PV sample")
   public void testFmwDomainInPvUsingWlst() {
     setupSample();
     // create persistent volume and persistent volume claims used by the samples
@@ -323,7 +323,7 @@ public class ItFmwSample {
     });
 
     String command = "chmod -R 755 " + tempSamplePath;
-    logger.info("The command to be executed: " + command); //TODO
+    logger.info("The command to be executed: " + command); 
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(command))
