@@ -87,9 +87,9 @@ public class ManagedServersUpStep extends Step {
   }
 
   private static boolean isServiceOnlyServers(List<ServerShutdownInfo> serversToStop) {
-    List<ServerShutdownInfo> list = serversToStop.stream()
+    List<ServerShutdownInfo> nonServiceOnlyServers = serversToStop.stream()
             .filter(ssi -> !ssi.isServiceOnly()).collect(Collectors.toList());
-    return list.isEmpty();
+    return nonServiceOnlyServers.isEmpty();
   }
 
   private static List<ServerShutdownInfo> getServersToStop(
