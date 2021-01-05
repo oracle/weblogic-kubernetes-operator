@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
@@ -48,7 +49,7 @@ public class K8sEvents {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
           if (event.getReason().contains(reason)
-              && event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis())) {
+              && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify reason
@@ -65,6 +66,46 @@ public class K8sEvents {
       }
       return false;
     };
+  }
+
+  /**
+   * Check if a given event is logged only once for the given pod.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param serverName server pod name for which event is checked
+   * @param reason event to check for Started, Killing etc
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkPodEventLoggedOnce(
+          String domainNamespace, String serverName, String reason, DateTime timestamp) {
+    return () -> {
+      logger.info("Verifying {0} event is logged for {1} pod in the domain namespace {2}",
+              reason, serverName, domainNamespace);
+      try {
+        return isEventLoggedOnce(serverName, Kubernetes.listNamespacedEvents(domainNamespace).stream()
+                .filter(e -> e.getInvolvedObject().getName().equals(serverName))
+                .filter(e -> e.getReason().contains(reason))
+                .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
+      } catch (ApiException ex) {
+        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      return false;
+    };
+  }
+
+  private static boolean isEqualOrAfter(DateTime timestamp, V1Event event) {
+    return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
+            || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
+  }
+
+  private static Boolean isEventLoggedOnce(String serverName, int count) {
+    return count == 1 ? true : logErrorAndFail(serverName, count);
+  }
+
+  private static Boolean logErrorAndFail(String serverName, int count) {
+    Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
+            "Pod " + serverName + " restarted " + count + " times");
+    return false;
   }
 
   // Verify the operator instance details are correct
@@ -98,5 +139,7 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String POD_TERMINATED = "Killing";
+  public static final String POD_STARTED = "Started";
 
 }
