@@ -62,9 +62,9 @@ additional pods become ready, or pods enter a non-ready state.
 
         Manually create an Ingress YAML file and then apply it to the Kubernetes cluster.
 
-#### Guide and samples for Traefik and Voyager/HAProxy
-Traefik and Voyager/HAProxy are both popular ingress controllers.
-Information about how to install and configure these to load balance WebLogic clusters is provided here:
+#### Guide and samples for Traefik, Voyager/HAProxy, and NGINX
+
+Information about how to install and configure these ingress controllers to load balance WebLogic clusters is provided here:
 
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
  - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)

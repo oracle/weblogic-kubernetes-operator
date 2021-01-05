@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -97,10 +97,11 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     if (!work.isEmpty()) {
-      return doForkJoin(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet, work);
+      return doForkJoin(DomainStatusUpdater.createStatusUpdateStep(
+              new ManagedServerUpAfterStep(getNext())), packet, work);
     }
 
-    return doNext(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet);
+    return doNext(DomainStatusUpdater.createStatusUpdateStep(new ManagedServerUpAfterStep(getNext())), packet);
   }
 
 
@@ -170,7 +171,7 @@ public class ManagedServerUpIteratorStep extends Step {
     public NextAction apply(Packet packet) {
 
       if (startDetailsQueue.isEmpty()) {
-        return doNext(new ManagedServerUpAfterStep(getNext()), packet);
+        return doNext(packet);
       } else if (hasServerAvailableToStart(packet)) {
         numStarted.getAndIncrement();
         return doForkJoin(this, packet, Collections.singletonList(startDetailsQueue.poll()));

@@ -23,7 +23,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 #### Prerequisites
 
-This sample assumes the following prerequisite environment setup.
+This sample assumes the following prerequisite environment setup:
 
 * WebLogic Server Kubernetes Operator: This document was tested with version v3.1.0.
 * Operating System: GNU/Linux.

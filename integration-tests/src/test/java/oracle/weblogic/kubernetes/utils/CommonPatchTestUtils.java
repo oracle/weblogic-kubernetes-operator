@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -195,6 +195,35 @@ public class CommonPatchTestUtils {
     logger.info("Modify domain resource for domain {0} in namespace {1} using patch string: {2}",
         domainUid, domainNamespace, patchStr.toString());
 
+    V1Patch patch = new V1Patch(new String(patchStr));
+    return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
+  /**
+   * Patch the domain with the given string.
+   *
+   * @param domainUid unique domain identifier
+   * @param domainNamespace the Kubernetes namespace where the domain is
+   * @param patchPath the string for patching
+   * @param policy the ServerStartPolicy
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchServerStartPolicy(
+         String domainUid, String domainNamespace, 
+         String patchPath, String policy) {
+    LoggingFacade logger = getLogger();
+    logger.info("Updating the for domain {0} in namespace {1} using patch string: {2}",
+        domainUid, domainNamespace, patchPath.toString());
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"")
+        .append(patchPath)
+        .append("\",")
+        .append(" \"value\":  \"")
+        .append(policy)
+        .append("\"")
+        .append(" }]");
     V1Patch patch = new V1Patch(new String(patchStr));
     return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
