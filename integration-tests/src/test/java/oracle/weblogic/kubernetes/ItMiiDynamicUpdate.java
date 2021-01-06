@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
@@ -780,28 +781,63 @@ class ItMiiDynamicUpdate {
         });
   }
 
-  private String getPodNameFromJobName(String namespace, String jobName) {
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    checkPodExists(jobName, domainUid, domainNamespace);
-    V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(namespace, labelSelector, jobName));
-    assertNotNull(introspectorPod, "introspectorPod is null");
-    assertNotNull(introspectorPod.getMetadata(), introspectorPod + " medadata is null");
-    return introspectorPod.getMetadata().getName();
-  }
-
   private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
-    String introspectPodName = getPodNameFromJobName(namespace, introspectJobName);
-    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectPodName, namespace));
-    logger.info("introspector log: {0}", introspectorLog);
+    String introspectPodName;
+    V1Pod introspectorPod;
+    
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    try {
+      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+    } else {
+      return false;
+    }
+
+    String introspectorLog;
+    try {
+      introspectorLog = getPodLog(introspectPodName, namespace);
+      logger.info("introspector log: {0}", introspectorLog);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod log: {0}", apiEx);
+      return false;
+    }
 
     return introspectorLog.contains(errormsg);
   }
 
   private boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
-    String introspectPodName = getPodNameFromJobName(namespace, jobName);
+    //String introspectPodName = getPodNameFromJobName(namespace, jobName);
+    String introspectPodName;
+    V1Pod introspectorPod;
+
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    return assertDoesNotThrow(() ->
-        getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase));
+    try {
+      introspectorPod = getPod(namespace, labelSelector, jobName);
+    } catch (ApiException apiEx) {
+      logger.severe("Got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+    } else {
+      return false;
+    }
+
+    try {
+      return getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase);
+    } catch (ApiException apiEx) {
+      logger.severe("Got ApiException while getting pod status phase: {0}", apiEx);
+      return false;
+    }
+
   }
 
   private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {
