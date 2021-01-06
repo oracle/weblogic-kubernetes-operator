@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -550,8 +551,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed with the expected error msg");
-    String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
@@ -601,8 +601,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
@@ -641,8 +640,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
@@ -682,8 +680,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    String expectedErrorMsg = "Model in image online update failed because of forbidden changes";
-    verifyIntrospectorFailsWithExpectedErrorMsg(expectedErrorMsg);
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
