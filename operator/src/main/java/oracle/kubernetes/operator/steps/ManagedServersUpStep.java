@@ -74,28 +74,24 @@ public class ManagedServersUpStep extends Step {
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      if (isServiceOnlyServers(serversToStop)) {
-        steps.add(new ServerDownIteratorStep(factory.shutdownInfos, null));
-      } else {
-        insert(steps,
-                Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-                        null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
-      }
+      insert(steps,
+              Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
   }
 
-  private static boolean isServiceOnlyServers(List<ServerShutdownInfo> serversToStop) {
-    List<ServerShutdownInfo> nonServiceOnlyServers = serversToStop.stream()
-            .filter(ssi -> !ssi.isServiceOnly()).collect(Collectors.toList());
-    return nonServiceOnlyServers.isEmpty();
-  }
-
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> info.getServerPod(ssi.getServerName()) != null).collect(Collectors.toList());
+            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).collect(Collectors.toList());
+  }
+
+  private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
+    return (info.getServerPod(ssi.getServerName()) != null
+            && !info.isServerPodBeingDeleted(ssi.getServerName()))
+            || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
   private static Step createAvailableHookStep() {
