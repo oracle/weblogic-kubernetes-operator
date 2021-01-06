@@ -102,29 +102,32 @@ port=$(echo "${STATUS}" | python cmds-$$.py)
 # Retrieve the api version of the deployed Custom Resource Domain
 function get_domain_api_version() {
   # Retrieve Custom Resource Definition for WebLogic domain
-  local CRD=$(curl \
+  local APIS=$(curl \
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
     -X GET \
-    $kubernetes_master/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/domains.weblogic.oracle)
+    $kubernetes_master/apis)
   if [ $? -ne 0 ]
     then
-      trace "Failed to retrieve Custom Resource Definition for WebLogic domain"
-      trace "CRD: $CRD"
+      trace "Failed to retrieve list of APIs from Kubernetes cluster"
+      trace "APIS: $APIS"
       exit 1
   fi
 
 # Find domain version
   local domain_api_version
   if [ -x "$(command -v jq)" ]; then
-    domain_api_version=$(echo "${CRD}" | jq -r '.spec.version')
+    local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
+    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}")
   else
 cat > cmds-$$.py << INPUT
 import sys, json
-print(json.load(sys.stdin)["spec"]["version"])
+for i in json.load(sys.stdin)["groups"]:
+  if i["name"] == "weblogic.oracle":
+    print(i["preferredVersion"]["version"])
 INPUT
-domain_api_version=`echo ${CRD} | python cmds-$$.py`
+domain_api_version=`echo ${APIS} | python cmds-$$.py`
   fi
   echo "$domain_api_version"
 }
@@ -249,7 +252,7 @@ import sys, json
 for i in json.load(sys.stdin)["items"]:
   j = i["status"]["clusters"]
   for index, cs in enumerate(j):
-    if j[index]["clusterName"] == "$clusterName"
+    if j[index]["clusterName"] == "$clusterName":
       print j[index]["minimumReplicas"]
 INPUT
   minReplicas=`echo ${DOMAIN} | python cmds-$$.py`
@@ -438,15 +441,15 @@ in_cluster_startup=$(is_defined_in_clusters "$DOMAIN")
 current_replica_count=$(get_replica_count "$in_cluster_startup" "$DOMAIN")
 trace "current number of managed servers is $current_replica_count"
 
-# Cleanup cmds-$$.py
-[ -e cmds-$$.py ] && rm cmds-$$.py
-
 # Calculate new managed server count
 new_ms=$(calculate_new_ms_count "$scaling_action" "$current_replica_count" "$scaling_size")
 
 # Verify the requested new managed server count is not less than
 # configured minimum replica count for the cluster
 verify_minimum_ms_count_for_cluster "$new_ms" "$DOMAIN" "$wls_cluster_name"
+
+# Cleanup cmds-$$.py
+[ -e cmds-$$.py ] && rm cmds-$$.py
 
 # Create the scaling request body
 request_body=$(get_request_body "$new_ms")
