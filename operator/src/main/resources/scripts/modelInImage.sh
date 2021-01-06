@@ -947,7 +947,7 @@ function wdtHandleOnlineUpdate() {
   stop_trap
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
-    trace "Not using online update"
+    trace "Not using online update because of onlineUpdate.enabled=false(or not set) or no diffed model found"
     return
   fi
 
