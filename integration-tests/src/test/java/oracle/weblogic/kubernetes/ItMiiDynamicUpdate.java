@@ -530,6 +530,10 @@ class ItMiiDynamicUpdate {
 
   /*
   * Negative test: Changing the domain name using mii dynamic update.
+  * Check the introspector will fail with error message showed in the introspector pod log.
+  * Check the status phase of the introspector pod is failed
+  * Check the domain status message contains the expected error msg
+  * Check the domain status condition type is "Failed" and message contains the expected error msg
   */
   @Test
   @Order(6)
@@ -579,6 +583,10 @@ class ItMiiDynamicUpdate {
 
   /**
    * Negative test: Changing the listen port of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log.
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
   @Order(7)
@@ -621,6 +629,10 @@ class ItMiiDynamicUpdate {
 
   /**
    * Negative test: Changing the listen address of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
   @Order(8)
@@ -663,6 +675,10 @@ class ItMiiDynamicUpdate {
 
   /**
    * Negative test: Changing SSL setting of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log.
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
   @Order(9)
@@ -784,7 +800,7 @@ class ItMiiDynamicUpdate {
   private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
     String introspectPodName;
     V1Pod introspectorPod;
-    
+
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
 
     try {
