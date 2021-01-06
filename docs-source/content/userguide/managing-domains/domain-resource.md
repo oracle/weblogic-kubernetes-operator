@@ -174,9 +174,10 @@ Elements related to specifying and overriding WebLogic domain configuration:
 
 * These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
 
-  * `configMap`: Name of a ConfigMap containing the WebLogic Deploy Tooling model.
+  * `configMap`: (Optional) Name of a ConfigMap containing WebLogic Deploy Tooling model YAML files or `.properties` files.
   * `domainType`: WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.
-  * `runtimeEncryptionSecret`: Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.
+  * `runtimeEncryptionSecret`: The name of the Secret containing the runtime encryption password, which must be in a field named `password`. Required when `domainHomeSourceType` is set to `FromModel`.
+  * `modelHome`: Location of the WebLogic Deploy Tooling model home directory, which can include model YAML files, `.properties` variable files, and application `.zip` archives. Defaults to `/u01/wdt/models`.
 
 * These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`.
 
