@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -65,7 +65,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public MainTuning getMainTuning() {
-    return new MainTuning(2, 2, 2, 2, 2, 2, 30, 2L, 2L);
+    return new MainTuning(5, 2, 2, 2, 2, 2, 2, 30, 2L, 2L);
   }
 
   @Override
