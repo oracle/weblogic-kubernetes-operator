@@ -564,8 +564,8 @@ public class JobHelper {
   private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
     Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-    if (logged == null || !logged.booleanValue()) {
-      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
+    if (logged == null || !logged) {
+      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),

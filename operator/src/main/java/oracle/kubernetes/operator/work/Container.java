@@ -14,7 +14,7 @@ public class Container implements ComponentRegistry, ComponentEx {
    * #getSpi(Class)}.
    */
   public static final Container NONE = new NoneContainer();
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
+  private final Map<String, Component> components = new ConcurrentHashMap<>();
 
   @Override
   public <S> S getSpi(Class<S> spiType) {

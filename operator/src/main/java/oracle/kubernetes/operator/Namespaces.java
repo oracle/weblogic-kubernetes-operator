@@ -244,7 +244,7 @@ public class Namespaces {
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
       return new StepAndPacket(
           createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
-          packet.clone());
+          packet.copy());
     }
 
     private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {

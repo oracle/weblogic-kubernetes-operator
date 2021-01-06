@@ -149,7 +149,7 @@ public class RollingHelperTest {
   }
 
   private Step.StepAndPacket createRollingStepAndPacket(String serverName) {
-    Packet packet = testSupport.getPacket().clone();
+    Packet packet = testSupport.getPacket().copy();
     packet.put(SERVER_SCAN, domainTopology.getServerConfig(serverName));
     return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
         DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,

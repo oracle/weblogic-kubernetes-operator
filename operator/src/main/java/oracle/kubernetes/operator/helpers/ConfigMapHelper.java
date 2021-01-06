@@ -695,7 +695,7 @@ public class ConfigMapHelper {
     }
 
     public Step.StepAndPacket createStepAndPacket(Packet packet) {
-      return new Step.StepAndPacket(verifyConfigMap(null), packet.clone());
+      return new Step.StepAndPacket(verifyConfigMap(null), packet.copy());
     }
   }
 
@@ -724,7 +724,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       Step step = new CallBuilder()
-            .withLabelSelectors(LabelConstants.getCreatedbyOperatorSelector())
+            .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
             .listConfigMapsAsync(namespace, new SelectConfigMapsToDeleteStep(domainUid, namespace));
 
       return doNext(step, packet);

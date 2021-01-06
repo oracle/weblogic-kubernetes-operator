@@ -8,6 +8,7 @@ import java.util.Properties;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class MacroSubstitutorTest {
 
@@ -27,8 +28,7 @@ public class MacroSubstitutorTest {
         "",
         macroSubstitutor.substituteMacro(""));
 
-    assertEquals(
-        "null input string should return null", null, macroSubstitutor.substituteMacro(null));
+    assertNull("null input string should return null", macroSubstitutor.substituteMacro(null));
 
     assertEquals(
         "string without macro should remains unchanged",

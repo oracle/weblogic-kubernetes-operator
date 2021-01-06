@@ -17,7 +17,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
-import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 
 public class DeleteDomainStep extends Step {
   private final DomainPresenceInfo info;
@@ -59,10 +59,10 @@ public class DeleteDomainStep extends Step {
 
   private Step deleteServices() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedbyOperatorSelector())
+        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
         .listServiceAsync(
             namespace,
-            new ActionResponseStep<V1ServiceList>() {
+            new ActionResponseStep<>() {
               public Step createSuccessStep(V1ServiceList result, Step next) {
                 return new DeleteServiceListStep(result.getItems(), next);
               }
@@ -71,7 +71,7 @@ public class DeleteDomainStep extends Step {
 
   private Step deletePods() {
     return new CallBuilder()
-        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedbyOperatorSelector())
+        .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
         .deleteCollectionPodAsync(namespace, new DefaultResponseStep<>(null));
   }
 

@@ -154,7 +154,7 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
         return -1;
       }
 
-      // Reverse order of comparision is intentional
+      // Reverse order of comparison is intentional
       return o.value.compareTo(value);
     }
   }

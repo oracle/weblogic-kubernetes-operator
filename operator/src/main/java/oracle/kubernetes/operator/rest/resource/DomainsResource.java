@@ -43,7 +43,7 @@ public class DomainsResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public CollectionModel<DomainModel> get() {
     LOGGER.entering(href());
-    CollectionModel<DomainModel> collection = new CollectionModel<DomainModel>();
+    CollectionModel<DomainModel> collection = new CollectionModel<>();
     for (String domainUid : getBackend().getDomainUids()) {
       DomainModel item = new DomainModel(domainUid);
       item.addSelfLinks(href(item.getDomainUid()));

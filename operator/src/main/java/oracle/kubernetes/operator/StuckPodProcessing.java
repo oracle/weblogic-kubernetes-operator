@@ -42,7 +42,7 @@ public class StuckPodProcessing {
 
   void checkStuckPods(String namespace) {
     Step step = new CallBuilder()
-          .withLabelSelectors(LabelConstants.getCreatedbyOperatorSelector())
+          .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
           .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
     mainDelegate.runSteps(step);
   }
@@ -108,7 +108,7 @@ public class StuckPodProcessing {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (V1Pod pod : stuckPodList) {
-          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.clone()));
+          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.copy()));
         }
         return doForkJoin(readExistingNamespaces(), packet, startDetails);
       }
