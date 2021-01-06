@@ -569,6 +569,9 @@ class ItMiiDynamicUpdate {
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAppDeploymentYaml.toString()),
         withStandardRetryPolicy);
 
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
   }
@@ -607,6 +610,9 @@ class ItMiiDynamicUpdate {
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
@@ -647,6 +653,9 @@ class ItMiiDynamicUpdate {
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
   }
@@ -686,6 +695,9 @@ class ItMiiDynamicUpdate {
     // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
