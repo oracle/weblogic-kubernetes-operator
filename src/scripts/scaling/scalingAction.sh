@@ -118,9 +118,8 @@ function get_domain_api_version() {
 # Find domain version
   local domain_api_version
   if [ -x "$(command -v jq)" ]; then
-    local extractVersionCmd="(.groups[] | select (.name == \"weblogic\.oracle\") | .preferredVersion.version)"
-    trace "jq using $extractVersionCmd"
-    domain_api_version=$(echo "${APIS}" | jq "${extractVersionCmd}")
+    local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
+    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}")
   else
 cat > cmds-$$.py << INPUT
 import sys, json
