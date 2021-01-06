@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,12 +8,12 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ResourceRule;
 import io.kubernetes.client.openapi.models.V1SelfSubjectRulesReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.Main;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Resource;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -205,9 +205,12 @@ public final class HealthCheckHelper {
     LOGGER.fine(MessageKeys.VERIFY_K8S_MIN_VERSION);
 
     try {
-      return createAndValidateKubernetesVersion(new CallBuilder().readVersionCode());
-    } catch (ApiException ae) {
-      LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, ae);
+      CallBuilder cb = new CallBuilder();
+      return createAndValidateKubernetesVersion(
+          cb.executeSynchronousCallWithRetry(() -> cb.readVersionCode(),
+          TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
+    } catch (Throwable t) {
+      LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);
       return KubernetesVersion.UNREADABLE;
     }
   }

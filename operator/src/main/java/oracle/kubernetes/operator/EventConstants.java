@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -34,4 +34,8 @@ public interface EventConstants {
       = "Aborting the processing of domain resource %s permanently due to: %s";
   String DOMAIN_VALIDATION_ERROR_PATTERN
       = "Validation error in domain resource %s: %s";
+  String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
+  String NAMESPACE_WATCHING_STARTED_PATTERN = "Started watching namespace %s";
+  String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
+  String NAMESPACE_WATCHING_STOPPED_PATTERN = "Stopped watching namespace %s";
 }

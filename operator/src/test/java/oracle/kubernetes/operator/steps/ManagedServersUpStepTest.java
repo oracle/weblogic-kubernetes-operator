@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -53,8 +53,8 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.helpers.EventHelperTest.containsEventWithMessage;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT;
 import static oracle.kubernetes.operator.steps.ManagedServersUpStep.SERVERS_UP_MSG;
