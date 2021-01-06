@@ -64,14 +64,6 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
-echo "PRINTING CONTENTS 1"
-if [ -d /weblogic-operator/secrets ] ; then
-  ls -l /weblogic-operator/secrets
-fi
-echo "PRINTING CONTENTS 2"
-if [ -d /weblogic-operator/config-overrides-secrets ] ; then
-  ls -l /weblogic-operator/config-overrides-secrets
-fi
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
