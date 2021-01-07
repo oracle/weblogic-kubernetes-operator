@@ -349,7 +349,7 @@ class ObjectPatch<T> {
       }
     }
 
-    @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
+    @SuppressWarnings("unchecked")
     private P[] getListField(T item) {
       return (P[]) getter.apply(item).toArray(new PatchableComponent[0]);
     }

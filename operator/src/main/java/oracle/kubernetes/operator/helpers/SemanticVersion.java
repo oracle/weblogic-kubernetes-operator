@@ -66,7 +66,7 @@ public class SemanticVersion implements Comparable<SemanticVersion> {
   }
 
   /**
-   * Compatibility check, similar to compare, but that reports more details on revision comparision.
+   * Compatibility check, similar to compare, but that reports more details on revision comparison.
    * @param minimumVersion Minimum version
    * @return Compatibility statement
    */

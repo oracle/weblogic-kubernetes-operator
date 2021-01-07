@@ -147,7 +147,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
         .append("replicas", replicas)
         .append("readyReplicas", readyReplicas)
         .append("maximumReplicas", maximumReplicas)
-        .append("mimimumReplicas", minimumReplicas)
+        .append("minimumReplicas", minimumReplicas)
         .append("replicasGoal", replicasGoal)
         .toString();
   }

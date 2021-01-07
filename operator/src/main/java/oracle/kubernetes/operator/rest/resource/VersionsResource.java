@@ -40,7 +40,7 @@ public class VersionsResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public CollectionModel<VersionModel> get() {
     LOGGER.entering(href());
-    CollectionModel<VersionModel> collection = new CollectionModel<VersionModel>();
+    CollectionModel<VersionModel> collection = new CollectionModel<>();
     for (String version : VersionUtils.getVersions()) {
       VersionModel item =
           new VersionModel(

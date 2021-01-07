@@ -88,7 +88,7 @@ public class BaseResource {
     // traverse my parents to find the path segments to this resource.
     // insert each into an array starting at 0 so that the array
     // starts from the root resource when we're finished.
-    List<String> resourceSegments = new ArrayList<String>();
+    List<String> resourceSegments = new ArrayList<>();
     for (BaseResource r = this; r != null; r = r.getParent()) {
       resourceSegments.add(0, r.getPathSegment());
     }

@@ -224,7 +224,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledwithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
+  public void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Found DOMAIN_PROCESSING_FAILED event with expected message",

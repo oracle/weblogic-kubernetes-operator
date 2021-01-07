@@ -9,7 +9,7 @@ import java.util.List;
 /** ItemModel is the base class for collection resources. */
 public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
 
-  private List<T> items = new ArrayList<T>();
+  private List<T> items = new ArrayList<>();
 
   /**
    * Get the items in the collection.

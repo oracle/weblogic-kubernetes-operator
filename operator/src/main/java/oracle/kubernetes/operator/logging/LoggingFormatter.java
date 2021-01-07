@@ -26,7 +26,7 @@ import oracle.kubernetes.operator.work.Packet;
 
 /** Custom log formatter to format log messages in JSON format. */
 public class LoggingFormatter extends Formatter {
-  private static final Map<String, List<String>> PLACEHOLDER = new HashMap<String, List<String>>();
+  private static final Map<String, List<String>> PLACEHOLDER = new HashMap<>();
 
   private static final String LOG_LEVEL = "level";
   private static final String TIMESTAMP = "timestamp";

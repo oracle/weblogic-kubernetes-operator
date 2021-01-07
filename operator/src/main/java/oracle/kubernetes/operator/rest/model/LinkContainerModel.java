@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class LinkContainerModel extends BaseModel {
 
-  private List<LinkModel> links = new ArrayList<LinkModel>();
+  private List<LinkModel> links = new ArrayList<>();
 
   /**
    * Get the links.
@@ -56,7 +56,7 @@ public class LinkContainerModel extends BaseModel {
   /**
    * Add a link to an action resource.
    *
-   * @param action - the name of the action (i.e. the terminal path segement in the url)
+   * @param action - the name of the action (i.e. the terminal path segment in the url)
    * @param actionHref - the action link's hypertext reference.
    */
   public void addActionLink(String action, String actionHref) {
