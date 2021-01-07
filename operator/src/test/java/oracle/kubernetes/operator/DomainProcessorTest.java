@@ -13,6 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -66,6 +68,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
@@ -237,6 +241,11 @@ public class DomainProcessorTest {
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
+  private List<V1Event> getEventsAfterTimestamp(long timestamp) {
+    return testSupport.<V1Event>getResources(KubernetesTestSupport.EVENT).stream()
+            .filter(e -> e.getLastTimestamp().isAfter(timestamp)).collect(Collectors.toList());
+  }
+
   @Test
   public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
@@ -378,6 +387,54 @@ public class DomainProcessorTest {
     assertServerPodNotPresent(info, MS_PREFIX + 2);
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+  }
+
+  @Test
+  public void whenMakeRightOperationHasNoDomainUpdates_domainProcessingEventsNotGenerated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
+    for (Integer i : Arrays.asList(1,2,3,4)) {
+      domainConfigurator.configureServer(MS_PREFIX + i);
+    }
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+
+    processor.createMakeRightOperation(info).execute();
+
+    // Run the make right flow again with explicit recheck and no domain updates
+    long timestamp = System.currentTimeMillis();
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+    assertThat("Event DOMAIN_PROCESSING_STARTED",
+            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
+    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
+            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+  }
+
+  @Test
+  public void whenMakeRightOperationHasNoDomainUpdatesAndServiceOnlyServers_domainProcessingEventsNotGenerated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
+    for (Integer i : Arrays.asList(1,2,3,4)) {
+      domainConfigurator.configureServer(MS_PREFIX + i);
+    }
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3).withPrecreateServerService(true);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+
+    processor.createMakeRightOperation(info).execute();
+
+    // Run the make right flow again with explicit recheck and no domain updates
+    long timestamp = System.currentTimeMillis();
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+    assertThat("Event DOMAIN_PROCESSING_STARTED",
+            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
+    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
+            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+  }
+
+  private static boolean doesNotContainEvent(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
+            .stream()
+            .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) == null;
   }
 
   @Test
