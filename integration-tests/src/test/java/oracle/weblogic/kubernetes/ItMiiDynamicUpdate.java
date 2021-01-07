@@ -778,16 +778,6 @@ class ItMiiDynamicUpdate {
     verifyPodsNotRolled(pods);
   }
 
-  private boolean domainStatusConditionMsgContainsErrorMsg(Domain domain, String errorMsg) {
-    for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
-      if (domainCondition.getType().equalsIgnoreCase("Failed")
-          && domainCondition.getMessage().contains(errorMsg)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
