@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
@@ -38,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -140,7 +142,7 @@ class ItMiiDynamicUpdate {
     domainNamespace = namespaces.get(1);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, 0, 0, domainNamespace);
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -447,7 +449,6 @@ class ItMiiDynamicUpdate {
                   () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
             adminServerName, "404"));
 
-
     verifyPodsNotRolled(pods);
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
@@ -529,6 +530,10 @@ class ItMiiDynamicUpdate {
 
   /*
   * Negative test: Changing the domain name using mii dynamic update.
+  * Check the introspector will fail with error message showed in the introspector pod log.
+  * Check the status phase of the introspector pod is failed
+  * Check the domain status message contains the expected error msg
+  * Check the domain status condition type is "Failed" and message contains the expected error msg
   */
   @Test
   @Order(6)
@@ -537,7 +542,7 @@ class ItMiiDynamicUpdate {
     // write sparse yaml to file
     Path pathToChangeDomainNameYaml = Paths.get(WORK_DIR + "/changedomainname.yaml");
     String yamlToChangeDomainName = "topology:\n"
-        + "  name: newdomainname\n"
+        + "  Name: newdomainname\n"
         + "  AdminServerName: 'admin-server'";
 
     assertDoesNotThrow(() -> Files.write(pathToChangeDomainNameYaml, yamlToChangeDomainName.getBytes()));
@@ -550,32 +555,169 @@ class ItMiiDynamicUpdate {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created and failed
-    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    String expectedErrorMsg = "name is not one of the attribute names allowed in model location topology";
-    verifyIntrospectorFails(expectedErrorMsg);
+    logger.info("verifying the introspector failed with the expected error msg");
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
-    // verify the domain status message contains the error msg
-    logger.info("verifying the domain status message contains the expected error msg");
-    Domain miiDynamicUpdateDomain =
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+    // clean failed introspector
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
+    // there is an issue that the application SourcePath can not be found when the target is removed
+    // https://jira.oraclecorp.com/jira/browse/WDT-535
+    Path pathToAppDeploymentYaml = Paths.get(WORK_DIR + "/appdeployment.yaml");
+    String yamlToAppDeployment = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: 'cluster-1'";
 
-    assertTrue(miiDynamicUpdateDomain.getStatus().getMessage().contains(expectedErrorMsg),
-        String.format("failed to find the error msg %s in domain status message", expectedErrorMsg));
+    assertDoesNotThrow(() -> Files.write(pathToAppDeploymentYaml, yamlToAppDeployment.getBytes()));
 
-    // check the domain status condition message contains the error msg
-    logger.info("verifying the domain status condition message contains the expected error msg");
-    assertTrue(domainStatusConditionMsgContainsErrorMsg(miiDynamicUpdateDomain, expectedErrorMsg),
-        String.format("domain status condition does not contain error msg %s", expectedErrorMsg));
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAppDeploymentYaml.toString()),
+        withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
   }
 
-  private boolean domainStatusConditionMsgContainsErrorMsg(Domain domain, String errorMsg) {
-    for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
-      if (domainCondition.getType().equalsIgnoreCase("Failed")
-          && domainCondition.getMessage().contains(errorMsg)) {
-        return true;
-      }
-    }
-    return false;
+  /**
+   * Negative test: Changing the listen port of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log.
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
+   */
+  @Test
+  @Order(7)
+  @DisplayName("Negative test changing listen port of a server using mii dynamic update")
+  public void testMiiChangeListenPort() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    // write sparse yaml to file
+    Path pathToChangeListenPortYaml = Paths.get(WORK_DIR + "/changelistenport.yaml");
+    String yamlToChangeListenPort = "topology:\n"
+        + "  Server:\n"
+        + "    'admin-server':\n"
+        + "      ListenPort: 7003";
+    assertDoesNotThrow(() -> Files.write(pathToChangeListenPortYaml, yamlToChangeListenPort.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(pathToChangeListenPortYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created and failed
+    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+
+    // clean failed introspector
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+  }
+
+  /**
+   * Negative test: Changing the listen address of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
+   */
+  @Test
+  @Order(8)
+  @DisplayName("Negative test changing listen address of a server using mii dynamic update")
+  public void testMiiChangeListenAddress() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    // write sparse yaml to file
+    Path pathToChangeListenAddressYaml = Paths.get(WORK_DIR + "/changelistenAddress.yaml");
+    String yamlToChangeListenAddress = "topology:\n"
+        + "  ServerTemplate:\n"
+        + "    'cluster-1-template':\n"
+        + "       ListenAddress: myAddress";
+    assertDoesNotThrow(() -> Files.write(pathToChangeListenAddressYaml, yamlToChangeListenAddress.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(pathToChangeListenAddressYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created and failed
+    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+
+    // clean failed introspector
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+  }
+
+  /**
+   * Negative test: Changing SSL setting of a server using mii dynamic update.
+   * Check the introspector will fail with error message showed in the introspector pod log.
+   * Check the status phase of the introspector pod is failed
+   * Check the domain status message contains the expected error msg
+   * Check the domain status condition type is "Failed" and message contains the expected error msg
+   */
+  @Test
+  @Order(9)
+  @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
+  public void testMiiChangeSSL() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    // write sparse yaml to file
+    Path pathToChangeSSLYaml = Paths.get(WORK_DIR + "/changessl.yaml");
+    String yamlToChangeSSL = "topology:\n"
+        + "  ServerTemplate:\n"
+        + "    'cluster-1-template':\n"
+        + "      SSL:\n"
+        + "         ListenPort: 8103";
+    assertDoesNotThrow(() -> Files.write(pathToChangeSSLYaml, yamlToChangeSSL.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(pathToChangeSSLYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created and failed
+    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
+    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
+
+    // clean failed introspector
+    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
   }
 
   private void verifyIntrospectorRuns() {
@@ -586,18 +728,14 @@ class ItMiiDynamicUpdate {
     checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
 
-  private void verifyIntrospectorFails(String expectedErrorMsg) {
+  private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
     // verify the introspector pod is created
     logger.info("Verifying introspector pod is created");
     String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
 
     // check whether the introspector log contains the expected error message
-    ConditionFactory withRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(2, MINUTES).await();
-
-    withRetryPolicy
+    logger.info("verifying that the introspector log contains the expected error message");
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition ->
                 logger.info(
@@ -610,7 +748,8 @@ class ItMiiDynamicUpdate {
             podLogContainsExpectedErrorMsg(introspectJobName, domainNamespace, expectedErrorMsg));
 
     // check the status phase of the introspector pod is failed
-    withRetryPolicy
+    logger.info("verifying the status phase of the introspector pod is failed");
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition ->
                 logger.info(
@@ -619,28 +758,102 @@ class ItMiiDynamicUpdate {
                     condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
         .until(() ->
             podStatusPhaseContainsString(domainNamespace, introspectJobName, "Failed"));
-  }
 
-  private String getPodNameFromJobName(String namespace, String jobName) {
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(namespace, labelSelector, jobName));
-    assertNotNull(introspectorPod, "introspectorPod is null");
-    assertNotNull(introspectorPod.getMetadata(), introspectorPod + " medadata is null");
-    return introspectorPod.getMetadata().getName();
+    // check that the domain status message contains the expected error msg
+    logger.info("verifying the domain status message contains the expected error msg");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status message contains the expected error msg \"{0}\" "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                expectedErrorMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          return (miidomain != null) && (miidomain.getStatus() != null) && (miidomain.getStatus().getMessage() != null)
+              && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
+        });
+
+    // check that the domain status condition type is "Failed" and message contains the expected error msg
+    logger.info("verifying the domain status condition message contains the expected error msg");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status condition message contains the expected error msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                expectedErrorMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              if (domainCondition.getType().equalsIgnoreCase("Failed")
+                  && domainCondition.getMessage().contains(expectedErrorMsg)) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
   }
 
   private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
-    String introspectPodName = getPodNameFromJobName(namespace, introspectJobName);
-    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectPodName, namespace));
-    logger.info("introspector log: {0}", introspectorLog);
+    String introspectPodName;
+    V1Pod introspectorPod;
+
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    try {
+      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+    } else {
+      return false;
+    }
+
+    String introspectorLog;
+    try {
+      introspectorLog = getPodLog(introspectPodName, namespace);
+      logger.info("introspector log: {0}", introspectorLog);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod log: {0}", apiEx);
+      return false;
+    }
+
     return introspectorLog.contains(errormsg);
   }
 
   private boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
-    String introspectPodName = getPodNameFromJobName(namespace, jobName);
+    //String introspectPodName = getPodNameFromJobName(namespace, jobName);
+    String introspectPodName;
+    V1Pod introspectorPod;
+
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-    return assertDoesNotThrow(() ->
-        getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase));
+    try {
+      introspectorPod = getPod(namespace, labelSelector, jobName);
+    } catch (ApiException apiEx) {
+      logger.severe("Got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+    } else {
+      return false;
+    }
+
+    try {
+      return getPodStatusPhase(namespace, labelSelector, introspectPodName).equalsIgnoreCase(expectedPhase);
+    } catch (ApiException apiEx) {
+      logger.severe("Got ApiException while getting pod status phase: {0}", apiEx);
+      return false;
+    }
+
   }
 
   private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {

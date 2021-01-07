@@ -281,4 +281,8 @@ public interface TestConstants {
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
   public String OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-external";
+
+  // MII domain dynamic update
+  public static final String MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG =
+      "Model in image online update failed because of forbidden changes";
 }
