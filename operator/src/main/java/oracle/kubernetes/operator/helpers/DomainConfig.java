@@ -34,7 +34,7 @@ public class DomainConfig {
     if (other == this) {
       return true;
     }
-    if ((other instanceof DomainConfig) == false) {
+    if (!(other instanceof DomainConfig)) {
       return false;
     }
     DomainConfig rhs = ((DomainConfig) other);

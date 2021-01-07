@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -231,10 +230,7 @@ public class WlsClusterConfig {
       result.addAll(dynamicServersConfig.getServerConfigs());
     }
     result.addAll(servers);
-    Collections.sort(
-        result,
-        Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName()))
-    );
+    result.sort(Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName())));
     return result;
   }
 

@@ -16,7 +16,7 @@ public class SecretHelperTest {
   List<Memento> mementos = new ArrayList<>();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
   }

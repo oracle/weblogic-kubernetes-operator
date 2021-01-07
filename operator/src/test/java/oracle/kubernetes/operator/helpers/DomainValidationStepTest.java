@@ -69,7 +69,7 @@ public class DomainValidationStepTest {
    * @throws Exception on failure
    */
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
         NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
     mementos.add(consoleControl);

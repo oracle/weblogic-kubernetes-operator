@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -531,7 +530,7 @@ public class DomainStatusPatchTest {
 
     private Stream<String> toPatchFieldStream(JsonObject jsonObject) {
       return jsonObject.entrySet().stream()
-            .sorted(Comparator.comparing(Map.Entry::getKey))
+            .sorted(Map.Entry.comparingByKey())
             .map(this::toPatchField);
     }
 

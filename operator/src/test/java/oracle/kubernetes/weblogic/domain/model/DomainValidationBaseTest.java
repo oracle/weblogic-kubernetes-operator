@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,11 +44,7 @@ public class DomainValidationBaseTest {
     }
 
     void undefineResource(String name, KubernetesResourceType type, String namespace) {
-      for (Iterator<V1ObjectMeta> each = getResourceList(type).iterator(); each.hasNext();) {
-        if (hasSpecification(each.next(), name, namespace)) {
-          each.remove();
-        }
-      }
+      getResourceList(type).removeIf(v1ObjectMeta -> hasSpecification(v1ObjectMeta, name, namespace));
     }
 
     public void defineResource(String name, KubernetesResourceType type, String namespace) {

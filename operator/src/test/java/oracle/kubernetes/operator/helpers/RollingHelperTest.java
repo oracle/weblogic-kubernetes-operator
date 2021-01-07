@@ -161,7 +161,7 @@ public class RollingHelperTest {
   }
 
   private void initializeExistingPods() {
-    SERVER_NAMES.forEach(s -> initializeExistingPod(s));
+    SERVER_NAMES.forEach(this::initializeExistingPod);
   }
 
   private void initializeExistingPod(String serverName) {

@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -167,12 +168,9 @@ public class ReadHealthStepTest {
   }
 
   private void defineResponse(int status, String body, String url) {
-    if (url == null) {
-      httpSupport.defineResponse(createExpectedRequest("127.0.0.1:7001"), createStub(HttpResponseStub.class,
-              status, body));
-    } else {
-      httpSupport.defineResponse(createExpectedRequest(url), createStub(HttpResponseStub.class, status, body));
-    }
+    httpSupport.defineResponse(
+        createExpectedRequest(Objects.requireNonNullElse(url, "127.0.0.1:7001")),
+        createStub(HttpResponseStub.class, status, body));
   }
 
   private HttpRequest createExpectedRequest(String url) {

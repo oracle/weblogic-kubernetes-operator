@@ -224,7 +224,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainAsynchronously_statusIsUnchanged() throws ApiException {
+  public void afterPatchDomainAsynchronously_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 

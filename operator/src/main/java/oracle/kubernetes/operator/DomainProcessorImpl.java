@@ -219,17 +219,13 @@ public class DomainProcessorImpl implements DomainProcessor {
   public void reportSuspendedFibers() {
     if (LOGGER.isFineEnabled()) {
       BiConsumer<String, FiberGate> consumer =
-          (namespace, gate) -> {
-            gate.getCurrentFibers().forEach(
-                (key, fiber) -> {
-                  Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    try (LoggingContext ignored
-                             = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
-                      LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
-                    }
-                  });
-                });
-          };
+          (namespace, gate) -> gate.getCurrentFibers().forEach(
+            (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
+              try (LoggingContext ignored
+                  = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
+              }
+            }));
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
@@ -704,7 +700,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .map(o -> o.resetIntrospectJobFailureCount());
+          .map(DomainStatus::resetIntrospectJobFailureCount);
     }
 
     private boolean hasExceededRetryCount() {

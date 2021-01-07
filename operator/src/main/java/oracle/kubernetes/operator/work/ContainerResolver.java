@@ -17,7 +17,7 @@ public abstract class ContainerResolver {
   private static final ThreadLocalContainerResolver DEFAULT = new ThreadLocalContainerResolver();
 
   private static final AtomicReference<ContainerResolver> theResolver =
-      new AtomicReference(DEFAULT);
+      new AtomicReference<>(DEFAULT);
 
   /**
    * Returns the container resolver which can be used to get client's {@link Container}.

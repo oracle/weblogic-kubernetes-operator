@@ -736,7 +736,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterInitialIntrospection_serverPodsHaveInitialIntrospectVersionLabel() throws Exception {
+  public void afterInitialIntrospection_serverPodsHaveInitialIntrospectVersionLabel() {
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);

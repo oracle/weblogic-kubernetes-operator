@@ -885,14 +885,13 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
           return true;
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
-        return false;
       } else {
         if (matchSelectedPort(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
-        return false;
       }
+      return false;
     }
 
     private boolean matchSelectedPort(V1ServicePort matchingPort) {

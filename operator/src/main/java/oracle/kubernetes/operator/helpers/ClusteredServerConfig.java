@@ -36,7 +36,7 @@ public class ClusteredServerConfig extends ServerConfig {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ClusteredServerConfig) == false) {
+    if (!(other instanceof ClusteredServerConfig)) {
       return false;
     }
     ClusteredServerConfig rhs = ((ClusteredServerConfig) other);

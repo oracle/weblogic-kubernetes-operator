@@ -38,15 +38,12 @@ public class ClientPool extends Pool<ApiClient> {
   }
 
   private static Runnable wrapRunnable(Runnable r) {
-    return new Runnable() {
-      @Override
-      public void run() {
-        try {
-          r.run();
-        } catch (Throwable t) {
-          // These will almost always be spurious exceptions
-          LOGGER.finer(MessageKeys.EXCEPTION, t);
-        }
+    return () -> {
+      try {
+        r.run();
+      } catch (Throwable t) {
+        // These will almost always be spurious exceptions
+        LOGGER.finer(MessageKeys.EXCEPTION, t);
       }
     };
   }
@@ -62,9 +59,7 @@ public class ClientPool extends Pool<ApiClient> {
     // client, version 7.0.0, the ApiClient held an instance of the OkHttp 2
     // HTTP client, which was single threaded.
     // Disable pooling and always return the same instance
-    return instance.updateAndGet(prev -> {
-      return prev != null ? prev : getApiClient();
-    });
+    return instance.updateAndGet(prev -> prev != null ? prev : getApiClient());
   }
 
   private ApiClient getApiClient() {

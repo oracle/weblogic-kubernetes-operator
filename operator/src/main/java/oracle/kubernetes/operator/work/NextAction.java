@@ -90,12 +90,9 @@ public final class NextAction {
   /** Dumps the contents to assist debugging. */
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append('[');
-    buf.append("kind=").append(kind).append(',');
-    buf.append("next=").append(next).append(',');
-    buf.append("packet=").append(packet != null ? packet.toString() : null).append(']');
-    return buf.toString();
+    String buf = '[' +  "kind=" + kind + ',' + "next=" + next + ','
+        + "packet=" + (packet != null ? packet.toString() : null) + ']';
+    return buf;
   }
 
   public enum Kind {

@@ -46,7 +46,7 @@ public class ClusterConfig {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ClusterConfig) == false) {
+    if (!(other instanceof ClusterConfig)) {
       return false;
     }
     ClusterConfig rhs = ((ClusterConfig) other);

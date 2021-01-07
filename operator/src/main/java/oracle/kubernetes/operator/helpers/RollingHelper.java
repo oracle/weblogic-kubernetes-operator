@@ -214,7 +214,7 @@ public class RollingHelper {
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
         Optional.ofNullable(servers.poll())
-            .ifPresent(serverToRestart -> restarts.add(serverToRestart));
+            .ifPresent(restarts::add);
       }
 
       if (!restarts.isEmpty()) {

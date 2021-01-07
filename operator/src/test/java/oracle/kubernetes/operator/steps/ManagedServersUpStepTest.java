@@ -791,9 +791,7 @@ public class ManagedServersUpStepTest {
 
   private void addShutdownServerInfo(String serverName, List<String> servers,
                                      List<DomainPresenceInfo.ServerShutdownInfo> ssi) {
-    if (serverName.equals(configSupport.createDomainConfig().getAdminServerName())) {
-      return;
-    } else if (!servers.contains(serverName)) {
+    if (!serverName.equals(configSupport.createDomainConfig().getAdminServerName()) && !servers.contains(serverName)) {
       ssi.add(new DomainPresenceInfo.ServerShutdownInfo(serverName, null));
     }
   }

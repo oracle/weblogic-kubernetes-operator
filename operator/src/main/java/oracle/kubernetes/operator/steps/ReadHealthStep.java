@@ -366,11 +366,7 @@ public class ReadHealthStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      try {
-        new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
-      } catch (IOException e) {
-        logReadFailure(packet);
-      }
+      new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
       return doNext(packet);
     }
 
@@ -382,7 +378,7 @@ public class ReadHealthStep extends Step {
       private String state;
       private ServerHealth health;
 
-      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) throws IOException {
+      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) {
         this.packet = packet;
         this.response = response;
 

@@ -46,7 +46,7 @@ public class ConfigMapSplitterTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     mementos.forEach(Memento::revert);
   }
 

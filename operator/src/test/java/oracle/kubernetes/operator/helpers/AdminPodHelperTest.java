@@ -353,8 +353,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
-        allOf(
-            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
+        hasVolumeMount("volume1", END_MOUNT_PATH_1));
   }
 
   @Test

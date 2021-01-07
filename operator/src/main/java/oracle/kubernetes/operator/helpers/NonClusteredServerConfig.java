@@ -36,7 +36,7 @@ public class NonClusteredServerConfig extends ServerConfig {
     if (other == this) {
       return true;
     }
-    if ((other instanceof NonClusteredServerConfig) == false) {
+    if (!(other instanceof NonClusteredServerConfig)) {
       return false;
     }
     NonClusteredServerConfig rhs = ((NonClusteredServerConfig) other);

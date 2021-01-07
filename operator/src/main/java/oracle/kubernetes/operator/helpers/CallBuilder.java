@@ -1176,10 +1176,10 @@ public class CallBuilder {
                                       Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
                                       V1DeleteOptions body, ApiCallback callback) throws ApiException {
     String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
-            client.escapeString(name.toString())).replaceAll("\\{namespace\\}",
-            client.escapeString(namespace.toString()));
-    List<Pair> localVarQueryParams = new ArrayList();
-    List<Pair> localVarCollectionQueryParams = new ArrayList();
+            client.escapeString(name)).replaceAll("\\{namespace\\}",
+            client.escapeString(namespace));
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    List<Pair> localVarCollectionQueryParams = new ArrayList<>();
     if (pretty != null) {
       localVarQueryParams.addAll(client.parameterToPair("pretty", pretty));
     }
@@ -1200,9 +1200,9 @@ public class CallBuilder {
       localVarQueryParams.addAll(client.parameterToPair("propagationPolicy", propagationPolicy));
     }
 
-    Map<String, String> localVarHeaderParams = new HashMap();
-    Map<String, String> localVarCookieParams = new HashMap();
-    Map<String, Object> localVarFormParams = new HashMap();
+    Map<String, String> localVarHeaderParams = new HashMap<>();
+    Map<String, String> localVarCookieParams = new HashMap<>();
+    Map<String, Object> localVarFormParams = new HashMap<>();
     String[] localVarAccepts = new String[]{
         "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
     };

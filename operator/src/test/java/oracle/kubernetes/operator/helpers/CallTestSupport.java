@@ -257,7 +257,7 @@ public class CallTestSupport {
     }
   }
 
-  private class AdditionalParams {
+  private static class AdditionalParams {
     private String fieldSelector;
     private String labelSelector;
 

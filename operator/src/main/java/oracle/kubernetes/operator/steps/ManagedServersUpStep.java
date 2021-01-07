@@ -247,8 +247,7 @@ public class ManagedServersUpStep extends Step {
 
     Collection<ServerStartupInfo> getStartupInfos() {
       if (startupInfos != null) {
-        Collections.sort(
-            startupInfos,
+        startupInfos.sort(
             comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
       }
       return startupInfos;

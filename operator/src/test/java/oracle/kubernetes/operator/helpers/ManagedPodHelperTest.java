@@ -350,7 +350,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPvClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123)));
+        hasPvClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123));
   }
 
   @Test

@@ -56,7 +56,7 @@ public class ServerConfig {
     if (other == this) {
       return true;
     }
-    if ((other instanceof ServerConfig) == false) {
+    if (!(other instanceof ServerConfig)) {
       return false;
     }
     ServerConfig rhs = ((ServerConfig) other);

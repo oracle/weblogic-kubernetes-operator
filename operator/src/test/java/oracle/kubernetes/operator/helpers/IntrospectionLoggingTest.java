@@ -37,10 +37,9 @@ public class IntrospectionLoggingTest {
 
   /**
    * Setup test.
-   * @throws Exception on failure
    */
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
     mementos.add(testSupport.install());
 
