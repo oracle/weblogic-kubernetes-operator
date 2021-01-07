@@ -75,8 +75,8 @@ public class ManagedServersUpStep extends Step {
 
     if (!serversToStop.isEmpty()) {
       insert(steps,
-          Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-          null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+              Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
@@ -85,7 +85,13 @@ public class ManagedServersUpStep extends Step {
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> info.getServerNames().contains(ssi.getServerName())).collect(Collectors.toList());
+            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).collect(Collectors.toList());
+  }
+
+  private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
+    return (info.getServerPod(ssi.getServerName()) != null
+            && !info.isServerPodBeingDeleted(ssi.getServerName()))
+            || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
   private static Step createAvailableHookStep() {
