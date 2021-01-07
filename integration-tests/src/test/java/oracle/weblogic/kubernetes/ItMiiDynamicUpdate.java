@@ -557,8 +557,8 @@ class ItMiiDynamicUpdate {
 
     assertDoesNotThrow(() -> Files.write(pathToAppDeploymentYaml, yamlToAppDeployment.getBytes()));
 
-    // replace WDT config map with config that's added to previous tests,
-    // otherwise it will try to delete them we are not testing deletion here
+    // replace WDT config map with config that's added in previous tests,
+    // otherwise it will try to delete them, we are not testing deletion here
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAppDeploymentYaml.toString(),
             pathToAddClusterYaml.toString(), MODEL_DIR + "/model.jdbc2.yaml"),
@@ -606,8 +606,8 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    // replace WDT config map with config that's added to previous tests,
-    // otherwise it will try to delete them we are not testing deletion here
+    // replace WDT config map with config that's added in previous tests,
+    // otherwise it will try to delete them, we are not testing deletion here
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
@@ -650,8 +650,8 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    // replace with config that's added to previous tests,
-    // otherwise it will try to delete them we are not testing deletion here
+    // replace with config that's added in previous tests,
+    // otherwise it will try to delete them, we are not testing deletion here
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
@@ -699,8 +699,8 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    // replace WDT config map with config that's added to previous tests,
-    // otherwise it will try to delete them we are not testing deletion here
+    // replace WDT config map with config that's added in previous tests,
+    // otherwise it will try to delete them, we are not testing deletion here
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
