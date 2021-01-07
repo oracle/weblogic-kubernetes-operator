@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -152,6 +152,7 @@ public class BuildApplication {
     } catch (ApiException | IOException  ioex) {
       logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
+
     try {
       //copy the build script to /u01 location inside pod
       Kubernetes.copyFileToPod(namespace, webLogicPod.getMetadata().getName(),
@@ -159,6 +160,22 @@ public class BuildApplication {
     } catch (ApiException | IOException  ioex) {
       logger.info("Exception while copying file " + zipFile + " to pod", ioex);
     }
+    logger.info("kubectl copied " + BUILD_SCRIPT + " into the pod");
+
+    // One of the test is failing in running the BUILD_SCRIPT (build_application.sh) - reason: the script does not exist
+    // Adding the following to check if the script is copied and it has execute permissions
+    try {
+      ExecResult ex = Exec.exec(webLogicPod, null, false, "/bin/ls", "-ls", "/u01");
+      if (ex.stdout() != null) {
+        logger.info("Exec stdout {0}", ex.stdout());
+      }
+      if (ex.stderr() != null) {
+        logger.info("Exec stderr {0}", ex.stderr());
+      }
+    } catch (ApiException | IOException | InterruptedException ioex) {
+      logger.info("Exception while listing the files in /u01", ioex);
+    }
+
     try {
       //Kubernetes.exec(webLogicPod, new String[]{"/bin/sh", "/u01/" + BUILD_SCRIPT});
       ExecResult exec = Exec.exec(webLogicPod, null, false, "/bin/sh", "/u01/" + BUILD_SCRIPT);

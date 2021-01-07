@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -236,7 +236,7 @@ public interface TestConstants {
   //monitoring constants
   public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_VERSION"))
-      .orElse("1.2.0");
+      .orElse("1.3.0");
   public static final String MONITORING_EXPORTER_BRANCH = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_BRANCH"))
       .orElse("master");
@@ -245,7 +245,9 @@ public interface TestConstants {
   public static final String GRAFANA_CHART_VERSION = Optional.ofNullable(System.getenv("GRAFANA_CHART_VERSION"))
       .orElse("5.0.20");
   public static final String PROMETHEUS_REPO_NAME = "stable";
-  public static final String PROMETHEUS_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
+  public static final String PROMETHEUS_REPO_URL = "https://charts.helm.sh/stable/";
+  public static final String GRAFANA_REPO_NAME = "stable";
+  public static final String GRAFANA_REPO_URL = "https://kubernetes-charts.storage.googleapis.com/";
 
   // credentials
   public static final String ADMIN_USERNAME_DEFAULT = "weblogic";
@@ -259,8 +261,9 @@ public interface TestConstants {
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // istio constants
-  public static final String ISTIO_VERSION = "1.7.3";
+  // Default ISTIO version is 1.7.3
+  public static final String ISTIO_VERSION = 
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.7.3");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";

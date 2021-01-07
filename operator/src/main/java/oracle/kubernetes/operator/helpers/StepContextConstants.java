@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,7 +11,7 @@ public interface StepContextConstants {
   static final String SECRETS_VOLUME = "weblogic-credentials-volume";
   static final String SCRIPTS_VOLUME = "weblogic-scripts-cm-volume";
   static final String DEBUG_CM_VOLUME = "weblogic-domain-debug-cm-volume";
-  static final String SIT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-cm-volume";
+  static final String INTROSPECTOR_VOLUME = "weblogic-domain-introspect-cm-volume";
   static final String WDT_CONFIG_MAP_VOLUME = "weblogic-domain-introspect-wdt-cm-volume";
   static final String RUNTIME_ENCRYPTION_SECRET_VOLUME = "weblogic-domain-runtime-encryption-volume";
   static final String STORAGE_VOLUME = "weblogic-domain-storage-volume";

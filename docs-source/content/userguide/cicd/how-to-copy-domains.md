@@ -6,7 +6,7 @@ weight: 5
 description: "How to copy domains."
 ---
 
-The recommended approach to save a copy of a Domain in Image or Domain in PV 
+The recommended approach to save a copy of a Domain in Image or Domain in PV
 domain is to simply ZIP (or tar)
 the domain directory.  However, there is a very important caveat with this
 recommendation - when you unzip the domain, it must go back into exactly
@@ -17,7 +17,7 @@ The best practice/recommended approach is to create a "primordial domain"
 which does not contain any applications or resources,
 and to create a ZIP file of this domain before starting any servers.  
 
-> **The domain ZIP must be created before starting servers.**  
+> **The domain ZIP file must be created before starting servers.**  
 
 When servers are started the first time, they will encrypt various other data.
 Make sure that you create the ZIP file before starting servers for the first time.
