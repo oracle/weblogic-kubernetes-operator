@@ -29,7 +29,7 @@ public class ClusterServicesStep extends Step {
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     if (config != null) {
       for (Map.Entry<String, WlsClusterConfig> entry : config.getClusterConfigs().entrySet()) {
-        Packet p = packet.clone();
+        Packet p = packet.copy();
         WlsClusterConfig clusterConfig = entry.getValue();
         p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
 

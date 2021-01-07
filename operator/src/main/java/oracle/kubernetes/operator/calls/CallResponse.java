@@ -21,11 +21,11 @@ public final class CallResponse<T> {
   }
 
   public static CallResponse<Void> createFailure(RequestParams requestParams, ApiException ex, int statusCode) {
-    return new CallResponse<Void>(requestParams, null, ex, statusCode);
+    return new CallResponse<>(requestParams, null, ex, statusCode);
   }
 
   public static <R> CallResponse<R> createNull() {
-    return new CallResponse<R>(null, null, null, 0);
+    return new CallResponse<>(null, null, null, 0);
   }
 
   CallResponse<T> withResponseHeaders(Map<String, List<String>> responseHeaders) {

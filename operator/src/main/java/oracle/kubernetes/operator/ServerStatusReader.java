@@ -119,7 +119,7 @@ public class ServerStatusReader {
     private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
       return new StepAndPacket(
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
-          packet.clone());
+          packet.copy());
     }
   }
 

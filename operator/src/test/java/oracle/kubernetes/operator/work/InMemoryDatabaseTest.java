@@ -26,7 +26,7 @@ public class InMemoryDatabaseTest {
   private static final String NAME2 = "name2";
 
   private InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
-      new InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList>() {
+      new InMemoryDatabase<>() {
         @Override
         NetworkingV1beta1IngressList createList(List<NetworkingV1beta1Ingress> items) {
           return new NetworkingV1beta1IngressList().items(items);

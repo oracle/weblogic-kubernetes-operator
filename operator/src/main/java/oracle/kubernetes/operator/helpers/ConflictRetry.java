@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helpers;
 /**
  * Interface used by CallBuilder to obtain the latest version of the Kubernetes object for retrying
  * synchronous API calls that previously failed with Conflict response code (409). This indicates an
- * optimistic locking failure and the kubernetes object has since been modified. The synchoronus API
+ * optimistic locking failure and the kubernetes object has since been modified. The synchronous API
  * can be retried with the latest version of the kubernetes object.
  *
  * @param <T> Type of kubernetes object to be passed to the API

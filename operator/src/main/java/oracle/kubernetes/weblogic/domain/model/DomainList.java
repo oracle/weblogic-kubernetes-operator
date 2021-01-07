@@ -36,7 +36,7 @@ public class DomainList implements KubernetesListObject {
   @Expose
   @Valid
   @NotNull
-  private List<Domain> items = new ArrayList<Domain>();
+  private List<Domain> items = new ArrayList<>();
 
   /**
    * Kind is a string value representing the REST resource this object represents. Servers may infer

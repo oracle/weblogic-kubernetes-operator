@@ -96,13 +96,13 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenserviceAnnotationsDiffer_hashCodesAreNotEqual() {
+  public void whenServiceAnnotationsDiffer_hashCodesAreNotEqual() {
     instance1.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
   }
 
   @Test
-  public void whenserviceAnnotationsDoNotDiffer_hashCodesAreEqual() {
+  public void whenServiceAnnotationsDoNotDiffer_hashCodesAreEqual() {
     instance1.addServiceAnnotation("key", "value");
     instance2.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));

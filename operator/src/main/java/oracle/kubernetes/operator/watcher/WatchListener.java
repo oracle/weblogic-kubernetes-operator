@@ -18,5 +18,5 @@ public interface WatchListener<T> {
    *
    * @param response Watch response consisting of type and object
    */
-  public void receivedResponse(Watch.Response<T> response);
+  void receivedResponse(Watch.Response<T> response);
 }

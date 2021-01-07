@@ -749,7 +749,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenDomainToplogyIsMissing_noExceptionAndDontStartServers() {
+  public void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
     assertServersWillNotBeStarted();

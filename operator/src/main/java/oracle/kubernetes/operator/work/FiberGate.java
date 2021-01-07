@@ -22,7 +22,7 @@ import oracle.kubernetes.operator.work.Fiber.ExitCallback;
  */
 public class FiberGate {
   private final Engine engine;
-  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
+  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<>();
 
   private final Fiber placeholder;
 

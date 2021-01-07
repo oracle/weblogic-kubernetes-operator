@@ -206,23 +206,6 @@ public class CallBuilder {
           wrap(
               createServiceAsync(
                   usage, requestParams.namespace, (V1Service) requestParams.body, callback));
-  private final CallFactory<V1PersistentVolume> createPersistentvolume =
-      ((requestParams, client, cont, callback) ->
-          wrap(
-              new CoreV1Api(client)
-                  .createPersistentVolumeAsync(
-                      (V1PersistentVolume) requestParams.body, pretty, null, null, callback)));
-  private final CallFactory<V1PersistentVolumeClaim> createPersistentvolumeclaim =
-      (requestParams, client, cont, callback) ->
-          wrap(
-              new CoreV1Api(client)
-                  .createNamespacedPersistentVolumeClaimAsync(
-                      requestParams.namespace,
-                      (V1PersistentVolumeClaim) requestParams.body,
-                      pretty,
-                      null,
-                      null,
-                      callback));
   private final CallFactory<V1SubjectAccessReview> createSubjectaccessreview =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -363,33 +346,6 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
-  private final CallFactory<V1PersistentVolume> deletePersistentvolume =
-      (requestParams, client, cont, callback) ->
-          wrap(
-              new CoreV1Api(client)
-                  .deletePersistentVolumeAsync(
-                      requestParams.name,
-                      pretty,
-                      dryRun,
-                      gracePeriodSeconds,
-                      orphanDependents,
-                      propagationPolicy,
-                      (V1DeleteOptions) requestParams.body,
-                      callback));
-  private final CallFactory<V1PersistentVolumeClaim> deletePersistentvolumeclaim =
-      (requestParams, client, cont, callback) ->
-          wrap(
-              new CoreV1Api(client)
-                  .deleteNamespacedPersistentVolumeClaimAsync(
-                      requestParams.name,
-                      requestParams.namespace,
-                      pretty,
-                      dryRun,
-                      gracePeriodSeconds,
-                      orphanDependents,
-                      propagationPolicy,
-                      (V1DeleteOptions) requestParams.body,
-                      callback));
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -1289,7 +1245,7 @@ public class CallBuilder {
                                        V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
     Call localVarCall = this.deleteNamespacedPodValidateBeforeCall(client, name, namespace, pretty, dryRun,
         gracePeriodSeconds, orphanDependents, propagationPolicy, body, callback);
-    Type localVarReturnType = (new TypeToken<Object>() {
+    Type localVarReturnType = (new TypeToken<>() {
     }).getType();
     client.executeAsync(localVarCall, localVarReturnType, callback);
     return localVarCall;

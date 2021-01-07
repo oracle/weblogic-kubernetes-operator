@@ -24,7 +24,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class WlsDomainConfig implements WlsDomain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
+  // Name of this WLS domain (This is NOT the domain UID in the WebLogic domain kubernetes CRD)
   private String name;
 
   private String adminServerName;
@@ -57,7 +57,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @param adminServerName Name of the admin server in this WLS domain
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
-   * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
+   * @param wlsServerTemplates A Map containing server templates configured in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(
