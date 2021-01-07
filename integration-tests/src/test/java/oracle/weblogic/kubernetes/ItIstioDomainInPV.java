@@ -102,7 +102,7 @@ public class ItIstioDomainInPV  {
 
   private final String wlSecretName = "weblogic-credentials";
   private final String domainUid = "istio-div";
-  private final String clusterName = "mycluster";
+  private final String clusterName = "cluster-1";
   private final String adminServerName = "admin-server";
   private final String adminServerPodName = domainUid + "-" + adminServerName;
   private static LoggingFacade logger = null;
