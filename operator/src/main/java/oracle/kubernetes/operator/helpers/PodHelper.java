@@ -438,7 +438,7 @@ public class PodHelper {
     }
 
     private Step.StepAndPacket createRollRequest(Step deferredStep) {
-      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.clone());
+      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.copy());
     }
 
     @SuppressWarnings("unchecked")

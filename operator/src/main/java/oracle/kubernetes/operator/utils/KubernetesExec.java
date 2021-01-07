@@ -7,7 +7,7 @@ import java.io.IOException;
 
 import io.kubernetes.client.openapi.ApiException;
 
-/** A base class for an object which can execute a command in an Kubertenes containers. */
+/** A base class for an object which can execute a command in an Kubernetes containers. */
 public abstract class KubernetesExec {
   private boolean stdin = true;
   private boolean tty = true;

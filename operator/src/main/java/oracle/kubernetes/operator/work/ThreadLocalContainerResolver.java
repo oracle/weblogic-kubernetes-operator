@@ -41,7 +41,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final ThreadLocal<Container> containerThreadLocal =
-      new ThreadLocal<Container>() {
+      new ThreadLocal<>() {
         @Override
         protected Container initialValue() {
           return Container.NONE;
@@ -85,12 +85,9 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
             Container old = enterContainer(container);
             try {
               x.run();
-            } catch (RuntimeException runtime) {
+            } catch (RuntimeException | Error runtime) {
               LOGGER.severe(MessageKeys.EXCEPTION, runtime);
               throw runtime;
-            } catch (Error error) {
-              LOGGER.severe(MessageKeys.EXCEPTION, error);
-              throw error;
             } catch (Throwable throwable) {
               LOGGER.severe(MessageKeys.EXCEPTION, throwable);
               throw new RuntimeException(throwable);
@@ -106,12 +103,9 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
             Container old = enterContainer(container);
             try {
               return x.call();
-            } catch (RuntimeException runtime) {
+            } catch (RuntimeException | Error runtime) {
               LOGGER.severe(MessageKeys.EXCEPTION, runtime);
               throw runtime;
-            } catch (Error error) {
-              LOGGER.severe(MessageKeys.EXCEPTION, error);
-              throw error;
             } catch (Throwable throwable) {
               LOGGER.severe(MessageKeys.EXCEPTION, throwable);
               throw new RuntimeException(throwable);

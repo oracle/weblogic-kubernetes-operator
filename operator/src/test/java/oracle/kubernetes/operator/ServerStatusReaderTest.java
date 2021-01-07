@@ -5,7 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -228,7 +228,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
 
     @Override
     public InputStream getInputStream() {
-      return new ByteArrayInputStream(response.getBytes(Charset.forName("UTF-8")));
+      return new ByteArrayInputStream(response.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override

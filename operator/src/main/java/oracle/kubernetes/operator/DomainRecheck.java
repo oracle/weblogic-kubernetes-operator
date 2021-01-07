@@ -258,7 +258,7 @@ class DomainRecheck {
 
         for (String ns : domainNamespaces) {
           try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
-            startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.clone()));
+            startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.copy()));
           }
         }
         return doForkJoin(getNext(), packet, startDetails);

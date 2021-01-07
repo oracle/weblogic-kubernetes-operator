@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.utils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.models.V1Pod;
 
-/** A factory for objects which can execute commands in Kubertenes containers. */
+/** A factory for objects which can execute commands in Kubernetes containers. */
 public interface KubernetesExecFactory {
   /**
    * Creates an object to execute a command in a Kubernetes container.

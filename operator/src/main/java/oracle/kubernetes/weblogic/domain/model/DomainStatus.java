@@ -54,7 +54,7 @@ public class DomainStatus {
           + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureCount = new Integer(0);
+  private Integer introspectJobFailureCount = 0;
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -301,7 +301,7 @@ public class DomainStatus {
    * @return retryCount
    */
   public Integer incrementIntrospectJobFailureCount() {
-    return this.introspectJobFailureCount = this.introspectJobFailureCount.intValue() + 1;
+    return this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
   }
 
 

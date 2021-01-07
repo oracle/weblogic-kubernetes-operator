@@ -425,12 +425,12 @@ public class WlsDomainConfigTest {
         assertEquals("domain1-" + serverName, wlsServerConfig.getListenAddress());
         assertTrue(wlsServerConfig.isSslPortEnabled());
         if ("dynamic-1".equals(serverName)) {
-          assertEquals(new Integer(8051), wlsServerConfig.getListenPort());
-          assertEquals(new Integer(8151), wlsServerConfig.getSslListenPort());
+          assertEquals(Integer.valueOf(8051), wlsServerConfig.getListenPort());
+          assertEquals(Integer.valueOf(8151), wlsServerConfig.getSslListenPort());
 
         } else {
-          assertEquals(new Integer(8052), wlsServerConfig.getListenPort());
-          assertEquals(new Integer(8152), wlsServerConfig.getSslListenPort());
+          assertEquals(Integer.valueOf(8052), wlsServerConfig.getListenPort());
+          assertEquals(Integer.valueOf(8152), wlsServerConfig.getSslListenPort());
         }
       }
     }
@@ -446,13 +446,13 @@ public class WlsDomainConfigTest {
 
     WlsMachineConfig domain1machine1 = wlsDomainConfig.getMachineConfig("domain1-machine1");
     assertEquals("domain1-machine1", domain1machine1.getName());
-    assertEquals(new Integer(5556), domain1machine1.getNodeManagerListenPort());
+    assertEquals(Integer.valueOf(5556), domain1machine1.getNodeManagerListenPort());
     assertEquals("domain1-managed-server1", domain1machine1.getNodeManagerListenAddress());
     assertEquals("Plain", domain1machine1.getNodeManagerType());
 
     WlsMachineConfig domain1machine2 = wlsDomainConfig.getMachineConfig("domain1-machine2");
     assertEquals("domain1-machine2", domain1machine2.getName());
-    assertEquals(new Integer(5556), domain1machine2.getNodeManagerListenPort());
+    assertEquals(Integer.valueOf(5556), domain1machine2.getNodeManagerListenPort());
     assertEquals("domain1-managed-server2", domain1machine2.getNodeManagerListenAddress());
     assertEquals("SSL", domain1machine2.getNodeManagerType());
   }
@@ -548,7 +548,7 @@ public class WlsDomainConfigTest {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-0");
-    assertEquals(new Integer(8101), serverConfig.getSslListenPort());
+    assertEquals(Integer.valueOf(8101), serverConfig.getSslListenPort());
     assertTrue(serverConfig.isSslPortEnabled());
 
     serverConfig = wlsDomainConfig.getServerConfig("ms-1");
@@ -580,7 +580,7 @@ public class WlsDomainConfigTest {
     assertNotNull(wlsClusterConfig);
     assertEquals(0, wlsClusterConfig.getClusterSize());
     assertEquals(
-        "newly created empty WlsClusterConfig should not added to the clsuterConfigs list",
+        "newly created empty WlsClusterConfig should not added to the clusterConfigs list",
         0,
         wlsDomainConfig.getClusterConfigs().size());
   }

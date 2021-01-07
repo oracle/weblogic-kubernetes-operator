@@ -20,8 +20,8 @@ public interface Component {
    * @param objects Objects to encapsulate; precede object with Class to specify key type
    * @return Component
    */
-  public static Component createFor(Object... objects) {
-    Map<Class<?>, Object> comps = new HashMap<Class<?>, Object>();
+  static Component createFor(Object... objects) {
+    Map<Class<?>, Object> comps = new HashMap<>();
     Class<?> key = null;
     for (Object o : objects) {
       if (o != null) {
