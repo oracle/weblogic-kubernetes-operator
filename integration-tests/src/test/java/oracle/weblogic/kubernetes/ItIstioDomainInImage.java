@@ -217,11 +217,10 @@ class ItIstioDomainInImage {
 
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    String targets = "{identity:[clusters,'cluster-1']}";
-    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+    result = DeployUtil.deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        targets, archivePath, domainNamespace + ".org", "testwebapp");
+        clusterName, archivePath, domainNamespace + ".org", "testwebapp");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");

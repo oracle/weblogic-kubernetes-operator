@@ -227,9 +227,8 @@ public class DeployUtil {
 
   }
 
-
   /**
-   * Deploy application to a cluster using REST API with curl utility.
+   * Deploy an application to a cluster using REST API with curl utility.
    * @param host name of the admin server host
    * @param port node port of admin server
    * @param userName admin server user name
@@ -243,46 +242,31 @@ public class DeployUtil {
   public static ExecResult deployToClusterUsingRest(String host, String port,
             String userName, String password, String cluster, 
             Path archivePath, String hostHeader, String appName) {
-    final LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    StringBuffer headerString = null;
-    if (hostHeader != null) {
-      headerString = new StringBuffer("-H 'host: ");
-      headerString.append(hostHeader)
-                  .append(" ' ");
-    } else {
-      headerString = new StringBuffer("");
-    }
-    StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' ");
-    curlString.append(" --user " + userName + ":" + password);
-    curlString.append(" -w %{http_code} --show-error -o /dev/null ")
-        .append(headerString.toString())
-        .append("-H X-Requested-By:MyClient ")
-        .append("-H Accept:application/json  ")
-        .append("-H Content-Type:multipart/form-data ")
-        .append("-H Prefer:respond-async ")
-        .append("-F \"model={ name: '")
-        .append(appName)
-        .append("', targets: [ { identity: [ clusters, '")
-        .append(cluster + "' ] } ] }\" ")
-        .append(" -F \"sourcePath=@")
-        .append(archivePath.toString() + "\" ")
-        .append("-X POST http://" + host + ":" + port)
-        .append("/management/weblogic/latest/edit/appDeployments); ")
-        .append("echo ${status}");
-
-    logger.info("deployToClusterUsingRest: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("deployToClusterUsingRest: caught unexpected exception {0}", ex);
-      return null;
-    }
-    return result;
+    String target = "{identity: [clusters,'" + cluster + "']}";
+    return deployUsingRest(host, port, userName, password, target, archivePath, hostHeader, appName);
   }
 
   /**
-   * Deploy application to a set of target using REST API with curl utility.
+   * Deploy an application to a server using REST API with curl utility.
+   * @param host name of the admin server host
+   * @param port node port of admin server
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param server name of the server to deploy application
+   * @param archivePath local path of the application archive
+   * @param hostHeader Host header for the curl command 
+   * @param appName name of the application
+   * @return ExecResult 
+   */
+  public static ExecResult deployToServerUsingRest(String host, String port,
+            String userName, String password, String server, 
+            Path archivePath, String hostHeader, String appName) {
+    String target = "{identity: [servers,'" + server + "']}";
+    return deployUsingRest(host, port, userName, password, target, archivePath, hostHeader, appName);
+  }
+
+  /**
+   * Deploy an application to a set of target using REST API with curl utility.
    * Note the targets parameter should be a string with following format
    *  {identity: [clusters,'cluster-1']}   for cluster target 
    *  {identity: [servers, 'admin-server']} for server target 
