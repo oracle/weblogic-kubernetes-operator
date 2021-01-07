@@ -37,8 +37,8 @@ IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="/u01/wdt/weblogic-deploy"
 WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
-WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
-WDT_CREATE_FILTER="/weblogic-operator/scripts/model_wdt_create_filter.py"
+WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
+WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
@@ -619,7 +619,7 @@ function diff_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_diff.py $2 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
     trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
     cat ${WDT_OUTPUT}
@@ -1094,7 +1094,7 @@ function encrypt_decrypt_model() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_encryption_util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model-encryption-util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
@@ -1135,7 +1135,7 @@ function encrypt_decrypt_domain_secret() {
   ${JAVA_HOME}/bin/java -cp ${CP} \
     ${JAVA_PROPS} \
     org.python.util.jython \
-    ${SCRIPTPATH}/model_encryption_util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
+    ${SCRIPTPATH}/model-encryption-util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
