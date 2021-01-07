@@ -74,7 +74,7 @@ public class VersionModel extends ItemModel {
   }
 
   /**
-   * Set thie lifecycle of this version of the WebLogic operator REST api.
+   * Set the lifecycle of this version of the WebLogic operator REST api.
    *
    * @param lifecycle - either 'current' or 'deprecated'.
    */

@@ -27,15 +27,13 @@ public class Authenticator {
 
   private static final String SERVICE_HOST = "KUBERNETES_SERVICE_HOST";
   private static final String SERVICE_PORT = "KUBERNETES_SERVICE_PORT";
-  // private final String _TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
-  // private final String _CACERT_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final ApiClient apiClient;
   private final Helpers helper;
   private String serviceToken;
 
   /**
-   * Create a new instace of the Authenticator class containing the default API client. The default
+   * Create a new instance of the Authenticator class containing the default API client. The default
    * client will normally use <code>~/.kube/config</code> or the file pointed to by <code>
    * $KUBECONFIG</code> outside a Kubernetes cluster, or the <code>default</code> Service Account
    * inside a Kubernetes cluster (i.e. in a Container in a Pod).

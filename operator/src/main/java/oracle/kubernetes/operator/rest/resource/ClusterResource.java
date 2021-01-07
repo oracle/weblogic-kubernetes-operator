@@ -32,7 +32,7 @@ public class ClusterResource extends BaseResource {
   }
 
   /**
-   * Get a description of this Weblogic cluster.
+   * Get a description of this WebLogic cluster.
    *
    * @return a ClusterModel describing this cluster.
    */

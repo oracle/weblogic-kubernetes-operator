@@ -40,7 +40,7 @@ public class Helpers {
   }
 
   /**
-   * Find the servivce account by name.
+   * Find the service account by name.
    *
    * @param serviceAccountName The name of the Service Account.
    * @param namespace The Namespace the Service Account is defined in.

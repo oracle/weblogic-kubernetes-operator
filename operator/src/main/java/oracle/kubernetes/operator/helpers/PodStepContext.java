@@ -173,7 +173,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   /**
-   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * Check if the server is listening on a secure port. NOTE: If the targeted server is a managed
    * server, this method is overridden to check if the managed server has a secure listen port rather
    * than the admin server. See PodHelper.ManagedPodStepContext
    *

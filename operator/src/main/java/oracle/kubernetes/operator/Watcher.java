@@ -146,7 +146,7 @@ abstract class Watcher<T> {
 
   private void watchForEvents() {
     long now = System.currentTimeMillis();
-    long delay = (getWatchMinimumDelay() * 1000) - (now - lastInitialize);
+    long delay = (getWatchMinimumDelay() * 1000L) - (now - lastInitialize);
     if (lastInitialize != 0 && delay > 0) {
       try {
         Thread.sleep(delay);
