@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -105,6 +105,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
@@ -272,6 +274,28 @@ public class CommonTestUtils {
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
    *
    * @param opNamespace the operator namespace in which the operator will be installed
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    int domainPresenceFailureRetryMaxCount,
+                                                    int domainPresenceFailureRetrySeconds,
+                                                    String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, opHelmParams, false, null, null,
+        false, domainPresenceFailureRetryMaxCount, domainPresenceFailureRetrySeconds, domainNamespace);
+
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
    * @param opHelmParams the Helm parameters to install operator
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -373,7 +397,7 @@ public class CommonTestUtils {
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        null, null, false, domainNamespace);
+        null, null, false, -1, -1, domainNamespace);
   }
 
   /**
@@ -400,7 +424,7 @@ public class CommonTestUtils {
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        domainNamespaceSelectionStrategy, null, false, domainNamespace);
+        domainNamespaceSelectionStrategy, null, false, -1, -1, domainNamespace);
   }
 
   /**
@@ -416,6 +440,8 @@ public class CommonTestUtils {
    *                                  how to select the set of namespaces that it will manage
    * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -428,6 +454,8 @@ public class CommonTestUtils {
                                                     String domainNamespaceSelectionStrategy,
                                                     String domainNamespaceSelector,
                                                     boolean enableClusterRoleBinding,
+                                                    int domainPresenceFailureRetryMaxCount,
+                                                    int domainPresenceFailureRetrySeconds,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -506,6 +534,14 @@ public class CommonTestUtils {
       }
     }
 
+    // domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds
+    if (domainPresenceFailureRetryMaxCount >= 0) {
+      opParams.domainPresenceFailureRetryMaxCount(domainPresenceFailureRetryMaxCount);
+    }
+    if (domainPresenceFailureRetrySeconds > 0) {
+      opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
+    }
+
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
@@ -571,7 +607,8 @@ public class CommonTestUtils {
         .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
         true, 0, opHelmParams, false,
-        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
+        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding,
+        -1, -1, domainNamespace);
   }
 
   /**
@@ -2539,7 +2576,9 @@ public class CommonTestUtils {
     HelmParams grafanaHelmParams = new HelmParams()
         .releaseName(grafanaReleaseName)
         .namespace(grafanaNamespace)
-        .chartDir("stable/grafana")
+        .repoUrl(GRAFANA_REPO_URL)
+        .repoName(GRAFANA_REPO_NAME)
+        .chartName("grafana")
         .chartValuesFile(grafanaValueFile);
 
     if (grafanaVersion != null) {

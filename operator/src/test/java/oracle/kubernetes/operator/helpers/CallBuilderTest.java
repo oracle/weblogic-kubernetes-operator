@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -56,7 +56,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
   }
 
@@ -76,6 +76,34 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineHttpGetResponse("/version/", versionInfo);
 
     assertThat(callBuilder.readVersionCode(), equalTo(versionInfo));
+  }
+
+  @Test
+  public void getVersionCode_firstAttemptFailsAndThenReturnsAVersionInfo() throws Exception {
+    VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
+    defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
+
+    assertThat(callBuilder.executeSynchronousCallWithRetry(
+            () -> callBuilder.readVersionCode(), 1), equalTo(versionInfo));
+  }
+
+  static class FailOnceGetServlet extends JsonGetServlet {
+
+    final int errorCode;
+    int numGetResponseCalled = 0;
+
+    FailOnceGetServlet(Object returnValue, int errorCode) {
+      super(returnValue);
+      this.errorCode = errorCode;
+    }
+
+    @Override
+    public WebResource getGetResponse() throws IOException {
+      if (numGetResponseCalled++ > 0) {
+        return super.getGetResponse();
+      }
+      return new WebResource("", errorCode);
+    }
   }
 
   @Test
@@ -130,6 +158,11 @@ public class CallBuilderTest extends HttpUserAgentTest {
     JsonGetServlet servlet = new JsonGetServlet(response);
     defineResource(resourceName, servlet);
     return servlet;
+  }
+
+  private void defineHttpGetResponse(
+          String resourceName, PseudoServlet pseudoServlet) {
+    defineResource(resourceName, pseudoServlet);
   }
 
   private void defineHttpPostResponse(String resourceName, Object response) {

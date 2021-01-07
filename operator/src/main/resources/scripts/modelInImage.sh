@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
@@ -64,14 +64,6 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
-echo "PRINTING CONTENTS 1"
-if [ -d /weblogic-operator/secrets ] ; then
-  ls -l /weblogic-operator/secrets
-fi
-echo "PRINTING CONTENTS 2"
-if [ -d /weblogic-operator/config-overrides-secrets ] ; then
-  ls -l /weblogic-operator/config-overrides-secrets
-fi
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -955,7 +947,7 @@ function wdtHandleOnlineUpdate() {
   stop_trap
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] \
     || [ ! -f "/tmp/diffed_model.json" ] ; then
-    trace "Not using online update"
+    trace "Not using online update because of onlineUpdate.enabled=false(or not set) or no diffed model found"
     return
   fi
 

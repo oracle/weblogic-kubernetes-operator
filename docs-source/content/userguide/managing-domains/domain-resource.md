@@ -174,9 +174,10 @@ Elements related to specifying and overriding WebLogic domain configuration:
 
 * These elements are under `configuration.model`, only apply if the `domainHomeSourceType` is `FromModel`, and are discussed in [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}).
 
-  * `configMap`: Name of a ConfigMap containing the WebLogic Deploy Tooling model.
+  * `configMap`: (Optional) Name of a ConfigMap containing WebLogic Deploy Tooling model YAML files or `.properties` files.
   * `domainType`: WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.
-  * `runtimeEncryptionSecret`: Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.
+  * `runtimeEncryptionSecret`: The name of the Secret containing the runtime encryption password, which must be in a field named `password`. Required when `domainHomeSourceType` is set to `FromModel`.
+  * `modelHome`: Location of the WebLogic Deploy Tooling model home directory, which can include model YAML files, `.properties` variable files, and application `.zip` archives. Defaults to `/u01/wdt/models`.
 
 * These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`.
 
@@ -233,7 +234,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 
 This example snippet illustrates how to add some of the above environment variables using the `env` attribute under the `serverPod` configuration in your Domain YAML file.
 ```yaml
-# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 apiVersion: "weblogic.oracle/v8"
@@ -285,7 +286,7 @@ Prior to creating a Pod, the operator replaces variable references allowing the 
 This example domain YAML file specifies that Pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:
 
 ```yaml
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 apiVersion: "weblogic.oracle/v8"

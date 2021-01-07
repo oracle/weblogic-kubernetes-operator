@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -103,6 +103,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -291,7 +292,7 @@ class ItMiiUpdateDomainConfig {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
@@ -372,6 +373,7 @@ class ItMiiUpdateDomainConfig {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
@@ -437,7 +439,7 @@ class ItMiiUpdateDomainConfig {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JDBCSystemResources",
           "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");

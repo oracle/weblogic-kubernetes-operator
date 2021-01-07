@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 usage() {
@@ -11,7 +11,7 @@ Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
 Parameters:
    -t: image name and tag in 'name:tag' format
 
-Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 EOF

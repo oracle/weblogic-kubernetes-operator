@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -161,6 +161,10 @@ public class DomainNamespaces {
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
     return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
+  }
+
+  boolean shouldStartNamespace(String ns) {
+    return getNamespaceStatus(ns).shouldStartNamespace();
   }
 
   interface WatcherFactory<T, W extends Watcher<T>> {

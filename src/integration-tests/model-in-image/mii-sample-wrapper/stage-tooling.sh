@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -86,7 +86,7 @@ download_zip() {
 
 if [ "$dry_run" = "true" ]; then
   echo "dryrun:#!/bin/bash"
-  echo "dryrun:# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates."
+  echo "dryrun:# Copyright (c) 2019, 2021, Oracle and/or its affiliates."
   echo "dryrun:# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl."
   echo "dryrun:"
   echo "dryrun:set -eux"
