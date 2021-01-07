@@ -110,7 +110,7 @@ class ItMiiDynamicUpdate {
   private final String adminServerName = "admin-server";
   private final String workManagerName = "newWM";
   private static Path pathToChangeTargetYaml = null;
-
+  private static Path pathToAddClusterYaml = null;
   private static LoggingFacade logger = null;
 
   /**
@@ -208,6 +208,26 @@ class ItMiiDynamicUpdate {
         + "      Target: 'cluster-1,admin-server'";
 
     assertDoesNotThrow(() -> Files.write(pathToChangeTargetYaml, yamlToChangeTarget.getBytes()));
+
+
+    // write sparse yaml to file
+    pathToAddClusterYaml = Paths.get(WORK_DIR + "/addcluster.yaml");
+    String yamlToAddCluster = "topology:\n"
+        + "    Cluster:\n"
+        + "        \"cluster-2\":\n"
+        + "            DynamicServers:\n"
+        + "                ServerTemplate:  \"cluster-2-template\"\n"
+        + "                ServerNamePrefix: \"dynamic-server\"\n"
+        + "                DynamicClusterSize: 4\n"
+        + "                MinDynamicClusterSize: 2\n"
+        + "                MaxDynamicClusterSize: 4\n"
+        + "                CalculatedListenPorts: false\n"
+        + "    ServerTemplate:\n"
+        + "        \"cluster-2-template\":\n"
+        + "            Cluster: \"cluster-2\"\n"
+        + "            ListenPort : 8001";
+
+    assertDoesNotThrow(() -> Files.write(pathToAddClusterYaml, yamlToAddCluster.getBytes()));
   }
 
   /**
@@ -290,7 +310,7 @@ class ItMiiDynamicUpdate {
    * Wait for introspector to complete
    * Verify work manager configuration is updated.
    */
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Update work manager min/max threads constraints config to a model-in-image domain using dynamic update")
   public void testMiiUpdateWorkManager() {
@@ -390,73 +410,6 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Recreate configmap containing application config target to none.
-   * Patch the domain resource with the configmap.
-   * Update the introspect version of the domain resource.
-   * Wait for introspector to complete
-   * Verify application target is changed by accessing the application runtime using REST API.
-   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
-   */
-  @Test
-  @Order(4)
-  @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
-  public void testMiiRemoveTarget() {
-
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
-    }
-
-    // check and wait for the application to be accessible in all server pods
-    verifyApplicationAccessOnCluster();
-
-    // write sparse yaml to file
-    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
-    String yamlToRemoveTarget = "appDeployments:\n"
-        + "  Application:\n"
-        + "    myear:\n"
-        + "      Target: ''";
-
-    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
-
-    // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
-
-    // make sure the application is not deployed on cluster
-    verifyApplicationRuntimeOnCluster("404");
-
-    // make sure the application is not deployed on admin
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for application target to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
-            adminServerName, "404"));
-
-
-    verifyPodsNotRolled(pods);
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
-
-  }
-
-  /**
    * Recreate configmap containing new cluster config.
    * Patch the domain resource with the configmap.
    * Update the introspect version of the domain resource.
@@ -464,7 +417,7 @@ class ItMiiDynamicUpdate {
    * Verify servers in the newly added cluster are started and other servers are not rolled.
    */
   @Test
-  @Order(5)
+  @Order(4)
   @DisplayName("Add cluster in MII domain using mii dynamic update")
   public void testMiiAddCluster() {
 
@@ -481,28 +434,11 @@ class ItMiiDynamicUpdate {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
     }
 
-    // write sparse yaml to file
-    Path pathToAddClusterYaml = Paths.get(WORK_DIR + "/addcluster.yaml");
-    String yamlToAddCluster = "topology:\n"
-        + "    Cluster:\n"
-        + "        \"cluster-2\":\n"
-        + "            DynamicServers:\n"
-        + "                ServerTemplate:  \"cluster-2-template\"\n"
-        + "                ServerNamePrefix: \"dynamic-server\"\n"
-        + "                DynamicClusterSize: 4\n"
-        + "                MinDynamicClusterSize: 2\n"
-        + "                MaxDynamicClusterSize: 4\n"
-        + "                CalculatedListenPorts: false\n"
-        + "    ServerTemplate:\n"
-        + "        \"cluster-2-template\":\n"
-        + "            Cluster: \"cluster-2\"\n"
-        + "            ListenPort : 8001";
-
-    assertDoesNotThrow(() -> Files.write(pathToAddClusterYaml, yamlToAddCluster.getBytes()));
-
-    // Replace contents of an existing configMap
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString()), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
+            pathToAddClusterYaml.toString()), withStandardRetryPolicy);
 
     // change replica to have the servers running in the newly added cluster
     assertTrue(patchDomainResourceWithNewReplicaCountAtSpecLevel(domainUid, domainNamespace, replicaCount),
@@ -535,7 +471,7 @@ class ItMiiDynamicUpdate {
    * Verify the datasource is added by checking the MBean using REST api.
    */
   @Test
-  @Order(6)
+  @Order(5)
   @DisplayName("Add datasource in MII domain using mii dynamic update")
   public void testMiiAddDataSource() {
 
@@ -552,9 +488,11 @@ class ItMiiDynamicUpdate {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
     }
 
-    // Replace contents of an existing configMap
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -579,13 +517,13 @@ class ItMiiDynamicUpdate {
   * Negative test: Changing the domain name using mii dynamic update.
   */
   @Test
-  @Order(7)
+  @Order(6)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
     // write sparse yaml to file
     Path pathToChangeDomainNameYaml = Paths.get(WORK_DIR + "/changedomainname.yaml");
     String yamlToChangeDomainName = "topology:\n"
-        + "  name: newdomainname\n"
+        + "  Name: newdomainname\n"
         + "  AdminServerName: 'admin-server'";
 
     assertDoesNotThrow(() -> Files.write(pathToChangeDomainNameYaml, yamlToChangeDomainName.getBytes()));
@@ -615,6 +553,73 @@ class ItMiiDynamicUpdate {
     assertTrue(domainStatusConditionMsgContainsErrorMsg(miiDynamicUpdateDomain, expectedErrorMsg),
         String.format("domain status condition does not contain error msg %s", expectedErrorMsg));
   }
+
+  /**
+   * Recreate configmap containing application config target to none.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify application target is changed by accessing the application runtime using REST API.
+   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
+   */
+  @Test
+  @Order(7)
+  @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
+  public void testMiiRemoveTarget() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
+    }
+
+    // check and wait for the application to be accessible in all server pods
+    verifyApplicationAccessOnCluster();
+
+    // write sparse yaml to file
+    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
+    String yamlToRemoveTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: ''";
+
+    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // make sure the application is not deployed on cluster
+    verifyApplicationRuntimeOnCluster("404");
+
+    // make sure the application is not deployed on admin
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition ->
+            logger.info("Waiting for application target to be updated. "
+                    + "Elapsed time {0}ms, remaining time {1}ms",
+                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+            adminServerName, "404"));
+
+    verifyPodsNotRolled(pods);
+  }
+
 
   private boolean domainStatusConditionMsgContainsErrorMsg(Domain domain, String errorMsg) {
     for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
@@ -692,6 +697,13 @@ class ItMiiDynamicUpdate {
   }
 
   private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {
+    // wait for 2 minutes before checking the pods, make right decision logic
+    // that runs every two minutes in the  Operator
+    try {
+      Thread.sleep(120 * 1000);
+    } catch (InterruptedException ie) {
+      logger.info("Can't wait for 2 minutes");
+    }
     for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
       assertEquals(
           entry.getValue(),
