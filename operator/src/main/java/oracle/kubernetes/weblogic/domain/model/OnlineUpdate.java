@@ -5,14 +5,10 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public class OnlineUpdate {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   @Description("Enable online update.")
   private Boolean enabled = false;
