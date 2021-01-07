@@ -22,7 +22,7 @@ function usage() {
   -s <secret-name>    : Name of secret. Required.
 
   -l <key-value-pair> : Secret 'literal' key/value pair, for example
-                        '-l "password=abc 123"'. Can be specified more than once. 
+                        '-l "password=abc123"'. Can be specified more than once.
 
   -f <key-file-pair>  : Secret 'file-name' key/file pair, for example
                         '-l walletFile=./ewallet.p12'.

@@ -7,7 +7,8 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.9.8"
+WDT_MINIMUM_VERSION="1.7.3"
+ONLINE_UPDATE_WDT_MINIMUM_VERSION="1.9.8"
 OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
