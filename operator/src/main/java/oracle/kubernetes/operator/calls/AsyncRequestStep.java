@@ -334,7 +334,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private void logTimeout() {
     // called from a code path where we don't have the necessary information for logging context
-    // so we need to use th ethread context to pass in the logging context
+    // so we need to use the thread context to pass in the logging context
     try (LoggingContext stack =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
@@ -356,7 +356,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
-    // so we need to use th ethread context to pass in the logging context
+    // so we need to use the thread context to pass in the logging context
     try (LoggingContext stack =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
@@ -373,7 +373,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
   private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
-    // so we need to use th ethread context to pass in the logging context
+    // so we need to use the thread context to pass in the logging context
     try (LoggingContext stack =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)

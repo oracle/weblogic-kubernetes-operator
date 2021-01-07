@@ -17,5 +17,5 @@ public interface ComponentRegistry extends Component {
    *
    * @return map of registered components
    */
-  public Map<String, Component> getComponents();
+  Map<String, Component> getComponents();
 }

@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.builders;
 import io.kubernetes.client.openapi.ApiException;
 
 /**
- * An exception used to bypass functional programming incompatability with checked exceptions. This
+ * An exception used to bypass functional programming incompatibility with checked exceptions. This
  * is thrown by a function object and the underlying ApiException is then rethrown by the caller of
  * the function object.
  */

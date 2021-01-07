@@ -26,7 +26,7 @@ public interface LabelConstants {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);
   }
 
-  static String getCreatedbyOperatorSelector() {
+  static String getCreatedByOperatorSelector() {
     return String.format("%s=%s", CREATEDBYOPERATOR_LABEL, "true");
   }
 }

@@ -13,7 +13,7 @@ import io.kubernetes.client.openapi.JSON;
 public class LoggingFactory {
 
   // map from resourceBundleName to facade
-  private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
+  private static final Map<String, LoggingFacade> facade = new HashMap<>();
 
   private static JSON json = new JSON();
 

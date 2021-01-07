@@ -15,7 +15,7 @@ public interface RestConfig {
    * This constant is used internally to pass the RestConfig instance from the RestServer to the
    * filters and resources so that they can access it.
    */
-  public static final String REST_CONFIG_PROPERTY = "RestConfig";
+  String REST_CONFIG_PROPERTY = "RestConfig";
 
   /**
    * Gets the in-pod hostname of the WebLogic operator REST api.

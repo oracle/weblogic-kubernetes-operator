@@ -87,7 +87,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track changes to weblogic domains in one namespaces.
+   * Creates a web hook object to track changes to WebLogic domains in one namespaces.
    *
    * @param namespace the namespace in which to track domains
    * @return the active web hook

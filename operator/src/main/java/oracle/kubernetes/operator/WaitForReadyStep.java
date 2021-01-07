@@ -161,7 +161,7 @@ abstract class WaitForReadyStep<T> extends Step {
         .createChildFiber()
         .start(
             createReadAndIfReadyCheckStep(callback),
-            packet.clone(),
+            packet.copy(),
             null);
   }
 
