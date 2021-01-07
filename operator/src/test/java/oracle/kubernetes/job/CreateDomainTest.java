@@ -54,7 +54,7 @@ public class CreateDomainTest {
       // Generate the create domain job for kubernetes
       Process p = new ProcessBuilder("/bin/sh", createJobScript.toString()).start();
       p.waitFor();
-      Assert.assertTrue(p.exitValue() == 0);
+      Assert.assertEquals(0, p.exitValue());
 
       File createDomainJob =
           new File(dstDir.toString() + File.separator + "create-domain-job.yaml");

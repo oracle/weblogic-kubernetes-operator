@@ -83,12 +83,12 @@ public class ServerDownIteratorStep extends Step {
       return new StepAndPacket(createServiceStep(ssi),
               createPacketForServer(packet, ssi));
     } else {
-      return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.clone());
+      return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
     }
   }
 
   private Packet createPacketForServer(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    Packet p = packet.clone();
+    Packet p = packet.copy();
     p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
     p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
     p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);

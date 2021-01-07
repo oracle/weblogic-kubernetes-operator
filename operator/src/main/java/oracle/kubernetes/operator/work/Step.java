@@ -323,7 +323,7 @@ public abstract class Step {
     protected final AsyncFiber fiber;
     protected final Packet packet;
     protected final AtomicInteger count;
-    protected final List<Throwable> throwables = new ArrayList<Throwable>();
+    protected final List<Throwable> throwables = new ArrayList<>();
 
     JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
       this.fiber = fiber;

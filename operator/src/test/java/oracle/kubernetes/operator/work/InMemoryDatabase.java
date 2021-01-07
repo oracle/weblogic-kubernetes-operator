@@ -39,7 +39,6 @@ public abstract class InMemoryDatabase<T, L> {
     }
   }
 
-  @SuppressWarnings("unchecked")
   L list(Map<String, String> searchKeys) {
     List<T> foundItems = new ArrayList<>();
     for (DatabaseKey key : contents.keySet()) {
@@ -59,7 +58,6 @@ public abstract class InMemoryDatabase<T, L> {
     return t;
   }
 
-  @SuppressWarnings("unchecked")
   abstract L createList(List<T> items);
 
   void replace(T item, Map<String, String> keys) {

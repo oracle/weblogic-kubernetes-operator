@@ -119,7 +119,7 @@ public class ClientPool extends Pool<ApiClient> {
                   Integer.MAX_VALUE,
                   60,
                   TimeUnit.SECONDS,
-                  new SynchronousQueue<Runnable>(),
+                  new SynchronousQueue<>(),
                   threadFactory) {
                 @Override
                 public void execute(Runnable command) {

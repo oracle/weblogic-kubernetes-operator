@@ -107,7 +107,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void listDomains_returnsListasJson() throws ApiException {
+  public void listDomains_returnsListAsJson() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
@@ -126,7 +126,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test(expected = ApiException.class)
-  public void replaceDomain_errorResonseCode_throws() throws ApiException {
+  public void replaceDomain_errorResponseCode_throws() throws ApiException {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
@@ -213,7 +213,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
 
     private Pool<ApiClient> createSingleUsePool() {
-      return new Pool<ApiClient>() {
+      return new Pool<>() {
         @Override
         protected ApiClient create() {
           ApiClient client = apiClient;

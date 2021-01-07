@@ -6,5 +6,5 @@ package oracle.kubernetes.operator;
 public enum ModelInImageDomainType {
   WLS,
   RestrictedJRF,
-  JRF;
+  JRF
 }
