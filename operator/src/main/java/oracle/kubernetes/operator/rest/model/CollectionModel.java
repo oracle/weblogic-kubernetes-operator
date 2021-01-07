@@ -21,15 +21,6 @@ public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
   }
 
   /**
-   * Set the items in the collection.
-   *
-   * @param items - a List of items.
-   */
-  public void setItems(List<T> items) {
-    this.items = items;
-  }
-
-  /**
    * Add an item to the collection.
    *
    * @param item - the item to add to the collection.

@@ -107,18 +107,6 @@ public class CrdHelper {
     return new CrdStep(version, productVersion);
   }
 
-  /**
-   * Factory for {@link Step} that creates Domain CRD.
-   *
-   * @param version Version of the Kubernetes API Server
-   * @param productVersion Version of the operator
-   * @param next Next step
-   * @return Step for creating Domain custom resource definition
-   */
-  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
-    return new CrdStep(version, productVersion, next);
-  }
-
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
     List<ResourceVersion> versions = new ArrayList<>();
     List<V1CustomResourceDefinitionVersion> vs = crd.getSpec().getVersions();

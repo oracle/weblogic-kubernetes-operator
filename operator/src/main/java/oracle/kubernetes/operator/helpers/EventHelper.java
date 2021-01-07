@@ -430,10 +430,6 @@ public class EventHelper {
       return eventItem;
     }
 
-    public String getMessage() {
-      return message;
-    }
-
     public String getNamespace() {
       return namespace;
     }

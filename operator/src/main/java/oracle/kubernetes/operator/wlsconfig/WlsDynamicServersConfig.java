@@ -246,19 +246,6 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Return the expression used in matching machine names assigned to dynamic servers.
-   *
-   * @return the expression used in matching machine names assigned to dynamic servers
-   */
-  public String getMachineNameMatchExpression() {
-    return machineNameMatchExpression;
-  }
-
-  public void setMachineNameMatchExpression(String machineNameMatchExpression) {
-    this.machineNameMatchExpression = machineNameMatchExpression;
-  }
-
-  /**
    * Return list of WlsServerConfig objects containing configurations of WLS dynamic server that can
    * be started under the current cluster size.
    *
@@ -282,40 +269,20 @@ public class WlsDynamicServersConfig {
     return serverTemplate;
   }
 
-  public void setServerTemplate(WlsServerConfig serverTemplate) {
-    this.serverTemplate = serverTemplate;
-  }
-
   public String getName() {
     return this.name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   public String getServerTemplateName() {
     return this.serverTemplateName;
   }
 
-  public void setServerTemplateName(String serverTemplateName) {
-    this.serverTemplateName = serverTemplateName;
-  }
-
   public String getServerNamePrefix() {
     return this.serverNamePrefix;
   }
 
-  public void setServerNamePrefix(String serverNamePrefix) {
-    this.serverNamePrefix = serverNamePrefix;
-  }
-
   public boolean getCalculatedListenPorts() {
     return this.calculatedListenPorts;
-  }
-
-  public void setCalculatedListenPorts(boolean calculatedListenPorts) {
-    this.calculatedListenPorts = calculatedListenPorts;
   }
 
   /**

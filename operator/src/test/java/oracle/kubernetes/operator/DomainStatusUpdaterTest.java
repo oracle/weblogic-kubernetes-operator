@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -742,10 +741,6 @@ public class DomainStatusUpdaterTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configureDomain().configureServer(serverName);
-  }
-
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
   }
 
   private void generateServiceOnlyStartupInfos(String... serverNames) {

@@ -25,10 +25,6 @@ public class LoggingFactory {
     return json;
   }
 
-  public static void setJson(JSON json) {
-    LoggingFactory.json = json;
-  }
-
   /**
    * Obtains a Logger from the underlying logging implementation and wraps it in a LoggingFacade.
    *

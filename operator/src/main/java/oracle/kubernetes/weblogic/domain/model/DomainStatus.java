@@ -179,20 +179,6 @@ public class DomainStatus {
     return null;
   }
 
-  private boolean isNewCondition(DomainCondition condition) {
-    DomainCondition oldCondition = getConditionWithType(condition.getType());
-    if (oldCondition == null) {
-      return true;
-    }
-
-    if (oldCondition.equals(condition)) {
-      return false;
-    }
-
-    conditions.remove(oldCondition);
-    return true;
-  }
-
   /**
    * A human readable message indicating details about why the domain is in this condition.
    *

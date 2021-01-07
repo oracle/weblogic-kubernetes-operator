@@ -614,8 +614,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * @param deleting if true, indicates that the domain is being shut down
      * @return the updated factory
      */
-    @Override
-    public MakeRightDomainOperation withDeleting(boolean deleting) {
+    private MakeRightDomainOperation withDeleting(boolean deleting) {
       this.deleting = deleting;
       return this;
     }
@@ -624,7 +623,6 @@ public class DomainProcessorImpl implements DomainProcessor {
      * Modifies the factory to indicate that it should interrupt any current make-right thread.
      * @return the updated factory
      */
-    @Override
     public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;

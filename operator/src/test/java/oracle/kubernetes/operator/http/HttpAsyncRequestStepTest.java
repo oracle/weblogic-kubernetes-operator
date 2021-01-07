@@ -194,10 +194,6 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
       return terminationCause == null && packet != null;
     }
 
-    boolean wasTerminated() {
-      return terminationCause != null;
-    }
-
     @Override
     public void resume(Packet resumePacket) {
       packet = resumePacket;

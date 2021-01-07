@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.builders.CallParams;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
@@ -98,40 +96,6 @@ public class CallTestSupport {
     return cannedResponse;
   }
 
-  /**
-   * Primes CallBuilder to expect a possible request for the specified method.
-   *
-   * @param forMethod the name of the method
-   * @return a canned response which may be qualified by parameters and defines how CallBuilder
-   *     should react.
-   */
-  CannedResponse createOptionalCannedResponse(String forMethod) {
-    CannedResponse cannedResponse = new CannedResponse(forMethod).optional();
-    this.cannedResponses.put(cannedResponse, false);
-    return cannedResponse;
-  }
-
-  /** Throws an exception if any of the canned responses were not used. */
-  void verifyAllDefinedResponsesInvoked() {
-    List<CannedResponse> unusedResponses = new ArrayList<>();
-    for (CannedResponse cannedResponse : this.cannedResponses.keySet()) {
-      if (isUnused(cannedResponse)) {
-        unusedResponses.add(cannedResponse);
-      }
-    }
-
-    if (unusedResponses.isEmpty()) {
-      return;
-    }
-
-    StringBuilder sb = new StringBuilder("The following expected calls were not made:\n");
-    for (CannedResponse cannedResponse : unusedResponses) {
-      sb.append("  ").append(cannedResponse).append('\n');
-    }
-
-    throw new AssertionError(sb.toString());
-  }
-
   private boolean isUnused(CannedResponse cannedResponse) {
     return !cannedResponse.optional && !cannedResponses.get(cannedResponse);
   }
@@ -188,14 +152,6 @@ public class CallTestSupport {
       return result;
     }
 
-    CallResponse getCallResponse() {
-      if (result == null) {
-        return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(), status);
-      } else {
-        return CallResponse.createSuccess(REQUEST_PARAMS, result, HttpURLConnection.HTTP_OK);
-      }
-    }
-
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
       return matches(requestParams) && matches(params);
     }
@@ -218,28 +174,6 @@ public class CallTestSupport {
           || function != null;
     }
 
-    /**
-     * Qualifies the canned response to be used only if the namespace matches the value specified.
-     *
-     * @param namespace the expected namespace
-     * @return the updated response
-     */
-    public CannedResponse withNamespace(String namespace) {
-      requestParamExpectations.put(NAMESPACE, namespace);
-      return this;
-    }
-
-    /**
-     * Qualifies the canned response to be used only if the name matches the value specified.
-     *
-     * @param name the expected name
-     * @return the updated response
-     */
-    public CannedResponse withName(String name) {
-      requestParamExpectations.put(NAME, name);
-      return this;
-    }
-
     private CannedResponse optional() {
       optional = true;
       return this;
@@ -256,41 +190,12 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the body matches the value specified.
-     *
-     * @param body the expected body
-     * @return the updated response
-     */
-    public CannedResponse withBody(Object body) {
-      requestParamExpectations.put(BODY, body);
-      return this;
-    }
-
-    /**
-     * Specifies a function to compute the result from the request parameters.
-     *
-     * @param function the specified function
-     */
-    void computingResult(Function<RequestParams, Object> function) {
-      this.function = function;
-    }
-
-    /**
      * Specifies the result to be returned by the canned response.
      *
      * @param result the response to return
      */
     public <T> void returning(T result) {
       this.result = result;
-    }
-
-    /**
-     * Indicates that the canned response should fail and specifies the HTML status to report.
-     *
-     * @param status the failure status
-     */
-    void failingWithStatus(int status) {
-      this.status = status;
     }
 
     @Override

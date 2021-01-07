@@ -29,18 +29,6 @@ public abstract class ContainerResolver {
   }
 
   /**
-   * Sets the custom container resolver which can be used to get client's {@link Container}.
-   *
-   * @param resolver container resolver
-   */
-  public static void setInstance(ContainerResolver resolver) {
-    if (resolver == null) {
-      resolver = DEFAULT;
-    }
-    theResolver.set(resolver);
-  }
-
-  /**
    * Returns the default container resolver which can be used to get {@link Container}.
    *
    * @return default container resolver

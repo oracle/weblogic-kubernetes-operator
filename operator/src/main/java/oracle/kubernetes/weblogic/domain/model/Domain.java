@@ -493,10 +493,6 @@ public class Domain implements KubernetesObject {
     return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
-  public Model getModel() {
-    return spec.getModel();
-  }
-
   public boolean isHttpAccessLogInLogHome() {
     return spec.getHttpAccessLogInLogHome();
   }

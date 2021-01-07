@@ -193,16 +193,8 @@ public class WlsClusterConfig {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
   public WlsDynamicServersConfig getDynamicServersConfig() {
     return this.dynamicServersConfig;
-  }
-
-  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
-    this.dynamicServersConfig = dynamicServersConfig;
   }
 
   /**
@@ -248,10 +240,6 @@ public class WlsClusterConfig {
 
   public List<WlsServerConfig> getServers() {
     return this.servers;
-  }
-
-  public void setServers(List<WlsServerConfig> servers) {
-    this.servers = servers;
   }
 
   /**

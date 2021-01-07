@@ -99,10 +99,6 @@ public class DomainTopology {
     return this.domain;
   }
 
-  public void setDomain(WlsDomainConfig domain) {
-    this.domain = domain;
-  }
-
   /**
    * Retrieve validation errors.
    * @return validation errors

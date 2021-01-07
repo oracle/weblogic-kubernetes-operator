@@ -18,7 +18,6 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -141,10 +140,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
   }
 
-  private V1PersistentVolumeClaimSpec createSpec() {
-    return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
-  }
-
   private Object fromJson(String json, Class<?> aaClass) {
     return new GsonBuilder().create().fromJson(json, aaClass);
   }
@@ -165,15 +160,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineResource(resourceName, pseudoServlet);
   }
 
-  private void defineHttpPostResponse(String resourceName, Object response) {
-    defineResource(resourceName, new JsonPostServlet(response));
-  }
-
-  private void defineHttpPostResponse(
-      String resourceName, Object response, Consumer<String> bodyValidation) {
-    defineResource(resourceName, new JsonPostServlet(response, bodyValidation));
-  }
-
   private void defineHttpPutResponse(
       String resourceName, String name, Object response, Consumer<String> bodyValidation) {
     defineResource(resourceName + "/" + name, new JsonPutServlet(response, bodyValidation));
@@ -183,10 +169,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private void defineHttpPutResponse(
       String resourceName, String name, Object response, PseudoServlet pseudoServlet) {
     defineResource(resourceName + "/" + name, pseudoServlet);
-  }
-
-  private void defineHttpDeleteResponse(String resourceName, String name, Object response) {
-    defineResource(resourceName + "/" + name, new JsonDeleteServlet(response));
   }
 
   static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
@@ -325,10 +307,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   static class JsonPostServlet extends JsonBodyServlet {
 
-    private JsonPostServlet(Object returnValue) {
-      this(returnValue, null);
-    }
-
     private JsonPostServlet(Object returnValue, Consumer<String> bodyValidation) {
       super(returnValue, bodyValidation);
     }
@@ -368,13 +346,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     long time;
     long interval;
     String description;
-
-    public Event(long time, String description) {
-      this.time = time;
-      this.description = description;
-      interval = lastTime == 0 ? 0 : time - lastTime;
-      lastTime = time;
-    }
 
     @Override
     public String toString() {

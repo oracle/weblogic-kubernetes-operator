@@ -455,11 +455,6 @@ public class DomainStatusTest {
       return this;
     }
 
-    ClusterStatusMatcher withReadyReplicas(int readyReplicas) {
-      this.readyReplicas = readyReplicas;
-      return this;
-    }
-
     ClusterStatusMatcher withReplicasGoal(int replicasGoal) {
       this.replicasGoal = replicasGoal;
       return this;

@@ -20,10 +20,6 @@ class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     this.expectMessage = expectMessage;
   }
 
-  static DomainStatusMatcher hasNormalStatus() {
-    return new DomainStatusMatcher(null, null);
-  }
-
   static DomainStatusMatcher hasStatus(String expectedReason, String expectMessage) {
     return new DomainStatusMatcher(expectedReason, expectMessage);
   }

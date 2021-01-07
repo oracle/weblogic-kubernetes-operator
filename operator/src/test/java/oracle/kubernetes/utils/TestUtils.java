@@ -47,25 +47,6 @@ public class TestUtils {
   }
 
   /**
-   * Removes the console handlers from the specified logger, in order to silence them during a test.
-   *
-   * @param logger a logger to silence
-   * @return a collection of the removed handlers
-   */
-  public static List<Handler> removeConsoleHandlers(Logger logger) {
-    List<Handler> savedHandlers = new ArrayList<>();
-    for (Handler handler : logger.getHandlers()) {
-      if (handler instanceof ConsoleHandler) {
-        savedHandlers.add(handler);
-      }
-    }
-    for (Handler handler : savedHandlers) {
-      logger.removeHandler(handler);
-    }
-    return savedHandlers;
-  }
-
-  /**
    * Restores the silenced logger handlers.
    *
    * @param logger a logger to restore
@@ -260,10 +241,6 @@ public class TestUtils {
       log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
       originalLogLevel = log.getLevel();
       log.setLevel(ch.qos.logback.classic.Level.INFO);
-    }
-
-    static Memento silenceLogger() {
-      return new JsonPathLoggerMemento();
     }
 
     @Override

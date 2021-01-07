@@ -7,7 +7,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
@@ -68,10 +67,6 @@ public class WatchEvent<T> {
 
   private static String createMessageWithResourceVersion(BigInteger resourceVersion) {
     return String.format("Something wrong: continue from (%d)", resourceVersion);
-  }
-
-  public String toJson() {
-    return new GsonBuilder().create().toJson(toWatchResponse());
   }
 
   /**

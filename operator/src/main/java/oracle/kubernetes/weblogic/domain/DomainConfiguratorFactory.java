@@ -14,7 +14,4 @@ public class DomainConfiguratorFactory {
     return exemplar.createFor(domain);
   }
 
-  public static void selectCommonDomainModel() {
-    exemplar = new DomainCommonConfigurator();
-  }
 }

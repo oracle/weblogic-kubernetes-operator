@@ -24,15 +24,6 @@ public class LinkContainerModel extends BaseModel {
   }
 
   /**
-   * Set the links.
-   *
-   * @param links - a List of LinkModels.
-   */
-  public void setLinks(List<LinkModel> links) {
-    this.links = links;
-  }
-
-  /**
    * Add the standard self and canonical links to the list of links.
    *
    * @param selfHref - the self link's hypertext reference.

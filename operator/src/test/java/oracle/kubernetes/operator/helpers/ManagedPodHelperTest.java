@@ -29,8 +29,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 import org.junit.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -121,14 +119,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return configureServer(getConfigurator(), SERVER_NAME);
   }
 
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+  private ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureServer(serverName);
-  }
-
-  @Override
-  V1Pod createTestPodModel() {
-    return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 
   @Override
@@ -274,10 +266,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
     assertThat(getDomain().getStatus().getReason(), is(DomainStatusUpdater.BAD_DOMAIN));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
-  }
-
-  private DomainConfigurator configureDomain(Domain domain) {
-    return new DomainCommonConfigurator(domain);
   }
 
   @Test

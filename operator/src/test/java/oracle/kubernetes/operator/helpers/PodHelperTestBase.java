@@ -628,9 +628,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return testSupport.getResourceWithName(KubernetesTestSupport.POD, getPodName());
   }
 
-  protected abstract ServerConfigurator configureServer(
-      DomainConfigurator configurator, String serverName);
-
   abstract ServerConfigurator configureServer();
 
   @SuppressWarnings("unchecked")
@@ -1104,8 +1101,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   abstract String getReplacedMessageKey();
 
   abstract String getDomainValidationFailedKey();
-
-  abstract V1Pod createTestPodModel();
 
   V1EnvVar envItem(String name, String value) {
     return new V1EnvVar().name(name).value(value);
