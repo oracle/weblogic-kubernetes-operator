@@ -183,7 +183,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   static class ReadServerHealthStepFactoryFake implements Function<Step, Step> {
-    List<String> serverNames = new ArrayList<>();
+    final List<String> serverNames = new ArrayList<>();
 
     @Override
     public Step apply(Step next) {

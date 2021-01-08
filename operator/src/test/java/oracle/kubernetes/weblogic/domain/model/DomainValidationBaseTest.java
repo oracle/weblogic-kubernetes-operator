@@ -25,7 +25,7 @@ public class DomainValidationBaseTest {
   protected static final String VOLUME_PATH_1 = "/usr";
   protected static final String END_VOLUME_MOUNT_PATH_1 = "/projectdir/bin";
 
-  protected KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
+  protected final KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
   /**
    *  Types of Kubernetes resources which can be looked up on a domain.

@@ -312,7 +312,7 @@ public class RestTest extends JerseyTest {
   }
 
   private void defineDomains(String... uids) {
-    Arrays.stream(uids).forEach(uid -> restBackend.addDomain(uid));
+    Arrays.stream(uids).forEach(restBackend::addDomain);
   }
 
   private void defineClusters(String domain, String... clusters) {

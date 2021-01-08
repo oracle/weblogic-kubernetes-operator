@@ -20,9 +20,11 @@ public class ServerConfig {
   private String serverName;
   private String restartedLabel;
   private int nodePort;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1EnvVar> env = null;
   private String image;
   private String imagePullPolicy;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private List<V1LocalObjectReference> imagePullSecrets = null;
 
   @Override

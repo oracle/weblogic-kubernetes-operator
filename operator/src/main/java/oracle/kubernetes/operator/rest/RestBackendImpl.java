@@ -58,7 +58,7 @@ public class RestBackendImpl implements RestBackend {
       "{'clusterName':'%s','replicas':%d}".replaceAll("'", "\"");
   private static final String INITIAL_VERSION = "1";
 
-  @SuppressWarnings("FieldMayBeFinal") // used by unit test
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // used by unit test
   private static TopologyRetriever INSTANCE =
       (String ns, String domainUid) -> {
         Scan s = ScanCache.INSTANCE.lookupScan(ns, domainUid);

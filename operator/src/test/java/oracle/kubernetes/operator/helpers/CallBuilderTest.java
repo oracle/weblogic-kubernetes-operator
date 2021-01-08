@@ -83,7 +83,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
 
     assertThat(callBuilder.executeSynchronousCallWithRetry(
-            () -> callBuilder.readVersionCode(), 1), equalTo(versionInfo));
+        callBuilder::readVersionCode, 1), equalTo(versionInfo));
   }
 
   static class FailOnceGetServlet extends JsonGetServlet {

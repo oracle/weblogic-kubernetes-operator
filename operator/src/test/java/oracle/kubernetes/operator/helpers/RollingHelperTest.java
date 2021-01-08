@@ -65,9 +65,9 @@ public class RollingHelperTest {
   private final TerminalStep terminalStep = new TerminalStep();
   private final Map<String, StepAndPacket> rolling = new HashMap<>();
 
-  protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  protected List<LogRecord> logRecords = new ArrayList<>();
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected final List<Memento> mementos = new ArrayList<>();
+  protected final List<LogRecord> logRecords = new ArrayList<>();
 
   private WlsDomainConfig domainTopology;
 

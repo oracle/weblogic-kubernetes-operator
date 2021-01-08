@@ -66,7 +66,6 @@ public class DomainValidationStepTest {
 
   /**
    * Setup test.
-   * @throws Exception on failure
    */
   @Before
   public void setUp() {

@@ -12,8 +12,8 @@ import org.junit.After;
 import org.junit.Before;
 
 public class SecretHelperTest {
-  KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  List<Memento> mementos = new ArrayList<>();
+  final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  final List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setUp() {

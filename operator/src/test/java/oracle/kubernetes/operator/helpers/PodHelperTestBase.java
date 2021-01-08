@@ -157,10 +157,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
-  protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  protected List<LogRecord> logRecords = new ArrayList<>();
-  RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected final List<Memento> mementos = new ArrayList<>();
+  protected final List<LogRecord> logRecords = new ArrayList<>();
+  final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private Method getDomainSpec;
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final String serverName;

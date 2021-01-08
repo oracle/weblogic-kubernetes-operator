@@ -74,7 +74,7 @@ public class KubernetesTestSupportTest {
 
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
-  List<Memento> mementos = new ArrayList<>();
+  final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**

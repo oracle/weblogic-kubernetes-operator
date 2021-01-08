@@ -26,7 +26,7 @@ public class HttpAsyncTestSupport {
   private static final HttpResponse<String> NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
-  @SuppressWarnings("FieldMayBeFinal")
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private HttpAsyncRequestStep.FutureFactory futureFactory = this::getFuture;
   private final Map<URI, List<RequestHandler>> cannedResponses = new HashMap<>();
 
