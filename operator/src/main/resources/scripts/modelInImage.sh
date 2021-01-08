@@ -288,7 +288,7 @@ function overrideWDTTimeoutValues() {
 
   changeTimeoutProperty "connect.timeout" ${WDT_CONNECT_TIMEOUT}
   changeTimeoutProperty "activate.timeout" ${WDT_ACTIVATE_TIMEOUT}
-  changeTimeoutProperty "deploy.timeout" ${WDT_DEPLOY_TIMEOUt}
+  changeTimeoutProperty "deploy.timeout" ${WDT_DEPLOY_TIMEOUT}
   changeTimeoutProperty "redeploy.timeout" ${WDT_REDEPLOY_TIMEOUT}
   changeTimeoutProperty "undeploy.timeout" ${WDT_UNDEPLOY_TIMEOUT}
   changeTimeoutProperty "start.application.timeout" ${WDT_START_APPLICATION_TIMEOUT}
