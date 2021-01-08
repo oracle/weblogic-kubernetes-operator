@@ -493,12 +493,12 @@ In a rare case if the WDT online update command timeout results in error in the 
 
 |Attribute Name | Default value (milli seconds) |
 |-------|------|
-|deployTimeoutMilliSeconds| 180000 |
-|redeployTimeoutMilliSeconds| 180000 |
-|undeployTimeoutMilliSeconds| 180000 |
-|startApplicationTimeoutMilliSeconds| 180000 |
-|stopApplicationTimeoutMilliSeconds| 180000 |
-|connectTimeoutMilliSeconds| 120000 |
-|activateTimeoutMilliSeconds| 180000 |
-|setServerGroupsTimeoutMilliSeconds| 180000 |
+|deployTimeoutMillis| 180000 |
+|redeployTimeoutMillis| 180000 |
+|undeployTimeoutMillis| 180000 |
+|startApplicationTimeoutMillis| 180000 |
+|stopApplicationTimeoutMillis| 180000 |
+|connectTimeoutMillis| 120000 |
+|activateTimeoutMillis| 180000 |
+|setServerGroupsTimeoutMillis| 180000 |
 

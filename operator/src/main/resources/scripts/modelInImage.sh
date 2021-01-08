@@ -7,8 +7,6 @@
 
 source ${SCRIPTPATH}/utils.sh
 
-WDT_MINIMUM_VERSION="1.7.3"
-ONLINE_UPDATE_WDT_MINIMUM_VERSION="1.9.8"
 OPERATOR_ROOT=${TEST_OPERATOR_ROOT:-/weblogic-operator}
 INTROSPECTCM_IMAGE_MD5="/weblogic-operator/introspectormii/inventory_image.md5"
 INTROSPECTCM_CM_MD5="/weblogic-operator/introspectormii/inventory_cm.md5"
@@ -268,9 +266,15 @@ function buildWDTParams_MD5() {
   trace "Exiting setupInventoryList"
 }
 
-function overrideWDTTimeoutValues() {
-  trace "Entering overrideWDTTimeoutValues"
+function changeTimeoutProperty() {
+  trace "Entering changeTimeoutProperty"
+  sed -i "s/\($1=\).*\$/\1$2/" ${WDT_ROOT}/lib/tool.properties || exitOrLoop
+  trace "Exiting changeTimeoutProperty"
+}
 
+function overrideWDTTimeoutValues() {
+  start_trap
+  trace "Entering overrideWDTTimeoutValues"
   # WDT defaults
   #
   #  connect.timeout=120000
@@ -281,40 +285,40 @@ function overrideWDTTimeoutValues() {
   #  start.application.timeout=180000
   #  stop.application.timeout=180000
   #  set.server.groups.timeout=30000
-
-  if [ ! -z ${wdt_connect_timeout} ] ; then
-    sed -i "s/\(connect\.timeout=\).*\$/\1${wdt_connect_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_CONNECT_TIMEOUT} ] ; then
+    changeTimeoutProperty "connect.timeout" ${WDT_CONNECT_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_activate_timeout} ] ; then
-    sed -i "s/\(activate\.timeout=\).*\$/\1${wdt_activate_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_ACTIVATE_TIMEOUT} ] ; then
+    changeTimeoutProperty "activate.timeout" ${WDT_ACTIVATE_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_deploy_timeout} ] ; then
-    sed -i "s/\(deploy\.timeout=\).*\$/\1${wdt_deploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_DEPLOY_TIMEOUt} ] ; then
+    changeTimeoutProperty "deploy.timeout" ${WDT_DEPLOY_TIMEOUt}
   fi
 
-  if [ ! -z ${wdt_redeploy_timeout} ] ; then
-    sed -i "s/\(redeploy\.timeout=\).*\$/\1${wdt_redeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_REDEPLOY_TIMEOUT} ] ; then
+    changeTimeoutProperty "redeploy.timeout" ${WDT_REDEPLOY_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_undeploy_timeout} ] ; then
-    sed -i "s/\(undeploy\.timeout=\).*\$/\1${wdt_undeploy_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_UNDEPLOY_TIMEOUT} ] ; then
+    changeTimeoutProperty "undeploy.timeout" ${WDT_UNDEPLOY_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_start_application_timeout} ] ; then
-    sed -i "s/\(start.application\.timeout=\).*\$/\1${wdt_start_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_START_APPLICATION_TIMEOUT} ] ; then
+    changeTimeoutProperty "start.application.timeout" ${WDT_START_APPLICATION_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_stop_application_timeout} ] ; then
-    sed -i "s/\(stop.application\.timeout=\).*\$/\1${wdt_stop_application_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_STOP_APPLICATION_TIMEOUT} ] ; then
+    changeTimeoutProperty "stop.application.timeout" ${WDT_STOP_APPLICATION_TIMEOUT}
   fi
 
-  if [ ! -z ${wdt_set_server_groups_timeout} ] ; then
-    sed -i "s/\(set.server.groups\.timeout=\).*\$/\1${wdt_set_server_groups_timeout}/" ${WDT_ROOT}/lib/tool.properties
+  if [ ! -z ${WDT_SET_SERVER_GROUPS_TIMEOUT} ] ; then
+    changeTimeoutProperty "set.server.groups.timeout" ${WDT_SET_SERVER_GROUPS_TIMEOUT}
   fi
 
   trace "Exiting setupInventoryList"
+  stop_trap
 }
 
 # createWLDomain
@@ -475,11 +479,18 @@ function checkWDTVersion() {
   trace "Entering checkWDTVersion"
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
+
+  if [ "true" == "${MII_USE_ONLINE_UPDATE}" ] ; then
+    local required_min_wdt_version="1.9.8"
+  else
+    local required_min_wdt_version="1.7.3"
+  fi
+
   if  [ ! -z ${wdt_version} ]; then
-    versionGE ${wdt_version} ${WDT_MINIMUM_VERSION}
+    versionGE ${wdt_version} ${required_min_wdt_version}
     if [ $? != "0" ] ; then
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "version of ${required_min_wdt_version} installed in the image. The version of the WebLogic Deploy Tool installed " \
       "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
       "Tool and redeploy the domain again. To bypass this check, set environment variable " \
       "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
@@ -487,7 +498,7 @@ function checkWDTVersion() {
     fi
   else
       trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${WDT_MINIMUM_VERSION} installed in the image. The version of the WebLogic Deploy Tool installed " \
+      "version of ${required_min_wdt_version} installed in the image. The version of the WebLogic Deploy Tool installed " \
       "in the image cannot be determined, you can create another image with an updated version of the WebLogic Deploy" \
       " Tool and redeploy the domain again. To bypass this check, set environment variable " \
       "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
@@ -957,11 +968,6 @@ function wdtHandleOnlineUpdate() {
     return
   fi
 
-  trace "Entering wdtHandleOnlineUpdate"
-  # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
-  # temporarily disable it
-
-  stop_trap
   # We need to extract all the archives, WDT online checks for file existence
   # even for delete
   #

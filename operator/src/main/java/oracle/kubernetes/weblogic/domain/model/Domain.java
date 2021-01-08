@@ -517,12 +517,12 @@ public class Domain implements KubernetesObject {
   }
 
   /**
-   * Returns WDT activate timeout.
+   * Returns WDT activate changes timeout.
    * @return WDT activate timeout
    */
-  public Long getWDTActivateTimeout() {
+  public Long getWDTActivateTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getActivateTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getActivateTimeoutMillis)
         .orElse(null);
   }
 
@@ -530,39 +530,39 @@ public class Domain implements KubernetesObject {
    * Returns WDT connect timeout.
    * @return WDT connect timeout
    */
-  public Long getWDTConnectTimeout() {
+  public Long getWDTConnectTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getConnectTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getConnectTimeoutMillis)
         .orElse(null);
   }
 
   /**
-   * Returns WDT deploy timeout.
+   * Returns WDT deploy application timeout.
    * @return WDT deploy timeout
    */
-  public Long getWDTDeployTimeout() {
+  public Long getWDTDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getDeployTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getDeployTimeoutMillis)
         .orElse(null);
   }
 
   /**
-   * Returns WDT undeploy timeout.
+   * Returns WDT undeploy application timeout.
    * @return WDT undeploy timeout
    */
-  public Long getWDTUnDeployTimeout() {
+  public Long getWDTUnDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getUndeployTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getUndeployTimeoutMillis)
         .orElse(null);
   }
 
   /**
-   * Returns WDT redeploy timeout.
+   * Returns WDT redeploy application timeout.
    * @return WDT redeploy timeout
    */
-  public Long getWDTReDeployTimeout() {
+  public Long getWDTReDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getRedeployTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getRedeployTimeoutMillis)
         .orElse(null);
   }
 
@@ -570,9 +570,9 @@ public class Domain implements KubernetesObject {
    * Returns WDT start application timeout.
    * @return WDT start application timeout
    */
-  public Long getWDTStartApplicationTimeout() {
+  public Long getWDTStartApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getStartApplicationTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getStartApplicationTimeoutMillis)
         .orElse(null);
   }
 
@@ -580,19 +580,19 @@ public class Domain implements KubernetesObject {
    * Returns WDT stop application timeout.
    * @return WDT stop application timeout
    */
-  public Long getWDTStopApplicationTimeout() {
+  public Long getWDTStopApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getStopApplicationTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getStopApplicationTimeoutMillis)
         .orElse(null);
   }
 
   /**
-   * Returns WDT set server groups timeout.
+   * Returns WDT set server groups timeout when setting JRF domain server group targeting.
    * @return WDT set server groups timeout
    */
-  public Long getWDTSetServerGroupsTimeout() {
+  public Long getWDTSetServerGroupsTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getSetServerGroupsTimeoutMilliSeconds)
+        .map(OnlineUpdate.WDTTimeouts::getSetServerGroupsTimeoutMillis)
         .orElse(null);
   }
 
@@ -609,7 +609,7 @@ public class Domain implements KubernetesObject {
    *
    * @return true if onlineUpdate.onNonDynamicChanges is set to cancelUpdate
    */
-  public boolean isCancelChangesIfRestartRequire() {
+  public boolean isCancelChangesIfRestartRequired() {
     return MIINonDynamicChangesMethod.CancelUpdate.equals(
         Optional.ofNullable(spec)
           .map(DomainSpec::getConfiguration)

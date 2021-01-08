@@ -79,46 +79,46 @@ public class IntrospectorJobEnvVars {
    * WDT CONNECT TIMEOUT.
    */
 
-  public static final String WDT_CONNECT_TIMEOUT = "wdt_connect_timeout";
+  public static final String MII_WDT_CONNECT_TIMEOUT = "WDT_CONNECT_TIMEOUT";
 
   /**
    * WDT ACTIVATE TIMEOUT.
    */
-  public static final String WDT_ACTIVATE_TIMEOUT = "wdt_activate_timeout";
+  public static final String MII_WDT_ACTIVATE_TIMEOUT = "WDT_ACTIVATE_TIMEOUT";
 
   /**
    * WDT DEPLOY TIMEOUT.
    */
 
-  public static final String WDT_DEPLOY_TIMEOUT = "wdt_deploy_timeout";
+  public static final String MII_WDT_DEPLOY_TIMEOUT = "WDT_DEPLOY_TIMEOUT";
 
   /**
    * WDT REDEPLOY TIMEOUT.
    */
 
-  public static final String WDT_REDEPLOY_TIMEOUT = "wdt_redeploy_timeout";
+  public static final String MII_WDT_REDEPLOY_TIMEOUT = "WDT_REDEPLOY_TIMEOUT";
 
   /**
    * WDT UNDEPLOY TIMEOUT.
    */
 
-  public static final String WDT_UNDEPLOY_TIMEOUT = "wdt_undeploy_timeout";
+  public static final String MII_WDT_UNDEPLOY_TIMEOUT = "WDT_UNDEPLOY_TIMEOUT";
 
   /**
    * WDT START APPLICATION TIMEOUT.
    */
 
-  public static final String WDT_START_APPLICATION_TIMEOUT = "wdt_start_application_timeout";
+  public static final String MII_WDT_START_APPLICATION_TIMEOUT = "WDT_START_APPLICATION_TIMEOUT";
   /**
    * WDT STOP APPLICATION TIMEOUT.
    */
-  public static final String WDT_STOP_APPLICAITON_TIMEOUT = "wdt_stop_application_timeout";
+  public static final String MII_WDT_STOP_APPLICAITON_TIMEOUT = "WDT_STOP_APPLICATION_TIMEOUT";
 
   /**
    * WDT SET SERVER GROUPS TIMEOUT.
    */
 
-  public static final String WDT_SET_SERVERGROUPS_TIMEOUT = "wdt_set_server_groups_timeout";
+  public static final String MII_WDT_SET_SERVERGROUPS_TIMEOUT = "WDT_SET_SERVER_GROUPS_TIMEOUT";
 
   /**
    * Istio enabled.
@@ -150,7 +150,7 @@ public class IntrospectorJobEnvVars {
       NAMESPACE, INTROSPECT_HOME, CREDENTIALS_SECRET_NAME, OPSS_KEY_SECRET_NAME, OPSS_WALLETFILE_SECRET_NAME,
       RUNTIME_ENCRYPTION_SECRET_NAME, WDT_DOMAIN_TYPE, DOMAIN_SOURCE_TYPE, ISTIO_ENABLED, ISTIO_READINESS_PORT,
       ISTIO_POD_NAMESPACE, WDT_MODEL_HOME, MII_USE_ONLINE_UPDATE, MII_CANCEL_CHANGES_IFRESTART_REQUIRED,
-      MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, WDT_CONNECT_TIMEOUT, WDT_ACTIVATE_TIMEOUT, WDT_DEPLOY_TIMEOUT,
-      WDT_REDEPLOY_TIMEOUT, WDT_UNDEPLOY_TIMEOUT, WDT_START_APPLICATION_TIMEOUT, WDT_STOP_APPLICAITON_TIMEOUT,
-      WDT_SET_SERVERGROUPS_TIMEOUT);
+      MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, MII_WDT_CONNECT_TIMEOUT, MII_WDT_ACTIVATE_TIMEOUT, MII_WDT_DEPLOY_TIMEOUT,
+      MII_WDT_REDEPLOY_TIMEOUT, MII_WDT_UNDEPLOY_TIMEOUT, MII_WDT_START_APPLICATION_TIMEOUT,
+      MII_WDT_STOP_APPLICAITON_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT);
 }

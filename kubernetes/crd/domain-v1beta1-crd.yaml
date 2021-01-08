@@ -127,38 +127,38 @@ spec:
                         wdtTimeouts:
                           type: object
                           properties:
-                            deployTimeoutMilliSeconds:
-                              type: number
-                              description: 'WDT application or library deployment
-                                timeout in milliseconds. Default: 180000.'
-                            stopApplicationTimeoutMilliSeconds:
-                              type: number
-                              description: 'WDT application stop timeout in milliseconds.
-                                Default: 180000.'
-                            connectTimeoutMilliSeconds:
-                              type: number
-                              description: 'WDT connect to WebLogic admin server timeout
-                                in milliseconds. Default: 120000.'
-                            startApplicationTimeoutMilliSeconds:
-                              type: number
-                              description: 'WDT application start timeout in milliseconds.
-                                Default: 180000.'
-                            setServerGroupsTimeoutMilliSeconds:
+                            setServerGroupsTimeoutMillis:
                               type: number
                               description: 'WDT set server groups timeout for extending
                                 a JRF domain configured cluster in milliseconds. Default:
                                 180000.'
-                            undeployTimeoutMilliSeconds:
+                            connectTimeoutMillis:
+                              type: number
+                              description: 'WDT connect to WebLogic admin server timeout
+                                in milliseconds. Default: 120000.'
+                            undeployTimeoutMillis:
                               type: number
                               description: 'WDT application or library undeployment
                                 timeout in milliseconds. Default: 180000.'
-                            redeployTimeoutMilliSeconds:
+                            deployTimeoutMillis:
                               type: number
-                              description: 'WDT application or library redeployment
+                              description: 'WDT application or library deployment
                                 timeout in milliseconds. Default: 180000.'
-                            activateTimeoutMilliSeconds:
+                            startApplicationTimeoutMillis:
+                              type: number
+                              description: 'WDT application start timeout in milliseconds.
+                                Default: 180000.'
+                            activateTimeoutMillis:
                               type: number
                               description: 'WDT activate WebLogic configuration changes
+                                timeout in milliseconds. Default: 180000.'
+                            stopApplicationTimeoutMillis:
+                              type: number
+                              description: 'WDT application stop timeout in milliseconds.
+                                Default: 180000.'
+                            redeployTimeoutMillis:
+                              type: number
+                              description: 'WDT application or library redeployment
                                 timeout in milliseconds. Default: 180000.'
                     modelHome:
                       type: string
