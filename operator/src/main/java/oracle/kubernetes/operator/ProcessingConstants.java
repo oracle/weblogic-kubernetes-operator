@@ -32,7 +32,7 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
   String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
   String MII_DYNAMIC_UPDATE = "miiDynamicUpdate";
-  String MII_DYNAMIC_UPDATE_WDTROLLBACKFILE = "miiDynamicUpdateRollBackFile";
+  String MII_DYNAMIC_UPDATE_WDTROLLBACKFILE = "miiDynamicUpdateRollbackFile";
   String MII_DYNAMIC_UPDATE_SUCCESS = "0";
   String MII_DYNAMIC_UPDATE_RESTART_REQUIRED = "103";
   String MII_DYNAMIC_UPDATE_UPDATES_CANCELED = "104";
