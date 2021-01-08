@@ -90,7 +90,8 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (hasProcessingNotStarted(packet) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      if (hasProcessingNotStarted(packet, info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
         return doNext(packet);
       }
 
@@ -101,6 +102,7 @@ public class EventHelper {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
 
       packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
+      Optional.ofNullable(info).ifPresent(dpi -> dpi.setEventType(eventData.eventItem));
 
       V1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
@@ -116,8 +118,12 @@ public class EventHelper {
           && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTING;
     }
 
-    private boolean hasProcessingNotStarted(Packet packet) {
-      return packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
+    private boolean hasProcessingNotStarted(Packet packet, DomainPresenceInfo info) {
+      boolean startedEventNotFound = packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
+      if ((startedEventNotFound) && (info != null)) {
+        startedEventNotFound = info.getEventType() != DOMAIN_PROCESSING_STARTING;
+      }
+      return startedEventNotFound;
     }
 
   }

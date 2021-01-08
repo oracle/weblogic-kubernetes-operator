@@ -54,6 +54,7 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
+  private Enum eventType;
 
   /**
    * Create presence for a domain.
@@ -470,6 +471,14 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now. */
   public void complete() {
     resetFailureCount();
+  }
+
+  public Enum getEventType() {
+    return eventType;
+  }
+
+  public void setEventType(Enum eventType) {
+    this.eventType = eventType;
   }
 
   /**
