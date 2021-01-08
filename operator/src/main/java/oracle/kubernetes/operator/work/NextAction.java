@@ -93,7 +93,7 @@ public final class NextAction {
     return '['
         + "kind=" + kind
         + ",next=" + next
-        + ",packet=" + (packet != null ? packet.toString() : null)
+        + ",packet=" + packet
         + ']';
   }
 
