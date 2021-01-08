@@ -90,9 +90,11 @@ public final class NextAction {
   /** Dumps the contents to assist debugging. */
   @Override
   public String toString() {
-    String buf = '[' +  "kind=" + kind + ',' + "next=" + next + ','
-        + "packet=" + (packet != null ? packet.toString() : null) + ']';
-    return buf;
+    return '['
+        + "kind=" + kind
+        + ",next=" + next
+        + ",packet=" + (packet != null ? packet.toString() : null)
+        + ']';
   }
 
   public enum Kind {
