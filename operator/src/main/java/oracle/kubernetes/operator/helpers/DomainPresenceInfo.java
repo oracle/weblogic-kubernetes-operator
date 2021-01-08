@@ -33,6 +33,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -54,7 +55,7 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private Enum eventType;
+  private EventItem eventType;
 
   /**
    * Create presence for a domain.
@@ -473,11 +474,11 @@ public class DomainPresenceInfo {
     resetFailureCount();
   }
 
-  public Enum getEventType() {
+  public EventItem getEventType() {
     return eventType;
   }
 
-  public void setEventType(Enum eventType) {
+  public void setEventType(EventItem eventType) {
     this.eventType = eventType;
   }
 

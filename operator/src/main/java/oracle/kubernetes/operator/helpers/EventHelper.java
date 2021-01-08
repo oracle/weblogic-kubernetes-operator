@@ -12,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -91,17 +90,16 @@ public class EventHelper {
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (hasProcessingNotStarted(packet, info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
+      if (hasProcessingNotStarted(info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
         return doNext(packet);
       }
 
-      if (isDuplicatedStartedEvent(packet)) {
+      if (isDuplicatedStartedEvent(info)) {
         return doNext(packet);
       }
 
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
 
-      packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
       Optional.ofNullable(info).ifPresent(dpi -> dpi.setEventType(eventData.eventItem));
 
       V1Event event = createEvent(packet, eventData);
@@ -113,19 +111,14 @@ public class EventHelper {
           packet);
     }
 
-    private boolean isDuplicatedStartedEvent(Packet packet) {
-      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTING;
+    private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(dpi -> dpi.getEventType() == DOMAIN_PROCESSING_STARTING).orElse(false)
+              && eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING;
     }
 
-    private boolean hasProcessingNotStarted(Packet packet, DomainPresenceInfo info) {
-      boolean startedEventNotFound = packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
-      if ((startedEventNotFound) && (info != null)) {
-        startedEventNotFound = info.getEventType() != DOMAIN_PROCESSING_STARTING;
-      }
-      return startedEventNotFound;
+    private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(dpi -> dpi.getEventType() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
-
   }
 
   private static V1Event createEvent(

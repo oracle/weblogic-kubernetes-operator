@@ -447,10 +447,11 @@ public class DomainProcessorTest {
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
+    // Scale up the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
     newDomain.getMetadata().setCreationTimestamp(new DateTime());
     long timestamp = System.currentTimeMillis();
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain.withMetadata(newDomain.getMetadata())))
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
