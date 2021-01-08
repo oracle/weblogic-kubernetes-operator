@@ -55,7 +55,7 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private EventItem eventType;
+  private EventItem lastEventItem;
 
   /**
    * Create presence for a domain.
@@ -474,12 +474,12 @@ public class DomainPresenceInfo {
     resetFailureCount();
   }
 
-  public EventItem getEventType() {
-    return eventType;
+  EventItem getLastEventItem() {
+    return lastEventItem;
   }
 
-  public void setEventType(EventItem eventType) {
-    this.eventType = eventType;
+  void setLastEventItem(EventItem lastEventItem) {
+    this.lastEventItem = lastEventItem;
   }
 
   /**

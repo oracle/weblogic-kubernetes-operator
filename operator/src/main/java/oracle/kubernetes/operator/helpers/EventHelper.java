@@ -100,7 +100,7 @@ public class EventHelper {
 
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
 
-      Optional.ofNullable(info).ifPresent(dpi -> dpi.setEventType(eventData.eventItem));
+      Optional.ofNullable(info).ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
 
       V1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
@@ -113,11 +113,11 @@ public class EventHelper {
 
     private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
       return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && Optional.ofNullable(info).map(dpi -> dpi.getEventType() == DOMAIN_PROCESSING_STARTING).orElse(false);
+          && Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() == DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
     private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(dpi -> dpi.getEventType() != DOMAIN_PROCESSING_STARTING).orElse(false);
+      return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
   }
 
