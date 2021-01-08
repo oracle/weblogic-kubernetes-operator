@@ -267,9 +267,9 @@ function buildWDTParams_MD5() {
 }
 
 function changeTimeoutProperty() {
-  trace "Entering changeTimeoutProperty"
-  sed -i "s/\($1=\).*\$/\1$2/" ${WDT_ROOT}/lib/tool.properties || exitOrLoop
-  trace "Exiting changeTimeoutProperty"
+  if [ ! -z $2 ] ; then
+    sed -i "s/\($1=\).*\$/\1$2/" ${WDT_ROOT}/lib/tool.properties || exitOrLoop
+  fi
 }
 
 function overrideWDTTimeoutValues() {
@@ -285,37 +285,15 @@ function overrideWDTTimeoutValues() {
   #  start.application.timeout=180000
   #  stop.application.timeout=180000
   #  set.server.groups.timeout=30000
-  if [ ! -z ${WDT_CONNECT_TIMEOUT} ] ; then
-    changeTimeoutProperty "connect.timeout" ${WDT_CONNECT_TIMEOUT}
-  fi
 
-  if [ ! -z ${WDT_ACTIVATE_TIMEOUT} ] ; then
-    changeTimeoutProperty "activate.timeout" ${WDT_ACTIVATE_TIMEOUT}
-  fi
-
-  if [ ! -z ${WDT_DEPLOY_TIMEOUt} ] ; then
-    changeTimeoutProperty "deploy.timeout" ${WDT_DEPLOY_TIMEOUt}
-  fi
-
-  if [ ! -z ${WDT_REDEPLOY_TIMEOUT} ] ; then
-    changeTimeoutProperty "redeploy.timeout" ${WDT_REDEPLOY_TIMEOUT}
-  fi
-
-  if [ ! -z ${WDT_UNDEPLOY_TIMEOUT} ] ; then
-    changeTimeoutProperty "undeploy.timeout" ${WDT_UNDEPLOY_TIMEOUT}
-  fi
-
-  if [ ! -z ${WDT_START_APPLICATION_TIMEOUT} ] ; then
-    changeTimeoutProperty "start.application.timeout" ${WDT_START_APPLICATION_TIMEOUT}
-  fi
-
-  if [ ! -z ${WDT_STOP_APPLICATION_TIMEOUT} ] ; then
-    changeTimeoutProperty "stop.application.timeout" ${WDT_STOP_APPLICATION_TIMEOUT}
-  fi
-
-  if [ ! -z ${WDT_SET_SERVER_GROUPS_TIMEOUT} ] ; then
-    changeTimeoutProperty "set.server.groups.timeout" ${WDT_SET_SERVER_GROUPS_TIMEOUT}
-  fi
+  changeTimeoutProperty "connect.timeout" ${WDT_CONNECT_TIMEOUT}
+  changeTimeoutProperty "activate.timeout" ${WDT_ACTIVATE_TIMEOUT}
+  changeTimeoutProperty "deploy.timeout" ${WDT_DEPLOY_TIMEOUt}
+  changeTimeoutProperty "redeploy.timeout" ${WDT_REDEPLOY_TIMEOUT}
+  changeTimeoutProperty "undeploy.timeout" ${WDT_UNDEPLOY_TIMEOUT}
+  changeTimeoutProperty "start.application.timeout" ${WDT_START_APPLICATION_TIMEOUT}
+  changeTimeoutProperty "stop.application.timeout" ${WDT_STOP_APPLICATION_TIMEOUT}
+  changeTimeoutProperty "set.server.groups.timeout" ${WDT_SET_SERVER_GROUPS_TIMEOUT}
 
   trace "Exiting setupInventoryList"
   stop_trap
