@@ -25,7 +25,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -280,7 +280,7 @@ class ItIstioTwoDomainsInImage {
     logger.info("WebLogic console on domain1 is accessible");
     Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
         clusterName, archivePath, domainNamespace1 + ".org", "testwebapp");
@@ -296,7 +296,7 @@ class ItIstioTwoDomainsInImage {
     checkConsole = checkAppUsingHostHeader(consoleUrl, domainNamespace2 + ".org");
     assertTrue(checkConsole, "Failed to access domain2 WebLogic console");
     logger.info("WebLogic console on domain2 is accessible");
-    result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST, 
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
         clusterName, archivePath, domainNamespace2 + ".org", "testwebapp");
