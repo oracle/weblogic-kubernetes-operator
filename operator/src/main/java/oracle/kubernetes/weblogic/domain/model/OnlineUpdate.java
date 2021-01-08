@@ -38,30 +38,15 @@ public class OnlineUpdate {
        + " For more information, see the runtime update section of the Model in Image user guide.")
   private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateOnly;
 
-  @Description("WDT application or library deployment timeout in milliseconds. Default: 180000.")
-  private Long deployTimeoutMilliSeconds = 180000L;
+  private WDTTimeouts wdtTimeouts;
 
-  @Description("WDT application or library redeployment timeout in milliseconds. Default: 180000.")
-  private Long redeployTimeoutMilliSeconds = 180000L;
+  public WDTTimeouts getWdtTimeouts() {
+    return wdtTimeouts;
+  }
 
-  @Description("WDT application or library undeployment timeout in milliseconds. Default: 180000.")
-  private Long undeployTimeoutMilliSeconds = 180000L;
-
-  @Description("WDT application start timeout in milliseconds. Default: 180000.")
-  private Long startApplicationTimeoutMilliSeconds = 180000L;
-
-  @Description("WDT application stop timeout in milliseconds. Default: 180000.")
-  private Long stopApplicationTimeoutMilliSeconds = 180000L;
-
-  @Description("WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.")
-  private Long connectTimeoutMilliSeconds = 120000L;
-
-  @Description("WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.")
-  private Long activateTimeoutMilliSeconds = 180000L;
-
-  @Description("WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. "
-        + "Default: 180000.")
-  private Long setServerGroupsTimeoutMilliSeconds = 180000L;
+  public void setWdtTimeouts(WDTTimeouts wdtTimeouts) {
+    this.wdtTimeouts = wdtTimeouts;
+  }
 
   public Boolean getEnabled() {
     return enabled;
@@ -89,123 +74,12 @@ public class OnlineUpdate {
     return this;
   }
 
-  public Long getDeployTimeoutMilliSeconds() {
-    return deployTimeoutMilliSeconds;
-  }
-
-  public void setDeployTimeoutMilliSeconds(Long deployTimeoutMilliSeconds) {
-    this.deployTimeoutMilliSeconds = deployTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withDeployTimeoutSeconds(Long deployTimeoutSeconds) {
-    this.deployTimeoutMilliSeconds = deployTimeoutSeconds;
-    return this;
-  }
-
-  public Long getRedeployTimeoutMilliSeconds() {
-    return redeployTimeoutMilliSeconds;
-  }
-
-  public void setRedeployTimeoutMilliSeconds(Long redeployTimeoutMilliSeconds) {
-    this.redeployTimeoutMilliSeconds = redeployTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withRedeployTimeoutSeconds(Long redeployTimeoutSeconds) {
-    this.redeployTimeoutMilliSeconds = redeployTimeoutSeconds;
-    return this;
-  }
-
-  public Long getUndeployTimeoutMilliSeconds() {
-    return undeployTimeoutMilliSeconds;
-  }
-
-  public void setUndeployTimeoutMilliSeconds(Long undeployTimeoutMilliSeconds) {
-    this.undeployTimeoutMilliSeconds = undeployTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withUndeployTimeoutSeconds(Long undeployTimeoutSeconds) {
-    this.undeployTimeoutMilliSeconds = undeployTimeoutSeconds;
-    return this;
-  }
-
-  public Long getStartApplicationTimeoutMilliSeconds() {
-    return startApplicationTimeoutMilliSeconds;
-  }
-
-  public void setStartApplicationTimeoutMilliSeconds(Long startApplicationTimeoutMilliSeconds) {
-    this.startApplicationTimeoutMilliSeconds = startApplicationTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withStartApplicationTimeoutSeconds(Long startApplicationTimeoutSeconds) {
-    this.startApplicationTimeoutMilliSeconds = startApplicationTimeoutSeconds;
-    return this;
-  }
-
-  public Long getStopApplicationTimeoutMilliSeconds() {
-    return stopApplicationTimeoutMilliSeconds;
-  }
-
-  public void setStopApplicationTimeoutMilliSeconds(Long stopApplicationTimeoutMilliSeconds) {
-    this.stopApplicationTimeoutMilliSeconds = stopApplicationTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withStopApplicationTimeoutSeconds(Long stopApplicationTimeoutSeconds) {
-    this.stopApplicationTimeoutMilliSeconds = stopApplicationTimeoutSeconds;
-    return this;
-  }
-
-  public Long getConnectTimeoutMilliSeconds() {
-    return connectTimeoutMilliSeconds;
-  }
-
-  public void setConnectTimeoutMilliSeconds(Long connectTimeoutMilliSeconds) {
-    this.connectTimeoutMilliSeconds = connectTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withConnectTimeoutSeconds(Long connectTimeoutSeconds) {
-    this.connectTimeoutMilliSeconds = connectTimeoutSeconds;
-    return this;
-  }
-
-  public Long getActivateTimeoutMilliSeconds() {
-    return activateTimeoutMilliSeconds;
-  }
-
-  public void setActivateTimeoutMilliSeconds(Long activateTimeoutMilliSeconds) {
-    this.activateTimeoutMilliSeconds = activateTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withActivateTimeoutSeconds(Long activateTimeoutSeconds) {
-    this.activateTimeoutMilliSeconds = activateTimeoutSeconds;
-    return this;
-  }
-
-  public Long getSetServerGroupsTimeoutMilliSeconds() {
-    return setServerGroupsTimeoutMilliSeconds;
-  }
-
-  public void setSetServerGroupsTimeoutMilliSeconds(Long setServerGroupsTimeoutMilliSeconds) {
-    this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutMilliSeconds;
-  }
-
-  public OnlineUpdate withSetServerGroupsTimeoutSeconds(Long setServerGroupsTimeoutSeconds) {
-    this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutSeconds;
-    return this;
-  }
-
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(enabled)
         .append(onNonDynamicChanges)
-        .append(deployTimeoutMilliSeconds)
-        .append(redeployTimeoutMilliSeconds)
-        .append(undeployTimeoutMilliSeconds)
-        .append(startApplicationTimeoutMilliSeconds)
-        .append(stopApplicationTimeoutMilliSeconds)
-        .append(connectTimeoutMilliSeconds)
-        .append(setServerGroupsTimeoutMilliSeconds)
-        .append(activateTimeoutMilliSeconds);
+        .append(wdtTimeouts);
 
     return builder.toHashCode();
   }
@@ -223,16 +97,101 @@ public class OnlineUpdate {
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
             .append(onNonDynamicChanges, rhs.onNonDynamicChanges)
-            .append(deployTimeoutMilliSeconds, rhs.deployTimeoutMilliSeconds)
-            .append(redeployTimeoutMilliSeconds, rhs.redeployTimeoutMilliSeconds)
-            .append(undeployTimeoutMilliSeconds, rhs.undeployTimeoutMilliSeconds)
-            .append(startApplicationTimeoutMilliSeconds, rhs.startApplicationTimeoutMilliSeconds)
-            .append(stopApplicationTimeoutMilliSeconds, rhs.stopApplicationTimeoutMilliSeconds)
-            .append(connectTimeoutMilliSeconds, rhs.connectTimeoutMilliSeconds)
-            .append(setServerGroupsTimeoutMilliSeconds, rhs.setServerGroupsTimeoutMilliSeconds)
-            .append(activateTimeoutMilliSeconds, rhs.activateTimeoutMilliSeconds);
+            .append(wdtTimeouts, rhs.wdtTimeouts);
 
     return builder.isEquals();
+  }
+
+  class WDTTimeouts {
+    @Description("WDT application or library deployment timeout in milliseconds. Default: 180000.")
+    private Long deployTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT application or library redeployment timeout in milliseconds. Default: 180000.")
+    private Long redeployTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT application or library undeployment timeout in milliseconds. Default: 180000.")
+    private Long undeployTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT application start timeout in milliseconds. Default: 180000.")
+    private Long startApplicationTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT application stop timeout in milliseconds. Default: 180000.")
+    private Long stopApplicationTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.")
+    private Long connectTimeoutMilliSeconds = 120000L;
+
+    @Description("WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.")
+    private Long activateTimeoutMilliSeconds = 180000L;
+
+    @Description("WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. "
+        + "Default: 180000.")
+    private Long setServerGroupsTimeoutMilliSeconds = 180000L;
+
+    public Long getDeployTimeoutMilliSeconds() {
+      return deployTimeoutMilliSeconds;
+    }
+
+    public void setDeployTimeoutMilliSeconds(Long deployTimeoutMilliSeconds) {
+      this.deployTimeoutMilliSeconds = deployTimeoutMilliSeconds;
+    }
+
+    public Long getRedeployTimeoutMilliSeconds() {
+      return redeployTimeoutMilliSeconds;
+    }
+
+    public void setRedeployTimeoutMilliSeconds(Long redeployTimeoutMilliSeconds) {
+      this.redeployTimeoutMilliSeconds = redeployTimeoutMilliSeconds;
+    }
+
+    public Long getUndeployTimeoutMilliSeconds() {
+      return undeployTimeoutMilliSeconds;
+    }
+
+    public void setUndeployTimeoutMilliSeconds(Long undeployTimeoutMilliSeconds) {
+      this.undeployTimeoutMilliSeconds = undeployTimeoutMilliSeconds;
+    }
+
+    public Long getStartApplicationTimeoutMilliSeconds() {
+      return startApplicationTimeoutMilliSeconds;
+    }
+
+    public void setStartApplicationTimeoutMilliSeconds(Long startApplicationTimeoutMilliSeconds) {
+      this.startApplicationTimeoutMilliSeconds = startApplicationTimeoutMilliSeconds;
+    }
+
+    public Long getStopApplicationTimeoutMilliSeconds() {
+      return stopApplicationTimeoutMilliSeconds;
+    }
+
+    public void setStopApplicationTimeoutMilliSeconds(Long stopApplicationTimeoutMilliSeconds) {
+      this.stopApplicationTimeoutMilliSeconds = stopApplicationTimeoutMilliSeconds;
+    }
+
+    public Long getConnectTimeoutMilliSeconds() {
+      return connectTimeoutMilliSeconds;
+    }
+
+    public void setConnectTimeoutMilliSeconds(Long connectTimeoutMilliSeconds) {
+      this.connectTimeoutMilliSeconds = connectTimeoutMilliSeconds;
+    }
+
+    public Long getActivateTimeoutMilliSeconds() {
+      return activateTimeoutMilliSeconds;
+    }
+
+    public void setActivateTimeoutMilliSeconds(Long activateTimeoutMilliSeconds) {
+      this.activateTimeoutMilliSeconds = activateTimeoutMilliSeconds;
+    }
+
+    public Long getSetServerGroupsTimeoutMilliSeconds() {
+      return setServerGroupsTimeoutMilliSeconds;
+    }
+
+    public void setSetServerGroupsTimeoutMilliSeconds(Long setServerGroupsTimeoutMilliSeconds) {
+      this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutMilliSeconds;
+    }
+
   }
 
 }

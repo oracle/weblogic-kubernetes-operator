@@ -489,7 +489,7 @@ You can delete the introspection job, correct the error and re-apply the changes
 
 #### Specifying timeout for online updates
 
-In a rare case if the WDT online update command timeout results in error in the operator log, you can specify the following attributes under `onlineUpdate` to override the default value:
+In a rare case if the WDT online update command timeout results in error in the operator log, you can specify the following attributes under `onlineUpdate.wdtTimeouts` to override the default value:
 
 |Attribute Name | Default value (milli seconds) |
 |-------|------|

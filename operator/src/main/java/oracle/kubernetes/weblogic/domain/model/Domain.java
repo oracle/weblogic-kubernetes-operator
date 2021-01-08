@@ -521,11 +521,8 @@ public class Domain implements KubernetesObject {
    * @return WDT activate timeout
    */
   public Long getWDTActivateTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getActivateTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getActivateTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -534,11 +531,8 @@ public class Domain implements KubernetesObject {
    * @return WDT connect timeout
    */
   public Long getWDTConnectTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getConnectTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getConnectTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -547,11 +541,8 @@ public class Domain implements KubernetesObject {
    * @return WDT deploy timeout
    */
   public Long getWDTDeployTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getDeployTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getDeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -560,11 +551,8 @@ public class Domain implements KubernetesObject {
    * @return WDT undeploy timeout
    */
   public Long getWDTUnDeployTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getUndeployTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getUndeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -573,11 +561,8 @@ public class Domain implements KubernetesObject {
    * @return WDT redeploy timeout
    */
   public Long getWDTReDeployTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getRedeployTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getRedeployTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -586,11 +571,8 @@ public class Domain implements KubernetesObject {
    * @return WDT start application timeout
    */
   public Long getWDTStartApplicationTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getStartApplicationTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getStartApplicationTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -599,11 +581,8 @@ public class Domain implements KubernetesObject {
    * @return WDT stop application timeout
    */
   public Long getWDTStopApplicationTimeout() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getStopApplicationTimeoutMilliSeconds)
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getStopApplicationTimeoutMilliSeconds)
         .orElse(null);
   }
 
@@ -612,12 +591,17 @@ public class Domain implements KubernetesObject {
    * @return WDT set server groups timeout
    */
   public Long getWDTSetServerGroupsTimeout() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(OnlineUpdate.WDTTimeouts::getSetServerGroupsTimeoutMilliSeconds)
+        .orElse(null);
+  }
+
+  private Optional<OnlineUpdate.WDTTimeouts> getWDTOnlineUpdateTimeouts() {
     return Optional.ofNullable(spec)
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getSetServerGroupsTimeoutMilliSeconds)
-        .orElse(null);
+        .map(OnlineUpdate::getWdtTimeouts);
   }
 
   /**
