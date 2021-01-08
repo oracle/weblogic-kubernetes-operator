@@ -101,6 +101,13 @@ port=$(echo "${STATUS}" | python cmds-$$.py)
   echo "$port"
 }
 
+function jq_available() {
+  if [ -x "$(command -v jq)" ] && [ -z "$DONT_USE_JQ" ]; then
+    return;
+  fi
+  false
+}
+
 # Retrieve the api version of the deployed Custom Resource Domain
 function get_domain_api_version() {
   # Retrieve Custom Resource Definition for WebLogic domain
@@ -119,7 +126,7 @@ function get_domain_api_version() {
 
 # Find domain version
   local domain_api_version
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
     local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
     domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}")
   else
