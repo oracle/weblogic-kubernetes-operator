@@ -12,6 +12,7 @@ operator_namespace="weblogic-operator"
 operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
+no_op=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 
 # timestamp
@@ -35,7 +36,7 @@ function trace() {
 }
 
 function print_usage() {
-  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1]"
+  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1] [--no_op]"
   echo "  where"
   echo "    action - scaleUp or scaleDown"
   echo "    domain_uid - WebLogic Domain Unique Identifier"
@@ -47,6 +48,7 @@ function print_usage() {
   echo "    operator_service_account - Kubernetes Service Account for WebLogic Operator, default=weblogic-operator"
   echo "    operator_namespace - WebLogic Operator Namespace, default=weblogic-operator"
   echo "    scaling_size - number of WebLogic server instances by which to scale up or down, default=1"
+  echo "    no_op - if specified, returns without doing anything. For use by unit test to include methods in the script"
   exit 1
 }
 
@@ -403,11 +405,19 @@ do
     access_token="${arg#*=}"
     shift # past argument=value
     ;;
+    --no_op)
+    no_op="true"
+    ;;
     *)
           # unknown option
     ;;
   esac
 done
+
+if [ "${no_op}" = "true" ]; then
+  echo "no_op is set, returning"
+  return
+fi
 
 # Verify required parameters
 if [ -z "$scaling_action" ] || [ -z "$wls_domain_uid" ] || [ -z "$wls_cluster_name" ]
