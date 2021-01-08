@@ -1131,9 +1131,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class DomainStatusUpdate {
     private final V1Pod pod;
     private final String domainUid;
-    private DomainProcessorDelegate delegate;
-    private DomainPresenceInfo info;
-    private PodWatcher.PodStatus podStatus;
+    private final DomainProcessorDelegate delegate;
+    private final DomainPresenceInfo info;
+    private final PodWatcher.PodStatus podStatus;
 
     DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,
                        DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {

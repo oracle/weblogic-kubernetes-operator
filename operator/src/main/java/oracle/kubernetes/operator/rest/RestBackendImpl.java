@@ -73,7 +73,7 @@ public class RestBackendImpl implements RestBackend {
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;
   private V1UserInfo userInfo;
-  private CallBuilder callBuilder;
+  private final CallBuilder callBuilder;
 
   /**
    * Construct a RestBackendImpl that is used to handle one WebLogic operator REST request.

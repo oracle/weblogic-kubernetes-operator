@@ -41,10 +41,10 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  */
 public class CallTestSupport {
 
-  private static RequestParams REQUEST_PARAMS
+  private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
-  private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
+  private final Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
   private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
     return new ErrorFormatter(requestParams.call)
@@ -62,7 +62,7 @@ public class CallTestSupport {
    */
   public Memento installSynchronousCallDispatcher() {
     return new Memento() {
-      private SynchronousCallDispatcher originalCallDispatcher;
+      private final SynchronousCallDispatcher originalCallDispatcher;
 
       {
         {
@@ -131,8 +131,8 @@ public class CallTestSupport {
     private static final String MISFORMED_RESPONSE =
         "%s not defined with returning(), computingResult() or failingWithStatus()";
     private static final BodyMatcher WILD_CARD = actualBody -> true;
-    private String methodName;
-    private Map<String, Object> requestParamExpectations = new HashMap<>();
+    private final String methodName;
+    private final Map<String, Object> requestParamExpectations = new HashMap<>();
     private Object result;
     private int status;
     private boolean optional;
@@ -216,8 +216,8 @@ public class CallTestSupport {
   }
 
   private static class ErrorFormatter {
-    private String call;
-    private List<String> descriptors = new ArrayList<>();
+    private final String call;
+    private final List<String> descriptors = new ArrayList<>();
 
     ErrorFormatter(String call) {
       this.call = call;
@@ -258,8 +258,8 @@ public class CallTestSupport {
   }
 
   private static class AdditionalParams {
-    private String fieldSelector;
-    private String labelSelector;
+    private final String fieldSelector;
+    private final String labelSelector;
 
     AdditionalParams(String fieldSelector, String labelSelector) {
       this.fieldSelector = fieldSelector;

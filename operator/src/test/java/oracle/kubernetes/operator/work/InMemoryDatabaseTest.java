@@ -25,7 +25,7 @@ public class InMemoryDatabaseTest {
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
 
-  private InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
+  private final InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
       new InMemoryDatabase<>() {
         @Override
         NetworkingV1beta1IngressList createList(List<NetworkingV1beta1Ingress> items) {
@@ -131,7 +131,7 @@ public class InMemoryDatabaseTest {
   }
 
   static class MapMaker {
-    private Map<String, String> keys = new HashMap<>();
+    private final Map<String, String> keys = new HashMap<>();
 
     public Map<String, String> map() {
       return keys;

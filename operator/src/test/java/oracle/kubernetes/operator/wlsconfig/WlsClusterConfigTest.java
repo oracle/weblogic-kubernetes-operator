@@ -39,7 +39,7 @@ public class WlsClusterConfigTest {
 
   private static final String ADMIN_SERVER = "admin-server";
   Field nextField;
-  private List<LogRecord> logRecords = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
   private Memento consoleControl;
 
   static WlsDynamicServersConfig createDynamicServersConfig(

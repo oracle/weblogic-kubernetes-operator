@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class LinkContainerModel extends BaseModel {
 
-  private List<LinkModel> links = new ArrayList<>();
+  private final List<LinkModel> links = new ArrayList<>();
 
   /**
    * Get the links.

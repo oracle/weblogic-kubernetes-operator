@@ -16,9 +16,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 public class StepChainTest {
-  private FiberTestSupport testSupport = new FiberTestSupport();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   /**
    * Setup test.
@@ -119,7 +119,7 @@ public class StepChainTest {
 
   private static class NamedStep extends Step {
     private static final String NAMES = "names";
-    private String name;
+    private final String name;
 
     NamedStep(String name) {
       this(name, null);

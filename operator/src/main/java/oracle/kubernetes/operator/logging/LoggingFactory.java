@@ -15,7 +15,7 @@ public class LoggingFactory {
   // map from resourceBundleName to facade
   private static final Map<String, LoggingFacade> facade = new HashMap<>();
 
-  private static JSON json = new JSON();
+  private static final JSON json = new JSON();
 
   private LoggingFactory() {
     // hide implicit public constructor

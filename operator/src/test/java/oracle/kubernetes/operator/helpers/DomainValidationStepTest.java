@@ -53,16 +53,16 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainValidationStepTest {
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private TerminalStep terminalStep = new TerminalStep();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private final TerminalStep terminalStep = new TerminalStep();
   private Step domainValidationSteps;
   private Step topologyValidationStep;
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private List<LogRecord> logRecords = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
 
   /**
    * Setup test.

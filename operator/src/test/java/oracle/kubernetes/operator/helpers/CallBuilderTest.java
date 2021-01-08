@@ -44,9 +44,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
           "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
           NAMESPACE);
 
-  private static ApiClient apiClient = new ApiClient();
-  private List<Memento> mementos = new ArrayList<>();
-  private CallBuilder callBuilder = new CallBuilder();
+  private static final ApiClient apiClient = new ApiClient();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
 
   private static String toJson(Object object) {
@@ -224,8 +224,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   abstract static class JsonServlet extends PseudoServlet {
 
-    private WebResource response;
-    private List<ParameterExpectation> parameterExpectations = new ArrayList<>();
+    private final WebResource response;
+    private final List<ParameterExpectation> parameterExpectations = new ArrayList<>();
 
     JsonServlet(Object returnValue) {
       response = new WebResource(toJson(returnValue), "application/json");
@@ -289,7 +289,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   abstract static class JsonBodyServlet extends JsonServlet {
-    private Consumer<String> bodyValidation;
+    private final Consumer<String> bodyValidation;
 
     private JsonBodyServlet(Object returnValue, Consumer<String> bodyValidation) {
       super(returnValue);

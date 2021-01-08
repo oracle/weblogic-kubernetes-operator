@@ -171,13 +171,11 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
         return (Future) ex.submit(wrap2.apply(task));
       }
 
-      @SuppressWarnings({"rawtypes"})
       @Override
       public Future<?> submit(Runnable task) {
         return ex.submit(wrap.apply(task));
       }
 
-      @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
       public <T> Future<T> submit(Runnable task, T result) {
         return ex.submit(wrap.apply(task), result);

@@ -25,7 +25,9 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings("FieldMayBeFinal")
   private static ClientFactory FACTORY = new DefaultClientFactory();
+  @SuppressWarnings("FieldMayBeFinal")
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);

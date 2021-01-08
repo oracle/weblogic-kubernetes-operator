@@ -63,7 +63,7 @@ public class RollingHelperTest {
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
-  private Map<String, StepAndPacket> rolling = new HashMap<>();
+  private final Map<String, StepAndPacket> rolling = new HashMap<>();
 
   protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected List<Memento> mementos = new ArrayList<>();

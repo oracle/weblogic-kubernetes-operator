@@ -29,7 +29,6 @@ public class Authenticator {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final ApiClient apiClient;
   private final Helpers helper;
-  private String serviceToken;
 
   /**
    * Create a new instance of the Authenticator class containing the default API client. The default
@@ -111,7 +110,7 @@ public class Authenticator {
         }
       }
     }
-    serviceToken = token;
+    String serviceToken = token;
 
     String serviceHost = System.getenv(SERVICE_HOST);
     String servicePort = System.getenv(SERVICE_PORT);

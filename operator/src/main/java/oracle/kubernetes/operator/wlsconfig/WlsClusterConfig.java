@@ -18,7 +18,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class WlsClusterConfig {
 
   private String name;
-  private List<WlsServerConfig> servers = new ArrayList<>();
+  private final List<WlsServerConfig> servers = new ArrayList<>();
   private WlsDynamicServersConfig dynamicServersConfig;
 
   // owner -- don't include in toString, hashCode, equals

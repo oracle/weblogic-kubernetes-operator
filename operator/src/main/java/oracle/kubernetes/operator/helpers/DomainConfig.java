@@ -13,8 +13,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 /** DomainConfig describes the desired state of a domain. */
 public class DomainConfig {
 
-  private Map<String, NonClusteredServerConfig> servers = new HashMap<>();
-  private Map<String, ClusterConfig> clusters = new HashMap<>();
+  private final Map<String, NonClusteredServerConfig> servers = new HashMap<>();
+  private final Map<String, ClusterConfig> clusters = new HashMap<>();
 
   @Override
   public String toString() {

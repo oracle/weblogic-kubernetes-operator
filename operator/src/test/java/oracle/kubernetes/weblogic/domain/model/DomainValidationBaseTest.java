@@ -37,7 +37,7 @@ public class DomainValidationBaseTest {
 
   @SuppressWarnings("SameParameterValue")
   protected static class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
+    private final Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
 
     List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {
       return definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());

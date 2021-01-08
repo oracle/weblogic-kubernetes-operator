@@ -32,7 +32,7 @@ public class UnprocessableEntityTest {
          + "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + ","
          + "\"causes\":[{" + CAUSE + "}]},"
          + "\"code\":422}\n";
-  private static RequestParams REQUEST_PARAMS
+  private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private static String escape(String s) {

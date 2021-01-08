@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.is;
 
 public class LegalNamesTest {
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setup() throws Exception {

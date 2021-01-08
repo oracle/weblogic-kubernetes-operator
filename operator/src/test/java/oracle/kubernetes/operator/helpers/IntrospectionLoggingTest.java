@@ -27,13 +27,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class IntrospectionLoggingTest {
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private String jobPodName = LegalNames.toJobIntrospectorName(UID);
-  private TerminalStep terminalStep = new TerminalStep();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
+  private final TerminalStep terminalStep = new TerminalStep();
 
   /**
    * Setup test.

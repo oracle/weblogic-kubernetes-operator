@@ -17,7 +17,7 @@ public class ClusterConfig {
   private int maxReplicas;
   private int minReplicas;
   private String clusterName;
-  private Map<String, ClusteredServerConfig> servers = new HashMap<>();
+  private final Map<String, ClusteredServerConfig> servers = new HashMap<>();
 
   @Override
   public String toString() {

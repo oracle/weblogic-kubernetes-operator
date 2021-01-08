@@ -61,15 +61,15 @@ public class DomainStatusUpdaterTest {
   private static final String NAME = UID;
   private final TerminalStep endStep = new TerminalStep();
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private RandomStringGenerator generator = new RandomStringGenerator();
+  private final RandomStringGenerator generator = new RandomStringGenerator();
   private final String message = generator.getUniqueString();
-  private String reason = generator.getUniqueString();
-  private RuntimeException failure = new RuntimeException(message);
-  private String validationWarning = generator.getUniqueString();
+  private final String reason = generator.getUniqueString();
+  private final RuntimeException failure = new RuntimeException(message);
+  private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 

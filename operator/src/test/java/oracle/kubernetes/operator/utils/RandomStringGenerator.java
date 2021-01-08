@@ -8,7 +8,7 @@ import java.util.List;
 
 /** A class which generates random strings, guaranteeing that no two will be equal. */
 public class RandomStringGenerator {
-  private List<String> previousStrings = new ArrayList<>();
+  private final List<String> previousStrings = new ArrayList<>();
 
   /**
    * generated unique string.

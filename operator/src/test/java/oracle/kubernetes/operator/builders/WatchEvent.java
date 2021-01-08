@@ -18,11 +18,12 @@ import io.kubernetes.client.util.Watch;
  */
 public class WatchEvent<T> {
   @SerializedName("type")
-  private String type;
+  private final String type;
 
-  private @SerializedName("object") T object;
+  @SerializedName("object")
+  private final T object;
 
-  private V1Status status;
+  private final V1Status status;
 
   private WatchEvent(String type, T object) {
     this.type = type;

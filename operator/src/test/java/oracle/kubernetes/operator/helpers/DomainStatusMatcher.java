@@ -12,8 +12,8 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
-  private String expectedReason;
-  private String expectMessage;
+  private final String expectedReason;
+  private final String expectMessage;
 
   private DomainStatusMatcher(String expectedReason, String expectMessage) {
     this.expectedReason = expectedReason;
