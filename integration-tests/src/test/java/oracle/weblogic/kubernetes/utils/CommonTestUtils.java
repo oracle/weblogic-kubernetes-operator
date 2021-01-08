@@ -86,6 +86,8 @@ import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
@@ -3476,5 +3478,36 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
             String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
                 podName, domNamespace)));
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/")
+        .append(resourcesName)
+        .append("/")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedStatusCode);
   }
 }

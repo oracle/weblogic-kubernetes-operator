@@ -39,8 +39,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -86,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainW
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -104,6 +103,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -290,15 +290,18 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
   public void testMiiCheckSystemResources() {
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JMSSystemResources",
         "TestClusterJmsModule", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"WLDFSystemResources",
         "TestWldfModule", "200"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
@@ -367,10 +370,13 @@ class ItMiiUpdateDomainConfig {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-   
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
          "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
@@ -431,11 +437,14 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JDBCSystemResources",
           "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
           "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
@@ -883,31 +892,6 @@ class ItMiiUpdateDomainConfig {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-  }
-
-  private boolean checkSystemResourceConfiguration(String resourcesType, 
-         String resourcesName, String expectedStatusCode) {
-
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
-    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append("/management/weblogic/latest/domainConfig")
-         .append("/")
-         .append(resourcesType)
-         .append("/")
-         .append(resourcesName)
-         .append("/")
-         .append(" --silent --show-error ")
-         .append(" -o /dev/null ")
-         .append(" -w %{http_code});")
-         .append("echo ${status}");
-    logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
-          .withParams(new CommandParams()
-              .command(curlString.toString()))
-          .executeAndVerify(expectedStatusCode);
   }
 
   private ExecResult checkJdbcRuntime(String resourcesName) {
