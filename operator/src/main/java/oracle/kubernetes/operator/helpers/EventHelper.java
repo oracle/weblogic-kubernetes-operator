@@ -112,8 +112,8 @@ public class EventHelper {
     }
 
     private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(dpi -> dpi.getEventType() == DOMAIN_PROCESSING_STARTING).orElse(false)
-              && eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING;
+      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
+          && Optional.ofNullable(info).map(dpi -> dpi.getEventType() == DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
     private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
