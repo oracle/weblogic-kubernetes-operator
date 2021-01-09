@@ -97,7 +97,7 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
-    loggingFacade.severe((LoggingFilter) null, "msg", new Throwable());
+    loggingFacade.severe(null, "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }

@@ -18,8 +18,8 @@ public class ServiceHelperTestBase {
   static final String NS = "namespace";
   static final String UID = "uid1";
   static final String KUBERNETES_UID = "12345";
-  List<Memento> mementos = new ArrayList<>();
-  DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
+  final List<Memento> mementos = new ArrayList<>();
+  final DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
   /**
    * Tear down test.

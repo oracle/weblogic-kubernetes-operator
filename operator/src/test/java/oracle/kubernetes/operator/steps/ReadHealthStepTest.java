@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -87,17 +88,17 @@ public class ReadHealthStepTest {
           .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
           .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1)
           .withAdminServerName(ADMIN_NAME);
-  private V1Service service = createStub(V1ServiceStub.class);
-  private V1Service headlessService = createStub(V1HeadlessServiceStub.class);
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private List<Memento> mementos = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
-  private TerminalStep terminalStep = new TerminalStep();
-  private Step readHealthStep = ReadHealthStep.createReadHealthStep(terminalStep);
-  private Map<String, ServerHealth> serverHealthMap = new HashMap<>();
-  private Map<String, String> serverStateMap = new HashMap<>();
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final V1Service service = createStub(V1ServiceStub.class);
+  private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
+  private final TerminalStep terminalStep = new TerminalStep();
+  private final Step readHealthStep = ReadHealthStep.createReadHealthStep(terminalStep);
+  private final Map<String, ServerHealth> serverHealthMap = new HashMap<>();
+  private final Map<String, String> serverStateMap = new HashMap<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   /**
@@ -167,12 +168,9 @@ public class ReadHealthStepTest {
   }
 
   private void defineResponse(int status, String body, String url) {
-    if (url == null) {
-      httpSupport.defineResponse(createExpectedRequest("127.0.0.1:7001"), createStub(HttpResponseStub.class,
-              status, body));
-    } else {
-      httpSupport.defineResponse(createExpectedRequest(url), createStub(HttpResponseStub.class, status, body));
-    }
+    httpSupport.defineResponse(
+        createExpectedRequest(Objects.requireNonNullElse(url, "127.0.0.1:7001")),
+        createStub(HttpResponseStub.class, status, body));
   }
 
   private HttpRequest createExpectedRequest(String url) {

@@ -11,7 +11,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -105,18 +104,6 @@ public class CrdHelper {
 
   public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
     return new CrdStep(version, productVersion);
-  }
-
-  /**
-   * Factory for {@link Step} that creates Domain CRD.
-   *
-   * @param version Version of the Kubernetes API Server
-   * @param productVersion Version of the operator
-   * @param next Next step
-   * @return Step for creating Domain custom resource definition
-   */
-  public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
-    return new CrdStep(version, productVersion, next);
   }
 
   private static List<ResourceVersion> getVersions(V1CustomResourceDefinition crd) {
@@ -271,7 +258,7 @@ public class CrdHelper {
     static List<V1CustomResourceDefinitionVersion> getCrdVersions() {
       Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       List<V1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
-          .sorted(Comparator.comparing(Map.Entry::getKey))
+          .sorted(Map.Entry.comparingByKey())
           .map(entry -> new V1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
               .schema(getValidationFromCrdSchemaFile(entry.getValue()))
@@ -294,7 +281,7 @@ public class CrdHelper {
     static List<V1beta1CustomResourceDefinitionVersion> getBetaCrdVersions() {
       Map<String, String> schemas = schemaReader.loadFilesFromClasspath();
       List<V1beta1CustomResourceDefinitionVersion> versions = schemas.entrySet().stream()
-          .sorted(Comparator.comparing(Map.Entry::getKey))
+          .sorted(Map.Entry.comparingByKey())
           .map(entry -> new V1beta1CustomResourceDefinitionVersion()
               .name(getVersionFromCrdSchemaFileName(entry.getKey()))
               .served(true)

@@ -30,6 +30,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return doDeepSubstitution(substitutionVariables, obj, false);
   }
 
+  @SuppressWarnings("unchecked")
   private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
     if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
@@ -90,6 +91,7 @@ public abstract class StepContextBase implements StepContextConstants {
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
+  @SuppressWarnings("unchecked")
   private List<Pair<Method, Method>> typeBeans(Class cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();

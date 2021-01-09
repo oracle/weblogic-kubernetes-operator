@@ -31,7 +31,7 @@ public class WatchBuilder {
 
   private static final Boolean ALLOW_BOOKMARKS = true;
 
-  @SuppressWarnings("FieldMayBeFinal") // Leave non-final for unit test
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
   private final CallParamsImpl callParams = new CallParamsImpl();

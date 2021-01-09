@@ -17,7 +17,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
 class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
-  private DomainConditionType expectedType;
+  private final DomainConditionType expectedType;
   private String expectedStatus;
   private String expectedReason;
   private String expectedMessage;

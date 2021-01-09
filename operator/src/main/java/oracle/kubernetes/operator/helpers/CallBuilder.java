@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import com.google.common.base.Strings;
@@ -36,10 +35,7 @@ import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
-import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Secret;
@@ -379,43 +375,6 @@ public class CallBuilder {
               .patchNamespacedDomain(
                   requestParams.name, requestParams.namespace, (V1Patch) requestParams.body);
 
-  /* Config Maps */
-  private SynchronousCallFactory<V1PersistentVolume> createPvCall =
-      (client, requestParams) ->
-          new CoreV1Api(client)
-              .createPersistentVolume((V1PersistentVolume) requestParams.body, pretty, null, null);
-  private SynchronousCallFactory<V1PersistentVolume> deletePvCall =
-      (client, requestParams) ->
-          new CoreV1Api(client)
-              .deletePersistentVolume(
-                  requestParams.name,
-                  pretty,
-                  dryRun,
-                  gracePeriodSeconds,
-                  orphanDependents,
-                  propagationPolicy,
-                  (V1DeleteOptions) requestParams.body);
-  private SynchronousCallFactory<V1PersistentVolumeClaim> createPvcCall =
-      (client, requestParams) ->
-          new CoreV1Api(client)
-              .createNamespacedPersistentVolumeClaim(
-                  requestParams.namespace,
-                  (V1PersistentVolumeClaim) requestParams.body,
-                  pretty,
-                  null,
-                  null);
-  private SynchronousCallFactory<V1PersistentVolumeClaim> deletePvcCall =
-      (client, requestParams) ->
-          new CoreV1Api(client)
-              .deleteNamespacedPersistentVolumeClaim(
-                  requestParams.name,
-                  requestParams.namespace,
-                  pretty,
-                  dryRun,
-                  gracePeriodSeconds,
-                  orphanDependents,
-                  propagationPolicy,
-                  (V1DeleteOptions) requestParams.body);
   private final SynchronousCallFactory<V1SubjectAccessReview> createSubjectaccessreviewCall =
       ((client, requestParams) ->
           new AuthorizationV1Api(client)
@@ -455,16 +414,6 @@ public class CallBuilder {
     return Optional.ofNullable(TuningParameters.getInstance())
         .map(TuningParameters::getCallBuilderTuning)
         .orElse(null);
-  }
-
-  /**
-   * Creates instance that will acquire clients as needed from the {@link ClientPool} instance.
-   *
-   * @param tuning Tuning parameters
-   * @return Call builder
-   */
-  static CallBuilder create(CallBuilderTuning tuning) {
-    return new CallBuilder(tuning, ClientPool.getInstance());
   }
 
   /* Pods */
@@ -526,17 +475,6 @@ public class CallBuilder {
 
     this.callParams.setLimit(limit);
     this.callParams.setTimeoutSeconds(timeoutSeconds);
-  }
-
-  /**
-   * Consumer for lambda-based builder pattern.
-   *
-   * @param builderFunction Builder lambda function
-   * @return this CallBuilder
-   */
-  public CallBuilder with(Consumer<CallBuilder> builderFunction) {
-    builderFunction.accept(this);
-    return this;
   }
 
   /**
@@ -602,38 +540,6 @@ public class CallBuilder {
       // We are intentionally not limiting the number of retries as described in the implementation note above.
     } while (true);
     return result;
-  }
-
-  /**
-   * Read namespace.
-   *
-   * @param name Name
-   * @return Read service
-   * @throws ApiException API Exception
-   */
-  public V1Namespace readNamespace(String name) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).readNamespace(name, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  /**
-   * Create namespace.
-   *
-   * @param body Body
-   * @return Created service
-   * @throws ApiException API Exception
-   */
-  public V1Namespace createNamespace(V1Namespace body) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).createNamespace(body, pretty, null, null);
-    } finally {
-      helper.recycle(client);
-    }
   }
 
   /**
@@ -1270,10 +1176,10 @@ public class CallBuilder {
                                       Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
                                       V1DeleteOptions body, ApiCallback callback) throws ApiException {
     String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
-            client.escapeString(name.toString())).replaceAll("\\{namespace\\}",
-            client.escapeString(namespace.toString()));
-    List<Pair> localVarQueryParams = new ArrayList();
-    List<Pair> localVarCollectionQueryParams = new ArrayList();
+            client.escapeString(name)).replaceAll("\\{namespace\\}",
+            client.escapeString(namespace));
+    List<Pair> localVarQueryParams = new ArrayList<>();
+    List<Pair> localVarCollectionQueryParams = new ArrayList<>();
     if (pretty != null) {
       localVarQueryParams.addAll(client.parameterToPair("pretty", pretty));
     }
@@ -1294,9 +1200,9 @@ public class CallBuilder {
       localVarQueryParams.addAll(client.parameterToPair("propagationPolicy", propagationPolicy));
     }
 
-    Map<String, String> localVarHeaderParams = new HashMap();
-    Map<String, String> localVarCookieParams = new HashMap();
-    Map<String, Object> localVarFormParams = new HashMap();
+    Map<String, String> localVarHeaderParams = new HashMap<>();
+    Map<String, String> localVarCookieParams = new HashMap<>();
+    Map<String, Object> localVarFormParams = new HashMap<>();
     String[] localVarAccepts = new String[]{
         "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
     };
@@ -1493,34 +1399,6 @@ public class CallBuilder {
             deleteJob, timeoutSeconds);
   }
 
-  /**
-   * List services.
-   *
-   * @param namespace Namespace
-   * @return List of services
-   * @throws ApiException API Exception
-   */
-  public V1ServiceList listService(String namespace) throws ApiException {
-    String cont = "";
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client)
-          .listNamespacedService(
-              namespace,
-              pretty,
-              allowWatchBookmarks,
-              cont,
-              fieldSelector,
-              labelSelector,
-              limit,
-              resourceVersion,
-              timeoutSeconds,
-              watch);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
   private Call listServiceAsync(
       ApiClient client, String namespace, String cont, ApiCallback<V1ServiceList> callback)
       throws ApiException {
@@ -1549,23 +1427,6 @@ public class CallBuilder {
   public Step listServiceAsync(String namespace, ResponseStep<V1ServiceList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listService", namespace, null, null, callParams), listService);
-  }
-
-  /**
-   * Read service.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @return Read service
-   * @throws ApiException API Exception
-   */
-  public V1Service readService(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).readNamespacedService(name, namespace, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
   }
 
   private Call readServiceAsync(
@@ -1612,34 +1473,6 @@ public class CallBuilder {
         new RequestParams("createService", namespace, null, body,
             getDomainUidLabel(Optional.ofNullable(body).map(V1Service::getMetadata).orElse(null))),
         createService);
-  }
-
-  /**
-   * Delete service.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @return Status of deletion
-   * @throws ApiException API Exception
-   */
-  public V1Status deleteService(String name, String namespace, V1DeleteOptions deleteOptions)
-      throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client)
-          .deleteNamespacedService(
-              name,
-              namespace,
-              pretty,
-              dryRun,
-              gracePeriodSeconds,
-              orphanDependents,
-              propagationPolicy,
-              deleteOptions);
-    } finally {
-      helper.recycle(client);
-    }
   }
 
   private Call deleteServiceAsync(
@@ -1769,23 +1602,6 @@ public class CallBuilder {
         listNamespace);
   }
 
-  /**
-   * Read secret.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @return Read secret
-   * @throws ApiException API Exception
-   */
-  public V1Secret readSecret(String name, String namespace) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).readNamespacedSecret(name, namespace, pretty, exact, export);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
   /* Self Subject Rules Review */
 
   private Call readSecretAsync(
@@ -1806,51 +1622,6 @@ public class CallBuilder {
   public Step readSecretAsync(String name, String namespace, ResponseStep<V1Secret> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readSecret", namespace, name, null, callParams), readSecret);
-  }
-
-  /**
-   * Create secret.
-   *
-   * @param namespace Namespace
-   * @param body Body
-   * @return Created secret
-   * @throws ApiException API Exception
-   */
-  public V1Secret createSecret(String namespace, V1Secret body) throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client).createNamespacedSecret(namespace, body, pretty, null, null);
-    } finally {
-      helper.recycle(client);
-    }
-  }
-
-  /**
-   * Delete secret.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param deleteOptions Delete options
-   * @return Status of deletion
-   * @throws ApiException API Exception
-   */
-  public V1Status deleteSecret(String name, String namespace, V1DeleteOptions deleteOptions)
-      throws ApiException {
-    ApiClient client = helper.take();
-    try {
-      return new CoreV1Api(client)
-          .deleteNamespacedSecret(
-              name,
-              namespace,
-              pretty,
-              dryRun,
-              gracePeriodSeconds,
-              orphanDependents,
-              propagationPolicy,
-              deleteOptions);
-    } finally {
-      helper.recycle(client);
-    }
   }
 
   private Call listSecretsAsync(
@@ -1909,21 +1680,6 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for creating subject access review.
-   *
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createSubjectAccessReviewAsync(
-      V1SubjectAccessReview body, ResponseStep<V1SubjectAccessReview> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("createSubjectAccessReview", null, null, body, callParams),
-        createSubjectaccessreview);
-  }
-
-  /**
    * Create self subject access review.
    *
    * @param body Body
@@ -1958,21 +1714,6 @@ public class CallBuilder {
       throws ApiException {
     return new AuthorizationV1Api(client)
         .createSelfSubjectRulesReviewAsync(body, null, null, pretty, callback);
-  }
-
-  /**
-   * Asynchronous step for creating self subject rules review.
-   *
-   * @param body Body
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step createSelfSubjectRulesReviewAsync(
-      V1SelfSubjectRulesReview body, ResponseStep<V1SelfSubjectRulesReview> responseStep) {
-    return createRequestAsync(
-        responseStep,
-        new RequestParams("createSelfSubjectRulesReview", null, null, body, callParams),
-        createSelfsubjectrulesreview);
   }
 
   /**

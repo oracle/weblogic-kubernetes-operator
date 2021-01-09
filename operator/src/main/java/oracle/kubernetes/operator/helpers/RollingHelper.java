@@ -36,7 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
  */
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static long DELAY_IN_SECONDS = 1;
+  private static final long DELAY_IN_SECONDS = 1;
 
   private RollingHelper() {
   }
@@ -214,7 +214,7 @@ public class RollingHelper {
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
         Optional.ofNullable(servers.poll())
-            .ifPresent(serverToRestart -> restarts.add(serverToRestart));
+            .ifPresent(restarts::add);
       }
 
       if (!restarts.isEmpty()) {

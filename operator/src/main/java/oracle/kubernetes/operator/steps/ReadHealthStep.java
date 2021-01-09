@@ -169,9 +169,9 @@ public class ReadHealthStep extends Step {
   }
 
   static final class ReadHealthProcessing {
-    private Packet packet;
-    private V1Service service;
-    private V1Pod pod;
+    private final Packet packet;
+    private final V1Service service;
+    private final V1Pod pod;
 
     ReadHealthProcessing(Packet packet, V1Service service, V1Pod pod) {
       this.packet = packet;
@@ -366,23 +366,17 @@ public class ReadHealthStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      try {
-        new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
-      } catch (IOException e) {
-        logReadFailure(packet);
-      }
+      new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
       return doNext(packet);
     }
 
 
     static class HealthResponseProcessing {
       private final String serverName;
-      private Packet packet;
-      private HttpResponse<String> response;
-      private String state;
-      private ServerHealth health;
+      private final Packet packet;
+      private final HttpResponse<String> response;
 
-      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) throws IOException {
+      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) {
         this.packet = packet;
         this.response = response;
 
@@ -405,8 +399,8 @@ public class ReadHealthStep extends Step {
 
       void recordStateAndHealth() throws IOException {
         Pair<String, ServerHealth> pair = RecordHealthStep.parseServerHealthJson(getResponse().body());
-        state = Strings.emptyToNull(pair.getLeft());
-        health = pair.getRight();
+        String state = Strings.emptyToNull(pair.getLeft());
+        ServerHealth health = pair.getRight();
         recordStateAndHealth(state, health);
       }
 
