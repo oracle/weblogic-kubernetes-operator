@@ -39,7 +39,7 @@ public class FiberTest {
   private final Step suspend = new SuspendingStep(this::recordFiber);
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     packet.put(STEPS, stepList);
     packet.put(FIBERS, fiberList);
   }

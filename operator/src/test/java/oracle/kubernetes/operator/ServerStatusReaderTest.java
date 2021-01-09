@@ -54,11 +54,11 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesExecFactoryFake execFactory = new KubernetesExecFactoryFake();
   private final ReadServerHealthStepFactoryFake stepFactory = new ReadServerHealthStepFactoryFake();
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private Domain domain =
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Domain domain =
       new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
-  private DomainPresenceInfo info = new DomainPresenceInfo(domain);
+  private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   /**
    * Setup test.
@@ -183,7 +183,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   static class ReadServerHealthStepFactoryFake implements Function<Step, Step> {
-    List<String> serverNames = new ArrayList<>();
+    final List<String> serverNames = new ArrayList<>();
 
     @Override
     public Step apply(Step next) {
@@ -198,7 +198,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   static class KubernetesExecFactoryFake implements KubernetesExecFactory {
-    private Map<String, String> responses = new HashMap<>();
+    private final Map<String, String> responses = new HashMap<>();
 
     void defineResponse(String serverName, String response) {
       responses.put(LegalNames.toPodName(UID, serverName), response);
@@ -220,7 +220,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   abstract static class ProcessStub extends Process {
-    private String response;
+    private final String response;
 
     public ProcessStub(String response) {
       this.response = response;

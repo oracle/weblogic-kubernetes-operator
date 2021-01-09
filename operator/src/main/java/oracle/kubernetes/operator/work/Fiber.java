@@ -651,7 +651,6 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
     return null;
   }
 
-  @Override
   public Map<String, Component> getComponents() {
     return components;
   }

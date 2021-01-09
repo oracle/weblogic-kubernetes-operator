@@ -24,9 +24,9 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   private static final String VALUE1 = "value1";
   private static final String NAME2 = "name2";
   private static final String VALUE2 = "value2";
-  private AdminServer server1;
-  private AdminServer server2;
-  private Domain domain = new Domain();
+  private final AdminServer server1;
+  private final AdminServer server2;
+  private final Domain domain = new Domain();
 
   /**
    * Administration server tests.

@@ -25,7 +25,7 @@ public class InMemoryDatabaseTest {
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
 
-  private InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
+  private final InMemoryDatabase<NetworkingV1beta1Ingress, NetworkingV1beta1IngressList> database =
       new InMemoryDatabase<>() {
         @Override
         NetworkingV1beta1IngressList createList(List<NetworkingV1beta1Ingress> items) {
@@ -34,7 +34,7 @@ public class InMemoryDatabaseTest {
       };
 
   @Test
-  public void whenItemAbsent_readThrowsException() throws Exception {
+  public void whenItemAbsent_readThrowsException() {
     try {
       database.read(keys().name(NAME1).namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
@@ -44,7 +44,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void whenItemPresent_createThrowsException() throws Exception {
+  public void whenItemPresent_createThrowsException() {
     createItem(NAME1, NS1);
 
     try {
@@ -65,14 +65,14 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterItemCreated_canRetrieveIt() throws Exception {
+  public void afterItemCreated_canRetrieveIt() {
     NetworkingV1beta1Ingress item = createItem(NAME1, NS1);
 
     assertThat(database.read(keys().name(NAME1).namespace(NS1).map()), equalTo(item));
   }
 
   @Test
-  public void whenItemAbsent_replaceThrowsException() throws Exception {
+  public void whenItemAbsent_replaceThrowsException() {
     try {
       database.replace(
           new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
@@ -84,7 +84,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterReplaceItem_canRetrieveNewItem() throws Exception {
+  public void afterReplaceItem_canRetrieveNewItem() {
     createItem(NAME1, NS1).kind("old item");
 
     NetworkingV1beta1Ingress replacement =
@@ -97,7 +97,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test(expected = InMemoryDatabaseException.class)
-  public void afterItemDeleted_cannotRetrieveIt() throws Exception {
+  public void afterItemDeleted_cannotRetrieveIt() {
     createItem(NAME1, NS1);
     database.delete(keys().name(NAME1).namespace(NS1).map());
 
@@ -105,7 +105,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void whenItemToDeletedAbsent_throwException() throws Exception {
+  public void whenItemToDeletedAbsent_throwException() {
     try {
       database.delete(keys().name(NAME1).namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
@@ -115,7 +115,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterItemsCreated_canListMatches() throws Exception {
+  public void afterItemsCreated_canListMatches() {
     NetworkingV1beta1Ingress item1 = createItem(NAME1, NS1);
     NetworkingV1beta1Ingress item2 = createItem(NAME2, NS1);
     NetworkingV1beta1Ingress item3 = createItem(NAME1, NS2);
@@ -131,7 +131,7 @@ public class InMemoryDatabaseTest {
   }
 
   static class MapMaker {
-    private Map<String, String> keys = new HashMap<>();
+    private final Map<String, String> keys = new HashMap<>();
 
     public Map<String, String> map() {
       return keys;

@@ -428,7 +428,7 @@ public class RestBackendImplTest {
     }
   }
 
-  private class AuthorizationProxyStub extends AuthorizationProxy {
+  private static class AuthorizationProxyStub extends AuthorizationProxy {
     boolean atzCheck = false;
 
     /**

@@ -23,8 +23,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class HttpResponseStepTest {
 
-  private TerminalStep terminalStep = new TerminalStep();
-  private HttpResponseStepImpl responseStep = new HttpResponseStepImpl(terminalStep);
+  private final TerminalStep terminalStep = new TerminalStep();
+  private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(terminalStep);
 
   @Test
   public void classImplementsStep() {

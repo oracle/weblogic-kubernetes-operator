@@ -38,11 +38,11 @@ public class BeforeAdminServiceStepTest {
   private static final String UID = "uid1";
   private final Domain domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private Step nextStep = new TerminalStep();
-  private List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private BeforeAdminServiceStep step = new BeforeAdminServiceStep(nextStep);
+  private final Step nextStep = new TerminalStep();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final BeforeAdminServiceStep step = new BeforeAdminServiceStep(nextStep);
 
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);

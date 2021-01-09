@@ -35,7 +35,7 @@ import static java.net.HttpURLConnection.HTTP_GONE;
  * @param <T> The type of the object to be watched.
  */
 abstract class Watcher<T> {
-  @SuppressWarnings("FieldMayBeFinal") // not final so unit tests can set it
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // not final so unit tests can set it
   private static WatcherStarter STARTER = Watcher::startAsynchronousWatch;
 
   static final String HAS_NEXT_EXCEPTION_MESSAGE = "IO Exception during hasNext method.";

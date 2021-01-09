@@ -302,7 +302,7 @@ public class JobHelper {
       // Populate env var list used by the MII introspector job's 'short circuit' MD5
       // check. To prevent a false trip of the circuit breaker, the list must be the
       // same regardless of whether domainTopology == null.
-      StringBuffer sb = new StringBuffer(vars.size() * 32);
+      StringBuilder sb = new StringBuilder(vars.size() * 32);
       for (V1EnvVar var : vars) {
         sb.append(var.getName()).append(',');
       }

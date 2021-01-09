@@ -37,8 +37,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
-  private static final String NS = "ns1";
-  private static final String VERSION = "123";
   private final V1Job cachedJob = createJob();
   private long clock;
 

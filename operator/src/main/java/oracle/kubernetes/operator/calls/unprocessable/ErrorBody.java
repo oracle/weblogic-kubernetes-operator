@@ -3,16 +3,9 @@
 
 package oracle.kubernetes.operator.calls.unprocessable;
 
-import java.util.Map;
-
 public class ErrorBody {
-  private String kind;
-  private String apiVersion;
-  private Map<String,String> metaData;
-  private String status;
   private String message;
   private ErrorDetails details;
-  private int code;
 
   public String getMessage() {
     return message;

@@ -58,14 +58,6 @@ public abstract class DomainTestBase {
                     .withDomainUid(DOMAIN_UID));
   }
 
-  protected static String getDomainUid() {
-    return DOMAIN_UID;
-  }
-
-  protected static String getNamespace() {
-    return NS;
-  }
-
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
   @Test

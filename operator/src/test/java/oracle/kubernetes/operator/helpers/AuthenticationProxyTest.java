@@ -54,7 +54,7 @@ public class AuthenticationProxyTest {
     assertThat(authorizationProxyStub.scope, equalTo(Scope.namespace));
   }
 
-  private class AuthorizationProxyStub extends AuthorizationProxy {
+  private static class AuthorizationProxyStub extends AuthorizationProxy {
     Scope scope;
 
     public boolean check(

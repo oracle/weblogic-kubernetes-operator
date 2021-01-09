@@ -26,10 +26,6 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation withExplicitRecheck();
 
-  MakeRightDomainOperation withDeleting(boolean deleting);
-
-  MakeRightDomainOperation interrupt();
-
   MakeRightDomainOperation withEventData(EventItem eventItem, String message);
 
   void execute();

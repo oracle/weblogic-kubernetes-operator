@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class WlsClusterConfig {
 
   private String name;
-  private List<WlsServerConfig> servers = new ArrayList<>();
+  private final List<WlsServerConfig> servers = new ArrayList<>();
   private WlsDynamicServersConfig dynamicServersConfig;
 
   // owner -- don't include in toString, hashCode, equals
@@ -193,16 +192,8 @@ public class WlsClusterConfig {
     return name;
   }
 
-  public void setName(String name) {
-    this.name = name;
-  }
-
   public WlsDynamicServersConfig getDynamicServersConfig() {
     return this.dynamicServersConfig;
-  }
-
-  public void setDynamicServersConfig(WlsDynamicServersConfig dynamicServersConfig) {
-    this.dynamicServersConfig = dynamicServersConfig;
   }
 
   /**
@@ -239,19 +230,12 @@ public class WlsClusterConfig {
       result.addAll(dynamicServersConfig.getServerConfigs());
     }
     result.addAll(servers);
-    Collections.sort(
-        result,
-        Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName()))
-    );
+    result.sort(Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName())));
     return result;
   }
 
   public List<WlsServerConfig> getServers() {
     return this.servers;
-  }
-
-  public void setServers(List<WlsServerConfig> servers) {
-    this.servers = servers;
   }
 
   /**

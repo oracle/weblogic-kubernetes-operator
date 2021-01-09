@@ -56,10 +56,6 @@ public class CallParamsImpl implements CallParams {
     return pretty;
   }
 
-  void setPretty(String pretty) {
-    this.pretty = pretty;
-  }
-
   @Override
   public String getResourceVersion() {
     return resourceVersion;

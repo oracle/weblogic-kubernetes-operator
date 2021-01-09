@@ -21,7 +21,7 @@ import static org.hamcrest.Matchers.is;
 
 public class LegalNamesTest {
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setup() throws Exception {
@@ -41,14 +41,14 @@ public class LegalNamesTest {
 
 
   @Test
-  public void createValidServerServiceNames() throws Exception {
+  public void createValidServerServiceNames() {
     assertThat(toServerServiceName("abc", "cls1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cLs1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cls_1"), equalTo("abc-cls-1"));
   }
 
   @Test
-  public void createValidClusterServiceNames() throws Exception {
+  public void createValidClusterServiceNames() {
     assertThat(toClusterServiceName("abc", "cls1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cLs1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cls_1"), equalTo("abc-cluster-cls-1"));
@@ -90,7 +90,7 @@ public class LegalNamesTest {
 
   @Test
   public void verify_requiresDns1123Names_returnFalse_for_invalidValues() {
-    assertThat(LegalNames.isDns1123Required((String)null), is(false));
+    assertThat(LegalNames.isDns1123Required(null), is(false));
     assertThat(LegalNames.isDns1123Required(""), is(false));
   }
 
