@@ -59,6 +59,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -435,6 +436,31 @@ public class DomainProcessorTest {
     return Optional.ofNullable(events).get()
             .stream()
             .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) == null;
+  }
+
+  @Test
+  public void whenScalingUpDomain_domainProcessingCompletedEventsGenerated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    // Scale up the cluster and execute the make right flow again with explicit recheck
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    long timestamp = System.currentTimeMillis();
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
+            containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+  }
+
+  private static boolean containsEvent(List<V1Event> events, String reason) {
+    return Optional.ofNullable(events).get()
+            .stream()
+            .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) != null;
   }
 
   @Test
