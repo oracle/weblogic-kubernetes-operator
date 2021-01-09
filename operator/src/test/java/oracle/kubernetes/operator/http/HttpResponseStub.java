@@ -7,7 +7,7 @@ import java.net.http.HttpResponse;
 
 public abstract class HttpResponseStub implements HttpResponse<String> {
 
-  private int statusCode;
+  private final int statusCode;
   private String body;
 
   HttpResponseStub(int statusCode) {

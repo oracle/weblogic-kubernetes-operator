@@ -14,7 +14,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 public class ThreadFactoryTestBase implements ThreadFactory {
-  private List<Thread> threads = new ArrayList<>();
+  private final List<Thread> threads = new ArrayList<>();
   private String testName;
   @Rule
   public TestRule watcher =

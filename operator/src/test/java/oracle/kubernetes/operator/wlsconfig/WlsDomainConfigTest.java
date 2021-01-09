@@ -342,10 +342,10 @@ public class WlsDomainConfigTest {
           + "        \"networkAccessPoints\": {\"items\": []}\n"
           + "    }\n"
           + "]}}";
-  private List<LogRecord> logRecords = new ArrayList<>();
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("test-domain");
-  private WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
+  private final WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
 
   /**
    * Setup test.
@@ -766,9 +766,9 @@ public class WlsDomainConfigTest {
   static class WlsServerConfigMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<
           java.util.List<java.util.Map<String, Object>>> {
-    private String expectedName;
-    private String expectedAddress;
-    private int expectedPort;
+    private final String expectedName;
+    private final String expectedAddress;
+    private final int expectedPort;
 
     private WlsServerConfigMatcher(String expectedName, String expectedAddress, int expectedPort) {
       this.expectedName = expectedName;

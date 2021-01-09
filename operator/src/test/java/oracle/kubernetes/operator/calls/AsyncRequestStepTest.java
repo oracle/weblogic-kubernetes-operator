@@ -44,13 +44,13 @@ public class AsyncRequestStepTest {
   private static final int MAX_RETRY_COUNT = 2;
   private static final String CONTINUE = "continue-value";
 
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private CallParams callParams = new CallParamsStub();
-  private RequestParams requestParams
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final CallParams callParams = new CallParamsStub();
+  private final RequestParams requestParams
       = new RequestParams("testcall", "junit", "testName", "body", callParams);
-  private CallFactoryStub callFactory = new CallFactoryStub();
-  private TestStep nextStep = new TestStep();
-  private ClientPool helper = ClientPool.getInstance();
+  private final CallFactoryStub callFactory = new CallFactoryStub();
+  private final TestStep nextStep = new TestStep();
+  private final ClientPool helper = ClientPool.getInstance();
   private final AsyncRequestStep<DomainList> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
@@ -62,7 +62,7 @@ public class AsyncRequestStepTest {
           null,
           null,
           null);
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
   private final DomainList smallList = generateDomainList(5);
   private final DomainList largeListPartOne
       = generateDomainList(50).withMetadata(new V1ListMeta()._continue(CONTINUE));
@@ -268,8 +268,8 @@ public class AsyncRequestStepTest {
   }
 
   static class CallParamsStub implements CallParams {
-    private Integer limit = 50;
-    private Integer timeoutSeconds = 30;
+    private static final Integer limit = 50;
+    private static final Integer timeoutSeconds = 30;
 
     @Override
     public Integer getLimit() {

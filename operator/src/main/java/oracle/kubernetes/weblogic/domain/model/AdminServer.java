@@ -51,18 +51,6 @@ public class AdminServer extends Server {
     return channelNames;
   }
 
-  /**
-   * Gets channels.
-   *
-   * @return Channels
-   */
-  public List<Channel> getChannels() {
-    if (adminService == null) {
-      return Collections.emptyList();
-    }
-    return adminService.getChannels();
-  }
-
   @Override
   public String toString() {
     return new ToStringBuilder(this)

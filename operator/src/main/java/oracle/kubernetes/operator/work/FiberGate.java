@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.Fiber.ExitCallback;
 
 /**
  * Allows at most one running Fiber per key value. However, rather than queue later arriving Fibers
@@ -147,12 +146,9 @@ public class FiberGate {
             boolean isWillCall =
                 o.cancelAndExitCallback(
                     true,
-                    new ExitCallback() {
-                      @Override
-                      public void onExit() {
-                        current.set(o.getSpi(WaitForOldFiberStep.class));
-                        fiber.resume(packet);
-                      }
+                    () -> {
+                      current.set(o.getSpi(WaitForOldFiberStep.class));
+                      fiber.resume(packet);
                     });
 
             if (!isWillCall) {

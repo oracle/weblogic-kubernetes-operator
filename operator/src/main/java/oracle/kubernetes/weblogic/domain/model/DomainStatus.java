@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -177,20 +176,6 @@ public class DomainStatus {
     }
 
     return null;
-  }
-
-  private boolean isNewCondition(DomainCondition condition) {
-    DomainCondition oldCondition = getConditionWithType(condition.getType());
-    if (oldCondition == null) {
-      return true;
-    }
-
-    if (oldCondition.equals(condition)) {
-      return false;
-    }
-
-    conditions.remove(oldCondition);
-    return true;
   }
 
   /**
@@ -398,11 +383,7 @@ public class DomainStatus {
    */
   public DomainStatus addServer(ServerStatus server) {
     synchronized (servers) {
-      for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
-        if (Objects.equals(it.next().getServerName(), server.getServerName())) {
-          it.remove();
-        }
-      }
+      servers.removeIf(serverStatus -> Objects.equals(serverStatus.getServerName(), server.getServerName()));
 
       servers.add(server);
       Collections.sort(servers);
@@ -449,11 +430,7 @@ public class DomainStatus {
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
     synchronized (clusters) {
-      for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
-        if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
-          it.remove();
-        }
-      }
+      clusters.removeIf(clusterStatus -> Objects.equals(clusterStatus.getClusterName(), cluster.getClusterName()));
 
       clusters.add(cluster);
       Collections.sort(clusters);

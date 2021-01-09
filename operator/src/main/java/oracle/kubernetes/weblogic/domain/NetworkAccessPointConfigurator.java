@@ -5,7 +5,4 @@ package oracle.kubernetes.weblogic.domain;
 
 public interface NetworkAccessPointConfigurator {
 
-  NetworkAccessPointConfigurator withLabel(String name, String value);
-
-  NetworkAccessPointConfigurator withAnnotation(String name, String value);
 }

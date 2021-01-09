@@ -467,18 +467,6 @@ public class DomainSpec extends BaseConfiguration {
     return this;
   }
 
-  /**
-   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
-   * contain keys names 'username' and 'password'. Required.
-   *
-   * @param opssKeyPassPhrase WebLogic startup credentials secret
-   * @return this
-   */
-  public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
-    this.webLogicCredentialsSecret = opssKeyPassPhrase;
-    return this;
-  }
-
   public String getImage() {
     return Optional.ofNullable(image).orElse(DEFAULT_IMAGE);
   }

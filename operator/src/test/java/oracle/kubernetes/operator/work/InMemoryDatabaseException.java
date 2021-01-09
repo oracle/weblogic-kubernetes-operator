@@ -4,7 +4,7 @@
 package oracle.kubernetes.operator.work;
 
 public class InMemoryDatabaseException extends RuntimeException {
-  private int code;
+  private final int code;
 
   InMemoryDatabaseException(int code, String message) {
     super(message);

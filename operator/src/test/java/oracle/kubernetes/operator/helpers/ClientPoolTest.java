@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.sameInstance;
 
 public class ClientPoolTest {
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   /**
    * Setup test.

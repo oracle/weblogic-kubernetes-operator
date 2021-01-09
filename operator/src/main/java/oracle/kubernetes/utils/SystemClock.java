@@ -9,7 +9,7 @@ import org.joda.time.DateTime;
 public abstract class SystemClock {
 
   // Leave as non-final; unit tests may replace this value
-  @SuppressWarnings("FieldMayBeFinal")
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static SystemClock DELEGATE = new SystemClock() {
         @Override
         public DateTime getCurrentTime() {

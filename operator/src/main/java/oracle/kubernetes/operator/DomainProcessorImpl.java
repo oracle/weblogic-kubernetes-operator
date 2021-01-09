@@ -83,7 +83,8 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static final Map<String, FiberGate> makeRightFiberGates = new ConcurrentHashMap<>();
   private static final Map<String, FiberGate> statusFiberGates = new ConcurrentHashMap<>();
 
-  @SuppressWarnings("FieldMayBeFinal") // Map namespace to map of domainUID to Domain; tests may replace this value.
+  // Map namespace to map of domainUID to Domain; tests may replace this value.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
@@ -219,17 +220,13 @@ public class DomainProcessorImpl implements DomainProcessor {
   public void reportSuspendedFibers() {
     if (LOGGER.isFineEnabled()) {
       BiConsumer<String, FiberGate> consumer =
-          (namespace, gate) -> {
-            gate.getCurrentFibers().forEach(
-                (key, fiber) -> {
-                  Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
-                    try (LoggingContext ignored
-                             = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
-                      LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
-                    }
-                  });
-                });
-          };
+          (namespace, gate) -> gate.getCurrentFibers().forEach(
+            (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
+              try (LoggingContext ignored
+                  = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
+                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
+              }
+            }));
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
@@ -614,8 +611,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * @param deleting if true, indicates that the domain is being shut down
      * @return the updated factory
      */
-    @Override
-    public MakeRightDomainOperation withDeleting(boolean deleting) {
+    private MakeRightDomainOperation withDeleting(boolean deleting) {
       this.deleting = deleting;
       return this;
     }
@@ -624,7 +620,6 @@ public class DomainProcessorImpl implements DomainProcessor {
      * Modifies the factory to indicate that it should interrupt any current make-right thread.
      * @return the updated factory
      */
-    @Override
     public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
@@ -706,7 +701,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .map(o -> o.resetIntrospectJobFailureCount());
+          .map(DomainStatus::resetIntrospectJobFailureCount);
     }
 
     private boolean hasExceededRetryCount() {
@@ -1137,9 +1132,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static class DomainStatusUpdate {
     private final V1Pod pod;
     private final String domainUid;
-    private DomainProcessorDelegate delegate;
-    private DomainPresenceInfo info;
-    private PodWatcher.PodStatus podStatus;
+    private final DomainProcessorDelegate delegate;
+    private final DomainPresenceInfo info;
+    private final PodWatcher.PodStatus podStatus;
 
     DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,
                        DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {

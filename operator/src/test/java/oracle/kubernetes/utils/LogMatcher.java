@@ -48,20 +48,12 @@ public class LogMatcher
     return new LogMatcher(Level.WARNING, expectedMessage);
   }
 
-  public static LogMatcher containsWarning(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.WARNING, expectedMessage, expectedParameters);
-  }
-
   public static LogMatcher containsSevere(String expectedMessage) {
     return new LogMatcher(Level.SEVERE, expectedMessage);
   }
 
   public static LogMatcher containsFine(String expectedMessage) {
     return new LogMatcher(Level.FINE, expectedMessage);
-  }
-
-  public static LogMatcher containsFine(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.FINE, expectedMessage, expectedParameters);
   }
 
   public static LogMatcher containsInOrder(LogMatcher... logMatchers) {

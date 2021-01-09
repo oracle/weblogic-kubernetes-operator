@@ -25,7 +25,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   private static final String BOOKMARK_RESOURCE_VERSION = "987";
   private static final String UID = "uid";
 
-  private Domain domain = createDomain();
+  private final Domain domain = createDomain();
 
   private static Domain createDomain() {
     return new Domain().withSpec(new DomainSpec().withDomainUid(UID));

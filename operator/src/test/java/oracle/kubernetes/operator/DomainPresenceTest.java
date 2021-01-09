@@ -303,12 +303,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
       }
 
       @Override
-      public MakeRightDomainOperation withDeleting(boolean deleting) {
-        this.deleting = deleting;
-        return this;
-      }
-
-      @Override
       public void execute() {
         dpis.put(info.getDomainUid(), info);
       }
