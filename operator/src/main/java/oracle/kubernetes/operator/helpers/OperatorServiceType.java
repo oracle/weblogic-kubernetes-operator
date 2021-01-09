@@ -30,10 +30,6 @@ public enum OperatorServiceType {
       return info.deleteServerServiceFromEvent(ServiceHelper.getServerName(event), event);
     }
 
-    @Override
-    V1Service[] getServices(DomainPresenceInfo presenceInfo) {
-      return presenceInfo.getServiceServices();
-    }
   },
   EXTERNAL {
     @Override
@@ -130,7 +126,4 @@ public enum OperatorServiceType {
     return false;
   }
 
-  V1Service[] getServices(DomainPresenceInfo info) {
-    return new V1Service[0];
-  }
 }

@@ -8,13 +8,10 @@ import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
 
 public class DomainConfiguratorFactory {
 
-  private static DomainConfigurator exemplar = new DomainCommonConfigurator();
+  private static final DomainConfigurator exemplar = new DomainCommonConfigurator();
 
   public static DomainConfigurator forDomain(Domain domain) {
     return exemplar.createFor(domain);
   }
 
-  public static void selectCommonDomainModel() {
-    exemplar = new DomainCommonConfigurator();
-  }
 }

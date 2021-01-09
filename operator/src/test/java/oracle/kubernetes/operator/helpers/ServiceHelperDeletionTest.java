@@ -23,8 +23,8 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   private static final String SERVER_NAME = "server1";
   private static final String SERVICE_NAME = LegalNames.toServerServiceName(UID, SERVER_NAME);
 
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private V1Service service = createMinimalService();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final V1Service service = createMinimalService();
 
   private V1Service createMinimalService() {
     return new V1Service().metadata(new V1ObjectMeta().name(SERVICE_NAME).namespace(NS));
@@ -32,10 +32,9 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
 
   /**
    * Setup deletion test.
-   * @throws NoSuchFieldException if no such field
    */
   @Before
-  public void setUpDeletionTest() throws NoSuchFieldException {
+  public void setUpDeletionTest() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
 

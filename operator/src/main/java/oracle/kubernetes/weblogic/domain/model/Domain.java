@@ -142,10 +142,7 @@ public class Domain implements KubernetesObject {
     AdminServer adminServer = domainSpec.getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
     List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
-      return true;
-    }
-    return false;
+    return channels != null && !channels.isEmpty();
   }
 
   /**
@@ -493,10 +490,6 @@ public class Domain implements KubernetesObject {
     return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
-  public Model getModel() {
-    return spec.getModel();
-  }
-
   public boolean isHttpAccessLogInLogHome() {
     return spec.getHttpAccessLogInLogHome();
   }
@@ -841,9 +834,7 @@ public class Domain implements KubernetesObject {
       if (index != -1) {
         String str = token.substring(0, index);
         // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
-        if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
-          return false;
-        }
+        return !varNames.contains(str) && !IntrospectorJobEnvVars.isReserved(str);
       }
       return true;
     }

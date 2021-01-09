@@ -396,7 +396,7 @@ public class EventHelper {
   }
 
   public static class EventData {
-    private EventItem eventItem;
+    private final EventItem eventItem;
     private String message;
     private String namespace;
     private String resourceName;
@@ -427,10 +427,6 @@ public class EventHelper {
 
     public EventItem getItem() {
       return eventItem;
-    }
-
-    public String getMessage() {
-      return message;
     }
 
     public String getNamespace() {

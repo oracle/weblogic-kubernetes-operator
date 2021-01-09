@@ -198,21 +198,6 @@ public abstract class Step {
   }
 
   /**
-   * Create {@link NextAction} that indicates the the current fiber resume with the next step after.
-   * a delay.
-   *
-   * @param packet Packet to provide when retrying this step
-   * @param delay Delay time
-   * @param unit Delay time unit
-   * @return The next action
-   */
-  protected NextAction doDelay(Packet packet, long delay, TimeUnit unit) {
-    NextAction na = new NextAction();
-    na.delay(next, packet, delay, unit);
-    return na;
-  }
-
-  /**
    * Create {@link NextAction} that indicates the the current fiber resume with the indicated step
    * after a delay.
    *

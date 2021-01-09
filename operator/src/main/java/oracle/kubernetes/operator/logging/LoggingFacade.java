@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.logging;
 
 import java.text.MessageFormat;
-import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
@@ -36,51 +35,6 @@ public class LoggingFacade {
     ConsoleHandler handler = new ConsoleHandler();
     handler.setFormatter(new LoggingFormatter());
     logger.addHandler(handler);
-  }
-
-  /**
-   * Converts an array to a loggable string.
-   *
-   * @param value the object to log
-   * @param password true if the value is a password that should not be logged
-   * @return a loggable string
-   */
-  public static Object convertArraysForLogging(Object value, boolean password) {
-    // Don't log passwords.
-    if (password) {
-      return "***";
-    }
-
-    Object result = value;
-    if (value != null) {
-      // Convert any object arrays such as String arrays.
-      if (Object[].class.isAssignableFrom(value.getClass())) {
-        Object[] array = Object[].class.cast(value);
-        result = Arrays.toString(array);
-      } else if (value.getClass().isArray()) {
-        // Any other arrays are primitive arrays which must be cast to
-        // the correct primitive type.
-        Class<?> type = value.getClass().getComponentType();
-        if (type == boolean.class) {
-          result = Arrays.toString((boolean[]) value);
-        } else if (type == byte.class) {
-          result = Arrays.toString((byte[]) value);
-        } else if (type == char.class) {
-          result = Arrays.toString((char[]) value);
-        } else if (type == double.class) {
-          result = Arrays.toString((double[]) value);
-        } else if (type == float.class) {
-          result = Arrays.toString((float[]) value);
-        } else if (type == int.class) {
-          result = Arrays.toString((int[]) value);
-        } else if (type == long.class) {
-          result = Arrays.toString((long[]) value);
-        } else if (type == short.class) {
-          result = Arrays.toString((short[]) value);
-        }
-      }
-    }
-    return result;
   }
 
   /**

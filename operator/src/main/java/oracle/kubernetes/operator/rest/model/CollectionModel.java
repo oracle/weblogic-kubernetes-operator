@@ -9,7 +9,7 @@ import java.util.List;
 /** ItemModel is the base class for collection resources. */
 public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
 
-  private List<T> items = new ArrayList<>();
+  private final List<T> items = new ArrayList<>();
 
   /**
    * Get the items in the collection.
@@ -18,15 +18,6 @@ public class CollectionModel<T extends ItemModel> extends LinkContainerModel {
    */
   public List<T> getItems() {
     return items;
-  }
-
-  /**
-   * Set the items in the collection.
-   *
-   * @param items - a List of items.
-   */
-  public void setItems(List<T> items) {
-    this.items = items;
   }
 
   /**

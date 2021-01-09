@@ -21,7 +21,6 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.Test;
 
@@ -80,11 +79,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   ServerConfigurator configureServer() {
     return getConfigurator().configureAdminServer();
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer();
   }
 
   @Override
@@ -359,8 +353,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
-        allOf(
-            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
+        hasVolumeMount("volume1", END_MOUNT_PATH_1));
   }
 
   @Test
@@ -734,8 +727,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
-  @Override
-  V1Pod createTestPodModel() {
+  private V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 

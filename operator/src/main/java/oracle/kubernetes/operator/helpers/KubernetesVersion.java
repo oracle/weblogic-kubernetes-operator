@@ -70,7 +70,7 @@ public class KubernetesVersion extends SemanticVersion {
 
   @Override
   public boolean equals(Object o) {
-    return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);
+    return this == o || o instanceof KubernetesVersion && equals(o);
   }
 
   @Override

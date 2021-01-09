@@ -191,11 +191,6 @@ public class WlsDomainConfigSupport {
       this.listenPort = listenPort;
     }
 
-    ServerConfigBuilder withAdminPort(Integer adminPort) {
-      this.adminPort = adminPort;
-      return this;
-    }
-
     WlsServerConfig build() {
       return new WlsServerConfig(name, null, null, listenPort, null, adminPort, null);
     }

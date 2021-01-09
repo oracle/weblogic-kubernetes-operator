@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -14,7 +13,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public interface TuningParameters extends Map<String, String> {
 
   static TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+      ScheduledExecutorService executorService, String mountPoint) {
     return TuningParametersImpl.initializeInstance(executorService, mountPoint);
   }
 

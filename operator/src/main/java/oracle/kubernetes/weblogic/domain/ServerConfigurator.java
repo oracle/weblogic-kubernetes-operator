@@ -8,7 +8,6 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Toleration;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -124,5 +123,4 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withPriorityClassName(String priorityClassName);
 
-  ServerConfigurator withToleration(V1Toleration toleration);
 }

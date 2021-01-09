@@ -10,8 +10,8 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 public class ChannelMatcher extends TypeSafeDiagnosingMatcher<Channel> {
-  private String expectedName;
-  private Integer expectedNodePort;
+  private final String expectedName;
+  private final Integer expectedNodePort;
 
   private ChannelMatcher(String expectedName, Integer expectedNodePort) {
     this.expectedName = expectedName;
