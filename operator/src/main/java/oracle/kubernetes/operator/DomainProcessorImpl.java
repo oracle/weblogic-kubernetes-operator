@@ -743,8 +743,9 @@ public class DomainProcessorImpl implements DomainProcessor {
       // and onlineUpdate, disable online update ??
 
       if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
-        LOGGER.info("DomainType is FromModel and Online changes requested in the spec involves more than "
-            + "introspectVersion, overridden to use offline");
+        LOGGER.fine("DomainType is FromModel and onlineUpdate is enabled, but there are changes in the domain "
+            + "spec incompatible for onlineUpdate, e.g. image name, serverPod environment, etc... resetting "
+            + "onlineUpdate.enabled=false. The domain will roll after successful updates.");
         Optional.ofNullable(liveInfo)
             .map(DomainPresenceInfo::getDomain)
             .map(Domain::getSpec)
