@@ -33,6 +33,8 @@ import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -466,6 +468,26 @@ public class DbUtils {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
             String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)));
+  }
+
+  /**
+   * Delete all db in the given namespace, if any exists.
+   *
+   * @param dbNamespace name of the namespace
+   */
+  public static void deleteDb(String dbNamespace) {
+    LoggingFacade logger = getLogger();
+
+    try {
+      // delete db resources in dbNamespace
+      new Command()
+          .withParams(new CommandParams()
+              .command("kubectl delete all --all -n " + dbNamespace + " --ignore-not-found"))
+          .execute();
+    } catch (Exception ex) {
+      logger.severe(ex.getMessage());
+      logger.severe("Failed to delete db or the {0} is not a db namespace", dbNamespace);
+    }
   }
 
   /**
