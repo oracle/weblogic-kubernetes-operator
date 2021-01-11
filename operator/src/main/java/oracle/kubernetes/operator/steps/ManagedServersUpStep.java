@@ -46,6 +46,7 @@ public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, factory, next) ->
           scaleDownIfNecessary(info, config, factory, new ClusterServicesStep(next));
@@ -247,8 +248,7 @@ public class ManagedServersUpStep extends Step {
 
     Collection<ServerStartupInfo> getStartupInfos() {
       if (startupInfos != null) {
-        Collections.sort(
-            startupInfos,
+        startupInfos.sort(
             comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
       }
       return startupInfos;
@@ -360,8 +360,8 @@ public class ManagedServersUpStep extends Step {
   }
 
   private static class ServerConfig {
-    protected WlsServerConfig wlsServerConfig;
-    protected WlsClusterConfig wlsClusterConfig;
+    protected final WlsServerConfig wlsServerConfig;
+    protected final WlsClusterConfig wlsClusterConfig;
 
     ServerConfig(WlsClusterConfig cluster, WlsServerConfig server) {
       this.wlsClusterConfig = cluster;

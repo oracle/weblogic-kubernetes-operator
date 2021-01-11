@@ -20,7 +20,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainConditionTest {
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   @Before
   public void setUp() throws Exception {

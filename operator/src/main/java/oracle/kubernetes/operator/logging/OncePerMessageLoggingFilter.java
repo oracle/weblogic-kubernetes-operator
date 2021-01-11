@@ -12,7 +12,7 @@ public class OncePerMessageLoggingFilter implements LoggingFilter {
   // allow all messages to be logged when filtering is off
   boolean filtering = false;
 
-  final Set messagesLogged = new HashSet();
+  final Set<String> messagesLogged = new HashSet<>();
 
   /**
    * Turn on or off the filtering of log messages and skip logging of messages that have already

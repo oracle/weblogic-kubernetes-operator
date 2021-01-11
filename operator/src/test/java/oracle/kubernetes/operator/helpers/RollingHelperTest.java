@@ -63,11 +63,11 @@ public class RollingHelperTest {
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
-  private Map<String, StepAndPacket> rolling = new HashMap<>();
+  private final Map<String, StepAndPacket> rolling = new HashMap<>();
 
-  protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  protected List<LogRecord> logRecords = new ArrayList<>();
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected final List<Memento> mementos = new ArrayList<>();
+  protected final List<LogRecord> logRecords = new ArrayList<>();
 
   private WlsDomainConfig domainTopology;
 
@@ -161,7 +161,7 @@ public class RollingHelperTest {
   }
 
   private void initializeExistingPods() {
-    SERVER_NAMES.forEach(s -> initializeExistingPod(s));
+    SERVER_NAMES.forEach(this::initializeExistingPod);
   }
 
   private void initializeExistingPod(String serverName) {

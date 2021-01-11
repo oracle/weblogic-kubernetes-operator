@@ -494,7 +494,4 @@ public abstract class JobStepContext extends BasePodStepContext {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getOpssKeyWalletVolumeSource(String name) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
-  }
 }

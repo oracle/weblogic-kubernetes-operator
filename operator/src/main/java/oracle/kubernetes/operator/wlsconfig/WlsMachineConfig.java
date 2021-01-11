@@ -88,14 +88,6 @@ public class WlsMachineConfig {
     return "'name' ";
   }
 
-  static String getCreateUrl() {
-    return "/management/weblogic/latest/edit/machines";
-  }
-
-  static String getCreatePayload(String machineName) {
-    return " { name: \'" + machineName + "\' }";
-  }
-
   /**
    * Return the fields from node manager WLS configuration that should be retrieved from the WLS
    * REST request.

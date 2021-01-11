@@ -19,7 +19,4 @@ public class Scan {
     return domainConfig;
   }
 
-  public DateTime getLastScanTime() {
-    return lastScanTime;
-  }
 }

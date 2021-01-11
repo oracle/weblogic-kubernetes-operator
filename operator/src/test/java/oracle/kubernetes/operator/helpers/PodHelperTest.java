@@ -52,10 +52,9 @@ public class PodHelperTest {
 
   /**
    * Setup test.
-   * @throws NoSuchFieldException on no such field
    */
   @Before
-  public void setUp() throws NoSuchFieldException {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     testSupport.addDomainPresenceInfo(domainPresenceInfo);

@@ -12,7 +12,6 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
-import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 
@@ -110,7 +109,7 @@ public class EventTestUtils {
       List<V1Event> events, EventItem eventItem, List<String> namespaces) {
     for (String ns : namespaces) {
       if (!EventTestUtils.containsEventWithMessage(events, eventItem.getReason(),
-          eventItem.getMessage(ns, (EventHelper.EventData)null))) {
+          eventItem.getMessage(ns, null))) {
         return false;
       }
     }

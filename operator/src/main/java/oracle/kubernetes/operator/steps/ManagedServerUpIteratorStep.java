@@ -149,7 +149,6 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   static class StartManagedServersStep extends Step {
-    final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
     final int maxConcurrency;
@@ -158,7 +157,6 @@ public class ManagedServerUpIteratorStep extends Step {
     StartManagedServersStep(String clusterName, int maxConcurrency, Collection<StepAndPacket> startDetails, Step next) {
       super(next);
       this.clusterName = clusterName;
-      this.startDetails = startDetails;
       this.maxConcurrency = maxConcurrency;
       startDetails.forEach(this::add);
     }

@@ -160,8 +160,7 @@ public class Main {
       return Optional.ofNullable(buildProps.getProperty(key)).orElse("unknown");
     }
 
-    @Override
-    public void logStartup(LoggingFacade loggingFacade) {
+    private void logStartup(LoggingFacade loggingFacade) {
       loggingFacade.info(MessageKeys.OPERATOR_STARTED, buildVersion, operatorImpl, operatorBuildTime);
       loggingFacade.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
       loggingFacade.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
@@ -179,18 +178,8 @@ public class Main {
     }
 
     @Override
-    public String getServiceAccountName() {
-      return serviceAccountName;
-    }
-
-    @Override
     public String getPrincipal() {
       return principal;
-    }
-
-    @Override
-    public Engine getEngine() {
-      return engine;
     }
 
     @Override

@@ -29,7 +29,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
@@ -64,10 +63,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     completeCallbackRegistrations.remove(jobName, callback);
   }
 
-  private static String getNamespace(Domain domain) {
-    return domain.getMetadata().getNamespace();
-  }
-  
   @Override
   public String getNamespace() {
     return namespace;
