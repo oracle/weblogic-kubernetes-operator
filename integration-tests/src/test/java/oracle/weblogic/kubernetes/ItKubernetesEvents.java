@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,13 +22,16 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -35,7 +39,10 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -47,6 +54,8 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -66,6 +75,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_ABORT
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -76,12 +86,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to Domain events logged by operator.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
 public class ItKubernetesEvents {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String opServiceAccount = null;
+  private static int externalRestHttpsPort = 0;
 
   final String clusterName = "mycluster";
   final String adminServerName = "admin-server";
@@ -118,8 +131,14 @@ public class ItKubernetesEvents {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
-    // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    // set the service account name for the operator
+    opServiceAccount = opNamespace + "-sa";
+
+    // install and verify operator with REST API
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
+
+    externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
@@ -135,10 +154,11 @@ public class ItKubernetesEvents {
    * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
    * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
    */
+  @Order(1)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
-  public void testDomainK8SEvents() {
-    DateTime timestamp = new DateTime(System.currentTimeMillis());
+  public void testDomainK8SEventsSuccess() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("Creating domain");
     createDomain();
 
@@ -172,6 +192,105 @@ public class ItKubernetesEvents {
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_COMPLETED,  "Normal", timestamp));
+  }
+
+  /**
+   * Scale the cluster beyond maximum dynamic cluster size and verify the warning events are generated.
+   */
+  @Order(2)
+  @Test
+  public void testDomainK8sEventsScalePastMax() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    boolean scaleClusterWithRestApi = scaleClusterWithRestApi(domainUid, clusterName, 3,
+        externalRestHttpsPort, opNamespace, opServiceAccount);
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_VALIDATION_ERROR,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_VALIDATION_ERROR,  "Warning", timestamp));
+  }
+
+  /**
+   * Scale the cluster beyond minimum dynamic cluster size and verify the warning events are generated.
+   */
+  @Order(3)
+  @Test
+  public void testDomainK8sEventsScaleBelowMin() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    boolean scaleClusterWithRestApi = scaleClusterWithRestApi(domainUid, clusterName, 1,
+        externalRestHttpsPort, opNamespace, opServiceAccount);
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_VALIDATION_ERROR,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_VALIDATION_ERROR,  "Warning", timestamp));
+  }
+
+  /**
+   * Change a domain resource with adding a managed server not in domain and verify the warning events are generated.
+   */
+  @Order(4)
+  @Test
+  public void testDomainK8sEventsNonExistingMS() {
+    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace));
+    domain.getSpec().addManagedServersItem(new ManagedServer()
+        .serverName("managed-server1").serverStartPolicy("IF_NEEDED").serverStartState("RUNNING"));
+    logger.info(Yaml.dump(domain));
+  }
+
+  /**
+   * Change a domain resource with adding a cluster not in domain and verify the warning events are generated.
+   */
+  @Order(5)
+  @Test
+  public void testDomainK8sEventsNonExistingCluster() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    logger.info("patch the domain resource with new cluster and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
+        + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "}]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_VALIDATION_ERROR,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
+  }
+
+  /**
+   * Test domain events are logged when domain resource goes through various life cycle stages.
+   * Verifies DomainCreated is logged when domain resource is created.
+   * Verifies DomainProcessingStarting is logged when operator processes the domain resource.
+   * Verifies DomainProcessingCompleted is logged when operator done processes the domain resource.
+   * Verifies DomainChanged is logged when operator processes the domain resource changes.
+   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
+   * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
+   */
+  @Order(6)
+  @Test
+  @DisplayName("Test domain events for various domain life cycle changes")
+  public void testDomainK8SEventsFailed() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
 
     // remove the webLogicCredentialsSecret to verify the events
     // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
@@ -214,8 +333,40 @@ public class ItKubernetesEvents {
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
+  }
 
-    timestamp = new DateTime(System.currentTimeMillis() - 2000);
+  /*
+  @Order(7)
+  @Test
+  public void testK8SEventsStartWatchingNS(){
+
+  }
+
+  @Order(7)
+  @Test
+  public void testK8SEventsStopWatchingNS(){
+
+  }
+
+  @Order(8)
+  @Test
+  public void testK8SEventsMultiClusterEvents(){
+
+  }*/
+
+  /**
+   * Test domain events are logged when domain resource goes through various life cycle stages.
+   * Verifies DomainCreated is logged when domain resource is created.
+   * Verifies DomainProcessingStarting is logged when operator processes the domain resource.
+   * Verifies DomainProcessingCompleted is logged when operator done processes the domain resource.
+   * Verifies DomainChanged is logged when operator processes the domain resource changes.
+   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
+   * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
+   */
+  @Test
+  @DisplayName("Test domain events for various domain life cycle changes")
+  public void testDomainK8SEventsDelete() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
 
     deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);

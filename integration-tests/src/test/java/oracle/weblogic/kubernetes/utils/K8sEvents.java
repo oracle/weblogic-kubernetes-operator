@@ -139,6 +139,7 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
 
