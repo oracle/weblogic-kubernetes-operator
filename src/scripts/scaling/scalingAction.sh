@@ -14,6 +14,7 @@ scaling_size=1
 access_token=""
 no_op=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+log_file_name="scalingAction.log"
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
@@ -32,7 +33,7 @@ function timestamp() {
 }
 
 function trace() {
-  echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> scalingAction.log
+  echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> ${log_file_name}
 }
 
 function print_usage() {
@@ -71,6 +72,13 @@ function logScalingParameters() {
   trace "scaling_size: $scaling_size"
 }
 
+function jq_available() {
+  if [ -x "$(command -v jq)" ] && [ -z "$DONT_USE_JQ" ]; then
+    return;
+  fi
+  false
+}
+
 # Query WebLogic Operator Service Port
 function get_operator_internal_rest_port() {
   local STATUS=$(curl \
@@ -86,7 +94,7 @@ function get_operator_internal_rest_port() {
   fi
 
   local port
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
     local extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
     port=$(echo "${STATUS}" | jq "${extractPortCmd}")
   else
@@ -99,13 +107,6 @@ INPUT
 port=$(echo "${STATUS}" | python cmds-$$.py)
   fi
   echo "$port"
-}
-
-function jq_available() {
-  if [ -x "$(command -v jq)" ] && [ -z "$DONT_USE_JQ" ]; then
-    return;
-  fi
-  false
 }
 
 # Retrieve the api version of the deployed Custom Resource Domain
@@ -161,7 +162,8 @@ function get_custom_resource_domain() {
 function is_defined_in_clusters() {
   local DOMAIN="$1"
   local in_cluster_startup="False"
-  if [ -x "$(command -v jq)" ]; then
+
+  if jq_available; then
     local inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
     local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}")
     if [ "${clusterDefinedInCRD}" != "" ]; then
@@ -192,7 +194,8 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
 function get_num_ms_in_cluster() {
   local DOMAIN="$1"
   local num_ms
-  if [ -x "$(command -v jq)" ]; then
+  trace "zzz- wls_cluster_name is ${wls_cluster_name}"
+  if jq_available; then
   local numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
   num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}")
   else
@@ -204,10 +207,10 @@ for i in json.load(sys.stdin)["items"]:
     if j[index]["clusterName"] == "$wls_cluster_name":
       print j[index]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
 
-  if [ "${num_ms}" == "null" ]; then
+  if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
     num_ms=0
   fi
 
@@ -220,7 +223,7 @@ INPUT
 function get_num_ms_domain_scope() {
   local DOMAIN="$1"
   local num_ms
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
     num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' )
   else
 cat > cmds-$$.py << INPUT

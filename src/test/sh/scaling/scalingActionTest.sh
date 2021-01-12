@@ -4,25 +4,14 @@
 
 TEST_OPERATOR_ROOT=/tmp/test/weblogic-operator
 setUp() {
-
   DONT_USE_JQ=
-  #DISALLOW=
-  #PWD=/no/where/special
-  #DOMAIN_HOME=/domain/home
-
-  #INTROSPECTOR_MAP=${TEST_OPERATOR_ROOT}/introspector
-  #rm -fR ${TEST_OPERATOR_ROOT}
-  #mkdir -p ${TEST_OPERATOR_ROOT}/introspector
-  #echo "<ignored>" > $INTROSPECTOR_MAP/domainzip.secure
-  #echo "<ignored>" > $INTROSPECTOR_MAP/primordial_domainzip.secure
 }
 
-jq_installed() {
+skip_if_jq_not_installed() {
   if [ -x "$(command -v jq)" ]; then
     return
   fi
-  echo "--> jq not installed. Test skipped"
-  false
+  startSkipping
 }
 
 oneTimeTearDown() {
@@ -31,44 +20,204 @@ oneTimeTearDown() {
   rm -f cmds-$$.py
 }
 
+##### get_domain_api_version tests #####
+
 test_get_domain_api_version() {
-  CURL_FILE="apis1.txt"
+  CURL_FILE="apis1.json"
   DONT_USE_JQ="true"
 
-  output=$(get_domain_api_version)
+  result=$(get_domain_api_version)
 
-  assertEquals "should have api version v8" 'v8' "${output}"  
+  assertEquals "Did not return expected api version" 'v8' "${result}"  
 }
 
 test_get_domain_api_version_jq() {
-  if ! jq_installed; then
-    return
-  fi
-  CURL_FILE="apis1.txt"
+  skip_if_jq_not_installed
 
-  output=$(get_domain_api_version)
+  CURL_FILE="apis1.json"
 
-  assertEquals "should have api version v8" 'v8' "${output}"
+  result=$(get_domain_api_version)
+
+  assertEquals "Did not return expected api version" 'v8' "${result}"  
 }
 
 test_get_domain_api_version_without_weblogic_group() {
-  CURL_FILE="apis2.txt"
+  CURL_FILE="apis2.json"
   DONT_USE_JQ="true"
 
-  output=$(get_domain_api_version)
+  result=$(get_domain_api_version)
 
-  assertEquals "should have empty api version" '' "${output}"  
+  assertEquals "should have empty api version" '' "${result}"  
 }
 
 test_get_domain_api_version_without_weblogic_group_jq() {
-  if ! jq_installed; then
-    return
-  fi
-  CURL_FILE="apis2.txt"
+  skip_if_jq_not_installed
 
-  output=$(get_domain_api_version)
+  CURL_FILE="apis2.json"
 
-  assertEquals "should have empty api version" '' "${output}"  
+  result=$(get_domain_api_version)
+
+  assertEquals "should have empty api version" '' "${result}"  
+}
+
+##### get_operator_internal_rest_port tests #####
+
+test_get_operator_internal_rest_port() {
+  CURL_FILE="operator_status1.json"
+  DONT_USE_JQ="true"
+
+  result=$(get_operator_internal_rest_port)
+
+  assertEquals "Did not return expected rest port" '8082' "${result}"
+}
+
+test_get_operator_internal_rest_port_jq() {
+  skip_if_jq_not_installed
+
+  CURL_FILE="operator_status1.json"
+
+  result=$(get_operator_internal_rest_port)
+
+  assertEquals "Did not return expected rest port" '8082' "${result}"
+}
+
+##### is_defined_in_clusters tests #####
+
+test_is_defined_in_clusters() {
+  DONT_USE_JQ="true"
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(is_defined_in_clusters "${domain_json}")
+
+  assertEquals 'True' "${result}"
+}
+
+test_is_defined_in_clusters_jq() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(is_defined_in_clusters "${domain_json}")
+
+  assertEquals 'True' "${result}"
+}
+
+test_is_defined_in_clusters_no_matching() {
+  DONT_USE_JQ="true"
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='no-such-cluster'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(is_defined_in_clusters "${domain_json}")
+
+  assertEquals 'False' "${result}"
+}
+
+test_is_defined_in_clusters_no_matching_jq() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='no-such-cluster'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(is_defined_in_clusters "${domain_json}")
+
+  assertEquals 'False' "${result}"
+}
+
+##### get_num_ms_in_cluster tests #####
+
+test_get_num_ms_in_cluster() {
+  DONT_USE_JQ="true"
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_num_ms_in_cluster_jq() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '1' "${result}"
+}
+
+test_get_num_ms_in_cluster_no_replics() {
+  DONT_USE_JQ="true"
+
+  DOMAIN_FILE="${testdir}/cluster-noreplicas.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '0' "${result}"
+}
+
+test_get_num_ms_in_cluster_no_replicas_jq() {
+
+  DOMAIN_FILE="${testdir}/cluster-noreplicas.json"
+
+  wls_cluster_name='cluster-1'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '0' "${result}"
+}
+
+test_get_num_ms_in_cluster_no_matching() {
+  DONT_USE_JQ="true"
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='no-such-cluster'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '0' "${result}"
+}
+
+test_get_num_ms_in_cluster_no_matching_jq() {
+
+  DOMAIN_FILE="${testdir}/cluster1.json"
+
+  wls_cluster_name='no-such-cluster'
+
+  domain_json=`command cat ${DOMAIN_FILE}`
+
+  result=$(get_num_ms_in_cluster "${domain_json}")
+
+  assertEquals '0' "${result}"
 }
 
 ######################### Mocks for the tests ###############
