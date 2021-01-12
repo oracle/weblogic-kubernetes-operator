@@ -98,6 +98,7 @@ test_is_defined_in_clusters() {
 }
 
 test_is_defined_in_clusters_jq() {
+  skip_if_jq_not_installed
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -125,6 +126,7 @@ test_is_defined_in_clusters_no_matching() {
 }
 
 test_is_defined_in_clusters_no_matching_jq() {
+  skip_if_jq_not_installed
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -154,6 +156,7 @@ test_get_num_ms_in_cluster() {
 }
 
 test_get_num_ms_in_cluster_jq() {
+  skip_if_jq_not_installed
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -181,6 +184,7 @@ test_get_num_ms_in_cluster_no_replics() {
 }
 
 test_get_num_ms_in_cluster_no_replicas_jq() {
+  skip_if_jq_not_installed
 
   DOMAIN_FILE="${testdir}/cluster-noreplicas.json"
 
@@ -208,6 +212,7 @@ test_get_num_ms_in_cluster_no_matching() {
 }
 
 test_get_num_ms_in_cluster_no_matching_jq() {
+  skip_if_jq_not_installed
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
