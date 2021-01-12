@@ -1,22 +1,6 @@
 {
   "kind": "Service",
   "apiVersion": "v1",
-  "metadata": {
-    "name": "internal-weblogic-operator-svc",
-    "namespace": "weblogic-operator",
-    "selfLink": "/api/v1/namespaces/weblogic-operator/services/internal-weblogic-operator-svc/status",
-    "uid": "7c8d5952-4794-43f5-b281-f44aa4f329d6",
-    "resourceVersion": "16155909",
-    "creationTimestamp": "2021-01-11T20:43:29Z",
-    "labels": {
-      "app.kubernetes.io/managed-by": "Helm",
-      "weblogic.operatorName": "weblogic-operator"
-    },
-    "annotations": {
-      "meta.helm.sh/release-name": "oper",
-      "meta.helm.sh/release-namespace": "weblogic-operator"
-    }
-  },
   "spec": {
     "ports": [
       {

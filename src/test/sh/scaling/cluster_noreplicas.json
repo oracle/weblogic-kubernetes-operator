@@ -15,7 +15,7 @@
         "domainHome": "/shared/domains/domain1",
         "domainHomeSourceType": "PersistentVolume",
         "httpAccessLogInLogHome": true,
-        "image": "phx.ocir.io/weblogick8s/stage/ol8/middleware/weblogic:12.2.1.4",
+        "image": "container-registry.oracle.com/middleware/weblogic:12.2.1.4",
         "imagePullPolicy": "IfNotPresent",
         "includeServerOutInPodLog": false,
         "logHome": "/shared/logs/domain1",

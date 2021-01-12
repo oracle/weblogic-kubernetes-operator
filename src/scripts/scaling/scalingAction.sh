@@ -96,7 +96,7 @@ function get_operator_internal_rest_port() {
   local port
   if jq_available; then
     local extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
-    port=$(echo "${STATUS}" | jq "${extractPortCmd}")
+    port=$(echo "${STATUS}" | jq "${extractPortCmd}" 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -104,7 +104,7 @@ for i in json.load(sys.stdin)["spec"]["ports"]:
   if i["name"] == "rest":
     print(i["port"])
 INPUT
-port=$(echo "${STATUS}" | python cmds-$$.py)
+port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   echo "$port"
 }
@@ -129,7 +129,7 @@ function get_domain_api_version() {
   local domain_api_version
   if jq_available; then
     local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
-    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}")
+    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}" 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -137,7 +137,7 @@ for i in json.load(sys.stdin)["groups"]:
   if i["name"] == "weblogic.oracle":
     print(i["preferredVersion"]["version"])
 INPUT
-domain_api_version=`echo ${APIS} | python cmds-$$.py`
+domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   echo "$domain_api_version"
 }
@@ -165,7 +165,7 @@ function is_defined_in_clusters() {
 
   if jq_available; then
     local inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
-    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}")
+    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
     if [ "${clusterDefinedInCRD}" != "" ]; then
       in_cluster_startup="True"
     fi
@@ -183,7 +183,7 @@ for i in json.load(sys.stdin)["items"]:
 if outer_loop_must_break == False:
   print False
 INPUT
-in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
+in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   echo "$in_cluster_startup"
 }
@@ -194,10 +194,9 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
 function get_num_ms_in_cluster() {
   local DOMAIN="$1"
   local num_ms
-  trace "zzz- wls_cluster_name is ${wls_cluster_name}"
   if jq_available; then
   local numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
-  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}")
+  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -224,17 +223,17 @@ function get_num_ms_domain_scope() {
   local DOMAIN="$1"
   local num_ms
   if jq_available; then
-    num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' )
+    num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   print i["spec"]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
 
-  if [ "${num_ms}" == "null" ]; then
+  if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
     # if not defined then default to 0
     num_ms=0
   fi
@@ -254,10 +253,10 @@ function get_min_replicas {
   local __result=$3
 
   eval $__result=0
-  if [ -x "$(command -v jq)" ]; then
-    minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+  if jq_available; then
+    minReplicaCmd="(.items[].status.clusters[] | select (.clusterName == \"${clusterName}\")) \
       | .minimumReplicas"
-    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -267,7 +266,7 @@ for i in json.load(sys.stdin)["items"]:
     if j[index]["clusterName"] == "$clusterName":
       print j[index]["minimumReplicas"]
 INPUT
-  minReplicas=`echo ${DOMAIN} | python cmds-$$.py`
+  minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   eval $__result=${minReplicas}
 }
