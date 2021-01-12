@@ -392,16 +392,16 @@ Non dynamic attributes examples:
 |Use case|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
   |Changing a data source driver parameters properties (non dynamic attribute)|See High level descriptions section| |
-  |Changing a JMS connection factory attributes (non dynamic attribute)|See High level descriptions section| |
+  |Changing a JMS Server Session pool attributes (non dynamic attribute)|See High level descriptions section| |
 
-Unsupported Changes:
+Unsupported Changes examples:
 
 For any of these unsupported changes, the introspector job will fail and automatically retry up to maximum limit times.  You can either cancel the job, correct the problem, or wait for the job retry interval.
 
 - Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate; top level Toplogy attributes.  Any changes to these attributes will result in an error. . The introspection job will fail and automatically retry up to maximum retries.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to maximum retries.
 
-Changes that automatically switched to use offline and ignore whatever is set in `onlineUpdate.*`: 
+Changes that automatically switched to use offline and ignore whatever is set in `onlineUpdate.*` examples: 
 
 These changes will result in using and offline updates and the domain will roll upon successful updates.
 
