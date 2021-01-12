@@ -4,10 +4,11 @@
 
 TEST_OPERATOR_ROOT=/tmp/test/weblogic-operator
 setUp() {
-  DONT_USE_JQ=
+  DONT_USE_JQ="true"
 }
 
 skip_if_jq_not_installed() {
+  DONT_USE_JQ=
   if [ -x "$(command -v jq)" ]; then
     return
   fi
@@ -27,7 +28,6 @@ oneTimeTearDown() {
 
 test_get_domain_api_version() {
   CURL_FILE="apis1.json"
-  DONT_USE_JQ="true"
 
   result=$(get_domain_api_version)
 
@@ -46,7 +46,6 @@ test_get_domain_api_version_jq() {
 
 test_get_domain_api_version_without_weblogic_group() {
   CURL_FILE="apis2.json"
-  DONT_USE_JQ="true"
 
   result=$(get_domain_api_version)
 
@@ -67,7 +66,6 @@ test_get_domain_api_version_without_weblogic_group_jq() {
 
 test_get_operator_internal_rest_port() {
   CURL_FILE="operator_status1.json"
-  DONT_USE_JQ="true"
 
   result=$(get_operator_internal_rest_port)
 
@@ -86,7 +84,6 @@ test_get_operator_internal_rest_port_jq() {
 
 test_get_operator_internal_rest_port_operator_notfound() {
   CURL_FILE="operator_404.json"
-  DONT_USE_JQ="true"
 
   result=$(get_operator_internal_rest_port)
 
@@ -106,7 +103,6 @@ test_get_operator_internal_rest_port_operator_notfound_jq() {
 ##### is_defined_in_clusters tests #####
 
 test_is_defined_in_clusters() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -134,7 +130,6 @@ test_is_defined_in_clusters_jq() {
 }
 
 test_is_defined_in_clusters_no_matching() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -164,7 +159,6 @@ test_is_defined_in_clusters_no_matching_jq() {
 ##### get_num_ms_in_cluster tests #####
 
 test_get_num_ms_in_cluster() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -192,7 +186,6 @@ test_get_num_ms_in_cluster_jq() {
 }
 
 test_get_num_ms_in_cluster_no_replics() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
 
@@ -220,7 +213,6 @@ test_get_num_ms_in_cluster_no_replicas_jq() {
 }
 
 test_get_num_ms_in_cluster_no_matching() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -250,7 +242,6 @@ test_get_num_ms_in_cluster_no_matching_jq() {
 ##### get_num_ms_domain_scope tests #####
 
 test_get_num_ms_domain_scope() {
-  DONT_USE_JQ="true"
   
   DOMAIN_FILE="${testdir}/cluster1.json"
   
@@ -278,7 +269,6 @@ test_get_num_ms_domain_scope_jq() {
 }
 
 test_get_num_ms_domain_scope_no_replicas() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster_noreplicas.json"
 
@@ -308,7 +298,6 @@ test_get_num_ms_domain_scope_no_replicas_jq() {
 ##### get_replica_count tests #####
 
 test_get_replica_count_from_cluster() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -336,7 +325,6 @@ test_get_replica_count_from_cluster_jq() {
 }
 
 test_get_replica_count_from_domain() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster1.json"
 
@@ -364,7 +352,6 @@ test_get_replica_count_from_domain_jq() {
 }
 
 test_get_replica_count_set_to_minReplicas() {
-  DONT_USE_JQ="true"
 
   DOMAIN_FILE="${testdir}/cluster_min3.json"
 
