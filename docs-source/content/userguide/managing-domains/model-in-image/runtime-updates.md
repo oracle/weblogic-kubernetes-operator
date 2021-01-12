@@ -445,7 +445,7 @@ Status:
     Last Transition Time:        2020-11-18T15:19:11.867Z
     Reason:                      ServersReady
     Status:                      True
-    Type:                        OnlineUpdateComplete
+    Type:                        Available
 
 ```
 
