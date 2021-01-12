@@ -223,6 +223,61 @@ public class Domain {
   }
 
   /**
+   * Patch a running domain with spec.configuration.model.onlineUpdate.onNonDynamicChanges.
+   * spec.configuration.model.onlineUpdate.onNonDynamicChanges accepts three values:
+   *   CommitUpdateOnly    - Default value or if not set. All changes are committed, but if there are non-dynamic mbean
+   *                         changes. The domain needs to be restart manually.
+   *   CommitUpdateAndRoll - All changes are committed, but if there are non-dynamic mbean changes,
+   *                         the domain will rolling restart automatically; if not, no restart is necessary
+   *   CancelUpdate        - If there are non-dynamic mbean changes, all changes are canceled before
+   *                         they are committed. The domain will continue to run, but changes to the configmap
+   *                         and resources in the domain resource YAML should be reverted manually,
+   *                         otherwise in the next introspection will still use the same content
+   *                         in the changed configmap
+   *
+   * @param domainUid UID of the domain to patch with spec.configuration.model.onlineUpdate.onNonDynamicChanges
+   * @param namespace namespace in which the domain resource exists
+   * @param onNonDynamicChanges accepted values: CommitUpdateOnly|CommitUpdateAndRoll|CancelUpdate
+   * @return introspectVersion new introspectVersion of the domain resource
+   */
+  public static String patchDomainResourceWithOnNonDynamicChanges(
+      String domainUid, String namespace, String onNonDynamicChanges) {
+    LoggingFacade logger = getLogger();
+    StringBuffer patchStr;
+    oracle.weblogic.domain.Domain res = assertDoesNotThrow(
+        () -> getDomainCustomResource(domainUid, namespace),
+        String.format("Failed to get the domain custom resource of %s in namespace %s", domainUid, namespace));
+
+    // construct the patch string
+    if (res.getSpec().getConfiguration().getModel().getOnlineUpdate().getOnNonDynamicChanges() == null) {
+      patchStr = new StringBuffer("[{")
+          .append("\"op\": \"add\", ")
+          .append("\"path\": \"/spec/configuration/model/onlineUpdate/onNonDynamicChanges\", ")
+          .append("\"value\": \"")
+          .append(onNonDynamicChanges)
+          .append("\"}]");
+    } else {
+      patchStr = new StringBuffer("[{")
+          .append("\"op\": \"replace\", ")
+          .append("\"path\": \"/spec/configuration/model/onlineUpdate/onNonDynamicChanges\", ")
+          .append("\"value\": \"")
+          .append(onNonDynamicChanges)
+          .append("\"}]");
+    }
+
+    logger.info("Patch String \n{0}", patchStr);
+    logger.info("Adding/updating introspectVersion in domain {0} in namespace {1} using patch string: {2}",
+        domainUid, namespace, patchStr.toString());
+
+    // patch the domain
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean ivPatched = patchDomainCustomResource(domainUid, namespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    assertTrue(ivPatched, "patchDomainCustomResource(onNonDynamicChanges) failed");
+
+    return onNonDynamicChanges;
+  }
+
+  /**
    * Patch the domain resource with a new restartVersion.
    *
    * @param domainResourceName name of the domain resource

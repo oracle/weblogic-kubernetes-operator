@@ -261,6 +261,29 @@ public class TestActions {
   }
 
   /**
+   * Patch a running domain with spec.configuration.model.onlineUpdate.onNonDynamicChanges.
+   * spec.configuration.model.onlineUpdate.onNonDynamicChanges accepts three values:
+   *   CommitUpdateOnly    - Default value or if not set. All changes are committed, but if there are non-dynamic mbean
+   *                         changes. The domain needs to be restart manually.
+   *   CommitUpdateAndRoll - All changes are committed, but if there are non-dynamic mbean changes,
+   *                         the domain will rolling restart automatically; if not, no restart is necessary
+   *   CancelUpdate        - If there are non-dynamic mbean changes, all changes are canceled before
+   *                         they are committed. The domain will continue to run, but changes to the configmap
+   *                         and resources in the domain resource YAML should be reverted manually,
+   *                         otherwise in the next introspection will still use the same content
+   *                         in the changed configmap
+   *
+   * @param domainUid UID of the domain to patch with spec.configuration.model.onlineUpdate.onNonDynamicChanges
+   * @param namespace namespace in which the domain resource exists
+   * @param onNonDynamicChanges accepted values: CommitUpdateOnly|CommitUpdateAndRoll|CancelUpdate
+   * @return introspectVersion new introspectVersion of the domain resource
+   */
+  public static String patchDomainResourceWithOnNonDynamicChanges(
+      String domainUid, String namespace, String onNonDynamicChanges) {
+    return Domain.patchDomainResourceWithOnNonDynamicChanges(domainUid, namespace, onNonDynamicChanges);
+  }
+
+  /**
    * Get current introspectVersion for a given domain.
    *
    * @param domainUid domain id

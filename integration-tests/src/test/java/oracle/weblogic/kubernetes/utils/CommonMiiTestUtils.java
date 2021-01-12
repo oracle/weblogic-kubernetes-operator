@@ -229,6 +229,7 @@ public class CommonMiiTestUtils {
     return domain;
   }
 
+
   /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
    * image.

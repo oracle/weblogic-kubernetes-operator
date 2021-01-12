@@ -13,6 +13,17 @@ public class OnlineUpdate {
   @ApiModelProperty("Enable online update.")
   private Boolean enabled = false;
 
+  @ApiModelProperty("It has three possible values: "
+      + "CommitUpdateOnly - Default or if not set.  All changes are committed, but if there are "
+      + "                   non-dynamic mbean changes. The domain needs to be restart manually. "
+      + "CommitUpdateAndRoll - All changes are committed, but if there are non-dynamic mbean changes, "
+      + "                      the domain will rolling restart automatically; if not, no restart is necessary. "
+      + "CancelUpdate - If there are non-dynamic mbean changes, all changes are canceled before "
+      + "               they are committed. The domain will continue to run, but changes to the configmap "
+      + "               and resources in the domain resource YAML should be reverted manually, "
+      + "               otherwise in the next introspection will still use the same content")
+  private String onNonDynamicChanges = null;
+
   @ApiModelProperty("If set to true, it will rollback the changes if the update require domain restart. "
       + "All changes are rolled back, the domain continues to run without interruption. "
       + "It is the user responsibility to revert the content changes in the configmap specified in "
@@ -60,6 +71,19 @@ public class OnlineUpdate {
 
   public OnlineUpdate enabled(boolean enabled) {
     this.enabled = enabled;
+    return this;
+  }
+
+  public String getOnNonDynamicChanges() {
+    return onNonDynamicChanges;
+  }
+
+  public void setOnNonDynamicChanges(String onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
+  }
+
+  public OnlineUpdate withOnNonDynamicChanges(String onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
     return this;
   }
 

@@ -517,6 +517,56 @@ class ItMiiDynamicUpdate {
 
   }
 
+  @Test
+  @Order(6)
+  @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
+  public void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // write sparse yaml to file
+    Path pathToChangeAdminCredentialsYaml = Paths.get(WORK_DIR + "/changeadmincredentials.yaml");
+    String yamlToChangeAdminCredentials = "domainInfo:\n"
+        + "  AdminUserName: newadminuser\n"
+        + "  AdminPassword: newadminpassword";
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", pathToChangeAdminCredentialsYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+
+  }
+
   /**
    * Negative test: Changing the domain name using mii dynamic update.
    * Check the introspector will fail with error message showed in the introspector pod log.
@@ -525,7 +575,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
     // write sparse yaml to file
@@ -581,7 +631,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   public void testMiiChangeListenPort() {
 
@@ -629,7 +679,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
   public void testMiiChangeListenAddress() {
     // write sparse yaml to file
@@ -673,7 +723,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(9)
+  @Order(10)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   public void testMiiChangeSSL() {
 
@@ -723,7 +773,7 @@ class ItMiiDynamicUpdate {
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
   @Test
-  @Order(10)
+  @Order(11)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 
