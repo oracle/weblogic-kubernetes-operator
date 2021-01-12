@@ -391,10 +391,8 @@ Non dynamic attributes examples:
 
 |Use case|Expected Outcome|Actions Required|
   |---------------------|-------------|-------|
-  |Changing a data source driver parameters properties (non dynamic attribute)|Changes are committed in running domain and effective immediately| No action required|
-  |Changing WebLogic administrator credentials (non dynamic changes)|Changes are committed, domain will rolling restart|No action required|
-  |Changing image in the domain resource YAML at the same time|Offline changes are applied and domain will rolling restart|No action required|
-  |Changing security settings under domainInfo or SecurityConfiguration section (non dynamic changes)|See [Unsupported Changes](#Unsupported-Changes)| No action required|
+  |Changing a data source driver parameters properties (non dynamic attribute)|See High level descriptions section| |
+  |Changing a JMS connection factory attributes (non dynamic attribute)|See High level descriptions section| |
 
 Unsupported Changes:
 
@@ -402,8 +400,14 @@ For any of these unsupported changes, the introspector job will fail and automat
 
 - Topology changes (listen-address, listen-port), including SSL, deleting Server or ServerTemplate; top level Toplogy attributes.  Any changes to these attributes will result in an error. . The introspection job will fail and automatically retry up to maximum retries.
 - Dependency deletion. For example, trying to delete a datasource that is referenced by a persistent store, even if both of them are deleting at the same time. The introspection job will fail and automatically retry up to maximum retries.
-- Security related changes in the model including in `domainInfo.Admin*`, `domainInfo.RCUDbinfo.*`, `topology.Security.*`, `toplogy.SecurityConfiguration.*`.  Any changes in these sections will automatically switched to use offline update and the domain will be rolled.
 
+Changes that automatically switched to use offline and ignore whatever is set in `onlineUpdate.*`: 
+
+These changes will result in using and offline updates and the domain will roll upon successful updates.
+
+- Changing image in the domain resource YAML at the same time
+- Security related changes in the model including in `domainInfo.Admin*`, `domainInfo.RCUDbinfo.*`, `topology.Security.*`, `toplogy.SecurityConfiguration.*`.
+  
 #### Checking online update status
 
 During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
