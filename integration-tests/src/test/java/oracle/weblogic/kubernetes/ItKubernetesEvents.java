@@ -396,7 +396,7 @@ public class ItKubernetesEvents {
             NAMESPACE_WATCHING_STARTED, "Normal", timestamp));
   }
 
-  @Order(7)
+  @Order(8)
   @Test
   public void testK8SEventsStopWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -413,7 +413,7 @@ public class ItKubernetesEvents {
             NAMESPACE_WATCHING_STOPPED, "Normal", timestamp));
   }
 
-  @Order(8)
+  @Order(9)
   @Test
   public void testK8SEventsMultiClusterEvents() {
     createNewCluster();
@@ -441,6 +441,7 @@ public class ItKubernetesEvents {
    * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
    * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
    */
+  @Order(10)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
