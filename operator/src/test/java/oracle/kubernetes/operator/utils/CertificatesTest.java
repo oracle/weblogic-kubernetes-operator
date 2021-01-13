@@ -26,8 +26,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class CertificatesTest {
 
   private final TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
-  private Collection<LogRecord> logRecords = new ArrayList<>();
-  private List<Memento> mementos = new ArrayList<>();
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   /**
    * Setup test environment.

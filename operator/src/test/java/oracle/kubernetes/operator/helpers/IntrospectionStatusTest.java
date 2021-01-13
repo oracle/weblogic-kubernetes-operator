@@ -46,11 +46,11 @@ public class IntrospectionStatusTest {
   private static final String UNSCHEDULABLE = "Unschedulable";
   private static final String IMAGE_PULL_BACKOFF = "ImagePullBackoff";
   private static final String DEADLINE_EXCEEDED = "DeadlineExceeded";
-  private List<Memento> mementos = new ArrayList<>();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private DomainProcessorImpl processor =
+  private final List<Memento> mementos = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
   /**

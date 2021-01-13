@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class LinkContainerModel extends BaseModel {
 
-  private List<LinkModel> links = new ArrayList<>();
+  private final List<LinkModel> links = new ArrayList<>();
 
   /**
    * Get the links.
@@ -21,15 +21,6 @@ public class LinkContainerModel extends BaseModel {
    */
   public List<LinkModel> getLinks() {
     return links;
-  }
-
-  /**
-   * Set the links.
-   *
-   * @param links - a List of LinkModels.
-   */
-  public void setLinks(List<LinkModel> links) {
-    this.links = links;
   }
 
   /**

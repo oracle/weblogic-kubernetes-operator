@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -62,15 +61,15 @@ public class DomainStatusUpdaterTest {
   private static final String NAME = UID;
   private final TerminalStep endStep = new TerminalStep();
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private RandomStringGenerator generator = new RandomStringGenerator();
+  private final RandomStringGenerator generator = new RandomStringGenerator();
   private final String message = generator.getUniqueString();
-  private String reason = generator.getUniqueString();
-  private RuntimeException failure = new RuntimeException(message);
-  private String validationWarning = generator.getUniqueString();
+  private final String reason = generator.getUniqueString();
+  private final RuntimeException failure = new RuntimeException(message);
+  private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
@@ -742,10 +741,6 @@ public class DomainStatusUpdaterTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configureDomain().configureServer(serverName);
-  }
-
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
   }
 
   private void generateServiceOnlyStartupInfos(String... serverNames) {

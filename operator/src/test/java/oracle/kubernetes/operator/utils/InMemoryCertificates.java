@@ -14,6 +14,7 @@ public class InMemoryCertificates {
   public static final String INTERNAL_CERT_DATA = "encoded-cert-data";
 
   private static InMemoryFileSystem fileSystem;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
 
   /**

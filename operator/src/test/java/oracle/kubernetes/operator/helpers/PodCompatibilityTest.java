@@ -220,8 +220,8 @@ public class PodCompatibilityTest {
   }
 
   static class ObjectWithName {
-    private String name;
-    private int value;
+    private final String name;
+    private final int value;
 
     ObjectWithName(String name, int value) {
       this.name = name;

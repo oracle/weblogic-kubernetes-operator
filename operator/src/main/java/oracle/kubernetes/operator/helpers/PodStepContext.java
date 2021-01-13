@@ -947,39 +947,36 @@ public abstract class PodStepContext extends BasePodStepContext {
         //
         return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (shouldNotRestartAfterSuccessOnlineUpdate(dynamicUpdateResult)) {
-          if (miiDomainZipHash != null) {
-            LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
-            logPodExists();
+        if (shouldNotRestartAfterSuccessOnlineUpdate(dynamicUpdateResult) && miiDomainZipHash != null) {
+          LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
+          logPodExists();
 
-            //Create dummy meta data for patching
-            V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
-            V1ObjectMeta updatedMetaData = new V1ObjectMeta();
-            updatedMetaData.putAnnotationsItem("weblogic.sha256",
-                  updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
-            updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
-            updatedPod.setMetadata(updatedMetaData);
+          //Create dummy meta data for patching
+          V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
+          V1ObjectMeta updatedMetaData = new V1ObjectMeta();
+          updatedMetaData.putAnnotationsItem("weblogic.sha256",
+                updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+          updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
+          updatedPod.setMetadata(updatedMetaData);
+          // if the introspector job tells it needs restart, update the condition with the needed attributes
+          if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
 
-            if (onlineUpdateUserManualRestart()) {
+            String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+                ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+                .orElse("");
+            updateDomainConditions("Online update completed successfully, but the changes require "
+                    + "restart and the domain resource specified "
+                    + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
+                    + " The changes are committed but the domain require manually restart to "
+                    + " make the changes effective. The changes are: "
+                    + dynamicUpdateRollBackFile,
+                DomainConditionType.OnlineUpdateComplete);
 
-              String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-                  ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-                  .orElse("");
-
-              updateDomainConditions("Online update completed successfully, but the changes require "
-                      + "restart and the domain resource specified "
-                      + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
-                      + " The changes are committed but the domain require manually restart to "
-                      + " make the changes effective. The changes are: "
-                      + dynamicUpdateRollBackFile,
-                  DomainConditionType.OnlineUpdateComplete);
-
-            } else {
-              updateDomainConditions("Online update successful. No restart necessary",
-                  DomainConditionType.OnlineUpdateComplete);
-            }
-            return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
+          } else {
+            updateDomainConditions("Online update successful. No restart necessary",
+                DomainConditionType.OnlineUpdateComplete);
           }
+          return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
         }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
@@ -1009,20 +1006,7 @@ public abstract class PodStepContext extends BasePodStepContext {
              .map(OnlineUpdate::getOnNonDynamicChanges)
              .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
       }
-      LOGGER.fine("PodStepContext: shouldRestartAfterSuccessUpdate " + result);
       return result;
-    }
-
-    private boolean onlineUpdateUserManualRestart() {
-      return MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
-          Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getSpec)
-              .map(DomainSpec::getConfiguration)
-              .map(Configuration::getModel)
-              .map(Model::getOnlineUpdate)
-              .map(OnlineUpdate::getOnNonDynamicChanges)
-              .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
     }
 
     private NextAction returnCancelUpdateStep(Packet packet) {

@@ -207,7 +207,7 @@ public final class HealthCheckHelper {
     try {
       CallBuilder cb = new CallBuilder();
       return createAndValidateKubernetesVersion(
-          cb.executeSynchronousCallWithRetry(() -> cb.readVersionCode(),
+          cb.executeSynchronousCallWithRetry(cb::readVersionCode,
           TuningParameters.getInstance().getMainTuning().initializationRetryDelaySeconds));
     } catch (Throwable t) {
       LOGGER.warning(MessageKeys.K8S_VERSION_CHECK_FAILURE, t);

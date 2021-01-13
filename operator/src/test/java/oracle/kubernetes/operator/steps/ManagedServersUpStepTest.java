@@ -96,13 +96,13 @@ public class ManagedServersUpStepTest {
   private final Domain domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
 
-  private WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN);
 
-  private Step nextStep = new TerminalStep();
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-  private ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
+  private final Step nextStep = new TerminalStep();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final ManagedServersUpStep step = new ManagedServersUpStep(nextStep);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
   private Memento factoryMemento;
 
@@ -791,9 +791,7 @@ public class ManagedServersUpStepTest {
 
   private void addShutdownServerInfo(String serverName, List<String> servers,
                                      List<DomainPresenceInfo.ServerShutdownInfo> ssi) {
-    if (serverName.equals(configSupport.createDomainConfig().getAdminServerName())) {
-      return;
-    } else if (!servers.contains(serverName)) {
+    if (!serverName.equals(configSupport.createDomainConfig().getAdminServerName()) && !servers.contains(serverName)) {
       ssi.add(new DomainPresenceInfo.ServerShutdownInfo(serverName, null));
     }
   }
@@ -891,6 +889,7 @@ public class ManagedServersUpStepTest {
     private static Collection<String> servers;
     private static Collection<String> preCreateServers;
     private static Step next;
+    @SuppressWarnings("FieldCanBeLocal")
     private static TestStepFactory factory = new TestStepFactory();
 
     private static Memento install() throws NoSuchFieldException {

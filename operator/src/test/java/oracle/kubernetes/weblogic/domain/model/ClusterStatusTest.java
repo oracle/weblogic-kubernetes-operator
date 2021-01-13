@@ -12,10 +12,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ClusterStatusTest {
 
-  static ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
-  static ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
-  static ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster10");
-  static ClusterStatus nullCluster = new ClusterStatus();
+  static final ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
+  static final ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
+  static final ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster10");
+  static final ClusterStatus nullCluster = new ClusterStatus();
 
   @Test
   public void verify_Equal_compareTo() {

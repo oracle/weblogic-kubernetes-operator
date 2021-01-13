@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,7 +38,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainStatusPatchTest {
-  private PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
+  private final PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
 
   @Test      // todo have ADD full status definition as json object - then remove constructor item
   public void whenExistingStatusNull_addStatus() {
@@ -459,7 +458,7 @@ public class DomainStatusPatchTest {
 
 
   abstract static class PatchBuilderStub implements JsonPatchBuilder {
-    private List<String> patches = new ArrayList<>();
+    private final List<String> patches = new ArrayList<>();
 
     String[] getPatches() {
       return patches.toArray(new String[0]);
@@ -531,7 +530,7 @@ public class DomainStatusPatchTest {
 
     private Stream<String> toPatchFieldStream(JsonObject jsonObject) {
       return jsonObject.entrySet().stream()
-            .sorted(Comparator.comparing(Map.Entry::getKey))
+            .sorted(Map.Entry.comparingByKey())
             .map(this::toPatchField);
     }
 
@@ -547,7 +546,7 @@ public class DomainStatusPatchTest {
 
   @SuppressWarnings("unused")
   static class OrderedArrayMatcher extends TypeSafeDiagnosingMatcher<String[]> {
-    private String[] expectedItems;
+    private final String[] expectedItems;
 
     private OrderedArrayMatcher(String[] expectedItems) {
       this.expectedItems = expectedItems;

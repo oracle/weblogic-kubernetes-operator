@@ -149,10 +149,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     return requestParams.call;
   }
 
-  public RequestParams getRequestParams() {
-    return requestParams;
-  }
-
   @Override
   public void listenTimeoutDoubled() {
     timeoutSeconds *= 2;

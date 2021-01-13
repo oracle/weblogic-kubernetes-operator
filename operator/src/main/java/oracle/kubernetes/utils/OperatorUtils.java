@@ -79,20 +79,20 @@ public class OperatorUtils {
    * @return munged value
    */
   public static String getSortingString(String orig) {
-    String ret = "";
-    String word = "";
+    StringBuilder ret = new StringBuilder();
+    StringBuilder word = new StringBuilder();
     char lastCh = 0;
     for (char ch : orig.toCharArray()) {
       if (word.length() != 0
           && Character.isDigit(ch) ^ Character.isDigit(lastCh)) {
-        ret += getSortingWord(word);
-        word = "";
+        ret.append(getSortingWord(word.toString()));
+        word = new StringBuilder();
       }
-      word += ch;
+      word.append(ch);
       lastCh = ch;
     }
-    ret += getSortingWord(word);
-    return ret;
+    ret.append(getSortingWord(word.toString()));
+    return ret.toString();
   }
 
   private static String getSortingWord(String word) {
@@ -100,9 +100,11 @@ public class OperatorUtils {
       return word;
     }
     if (Character.isDigit(word.charAt(0))) {
-      for (int i = word.length(); i < 20; i++) {
-        word = '0' + word;
+      StringBuilder wordBuilder = new StringBuilder(word);
+      for (int i = wordBuilder.length(); i < 20; i++) {
+        wordBuilder.insert(0, '0');
       }
+      word = wordBuilder.toString();
     }
     return word;
   }

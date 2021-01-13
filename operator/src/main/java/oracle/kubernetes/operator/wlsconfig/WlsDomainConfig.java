@@ -157,36 +157,6 @@ public class WlsDomainConfig implements WlsDomain {
         wlsMachineConfigs);
   }
 
-  public static String getRetrieveServersSearchUrl() {
-    return "/management/weblogic/latest/domainConfig/search";
-  }
-
-  /**
-   * JSON payload for retrieve servers REST request.
-   * @return payload
-   */
-  public static String getRetrieveServersSearchPayload() {
-    return "{ fields: [ "
-        + getSearchFields()
-        + " ], "
-        + "  links: [], "
-        + "  children: { "
-        + "    servers: { "
-        + WlsServerConfig.getSearchPayload()
-        + " }, "
-        + "    serverTemplates: { "
-        + WlsServerConfig.getSearchPayload()
-        + " }, "
-        + "    clusters: { "
-        + WlsClusterConfig.getSearchPayload()
-        + " }, "
-        + "    machines: { "
-        + WlsMachineConfig.getSearchPayload()
-        + " } "
-        + "  } "
-        + "}";
-  }
-
   private static String getSearchFields() {
     return "'name' ";
   }
@@ -283,10 +253,6 @@ public class WlsDomainConfig implements WlsDomain {
     return this.configuredClusters;
   }
 
-  public void setConfiguredClusters(List<WlsClusterConfig> configuredClusters) {
-    this.configuredClusters = configuredClusters;
-  }
-
   /**
    * Returns configuration of servers found in the WLS domain, including admin server, standalone
    * managed servers that do not belong to any cluster, and statically configured managed servers
@@ -306,16 +272,8 @@ public class WlsDomainConfig implements WlsDomain {
     return this.servers;
   }
 
-  public void setServers(List<WlsServerConfig> servers) {
-    this.servers = servers;
-  }
-
   public List<WlsServerConfig> getServerTemplates() {
     return this.serverTemplates;
-  }
-
-  public void setServerTemplates(List<WlsServerConfig> serverTemplates) {
-    this.serverTemplates = serverTemplates;
   }
 
   /**
@@ -421,7 +379,6 @@ public class WlsDomainConfig implements WlsDomain {
     return result;
   }
 
-  @Override
   @Nonnull
   public String[] getClusterNames() {
     return getClusterConfigs().keySet().toArray(new String[0]);

@@ -16,7 +16,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 
 public abstract class InMemoryDatabase<T, L> {
 
-  private Map<DatabaseKey, T> contents = new HashMap<>();
+  private final Map<DatabaseKey, T> contents = new HashMap<>();
 
   /**
    * Create DB.
@@ -71,7 +71,7 @@ public abstract class InMemoryDatabase<T, L> {
   }
 
   private static class DatabaseKey {
-    private Map<String, String> keys;
+    private final Map<String, String> keys;
 
     DatabaseKey(@Nonnull Map<String, String> keys) {
       this.keys = new HashMap<>(keys);

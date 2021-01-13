@@ -280,11 +280,6 @@ public class ConfigMapHelper {
       return new CallBuilder().readConfigMapAsync(getName(), namespace, null, new ReadResponseStep(next));
     }
 
-    Step createConfigMap(Step next) {
-      return new CallBuilder()
-          .createConfigMapAsync(namespace, getModel(), createCreateResponseStep(next));
-    }
-
     boolean isIncompatibleMap(V1ConfigMap existingMap) {
       return !COMPARATOR.containsAll(existingMap, getModel());
     }
@@ -677,22 +672,9 @@ public class ConfigMapHelper {
       setContentValue(NUM_CONFIG_MAPS, Integer.toString(numTargets));
     }
 
-    private boolean isEncodedZip(String key) {
-      return ENCODED_ZIP_PATTERN.matcher(key).matches();
-    }
-
-    private String createRangeName(String key) {
-      return key + ".range";
-    }
-
     IntrospectorConfigMapContext patchOnly() {
       patchOnly = true;
       return this;
-    }
-
-    @Override
-    Step createConfigMap(Step next) {
-      return patchOnly ? null : super.createConfigMap(next);
     }
 
     @Override

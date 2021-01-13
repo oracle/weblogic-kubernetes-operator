@@ -125,9 +125,9 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @Parameter public String testType;
   @Parameter(1)
   public TestFacade testFacade;
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
-  private List<LogRecord> logRecords = new ArrayList<>();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
+  private final List<LogRecord> logRecords = new ArrayList<>();
   private WlsServerConfig serverConfig;
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
@@ -513,8 +513,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   abstract static class TestFacade {
-    private Map<String, Integer> expectedNapPorts = new HashMap<>();
-    private Map<String, Integer> expectedNodePorts = new HashMap<>();
+    private final Map<String, Integer> expectedNapPorts = new HashMap<>();
+    private final Map<String, Integer> expectedNodePorts = new HashMap<>();
 
     abstract OperatorServiceType getType();
 
@@ -831,7 +831,7 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @SuppressWarnings("unused")
   static class ServiceNameMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
-    private String expectedName;
+    private final String expectedName;
 
     private ServiceNameMatcher(String expectedName) {
       this.expectedName = expectedName;
@@ -885,14 +885,13 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
           return true;
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
-        return false;
       } else {
         if (matchSelectedPort(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
-        return false;
       }
+      return false;
     }
 
     private boolean matchSelectedPort(V1ServicePort matchingPort) {
@@ -925,8 +924,8 @@ public class ServiceHelperTest extends ServiceHelperTestBase {
   @SuppressWarnings("unused")
   static class NodePortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1ServicePort> {
-    private String name;
-    private int nodePort;
+    private final String name;
+    private final int nodePort;
 
     private NodePortMatcher(String name, int nodePort) {
       this.name = name;

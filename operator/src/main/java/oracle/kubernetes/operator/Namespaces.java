@@ -288,7 +288,7 @@ public class Namespaces {
 
   private static class NamespaceValidationContext {
 
-    Collection<String> allDomainNamespaces;
+    final Collection<String> allDomainNamespaces;
 
     NamespaceValidationContext(Packet packet) {
       allDomainNamespaces = Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());

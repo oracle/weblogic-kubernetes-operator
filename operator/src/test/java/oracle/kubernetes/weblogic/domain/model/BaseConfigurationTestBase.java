@@ -13,8 +13,8 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public abstract class BaseConfigurationTestBase {
-  private BaseConfiguration instance1;
-  private BaseConfiguration instance2;
+  private final BaseConfiguration instance1;
+  private final BaseConfiguration instance2;
 
   BaseConfigurationTestBase(BaseConfiguration instance1, BaseConfiguration instance2) {
     this.instance1 = instance1;
