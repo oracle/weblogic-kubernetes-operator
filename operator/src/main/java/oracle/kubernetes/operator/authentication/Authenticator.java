@@ -15,7 +15,6 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.util.Config;
-import okhttp3.OkHttpClient;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -30,7 +29,6 @@ public class Authenticator {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final ApiClient apiClient;
   private final Helpers helper;
-  private String serviceToken;
 
   /**
    * Create a new instance of the Authenticator class containing the default API client. The default
@@ -63,49 +61,6 @@ public class Authenticator {
    */
   public ApiClient getApiClient() {
     return apiClient;
-  }
-
-  /**
-   * Get a reference to ServiceHelper.
-   *
-   * @return the ServiceHelper object.
-   */
-  public Helpers getHelper() {
-    return helper;
-  }
-
-  /**
-   * Get the service token.
-   *
-   * @return the ServiceToken object.
-   */
-  public String getServiceToken() {
-    return serviceToken;
-  }
-
-  /**
-   * Given a token look through all service accounts for a secret that matches the token. Then
-   * create an authenticated client for that service account.
-   *
-   * @param token service token for search.
-   * @return ApiClient that has been properly authenticated
-   * @throws ApiException on API Exception
-   */
-  public ApiClient createClientByToken(String token) throws ApiException {
-    V1ServiceAccount serviceAccount = helper.findServiceAccountByToken(token);
-    return authenticateByServiceAccount(serviceAccount);
-  }
-
-  /**
-   * Given a serviceAccountName (not restricted by namespace) create the authenticated client from
-   * secrets attached to that account.
-   *
-   * @param serviceAccountName The name of the Service Account.
-   * @return ApiClient that has been properly authenticated.
-   * @throws ApiException if the API call fails.
-   */
-  public ApiClient createClientByServiceAccountName(String serviceAccountName) throws ApiException {
-    return createClientByServiceAccountName(serviceAccountName, null);
   }
 
   /**
@@ -155,7 +110,7 @@ public class Authenticator {
         }
       }
     }
-    serviceToken = token;
+    String serviceToken = token;
 
     String serviceHost = System.getenv(SERVICE_HOST);
     String servicePort = System.getenv(SERVICE_PORT);
@@ -170,18 +125,4 @@ public class Authenticator {
     return newClient;
   }
 
-  /**
-   * Close the ApiClient to make sure any open connection is cleaned up.
-   *
-   * @param apiClient ApiClient object that you want to close.
-   */
-  public void closeClient(ApiClient apiClient) {
-
-    OkHttpClient httpClient = apiClient.getHttpClient();
-    if (httpClient != null) {
-      // OkHttp does not have any cleanup so do nothing for now.
-    }
-    // Remember we closed this.
-    apiClient.setHttpClient(null);
-  }
 }

@@ -7,7 +7,6 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Toleration;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -124,8 +123,6 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withRuntimeClassName(String runtimeClassName);
 
   ClusterConfigurator withPriorityClassName(String priorityClassName);
-
-  ClusterConfigurator withToleration(V1Toleration toleration);
 
   ClusterConfigurator withPrecreateServerService(boolean precreateServerService);
 

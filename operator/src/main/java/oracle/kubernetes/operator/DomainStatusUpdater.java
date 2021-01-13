@@ -400,11 +400,6 @@ public class DomainStatusUpdater {
           .map(DomainStatus::getMessage)
           .orElse(null);
 
-      List<DomainCondition> domainConditions = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getConditions)
-          .orElse(null);
 
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
@@ -413,24 +408,49 @@ public class DomainStatusUpdater {
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::isUseOnlineUpdate)
               .orElse(false);
-          if (onlineUpdate) {
+          if (onlineUpdate && !hasUpdateCanceledCondition()) {
             DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
                 .withMessage("Online update failed")
-                .withReason("Check status message for reasons")
+                .withReason("Check status or other condition message for reasons")
                 .withStatus("False");
             newStatus.addCondition(onlineUpdateCondition);
           }
-          if (domainConditions != null && domainConditions.size() > 0) {
-            String reason = domainConditions.get(0).getReason();
-            // Only increase the instrospect job failure count if the job failed or timeout
-            // e.g. domain validation error is not counted as introspection error
-            if ("BackoffLimitExceeded".equals(reason)) {
-              newStatus.incrementIntrospectJobFailureCount();
-            }
+          if (hasBackOffLimitCondition()) {
+            newStatus.incrementIntrospectJobFailureCount();
           }
         }
       }
       return newStatus;
+    }
+
+    private boolean hasBackOffLimitCondition() {
+      List<DomainCondition> domainConditions = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getConditions)
+          .orElse(null);
+
+      for (DomainCondition cond : domainConditions) {
+        if ("BackoffLimitExceeded".equals(cond.getReason())) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private boolean hasUpdateCanceledCondition() {
+      List<DomainCondition> domainConditions = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getConditions)
+          .orElse(null);
+
+      for (DomainCondition cond : domainConditions) {
+        if (cond.getType() == DomainConditionType.OnlineUpdateCanceled) {
+          return true;
+        }
+      }
+      return false;
     }
 
     String getDomainUid() {

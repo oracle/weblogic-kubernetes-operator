@@ -21,10 +21,6 @@ public class FailureStatusSourceException extends Exception {
     this.failureStatusSource = failureStatusSource;
   }
 
-  public FailureStatusSource getFailureStatusSource() {
-    return failureStatusSource;
-  }
-
   /**
    * Log the exception.
    */

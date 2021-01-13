@@ -8,8 +8,6 @@ import java.util.concurrent.TimeUnit;
 
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
@@ -18,15 +16,9 @@ import oracle.kubernetes.operator.work.Step;
  */
 interface MainDelegate {
 
-  void logStartup(LoggingFacade loggingFacade);
-
   SemanticVersion getProductVersion();
 
-  String getServiceAccountName();
-
   String getPrincipal();
-
-  Engine getEngine();
 
   default void runSteps(Step firstStep) {
     runSteps(new Packet(), firstStep, null);

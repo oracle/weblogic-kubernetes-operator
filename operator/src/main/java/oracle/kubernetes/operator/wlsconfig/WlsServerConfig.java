@@ -207,17 +207,6 @@ public class WlsServerConfig {
   }
 
   /**
-   * Set the listen address for this server configuration.
-   *
-   * @param listenAddress the listen address
-   * @return this object
-   */
-  public WlsServerConfig withListenAddress(String listenAddress) {
-    this.listenAddress = listenAddress;
-    return this;
-  }
-
-  /**
    * Return the name of this WLS server.
    *
    * @return The name of this WLS server
@@ -321,10 +310,6 @@ public class WlsServerConfig {
 
   public String getClusterName() {
     return this.clusterName;
-  }
-
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
   }
 
   public boolean isAdminPortEnabled() {

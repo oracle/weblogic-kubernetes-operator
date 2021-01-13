@@ -11,7 +11,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 /** A matcher for events returned by a Watch object or sent to an event listener. */
 public class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
-  private String expectedType;
+  private final String expectedType;
   private Object expectedObject;
   private int expectedStatusCode;
 

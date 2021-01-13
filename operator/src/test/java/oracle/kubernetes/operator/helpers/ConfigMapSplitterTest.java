@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import org.apache.commons.lang3.tuple.Pair;
 import org.hamcrest.Description;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -47,7 +46,7 @@ public class ConfigMapSplitterTest {
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -100,7 +99,6 @@ public class ConfigMapSplitterTest {
 
   private static class TestTarget implements SplitterTarget {
     private final Map<String, String> data;
-    private final Map<String, Pair<Integer,Integer>> splitEntries = new HashMap<>();
     private final int index;
     private int numTargets;
 

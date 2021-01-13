@@ -52,13 +52,13 @@ public class ServicePresenceTest {
   private static final String CLUSTER = "cluster1";
   private static final String SERVER = "server1";
   private static final String RESOURCE_VERSION = "1233489";
-  private DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
-  private DomainProcessorImpl processor =
+  private final DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private long clock;
-  private Packet packet = new Packet();
+  private final Packet packet = new Packet();
 
   /**
    * Setup test.

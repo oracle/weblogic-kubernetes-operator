@@ -41,10 +41,9 @@ UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
-RESTART_REQUIRED=103
+PROG_RESTART_REQUIRED=103
 PROG_CANCELCHGS_IF_RESTART_EXIT_CODE=104
 MII_UPDATE_CANCELED=false
-
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
@@ -1007,7 +1006,7 @@ function wdtHandleOnlineUpdate() {
   local ret=$?
 
   trace "Completed online update="${ret}
-  if [ ${ret} -eq ${RESTART_REQUIRED} ] ; then
+  if [ ${ret} -eq ${PROG_RESTART_REQUIRED} ] ; then
     write_updatedresult ${ret}
     write_non_dynamic_changes_text_file
   elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then

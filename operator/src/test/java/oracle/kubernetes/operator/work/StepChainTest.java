@@ -16,9 +16,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 public class StepChainTest {
-  private FiberTestSupport testSupport = new FiberTestSupport();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
   /**
    * Setup test.
@@ -41,7 +41,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void afterChainingGroupsOfSteps_fiberRunsThemInOrder() throws Exception {
+  public void afterChainingGroupsOfSteps_fiberRunsThemInOrder() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
@@ -54,7 +54,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullFirstSteps() throws Exception {
+  public void ignoreNullFirstSteps() {
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
 
@@ -66,7 +66,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullMiddleSteps() throws Exception {
+  public void ignoreNullMiddleSteps() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group3 = new NamedStep("six");
 
@@ -78,12 +78,12 @@ public class StepChainTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void whenNoNonNullSteps_throwException() throws Exception {
+  public void whenNoNonNullSteps_throwException() {
     Step.chain();
   }
 
   @Test
-  public void doNotChainGroupThatContainsDuplicateStep() throws Exception {
+  public void doNotChainGroupThatContainsDuplicateStep() {
     Step duplicateStep = new NamedStep("duplicate", new NamedStep("two"));
     Step group1 = new NamedStep("one", duplicateStep);
     Step group2 = new NamedStep("three", duplicateStep);
@@ -94,7 +94,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void addGroupThatContainsStepsWithSameName() throws Exception {
+  public void addGroupThatContainsStepsWithSameName() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("two", new NamedStep("three"));
 
@@ -119,7 +119,7 @@ public class StepChainTest {
 
   private static class NamedStep extends Step {
     private static final String NAMES = "names";
-    private String name;
+    private final String name;
 
     NamedStep(String name) {
       this(name, null);

@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -173,11 +172,9 @@ public class ResourceVersionTest {
             "foo10",
             "v12alpha1");
     List<ResourceVersion> rvs =
-        values.stream().map(e -> new ResourceVersion(e)).collect(Collectors.toList());
+        values.stream().map(ResourceVersion::new).sorted().collect(Collectors.toList());
 
-    Collections.sort(rvs);
-
-    List<String> actual = rvs.stream().map(e -> e.toString()).collect(Collectors.toList());
+    List<String> actual = rvs.stream().map(ResourceVersion::toString).collect(Collectors.toList());
 
     List<String> expected =
         Arrays.asList(

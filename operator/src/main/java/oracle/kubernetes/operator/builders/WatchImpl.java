@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
  * A wrapper of the Kubernetes Watch class that includes management of clients.
  */
 public class WatchImpl<T> implements Watchable<T> {
-  @SuppressWarnings("FieldMayBeFinal") // non-final to allow unit testing
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // non-final to allow unit testing
   private static WatchFactory<?> FACTORY = WatchImpl::createWatch;
 
   private ApiClient client;

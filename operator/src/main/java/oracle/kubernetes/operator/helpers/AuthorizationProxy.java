@@ -86,33 +86,6 @@ public class AuthorizationProxy {
     return result;
   }
 
-  /**
-   * Check access.
-   *
-   * @param operation Operator
-   * @param resource Resource
-   * @param resourceName Resource name
-   * @param scope Scope
-   * @param namespaceName Namespace
-   * @return True, if authorization is allowed
-   */
-  public boolean check(
-      Operation operation,
-      Resource resource,
-      String resourceName,
-      Scope scope,
-      String namespaceName) {
-    LOGGER.entering();
-
-    Boolean result =
-        createSelfSubjectAccessReview(
-            prepareSelfSubjectAccessReview(
-                operation, resource, resourceName, scope, namespaceName));
-
-    LOGGER.exiting(result);
-    return result;
-  }
-
   private Boolean createSelfSubjectAccessReview(V1SelfSubjectAccessReview subjectAccessReview) {
     try {
       subjectAccessReview = new CallBuilder().createSelfSubjectAccessReview(subjectAccessReview);
@@ -241,10 +214,7 @@ public class AuthorizationProxy {
     create,
     update,
     patch,
-    replace,
     watch,
-    proxy,
-    redirect,
     delete,
     deletecollection
   }
@@ -254,28 +224,16 @@ public class AuthorizationProxy {
     PODS("pods", ""),
     LOGS("pods", "log", ""),
     EXEC("pods", "exec", ""),
-    PODTEMPLATES("podtemplates", ""),
     EVENTS("events", ""),
     SERVICES("services", ""),
     NAMESPACES("namespaces", ""),
     JOBS("jobs", "batch"),
-    CRONJOBS("cronjobs", "batch"),
     CRDS("customresourcedefinitions", "apiextensions.k8s.io"),
     DOMAINS("domains", "weblogic.oracle"),
     DOMAINSTATUSES("domains", "status", "weblogic.oracle"),
-    SUBJECTACCESSREVIEWS("subjectaccessreviews", "authorization.k8s.io"),
-    SELFSUBJECTACCESSREVIEWS("selfsubjectaccessreviews", "authorization.k8s.io"),
-    LOCALSUBJECTACCESSREVIEWS("localsubjectaccessreviews", "authorization.k8s.io"),
     SELFSUBJECTRULESREVIEWS("selfsubjectrulesreviews", "authorization.k8s.io"),
     TOKENREVIEWS("tokenreviews", "authentication.k8s.io"),
-    SECRETS("secrets", ""),
-    PERSISTENTVOLUMES("persistentvolumes", ""),
-    PERSISTENTVOLUMECLAIMS("persistentvolumeclaims", ""),
-    STORAGECLASSES("storageclasses", "storage.k8s.io"),
-    PODPRESETS("podpresets", "settings.k8s.io"),
-    INGRESSES("ingresses", "extensions"),
-    NETWORKPOLICIES("networkpolicies", "extensions"),
-    PODSECURITYPOLICIES("podsecuritypolicies", "extensions");
+    SECRETS("secrets", "");
 
     private final String resource;
     private final String subResource;

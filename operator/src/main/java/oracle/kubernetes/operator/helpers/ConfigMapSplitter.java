@@ -22,7 +22,9 @@ public class ConfigMapSplitter<T extends SplitterTarget> {
   // The limit for a Kubernetes Config Map is 1MB, including all components of the map. We use a data limit a bit
   // below that to ensure that the map structures, including the keys, metadata and the results of JSON encoding, don't
   // accidentally put us over the limit.
-  @SuppressWarnings({"FieldMayBeFinal", "FieldCanBeLocal"}) // not private or local so that unit tests can set it.
+
+  // not private or local so that unit tests can set it.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal", "FieldCanBeLocal"})
   private static int DATA_LIMIT = 900_000;
 
   private final BiFunction<Map<String, String>, Integer, T> factory;

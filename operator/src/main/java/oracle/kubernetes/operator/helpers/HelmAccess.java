@@ -14,7 +14,7 @@ public class HelmAccess {
   /** Helm variable to specify list of domain namespace. */
   public static final String OPERATOR_DOMAIN_NAMESPACES = "OPERATOR_DOMAIN_NAMESPACES";
 
-  @SuppressWarnings("FieldMayBeFinal") // Not final in order to allow unit tests to set its value
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Not final in order to allow unit tests to set its value
   private static Function<String,String> getHelmVariableFunction = System::getenv;
 
   /**

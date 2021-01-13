@@ -592,11 +592,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       return this;
     }
 
-    @Override
-    public ServerConfigurator withToleration(V1Toleration toleration) {
-      getDomainSpec().addToleration(toleration);
-      return this;
-    }
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -791,12 +786,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withPriorityClassName(String priorityClassName) {
       getDomainSpec().setPriorityClassName(priorityClassName);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withToleration(V1Toleration toleration) {
-      getDomainSpec().addToleration(toleration);
       return this;
     }
 
