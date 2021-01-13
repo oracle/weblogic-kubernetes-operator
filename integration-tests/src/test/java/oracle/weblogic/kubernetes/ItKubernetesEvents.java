@@ -87,8 +87,8 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPL
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_STARTED_WATCHING;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_STOPPED_WATCHING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -257,6 +257,7 @@ public class ItKubernetesEvents {
    */
   @Order(4)
   @Test
+  @Disabled
   public void testDomainK8sEventsNonExistingMS() {
     Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace));
     domain.getSpec().addManagedServersItem(new ManagedServer()
@@ -292,6 +293,7 @@ public class ItKubernetesEvents {
    */
   @Order(5)
   @Test
+  @Disabled
   public void testDomainK8sEventsNonExistingCluster() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("patch the domain resource with new cluster and introspectVersion");
@@ -327,6 +329,7 @@ public class ItKubernetesEvents {
    */
   @Order(6)
   @Test
+  @Disabled
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsFailed() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -386,11 +389,11 @@ public class ItKubernetesEvents {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
-                NAMESPACE_STARTED_WATCHING,
+                NAMESPACE_WATCHING_STARTED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            NAMESPACE_STARTED_WATCHING, "Warning", timestamp));
+            NAMESPACE_WATCHING_STARTED, "Normal", timestamp));
   }
 
   @Order(7)
@@ -403,11 +406,11 @@ public class ItKubernetesEvents {
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
-                NAMESPACE_STOPPED_WATCHING,
+                NAMESPACE_WATCHING_STOPPED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
-            NAMESPACE_STOPPED_WATCHING, "Warning", timestamp));
+            NAMESPACE_WATCHING_STOPPED, "Normal", timestamp));
   }
 
   @Order(8)
@@ -427,7 +430,6 @@ public class ItKubernetesEvents {
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
-
   }
 
   /**
