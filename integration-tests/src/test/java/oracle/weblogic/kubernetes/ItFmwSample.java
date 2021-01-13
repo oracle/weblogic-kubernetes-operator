@@ -65,10 +65,10 @@ public class ItFmwSample {
   private static String domainNamespace = null;
 
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
-  private final String domainUid = "jrfsamplepv";
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-sample-testing");
+  private final String domainUid = "fmwsamplepv";
 
-  private static final String RCUSCHEMAPREFIX = "jrfsamplepv";
+  private static final String RCUSCHEMAPREFIX = "fmwsamplepv";
   private static final String ORACLEDBURLPREFIX = "oracle-db.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
