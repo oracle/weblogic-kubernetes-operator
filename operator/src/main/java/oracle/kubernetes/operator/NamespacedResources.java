@@ -47,7 +47,8 @@ class NamespacedResources {
   Step createListSteps() {
     return Step.chain(
           getConfigMapListSteps(),
-          getEventListSteps(),
+          getPodEventListSteps(),
+          getDomainEventListSteps(),
           getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
@@ -120,14 +121,24 @@ class NamespacedResources {
              .listConfigMapsAsync(namespace, new ListResponseStep<>(processing));
   }
 
-  private Step getEventListSteps() {
-    return getListProcessing(Processors::getEventListProcessing).map(this::createEventListStep).orElse(null);
+  private Step getPodEventListSteps() {
+    return getListProcessing(Processors::getEventListProcessing).map(this::createPodEventListStep).orElse(null);
   }
 
-  private Step createEventListStep(List<Consumer<V1EventList>> processing) {
+  private Step createPodEventListStep(List<Consumer<V1EventList>> processing) {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getDomainEventListSteps() {
+    return getListProcessing(Processors::getEventListProcessing).map(this::createDomainEventListStep).orElse(null);
+  }
+
+  private Step createDomainEventListStep(List<Consumer<V1EventList>> processing) {
+    return new CallBuilder()
+        //.withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_FILTER)
+        .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getJobListSteps() {

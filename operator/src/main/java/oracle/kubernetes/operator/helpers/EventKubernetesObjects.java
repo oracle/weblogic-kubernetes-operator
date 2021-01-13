@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -13,7 +13,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /** Kubernetes event associated with a domain. */
 class EventKubernetesObjects {
-  private final Map<EventIdentifier, V1Event> events = new HashMap<>();
+  private final Map<EventIdentifier, V1Event> events = new ConcurrentHashMap<>();
 
   EventKubernetesObjects() {
   }
