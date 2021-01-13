@@ -30,10 +30,12 @@ public class HttpAsyncRequestStep extends Step {
   }
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static FutureFactory DEFAULT_FACTORY = HttpAsyncRequestStep::createFuture;
 
   private static final long DEFAULT_TIMEOUT_SECONDS = 5;
 
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
@@ -84,7 +86,7 @@ public class HttpAsyncRequestStep extends Step {
   }
 
   class AsyncProcessing {
-    private Packet packet;
+    private final Packet packet;
     private CompletableFuture<HttpResponse<String>> future;
 
     AsyncProcessing(Packet packet) {

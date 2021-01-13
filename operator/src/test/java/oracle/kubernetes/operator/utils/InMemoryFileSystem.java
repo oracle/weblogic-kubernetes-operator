@@ -196,7 +196,7 @@ public abstract class InMemoryFileSystem extends FileSystem {
   }
 
   abstract static class DirectoryStreamStub<T> implements DirectoryStream<T> {
-    List<Path> paths = new ArrayList<>();
+    final List<Path> paths = new ArrayList<>();
 
     public DirectoryStreamStub(FileSystemProviderStub parent, String root) {
       for (String key : parent.fileContents.keySet()) {

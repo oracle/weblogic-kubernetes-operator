@@ -16,7 +16,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class HttpAsyncTestSupportTest {
-  private HttpAsyncTestSupport support = new HttpAsyncTestSupport();
+  private final HttpAsyncTestSupport support = new HttpAsyncTestSupport();
 
   @Test
   public void whenNoDefinedResponse_returnNotFoundResponse() {

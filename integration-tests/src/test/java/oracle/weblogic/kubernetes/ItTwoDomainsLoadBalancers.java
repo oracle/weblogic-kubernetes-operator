@@ -1946,10 +1946,11 @@ public class ItTwoDomainsLoadBalancers {
     assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         clusterViewAppPath, domainUid, namespace);
+    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
     ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(serviceNodePort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        "cluster-1", clusterViewAppPath, null, domainUid + "clusterview");
+        targets, clusterViewAppPath, null, domainUid + "clusterview");
     assertNotNull(result, "Application deployment failed");
     logger.info("Application deployment returned {0}", result.toString());
     assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");

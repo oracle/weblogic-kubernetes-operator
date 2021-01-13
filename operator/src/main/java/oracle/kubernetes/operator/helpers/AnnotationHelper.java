@@ -18,6 +18,7 @@ public class AnnotationHelper {
   static final String SHA256_ANNOTATION = "weblogic.sha256";
   private static final boolean DEBUG = false;
   private static final String HASHED_STRING = "hashedString";
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<Object, String> HASH_FUNCTION = o -> DigestUtils.sha256Hex(Yaml.dump(o));
 
   /**

@@ -59,10 +59,6 @@ public final class RequestParams {
     this.callParams = callParams;
   }
 
-  public String getLabelSelector() {
-    return callParams.getLabelSelector();
-  }
-
   public CallParams getCallParams() {
     return callParams;
   }

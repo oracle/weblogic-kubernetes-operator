@@ -112,7 +112,7 @@ public class EventHelperTest {
   public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedLabels() {
     makeRightOperation.execute();
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.DOMAINUID_LABEL, UID);
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected labels",
@@ -140,8 +140,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject()
-      throws Exception {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected involved object",
@@ -149,8 +148,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent()
-      throws Exception {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected reporting component",
@@ -158,8 +156,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingInstance()
-      throws Exception {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingInstance() {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
 
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)));
@@ -350,7 +347,7 @@ public class EventHelperTest {
   public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
@@ -372,7 +369,7 @@ public class EventHelperTest {
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),

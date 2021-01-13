@@ -39,17 +39,17 @@ public class VersionCheckTest {
   private static final String[] LOG_KEYS = {
     K8S_VERSION_TOO_LOW, K8S_VERSION_CHECK, K8S_VERSION_CHECK_FAILURE,
   };
-  private List<Memento> mementos = new ArrayList<>();
-  private List<LogRecord> logRecords = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  private CallTestSupport testSupport = new CallTestSupport();
+  private final CallTestSupport testSupport = new CallTestSupport();
 
-  private TestType testType;
-  private String majorVersion;
-  private String minorVersion;
-  private String revision;
-  private Matcher<KubernetesVersion> matcher;
-  private String[] ignoredLogMessages;
+  private final TestType testType;
+  private final String majorVersion;
+  private final String minorVersion;
+  private final String revision;
+  private final Matcher<KubernetesVersion> matcher;
+  private final String[] ignoredLogMessages;
 
   /**
    * Version check test constructor.
@@ -178,8 +178,8 @@ public class VersionCheckTest {
 
   @SuppressWarnings("unused")
   static class VersionMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<KubernetesVersion> {
-    private int expectedMajor;
-    private int expectedMinor;
+    private final int expectedMajor;
+    private final int expectedMinor;
 
     private VersionMatcher(int expectedMajor, int expectedMinor) {
       this.expectedMajor = expectedMajor;
