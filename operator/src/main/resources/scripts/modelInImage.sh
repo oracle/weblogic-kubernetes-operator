@@ -694,14 +694,14 @@ function createPrimordialDomain() {
 
   fi
 
-  # If there is no primordial domain or needs to recreate one due to password changes
+  # If there is no primordial domain or needs to recreate one due to security changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [  "true" == "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [  ${recreate_domain} -eq 1  ] ; then
+    if [  "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1  ] ; then
       trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
-        "onlineUpdate.onNonDynamicChanges=CancelUpdate', will not perform " \
-        "update. You can use offline update to update the domain by setting " \
+        "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
+        ". You can use offline update to update the domain by setting " \
         "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
       exit 1
     fi
@@ -709,10 +709,6 @@ function createPrimordialDomain() {
     trace "No primordial domain or need to create again because of changes require domain recreation"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
-    # Override online update since the domain needs to be restarted for security related changes.
-    # Note: currently there is no way in WDT to update security information online
-
-    trace "Security changes detected or new deployment - override onlineUpdate.enabled to false"
     MII_USE_ONLINE_UPDATE=false
   fi
 
