@@ -807,14 +807,11 @@ class ItMiiDynamicUpdate {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // Add datasource, replace contents of an existing configMap with previous tests config and datasource
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
 
-    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
@@ -832,6 +829,30 @@ class ItMiiDynamicUpdate {
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("JDBCSystemResource configuration found");
+
+    // make non-dynamic change, update datasource connection pool max capacity attribute
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
+
+    // Patch a running domain with introspectVersion.
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource max capacity configuration using REST api
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2/JDBCResource/JDBCConnectionPoolParams/MaxCapacity", "200"),
+        "JDBCSystemResource JDBCConnectionPoolParams not found");
+    logger.info("JDBCSystemResource JDBCConnectionPoolParams configuration found");
 
   }
 
