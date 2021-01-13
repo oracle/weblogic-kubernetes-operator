@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -199,6 +200,7 @@ public class ItKubernetesEvents {
    */
   @Order(2)
   @Test
+  @Disabled
   public void testDomainK8sEventsScalePastMax() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     boolean scaleClusterWithRestApi = scaleClusterWithRestApi(domainUid, clusterName, 3,
@@ -220,6 +222,7 @@ public class ItKubernetesEvents {
    */
   @Order(3)
   @Test
+  @Disabled
   public void testDomainK8sEventsScaleBelowMin() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     boolean scaleClusterWithRestApi = scaleClusterWithRestApi(domainUid, clusterName, 1,
