@@ -440,8 +440,8 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    assertThat(getStartingNamespaces("NS1", "NS"+MULTICHUNK_LAST_NAMESPACE_NUM),
-            contains("NS1", "NS"+MULTICHUNK_LAST_NAMESPACE_NUM));
+    assertThat(getStartingNamespaces("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM),
+            contains("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM));
   }
 
   @Test
