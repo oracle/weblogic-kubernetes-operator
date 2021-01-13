@@ -18,8 +18,10 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -60,6 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to samples.
  */
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
 public class ItSamples {
@@ -84,7 +87,7 @@ public class ItSamples {
   private final String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private final Path tempSamplePath = Paths.get(WORK_DIR, "wls-sample-testing");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
@@ -139,6 +142,8 @@ public class ItSamples {
 
     //copy the samples directory to a temporary location
     setupSample();
+    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-in-image");
 
@@ -195,9 +200,8 @@ public class ItSamples {
     //create PV and PVC used by the domain
     createPvPvc(domainName);
 
-    //create WebLogic secrets for the domain
-    createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    // WebLogic secrets for the domain has been created by previous test
+    // No need to create it again
 
     Path sampleBase = Paths.get(tempSamplePath.toString(), "scripts/create-weblogic-domain/domain-home-on-pv");
 
@@ -350,7 +354,7 @@ public class ItSamples {
   // copy samples directory to a temporary location
   private void setupSample() {
     assertDoesNotThrow(() -> {
-      // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/sample-testing"
+      // copy ITTESTS_DIR + "../kubernates/samples" to WORK_DIR + "/wls-sample-testing"
       logger.info("Deleting and recreating {0}", tempSamplePath);
       Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
