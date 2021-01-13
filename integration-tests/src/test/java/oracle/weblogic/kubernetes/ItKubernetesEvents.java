@@ -146,7 +146,7 @@ public class ItKubernetesEvents {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace1 = namespaces.get(1);
     assertNotNull(namespaces.get(2), "Namespace is null");
-    domainNamespace1 = namespaces.get(2);
+    domainNamespace2 = namespaces.get(2);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
