@@ -246,6 +246,29 @@ public class ItKubernetesEvents {
     domain.getSpec().addManagedServersItem(new ManagedServer()
         .serverName("managed-server1").serverStartPolicy("IF_NEEDED").serverStartState("RUNNING"));
     logger.info(Yaml.dump(domain));
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    logger.info("patch the domain resource with new cluster and introspectVersion");
+    String patchStr
+        = "[{\"op\": \"add\",\"path\": \""
+        + "/spec/managedServers/-\", \"value\": "
+        + "{\"serverName\" : \"nonexisting-ms\", "
+        + "\"serverStartPolicy\": \"IF_NEEDED\","
+        + "\"serverStartState\": \"RUNNING\"}"
+        + "}]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+    // verify the DomainProcessing Starting/Completed event is generated
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_VALIDATION_ERROR,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+            DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
   }
 
   /**
@@ -259,7 +282,7 @@ public class ItKubernetesEvents {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + clusterName + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"nonexisting-cluster\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
