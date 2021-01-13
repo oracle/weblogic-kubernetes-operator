@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
@@ -314,7 +315,7 @@ class ItMiiDynamicUpdate {
    * Wait for introspector to complete
    * Verify work manager configuration is updated.
    */
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Update work manager min/max threads constraints config to a model-in-image domain using dynamic update")
   public void testMiiUpdateWorkManager() {
@@ -360,7 +361,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Verify the application can be accessed on both admin server and from all servers in cluster.
    */
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Change target for the application deployment using mii dynamic update")
   public void testMiiChangeTarget() {
@@ -420,7 +421,7 @@ class ItMiiDynamicUpdate {
    * Wait for introspector to complete
    * Verify servers in the newly added cluster are started and other servers are not rolled.
    */
-  @Test
+  //@Test
   @Order(4)
   @DisplayName("Add cluster in MII domain using mii dynamic update")
   public void testMiiAddCluster() {
@@ -524,7 +525,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  @Test
+  //@Test
   @Order(6)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
@@ -580,7 +581,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  @Test
+  //@Test
   @Order(7)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   public void testMiiChangeListenPort() {
@@ -628,7 +629,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  @Test
+  //@Test
   @Order(8)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
   public void testMiiChangeListenAddress() {
@@ -672,7 +673,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  @Test
+  //@Test
   @Order(9)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   public void testMiiChangeSSL() {
@@ -722,7 +723,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
-  @Test
+  //@Test
   @Order(10)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
@@ -778,6 +779,60 @@ class ItMiiDynamicUpdate {
             adminServerName, "404"));
 
     verifyPodsNotRolled(pods);
+  }
+
+  /**
+   * Recreate configmap containing non-dynamic change, changing WLS image on domain.
+   * Patch the domain resource with the configmap.
+   * Patch the domain with onNonDynamicChanges value as CancelUpdate.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify the changes are not effective and domain is not restarted.
+   */
+  @Test
+  @Order(11)
+  @DisplayName("Test onNonDynamicChanges value CancelUpdate")
+  public void testOnNonDynamicChangeCancelUpdate() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+
   }
 
   private void verifyIntrospectorRuns() {
