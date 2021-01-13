@@ -945,7 +945,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         // We got here because the introspectVersion changed and cancel changes return code from WDT
         // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
         //
-        return returnCancelUpdateStep(packet);
+        return returnCancelUpdateStep(packet, currentPod);
       } else if (!canUseCurrentPod(currentPod)) {
         if (shouldNotRestartAfterSuccessOnlineUpdate(dynamicUpdateResult) && miiDomainZipHash != null) {
           LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
@@ -1009,7 +1009,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       return result;
     }
 
-    private NextAction returnCancelUpdateStep(Packet packet) {
+    private NextAction returnCancelUpdateStep(Packet packet, V1Pod currentPod) {
       String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
           ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
           .orElse("");
@@ -1019,7 +1019,7 @@ public abstract class PodStepContext extends BasePodStepContext {
               + dynamicUpdateRollBackFile,
           DomainConditionType.OnlineUpdateCanceled);
 
-      return doNext(packet);
+      return doNext(patchCurrentPod(currentPod, getNext()), packet);
     }
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
