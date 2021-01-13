@@ -136,6 +136,8 @@ class DomainRecheck {
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
 
+    private final List<String> namespacesToStart = Collections.synchronizedList(new ArrayList<>());
+
     private NamespaceListResponseStep() {
       super(new Namespaces.NamespaceListAfterStep(domainNamespaces));
     }
@@ -162,13 +164,14 @@ class DomainRecheck {
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
     }
 
-    private Step createNextSteps(Set<String> namespacesToStartNow) {
+    private Step createNextSteps(Set<String> currentBatchOfNamespacesToStart) {
       List<Step> nextSteps = new ArrayList<>();
-      if (!namespacesToStartNow.isEmpty()) {
-        nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
+      namespacesToStart.addAll(currentBatchOfNamespacesToStart);
+      if (!namespacesToStart.isEmpty()) {
+        nextSteps.add(createStartNamespacesStep(namespacesToStart));
         if (Namespaces.getConfiguredDomainNamespaces() == null) {
           nextSteps.add(
-                RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview));
+                RunInParallel.perNamespace(namespacesToStart, DomainRecheck.this::createNamespaceReview));
         }
       }
       nextSteps.add(getNext());
