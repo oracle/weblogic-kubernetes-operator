@@ -166,8 +166,6 @@ class DomainRecheck {
 
     private Step createNextSteps(Set<String> currentBatchOfNamespacesToStart) {
       List<Step> nextSteps = new ArrayList<>();
-
-      // Add current batch of namespaces to start to the bigger list
       namespacesToStart.addAll(currentBatchOfNamespacesToStart);
       if (!namespacesToStart.isEmpty()) {
         nextSteps.add(createStartNamespacesStep(namespacesToStart));
