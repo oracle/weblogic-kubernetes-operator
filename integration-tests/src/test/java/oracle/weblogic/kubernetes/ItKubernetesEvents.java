@@ -395,7 +395,7 @@ public class ItKubernetesEvents {
                 NAMESPACE_WATCHING_STARTED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace2, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace2, null,
             NAMESPACE_WATCHING_STARTED, "Normal", timestamp));
   }
 
@@ -412,7 +412,7 @@ public class ItKubernetesEvents {
                 NAMESPACE_WATCHING_STOPPED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace2, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace2, null,
             NAMESPACE_WATCHING_STOPPED, "Normal", timestamp));
   }
 

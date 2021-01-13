@@ -126,8 +126,10 @@ public class K8sEvents {
     assertTrue(labels.containsKey("weblogic.createdByOperator")
         && labels.get("weblogic.createdByOperator").equals("true"));
     //verify the domainUID matches
-    assertTrue(labels.containsKey("weblogic.domainUID")
-        && labels.get("weblogic.domainUID").equals(domainUid));
+    if (domainUid != null) {
+      assertTrue(labels.containsKey("weblogic.domainUID")
+          && labels.get("weblogic.domainUID").equals(domainUid));
+    }
   }
 
 
