@@ -106,7 +106,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItKubernetesEvents {
 
   private static String opNamespace = null;
-  private static String domainNamespace = null;
+  private static String domainNamespace1 = null;
+  private static String domainNamespace2 = null;
   private static String opServiceAccount = null;
   private static int externalRestHttpsPort = 0;
 
@@ -136,26 +137,28 @@ public class ItKubernetesEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    domainNamespace = namespaces.get(1);
+    domainNamespace1 = namespaces.get(1);
+    assertNotNull(namespaces.get(2), "Namespace is null");
+    domainNamespace1 = namespaces.get(2);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
-    createSecretForBaseImages(domainNamespace);
+    createSecretForBaseImages(domainNamespace1);
 
   }
 
@@ -184,7 +187,7 @@ public class ItKubernetesEvents {
                 DOMAIN_CREATED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, DOMAIN_CREATED, "Normal", timestamp));
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -194,7 +197,7 @@ public class ItKubernetesEvents {
                 DOMAIN_PROCESSING_STARTING,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_PROCESSING_STARTING,  "Normal", timestamp));
 
     withStandardRetryPolicy
@@ -204,7 +207,7 @@ public class ItKubernetesEvents {
                 DOMAIN_PROCESSING_COMPLETED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_PROCESSING_COMPLETED,  "Normal", timestamp));
   }
 
@@ -226,7 +229,7 @@ public class ItKubernetesEvents {
                 DOMAIN_VALIDATION_ERROR,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_VALIDATION_ERROR,  "Warning", timestamp));
   }
 
@@ -248,7 +251,7 @@ public class ItKubernetesEvents {
                 DOMAIN_VALIDATION_ERROR,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_VALIDATION_ERROR,  "Warning", timestamp));
   }
 
@@ -259,7 +262,7 @@ public class ItKubernetesEvents {
   @Test
   @Disabled
   public void testDomainK8sEventsNonExistingMS() {
-    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace));
+    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace1));
     domain.getSpec().addManagedServersItem(new ManagedServer()
         .serverName("managed-server1").serverStartPolicy("IF_NEEDED").serverStartState("RUNNING"));
     logger.info(Yaml.dump(domain));
@@ -274,7 +277,7 @@ public class ItKubernetesEvents {
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -284,7 +287,7 @@ public class ItKubernetesEvents {
                 DOMAIN_VALIDATION_ERROR,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
   }
 
@@ -304,7 +307,7 @@ public class ItKubernetesEvents {
         + "}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
@@ -314,7 +317,7 @@ public class ItKubernetesEvents {
                 DOMAIN_VALIDATION_ERROR,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
   }
 
@@ -340,7 +343,7 @@ public class ItKubernetesEvents {
     logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
 
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "patchDomainCustomResource failed");
 
     //verify domain changed event is logged
@@ -351,7 +354,7 @@ public class ItKubernetesEvents {
                 DOMAIN_CHANGED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_CHANGED,  "Normal", timestamp));
 
     //verify domain processing retrying event
@@ -362,7 +365,7 @@ public class ItKubernetesEvents {
                 DOMAIN_PROCESSING_RETRYING,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_PROCESSING_RETRYING, "Normal", timestamp));
 
     //verify domain processing aborted event
@@ -373,7 +376,7 @@ public class ItKubernetesEvents {
                 DOMAIN_PROCESSING_ABORTED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
   }
 
@@ -382,8 +385,8 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    String ns2 = assertDoesNotThrow(() -> TestActions.createUniqueNamespace());
-    boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(opNamespace, domainNamespace, ns2);
+    boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(
+        opNamespace, domainNamespace1, domainNamespace2);
     //verify domain processing aborted event
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -392,7 +395,7 @@ public class ItKubernetesEvents {
                 NAMESPACE_WATCHING_STARTED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace2, domainUid,
             NAMESPACE_WATCHING_STARTED, "Normal", timestamp));
   }
 
@@ -400,7 +403,7 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsStopWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(opNamespace, domainNamespace);
+    boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     //verify domain processing aborted event
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -409,7 +412,7 @@ public class ItKubernetesEvents {
                 NAMESPACE_WATCHING_STOPPED,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace2, domainUid,
             NAMESPACE_WATCHING_STOPPED, "Normal", timestamp));
   }
 
@@ -428,7 +431,7 @@ public class ItKubernetesEvents {
                 DOMAIN_VALIDATION_ERROR,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_VALIDATION_ERROR, "Warning", timestamp));
   }
 
@@ -447,21 +450,20 @@ public class ItKubernetesEvents {
   public void testDomainK8SEventsDelete() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
 
-    deleteDomainCustomResource(domainUid, domainNamespace);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace);
+    deleteDomainCustomResource(domainUid, domainNamespace1);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace1);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
 
     //verify domain deleted event
     withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
+        .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_DELETED,
-                domainNamespace,
+                domainNamespace1,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
+        .until(checkDomainEvent(opNamespace, domainNamespace1, domainUid,
             DOMAIN_DELETED, "Normal", timestamp));
   }
 
@@ -471,13 +473,13 @@ public class ItKubernetesEvents {
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create WebLogic domain credential secret
-    createSecretWithUsernamePassword(wlSecretName, domainNamespace,
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace1,
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     createPV(pvName, domainUid, this.getClass().getSimpleName());
-    createPVC(pvName, pvcName, domainUid, domainNamespace);
+    createPVC(pvName, pvcName, domainUid, domainNamespace1);
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
@@ -507,7 +509,7 @@ public class ItKubernetesEvents {
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPVUsingWlst(wlstScript, domainPropertiesFile.toPath(),
-        pvName, pvcName, domainNamespace);
+        pvName, pvcName, domainNamespace1);
 
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
@@ -516,7 +518,7 @@ public class ItKubernetesEvents {
         .kind("Domain")
         .metadata(new V1ObjectMeta()
             .name(domainUid)
-            .namespace(domainNamespace))
+            .namespace(domainNamespace1))
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
@@ -528,7 +530,7 @@ public class ItKubernetesEvents {
                     .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
             .webLogicCredentialsSecret(new V1SecretReference()
                 .name(wlSecretName)
-                .namespace(domainNamespace))
+                .namespace(domainNamespace1))
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs/" + domainUid)
@@ -558,16 +560,16 @@ public class ItKubernetesEvents {
     setPodAntiAffinity(domain);
 
     // verify the domain custom resource is created
-    createDomainAndVerify(domain, domainNamespace);
+    createDomainAndVerify(domain, domainNamespace1);
 
     // verify the admin server service created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
     // verify managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service/pod {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
   }
@@ -625,7 +627,7 @@ public class ItKubernetesEvents {
 
     logger.info("Getting port for default channel");
     int adminServerPort
-        = getServicePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServicePort(domainNamespace1, getExternalServicePodName(adminServerPodName), "default");
 
     // create a temporary WebLogic WLST property file
     File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
@@ -644,9 +646,9 @@ public class ItKubernetesEvents {
 
     // changet the admin server port to a different value to force pod restart
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace);
+    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), domainNamespace1);
 
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
 
     logger.info("patch the domain resource with new cluster and introspectVersion");
     String patchStr
@@ -658,27 +660,27 @@ public class ItKubernetesEvents {
         + "]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
 
-    checkPodExists(introspectPodNameBase, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace);
+    checkPodExists(introspectPodNameBase, domainUid, domainNamespace1);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, domainNamespace1);
 
     // verify new cluster managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace1);
     }
 
     // verify new cluster managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Waiting for managed server pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
   }
