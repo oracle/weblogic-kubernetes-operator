@@ -169,13 +169,14 @@ public class TestActions {
    * Create Domain Custom Resource.
    *
    * @param domain Domain custom resource model object
+   * @param domainVersion custom resource's version
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
-      throws ApiException {
-    return Domain.createDomainCustomResource(domain);
-  }
+  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+                                                   String... domainVersion) throws ApiException {
+    return Domain.createDomainCustomResource(domain, domainVersion);
+  } 
 
   /**
    * List Domain Custom Resources.
