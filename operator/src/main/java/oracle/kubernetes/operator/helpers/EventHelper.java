@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -90,6 +91,7 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       if (hasProcessingNotStarted(packet) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
         return doNext(packet);
       }
@@ -102,13 +104,38 @@ public class EventHelper {
 
       packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
 
-      V1Event event = createEvent(packet, eventData);
-      return doNext(new CallBuilder()
-              .createEventAsync(
-                  event.getMetadata().getNamespace(),
-                  event,
-                  new DefaultResponseStep<>(getNext())),
-          packet);
+      return doNext(createEventAPICall(createEventModel(packet, eventData), info), packet);
+    }
+
+    private Step createEventAPICall(V1Event event, DomainPresenceInfo info) {
+      V1Event existingEvent = getExistingEvent(event, info);
+      return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
+    }
+
+    private Step createCreateEventCall(V1Event event) {
+      event.firstTimestamp(event.getLastTimestamp());
+      return new CallBuilder()
+          .createEventAsync(
+              event.getMetadata().getNamespace(),
+              event,
+              new DefaultResponseStep<>(getNext()));
+    }
+
+    private Step createReplaceEventCall(V1Event event, V1Event existingEvent) {
+      existingEvent.count(Optional.ofNullable(event.getCount()).map(c -> c + 1).orElse(1));
+      existingEvent.lastTimestamp(event.getLastTimestamp());
+      return new CallBuilder()
+          .replaceEventAsync(
+              existingEvent.getMetadata().getName(),
+              existingEvent.getMetadata().getNamespace(),
+              existingEvent,
+              new DefaultResponseStep<>(getNext()));
+    }
+
+    private V1Event getExistingEvent(V1Event event, DomainPresenceInfo info) {
+      return Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getEventK8SObjects)
+          .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
     private boolean isDuplicatedStartedEvent(Packet packet) {
@@ -122,13 +149,14 @@ public class EventHelper {
 
   }
 
-  private static V1Event createEvent(
+  private static V1Event createEventModel(
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     eventData.namespace(Optional.ofNullable(info)
         .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace));
     eventData.resourceName(eventData.eventItem.calculateResourceName(info, eventData.namespace));
+    eventData.domainPresenceInfo(info);
     return new V1Event()
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
@@ -137,7 +165,8 @@ public class EventHelper {
         .type(eventData.eventItem.getType())
         .reason(eventData.eventItem.getReason())
         .message(eventData.eventItem.getMessage(eventData.getResourceName(), eventData))
-        .involvedObject(eventData.eventItem.createInvolvedObject(eventData));
+        .involvedObject(eventData.eventItem.createInvolvedObject(eventData))
+        .count(1);
   }
 
   private static V1ObjectMeta createMetadata(
@@ -380,7 +409,8 @@ public class EventHelper {
           .name(eventData.getResourceName())
           .namespace(eventData.getNamespace())
           .kind(KubernetesConstants.DOMAIN)
-          .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
+          .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
+          .uid(eventData.getUID());
     }
 
     String calculateResourceName(DomainPresenceInfo info, String namespace) {
@@ -401,6 +431,7 @@ public class EventHelper {
     private String message;
     private String namespace;
     private String resourceName;
+    private DomainPresenceInfo info;
 
     public EventData(EventItem eventItem) {
       this(eventItem, "");
@@ -423,6 +454,11 @@ public class EventHelper {
 
     public EventData resourceName(String resourceName) {
       this.resourceName = resourceName;
+      return this;
+    }
+
+    public EventData domainPresenceInfo(DomainPresenceInfo info) {
+      this.info = info;
       return this;
     }
 
@@ -449,6 +485,18 @@ public class EventHelper {
 
     public static boolean isProcessingAbortedEvent(@NotNull EventData eventData) {
       return eventData.eventItem == DOMAIN_PROCESSING_ABORTED;
+    }
+
+    /**
+     * Get the UID from the domain metadata.
+     * @return domain resource's UID
+     */
+    public String getUID() {
+      return Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getMetadata)
+          .map(V1ObjectMeta::getUid)
+          .orElse("");
     }
   }
 }

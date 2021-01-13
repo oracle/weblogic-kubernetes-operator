@@ -238,6 +238,15 @@ public class CallBuilder {
           wrap(
               createEventAsync(
                   usage, requestParams.namespace, (V1Event) requestParams.body, callback));
+  private final CallFactory<V1Event> replaceEvent =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceEventAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Event) requestParams.body,
+                  callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1338,9 +1347,9 @@ public class CallBuilder {
       localVarQueryParams.addAll(client.parameterToPair("propagationPolicy", propagationPolicy));
     }
 
-    Map<String, String> localVarHeaderParams = new HashMap();
-    Map<String, String> localVarCookieParams = new HashMap();
-    Map<String, Object> localVarFormParams = new HashMap();
+    Map<String, String> localVarHeaderParams = new HashMap<>();
+    Map<String, String> localVarCookieParams = new HashMap<>();
+    Map<String, Object> localVarFormParams = new HashMap<>();
     String[] localVarAccepts = new String[]{
         "application/json", "application/yaml", "application/vnd.kubernetes.protobuf"
     };
@@ -1782,6 +1791,33 @@ public class CallBuilder {
       throws ApiException {
     return new CoreV1Api(client)
         .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for patching event.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceEventAsync(
+      String name, String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceEvent", namespace, name, body, (String) null),
+        replaceEvent);
+  }
+
+  private Call replaceEventAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1Event body,
+      ApiCallback<V1Event> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
   }
 
   private Call listNamespaceAsync(

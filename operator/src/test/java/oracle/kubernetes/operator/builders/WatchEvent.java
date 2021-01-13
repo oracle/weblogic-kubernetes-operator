@@ -45,7 +45,7 @@ public class WatchEvent<T> {
     return new WatchEvent<>("MODIFIED", object);
   }
 
-  public static <S> WatchEvent<S> createDeleteEvent(S object) {
+  public static <S> WatchEvent<S> createDeletedEvent(S object) {
     return new WatchEvent<>("DELETED", object);
   }
 

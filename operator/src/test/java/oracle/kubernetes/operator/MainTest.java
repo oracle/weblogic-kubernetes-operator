@@ -7,6 +7,7 @@ import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -38,7 +39,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
-import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
@@ -50,6 +50,7 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessageForNamespaces;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
@@ -58,6 +59,7 @@ import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
 import static oracle.kubernetes.operator.Main.GIT_COMMIT_KEY;
 import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.CRD_NOT_INSTALLED;
@@ -135,7 +137,7 @@ public class MainTest extends ThreadFactoryTestBase {
               .build();
   }
 
-  static class PropertiesBuilder {
+  private static class PropertiesBuilder {
     private final Properties properties = new Properties();
 
     private PropertiesBuilder withProperty(String name, String value) {
@@ -261,11 +263,11 @@ public class MainTest extends ThreadFactoryTestBase {
     verifyWatchersNotDefined(main.getDomainNamespaces(), getOperatorNamespace());
   }
 
-  void simulateMissingCRD() {
+  private void simulateMissingCRD() {
     testSupport.failOnResource(DOMAIN, null, getOperatorNamespace(), HttpURLConnection.HTTP_NOT_FOUND);
   }
 
-  void recheckDomains() {
+  private void recheckDomains() {
     testSupport.runSteps(main.createDomainRecheckSteps());
   }
 
@@ -343,7 +345,7 @@ public class MainTest extends ThreadFactoryTestBase {
   @SuppressWarnings("unused")
   static class NamespaceStatusMatcher extends TypeSafeDiagnosingMatcher<NamespaceStatus> {
 
-    static NamespaceStatusMatcher isNamespaceStarting() {
+    private static NamespaceStatusMatcher isNamespaceStarting() {
       return new NamespaceStatusMatcher();
     }
 
@@ -588,9 +590,9 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
-        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
-              NAMESPACE_WATCHING_STARTED, namespaces), is(true));
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
   @Test
@@ -602,9 +604,8 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Found no event",
-        containsEvent(getEvents(testSupport),
-            NAMESPACE_WATCHING_STARTED_EVENT), is(false));
+    assertThat("Found no event",
+        containsEvent(getEvents(testSupport), NAMESPACE_WATCHING_STARTED_EVENT), is(false));
   }
 
 
@@ -618,13 +619,9 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event",
-        containsEvent(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
-        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STOPPED, Collections.singletonList("NS3")), is(true));
   }
 
   @Test
@@ -639,8 +636,8 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
-        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
@@ -655,13 +652,10 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event",
-        containsEvent(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
-        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
+
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+            containsEventWithMessageForNamespaces(getEvents(testSupport),
+                NAMESPACE_WATCHING_STOPPED, Collections.singletonList("NS3")), is(true));
   }
 
   @Test
@@ -676,8 +670,8 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
-        EventTestUtils.containsEventWithMessageForNamespaces(getEvents(testSupport),
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STARTED, namespaces), is(true));
   }
 
@@ -692,14 +686,9 @@ public class MainTest extends ThreadFactoryTestBase {
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    MatcherAssert.assertThat("Event NAMESPACE_WATCHING_STOPPED",
-        containsEvent(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT), is(true));
-
-    MatcherAssert.assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
-        EventTestUtils.containsEventWithMessage(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, "NS3")), is(true));
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STOPPED, Collections.singletonList("NS3")), is(true));
   }
 
   abstract static class MainDelegateStub implements MainDelegate {

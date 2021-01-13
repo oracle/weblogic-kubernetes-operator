@@ -130,6 +130,44 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
+
+    if (ref == null || ref.getName() == null) {
+      return;
+    }
+
+    String kind = ref.getKind();
+    if (kind == null) {
+      return;
+    }
+
+    switch (kind) {
+      case EventConstants.EVENT_KIND_POD:
+        processServerEvent(event);
+        break;
+      case EventConstants.EVENT_KIND_DOMAIN:
+        processDomainEvent(event);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private static void processDomainEvent(V1Event event) {
+    V1ObjectReference ref = event.getInvolvedObject();
+
+    if (ref == null || ref.getName() == null) {
+      return;
+    }
+
+    String domainUid = ref.getName();
+    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
+        .map(m -> m.get(domainUid))
+        .ifPresent(info -> info.updateEventK8SObjects(event));
+  }
+
+  private static void processServerEvent(V1Event event) {
+    V1ObjectReference ref = event.getInvolvedObject();
+
     if (ref == null || ref.getName() == null) {
       return;
     }
@@ -146,6 +184,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(m -> m.get(domainUid))
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
+
 
   private static String getReadinessStatus(V1Event event) {
     return Optional.ofNullable(event.getMessage())
@@ -173,7 +212,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private final String requestedIntrospectVersion;
 
-    public IntrospectionRequestStep(DomainPresenceInfo info) {
+    IntrospectionRequestStep(DomainPresenceInfo info) {
       this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
     }
 
@@ -331,12 +370,13 @@ public class DomainProcessorImpl implements DomainProcessor {
   public void dispatchServiceWatch(Watch.Response<V1Service> item) {
     V1Service service = item.object;
     String domainUid = ServiceHelper.getServiceDomainUid(service);
-    if (domainUid == null) {
+    String namespace = Optional.ofNullable(service.getMetadata()).map(V1ObjectMeta::getNamespace).orElse(null);
+    if (domainUid == null || namespace == null) {
       return;
     }
 
     DomainPresenceInfo info =
-        getExistingDomainPresenceInfo(service.getMetadata().getNamespace(), domainUid);
+        getExistingDomainPresenceInfo(namespace, domainUid);
     if (info == null) {
       return;
     }
@@ -462,10 +502,9 @@ public class DomainProcessorImpl implements DomainProcessor {
                 packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
                 Step strategy =
                     ServerStatusReader.createStatusStep(main.statusUpdateTimeoutSeconds, null);
-                FiberGate gate = getStatusFiberGate(info.getNamespace());
 
-                Fiber f =
-                    gate.startFiberIfNoCurrentFiber(
+                getStatusFiberGate(info.getNamespace())
+                    .startFiberIfNoCurrentFiber(
                         info.getDomainUid(),
                         strategy,
                         packet,
@@ -518,7 +557,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return new MakeRightDomainOperationImpl(liveInfo);
   }
 
-  public Step createPopulatePacketServerMapsStep() {
+  Step createPopulatePacketServerMapsStep() {
     return new PopulatePacketServerMapsStep();
   }
 
@@ -595,7 +634,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * @return the updated factory
      */
     public MakeRightDomainOperation withEventData(EventItem eventItem, String message) {
-      this.eventData = new EventData(eventItem).message(message);
+      this.eventData = new EventData(eventItem, message);
       return this;
     }
 
@@ -706,7 +745,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .map(o -> o.resetIntrospectJobFailureCount());
+          .map(DomainStatus::resetIntrospectJobFailureCount);
     }
 
     private boolean hasExceededRetryCount() {
@@ -952,7 +991,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED, ""),
         new TailStep());
 
     Step domainUpStrategy =
@@ -973,15 +1012,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     return EventHelper.createEventStep(eventData);
   }
 
-  private Step createEventStep(EventItem eventItem) {
-    return createEventStep(eventItem, "");
-  }
-
   private Step createEventStep(EventItem eventItem, String message) {
     return EventHelper.createEventStep(new EventData(eventItem, message));
   }
 
-  Step createDomainUpInitialStep(DomainPresenceInfo info) {
+  private Step createDomainUpInitialStep(DomainPresenceInfo info) {
     return new UpHeadStep(info);
   }
 
@@ -992,7 +1027,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED, ""));
   }
 
   private static class UnregisterStep extends Step {

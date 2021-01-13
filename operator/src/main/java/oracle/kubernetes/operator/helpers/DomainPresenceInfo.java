@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -51,6 +52,7 @@ public class DomainPresenceInfo {
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
+  private final EventKubernetesObjects eventK8SObjects = new EventKubernetesObjects();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
@@ -100,7 +102,7 @@ public class DomainPresenceInfo {
    * @param clusterName cluster name of the pod server
    * @return Number of scheduled servers
    */
-  public long getNumScheduledServers(String clusterName) {
+  long getNumScheduledServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
             .filter(PodHelper::isScheduled)
             .count();
@@ -123,7 +125,7 @@ public class DomainPresenceInfo {
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
-  public long getNumReadyServers(String clusterName) {
+  long getNumReadyServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
             .filter(PodHelper::hasReadyServer)
             .count();
@@ -159,7 +161,7 @@ public class DomainPresenceInfo {
           .filter(p -> hasClusterNameOrNull(p, clusterName));
   }
 
-  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+  private boolean isNotDeletingPod(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
@@ -175,11 +177,11 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
-  public V1Service removeServerService(String serverName) {
+  V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
   }
 
-  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+  static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
@@ -572,7 +574,7 @@ public class DomainPresenceInfo {
   /**
    * Clear all validation warnings.
    */
-  public void clearValidationWarnings() {
+  void clearValidationWarnings() {
     validationWarnings.clear();
   }
 
@@ -585,6 +587,18 @@ public class DomainPresenceInfo {
       return null;
     }
     return String.join(lineSeparator(), validationWarnings);
+  }
+
+  public void updateEventK8SObjects(V1Event event) {
+    eventK8SObjects.update(event);
+  }
+
+  EventKubernetesObjects getEventK8SObjects() {
+    return eventK8SObjects;
+  }
+
+  public void deleteEventK8SObjects(V1Event event) {
+    eventK8SObjects.remove(event);
   }
 
   /** Details about a specific managed server that will be started up. */

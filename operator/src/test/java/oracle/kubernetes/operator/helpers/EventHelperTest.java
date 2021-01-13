@@ -10,12 +10,15 @@ import java.util.Map;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
+import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -32,6 +35,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
@@ -45,6 +49,7 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolve
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
+import static oracle.kubernetes.operator.EventTestUtils.containsOneEventWithCount;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
@@ -93,6 +98,7 @@ public class EventHelperTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
     HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
+
   }
 
   @After
@@ -112,7 +118,7 @@ public class EventHelperTest {
   public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedLabels() {
     makeRightOperation.execute();
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.DOMAINUID_LABEL, UID);
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected labels",
@@ -140,17 +146,20 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject()
-      throws Exception {
-    makeRightOperation.execute();
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject() {
+    V1ObjectMeta metadata = domain.getMetadata();
+    String k8sUID = metadata.getUid();
 
+    makeRightOperation.execute();
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected involved object",
-        containsEventWithInvolvedObject(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT, UID, NS), is(true));
+        containsEventWithInvolvedObject(
+            getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT, UID, NS, k8sUID),
+        is(true));
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent()
-      throws Exception {
+  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected reporting component",
@@ -158,8 +167,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingInstance()
-      throws Exception {
+  public void whenCreateEventStepCalledForStarting_domainProcessingStartingEventCreatedWithReportingInstance() {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
 
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)));
@@ -173,17 +181,17 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreated() {
+  public void whenCreateEventStepCalledForStartingAndCompleted_domainProcessingCompletedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
-        containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+        containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreatedWithExpectedMessage() {
+  public void whenCreateEventStepCalled4StartingCompleted_domainProcessingCompletedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
@@ -191,16 +199,40 @@ public class EventHelperTest {
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
-            EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT,
+            DOMAIN_PROCESSING_COMPLETED_EVENT,
             String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)), is(true));
   }
 
   @Test
-  public void whenCreateEventStepCalledWithOutStartedEvent_domainProcessingCompletedEventNotCreated() {
+  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreatedWithExpectedCount() {
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
+
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenCreateEventCalledTwice_domainProcessingStartingEventCreatedWithExpectedCount() {
+    presenceInfoMap.put(NS, Map.of(UID, info));
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+    dispatchAddedEventWatches();
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)))
+    );
+    presenceInfoMap.remove(NS);
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithOutStartingEvent_domainProcessingCompletedEventNotCreated() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
-        containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(false));
+        containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT), is(false));
   }
 
   @Test
@@ -212,7 +244,26 @@ public class EventHelperTest {
     );
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
-        containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+        containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+  }
+
+  @Test
+  public void whenCreateEventCalledTwice_domainProcessingCompletedEventCreatedWithExpectedCount() {
+    presenceInfoMap.put(NS, Map.of(UID, info));
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    dispatchAddedEventWatches();
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    presenceInfoMap.remove(NS);
+
+    assertThat("Found DOMAIN_PROCESSING_COMPLETED event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT, 2), is(true));
   }
 
   @Test
@@ -224,13 +275,25 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledwithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
+  public void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Found DOMAIN_PROCESSING_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_PROCESSING_FAILED_EVENT,
             String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledWithFailedEventTwice_domainProcessingFailedEventCreatedWithExpectedCount() {
+    presenceInfoMap.put(NS, Map.of(UID, info));
+    testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
+    dispatchAddedEventWatches();
+    testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
+
+    presenceInfoMap.remove(NS);
+    assertThat("Found DOMAIN_PROCESSING_FAILED event",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_FAILED_EVENT, 2), is(true));
   }
 
   @Test
@@ -285,6 +348,19 @@ public class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_CHANGED_EVENT,
             String.format(DOMAIN_CHANGED_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  public void whenMakeRightCalledTwice_withChangedEventData_domainChangedEventCreatedWithExpectedCount() {
+    presenceInfoMap.put(NS, Map.of(UID, info));
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_CHANGED))));
+    dispatchAddedEventWatches();
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_CHANGED))));
+
+    presenceInfoMap.remove(NS);
+    assertThat("Found DOMAIN_CHANGED event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), EventConstants.DOMAIN_CHANGED_EVENT, 2), is(true));
   }
 
   @Test
@@ -350,7 +426,7 @@ public class EventHelperTest {
   public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
@@ -359,12 +435,13 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedInvolvedObject() {
+
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
-
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected involvedObject",
         containsEventWithInvolvedObject(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, NS, NS), is(true));
+            EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, NS, NS),
+        is(true));
   }
 
   @Test
@@ -372,7 +449,7 @@ public class EventHelperTest {
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    Map<String, String> expectedLabels = new HashMap();
+    Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected labels",
         containsEventWithLabels(getEvents(testSupport),
@@ -386,7 +463,18 @@ public class EventHelperTest {
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
         containsEventWithInvolvedObject(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT, NS, NS), is(true));
+            EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT, NS, NS),
+        is(true));
   }
 
+  private void dispatchAddedEventWatches() {
+    List<V1Event> events = getEvents(testSupport);
+    for (V1Event event : events) {
+      dispatchAddedEventWatch(event);
+    }
+  }
+
+  private void dispatchAddedEventWatch(V1Event event) {
+    processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
+  }
 }

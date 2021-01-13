@@ -209,7 +209,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedClusterService_ignoreIt() {
     V1Service service = createClusterService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -221,7 +221,7 @@ public class ServicePresenceTest {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -233,7 +233,7 @@ public class ServicePresenceTest {
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -245,7 +245,7 @@ public class ServicePresenceTest {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -338,7 +338,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedServerService_ignoreIt() {
     V1Service service = createServerService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -350,7 +350,7 @@ public class ServicePresenceTest {
     V1Service oldService = createServerService();
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -362,7 +362,7 @@ public class ServicePresenceTest {
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -374,7 +374,7 @@ public class ServicePresenceTest {
     V1Service currentService = createServerService();
     V1Service newerService = createServerService();
     info.setServerService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -468,7 +468,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedExternalService_ignoreIt() {
     V1Service service = createExternalService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -480,7 +480,7 @@ public class ServicePresenceTest {
     V1Service oldService = createExternalService();
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -492,7 +492,7 @@ public class ServicePresenceTest {
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -504,7 +504,7 @@ public class ServicePresenceTest {
     V1Service currentService = createExternalService();
     V1Service newerService = createExternalService();
     info.setExternalService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 

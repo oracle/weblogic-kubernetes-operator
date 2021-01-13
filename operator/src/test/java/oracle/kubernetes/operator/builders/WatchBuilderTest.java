@@ -109,7 +109,7 @@ public class WatchBuilderTest {
   }
 
   private <T> Watch.Response<T> createDeleteResponse(T object) {
-    return WatchEvent.createDeleteEvent(object).toWatchResponse();
+    return WatchEvent.createDeletedEvent(object).toWatchResponse();
   }
 
   private <T> Watch.Response<T> createBookmarkResponse(T object) {

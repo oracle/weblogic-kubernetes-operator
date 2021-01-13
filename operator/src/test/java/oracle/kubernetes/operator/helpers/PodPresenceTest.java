@@ -331,7 +331,7 @@ public class PodPresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedServerPod_ignoreIt() {
     V1Pod service = createServerPod();
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -343,7 +343,7 @@ public class PodPresenceTest {
     V1Pod oldPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(oldPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(oldPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -354,7 +354,7 @@ public class PodPresenceTest {
   public void onDeleteEventWithSameServerPod_removeIt() {
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(currentPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(currentPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -366,7 +366,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -378,7 +378,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -391,7 +391,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 

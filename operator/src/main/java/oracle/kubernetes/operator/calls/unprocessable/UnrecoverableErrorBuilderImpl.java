@@ -63,6 +63,11 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
     return code == 400 || code == 401 || code == 403 || code == 404 || code == 405 || code == 410 || code == 500;
   }
 
+  public static boolean isNotFound(ApiException e) {
+    int code = e.getCode();
+    return code == 404 || code == 410;
+  }
+
   /**
    * Create unrecoverable error builder.
    */
