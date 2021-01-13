@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -17,6 +18,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -61,11 +63,11 @@ class DomainRecheck {
   }
 
   NamespaceRulesReviewStep createOperatorNamespaceReview() {
-    return new NamespaceRulesReviewStep(getOperatorNamespace());
+    return new NamespaceRulesReviewStep(getOperatorNamespace(), false);
   }
 
   NamespaceRulesReviewStep createNamespaceReview(String namespace) {
-    return new NamespaceRulesReviewStep(namespace);
+    return new NamespaceRulesReviewStep(namespace, true);
   }
 
   Step createReadNamespacesStep() {
@@ -78,9 +80,11 @@ class DomainRecheck {
    */
   class NamespaceRulesReviewStep extends Step {
     private final String ns;
+    private final boolean isDomainNamespace;
 
-    private NamespaceRulesReviewStep(@Nonnull String ns) {
+    private NamespaceRulesReviewStep(@Nonnull String ns, boolean isDomainNamespace) {
       this.ns = ns;
+      this.isDomainNamespace = isDomainNamespace;
     }
 
     @Override
@@ -93,18 +97,23 @@ class DomainRecheck {
           LoggingContext.LOGGING_CONTEXT_KEY,
           Component.createFor(new LoggingContext().namespace(ns)));
 
-      nss.getRulesReviewStatus().updateAndGet(prev -> {
+      V1SubjectRulesReviewStatus status = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
         }
 
         try {
-          return HealthCheckHelper.getAccessAuthorizations(ns);
+          return HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
         return null;
       });
+
+      AtomicBoolean guard = isDomainNamespace ? nss.verifiedAsDomainNamespace() : nss.verifiedAsOperatorNamespace();
+      if (!guard.getAndSet(true)) {
+        HealthCheckHelper.verifyAccess(status, ns, isDomainNamespace);
+      }
 
       return doNext(packet);
     }

@@ -116,7 +116,8 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
   }
 
@@ -126,7 +127,8 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
