@@ -677,7 +677,7 @@ function generateMergedModel() {
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed:"
@@ -805,7 +805,7 @@ function wdtUpdateModelDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
+  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then
