@@ -313,7 +313,7 @@ public class ItIstioDomainInPV  {
     assertTrue(checkConsole, "Failed to access WebLogic console");
     logger.info("WebLogic console is accessible");
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
