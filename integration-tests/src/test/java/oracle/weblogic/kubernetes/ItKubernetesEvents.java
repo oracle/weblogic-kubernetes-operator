@@ -123,7 +123,7 @@ public class ItKubernetesEvents {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
+          .atMost(5, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
