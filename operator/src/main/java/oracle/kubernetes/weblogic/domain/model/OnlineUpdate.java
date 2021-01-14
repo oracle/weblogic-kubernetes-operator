@@ -7,6 +7,7 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class OnlineUpdate {
 
@@ -72,6 +73,17 @@ public class OnlineUpdate {
   public OnlineUpdate withOnNonDynamicChanges(MIINonDynamicChangesMethod onNonDynamicChanges) {
     this.onNonDynamicChanges = onNonDynamicChanges;
     return this;
+  }
+
+  @Override
+  public String toString() {
+    ToStringBuilder builder =
+        new ToStringBuilder(this)
+            .append("enabled", enabled)
+            .append("wdtTimeouts", wdtTimeouts)
+            .append("onNonDynamicChanges", onNonDynamicChanges);
+
+    return builder.toString();
   }
 
   @Override

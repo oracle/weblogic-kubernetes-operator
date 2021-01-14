@@ -65,7 +65,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
-import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
@@ -660,22 +659,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      int currentIntrospectFailureRetryCount = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getIntrospectJobFailureCount)
-          .orElse(0);
-
-      String existingError = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
-
-      boolean exceededFailureRetryCount = (currentIntrospectFailureRetryCount
-          >= DomainPresence.getDomainPresenceFailureRetryMaxCount());
-
-      boolean isVersionsChanged = isImgRestartIntrospectVerChanged(liveInfo, cachedInfo);
 
       if (isNewDomain(cachedInfo)) {
         return true;
@@ -684,7 +667,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
         return false;
-      } else if (isFatalIntrospectorError(existingError)) {
+      } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
         return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
@@ -778,7 +761,12 @@ public class DomainProcessorImpl implements DomainProcessor {
       return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
     }
 
-    private boolean isFatalIntrospectorError(String existingError) {
+    private boolean isFatalIntrospectorError() {
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
       return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
     }
 
@@ -867,11 +855,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     // Returns true if configuration.sepc.useOnlineUdpate = not set or false
     // false is useOnline is true but there are other changes in spec other than the introspectVersion
     boolean isOnlineUpdate = Optional.ofNullable(liveInfo.getDomain())
-        .map(Domain::getSpec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getEnabled)
+        .map(Domain::isUseOnlineUpdate)
         .orElse(false);
 
     if (isOnlineUpdate) {
