@@ -9,11 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
-import static com.google.common.collect.ImmutableMap.of;
+import static java.util.Map.of;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -63,7 +62,7 @@ public class YamlDocGeneratorTest {
 
   @Test
   public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() throws NoSuchFieldException {
-    Map<String, Object> schema = ImmutableMap.of("anInt", of("type", "integer"));
+    Map<String, Object> schema = of("anInt", of("type", "integer"));
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
 
