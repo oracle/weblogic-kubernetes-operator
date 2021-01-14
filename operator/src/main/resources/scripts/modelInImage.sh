@@ -52,7 +52,6 @@ MODELS_SAME=3
 SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
 NOT_FOR_ONLINE_UPDATE=6
-
 SCRIPT_ERROR=255
 
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
@@ -694,14 +693,14 @@ function createPrimordialDomain() {
 
   fi
 
-  # If there is no primordial domain or needs to recreate one due to password changes
+  # If there is no primordial domain or needs to recreate one due to security changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [  "true" == "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [  ${recreate_domain} -eq 1  ] ; then
+    if [  "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1  ] ; then
       trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
-        "onlineUpdate.onNonDynamicChanges=CancelUpdate', will not perform " \
-        "update. You can use offline update to update the domain by setting " \
+        "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
+        ". You can use offline update to update the domain by setting " \
         "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
       exit 1
     fi
@@ -709,10 +708,6 @@ function createPrimordialDomain() {
     trace "No primordial domain or need to create again because of changes require domain recreation"
     wdtCreatePrimordialDomain
     create_primordial_tgz=1
-    # Override online update since the domain needs to be restarted for security related changes.
-    # Note: currently there is no way in WDT to update security information online
-
-    trace "Security changes detected or new deployment - override onlineUpdate.enabled to false"
     MII_USE_ONLINE_UPDATE=false
   fi
 
@@ -756,7 +751,7 @@ function generateMergedModel() {
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed:"
@@ -884,7 +879,7 @@ function wdtUpdateModelDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
+  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then
