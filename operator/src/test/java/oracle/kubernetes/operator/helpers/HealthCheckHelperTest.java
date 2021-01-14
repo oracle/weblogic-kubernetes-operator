@@ -50,6 +50,7 @@ public class HealthCheckHelperTest {
 
   private static final String NS1 = "ns1";
   private static final String NS2 = "ns2";
+  private static final String OPERATOR_NAMESPACE = "op1";
   private static final List<String> TARGET_NAMESPACES = Arrays.asList(NS1, NS2);
   private static final List<String> CRUD_RESOURCES =
       Arrays.asList(
@@ -116,18 +117,33 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
   }
 
   @Test
-  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() {
+  public void whenRulesReviewSupportedAndNoDomainNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
+
+    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
+  }
+
+  // HERE
+
+  @Test
+  public void whenRulesReviewSupportedAndNoOperatorNamespaceAccess_logWarning() {
+    accessChecks.setMayAccessNamespace(false);
+    expectSelfSubjectRulesReview();
+
+    V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(OPERATOR_NAMESPACE);
+    HealthCheckHelper.verifyAccess(status, OPERATOR_NAMESPACE, false);
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }
