@@ -71,6 +71,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -392,8 +393,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
-  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
-    return createProgressingStep(patchPod(currentPod, updatedPod, next));
+  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
+    return createProgressingStep(patchPod(currentPod, updatedPod, next, addRestartRequiredLabel));
   }
 
   protected Step patchPod(V1Pod currentPod, Step next) {
@@ -408,7 +409,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // Method for online update
-  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
+  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
         .map(V1Pod::getMetadata)
@@ -427,6 +428,9 @@ public abstract class PodStepContext extends BasePodStepContext {
           .orElse(null);
       if (introspectVersion != null) {
         updatedLabels.put(INTROSPECTION_STATE_LABEL, introspectVersion);
+        if (addRestartRequiredLabel) {
+          updatedLabels.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
+        }
       }
 
       KubernetesUtils.addPatches(
@@ -960,14 +964,15 @@ public abstract class PodStepContext extends BasePodStepContext {
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
           }
           updatedPod.setMetadata(updatedMetaData);
-
+          boolean addRestartRequiredLabel = false;
           // if the introspector job tells it needs restart, update the condition with the needed attributes
           if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
             setOnlineUpdateNeedRestartCondition(packet);
+            addRestartRequiredLabel = true;
           } else {
             setOnlineUpdateSuccessCondition();
           }
-          return doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
+          return doNext(patchRunningPod(currentPod, updatedPod, getNext(), addRestartRequiredLabel), packet);
         }
         removeOnlineUpdateConditions();
         LOGGER.info(
