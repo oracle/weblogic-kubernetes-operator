@@ -49,9 +49,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -383,6 +381,7 @@ public class ItKubernetesEvents {
 
   @Order(7)
   @Test
+  @Disabled
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(
@@ -401,6 +400,7 @@ public class ItKubernetesEvents {
 
   @Order(8)
   @Test
+  @Disabled
   public void testK8SEventsStopWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     boolean upgradeAndVerifyOperator = CommonTestUtils.upgradeAndVerifyOperator(opNamespace, domainNamespace1);
@@ -635,8 +635,8 @@ public class ItKubernetesEvents {
     Properties p = new Properties();
     p.setProperty("admin_host", adminServerPodName);
     p.setProperty("admin_port", Integer.toString(adminServerPort));
-    p.setProperty("admin_username", ADMIN_USERNAME_PATCH);
-    p.setProperty("admin_password", ADMIN_PASSWORD_PATCH);
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
     p.setProperty("test_name", "create_cluster");
     p.setProperty("cluster_name", clusterName);
     p.setProperty("server_prefix", managedServerNameBase);
