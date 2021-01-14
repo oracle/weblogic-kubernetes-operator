@@ -27,12 +27,12 @@ import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
@@ -212,11 +212,11 @@ public class CallBuilder {
           wrap(
               createSelfSubjectRulesReviewAsync(
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
-  private final CallFactory<V1Event> createEvent =
+  private final CallFactory<EventsV1Event> createEvent =
       (requestParams, usage, cont, callback) ->
           wrap(
               createEventAsync(
-                  usage, requestParams.namespace, (V1Event) requestParams.body, callback));
+                  usage, requestParams.namespace, (EventsV1Event) requestParams.body, callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -265,7 +265,7 @@ public class CallBuilder {
   private final CallFactory<V1ServiceList> listService =
       (requestParams, usage, cont, callback) ->
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1EventList> listEvent =
+  private final CallFactory<EventsV1EventList> listEvent =
       (requestParams, usage, cont, callback) ->
           wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1NamespaceList> listNamespace =
@@ -1520,7 +1520,7 @@ public class CallBuilder {
   /* Secrets */
 
   private Call listEventAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1EventList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<EventsV1EventList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
@@ -1544,7 +1544,7 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step listEventAsync(String namespace, ResponseStep<V1EventList> responseStep) {
+  public Step listEventAsync(String namespace, ResponseStep<EventsV1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
   }
@@ -1558,16 +1558,16 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createEventAsync(
-      String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+      String namespace, EventsV1Event body, ResponseStep<EventsV1Event> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("createEvent", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(V1Event::getMetadata).orElse(null))),
+            getDomainUidLabel(Optional.ofNullable(body).map(EventsV1Event::getMetadata).orElse(null))),
         createEvent);
   }
 
   private Call createEventAsync(
-      ApiClient client, String namespace, V1Event body, ApiCallback<V1Event> callback)
+      ApiClient client, String namespace, EventsV1Event body, ApiCallback<EventsV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);

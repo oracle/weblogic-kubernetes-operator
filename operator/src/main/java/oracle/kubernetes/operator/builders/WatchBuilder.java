@@ -10,8 +10,8 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -81,9 +81,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public Watchable<V1Event> createEventWatch(String namespace) throws ApiException {
+  public Watchable<EventsV1Event> createEventWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams, V1Event.class, new ListEventCall(namespace));
+          callParams, EventsV1Event.class, new ListEventCall(namespace));
   }
 
   /**

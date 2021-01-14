@@ -14,10 +14,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.EventsV1Event;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -49,7 +49,7 @@ public class DomainNamespaces {
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<Domain, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
-  private final WatcherControl<V1Event, EventWatcher> eventWatchers
+  private final WatcherControl<EventsV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
@@ -225,7 +225,7 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<V1EventList> getEventListProcessing() {
+    Consumer<EventsV1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
