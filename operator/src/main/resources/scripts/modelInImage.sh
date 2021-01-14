@@ -589,6 +589,7 @@ function diff_model() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
+  
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /tmp/compare_model_stdout 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -597,7 +598,7 @@ function diff_model() {
     exitOrLoop
   fi
 
-  if [ ! -f "/tmp/diffed_model.yaml" ] ; then
+  if [ ! -f "/tmp/diffed_model.yaml" ] && [ -f "/tmp/compare_model_stdout" ]; then
     trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'. These changes are not " \
       "compatible with online changes, such as trying to removing an entire mbean tree. Please correct the referenced" \
       " attributes listed below:"
