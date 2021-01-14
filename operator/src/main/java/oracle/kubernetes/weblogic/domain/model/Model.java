@@ -109,6 +109,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
+            .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
