@@ -137,7 +137,7 @@ class NamespacedResources {
 
   private Step createDomainEventListStep(List<Consumer<V1EventList>> processing) {
     return new CallBuilder()
-        //.withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_FILTER)
+        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
         .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 

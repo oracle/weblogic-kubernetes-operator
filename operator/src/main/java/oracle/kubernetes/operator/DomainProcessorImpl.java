@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import oracle.kubernetes.operator.helpers.EventKubernetesObjects;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -87,6 +88,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
+  private static final Map<String, Map<String, EventKubernetesObjects>> eventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
@@ -128,6 +130,36 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  private static void updateEventK8SObjects(V1Event event) {
+    getEventK8SObjects(event).update(event);
+  }
+
+  // unit test only
+  public void clearEventK8SObjects() {
+    eventK8SObjects.clear();
+  }
+
+  private static String getEventNamespace(V1Event event) {
+    return Optional.ofNullable(event).map(V1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+  }
+
+  private static String getEventDomainUid(V1Event event) {
+    return Optional.ofNullable(event).map(V1Event::getInvolvedObject).map(V1ObjectReference::getName).orElse(null);
+  }
+
+  public static EventKubernetesObjects getEventK8SObjects(V1Event event) {
+    return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
+  }
+
+  private static synchronized EventKubernetesObjects getEventK8SObjects(String ns, String domainUid) {
+    return eventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
+        .computeIfAbsent(domainUid, d -> new EventKubernetesObjects());
+  }
+
+  private static void deleteEventK8SObjects(V1Event event) {
+    getEventK8SObjects(event).remove(event);
+  }
+
   private static void onEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
@@ -145,24 +177,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         processServerEvent(event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
-        processDomainEvent(event);
+        updateEventK8SObjects(event);
         break;
       default:
         break;
     }
-  }
-
-  private static void processDomainEvent(V1Event event) {
-    V1ObjectReference ref = event.getInvolvedObject();
-
-    if (ref == null || ref.getName() == null) {
-      return;
-    }
-
-    String domainUid = ref.getName();
-    Optional.ofNullable(DOMAINS.get(event.getMetadata().getNamespace()))
-        .map(m -> m.get(domainUid))
-        .ifPresent(info -> info.updateEventK8SObjects(event));
   }
 
   private static void processServerEvent(V1Event event) {
@@ -185,6 +204,27 @@ public class DomainProcessorImpl implements DomainProcessor {
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
+  private void onDeleteEvent(V1Event event) {
+    V1ObjectReference ref = event.getInvolvedObject();
+
+    if (ref == null || ref.getName() == null) {
+      return;
+    }
+
+    String kind = ref.getKind();
+    if (kind == null) {
+      return;
+    }
+
+    switch (kind) {
+      case EventConstants.EVENT_KIND_DOMAIN:
+        deleteEventK8SObjects(event);
+        break;
+      case EventConstants.EVENT_KIND_POD:
+      default:
+        break;
+    }
+  }
 
   private static String getReadinessStatus(V1Event event) {
     return Optional.ofNullable(event.getMessage())
@@ -430,6 +470,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           onEvent(e);
           break;
         case "DELETED":
+          onDeleteEvent(e);
+          break;
         case "ERROR":
         default:
       }
@@ -991,7 +1033,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED, ""),
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         new TailStep());
 
     Step domainUpStrategy =
@@ -1012,8 +1054,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     return EventHelper.createEventStep(eventData);
   }
 
-  private Step createEventStep(EventItem eventItem, String message) {
-    return EventHelper.createEventStep(new EventData(eventItem, message));
+  private Step createEventStep(EventItem eventItem) {
+    return EventHelper.createEventStep(new EventData(eventItem));
   }
 
   private Step createDomainUpInitialStep(DomainPresenceInfo info) {
@@ -1027,7 +1069,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED, ""));
+        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
   }
 
   private static class UnregisterStep extends Step {
@@ -1190,7 +1232,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case PHASE_FAILED:
           delegate.runSteps(
                   DomainStatusUpdater.createFailureRelatedSteps(
-                          info, pod.getStatus().getReason(), pod.getStatus().getMessage(), null));
+                          info, getPodStatusReason(), getPodStatusMessage(), null));
           break;
         case WAITING_NON_NULL_MESSAGE:
           Optional.ofNullable(getMatchingContainerStatus())
@@ -1227,6 +1269,14 @@ public class DomainProcessorImpl implements DomainProcessor {
           break;
         default:
       }
+    }
+
+    private String getPodStatusReason() {
+      return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getReason).orElse(null);
+    }
+
+    private String getPodStatusMessage() {
+      return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
     }
 
     private V1ContainerStatus getMatchingContainerStatus() {

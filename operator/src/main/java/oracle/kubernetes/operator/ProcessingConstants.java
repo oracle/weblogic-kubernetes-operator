@@ -54,5 +54,5 @@ public interface ProcessingConstants {
       + " by adding it to the weblogic-operator-cm configmap.";
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
-  String DOMAIN_EVENT_FILTER = LabelConstants.CREATEDBYOPERATOR_LABEL + "=true";
+  String DOMAIN_EVENT_LABEL_FILTER = "weblogic.createdByOperator=true";
 }

@@ -213,8 +213,8 @@ public class EventTestUtils {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getApiVersion).orElse("");
   }
 
-  public static String getName(@NotNull V1Event event) {
-    return Optional.ofNullable(event.getMetadata()).map(V1ObjectMeta::getName).orElse("");
+  public static String getName(V1Event event) {
+    return Optional.ofNullable(event).map(V1Event::getMetadata).map(V1ObjectMeta::getName).orElse("");
   }
 
   private static String getNamespace(@NotNull V1Event event) {
@@ -227,15 +227,6 @@ public class EventTestUtils {
 
   private static String getInvolvedObjectName(@NotNull V1Event event) {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getName).orElse("");
-  }
-
-  public static Object containsEventsWithCountOne(List<V1Event> events, String reason, int eventsCount) {
-    List<V1Event> eventsMatchReason = getEventsWithReason(events, reason);
-    return eventsMatchReason.size() == eventsCount && eventsMatchReason.stream().allMatch(e -> countMatches(e, 1));
-  }
-
-  public static V1Event getEventWithReason(List<V1Event> events, String reason) {
-    return getEventsWithReason(events, reason).size() > 0 ? getEventsWithReason(events, reason).get(0) : null;
   }
 
 }

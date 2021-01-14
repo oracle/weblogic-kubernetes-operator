@@ -20,7 +20,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -50,9 +49,7 @@ public class DomainPresenceInfo {
   private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
-
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
-  private final EventKubernetesObjects eventK8SObjects = new EventKubernetesObjects();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
@@ -587,18 +584,6 @@ public class DomainPresenceInfo {
       return null;
     }
     return String.join(lineSeparator(), validationWarnings);
-  }
-
-  public void updateEventK8SObjects(V1Event event) {
-    eventK8SObjects.update(event);
-  }
-
-  EventKubernetesObjects getEventK8SObjects() {
-    return eventK8SObjects;
-  }
-
-  public void deleteEventK8SObjects(V1Event event) {
-    eventK8SObjects.remove(event);
   }
 
   /** Details about a specific managed server that will be started up. */

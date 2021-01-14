@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,13 +12,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 /** Kubernetes event associated with a domain. */
-class EventKubernetesObjects {
+public class EventKubernetesObjects {
   private final Map<EventIdentifier, V1Event> events = new ConcurrentHashMap<>();
 
-  EventKubernetesObjects() {
+  public EventKubernetesObjects() {
   }
 
-  void remove(V1Event event) {
+  public void remove(V1Event event) {
     events.remove(new EventIdentifier(event));
   }
 
