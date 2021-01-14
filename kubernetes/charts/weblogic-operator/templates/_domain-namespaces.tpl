@@ -17,7 +17,7 @@
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{- /*
       Split terms on commas not contained in parentheses. Unfortunately, the regular expression
-      support included with Helm tempalates does not include lookarounds.
+      support included with Helm templates does not include lookarounds.
 */ -}}
 {{-   $working := dict "rejected" (list) "terms" (list $args.domainNamespaceLabelSelector) }}
 {{-   if contains "," $args.domainNamespaceLabelSelector }}
