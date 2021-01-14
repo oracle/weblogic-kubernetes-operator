@@ -75,7 +75,7 @@ public class K8sEvents {
    * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param timestamp the timestamp after which to see events
-   * @return
+   * @return count number of events count
    */
   public static int getEventCount(
       String domainNamespace, String domainUid, String reason, DateTime timestamp) {
