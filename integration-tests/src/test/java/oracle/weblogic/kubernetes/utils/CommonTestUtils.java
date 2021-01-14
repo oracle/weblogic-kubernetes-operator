@@ -3476,7 +3476,7 @@ public class CommonTestUtils {
                                                 String msInternalPort) {
     final LoggingFacade logger = getLogger();
 
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
         archivePath, domainUid, domainNamespace);
     logger.info("Deploying webapp {0} to admin server and cluster", archivePath);

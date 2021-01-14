@@ -168,7 +168,7 @@ function cleanupMajor() {
   tracen "Info: Waiting for cleanup.sh to complete."
   printdots_start
   FAST_DELETE="--grace-period=1 --timeout=1s" \
-    ${SOURCEPATH}/src/integration-tests/bash/cleanup.sh 2>&1 > \
+    ${SOURCEPATH}/operator/integration-tests/bash/cleanup.sh 2>&1 > \
     ${test_home}/cleanup.out 2>&1
   status=$?
   printdots_end
