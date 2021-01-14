@@ -123,7 +123,7 @@ public class ItKubernetesEvents {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+          .atMost(10, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
@@ -238,6 +238,7 @@ public class ItKubernetesEvents {
         "Failed to patch domain");
 
     // verify the DomainProcessingCompleted event is generated
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
   }
@@ -275,6 +276,7 @@ public class ItKubernetesEvents {
         "Failed to patch domain");
 
     // verify the DomainProcessingStarting/Completed event is generated
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
   }
@@ -564,7 +566,7 @@ public class ItKubernetesEvents {
     String patchStr
         = "["
         + "{\"op\": \"add\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"" + cluster1Name + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
+        + "    {\"clusterName\" : \"" + cluster2Name + "\", \"replicas\": 2, \"serverStartState\": \"RUNNING\"}"
         + "},"
         + "{\"op\": \"replace\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
         + "]";
