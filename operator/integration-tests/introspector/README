@@ -50,7 +50,7 @@ Internal Test Flow:
 
 () Cleanup test k8s artifacts and any old created domain.
 
-   <operator-src>/src/integration-tests/bash/cleanup.sh
+   <operator-src>/operator/integration-tests/bash/cleanup.sh
 
 () Create a test directory in the k8s cluster via kubectl run.
 
