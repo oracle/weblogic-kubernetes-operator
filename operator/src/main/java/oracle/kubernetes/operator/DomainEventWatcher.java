@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -8,29 +8,25 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
- * This class handles Event watching. It receives event notifications and sends them into the operator
+ * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class EventWatcher extends Watcher<V1Event> {
-  private static final String FIELD_SELECTOR = ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER;
-  
-  protected final String ns;
+public class DomainEventWatcher extends EventWatcher {
+  private static final String FIELD_SELECTOR = ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER;
 
-  EventWatcher(
+  private DomainEventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
         WatchListener<V1Event> listener,
         AtomicBoolean isStopping) {
-    super(initialResourceVersion, tuning, isStopping, listener);
-    this.ns = ns;
+    super(ns, initialResourceVersion, tuning, listener, isStopping);
   }
 
   /**
@@ -43,15 +39,15 @@ public class EventWatcher extends Watcher<V1Event> {
    * @param isStopping an atomic boolean to watch to determine when to stop the watcher
    * @return the domain watcher
    */
-  public static EventWatcher create(
-        ThreadFactory factory,
-        String ns,
-        String initialResourceVersion,
-        WatchTuning tuning,
-        WatchListener<V1Event> listener,
-        AtomicBoolean isStopping) {
-    EventWatcher watcher =
-        new EventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+  public static DomainEventWatcher create(
+      ThreadFactory factory,
+      String ns,
+      String initialResourceVersion,
+      WatchTuning tuning,
+      WatchListener<V1Event> listener,
+      AtomicBoolean isStopping) {
+    DomainEventWatcher watcher =
+        new DomainEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -61,13 +57,4 @@ public class EventWatcher extends Watcher<V1Event> {
     return watchBuilder.withFieldSelector(FIELD_SELECTOR).createEventWatch(ns);
   }
 
-  @Override
-  public String getNamespace() {
-    return ns;
-  }
-
-  @Override
-  public String getDomainUid(Response<V1Event> item) {
-    return null;
-  }
 }
