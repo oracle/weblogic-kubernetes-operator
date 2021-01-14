@@ -69,6 +69,34 @@ public class K8sEvents {
   }
 
   /**
+   * Get the event count between a specific timestamp.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param timestamp the timestamp after which to see events
+   * @return
+   */
+  public static int getEventCount(
+      String domainNamespace, String domainUid, String reason, DateTime timestamp) {
+    int count = 0;
+    try {
+      List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (V1Event event : events) {
+        if (event.getReason().contains(reason)
+            && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          count++;
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      return -1;
+    }
+    return count;
+  }
+
+  /**
    * Check if a given event is logged only once for the given pod.
    *
    * @param domainNamespace namespace in which the domain exists
