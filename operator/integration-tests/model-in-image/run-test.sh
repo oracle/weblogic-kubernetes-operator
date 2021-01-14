@@ -195,7 +195,7 @@ if [ "$DO_CLEANUP" = "true" ]; then
   else
     doCommand -c rm -fr ./model-in-image-sample-work-dir
   fi
-  doCommand    "\$SRCDIR/src/integration-tests/bash/cleanup.sh"
+  doCommand    "\$SRCDIR/operator/integration-tests/bash/cleanup.sh"
 
   # delete model images, if any, and dangling images
   for m_image in \

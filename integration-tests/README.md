@@ -54,7 +54,7 @@ mvn -Dit.test="!ItCrossDomainTransaction,!ItMiiUpdateDomainConfig" -pl integrati
 ## Environment variables to manage test execution 
 | Variable | Description | Default Value
 | --- | --- | --- |
-| `SKIP_CLEANUP`  | Test infrastructure removes all Kubernetes objects created during test execution. To retain all such objects for triaging test failures, this environment variable should be set to true. Users need to run `weblogic-kubernetes-operator/src/integration-tests/bash/cleanup.sh` to clean up Kubernetes objects after traiging.    | false
+| `SKIP_CLEANUP`  | Test infrastructure removes all Kubernetes objects created during test execution. To retain all such objects for triaging test failures, this environment variable should be set to true. Users need to run `weblogic-kubernetes-operator/operator/integration-tests/bash/cleanup.sh` to clean up Kubernetes objects after traiging.    | false
 | `COLLECT_LOGS_ON_SUCCESS`  | Test infrastructure does not keep the diagnostic log for successful tests. To archive the diagnostic log for successful tests, this environment variable should be set to true. | false
 | `RESULT_ROOT` | Root directory for the integration test results and artifacts generated during test execution. | `/tmp/it-testsresults`
 | `BASE_IMAGES_REPO`  | The repository URL to download WebLogic and FMW image. Make sure you have access to this repository. The other supported repository is `phx.ocir.io` (OCIR).  | `container-registry.oracle.com` (OCR)
