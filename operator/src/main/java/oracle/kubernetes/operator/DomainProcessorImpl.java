@@ -690,7 +690,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
-        disableOnlineUpdateIfSpecChgNotCompatible(cachedInfo);
+        //disableOnlineUpdateIfSpecChgNotCompatible(cachedInfo);
 
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
@@ -738,7 +738,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       // and onlineUpdate, disable online update ??
 
       if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
-        LOGGER.fine("DomainType is FromModel and onlineUpdate is enabled, but there are changes in the domain "
+        LOGGER.info("DomainType is FromModel and onlineUpdate is enabled, but there are changes in the domain "
             + "spec incompatible for onlineUpdate, e.g. image name, serverPod environment, etc... resetting "
             + "onlineUpdate.enabled=false. The domain will roll after successful updates.");
         Optional.ofNullable(liveInfo)
