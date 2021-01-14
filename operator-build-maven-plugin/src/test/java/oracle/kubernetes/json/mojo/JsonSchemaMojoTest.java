@@ -9,8 +9,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.mojosupport.MojoTestBase;
 import oracle.kubernetes.mojosupport.TestFileSystem;
@@ -255,7 +255,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
 
   @Test
   public void whenGenerateMarkdownSpecified_useGeneratedSchemaForMarkdown() throws Exception {
-    ImmutableMap<String, Object> generatedSchema = ImmutableMap.of();
+    Map<String, Object> generatedSchema = Map.of();
     main.setGeneratedSchema(generatedSchema);
     setMojoParameter("generateMarkdown", true);
 
