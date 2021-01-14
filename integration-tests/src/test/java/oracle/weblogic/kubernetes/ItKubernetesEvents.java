@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -185,6 +186,7 @@ public class ItKubernetesEvents {
    */
   @Order(2)
   @Test
+  @Disabled
   public void testDomainK8sEventsScalePastMax() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     scaleClusterWithRestApi(domainUid, cluster1Name, 3, externalRestHttpsPort, opNamespace, opServiceAccount);
@@ -197,6 +199,7 @@ public class ItKubernetesEvents {
    */
   @Order(3)
   @Test
+  @Disabled
   public void testDomainK8sEventsScaleBelowMin() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount);
@@ -209,6 +212,7 @@ public class ItKubernetesEvents {
    */
   @Order(4)
   @Test
+  @Disabled
   public void testDomainK8sEventsNonExistingMS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("patch the domain resource with new managed server");
@@ -265,11 +269,7 @@ public class ItKubernetesEvents {
 
     //remove the cluster from domain resource
     timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    patchStr
-        = "["
-        + "{\"op\": \"remove\",\"path\": \"/spec/clusters/-\", \"value\": "
-        + "    {\"clusterName\" : \"nonexisting-cluster\""
-        + "}]";
+    patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     patch = new V1Patch(patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -317,6 +317,7 @@ public class ItKubernetesEvents {
    */
   @Order(7)
   @Test
+  @Disabled
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
@@ -329,6 +330,7 @@ public class ItKubernetesEvents {
    */
   @Order(8)
   @Test
+  @Disabled
   public void testK8SEventsStopWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
