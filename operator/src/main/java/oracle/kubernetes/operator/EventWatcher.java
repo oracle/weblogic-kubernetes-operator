@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.EventsV1Event;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -18,7 +18,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * This class handles Domain watching. It receives domain events and sends them into the operator
  * for processing.
  */
-public class EventWatcher extends Watcher<V1Event> {
+public class EventWatcher extends Watcher<EventsV1Event> {
   private static final String FIELD_SELECTOR = ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER;
   
   private final String ns;
@@ -27,7 +27,7 @@ public class EventWatcher extends Watcher<V1Event> {
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<V1Event> listener,
+        WatchListener<EventsV1Event> listener,
         AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -48,7 +48,7 @@ public class EventWatcher extends Watcher<V1Event> {
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<V1Event> listener,
+        WatchListener<EventsV1Event> listener,
         AtomicBoolean isStopping) {
     EventWatcher watcher =
         new EventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
@@ -57,7 +57,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<EventsV1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.withFieldSelector(FIELD_SELECTOR).createEventWatch(ns);
   }
 
@@ -67,7 +67,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public String getDomainUid(Response<V1Event> item) {
+  public String getDomainUid(Response<EventsV1Event> item) {
     return null;
   }
 }

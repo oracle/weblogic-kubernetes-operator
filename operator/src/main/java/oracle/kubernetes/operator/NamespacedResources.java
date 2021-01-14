@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.models.EventsV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -71,7 +71,7 @@ class NamespacedResources {
     /**
      * Return the processing to be performed on a list of events found in Kubernetes. May be null.
      */
-    Consumer<V1EventList> getEventListProcessing() {
+    Consumer<EventsV1EventList> getEventListProcessing() {
       return null;
     }
 
@@ -124,7 +124,7 @@ class NamespacedResources {
     return getListProcessing(Processors::getEventListProcessing).map(this::createEventListStep).orElse(null);
   }
 
-  private Step createEventListStep(List<Consumer<V1EventList>> processing) {
+  private Step createEventListStep(List<Consumer<EventsV1EventList>> processing) {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
