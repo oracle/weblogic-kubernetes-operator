@@ -57,7 +57,7 @@ public class ItMiiSample {
   private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
   private static final String MII_SAMPLES_SCRIPT =
-      "../src/integration-tests/model-in-image/run-test.sh";
+      "../operator/integration-tests/model-in-image/run-test.sh";
 
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
