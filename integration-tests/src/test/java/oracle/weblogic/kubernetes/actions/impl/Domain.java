@@ -420,7 +420,7 @@ public class Domain {
                 condition.getRemainingTimeInMS()))
         .until(() -> {
           return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
+              Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
               Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
         });
 
