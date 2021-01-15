@@ -134,11 +134,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     getEventK8SObjects(event).update(event);
   }
 
-  // unit test only
-  public void clearEventK8SObjects() {
-    eventK8SObjects.clear();
-  }
-
   private static String getEventNamespace(V1Event event) {
     return Optional.ofNullable(event).map(V1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
@@ -151,7 +146,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
   }
 
-  private static synchronized EventKubernetesObjects getEventK8SObjects(String ns, String domainUid) {
+  private static EventKubernetesObjects getEventK8SObjects(String ns, String domainUid) {
     return eventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
         .computeIfAbsent(domainUid, d -> new EventKubernetesObjects());
   }
@@ -160,7 +155,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onEvent(V1Event event) {
+  private static void onCreateModifyEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
     if (ref == null || ref.getName() == null) {
@@ -467,7 +462,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       switch (item.type) {
         case "ADDED":
         case "MODIFIED":
-          onEvent(e);
+          onCreateModifyEvent(e);
           break;
         case "DELETED":
           onDeleteEvent(e);

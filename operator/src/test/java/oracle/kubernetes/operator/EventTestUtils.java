@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
@@ -153,6 +154,44 @@ public class EventTestUtils {
     return eventsMatchReason.size() == 1 && eventsMatchReason.stream().anyMatch(e -> countMatches(e, count));
   }
 
+  /**
+   * Whether the latest event that matches the given reason has the expected count.
+   *
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param count count to match
+   * @return true if the expected condition met
+   */
+  public static boolean containsLastEventWithCountOne(
+      List<V1Event> events, String reason, int count) {
+    DateTime latest = new DateTime(0);
+    V1Event found = null;
+    for (V1Event event : events) {
+      if (reasonMatches(event, reason) && getFirstTimestamp(event).isAfter(latest)) {
+        found = event;
+        latest = event.getFirstTimestamp();
+      }
+    }
+    return Optional.ofNullable(found).map(c -> countMatches(c, count)).orElse(false);
+  }
+
+  /**
+   * Whether the number of events with the same reason and count of 1 matches the given expected count.
+   *
+   * @param events list of events to check
+   * @param reason reason to match
+   * @param eventsCount number of events that was expected to match
+   * @return true if the expected condition met
+   */
+  public static boolean containsEventsWithCountOne(List<V1Event> events, String reason, int eventsCount) {
+    List<V1Event> eventsMatchReason = getEventsWithReason(events, reason);
+    return eventsMatchReason.size() == eventsCount && eventsMatchReason.stream().allMatch(e -> countMatches(e, 1));
+  }
+
+  private static DateTime getFirstTimestamp(V1Event event) {
+    return Optional.ofNullable(event).map(V1Event::getFirstTimestamp).orElse(new DateTime(0));
+  }
+
   public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
@@ -166,7 +205,7 @@ public class EventTestUtils {
   }
 
   private static boolean namespaceMatches(V1Event event, String namespace) {
-    return namespace.equals(event.getMetadata().getNamespace());
+    return namespace.equals(getNamespace(event));
   }
 
   private static boolean labelsMatches(V1Event e, Map<String, String> labels) {
@@ -187,22 +226,41 @@ public class EventTestUtils {
 
   private static boolean involvedObjectMatches(
       @NotNull V1Event event, String name, String namespace, String k8sUID) {
-    return getInvolvedObjectName(event).equals(name)
-        && getInvolvedObjectApiVersion(event).equals(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
-        && getInvolvedObjectNamespace(event).equals(namespace)
-        && getNamespace(event).equals(getInvolvedObjectNamespace(event))
-        && getInvolvedObjectK8SUID(event).equals(k8sUID);
+    return involvedObjectNameMatches(event, name)
+        && involvedObjectApiVersionMatches(event)
+        && involvedObjectNamespaceMatches(event, namespace)
+        && involvedObjectUIDMatches(event, k8sUID);
   }
 
   private static boolean involvedObjectMatches(
       @NotNull V1Event event, String name, String namespace) {
-    return getInvolvedObjectName(event).equals(name)
-        && getInvolvedObjectNamespace(event).equals(namespace)
+    return involvedObjectNameMatches(event, name)
+        && involvedObjectNamespaceMatches(event, namespace);
+  }
+
+  private static boolean involvedObjectUIDMatches(@NotNull V1Event event, String k8sUID) {
+    return getInvolvedObjectK8SUID(event).equals(k8sUID);
+  }
+
+  private static boolean involvedObjectApiVersionMatches(@NotNull V1Event event) {
+    return getInvolvedObjectApiVersion(event).equals(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE);
+  }
+
+  private static boolean involvedObjectNameMatches(@NotNull V1Event event, String name) {
+    return getInvolvedObjectName(event).equals(name);
+  }
+
+  private static boolean involvedObjectNamespaceMatches(@NotNull V1Event event, String namespace) {
+    return getInvolvedObjectNamespace(event).equals(namespace)
         && getNamespace(event).equals(getInvolvedObjectNamespace(event));
   }
 
   private static boolean countMatches(@NotNull V1Event event, int count) {
-    return Optional.of(event).map(V1Event::getCount).map(c -> c == count).orElse(false);
+    return getCount(event) == count;
+  }
+
+  private static int getCount(@NotNull V1Event event) {
+    return Optional.of(event).map(V1Event::getCount).orElse(0);
   }
 
   private static String getInvolvedObjectK8SUID(V1Event event) {
@@ -227,6 +285,10 @@ public class EventTestUtils {
 
   private static String getInvolvedObjectName(@NotNull V1Event event) {
     return Optional.ofNullable(event.getInvolvedObject()).map(V1ObjectReference::getName).orElse("");
+  }
+
+  public static V1Event getEventWithReason(List<V1Event> events, String reason) {
+    return getEventsWithReason(events, reason).size() > 0 ? getEventsWithReason(events, reason).get(0) : null;
   }
 
 }

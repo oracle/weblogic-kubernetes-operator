@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.EventConstants;
+import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -50,6 +51,8 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolve
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
+import static oracle.kubernetes.operator.EventTestUtils.containsLastEventWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.containsOneEventWithCount;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
@@ -80,6 +83,7 @@ public class EventHelperTest {
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final Map<String, Map<String, EventKubernetesObjects>> eventObjects = new HashMap<>();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);
@@ -90,6 +94,7 @@ public class EventHelperTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "eventK8SObjects", eventObjects));
     mementos.add(TuningParametersStub.install());
     mementos.add(HelmAccessStub.install());
 
@@ -99,7 +104,6 @@ public class EventHelperTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
     HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
-    processor.clearEventK8SObjects();
   }
 
   @After
@@ -228,6 +232,40 @@ public class EventHelperTest {
   }
 
   @Test
+  public void whenCreateEventTwice_fail404OnCreate2ndEvent_domainProcessingStartingEventCreatedWithExpectedCount() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    dispatchAddedEventWatches();
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 404);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
+
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
+        containsLastEventWithCountOne(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenCreateEventTwice_fail410OnCreate2ndEvent_domainProcessingStartingEventCreatedWithExpectedCount() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    dispatchAddedEventWatches();
+    testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 410);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
+
+    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
+        containsLastEventWithCountOne(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT, 1), is(true));
+  }
+
+  @Test
   public void whenCreateEventStepCalledWithOutStartingEvent_domainProcessingCompletedEventNotCreated() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
@@ -237,7 +275,6 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingCompletedEventCreated() {
-    processor.clearEventK8SObjects();
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_RETRYING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
@@ -250,7 +287,6 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventCalledTwice_domainProcessingCompletedEventCreatedWithExpectedCount() {
-    processor.clearEventK8SObjects();
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -263,6 +299,40 @@ public class EventHelperTest {
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event with expected count",
         containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenCreateEventCalledTwice_thenDeleteEvent_domainProcessingStartingEventCreatedTwice() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_CREATED))));
+
+    dispatchAddedEventWatches();
+    dispatchDeletedEventWatches();
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_CREATED))));
+
+    assertThat("Found 2 DOMAIN_CREATED events with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            DOMAIN_CREATED_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenCreateEventCalledTwice_thenDeleteCompletedEvent_domainProcessingCompletedEventCreatedTwice() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    dispatchAddedEventWatches();
+    dispatchDeletedEventWatches();
+
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    assertThat("Found 2 DOMAIN_PROCESSING_COMPLETED events with expected count 1",
+        containsEventsWithCountOne(getEvents(testSupport),
+            DOMAIN_PROCESSING_COMPLETED_EVENT, 2), is(true));
   }
 
   @Test
@@ -475,4 +545,14 @@ public class EventHelperTest {
     processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
   }
 
+  private void dispatchDeletedEventWatches() {
+    List<V1Event> events = getEvents(testSupport);
+    for (V1Event event : events) {
+      dispatchDeletedEventWatch(event);
+    }
+  }
+
+  private void dispatchDeletedEventWatch(V1Event event) {
+    processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
+  }
 }

@@ -31,8 +31,8 @@ public class EventKubernetesObjects {
   }
 
   private static class EventIdentifier {
-    String reason;
     V1ObjectReference involvedObject;
+    String reason;
     String message;
 
     EventIdentifier(V1Event event) {

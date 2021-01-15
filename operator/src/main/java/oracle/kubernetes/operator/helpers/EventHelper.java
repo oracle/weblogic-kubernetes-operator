@@ -119,7 +119,7 @@ public class EventHelper {
               new CreateEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(V1Event event, V1Event existingEvent) {
+    private Step createReplaceEventCall(V1Event event, @NotNull V1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
@@ -128,7 +128,7 @@ public class EventHelper {
               existingEvent.getMetadata().getName(),
               existingEvent.getMetadata().getNamespace(),
               existingEvent,
-              new ReplaceEventResponseStep(event, getNext()));
+              new ReplaceEventResponseStep(getNext()));
     }
 
     private V1Event getExistingEvent(V1Event event) {
@@ -146,7 +146,6 @@ public class EventHelper {
     }
 
     private class CreateEventResponseStep extends ResponseStep<V1Event> {
-
       CreateEventResponseStep(Step next) {
         super(next);
       }
@@ -156,15 +155,12 @@ public class EventHelper {
         packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
         return doNext(packet);
       }
-
     }
 
     private class ReplaceEventResponseStep extends ResponseStep<V1Event> {
-      V1Event event;
 
-      ReplaceEventResponseStep(V1Event event, Step next) {
+      ReplaceEventResponseStep(Step next) {
         super(next);
-        this.event = event;
       }
 
       @Override
@@ -176,7 +172,7 @@ public class EventHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
         return UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-            ? doNext(Step.chain(createCreateEventCall(event), getNext()), packet)
+            ? doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet)
             : super.onFailure(packet, callResponse);
       }
     }
@@ -186,33 +182,43 @@ public class EventHelper {
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-    eventData.namespace(Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace));
-    eventData.resourceName(eventData.eventItem.calculateResourceName(info, eventData.namespace));
+    EventItem eventItem = eventData.eventItem;
+
+    String namespace = getNamespaceFromInfo(eventData, info);
+    eventData.namespace(namespace);
+    eventData.resourceName(eventItem.calculateResourceName(info, namespace));
     eventData.domainPresenceInfo(info);
+
     return new V1Event()
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())
-        .lastTimestamp(eventData.eventItem.getLastTimestamp())
-        .type(eventData.eventItem.getType())
-        .reason(eventData.eventItem.getReason())
-        .message(eventData.eventItem.getMessage(eventData.getResourceName(), eventData))
-        .involvedObject(eventData.eventItem.createInvolvedObject(eventData))
+        .lastTimestamp(eventItem.getLastTimestamp())
+        .type(eventItem.getType())
+        .reason(eventItem.getReason())
+        .message(eventItem.getMessage(eventData.getResourceName(), eventData))
+        .involvedObject(eventItem.createInvolvedObject(eventData))
         .count(1);
+  }
+
+  private static String getNamespaceFromInfo(EventData eventData, DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+        .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace);
   }
 
   private static V1ObjectMeta createMetadata(
       EventData eventData) {
     final V1ObjectMeta metadata =
-        new V1ObjectMeta()
-            .name(String.format("%s.%s.%s",
-                eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis()))
-            .namespace(eventData.getNamespace());
+        new V1ObjectMeta().name(generateEventName(eventData)).namespace(eventData.getNamespace());
 
     eventData.eventItem.addLabels(metadata, eventData);
 
     return metadata;
+  }
+
+  private static String generateEventName(EventData eventData) {
+    return String.format("%s.%s.%s.%s",
+        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), Math.random());
   }
 
   public enum EventItem {

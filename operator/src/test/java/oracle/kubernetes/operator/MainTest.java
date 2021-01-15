@@ -490,6 +490,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(domainNamespaces.getConfigMapWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(NS), notNullValue());
+    assertThat(domainNamespaces.getDomainEventWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getPodWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getServiceWatcher(NS), notNullValue());
   }
@@ -529,6 +530,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(domainNamespaces.getConfigMapWatcher(ns), nullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), nullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), nullValue());
+    assertThat(domainNamespaces.getDomainEventWatcher(ns), nullValue());
     assertThat(domainNamespaces.getJobWatcher(ns), nullValue());
     assertThat(domainNamespaces.getPodWatcher(ns), nullValue());
     assertThat(domainNamespaces.getServiceWatcher(ns), nullValue());
@@ -564,6 +566,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(domainNamespaces.getConfigMapWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getDomainWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getEventWatcher(ns), notNullValue());
+    assertThat(domainNamespaces.getDomainEventWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getJobWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getPodWatcher(ns), notNullValue());
     assertThat(domainNamespaces.getServiceWatcher(ns), notNullValue());
