@@ -1,0 +1,25 @@
+{
+  "kind": "Service",
+  "apiVersion": "v1",
+  "spec": {
+    "ports": [
+      {
+        "name": "rest",
+        "protocol": "TCP",
+        "port": 8082,
+        "targetPort": 8082
+      }
+    ],
+    "selector": {
+      "app": "weblogic-operator"
+    },
+    "clusterIP": "10.104.26.52",
+    "type": "ClusterIP",
+    "sessionAffinity": "None"
+  },
+  "status": {
+    "loadBalancer": {
+
+    }
+  }
+}
