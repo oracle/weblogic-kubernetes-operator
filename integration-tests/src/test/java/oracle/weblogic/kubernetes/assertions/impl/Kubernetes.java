@@ -47,6 +47,8 @@ public class Kubernetes {
 
   private static final String OPERATOR_NAME = "weblogic-operator-";
 
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
   private static CustomObjectsApi customObjectsApi = null;
@@ -450,6 +452,7 @@ public class Kubernetes {
             labelSelector, // selector to restrict the list of returned objects by their labels.
             null, // maximum number of responses to return for a list call.
             null, // shows changes that occur after that particular version of a resource.
+            RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
@@ -510,6 +513,7 @@ public class Kubernetes {
         null, // maximum number of responses to return for a list call.
         Boolean.FALSE.toString(), // pretty print output.
         null, // shows changes that occur after that particular version of a resource.
+        RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
     );
@@ -619,6 +623,7 @@ public class Kubernetes {
             labelSelectors, // selector to restrict the list of returned objects by their labels.
             null, // maximum number of responses to return for a list call.
             null, // shows changes that occur after that particular version of a resource.
+            RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
@@ -643,6 +648,7 @@ public class Kubernetes {
         null, // maximum number of responses to return for a list call.
         Boolean.FALSE.toString(), // pretty print output.
         null, // shows changes that occur after that particular version of a resource.
+        RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
         );
@@ -691,6 +697,7 @@ public class Kubernetes {
           labelSelectors, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           "", // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -811,6 +818,7 @@ public class Kubernetes {
           labels, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           "", // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -839,6 +847,7 @@ public class Kubernetes {
           "", // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           "", // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
