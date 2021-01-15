@@ -17,6 +17,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -36,6 +38,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -50,8 +53,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -517,6 +522,14 @@ class ItMiiDynamicUpdate {
 
   }
 
+  /**
+   * Non-dynamic change using dynamic update by changing datasource parameters.
+   * Set onNonDynamicChanges to CommitUpdateAndRoll.
+   * Verify domain will rolling restart.
+   * Verify introspectVersion is updated.
+   * Verify the datasource parameter is updated by checking the MBean using REST api.
+   * Verify domain status should have a condition type OnlineUpdateComplete.
+   */
   @Test
   @Order(6)
   @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
@@ -535,17 +548,14 @@ class ItMiiDynamicUpdate {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    // write sparse yaml to file
-    Path pathToChangeAdminCredentialsYaml = Paths.get(WORK_DIR + "/changeadmincredentials.yaml");
-    String yamlToChangeAdminCredentials = "domainInfo:\n"
-        + "  AdminUserName: newadminuser\n"
-        + "  AdminPassword: newadminpassword";
-
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", pathToChangeAdminCredentialsYaml.toString()), withStandardRetryPolicy);
+            MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -553,7 +563,9 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
 
-    verifyPodsNotRolled(pods);
+    // Verifying the domain is rolling restarted
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
@@ -561,10 +573,33 @@ class ItMiiDynamicUpdate {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
+        "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
     logger.info("JDBCSystemResource configuration found");
 
+    // check that the domain status message contains the expected error msg
+    logger.info("verifying the domain status message contains the expected error msg");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status condition type is OnlineUpdateComplete, "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            List<DomainCondition> domainConditions = miidomain.getStatus().getConditions();
+            for (DomainCondition domainCondition : domainConditions) {
+              if (domainCondition.getType().equalsIgnoreCase("OnlineUpdateComplete")) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        });
   }
 
   /**
@@ -1086,4 +1121,27 @@ class ItMiiDynamicUpdate {
     }
   }
 
+  /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  private static boolean checkSystemResourceConfig(int nodePort, String resourcesType, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
 }
