@@ -782,12 +782,12 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Recreate configmap containing non-dynamic change, changing WLS image on domain.
+   * Recreate configmap containing non-dynamic change, changing DS attribute.
    * Patch the domain resource with the configmap.
    * Patch the domain with onNonDynamicChanges value as CancelUpdate.
    * Update the introspect version of the domain resource.
    * Wait for introspector to complete
-   * Verify the changes are not effective and domain is not restarted.
+   * Verify the domain status is updated and domain is not restarted.
    */
   @Test
   @Order(11)
@@ -1114,6 +1114,12 @@ class ItMiiDynamicUpdate {
     }
   }
 
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   * @param conditionType condition type
+   * @param conditionMsg messsage in condition
+   * @return true if the condition matches
+   */
   private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
     withStandardRetryPolicy
         .conditionEvaluationListener(
