@@ -12,7 +12,9 @@ operator_namespace="weblogic-operator"
 operator_service_account="weblogic-operator"
 scaling_size=1
 access_token=""
+no_op=""
 kubernetes_master="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
+log_file_name="scalingAction.log"
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
@@ -31,11 +33,11 @@ function timestamp() {
 }
 
 function trace() {
-  echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> scalingAction.log
+  echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> ${log_file_name}
 }
 
 function print_usage() {
-  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1]"
+  echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1] [--no_op]"
   echo "  where"
   echo "    action - scaleUp or scaleDown"
   echo "    domain_uid - WebLogic Domain Unique Identifier"
@@ -47,6 +49,7 @@ function print_usage() {
   echo "    operator_service_account - Kubernetes Service Account for WebLogic Operator, default=weblogic-operator"
   echo "    operator_namespace - WebLogic Operator Namespace, default=weblogic-operator"
   echo "    scaling_size - number of WebLogic server instances by which to scale up or down, default=1"
+  echo "    no_op - if specified, returns without doing anything. For use by unit test to include methods in the script"
   exit 1
 }
 
@@ -69,6 +72,13 @@ function logScalingParameters() {
   trace "scaling_size: $scaling_size"
 }
 
+function jq_available() {
+  if [ -x "$(command -v jq)" ] && [ -z "$DONT_USE_JQ" ]; then
+    return;
+  fi
+  false
+}
+
 # Query WebLogic Operator Service Port
 function get_operator_internal_rest_port() {
   local STATUS=$(curl \
@@ -84,9 +94,9 @@ function get_operator_internal_rest_port() {
   fi
 
   local port
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
     local extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
-    port=$(echo "${STATUS}" | jq "${extractPortCmd}")
+    port=$(echo "${STATUS}" | jq "${extractPortCmd}" 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -94,7 +104,7 @@ for i in json.load(sys.stdin)["spec"]["ports"]:
   if i["name"] == "rest":
     print(i["port"])
 INPUT
-port=$(echo "${STATUS}" | python cmds-$$.py)
+port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
   echo "$port"
 }
@@ -117,9 +127,9 @@ function get_domain_api_version() {
 
 # Find domain version
   local domain_api_version
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
     local extractVersionCmd="(.groups[] | select (.name == \"weblogic.oracle\") | .preferredVersion.version)"
-    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}")
+    domain_api_version=$(echo "${APIS}" | jq -r "${extractVersionCmd}" 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -127,7 +137,7 @@ for i in json.load(sys.stdin)["groups"]:
   if i["name"] == "weblogic.oracle":
     print(i["preferredVersion"]["version"])
 INPUT
-domain_api_version=`echo ${APIS} | python cmds-$$.py`
+domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   echo "$domain_api_version"
 }
@@ -152,9 +162,10 @@ function get_custom_resource_domain() {
 function is_defined_in_clusters() {
   local DOMAIN="$1"
   local in_cluster_startup="False"
-  if [ -x "$(command -v jq)" ]; then
+
+  if jq_available; then
     local inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
-    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}")
+    local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
     if [ "${clusterDefinedInCRD}" != "" ]; then
       in_cluster_startup="True"
     fi
@@ -172,7 +183,7 @@ for i in json.load(sys.stdin)["items"]:
 if outer_loop_must_break == False:
   print False
 INPUT
-in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
+in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   echo "$in_cluster_startup"
 }
@@ -183,9 +194,9 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py`
 function get_num_ms_in_cluster() {
   local DOMAIN="$1"
   local num_ms
-  if [ -x "$(command -v jq)" ]; then
+  if jq_available; then
   local numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
-  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}")
+  num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -195,10 +206,10 @@ for i in json.load(sys.stdin)["items"]:
     if j[index]["clusterName"] == "$wls_cluster_name":
       print j[index]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
 
-  if [ "${num_ms}" == "null" ]; then
+  if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
     num_ms=0
   fi
 
@@ -211,18 +222,18 @@ INPUT
 function get_num_ms_domain_scope() {
   local DOMAIN="$1"
   local num_ms
-  if [ -x "$(command -v jq)" ]; then
-    num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' )
+  if jq_available; then
+    num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
   print i["spec"]["replicas"]
 INPUT
-  num_ms=`echo ${DOMAIN} | python cmds-$$.py`
+  num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
 
-  if [ "${num_ms}" == "null" ]; then
+  if [ "${num_ms}" == "null" ] || [ "${num_ms}" == '' ] ; then
     # if not defined then default to 0
     num_ms=0
   fi
@@ -242,10 +253,10 @@ function get_min_replicas {
   local __result=$3
 
   eval $__result=0
-  if [ -x "$(command -v jq)" ]; then
-    minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+  if jq_available; then
+    minReplicaCmd="(.items[].status.clusters[] | select (.clusterName == \"${clusterName}\")) \
       | .minimumReplicas"
-    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
+    minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
@@ -255,7 +266,7 @@ for i in json.load(sys.stdin)["items"]:
     if j[index]["clusterName"] == "$clusterName":
       print j[index]["minimumReplicas"]
 INPUT
-  minReplicas=`echo ${DOMAIN} | python cmds-$$.py`
+  minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
   eval $__result=${minReplicas}
 }
@@ -403,11 +414,19 @@ do
     access_token="${arg#*=}"
     shift # past argument=value
     ;;
+    --no_op)
+    no_op="true"
+    ;;
     *)
           # unknown option
     ;;
   esac
 done
+
+if [ "${no_op}" = "true" ]; then
+  echo "no_op is set, returning"
+  return
+fi
 
 # Verify required parameters
 if [ -z "$scaling_action" ] || [ -z "$wls_domain_uid" ] || [ -z "$wls_cluster_name" ]
