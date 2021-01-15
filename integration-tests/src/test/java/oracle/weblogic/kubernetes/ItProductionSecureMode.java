@@ -59,13 +59,19 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the `default-admin` service is provisioned when 
- * a channel called `default-admin` is added to domain resource and 
- * `AdministrationPortEnabled` is set to true.
+ * The test verifies the enablement of ProductionSecureMode in WebLogic Operator
+ * environment. Make sure all the servers in the domain comes up and WebLogic
+ * console is accessible thru secure admin NodePort service and application can
+ * be deployed using REST API. 
+ * In order to enable ProductionSecureMode in WebLogic Operator environment 
+ * (a) add channel called `default-admin` to domain resource
+ * (b) JAVA_OPTIONS to -Dweblogic.security.SSL.ignoreHostnameVerification=true
+ * (c) add ServerStartMode: secure to domainInfo section of model file
+ * (d) add a SSL Configuration to the server template
  */
-@DisplayName("Test secure nodePort service through admin port and default-admin channel in a mii domain")
+@DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
-class ItDefaultAdminNodePort {
+class ItProductionSecureMode {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -118,11 +124,18 @@ class ItDefaultAdminNodePort {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, 
             "weblogicenc", "weblogicenc");
-
     String configMapName = "default-admin-configmap";
-    String yamlString = "topology:\n"
-        + "  AdministrationPortEnabled: true\n"
-        + "  AdministrationPort: '9010'\n";
+    String yamlString = "domainInfo:\n"
+        + "  ServerStartMode: secure\n"
+        + "topology:\n"
+        + "  ServerTemplate: \n" 
+        + "    \"cluster-1-template\": \n"
+        + "       SSL: \n"
+        + "         Enabled: true \n"
+        + "         ListenPort: '7003' \n"; 
+
+    // yamlString = "domainInfo:\n"
+    //    + "  ServerStartMode: secure\n";
 
     createModelConfigMap(configMapName, yamlString);
 
@@ -170,7 +183,7 @@ class ItDefaultAdminNodePort {
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
-  public void testVerifyDefaultAdminPortService() {
+  public void testVerifyProductionSecureMode() {
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
     assertTrue(sslNodePort != -1,
