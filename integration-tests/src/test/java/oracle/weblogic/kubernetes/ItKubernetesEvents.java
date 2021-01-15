@@ -314,7 +314,8 @@ public class ItKubernetesEvents {
       // remove the webLogicCredentialsSecret to verify the following events
       // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
       patchStr = "[{\"op\": \"add\", \"path\": \"/spec/webLogicCredentialsSecret\", "
-          + "\"value\" : \"" + wlSecretName + "\"}]";
+          + "\"value\" : {\"name\":\"" + wlSecretName + "\" , \"namespace\":\"" + domainNamespace1 + "\"}"
+          + "}]";
       logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
