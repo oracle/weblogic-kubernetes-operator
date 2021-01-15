@@ -182,37 +182,10 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Scale the cluster beyond maximum dynamic cluster size and verify the warning event is generated.
+   * Change a domain resource with adding a managed server not in domain and verify the warning event is generated.
    */
   @Order(2)
   @Test
-  @Disabled
-  public void testDomainK8sEventsScalePastMax() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    scaleClusterWithRestApi(domainUid, cluster1Name, 3, externalRestHttpsPort, opNamespace, opServiceAccount);
-    // verify the DomainValidationError event is generated
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
-  }
-
-  /**
-   * Scale the cluster below minimum dynamic cluster size and verify the warning event is generated.
-   */
-  @Order(3)
-  @Test
-  @Disabled
-  public void testDomainK8sEventsScaleBelowMin() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount);
-    // verify the DomainValidationError event is generated
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
-  }
-
-  /**
-   * Change a domain resource with adding a managed server not in domain and verify the warning event is generated.
-   */
-  @Order(4)
-  @Test
-  @Disabled
   public void testDomainK8sEventsNonExistingMS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("patch the domain resource with new managed server");
@@ -248,9 +221,8 @@ public class ItKubernetesEvents {
   /**
    * Change a domain resource with adding a cluster not in domain and verify the warning event is generated.
    */
-  @Order(5)
+  @Order(3)
   @Test
-  @Disabled
   public void testDomainK8sEventsNonExistingCluster() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("patch the domain resource with new cluster");
@@ -284,7 +256,7 @@ public class ItKubernetesEvents {
    * logged when operator retries the failed domain resource changes. Verifies DomainProcessingAborted is logged when
    * operator exceeds the maximum retries.
    */
-  @Order(6)
+  @Order(4)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsFailed() {
@@ -336,9 +308,8 @@ public class ItKubernetesEvents {
   /**
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
-  @Order(7)
+  @Order(5)
   @Test
-  @Disabled
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
@@ -349,9 +320,8 @@ public class ItKubernetesEvents {
   /**
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching an another domain namespace.
    */
-  @Order(8)
+  @Order(6)
   @Test
-  @Disabled
   public void testK8SEventsStopWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
@@ -362,7 +332,7 @@ public class ItKubernetesEvents {
   /**
    * Test verifies there is only 1 DomainProcessing Starting/Completed event is logged in a multi cluster domain.
    */
-  @Order(9)
+  @Order(7)
   @Test
   public void testK8SEventsMultiClusterEvents() {
     createNewCluster();
@@ -374,6 +344,32 @@ public class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
     assertEquals(1, getEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_STARTING, timestamp));
     assertEquals(1, getEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, timestamp));
+  }
+
+  /**
+   * Scale the cluster beyond maximum dynamic cluster size and verify the warning event is generated.
+   */
+  @Order(8)
+  @Test
+  @Disabled
+  public void testDomainK8sEventsScalePastMax() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    scaleClusterWithRestApi(domainUid, cluster1Name, 3, externalRestHttpsPort, opNamespace, opServiceAccount);
+    // verify the DomainValidationError event is generated
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
+  }
+
+  /**
+   * Scale the cluster below minimum dynamic cluster size and verify the warning event is generated.
+   */
+  @Order(9)
+  @Test
+  @Disabled
+  public void testDomainK8sEventsScaleBelowMin() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount);
+    // verify the DomainValidationError event is generated
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
   }
 
   /**
