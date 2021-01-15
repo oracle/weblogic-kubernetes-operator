@@ -113,8 +113,14 @@ public class ItCrossClusterDomainTransaction {
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
-  private static final String KUBECONFIG1 = System.getenv("WORKSPACE") + "/terraform/mlcluster_kubeconfig";
-  private static final String KUBECONFIG2 = System.getenv("KUBECONFIG");
+  private static final String KUBECONFIG1 = System.getenv("WORKSPACE")
+      + "/terraform/"
+      + System.getenv("CLUSTER_NAME1")
+      + "_kubeconfig";
+  private static final String KUBECONFIG2 = System.getenv("WORKSPACE")
+      + "/terraform/"
+      + System.getenv("CLUSTER_NAME2")
+      + "_kubeconfig";
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = K8S_NODEPORT_HOST;
 
@@ -166,6 +172,7 @@ public class ItCrossClusterDomainTransaction {
     updatePropertyFile();
 
   }
+
 
   private static void initCluster1() {
 
