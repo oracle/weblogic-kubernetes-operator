@@ -315,7 +315,7 @@ class ItMiiDynamicUpdate {
    * Wait for introspector to complete
    * Verify work manager configuration is updated.
    */
-  //@Test
+  @Test
   @Order(2)
   @DisplayName("Update work manager min/max threads constraints config to a model-in-image domain using dynamic update")
   public void testMiiUpdateWorkManager() {
@@ -361,7 +361,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Verify the application can be accessed on both admin server and from all servers in cluster.
    */
-  //@Test
+  @Test
   @Order(3)
   @DisplayName("Change target for the application deployment using mii dynamic update")
   public void testMiiChangeTarget() {
@@ -421,7 +421,7 @@ class ItMiiDynamicUpdate {
    * Wait for introspector to complete
    * Verify servers in the newly added cluster are started and other servers are not rolled.
    */
-  //@Test
+  @Test
   @Order(4)
   @DisplayName("Add cluster in MII domain using mii dynamic update")
   public void testMiiAddCluster() {
@@ -525,7 +525,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  //@Test
+  @Test
   @Order(6)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
@@ -581,7 +581,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  //@Test
+  @Test
   @Order(7)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   public void testMiiChangeListenPort() {
@@ -629,7 +629,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  //@Test
+  @Test
   @Order(8)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
   public void testMiiChangeListenAddress() {
@@ -673,7 +673,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status message contains the expected error msg
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
-  //@Test
+  @Test
   @Order(9)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   public void testMiiChangeSSL() {
@@ -723,7 +723,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
-  //@Test
+  @Test
   @Order(10)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
@@ -830,7 +830,7 @@ class ItMiiDynamicUpdate {
         "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("JDBCSystemResource configuration found");
 
-    // make non-dynamic change, update datasource connection pool max capacity attribute
+    // make non-dynamic change, update datasource JDBCDriver params
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
@@ -844,15 +844,17 @@ class ItMiiDynamicUpdate {
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
 
+    // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
     verifyPodsNotRolled(pods);
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
-    // check datasource max capacity configuration using REST api
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2/JDBCResource/JDBCConnectionPoolParams/MaxCapacity", "200"),
-        "JDBCSystemResource JDBCConnectionPoolParams not found");
-    logger.info("JDBCSystemResource JDBCConnectionPoolParams configuration found");
+    // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
+    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
+          + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
+          + "option to cancel all changes if restart require.";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+    verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
 
   }
 
@@ -1110,6 +1112,33 @@ class ItMiiDynamicUpdate {
           "sample-war/index.jsp",
           MII_APP_RESPONSE_V1 + i);
     }
+  }
+
+  private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status condition message contains the expected msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                conditionMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
+                  + " msg " + domainCondition.getMessage().contains(conditionMsg));
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+    return false;
   }
 
 }
