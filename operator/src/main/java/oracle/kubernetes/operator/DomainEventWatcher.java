@@ -13,12 +13,13 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER;
+
 /**
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
 public class DomainEventWatcher extends EventWatcher {
-  private static final String FIELD_SELECTOR = ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER;
 
   private DomainEventWatcher(
         String ns,
@@ -54,7 +55,7 @@ public class DomainEventWatcher extends EventWatcher {
 
   @Override
   public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-    return watchBuilder.withFieldSelector(FIELD_SELECTOR).createEventWatch(ns);
+    return watchBuilder.withLabelSelector(DOMAIN_EVENT_LABEL_FILTER).createEventWatch(ns);
   }
 
 }
