@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 
-import com.google.common.base.Strings;
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -27,8 +26,8 @@ import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
-import io.kubernetes.client.openapi.models.EventsV1Event;
-import io.kubernetes.client.openapi.models.EventsV1EventList;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
@@ -70,9 +69,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.apache.commons.lang.ArrayUtils;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
@@ -81,6 +80,8 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found". */
   public static final int NOT_FOUND = 404;
+
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -212,11 +213,11 @@ public class CallBuilder {
           wrap(
               createSelfSubjectRulesReviewAsync(
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
-  private final CallFactory<EventsV1Event> createEvent =
+  private final CallFactory<CoreV1Event> createEvent =
       (requestParams, usage, cont, callback) ->
           wrap(
               createEventAsync(
-                  usage, requestParams.namespace, (EventsV1Event) requestParams.body, callback));
+                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -265,7 +266,7 @@ public class CallBuilder {
   private final CallFactory<V1ServiceList> listService =
       (requestParams, usage, cont, callback) ->
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<EventsV1EventList> listEvent =
+  private final CallFactory<CoreV1EventList> listEvent =
       (requestParams, usage, cont, callback) ->
           wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1NamespaceList> listNamespace =
@@ -444,7 +445,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withLabelSelectors(String... selectors) {
-    this.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
+    this.labelSelector = !isNullOrEmpty(selectors) ? String.join(",", selectors) : null;
     return this;
   }
 
@@ -869,6 +870,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1041,6 +1043,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1260,6 +1263,7 @@ public class CallBuilder {
             orphanDependents,
             propagationPolicy,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             deleteOptions,
             callback);
@@ -1292,6 +1296,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1412,6 +1417,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1520,7 +1526,7 @@ public class CallBuilder {
   /* Secrets */
 
   private Call listEventAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<EventsV1EventList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
@@ -1532,6 +1538,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1544,7 +1551,7 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step listEventAsync(String namespace, ResponseStep<EventsV1EventList> responseStep) {
+  public Step listEventAsync(String namespace, ResponseStep<CoreV1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
   }
@@ -1558,16 +1565,16 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createEventAsync(
-      String namespace, EventsV1Event body, ResponseStep<EventsV1Event> responseStep) {
+      String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("createEvent", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(EventsV1Event::getMetadata).orElse(null))),
+            getDomainUidLabel(Optional.ofNullable(body).map(CoreV1Event::getMetadata).orElse(null))),
         createEvent);
   }
 
   private Call createEventAsync(
-      ApiClient client, String namespace, EventsV1Event body, ApiCallback<EventsV1Event> callback)
+      ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
@@ -1585,6 +1592,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1637,6 +1645,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1828,7 +1837,7 @@ public class CallBuilder {
    * @return - this CallBuilder instance
    */
   public CallBuilder withAuthentication(String accessToken) {
-    if (!Strings.isNullOrEmpty(accessToken)) {
+    if (!isNullOrEmpty(accessToken)) {
       this.helper = new ClientPool().withApiClient(createApiClient(accessToken));
     }
     return this;

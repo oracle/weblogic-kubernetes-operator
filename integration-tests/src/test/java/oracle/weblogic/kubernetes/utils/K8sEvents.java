@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.ItKubernetesEvents;
 import oracle.weblogic.kubernetes.TestConstants;
@@ -46,8 +46,8 @@ public class K8sEvents {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
-        List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-        for (V1Event event : events) {
+        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        for (CoreV1Event event : events) {
           if (event.getReason().contains(reason)
               && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
@@ -93,7 +93,7 @@ public class K8sEvents {
     };
   }
 
-  private static boolean isEqualOrAfter(DateTime timestamp, V1Event event) {
+  private static boolean isEqualOrAfter(DateTime timestamp, CoreV1Event event) {
     return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
             || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
   }
@@ -109,7 +109,7 @@ public class K8sEvents {
   }
 
   // Verify the operator instance details are correct
-  private static void verifyOperatorDetails(V1Event event, String opNamespace, String domainUid) throws ApiException {
+  private static void verifyOperatorDetails(CoreV1Event event, String opNamespace, String domainUid) throws ApiException {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
