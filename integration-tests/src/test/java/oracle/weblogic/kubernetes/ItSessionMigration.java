@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.primitives.Ints;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -186,7 +185,7 @@ class ItSessionMigration {
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     String countStr = httpDataInfo.get(countAttr);
-    int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
+    int count = Optional.ofNullable(countStr).map(Integer::valueOf).orElse(0);
     logger.info("After patching the domain, the primary server changes to {0} "
         + ", session create time {1} and session state {2}",
             primaryServerName, sessionCreateTime, countStr);
