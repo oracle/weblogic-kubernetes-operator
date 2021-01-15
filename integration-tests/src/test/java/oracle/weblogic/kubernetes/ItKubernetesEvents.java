@@ -286,28 +286,50 @@ public class ItKubernetesEvents {
    */
   @Order(6)
   @Test
-  @Disabled
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsFailed() {
+    V1Patch patch;
+    String patchStr;
+
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    try {
+      // remove the webLogicCredentialsSecret to verify the following events
+      // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
+      patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
+      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
 
-    // remove the webLogicCredentialsSecret to verify the following events
-    // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
-    String patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
-    logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "patchDomainCustomResource failed");
 
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "patchDomainCustomResource failed");
+      //verify domain changed event is logged
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
 
-    //verify domain changed event is logged
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      //verify domain processing retrying event
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
 
-    //verify domain processing retrying event
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
+      //verify domain processing aborted event
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
+    } finally {
+      // remove the webLogicCredentialsSecret to verify the following events
+      // DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged
+      patchStr = "[{\"op\": \"add\", \"path\": \"/spec/webLogicCredentialsSecret\", "
+          + "\"value\" : \"" + wlSecretName + "\"}]";
+      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
 
-    //verify domain processing aborted event
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "patchDomainCustomResource failed");
+
+      //verify domain changed event is logged
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+
+      //verify domain processing retrying event
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
+
+      //verify domain processing aborted event
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
+    }
   }
 
   /**
