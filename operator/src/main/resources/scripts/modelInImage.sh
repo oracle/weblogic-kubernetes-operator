@@ -589,6 +589,7 @@ function diff_model() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
+  
   ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /tmp/compare_model_stdout 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
@@ -596,6 +597,15 @@ function diff_model() {
     cat /tmp/compare_model_stdout
     exitOrLoop
   fi
+
+  if [ ! -f "/tmp/diffed_model.yaml" ] && [ -f "/tmp/compare_model_stdout" ]; then
+    trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'. These changes are not " \
+      "compatible with online changes, such as trying to removing an entire mbean tree. Please correct the referenced" \
+      " attributes listed below:"
+    cat /tmp/compare_model_stdout
+    exitOrLoop
+  fi
+
 
   #
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
@@ -697,7 +707,7 @@ function createPrimordialDomain() {
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [  "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1  ] ; then
+    if [ "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1 ] ; then
       trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
         "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
         ". You can use offline update to update the domain by setting " \
@@ -929,14 +939,8 @@ function wdtHandleOnlineUpdate() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
   stop_trap
-  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] \
-    || [ ! -f "/tmp/diffed_model.json" ] ; then
-    trace "Not using online update because of onlineUpdate.enabled=false(or not set) or no diffed model found"
-    return
-  fi
-
-  if [ "$(cat /tmp/diffed_model.json)" == "{}" ] ; then
-    trace "No difference in the models"
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] ; then
+    # no op for offline use case
     return
   fi
 
@@ -979,8 +983,6 @@ function wdtHandleOnlineUpdate() {
   if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
       ROLLBACK_FLAG="-cancel_changes_if_restart_required"
   fi
-  # DEBUG only
-  #cat /tmp/diffed_model.yaml
 
   if [ -z ${AS_SERVICE_NAME} ] || [ -z ${ADMIN_PORT} ] ; then
     trace SEVERE "Cannot find admin service name or port"
