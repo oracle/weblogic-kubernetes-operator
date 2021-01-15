@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
@@ -780,6 +781,83 @@ class ItMiiDynamicUpdate {
     verifyPodsNotRolled(pods);
   }
 
+  /**
+   * Recreate configmap containing non-dynamic change, changing DS attribute.
+   * Patch the domain resource with the configmap.
+   * Patch the domain with onNonDynamicChanges value as CancelUpdate.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify the domain status is updated and domain is not restarted.
+   */
+  @Test
+  @Order(11)
+  @DisplayName("Test onNonDynamicChanges value CancelUpdate")
+  public void testOnNonDynamicChangeCancelUpdate() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Add datasource, replace contents of an existing configMap with previous tests config and datasource
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+
+    // make non-dynamic change, update datasource JDBCDriver params
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
+
+    // Patch a running domain with introspectVersion.
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
+    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
+          + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
+          + "option to cancel all changes if restart require.";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+    verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
+
+  }
+
   private void verifyIntrospectorRuns() {
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs and deleted");
@@ -1034,6 +1112,39 @@ class ItMiiDynamicUpdate {
           "sample-war/index.jsp",
           MII_APP_RESPONSE_V1 + i);
     }
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   * @param conditionType condition type
+   * @param conditionMsg messsage in condition
+   * @return true if the condition matches
+   */
+  private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status condition message contains the expected msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                conditionMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
+                  + " msg " + domainCondition.getMessage().contains(conditionMsg));
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+    return false;
   }
 
 }

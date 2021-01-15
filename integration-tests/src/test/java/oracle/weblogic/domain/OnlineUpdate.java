@@ -45,6 +45,17 @@ public class OnlineUpdate {
   @ApiModelProperty("WLST set server groups timout in milliseconds. Default: 180000.")
   private Long setServerGroupsTimeoutMilliSeconds = 180000L;
 
+  @ApiModelProperty("It has three possible values: "
+      + "CommitUpdateOnly - Default or if not set.  All changes are committed, but if there are "
+      + "                   non-dynamic mbean changes. The domain needs to be restart manually. "
+      + "CommitUpdateAndRoll - All changes are committed, but if there are non-dynamic mbean changes, "
+      + "                      the domain will rolling restart automatically; if not, no restart is necessary. "
+      + "CancelUpdate - If there are non-dynamic mbean changes, all changes are canceled before "
+      + "               they are committed. The domain will continue to run, but changes to the configmap "
+      + "               and resources in the domain resource YAML should be reverted manually, "
+      + "               otherwise in the next introspection will still use the same content")
+  private String onNonDynamicChanges = null;
+
   public Boolean getEnabled() {
     return enabled;
   }
@@ -177,6 +188,19 @@ public class OnlineUpdate {
 
   public OnlineUpdate withSetServerGroupsTimeoutSeconds(Long setServerGroupsTimeoutSeconds) {
     this.setServerGroupsTimeoutMilliSeconds = setServerGroupsTimeoutSeconds;
+    return this;
+  }
+
+  public String getOnNonDynamicChanges() {
+    return onNonDynamicChanges;
+  }
+
+  public void setOnNonDynamicChanges(String onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
+  }
+
+  public OnlineUpdate withOnNonDynamicChanges(String onNonDynamicChanges) {
+    this.onNonDynamicChanges = onNonDynamicChanges;
     return this;
   }
 
