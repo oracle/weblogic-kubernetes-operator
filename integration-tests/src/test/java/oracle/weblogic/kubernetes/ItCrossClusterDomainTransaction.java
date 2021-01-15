@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,10 +14,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.Map;
-
-import java.lang.reflect.Field;
+import java.util.Properties;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -167,22 +166,23 @@ public class ItCrossClusterDomainTransaction {
     updatePropertyFile();
 
   }
+
   private static void initCluster1() {
 
-    assertDoesNotThrow(()->switchTheClusterConfig(KUBECONFIG1));
+    assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator in cluster1");
 
     assertNotNull(op2Namespace, "Namespace name for operator2 is null");
     op1Namespace = op2Namespace + "cluster1";
-    assertDoesNotThrow(  () -> Kubernetes.createNamespace(op1Namespace),
+    assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");
 
     logger.info("Creating unique namespace for Domain in cluster1");
     assertNotNull(domain2Namespace, "Namespace name for domain2 is null");
     domain1Namespace = domain2Namespace + "cluster1";
-        assertDoesNotThrow(  () -> Kubernetes.createNamespace(domain2Namespace + "cluster1"),
+    assertDoesNotThrow(() -> Kubernetes.createNamespace(domain2Namespace + "cluster1"),
             "Failed to create namespace for domain in cluster1");
 
     // install and verify operator
@@ -247,8 +247,8 @@ public class ItCrossClusterDomainTransaction {
   @Test
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
-    if(System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
-      assertDoesNotThrow(()->switchTheClusterConfig(KUBECONFIG2));
+    if (System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
+      assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
     }
     //build application archive
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
@@ -296,8 +296,8 @@ public class ItCrossClusterDomainTransaction {
     //create domain1
     createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
 
-    if(System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
-      assertDoesNotThrow(()->switchTheClusterConfig(KUBECONFIG1));
+    if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
+      assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
     }
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
@@ -357,7 +357,8 @@ public class ItCrossClusterDomainTransaction {
    *
    */
   //@Test
-  @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
+  //@DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
+  /*
   public void testCrossDomainTransactionWithFailInjection() {
 
     logger.info("Getting admin server external service node port");
@@ -381,6 +382,7 @@ public class ItCrossClusterDomainTransaction {
     }
 
   }
+  */
 
   private void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                             String domainImage) {
@@ -522,9 +524,6 @@ public class ItCrossClusterDomainTransaction {
     return -1;
   }
 
-  private static void createNSforOke2(@Namespaces(3) List<String> namespacesOke2) {
-
-  }
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
     injectEnvironmentVariable("KUBECONFIG", kubeconfig);
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
@@ -539,6 +538,7 @@ public class ItCrossClusterDomainTransaction {
 
      */
   }
+
   private static void injectEnvironmentVariable(String key, String value)
       throws Exception {
 
