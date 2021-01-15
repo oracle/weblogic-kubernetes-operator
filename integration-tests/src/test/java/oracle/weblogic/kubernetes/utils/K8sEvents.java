@@ -109,7 +109,8 @@ public class K8sEvents {
   }
 
   // Verify the operator instance details are correct
-  private static void verifyOperatorDetails(CoreV1Event event, String opNamespace, String domainUid) throws ApiException {
+  private static void verifyOperatorDetails(
+      CoreV1Event event, String opNamespace, String domainUid) throws ApiException {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
