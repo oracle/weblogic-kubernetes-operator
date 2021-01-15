@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,8 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.Copy;
@@ -75,6 +74,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
+import io.kubernetes.client.util.Streams;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -2274,7 +2274,7 @@ public class Kubernetes {
    * List cluster role bindings.
    *
    * @param labelSelector labels to narrow the list
-   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @return V1ClusterRoleBindingList list of {@link V1ClusterRoleBinding} objects
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
@@ -2633,7 +2633,7 @@ public class Kubernetes {
         new Thread(
             () -> {
               try {
-                ByteStreams.copy(inputStream, copyOut);
+                Streams.copy(inputStream, copyOut);
               } catch (IOException ex) {
                 // "Pipe broken" is expected when process is finished so don't log
                 if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
@@ -2692,7 +2692,7 @@ public class Kubernetes {
   private static String readExecCmdData(InputStream is) {
     StringBuilder sb = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(is, Charsets.UTF_8))) {
+        new InputStreamReader(is, StandardCharsets.UTF_8))) {
       int c = 0;
       while ((c = reader.read()) != -1) {
         sb.append((char) c);
