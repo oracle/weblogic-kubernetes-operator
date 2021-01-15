@@ -29,6 +29,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -150,7 +151,7 @@ public class ItKubernetesEvents {
     opServiceAccount = opNamespace + "-sa";
 
     // install and verify operator with REST API
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
+    HelmParams helmParams = installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
@@ -306,33 +307,9 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
-   */
-  @Order(5)
-  @Test
-  public void testK8SEventsStartWatchingNS() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
-    //verify domain processing aborted event
-    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-  }
-
-  /**
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching an another domain namespace.
-   */
-  @Order(6)
-  @Test
-  public void testK8SEventsStopWatchingNS() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    upgradeAndVerifyOperator(opNamespace, domainNamespace1);
-    //verify domain processing aborted event
-    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
-  }
-
-  /**
    * Test verifies there is only 1 DomainProcessing Starting/Completed event is logged in a multi cluster domain.
    */
-  @Order(7)
+  @Order(5)
   @Test
   public void testK8SEventsMultiClusterEvents() {
     createNewCluster();
@@ -349,7 +326,7 @@ public class ItKubernetesEvents {
   /**
    * Scale the cluster beyond maximum dynamic cluster size and verify the warning event is generated.
    */
-  @Order(8)
+  @Order(6)
   @Test
   @Disabled
   public void testDomainK8sEventsScalePastMax() {
@@ -362,7 +339,7 @@ public class ItKubernetesEvents {
   /**
    * Scale the cluster below minimum dynamic cluster size and verify the warning event is generated.
    */
-  @Order(9)
+  @Order(7)
   @Test
   @Disabled
   public void testDomainK8sEventsScaleBelowMin() {
@@ -375,7 +352,7 @@ public class ItKubernetesEvents {
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
    */
-  @Order(10)
+  @Order(8)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
@@ -388,6 +365,30 @@ public class ItKubernetesEvents {
 
     //verify domain deleted event
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_DELETED, "Normal", timestamp);
+  }
+
+  /**
+   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
+   */
+  @Order(9)
+  @Test
+  public void testK8SEventsStartWatchingNS() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
+    //verify domain processing aborted event
+    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+  }
+
+  /**
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching an another domain namespace.
+   */
+  @Order(10)
+  @Test
+  public void testK8SEventsStopWatchingNS() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    upgradeAndVerifyOperator(opNamespace, domainNamespace1);
+    //verify domain processing aborted event
+    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
   }
 
   // Utility method to check event
