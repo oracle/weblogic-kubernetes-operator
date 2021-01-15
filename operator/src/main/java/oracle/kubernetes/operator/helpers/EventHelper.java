@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.Optional;
 import javax.validation.constraints.NotNull;
 
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.EventConstants;
@@ -102,7 +102,7 @@ public class EventHelper {
 
       Optional.ofNullable(info).ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
 
-      V1Event event = createEvent(packet, eventData);
+      CoreV1Event event = createEvent(packet, eventData);
       return doNext(new CallBuilder()
               .createEventAsync(
                   event.getMetadata().getNamespace(),
@@ -121,14 +121,14 @@ public class EventHelper {
     }
   }
 
-  private static V1Event createEvent(
+  private static CoreV1Event createEvent(
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     eventData.namespace(Optional.ofNullable(info)
         .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace));
     eventData.resourceName(eventData.eventItem.calculateResourceName(info, eventData.namespace));
-    return new V1Event()
+    return new CoreV1Event()
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())

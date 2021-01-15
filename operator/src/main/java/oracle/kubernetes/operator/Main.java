@@ -19,6 +19,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -53,7 +54,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -169,7 +169,9 @@ public class Main {
     }
 
     private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
-      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
+      configuredDomainNamespaces.stream().collect(Collectors.joining(", "));
+      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES,
+          configuredDomainNamespaces.stream().collect(Collectors.joining(", ")));
     }
 
     @Override

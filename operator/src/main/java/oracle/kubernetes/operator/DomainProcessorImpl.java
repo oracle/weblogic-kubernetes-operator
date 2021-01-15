@@ -16,10 +16,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -129,7 +129,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void onEvent(V1Event event) {
+  private static void onEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
     if (ref == null || ref.getName() == null) {
       return;
@@ -148,7 +148,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
-  private static String getReadinessStatus(V1Event event) {
+  private static String getReadinessStatus(CoreV1Event event) {
     return Optional.ofNullable(event.getMessage())
           .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
           .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
@@ -378,8 +378,8 @@ public class DomainProcessorImpl implements DomainProcessor {
    * Dispatch event watch event.
    * @param item watch event
    */
-  public void dispatchEventWatch(Watch.Response<V1Event> item) {
-    V1Event e = item.object;
+  public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
+    CoreV1Event e = item.object;
     if (e != null) {
       switch (item.type) {
         case "ADDED":

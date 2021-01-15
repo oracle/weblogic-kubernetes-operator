@@ -12,7 +12,7 @@ import java.util.Map;
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -36,8 +36,8 @@ public class EventProcessingTest {
   private static final String ADMIN_NAME = "admin";
   private final V1ObjectReference serverReference =
       new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
-  private final V1Event event =
-      new V1Event()
+  private final CoreV1Event event =
+      new CoreV1Event()
           .metadata(new V1ObjectMeta().namespace(NS))
           .involvedObject(serverReference)
           .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
