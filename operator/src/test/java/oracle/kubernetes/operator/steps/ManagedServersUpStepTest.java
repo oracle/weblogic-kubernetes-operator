@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -926,7 +926,7 @@ public class ManagedServersUpStepTest {
     }
   }
 
-  private List<V1Event> getEvents() {
+  private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
