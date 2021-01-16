@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -123,7 +124,7 @@ public class ItCrossClusterDomainTransaction {
       + "_kubeconfig";
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = K8S_NODEPORT_HOST;
-  private static List<String> clusterOneNamespaces;
+  private static List<String> clusterOneNamespaces = new ArrayList<>();
 
 
   /**
