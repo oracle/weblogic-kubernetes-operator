@@ -12,16 +12,12 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
-  private String expectedReason;
-  private String expectMessage;
+  private final String expectedReason;
+  private final String expectMessage;
 
   private DomainStatusMatcher(String expectedReason, String expectMessage) {
     this.expectedReason = expectedReason;
     this.expectMessage = expectMessage;
-  }
-
-  static DomainStatusMatcher hasNormalStatus() {
-    return new DomainStatusMatcher(null, null);
   }
 
   static DomainStatusMatcher hasStatus(String expectedReason, String expectMessage) {

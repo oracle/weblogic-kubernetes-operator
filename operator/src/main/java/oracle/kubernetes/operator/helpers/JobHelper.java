@@ -302,7 +302,7 @@ public class JobHelper {
       // Populate env var list used by the MII introspector job's 'short circuit' MD5
       // check. To prevent a false trip of the circuit breaker, the list must be the
       // same regardless of whether domainTopology == null.
-      StringBuffer sb = new StringBuffer(vars.size() * 32);
+      StringBuilder sb = new StringBuilder(vars.size() * 32);
       for (V1EnvVar var : vars) {
         sb.append(var.getName()).append(',');
       }
@@ -564,8 +564,8 @@ public class JobHelper {
   private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
     Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-    if (logged == null || !logged.booleanValue()) {
-      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
+    if (logged == null || !logged) {
+      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),

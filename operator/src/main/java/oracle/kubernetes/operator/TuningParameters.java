@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -14,23 +13,23 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public interface TuningParameters extends Map<String, String> {
 
   static TuningParameters initializeInstance(
-      ScheduledExecutorService executorService, String mountPoint) throws IOException {
+      ScheduledExecutorService executorService, String mountPoint) {
     return TuningParametersImpl.initializeInstance(executorService, mountPoint);
   }
 
-  public static TuningParameters getInstance() {
+  static TuningParameters getInstance() {
     return TuningParametersImpl.getInstance();
   }
 
-  public MainTuning getMainTuning();
+  MainTuning getMainTuning();
 
-  public CallBuilderTuning getCallBuilderTuning();
+  CallBuilderTuning getCallBuilderTuning();
 
-  public WatchTuning getWatchTuning();
+  WatchTuning getWatchTuning();
 
-  public PodTuning getPodTuning();
+  PodTuning getPodTuning();
 
-  public static class MainTuning {
+  class MainTuning {
     public final int initializationRetryDelaySeconds;
     public final int domainPresenceFailureRetrySeconds;
     public final int domainPresenceFailureRetryMaxCount;
@@ -128,7 +127,7 @@ public interface TuningParameters extends Map<String, String> {
     }
   }
 
-  public static class CallBuilderTuning {
+  class CallBuilderTuning {
     public final int callRequestLimit;
     public final int callMaxRetryCount;
     public final int callTimeoutSeconds;
@@ -180,7 +179,7 @@ public interface TuningParameters extends Map<String, String> {
     }
   }
 
-  public static class WatchTuning {
+  class WatchTuning {
     public final int watchLifetime;
     public final int watchMinimumDelay;
     public final int watchBackstopRecheckDelay;
@@ -229,7 +228,7 @@ public interface TuningParameters extends Map<String, String> {
     }
   }
 
-  public static class PodTuning {
+  class PodTuning {
     public final int readinessProbeInitialDelaySeconds;
     public final int readinessProbeTimeoutSeconds;
     public final int readinessProbePeriodSeconds;

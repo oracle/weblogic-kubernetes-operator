@@ -6,7 +6,7 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 hostname="${HOSTNAME}"
 
-# this file lives in git_project_dir/src/integration-tests/bash
+# this file lives in git_project_dir/operator/integration-tests/bash
 # need to go up 3 levels to get to the git project dir
 git_project_dir="${script_dir}/../../.."
 

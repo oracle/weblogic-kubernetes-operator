@@ -18,7 +18,6 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -45,9 +44,9 @@ public class CallBuilderTest extends HttpUserAgentTest {
           "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
           NAMESPACE);
 
-  private static ApiClient apiClient = new ApiClient();
-  private List<Memento> mementos = new ArrayList<>();
-  private CallBuilder callBuilder = new CallBuilder();
+  private static final ApiClient apiClient = new ApiClient();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
 
   private static String toJson(Object object) {
@@ -84,7 +83,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
 
     assertThat(callBuilder.executeSynchronousCallWithRetry(
-            () -> callBuilder.readVersionCode(), 1), equalTo(versionInfo));
+        callBuilder::readVersionCode, 1), equalTo(versionInfo));
   }
 
   static class FailOnceGetServlet extends JsonGetServlet {
@@ -107,7 +106,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void listDomains_returnsListasJson() throws ApiException {
+  public void listDomains_returnsListAsJson() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
@@ -126,7 +125,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test(expected = ApiException.class)
-  public void replaceDomain_errorResonseCode_throws() throws ApiException {
+  public void replaceDomain_errorResponseCode_throws() throws ApiException {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
@@ -139,10 +138,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
     callBuilder.replaceDomain(UID, NAMESPACE, domain);
-  }
-
-  private V1PersistentVolumeClaimSpec createSpec() {
-    return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
   }
 
   private Object fromJson(String json, Class<?> aaClass) {
@@ -165,15 +160,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     defineResource(resourceName, pseudoServlet);
   }
 
-  private void defineHttpPostResponse(String resourceName, Object response) {
-    defineResource(resourceName, new JsonPostServlet(response));
-  }
-
-  private void defineHttpPostResponse(
-      String resourceName, Object response, Consumer<String> bodyValidation) {
-    defineResource(resourceName, new JsonPostServlet(response, bodyValidation));
-  }
-
   private void defineHttpPutResponse(
       String resourceName, String name, Object response, Consumer<String> bodyValidation) {
     defineResource(resourceName + "/" + name, new JsonPutServlet(response, bodyValidation));
@@ -183,10 +169,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private void defineHttpPutResponse(
       String resourceName, String name, Object response, PseudoServlet pseudoServlet) {
     defineResource(resourceName + "/" + name, pseudoServlet);
-  }
-
-  private void defineHttpDeleteResponse(String resourceName, String name, Object response) {
-    defineResource(resourceName + "/" + name, new JsonDeleteServlet(response));
   }
 
   static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
@@ -213,7 +195,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
 
     private Pool<ApiClient> createSingleUsePool() {
-      return new Pool<ApiClient>() {
+      return new Pool<>() {
         @Override
         protected ApiClient create() {
           ApiClient client = apiClient;
@@ -242,8 +224,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   abstract static class JsonServlet extends PseudoServlet {
 
-    private WebResource response;
-    private List<ParameterExpectation> parameterExpectations = new ArrayList<>();
+    private final WebResource response;
+    private final List<ParameterExpectation> parameterExpectations = new ArrayList<>();
 
     JsonServlet(Object returnValue) {
       response = new WebResource(toJson(returnValue), "application/json");
@@ -307,7 +289,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   abstract static class JsonBodyServlet extends JsonServlet {
-    private Consumer<String> bodyValidation;
+    private final Consumer<String> bodyValidation;
 
     private JsonBodyServlet(Object returnValue, Consumer<String> bodyValidation) {
       super(returnValue);
@@ -324,10 +306,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   static class JsonPostServlet extends JsonBodyServlet {
-
-    private JsonPostServlet(Object returnValue) {
-      this(returnValue, null);
-    }
 
     private JsonPostServlet(Object returnValue, Consumer<String> bodyValidation) {
       super(returnValue, bodyValidation);
@@ -368,13 +346,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     long time;
     long interval;
     String description;
-
-    public Event(long time, String description) {
-      this.time = time;
-      this.description = description;
-      interval = lastTime == 0 ? 0 : time - lastTime;
-      lastTime = time;
-    }
 
     @Override
     public String toString() {

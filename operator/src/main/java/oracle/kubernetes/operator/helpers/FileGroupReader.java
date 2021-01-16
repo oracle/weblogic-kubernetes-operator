@@ -30,7 +30,7 @@ class FileGroupReader {
 
   private final String pathToGroup;
 
-  @SuppressWarnings("FieldMayBeFinal") // keep non-final for unit test
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // keep non-final for unit test
   private static Function<URI, Path> uriToPath = Paths::get;
   
   /**

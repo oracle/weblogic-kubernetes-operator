@@ -244,7 +244,7 @@ public class Namespaces {
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
       return new StepAndPacket(
           createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
-          packet.clone());
+          packet.copy());
     }
 
     private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
@@ -288,7 +288,7 @@ public class Namespaces {
 
   private static class NamespaceValidationContext {
 
-    Collection<String> allDomainNamespaces;
+    final Collection<String> allDomainNamespaces;
 
     NamespaceValidationContext(Packet packet) {
       allDomainNamespaces = Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());

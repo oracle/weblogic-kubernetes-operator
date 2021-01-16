@@ -44,7 +44,7 @@ public class ClustersResource extends BaseResource {
   public CollectionModel<ClusterModel> get() {
     LOGGER.entering(href());
     String domainUid = getDomainUid();
-    CollectionModel<ClusterModel> collection = new CollectionModel<ClusterModel>();
+    CollectionModel<ClusterModel> collection = new CollectionModel<>();
     for (String cluster : getBackend().getClusters(domainUid)) {
       ClusterModel item = new ClusterModel(cluster);
       item.addSelfLinks(href(item.getCluster()));

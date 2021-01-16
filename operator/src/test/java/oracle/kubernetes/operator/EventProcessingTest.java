@@ -41,11 +41,11 @@ public class EventProcessingTest {
           .metadata(new V1ObjectMeta().namespace(NS))
           .involvedObject(serverReference)
           .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private DomainProcessorImpl processor =
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
 
   /**

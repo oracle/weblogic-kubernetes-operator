@@ -31,7 +31,7 @@ public class WatchBuilder {
 
   private static final Boolean ALLOW_BOOKMARKS = true;
 
-  @SuppressWarnings("FieldMayBeFinal") // Leave non-final for unit test
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
   private static WatchFactory FACTORY = new WatchFactoryImpl();
 
   private final CallParamsImpl callParams = new CallParamsImpl();
@@ -87,7 +87,7 @@ public class WatchBuilder {
   }
 
   /**
-   * Creates a web hook object to track changes to weblogic domains in one namespaces.
+   * Creates a web hook object to track changes to WebLogic domains in one namespaces.
    *
    * @param namespace the namespace in which to track domains
    * @return the active web hook

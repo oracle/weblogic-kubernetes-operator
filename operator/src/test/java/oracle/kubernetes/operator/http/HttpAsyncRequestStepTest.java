@@ -44,15 +44,15 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
  */
 public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
 
-  private HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
-  private Packet packet = new Packet();
-  private List<Memento> mementos = new ArrayList<>();
-  private TestFiber fiber = createStub(TestFiber.class);
-  private HttpResponse<String> response = createStub(HttpResponseStub.class, 200);
+  private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
+  private final Packet packet = new Packet();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final TestFiber fiber = createStub(TestFiber.class);
+  private final HttpResponse<String> response = createStub(HttpResponseStub.class, 200);
   private HttpAsyncRequestStep requestStep;
-  private CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
-  private HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
-  private Collection<LogRecord> logRecords = new ArrayList<>();
+  private final CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
+  private final HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleMemento;
 
   /**
@@ -192,10 +192,6 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
 
     boolean wasResumed() {
       return terminationCause == null && packet != null;
-    }
-
-    boolean wasTerminated() {
-      return terminationCause != null;
     }
 
     @Override

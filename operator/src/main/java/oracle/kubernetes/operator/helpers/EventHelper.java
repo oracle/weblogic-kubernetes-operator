@@ -12,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -93,11 +92,12 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      if (hasProcessingNotStarted(packet) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      if (hasProcessingNotStarted(info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
         return doNext(packet);
       }
 
-      if (isDuplicatedStartedEvent(packet)) {
+      if (isDuplicatedStartedEvent(info)) {
         return doNext(packet);
       }
 
@@ -136,13 +136,13 @@ public class EventHelper {
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
-    private boolean isDuplicatedStartedEvent(Packet packet) {
+    private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
       return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && packet.get(ProcessingConstants.EVENT_TYPE) == EventItem.DOMAIN_PROCESSING_STARTING;
+          && Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() == DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
-    private boolean hasProcessingNotStarted(Packet packet) {
-      return packet.get(ProcessingConstants.EVENT_TYPE) != DOMAIN_PROCESSING_STARTING;
+    private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
+      return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
     private class CreateEventResponseStep extends ResponseStep<V1Event> {
@@ -152,7 +152,8 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
-        packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
+        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
       }
     }
@@ -165,7 +166,8 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
-        packet.put(ProcessingConstants.EVENT_TYPE, eventData.eventItem);
+        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
       }
 
@@ -466,7 +468,7 @@ public class EventHelper {
   }
 
   public static class EventData {
-    private EventItem eventItem;
+    private final EventItem eventItem;
     private String message;
     private String namespace;
     private String resourceName;
@@ -503,10 +505,6 @@ public class EventHelper {
 
     public EventItem getItem() {
       return eventItem;
-    }
-
-    public String getMessage() {
-      return message;
     }
 
     public String getNamespace() {

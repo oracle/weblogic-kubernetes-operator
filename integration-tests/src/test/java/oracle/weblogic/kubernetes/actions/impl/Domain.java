@@ -68,12 +68,14 @@ public class Domain {
    * Create a domain custom resource.
    *
    * @param domain Domain custom resource model object
+   * @param domainVersion custom resource's version
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain) throws ApiException {
-    return Kubernetes.createDomainCustomResource(domain);
-  }
+  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+                                                   String... domainVersion) throws ApiException {
+    return Kubernetes.createDomainCustomResource(domain, domainVersion);
+  }   
 
   /**
    * List all Custom Resource Domains in a namespace.
@@ -418,7 +420,7 @@ public class Domain {
                 condition.getRemainingTimeInMS()))
         .until(() -> {
           return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(PROJECT_ROOT + "/../src/scripts/scaling/scalingAction.sh"),
+              Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
               Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
         });
 

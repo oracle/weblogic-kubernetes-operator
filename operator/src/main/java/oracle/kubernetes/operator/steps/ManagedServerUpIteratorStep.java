@@ -93,7 +93,7 @@ public class ManagedServerUpIteratorStep extends Step {
       work.add(
               new StepAndPacket(
                       new StartManagedServersStep(entry.getKey(), entry.getValue().getMaxConcurrency(),
-                              entry.getValue().getServerStartsStepAndPackets(), null), packet.clone()));
+                              entry.getValue().getServerStartsStepAndPackets(), null), packet.copy()));
     }
 
     if (!work.isEmpty()) {
@@ -119,7 +119,7 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
-    Packet p = packet.clone();
+    Packet p = packet.copy();
     p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
     p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
     p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
@@ -149,7 +149,6 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   static class StartManagedServersStep extends Step {
-    final Collection<StepAndPacket> startDetails;
     final Queue<StepAndPacket> startDetailsQueue = new ConcurrentLinkedQueue<>();
     final String clusterName;
     final int maxConcurrency;
@@ -158,7 +157,6 @@ public class ManagedServerUpIteratorStep extends Step {
     StartManagedServersStep(String clusterName, int maxConcurrency, Collection<StepAndPacket> startDetails, Step next) {
       super(next);
       this.clusterName = clusterName;
-      this.startDetails = startDetails;
       this.maxConcurrency = maxConcurrency;
       startDetails.forEach(this::add);
     }

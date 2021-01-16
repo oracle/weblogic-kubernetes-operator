@@ -14,7 +14,6 @@ public class MessageKeys {
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
   public static final String CREATING_CRD = "WLSKO-0012";
-  public static final String LISTING_DOMAINS = "WLSKO-0014";
   public static final String SECRET_NOT_FOUND = "WLSKO-0018";
   public static final String RETRIEVING_SECRET = "WLSKO-0019";
   public static final String SECRET_DATA_NOT_FOUND = "WLSKO-0020";
@@ -92,10 +91,6 @@ public class MessageKeys {
   public static final String POD_DELETED = "WLSKO-0122";
   public static final String TUNING_PARAMETERS = "WLSKO-0126";
   public static final String WLS_HEALTH_READ_FAILED = "WLSKO-0127";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_STARTING = "WLSKO-0128";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_FAILED = "WLSKO-0129";
-  public static final String WLS_UPDATE_CLUSTER_SIZE_INVALID_CLUSTER = "WLSKO-0131";
-  public static final String WLS_CLUSTER_SIZE_UPDATED = "WLSKO-0132";
   public static final String WLS_SERVER_TEMPLATE_NOT_FOUND = "WLSKO-0133";
   public static final String SCRIPT_LOADED = "WLSKO-0134";
   public static final String JOB_IS_FAILED = "WLSKO-0136";

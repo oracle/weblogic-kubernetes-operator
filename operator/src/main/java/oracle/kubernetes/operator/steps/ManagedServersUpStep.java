@@ -46,6 +46,7 @@ public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
       "Running servers for domain with UID: {0}, running list: {1}";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static NextStepFactory NEXT_STEP_FACTORY =
       (info, config, factory, next) ->
           scaleDownIfNecessary(info, config, factory, new ClusterServicesStep(next));
@@ -75,8 +76,8 @@ public class ManagedServersUpStep extends Step {
 
     if (!serversToStop.isEmpty()) {
       insert(steps,
-          Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-          null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+              Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
+                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
@@ -85,7 +86,13 @@ public class ManagedServersUpStep extends Step {
   private static List<ServerShutdownInfo> getServersToStop(
           DomainPresenceInfo info, List<ServerShutdownInfo> shutdownInfos) {
     return shutdownInfos.stream()
-            .filter(ssi -> info.getServerNames().contains(ssi.getServerName())).collect(Collectors.toList());
+            .filter(ssi -> isNotAlreadyStoppedOrServiceOnly(info, ssi)).collect(Collectors.toList());
+  }
+
+  private static boolean isNotAlreadyStoppedOrServiceOnly(DomainPresenceInfo info, ServerShutdownInfo ssi) {
+    return (info.getServerPod(ssi.getServerName()) != null
+            && !info.isServerPodBeingDeleted(ssi.getServerName()))
+            || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
   private static Step createAvailableHookStep() {
@@ -241,8 +248,7 @@ public class ManagedServersUpStep extends Step {
 
     Collection<ServerStartupInfo> getStartupInfos() {
       if (startupInfos != null) {
-        Collections.sort(
-            startupInfos,
+        startupInfos.sort(
             comparing((ServerStartupInfo sinfo) -> OperatorUtils.getSortingString(sinfo.getServerName())));
       }
       return startupInfos;
@@ -354,8 +360,8 @@ public class ManagedServersUpStep extends Step {
   }
 
   private static class ServerConfig {
-    protected WlsServerConfig wlsServerConfig;
-    protected WlsClusterConfig wlsClusterConfig;
+    protected final WlsServerConfig wlsServerConfig;
+    protected final WlsClusterConfig wlsClusterConfig;
 
     ServerConfig(WlsClusterConfig cluster, WlsServerConfig server) {
       this.wlsClusterConfig = cluster;

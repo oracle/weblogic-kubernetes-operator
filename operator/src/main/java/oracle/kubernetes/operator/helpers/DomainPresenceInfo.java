@@ -33,6 +33,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -53,6 +54,7 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
+  private EventItem lastEventItem;
 
   /**
    * Create presence for a domain.
@@ -95,7 +97,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
+   * Counts the number of non-clustered servers and servers in the specified cluster that are scheduled.
    * @param clusterName cluster name of the pod server
    * @return Number of scheduled servers
    */
@@ -106,7 +108,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are scheduled.
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are scheduled.
    * @param clusterName cluster name of the pod server
    * @param adminServerName Name of the admin server
    * @return Number of scheduled managed servers
@@ -118,7 +120,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered servers (including admin) and servers in the specified cluster that are ready.
+   * Counts the number of non-clustered servers (including admin) and servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
@@ -129,7 +131,7 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered managed servers and managed servers in the specified cluster that are ready.
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
@@ -469,6 +471,14 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now. */
   public void complete() {
     resetFailureCount();
+  }
+
+  EventItem getLastEventItem() {
+    return lastEventItem;
+  }
+
+  void setLastEventItem(EventItem lastEventItem) {
+    this.lastEventItem = lastEventItem;
   }
 
   /**

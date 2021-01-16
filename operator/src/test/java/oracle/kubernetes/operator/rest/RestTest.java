@@ -61,8 +61,8 @@ public class RestTest extends JerseyTest {
   private static final String DOMAIN1_CLUSTERS_HREF = DOMAIN1_HREF + "/clusters";
   private static final String ACCESS_TOKEN = "dummy token";
 
-  private List<Memento> mementos = new ArrayList<>();
-  private RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final RestBackendStub restBackend = createStrictStub(RestBackendStub.class);
   private boolean includeRequestedByHeader = true;
   private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
 
@@ -312,7 +312,7 @@ public class RestTest extends JerseyTest {
   }
 
   private void defineDomains(String... uids) {
-    Arrays.stream(uids).forEach(uid -> restBackend.addDomain(uid));
+    Arrays.stream(uids).forEach(restBackend::addDomain);
   }
 
   private void defineClusters(String domain, String... clusters) {
@@ -335,7 +335,7 @@ public class RestTest extends JerseyTest {
 
   @SuppressWarnings("unused")
   static class JsonArrayMatcher extends TypeSafeDiagnosingMatcher<List<Object>> {
-    private Object[] expectedContents;
+    private final Object[] expectedContents;
 
     private JsonArrayMatcher(Object[] expectedContents) {
       this.expectedContents = expectedContents;
@@ -368,7 +368,7 @@ public class RestTest extends JerseyTest {
   }
 
   abstract static class RestConfigStub implements RestConfig {
-    private Supplier<RestBackend> restBackendSupplier;
+    private final Supplier<RestBackend> restBackendSupplier;
 
     RestConfigStub(Supplier<RestBackend> restBackendSupplier) {
       this.restBackendSupplier = restBackendSupplier;
@@ -385,7 +385,7 @@ public class RestTest extends JerseyTest {
   }
 
   abstract static class RestBackendStub implements RestBackend {
-    private Map<String, List<ClusterState>> domainClusters = new HashMap<>();
+    private final Map<String, List<ClusterState>> domainClusters = new HashMap<>();
 
     void addDomain(String domain, String... clusterNames) {
       domainClusters.put(
@@ -432,7 +432,7 @@ public class RestTest extends JerseyTest {
   }
 
   static class ClusterState {
-    private String clusterName;
+    private final String clusterName;
     private Integer scale;
 
     ClusterState(String clusterName) {

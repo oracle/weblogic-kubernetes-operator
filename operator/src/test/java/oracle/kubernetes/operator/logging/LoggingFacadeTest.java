@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 public class LoggingFacadeTest {
 
@@ -97,7 +97,7 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
-    loggingFacade.severe((LoggingFilter) null, "msg", new Throwable());
+    loggingFacade.severe(null, "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }

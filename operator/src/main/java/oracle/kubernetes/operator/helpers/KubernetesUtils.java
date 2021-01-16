@@ -11,7 +11,6 @@ import java.util.Optional;
 import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.common.KubernetesListObject;
-import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
@@ -191,18 +190,6 @@ public class KubernetesUtils {
     return Optional.ofNullable(list)
           .map(KubernetesListObject::getMetadata)
           .map(V1ListMeta::getResourceVersion)
-          .orElse("");
-  }
-
-  /**
-   * Returns the resource version associated with the specified resource.
-   * @param resource a Kubernetes resource
-   * @return Resource version
-   */
-  public static String getResourceVersion(KubernetesObject resource) {
-    return Optional.ofNullable(resource)
-          .map(KubernetesObject::getMetadata)
-          .map(V1ObjectMeta::getResourceVersion)
           .orElse("");
   }
 

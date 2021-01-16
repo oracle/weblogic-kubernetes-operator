@@ -24,9 +24,6 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public class Helpers {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  @SuppressWarnings("unused")
-  private final Authenticator authenticator;
-  private final ApiClient apiClient;
   private final CoreV1Api coreApi;
 
   /**
@@ -34,13 +31,12 @@ public class Helpers {
    * @param authenticator authenticator
    */
   public Helpers(Authenticator authenticator) {
-    this.authenticator = authenticator;
-    apiClient = authenticator.getApiClient();
+    ApiClient apiClient = authenticator.getApiClient();
     coreApi = new CoreV1Api(apiClient);
   }
 
   /**
-   * Find the servivce account by name.
+   * Find the service account by name.
    *
    * @param serviceAccountName The name of the Service Account.
    * @param namespace The Namespace the Service Account is defined in.
