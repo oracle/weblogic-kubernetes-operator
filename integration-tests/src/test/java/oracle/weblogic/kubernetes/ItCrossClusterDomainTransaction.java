@@ -123,6 +123,7 @@ public class ItCrossClusterDomainTransaction {
       + "_kubeconfig";
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = K8S_NODEPORT_HOST;
+  private static List<String> clusterOneNamespaces;
 
 
   /**
@@ -194,7 +195,8 @@ public class ItCrossClusterDomainTransaction {
 
     // install and verify operator
     installAndVerifyOperator(op1Namespace, domain1Namespace);
-
+    clusterOneNamespaces.add(op1Namespace);
+    clusterOneNamespaces.add(domain1Namespace);
   }
 
   private static void updatePropertyFile() {
@@ -254,101 +256,105 @@ public class ItCrossClusterDomainTransaction {
   @Test
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
-    if (System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
-      assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
-    }
-    //build application archive
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "txforward.ear").toFile().exists(),
-        "Application archive is not available");
-    String appSource = distDir.toString() + "/txforward.ear";
-    logger.info("Application is in {0}", appSource);
+    try {
+      if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
+        assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+      }
+      //build application archive
+      Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+          "build", domain1Namespace);
+      logger.info("distDir is {0}", distDir.toString());
+      assertTrue(Paths.get(distDir.toString(),
+          "txforward.ear").toFile().exists(),
+          "Application archive is not available");
+      String appSource = distDir.toString() + "/txforward.ear";
+      logger.info("Application is in {0}", appSource);
 
-    //build application archive
-    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "cdttxservlet.war").toFile().exists(),
-        "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
-    logger.info("Application is in {0}", appSource1);
+      //build application archive
+      distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+          "build", domain1Namespace);
+      logger.info("distDir is {0}", distDir.toString());
+      assertTrue(Paths.get(distDir.toString(),
+          "cdttxservlet.war").toFile().exists(),
+          "Application archive is not available");
+      String appSource1 = distDir.toString() + "/cdttxservlet.war";
+      logger.info("Application is in {0}", appSource1);
 
-    // create admin credential secret for domain1
-    logger.info("Create admin credential secret for domain1");
-    String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
+      // create admin credential secret for domain1
+      logger.info("Create admin credential secret for domain1");
+      String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
+      assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+          domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
 
 
-    // build the model file list for domain1
-    final List<String> modelListDomain1 = Arrays.asList(
-        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
-        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
+      // build the model file list for domain1
+      final List<String> modelListDomain1 = Arrays.asList(
+          MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
+          MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
 
-    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+      final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
 
-    logger.info("Creating image with model file and verify");
-    String domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
-    logger.info("Created {0} image", domain1Image);
+      logger.info("Creating image with model file and verify");
+      String domain1Image = createImageAndVerify(
+          WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+      logger.info("Created {0} image", domain1Image);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain1Image);
+      // docker login and push image to docker registry if necessary
+      dockerLoginAndPushImageToRegistry(domain1Image);
 
-    //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
+      //create domain1
+      createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
+      logger.info("Getting admin server external service node port");
+      int adminServiceNodePort = assertDoesNotThrow(
+          () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
+          "Getting admin server node port failed");
 
-    if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
-      assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-    }
-    // build the model file list for domain2
-    final List<String> modelListDomain2 = Arrays.asList(
-        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
-        MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
+      if (System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
+        assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
+      }
+      // build the model file list for domain2
+      final List<String> modelListDomain2 = Arrays.asList(
+          MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
+          MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
 
-    final List<String> appSrcDirList2 = Collections.singletonList(appSource);
+      final List<String> appSrcDirList2 = Collections.singletonList(appSource);
 
-    // create admin credential secret for domain2
-    logger.info("Create admin credential secret for domain2");
-    String domain2AdminSecretName = domainUid2 + "-weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
+      // create admin credential secret for domain2
+      logger.info("Create admin credential secret for domain2");
+      String domain2AdminSecretName = domainUid2 + "-weblogic-credentials";
+      assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+          domain2AdminSecretName, domain2Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          String.format("createSecret %s failed for %s", domain2AdminSecretName, domainUid2));
 
-    logger.info("Creating image with model file and verify");
-    String domain2Image = createImageAndVerify(
-        WDT_IMAGE_NAME2, modelListDomain2, appSrcDirList2, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
-    logger.info("Created {0} image", domain2Image);
+      logger.info("Creating image with model file and verify");
+      String domain2Image = createImageAndVerify(
+          WDT_IMAGE_NAME2, modelListDomain2, appSrcDirList2, WDT_MODEL_DOMAIN2_PROPS, PROPS_TEMP_DIR, domainUid2);
+      logger.info("Created {0} image", domain2Image);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain2Image);
-    //create domain2
-    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
+      // docker login and push image to docker registry if necessary
+      dockerLoginAndPushImageToRegistry(domain2Image);
+      //create domain2
+      createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
 
-    logger.info("Getting admin server external service node port");
-    int adminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
-        "Getting admin server node port failed");
 
-    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST1, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
-        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
-        domain2ManagedServerPrefix, domain2Namespace);
+      String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+              + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
+          K8S_NODEPORT_HOST1, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+          domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
+          domain2ManagedServerPrefix, domain2Namespace);
 
-    ExecResult result = null;
-    logger.info("curl command {0}", curlRequest);
-    result = assertDoesNotThrow(
-        () -> exec(curlRequest, true));
-    if (result.exitValue() == 0) {
-      logger.info("\n HTTP response is \n " + result.stdout());
-      logger.info("curl command returned {0}", result.toString());
-      assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
+      ExecResult result = null;
+      logger.info("curl command {0}", curlRequest);
+      result = assertDoesNotThrow(
+          () -> exec(curlRequest, true));
+      if (result.exitValue() == 0) {
+        logger.info("\n HTTP response is \n " + result.stdout());
+        logger.info("curl command returned {0}", result.toString());
+        assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
+      }
+    } finally {
+      oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup(clusterOneNamespaces);
     }
 
   }
