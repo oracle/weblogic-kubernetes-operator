@@ -217,19 +217,19 @@ public class ItCrossClusterDomainTransaction {
     });
 
     assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
+      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1);
       String.format("Failed to update %s with namespace %s",
           WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
     });
     assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
+      addToPropertyFile(WDT_MODEL_DOMAIN2_PROPS, domain2Namespace, K8S_NODEPORT_HOST2);
       String.format("Failed to update %s with namespace %s",
           WDT_MODEL_DOMAIN2_PROPS, domain2Namespace);
     });
 
   }
 
-  private static void addToPropertyFile(String propFileName, String domainNamespace) throws IOException {
+  private static void addToPropertyFile(String propFileName, String domainNamespace, String host) throws IOException {
     FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
     Properties props = new Properties();
     props.load(in);
@@ -237,11 +237,11 @@ public class ItCrossClusterDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    props.setProperty("K8S_NODEPORT_HOST", host);
 
 
-    props.setProperty("K8S_NODEPORT_HOST1", K8S_NODEPORT_HOST1);
-    props.setProperty("K8S_NODEPORT_HOST2", K8S_NODEPORT_HOST2);
+    //props.setProperty("K8S_NODEPORT_HOST1", K8S_NODEPORT_HOST1);
+    //props.setProperty("K8S_NODEPORT_HOST2", K8S_NODEPORT_HOST2);
     props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.store(out, null);
     out.close();
