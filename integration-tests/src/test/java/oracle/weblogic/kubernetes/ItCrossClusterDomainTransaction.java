@@ -259,6 +259,7 @@ public class ItCrossClusterDomainTransaction {
   public void testCrossDomainTransaction() {
     try {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
+        logger.info("Build and deploy applications in the cluster1");
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
       }
       //build application archive
