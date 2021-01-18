@@ -123,8 +123,12 @@ public class ItCrossClusterDomainTransaction {
       + System.getenv("CLUSTER_NAME2")
       + "_kubeconfig";
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
-  private static String K8S_NODEPORT_HOST1 = K8S_NODEPORT_HOST;
+  private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");;
   private static List<String> clusterOneNamespaces = new ArrayList<>();
+
+  static {
+    assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
+  }
 
 
   /**
