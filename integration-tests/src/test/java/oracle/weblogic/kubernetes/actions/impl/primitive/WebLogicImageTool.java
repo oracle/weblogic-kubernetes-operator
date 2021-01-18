@@ -62,9 +62,9 @@ public class WebLogicImageTool {
     }
 
     // delete the old cache entry for the WDT installer
-    if (!deleteEntry()) {
+    //if (!deleteEntry()) {
       //return false;
-    }
+    //}
 
     // add the WDT installer that we just downloaded into WIT cache entry
     if (!addInstaller()) {
