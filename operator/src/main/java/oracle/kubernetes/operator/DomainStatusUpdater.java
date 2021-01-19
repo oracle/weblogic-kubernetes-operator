@@ -404,18 +404,21 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
-          boolean onlineUpdate = Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::isUseOnlineUpdate)
-              .orElse(false);
-          if (onlineUpdate && !hasUpdateCanceledCondition()) {
-            DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
-                .withMessage("Online update failed")
-                .withReason("Check status or other condition message for reasons")
-                .withStatus("False");
-            newStatus.addCondition(onlineUpdateCondition);
-          }
           if (hasBackOffLimitCondition()) {
+            boolean onlineUpdate = Optional.ofNullable(info)
+                .map(DomainPresenceInfo::getDomain)
+                .map(Domain::isUseOnlineUpdate)
+                .orElse(false);
+            if (onlineUpdate && !hasUpdateCanceledCondition()) {
+              newStatus.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete);
+              newStatus.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled);
+
+              DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
+                  .withMessage("Online update failed haha")
+                  .withReason("Check status or other condition message for reasons")
+                  .withStatus("False");
+              newStatus.addCondition(onlineUpdateCondition);
+            }
             newStatus.incrementIntrospectJobFailureCount();
           }
         }
@@ -446,7 +449,9 @@ public class DomainStatusUpdater {
           .orElse(null);
 
       for (DomainCondition cond : domainConditions) {
+        LOGGER.info("DEBUG: cond is " + cond.getType());
         if (cond.getType() == DomainConditionType.OnlineUpdateCanceled) {
+          LOGGER.info("DEBUG: found conditions");
           return true;
         }
       }
