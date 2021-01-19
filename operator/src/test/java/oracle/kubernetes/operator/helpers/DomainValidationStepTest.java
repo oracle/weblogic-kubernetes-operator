@@ -28,9 +28,9 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
@@ -56,19 +56,17 @@ public class DomainValidationStepTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
-  private Step domainValidationSteps;
-  private Step topologyValidationStep;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
 
-  /**
-   * Setup test.
-   */
-  @Before
-  public void setUp() {
+  private Step domainValidationSteps;
+  private Step topologyValidationStep;
+
+  @BeforeEach
+  public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
         NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
     mementos.add(consoleControl);
@@ -81,7 +79,7 @@ public class DomainValidationStepTest {
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -246,6 +244,7 @@ public class DomainValidationStepTest {
     assertThat(getEvents(), empty());
   }
 
+  @SuppressWarnings("SameParameterValue")
   private Cluster createCluster(String clusterName) {
     Cluster cluster = new Cluster();
     cluster.setClusterName(clusterName);

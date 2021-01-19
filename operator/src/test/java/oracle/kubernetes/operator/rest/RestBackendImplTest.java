@@ -39,10 +39,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -55,6 +54,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
 public class RestBackendImplTest {
@@ -89,11 +89,7 @@ public class RestBackendImplTest {
         .withSpec(new DomainSpec().withDomainUid(name));
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
@@ -124,7 +120,7 @@ public class RestBackendImplTest {
     subjectAccessReview.setStatus(new V1SubjectAccessReviewStatus().allowed(true));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -158,14 +154,16 @@ public class RestBackendImplTest {
     assertThat(restBackend.isDomainUid("no_such_uid"), is(false));
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void whenUnknownDomain_throwException() {
-    restBackend.performDomainAction("no_such_uid", new DomainAction(DomainActionType.INTROSPECT));
+    assertThrows(WebApplicationException.class,
+          () -> restBackend.performDomainAction("no_such_uid", new DomainAction(DomainActionType.INTROSPECT)));
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void whenUnknownDomainUpdateCommand_throwException() {
-    restBackend.performDomainAction(DOMAIN1, new DomainAction(null));
+    assertThrows(WebApplicationException.class,
+              () -> restBackend.performDomainAction(DOMAIN1, new DomainAction(null)));
   }
 
   @Test
@@ -278,9 +276,10 @@ public class RestBackendImplTest {
 
   // functionality used for scale resource
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void whenNegativeScaleSpecified_throwException() {
-    restBackend.scaleCluster(DOMAIN1, "cluster1", -1);
+    assertThrows(WebApplicationException.class,
+              () -> restBackend.scaleCluster(DOMAIN1, "cluster1", -1));
   }
 
   @Test
@@ -310,14 +309,6 @@ public class RestBackendImplTest {
   }
 
   @Test
-  @Ignore
-  public void whenNoPerClusterReplicaSetting_scaleClusterCreatesOne() {
-    restBackend.scaleCluster(DOMAIN1, "cluster1", 5);
-
-    assertThat(getUpdatedDomain().getReplicaCount("cluster1"), equalTo(5));
-  }
-
-  @Test
   public void whenNoPerClusterReplicaSettingAndDefaultMatchesRequest_doNothing() {
     configureDomain().withDefaultReplicaCount(REPLICA_LIMIT);
 
@@ -326,13 +317,14 @@ public class RestBackendImplTest {
     assertThat(getUpdatedDomain(), nullValue());
   }
 
-  @Test(expected = WebApplicationException.class)
+  @Test
   public void whenReplaceDomainReturnsError_scaleClusterThrowsException() {
     testSupport.failOnResource(DOMAIN, DOMAIN2, NS, HTTP_CONFLICT);
 
     DomainConfiguratorFactory.forDomain(domain2).configureCluster("cluster1").withReplicas(2);
 
-    restBackend.scaleCluster(DOMAIN2, "cluster1", 3);
+    assertThrows(WebApplicationException.class,
+              () -> restBackend.scaleCluster(DOMAIN2, "cluster1", 3));
   }
 
   @Test

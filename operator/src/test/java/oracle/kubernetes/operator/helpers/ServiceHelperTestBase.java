@@ -11,7 +11,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 
 public class ServiceHelperTestBase {
   static final String DOMAIN_NAME = "domain1";
@@ -21,14 +21,9 @@ public class ServiceHelperTestBase {
   final List<Memento> mementos = new ArrayList<>();
   final DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
-  /**
-   * Tear down test.
-   */
-  @After
-  public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+  @AfterEach
+  public void tearDown() throws Exception {
+    mementos.forEach(Memento::revert);
   }
 
   private DomainPresenceInfo createPresenceInfo() {

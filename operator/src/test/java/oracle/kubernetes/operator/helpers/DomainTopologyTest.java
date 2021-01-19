@@ -19,6 +19,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+// todo JUnit5 The tests in this class each make lots of assertions using the JUnit 4 Assert
+// and should be converted to use matchers not part of JUnit (such as hamcrest)
 public class DomainTopologyTest {
 
 
