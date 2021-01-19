@@ -26,7 +26,7 @@ import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -40,7 +40,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainStatusPatchTest {
   private final PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
 
-  @Test      // todo have ADD full status definition as json object - then remove constructor item
+  @Test
   public void whenExistingStatusNull_addStatus() {
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
@@ -453,9 +453,6 @@ public class DomainStatusPatchTest {
                 "ADD /status/servers/0/health/subsystems/0/symptoms/- 's3'"
                 ));
   }
-
-  // todo status deep clone
-
 
   abstract static class PatchBuilderStub implements JsonPatchBuilder {
     private final List<String> patches = new ArrayList<>();

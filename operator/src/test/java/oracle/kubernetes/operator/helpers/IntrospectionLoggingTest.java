@@ -12,9 +12,9 @@ import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -35,11 +35,8 @@ public class IntrospectionLoggingTest {
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final TerminalStep terminalStep = new TerminalStep();
 
-  /**
-   * Setup test.
-   */
-  @Before
-  public void setUp() {
+  @BeforeEach
+  public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
     mementos.add(testSupport.install());
 
@@ -48,7 +45,7 @@ public class IntrospectionLoggingTest {
     testSupport.defineResources(domain);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

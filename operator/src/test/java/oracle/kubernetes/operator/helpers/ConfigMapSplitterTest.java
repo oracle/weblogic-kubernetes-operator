@@ -17,9 +17,9 @@ import com.meterware.simplestub.StaticStubSupport;
 import org.hamcrest.Description;
 import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.helpers.ConfigMapSplitterTest.TargetMatcher.isTarget;
 import static org.hamcrest.Matchers.equalTo;
@@ -35,17 +35,18 @@ public class ConfigMapSplitterTest {
   private final Map<String, String> data = new HashMap<>();
   private final List<Memento> mementos = new ArrayList<>();
 
+  @SuppressWarnings("SameParameterValue")
   private static String createLargeData(double fraction) {
     final int numRepeats = (int) Math.round(fraction * TEST_DATA_LIMIT / UNIT_DATA.length());
     return UNIT_DATA.repeat(numRepeats);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(StaticStubSupport.install(ConfigMapSplitter.class, "DATA_LIMIT", TEST_DATA_LIMIT));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
