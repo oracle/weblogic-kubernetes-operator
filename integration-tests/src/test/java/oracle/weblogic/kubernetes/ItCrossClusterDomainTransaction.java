@@ -14,6 +14,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -560,7 +561,8 @@ public class ItCrossClusterDomainTransaction {
   }
 
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
-    injectEnvironmentVariable("KUBECONFIG", kubeconfig);
+    //injectEnvironmentVariable("KUBECONFIG", kubeconfig);
+    testMarina(kubeconfig);
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
 
     /*
@@ -573,7 +575,7 @@ public class ItCrossClusterDomainTransaction {
 
      */
   }
-
+  /*
   private static void injectEnvironmentVariable(String key, String value)
       throws Exception {
 
@@ -603,5 +605,74 @@ public class ItCrossClusterDomainTransaction {
     Field field = getAccessibleField(unmodifiableMap, "m");
     Object obj = field.get(map);
     ((Map<String, String>) obj).put(key, value);
+  }
+  */
+  private static Map<String, String> getModifiableEnvironmentMap() {
+    try {
+      Map<String,String> unmodifiableEnv = System.getenv();
+      Class<?> cl = unmodifiableEnv.getClass();
+      Field field = cl.getDeclaredField("m");
+      field.setAccessible(true);
+      Map<String,String> modifiableEnv = (Map<String,String>) field.get(unmodifiableEnv);
+      return modifiableEnv;
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to access writable environment variable map.");
+    }
+  }
+
+  private static Map<String, String> getModifiableEnvironmentMap2() {
+    try {
+      Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
+      Field theUnmodifiableEnvironmentField = processEnvironmentClass.getDeclaredField("theUnmodifiableEnvironment");
+      theUnmodifiableEnvironmentField.setAccessible(true);
+      Map<String,String> theUnmodifiableEnvironment = (Map<String,String>)theUnmodifiableEnvironmentField.get(null);
+
+      Class<?> theUnmodifiableEnvironmentClass = theUnmodifiableEnvironment.getClass();
+      Field theModifiableEnvField = theUnmodifiableEnvironmentClass.getDeclaredField("m");
+      theModifiableEnvField.setAccessible(true);
+      Map<String,String> modifiableEnv = (Map<String,String>) theModifiableEnvField.get(theUnmodifiableEnvironment);
+      return modifiableEnv;
+    } catch (Exception e) {
+      throw new RuntimeException("Unable to access writable environment variable map.");
+    }
+  }
+
+  private Map<String, String> updateEnvironmentVar(String key, String value) {
+
+    Map<String,String> modifiableEnv = getModifiableEnvironmentMap();
+    modifiableEnv.remove(key);
+    modifiableEnv.put(key, value);
+    return modifiableEnv;
+  }
+
+  private static Map<String, String> clearEnvironmentVars(String[] keys) {
+
+    Map<String,String> modifiableEnv = getModifiableEnvironmentMap();
+
+    HashMap<String, String> savedVals = new HashMap<String, String>();
+
+    for (String k : keys) {
+      String val = modifiableEnv.remove(k);
+      if (val != null) {
+        savedVals.put(k, val);
+      }
+    }
+    return savedVals;
+  }
+
+  private static void setEnvironmentVars(Map<String, String> varMap) {
+    getModifiableEnvironmentMap().putAll(varMap);
+  }
+
+
+  private static void testMarina(String newval) {
+    String[] keys = { "KUBECONFIG" };
+    Map<String, String> savedVars = clearEnvironmentVars(keys);
+    HashMap<String, String> newVals = new HashMap<String, String>();
+    newVals.put("KUBECONFIG", newval);
+
+    // do test
+
+    setEnvironmentVars(newVals);
   }
 }
