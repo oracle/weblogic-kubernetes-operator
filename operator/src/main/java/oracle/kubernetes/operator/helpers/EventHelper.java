@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Optional;
+import java.util.Random;
 import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.V1Event;
@@ -220,7 +221,12 @@ public class EventHelper {
 
   private static String generateEventName(EventData eventData) {
     return String.format("%s.%s.%s.%s",
-        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), Math.random());
+        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), generateRandomLong());
+  }
+
+  private static long generateRandomLong() {
+    Random r = new Random();
+    return r.nextLong();
   }
 
   public enum EventItem {
