@@ -183,6 +183,17 @@
               <sourceDirectory>src/main/resources/scripts</sourceDirectory>
             </configuration>
           </execution>
+          <execution>
+            <id>test-scaling-script</id>
+            <phase>test</phase>
+            <goals>
+              <goal>shunit2</goal>
+            </goals>
+            <configuration>
+              <testSourceDirectory>src/test/sh/scaling</testSourceDirectory>
+              <sourceDirectory>scripts/scaling</sourceDirectory>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
 
