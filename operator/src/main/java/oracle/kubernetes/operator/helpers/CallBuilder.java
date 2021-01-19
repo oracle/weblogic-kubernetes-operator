@@ -1583,7 +1583,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for patching event.
+   * Asynchronous step for replacing event.
    *
    * @param namespace Namespace
    * @param body Body

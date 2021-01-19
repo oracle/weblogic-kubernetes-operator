@@ -22,7 +22,7 @@ public class UnrecoverableErrorBuilder {
    * Returns true if the specified call response indicates a NotFound/Gone response from Kubernetes.
    * @param callResponse the response from a Kubernetes call
    * @param <T> call response type
-   * @return true if an NotFound/Gone entity failure has been reported
+   * @return true if a NotFound/Gone entity failure has been reported
    */
   public static <T> boolean isAsyncCallNotFoundFailure(CallResponse<T> callResponse) {
     return callResponse.isFailure() && isNotFound(callResponse.getE());

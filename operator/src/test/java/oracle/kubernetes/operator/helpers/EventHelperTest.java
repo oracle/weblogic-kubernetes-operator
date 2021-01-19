@@ -213,7 +213,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingCompletedEventCreatedWithExpectedCount() {
+  public void whenCreateEventStepCalled_domainProcessingStartingEventCreatedWithExpectedCount() {
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
@@ -439,7 +439,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalledTwice_withDomainChangedEventData_domainChangedEventCreatedOnceWithExpectedCount() {
+  public void whenDomainChangedEventCreateCalledTwice_domainChangedEventCreatedOnceWithExpectedCount() {
     presenceInfoMap.put(NS, Map.of(UID, info));
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_CHANGED))));
     dispatchAddedEventWatches();
@@ -527,7 +527,7 @@ public class EventHelperTest {
     dispatchAddedEventWatches();
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
 
-    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected count",
+    assertThat("Found 1 NAMESPACE_WATCHING_STARTED event with expected count",
         containsOneEventWithCount(getEvents(testSupport),
             EventConstants.NAMESPACE_WATCHING_STARTED_EVENT, 2), is(true));
   }

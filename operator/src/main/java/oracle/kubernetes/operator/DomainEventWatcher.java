@@ -31,7 +31,7 @@ public class DomainEventWatcher extends EventWatcher {
   }
 
   /**
-   * Create and start a new EventWatcher.
+   * Create and start a new DomainEventWatcher.
    * @param factory thread factory to use for this watcher's threads
    * @param ns namespace
    * @param initialResourceVersion the oldest version to return for this watch

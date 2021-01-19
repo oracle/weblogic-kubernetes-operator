@@ -154,7 +154,7 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether the number of events with the same reason and count of 1 matches the given expected count.
+   * Whether there are expected number of events that match the given reason and have count of 1.
    *
    * @param events list of events to check
    * @param reason reason to match
