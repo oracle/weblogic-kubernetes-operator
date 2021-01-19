@@ -172,6 +172,16 @@ public class ItCrossClusterDomainTransaction {
     // install and verify operator in cluster2
     installAndVerifyOperator(op2Namespace, domain2Namespace);
     domain1Namespace = domain2Namespace + "cluster1";
+    op1Namespace = op2Namespace + "cluster1";
+    clusterOneNamespaces.add(op1Namespace);
+    clusterOneNamespaces.add(domain1Namespace);
+
+    // Now that we got the namespaces for both the domains, we need to update the model properties
+    // file with the namespaces. For cross domain transaction to work, we need to have the externalDNSName
+    // set in the config file. Cannot set this after the domain is up since a server restart is
+    // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
+    // property file
+    updatePropertyFile();
 
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
@@ -208,12 +218,6 @@ public class ItCrossClusterDomainTransaction {
 
 
     initCluster1();
-    // Now that we got the namespaces for both the domains, we need to update the model properties
-    // file with the namespaces. For cross domain transaction to work, we need to have the externalDNSName
-    // set in the config file. Cannot set this after the domain is up since a server restart is
-    // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
-    // property file
-    updatePropertyFile();
 
   }
 
@@ -225,8 +229,6 @@ public class ItCrossClusterDomainTransaction {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator in cluster1");
 
-    assertNotNull(op2Namespace, "Namespace name for operator2 is null");
-    op1Namespace = op2Namespace + "cluster1";
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");
 
@@ -236,8 +238,6 @@ public class ItCrossClusterDomainTransaction {
 
     // install and verify operator
     installAndVerifyOperator(op1Namespace, domain1Namespace);
-    clusterOneNamespaces.add(op1Namespace);
-    clusterOneNamespaces.add(domain1Namespace);
 
     //build application archive
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
