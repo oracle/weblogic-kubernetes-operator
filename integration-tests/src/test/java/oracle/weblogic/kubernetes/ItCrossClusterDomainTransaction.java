@@ -117,19 +117,15 @@ public class ItCrossClusterDomainTransaction {
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
-  private static final String KUBECONFIG1 = System.getenv("WORKSPACE")
-      + "/terraform/"
-      + System.getenv("CLUSTER_NAME1")
-      + "_kubeconfig";
-  private static final String KUBECONFIG2 = System.getenv("WORKSPACE")
-      + "/terraform/"
-      + System.getenv("CLUSTER_NAME2")
-      + "_kubeconfig";
+  private static final String KUBECONFIG1;
+  private static final String KUBECONFIG2;
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
   private static List<String> clusterOneNamespaces = new ArrayList<>();
 
   static {
+    KUBECONFIG1 = System.getenv("KUBECONFIG1");
+    KUBECONFIG2 = System.getenv("KUBECONFIG2");
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
   }
 
