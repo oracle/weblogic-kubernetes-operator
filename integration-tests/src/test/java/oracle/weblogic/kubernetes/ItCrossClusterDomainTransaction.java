@@ -172,45 +172,20 @@ public class ItCrossClusterDomainTransaction {
     // install and verify operator in cluster2
     installAndVerifyOperator(op2Namespace, domain2Namespace);
     domain1Namespace = domain2Namespace + "cluster1";
-    //build application archive
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "txforward.ear").toFile().exists(),
-        "Application archive is not available");
-    appSource = distDir.toString() + "/txforward.ear";
-    logger.info("Application is in {0}", appSource);
-
-    //build application archive
-    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "cdttxservlet.war").toFile().exists(),
-        "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
-    logger.info("Application is in {0}", appSource1);
-
-    // build the model file list for domain1
-    final List<String> modelListDomain1 = Arrays.asList(
-        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
-        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
-
-    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
-
-    logger.info("Creating image with model file and verify");
-    domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
-    logger.info("Created {0} image", domain1Image);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain1Image);
 
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
+    //build application archive
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+        "build", domain2Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "txforward.ear").toFile().exists(),
+        "Application archive is not available");
+    String appSource = distDir.toString() + "/txforward.ear";
+    logger.info("Application is in {0}", appSource);
 
     final List<String> appSrcDirList2 = Collections.singletonList(appSource);
 
@@ -263,6 +238,41 @@ public class ItCrossClusterDomainTransaction {
     installAndVerifyOperator(op1Namespace, domain1Namespace);
     clusterOneNamespaces.add(op1Namespace);
     clusterOneNamespaces.add(domain1Namespace);
+
+    //build application archive
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "txforward.ear").toFile().exists(),
+        "Application archive is not available");
+    String appSource = distDir.toString() + "/txforward.ear";
+    logger.info("Application is in {0}", appSource);
+
+    //build application archive
+    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "cdttxservlet.war").toFile().exists(),
+        "Application archive is not available");
+    String appSource1 = distDir.toString() + "/cdttxservlet.war";
+    logger.info("Application is in {0}", appSource1);
+
+    // build the model file list for domain1
+    final List<String> modelListDomain1 = Arrays.asList(
+        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
+        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
+
+    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+
+    logger.info("Creating image with model file and verify");
+    domain1Image = createImageAndVerify(
+        WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+    logger.info("Created {0} image", domain1Image);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(domain1Image);
 
     // create admin credential secret for domain1
     logger.info("Create admin credential secret for domain1");
