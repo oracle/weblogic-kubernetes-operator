@@ -497,16 +497,11 @@ public class Domain implements KubernetesObject {
 
   /**
    * Returns if the domain is using online update.
-   * return true if using onlne update
+   * return true if using online update
    */
 
   public boolean isUseOnlineUpdate() {
-    return Optional.ofNullable(spec)
-        .map(DomainSpec::getConfiguration)
-        .map(Configuration::getModel)
-        .map(Model::getOnlineUpdate)
-        .map(OnlineUpdate::getEnabled)
-        .orElse(false);
+    return spec.isUseOnlineUpdate();
   }
 
   /**
@@ -515,7 +510,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTActivateTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getActivateTimeoutMillis)
+        .map(WDTTimeouts::getActivateTimeoutMillis)
         .orElse(null);
   }
 
@@ -525,7 +520,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTConnectTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getConnectTimeoutMillis)
+        .map(WDTTimeouts::getConnectTimeoutMillis)
         .orElse(null);
   }
 
@@ -535,7 +530,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getDeployTimeoutMillis)
+        .map(WDTTimeouts::getDeployTimeoutMillis)
         .orElse(null);
   }
 
@@ -545,7 +540,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTUnDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getUndeployTimeoutMillis)
+        .map(WDTTimeouts::getUndeployTimeoutMillis)
         .orElse(null);
   }
 
@@ -555,7 +550,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTReDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getRedeployTimeoutMillis)
+        .map(WDTTimeouts::getRedeployTimeoutMillis)
         .orElse(null);
   }
 
@@ -565,7 +560,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTStartApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getStartApplicationTimeoutMillis)
+        .map(WDTTimeouts::getStartApplicationTimeoutMillis)
         .orElse(null);
   }
 
@@ -575,7 +570,7 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTStopApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getStopApplicationTimeoutMillis)
+        .map(WDTTimeouts::getStopApplicationTimeoutMillis)
         .orElse(null);
   }
 
@@ -585,11 +580,11 @@ public class Domain implements KubernetesObject {
    */
   public Long getWDTSetServerGroupsTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
-        .map(OnlineUpdate.WDTTimeouts::getSetServerGroupsTimeoutMillis)
+        .map(WDTTimeouts::getSetServerGroupsTimeoutMillis)
         .orElse(null);
   }
 
-  private Optional<OnlineUpdate.WDTTimeouts> getWDTOnlineUpdateTimeouts() {
+  private Optional<WDTTimeouts> getWDTOnlineUpdateTimeouts() {
     return Optional.ofNullable(spec)
         .map(DomainSpec::getConfiguration)
         .map(Configuration::getModel)

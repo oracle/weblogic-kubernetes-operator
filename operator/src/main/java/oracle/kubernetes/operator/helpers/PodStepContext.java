@@ -947,7 +947,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         //
         return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        if (shouldNotRestartAfterSuccessOnlineUpdate(dynamicUpdateResult) && miiDomainZipHash != null) {
+        if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
           LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
           logPodExists();
 
@@ -956,27 +956,18 @@ public abstract class PodStepContext extends BasePodStepContext {
           V1ObjectMeta updatedMetaData = new V1ObjectMeta();
           updatedMetaData.putAnnotationsItem("weblogic.sha256",
                 updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
-          updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
+          if (miiDomainZipHash != null) {
+            updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
+          }
           updatedPod.setMetadata(updatedMetaData);
+
           // if the introspector job tells it needs restart, update the condition with the needed attributes
           if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
-
-            String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-                ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-                .orElse("");
-            updateDomainConditions("Online update completed successfully, but the changes require "
-                    + "restart and the domain resource specified "
-                    + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
-                    + " The changes are committed but the domain require manually restart to "
-                    + " make the changes effective. The changes are: "
-                    + dynamicUpdateRollBackFile,
-                DomainConditionType.OnlineUpdateComplete);
-
+            setOnlineUpdateNeedRestartCondition(packet);
           } else {
-            updateDomainConditions("Online update successful. No restart necessary",
-                DomainConditionType.OnlineUpdateComplete);
+            setOnlineUpdateSuccessCondition();
           }
-          return  doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
+          return doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
         }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
@@ -991,7 +982,12 @@ public abstract class PodStepContext extends BasePodStepContext {
       }
     }
 
-    private boolean shouldNotRestartAfterSuccessOnlineUpdate(String dynamicUpdateResult) {
+    private NextAction returnCancelUpdateStep(Packet packet) {
+      setOnlineUpdateCanceledCondition(packet);
+      return doNext(packet);
+    }
+
+    private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
       boolean result = false;
       if (ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
         result = true;
@@ -1005,11 +1001,32 @@ public abstract class PodStepContext extends BasePodStepContext {
              .map(Model::getOnlineUpdate)
              .map(OnlineUpdate::getOnNonDynamicChanges)
              .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
+      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED.equals(dynamicUpdateResult)) {
+        LOGGER.info("DEBUG: should not restart because of cancel");
+        result = true;
       }
       return result;
     }
 
-    private NextAction returnCancelUpdateStep(Packet packet) {
+    private void setOnlineUpdateNeedRestartCondition(Packet packet) {
+      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+          .orElse("");
+      updateDomainConditions("Online update completed successfully, but the changes require "
+              + "restart and the domain resource specified "
+              + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
+              + " The changes are committed but the domain require manually restart to "
+              + " make the changes effective. The changes are: "
+              + dynamicUpdateRollBackFile,
+          DomainConditionType.OnlineUpdateComplete);
+    }
+
+    private void setOnlineUpdateSuccessCondition() {
+      updateDomainConditions("Online update successful. No restart necessary",
+          DomainConditionType.OnlineUpdateComplete);
+    }
+
+    private void setOnlineUpdateCanceledCondition(Packet packet) {
       String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
           ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
           .orElse("");
@@ -1019,8 +1036,8 @@ public abstract class PodStepContext extends BasePodStepContext {
               + dynamicUpdateRollBackFile,
           DomainConditionType.OnlineUpdateCanceled);
 
-      return doNext(packet);
     }
+
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
       DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);

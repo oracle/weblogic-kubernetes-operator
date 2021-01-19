@@ -408,10 +408,10 @@ public class DomainStatusUpdater {
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::isUseOnlineUpdate)
               .orElse(false);
-          if (onlineUpdate) {
+          if (onlineUpdate && !hasUpdateCanceledCondition()) {
             DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
                 .withMessage("Online update failed")
-                .withReason("Check status message for reasons")
+                .withReason("Check status or other condition message for reasons")
                 .withStatus("False");
             newStatus.addCondition(onlineUpdateCondition);
           }
@@ -432,6 +432,21 @@ public class DomainStatusUpdater {
 
       for (DomainCondition cond : domainConditions) {
         if ("BackoffLimitExceeded".equals(cond.getReason())) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private boolean hasUpdateCanceledCondition() {
+      List<DomainCondition> domainConditions = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getConditions)
+          .orElse(null);
+
+      for (DomainCondition cond : domainConditions) {
+        if (cond.getType() == DomainConditionType.OnlineUpdateCanceled) {
           return true;
         }
       }

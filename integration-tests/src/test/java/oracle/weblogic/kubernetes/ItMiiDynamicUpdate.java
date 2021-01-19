@@ -578,28 +578,11 @@ class ItMiiDynamicUpdate {
         "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
     logger.info("JDBCSystemResource configuration found");
 
-    // check that the domain status message contains the expected error msg
-    logger.info("verifying the domain status message contains the expected error msg");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain status condition type is OnlineUpdateComplete, "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
-
-          if ((miidomain != null) && (miidomain.getStatus() != null)) {
-            List<DomainCondition> domainConditions = miidomain.getStatus().getConditions();
-            for (DomainCondition domainCondition : domainConditions) {
-              if (domainCondition.getType().equalsIgnoreCase("OnlineUpdateComplete")) {
-                return true;
-              }
-            }
-          }
-
-          return false;
-        });
+    // check that the domain status condition contains the correct type and expected msg
+    logger.info("verifying the domain status condition contains the correct type and expected msg");
+    // TODO: need to update the condition message: https://jira.oraclecorp.com/jira/browse/OWLS-87151
+    String expectedMsgForCommitUpdate = "Online update completed successfully, but the changes require restart";
+    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdate);
   }
 
   /**
@@ -632,22 +615,11 @@ class ItMiiDynamicUpdate {
     logger.info("verifying the introspector failed with the expected error msg");
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
-    // clean failed introspector
-    // replace WDT config map with model.config.wm.yaml because we can not delete the entire WM tree
-    // there is an issue that the application SourcePath can not be found when the target is removed
-    // https://jira.oraclecorp.com/jira/browse/WDT-535
-    Path pathToAppDeploymentYaml = Paths.get(WORK_DIR + "/appdeployment.yaml");
-    String yamlToAppDeployment = "appDeployments:\n"
-        + "  Application:\n"
-        + "    myear:\n"
-        + "      Target: 'cluster-1'";
-
-    assertDoesNotThrow(() -> Files.write(pathToAppDeploymentYaml, yamlToAppDeployment.getBytes()));
-
+    // clean failed introspector pods
     // replace WDT config map with config that's added in previous tests,
     // otherwise it will try to delete them, we are not testing deletion here
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAppDeploymentYaml.toString(),
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
             pathToAddClusterYaml.toString(), MODEL_DIR + "/model.jdbc2.yaml"),
         withStandardRetryPolicy);
 
@@ -863,6 +835,83 @@ class ItMiiDynamicUpdate {
             adminServerName, "404"));
 
     verifyPodsNotRolled(pods);
+  }
+
+  /**
+   * Recreate configmap containing non-dynamic change, changing DS attribute.
+   * Patch the domain resource with the configmap.
+   * Patch the domain with onNonDynamicChanges value as CancelUpdate.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify the domain status is updated and domain is not restarted.
+   */
+  @Test
+  @Order(12)
+  @DisplayName("Test onNonDynamicChanges value CancelUpdate")
+  public void testOnNonDynamicChangeCancelUpdate() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Add datasource, replace contents of an existing configMap with previous tests config and datasource
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+
+    // make non-dynamic change, update datasource JDBCDriver params
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
+
+    // Patch a running domain with introspectVersion.
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
+    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
+          + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
+          + "option to cancel all changes if restart require.";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+    verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
+
   }
 
   private void verifyIntrospectorRuns() {
@@ -1143,5 +1192,38 @@ class ItMiiDynamicUpdate {
         .withParams(new CommandParams()
             .command(curlString.toString()))
         .executeAndVerify(expectedValue);
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   * @param conditionType condition type
+   * @param conditionMsg messsage in condition
+   * @return true if the condition matches
+   */
+  private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain status condition message contains the expected msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                conditionMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
+                  + " msg " + domainCondition.getMessage().contains(conditionMsg));
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+    return false;
   }
 }
