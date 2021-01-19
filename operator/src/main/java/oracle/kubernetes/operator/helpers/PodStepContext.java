@@ -969,6 +969,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           }
           return doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
         }
+        removeOnlineUpdateConditions();
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
@@ -1038,6 +1039,18 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     }
 
+    private void removeOnlineUpdateConditions() {
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete));
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled));
+
+    }
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
       DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
@@ -1052,15 +1065,7 @@ public abstract class PodStepContext extends BasePodStepContext {
           .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
           .withStatus("True");
 
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete));
-
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled));
+      removeOnlineUpdateConditions();
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
