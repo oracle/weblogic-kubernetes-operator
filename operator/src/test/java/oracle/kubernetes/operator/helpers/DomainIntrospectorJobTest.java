@@ -35,9 +35,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -101,11 +101,7 @@ public class DomainIntrospectorJobTest {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -133,10 +129,7 @@ public class DomainIntrospectorJobTest {
     };
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

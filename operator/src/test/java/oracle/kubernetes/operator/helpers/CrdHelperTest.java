@@ -30,10 +30,9 @@ import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -125,7 +124,7 @@ public class CrdHelperTest {
                 .shortNames(Collections.singletonList(KubernetesConstants.DOMAIN_SHORT)));
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -138,7 +137,7 @@ public class CrdHelperTest {
     defaultBetaCrd = defineDefaultBetaCrd();
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
@@ -256,7 +255,6 @@ public class CrdHelperTest {
   }
 
   @Test
-  @Ignore
   public void whenExistingCrdHasFutureVersion_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
@@ -271,7 +269,6 @@ public class CrdHelperTest {
   }
 
   @Test
-  @Ignore
   public void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_FUTURE));
 

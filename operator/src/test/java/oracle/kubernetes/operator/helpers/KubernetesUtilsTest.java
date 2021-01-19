@@ -7,7 +7,7 @@ import java.math.BigInteger;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;

@@ -60,9 +60,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -150,7 +150,7 @@ public class DomainProcessorTest {
         .withCluster(clusterConfig);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
@@ -168,7 +168,7 @@ public class DomainProcessorTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
