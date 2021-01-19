@@ -94,8 +94,8 @@ public class K8sEvents {
   }
 
   private static boolean isEqualOrAfter(DateTime timestamp, V1Event event) {
-    return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
-            || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
+    return event.getLastTimestamp().isEqual(timestamp.getMillis())
+            || event.getLastTimestamp().isAfter(timestamp.getMillis());
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {

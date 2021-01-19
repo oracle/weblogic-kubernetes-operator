@@ -220,8 +220,8 @@ public class EventHelper {
   }
 
   private static String generateEventName(EventData eventData) {
-    return String.format("%s.%s.%s.%s",
-        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), generateRandomLong());
+    return String.format("%s.%s.%s",
+        eventData.getResourceName(), eventData.eventItem.getReason(), generateRandomLong());
   }
 
   private static long generateRandomLong() {
