@@ -11,9 +11,19 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 public class NamespaceStatus {
   private final AtomicBoolean isNamespaceStarting = new AtomicBoolean(false);
   private final AtomicReference<V1SubjectRulesReviewStatus> rulesReviewStatus = new AtomicReference<>();
+  private final AtomicBoolean verifiedAsOperatorNamespace = new AtomicBoolean(false);
+  private final AtomicBoolean verifiedAsDomainNamespace = new AtomicBoolean(false);
 
   public AtomicBoolean isNamespaceStarting() {
     return isNamespaceStarting;
+  }
+
+  public AtomicBoolean verifiedAsOperatorNamespace() {
+    return verifiedAsOperatorNamespace;
+  }
+
+  public AtomicBoolean verifiedAsDomainNamespace() {
+    return verifiedAsDomainNamespace;
   }
 
   public AtomicReference<V1SubjectRulesReviewStatus> getRulesReviewStatus() {
