@@ -220,13 +220,13 @@ public class EventHelper {
   }
 
   private static String generateEventName(EventData eventData) {
-    return String.format("%s.%s.%s",
-        eventData.getResourceName(), eventData.eventItem.getReason(), generateRandomLong());
+    return String.format("%s.%s.%h%h",
+        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), generateRandomLong());
   }
 
   private static long generateRandomLong() {
     Random r = new Random();
-    return r.nextLong();
+    return Math.abs(r.nextLong());
   }
 
   public enum EventItem {

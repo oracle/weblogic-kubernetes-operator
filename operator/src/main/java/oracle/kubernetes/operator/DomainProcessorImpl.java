@@ -89,7 +89,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
-  private static final Map<String, Map<String, EventKubernetesObjects>> eventK8SObjects = new ConcurrentHashMap<>();
+  private static final Map<String, Map<String, EventKubernetesObjects>> domainEventK8SObjects
+      = new ConcurrentHashMap<>();
+  private static final Map<String, EventKubernetesObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
@@ -148,7 +150,17 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static EventKubernetesObjects getEventK8SObjects(String ns, String domainUid) {
-    return eventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
+    return Optional.ofNullable(domainUid)
+        .map(d -> getDomainEventK8SObjects(ns, d))
+        .orElse(getNamespaceEventK8SObjects(ns));
+  }
+
+  private static EventKubernetesObjects getNamespaceEventK8SObjects(String ns) {
+    return namespaceEventK8SObjects.computeIfAbsent(ns, d -> new EventKubernetesObjects());
+  }
+
+  private static EventKubernetesObjects getDomainEventK8SObjects(String ns, String domainUid) {
+    return domainEventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
         .computeIfAbsent(domainUid, d -> new EventKubernetesObjects());
   }
 
@@ -173,6 +185,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         processServerEvent(event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
+      case EventConstants.EVENT_KIND_NAMESPACE:
         updateEventK8SObjects(event);
         break;
       default:
@@ -214,6 +227,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     switch (kind) {
       case EventConstants.EVENT_KIND_DOMAIN:
+      case EventConstants.EVENT_KIND_NAMESPACE:
         deleteEventK8SObjects(event);
         break;
       case EventConstants.EVENT_KIND_POD:
@@ -696,7 +710,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * Modifies the factory to indicate that it should interrupt any current make-right thread.
      * @return the updated factory
      */
-    public MakeRightDomainOperation interrupt() {
+    MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
     }

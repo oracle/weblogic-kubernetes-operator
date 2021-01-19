@@ -40,4 +40,5 @@ public interface EventConstants {
   String NAMESPACE_WATCHING_STOPPED_PATTERN = "Stopped watching namespace %s";
   String EVENT_KIND_POD = "Pod";
   String EVENT_KIND_DOMAIN = "Domain";
+  String EVENT_KIND_NAMESPACE = "Namespace";
 }
