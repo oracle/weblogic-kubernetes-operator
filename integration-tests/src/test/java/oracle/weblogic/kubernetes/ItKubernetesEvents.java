@@ -394,7 +394,6 @@ public class ItKubernetesEvents {
         .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
         + "(elapsed time {1}ms, remaining time {2}ms)",
         reason,
-        domainNamespace,
         condition.getElapsedTimeInMS(),
         condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
