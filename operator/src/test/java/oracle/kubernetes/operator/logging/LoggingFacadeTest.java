@@ -6,8 +6,8 @@ package oracle.kubernetes.operator.logging;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -17,7 +17,7 @@ public class LoggingFacadeTest {
   MockLogger mockLogger;
   LoggingFacade loggingFacade;
 
-  @Before
+  @BeforeEach
   public void setup() {
     mockLogger = new MockLogger();
     loggingFacade = new LoggingFacade(mockLogger);

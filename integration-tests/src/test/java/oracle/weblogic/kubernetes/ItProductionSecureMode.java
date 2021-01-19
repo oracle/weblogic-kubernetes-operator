@@ -54,18 +54,23 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillRe
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the `default-admin` service is provisioned when 
- * a channel called `default-admin` is added to domain resource and 
- * `AdministrationPortEnabled` is set to true.
+ * The test verifies the enablement of ProductionSecureMode in WebLogic Operator
+ * environment. Make sure all the servers in the domain comes up and WebLogic
+ * console is accessible thru default-admin NodePort service 
+ * In order to enable ProductionSecureMode in WebLogic Operator environment 
+ * (a) add channel called `default-admin` to domain resource
+ * (b) JAVA_OPTIONS to -Dweblogic.security.SSL.ignoreHostnameVerification=true
+ * (c) add ServerStartMode: secure to domainInfo section of model file
+ *     Alternativley add SecurityConfiguration/SecureMode to topology section 
+ * (d) add a SSL Configuration to the server template
  */
-@DisplayName("Test secure nodePort service through admin port and default-admin channel in a mii domain")
+@DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
-class ItDefaultAdminNodePort {
+class ItProductionSecureMode {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -118,11 +123,19 @@ class ItDefaultAdminNodePort {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, 
             "weblogicenc", "weblogicenc");
-
     String configMapName = "default-admin-configmap";
     String yamlString = "topology:\n"
-        + "  AdministrationPortEnabled: true\n"
-        + "  AdministrationPort: '9010'\n";
+        + "  SecurityConfiguration: \n" 
+        + "    SecureMode: \n"
+        + "         SecureModeEnabled: true \n"
+        + "  ServerTemplate: \n" 
+        + "    \"cluster-1-template\": \n"
+        + "       SSL: \n"
+        + "         Enabled: true \n"
+        + "         ListenPort: '7003' \n"; 
+
+    // yamlString = "domainInfo:\n"
+    //    + "  ServerStartMode: secure\n";
 
     createModelConfigMap(configMapName, yamlString);
 
@@ -162,15 +175,16 @@ class ItDefaultAdminNodePort {
   }
 
   /**
-   * Create a WebLogic domain with `AdministrationPortEnabled: true`.
-   * Create a domain custom resource with a channel with the name `default-admin`.
-   * Make sure an external NodePort service is created in domain namespace.
-   * Make sure WebLogic console is accessible through the `default-admin` service.  
-   * Make sure WebLogic console is not accessible through the `default` service.  
+   * Create a WebLogic domain with ProductionModeEnabled.
+   * Create a domain resource with a channel with the name `default-admin`.
+   * Verify a NodePort service is available thru default-admin channel.
+   * Verify WebLogic console is accessible through the `default-admin` service.
+   * Verify no NodePort service is available thru default channel since 
+   * clear text default port (7001) is disabled.
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
-  public void testVerifyDefaultAdminPortService() {
+  public void testVerifyProductionSecureMode() {
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
     assertTrue(sslNodePort != -1,
@@ -185,15 +199,9 @@ class ItDefaultAdminNodePort {
 
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
-          "Could not get the default external service node port");    
-    logger.info("Found the default service nodePort {0}", nodePort);
-    curlCmd = "curl -s --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd);
-    assertFalse(callWebAppAndWaitTillReady(curlCmd, 5));
-    logger.info("WebLogic console is not accessible thru default service");
+    assertTrue(nodePort == -1,
+          "Default external service node port service must not be available");
+    logger.info("Default service nodePort is not available as expected");
   }
 
   private static void createDomainResource(

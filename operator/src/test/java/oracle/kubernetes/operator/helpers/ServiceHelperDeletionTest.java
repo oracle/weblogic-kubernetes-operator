@@ -8,8 +8,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
@@ -30,10 +30,7 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
     return new V1Service().metadata(new V1ObjectMeta().name(SERVICE_NAME).namespace(NS));
   }
 
-  /**
-   * Setup deletion test.
-   */
-  @Before
+  @BeforeEach
   public void setUpDeletionTest() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());

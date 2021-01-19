@@ -16,9 +16,9 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.utils.TestUtils.ConsoleHandlerMemento;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_GONE;
 import static oracle.kubernetes.operator.builders.EventMatcher.addEvent;
@@ -68,11 +68,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     callBacks.add(response);
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(configureOperatorLogger());
     mementos.add(StubWatchFactory.install());
@@ -88,16 +84,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     mementos.add(memento);
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shutDownThreads();
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   void sendInitialRequest(BigInteger initialResourceVersion) {
