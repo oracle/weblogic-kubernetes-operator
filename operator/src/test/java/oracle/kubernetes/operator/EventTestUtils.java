@@ -14,7 +14,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
@@ -155,27 +154,6 @@ public class EventTestUtils {
   }
 
   /**
-   * Whether the latest event that matches the given reason has the expected count.
-   *
-   * @param events list of events to check
-   * @param reason reason to match
-   * @param count count to match
-   * @return true if the expected condition met
-   */
-  public static boolean containsLastEventWithCountOne(
-      List<V1Event> events, String reason, int count) {
-    DateTime latest = new DateTime(0);
-    V1Event found = null;
-    for (V1Event event : events) {
-      if (reasonMatches(event, reason) && getFirstTimestamp(event).isAfter(latest)) {
-        found = event;
-        latest = event.getFirstTimestamp();
-      }
-    }
-    return Optional.ofNullable(found).map(c -> countMatches(c, count)).orElse(false);
-  }
-
-  /**
    * Whether the number of events with the same reason and count of 1 matches the given expected count.
    *
    * @param events list of events to check
@@ -185,11 +163,7 @@ public class EventTestUtils {
    */
   public static boolean containsEventsWithCountOne(List<V1Event> events, String reason, int eventsCount) {
     List<V1Event> eventsMatchReason = getEventsWithReason(events, reason);
-    return eventsMatchReason.size() == eventsCount && eventsMatchReason.stream().allMatch(e -> countMatches(e, 1));
-  }
-
-  private static DateTime getFirstTimestamp(V1Event event) {
-    return Optional.ofNullable(event).map(V1Event::getFirstTimestamp).orElse(new DateTime(0));
+    return eventsMatchReason.stream().allMatch(e -> countMatches(e, 1)) && eventsMatchReason.size() == eventsCount;
   }
 
   public static List<V1Event> getEvents(KubernetesTestSupport testSupport) {
@@ -291,4 +265,7 @@ public class EventTestUtils {
     return getEventsWithReason(events, reason).size() > 0 ? getEventsWithReason(events, reason).get(0) : null;
   }
 
+  public static int getNumberOfEvents(List<V1Event> events, String reason) {
+    return getEventsWithReason(events, reason).size();
+  }
 }

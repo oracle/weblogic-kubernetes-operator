@@ -52,7 +52,6 @@ import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventsWithCountOne;
-import static oracle.kubernetes.operator.EventTestUtils.containsLastEventWithCountOne;
 import static oracle.kubernetes.operator.EventTestUtils.containsOneEventWithCount;
 import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
@@ -232,7 +231,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventTwice_fail404OnCreate2ndEvent_domainProcessingStartingEventCreatedWithExpectedCount() {
+  public void whenCreateEventTwice_fail404OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -243,13 +242,13 @@ public class EventHelperTest {
 
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
 
-    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
-        containsLastEventWithCountOne(getEvents(testSupport),
-            DOMAIN_PROCESSING_STARTING_EVENT, 1), is(true));
+    assertThat("Found 2 DOMAIN_PROCESSING_STARTING events",
+        EventTestUtils.getNumberOfEvents(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT), equalTo(2));
   }
 
   @Test
-  public void whenCreateEventTwice_fail410OnCreate2ndEvent_domainProcessingStartingEventCreatedWithExpectedCount() {
+  public void whenCreateEventTwice_fail410OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -260,9 +259,26 @@ public class EventHelperTest {
 
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
 
-    assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
-        containsLastEventWithCountOne(getEvents(testSupport),
-            DOMAIN_PROCESSING_STARTING_EVENT, 1), is(true));
+    assertThat("Found 2 DOMAIN_PROCESSING_STARTING events",
+        EventTestUtils.getNumberOfEvents(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT), equalTo(2));
+  }
+
+  @Test
+  public void whenCreateEventTwice_fail403OnReplaceEvent_domainProcessingStartingEventCreatedOnce() {
+    testSupport.runSteps(Step.chain(
+        createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    dispatchAddedEventWatches();
+    testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
+
+    assertThat("Found 1 DOMAIN_PROCESSING_STARTING event",
+        EventTestUtils.getNumberOfEvents(getEvents(testSupport),
+            DOMAIN_PROCESSING_STARTING_EVENT), equalTo(1));
   }
 
   @Test
