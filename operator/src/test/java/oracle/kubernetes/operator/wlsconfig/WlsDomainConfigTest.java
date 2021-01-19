@@ -14,9 +14,9 @@ import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_WLS_SERVER_IN_CLUSTER;
@@ -347,10 +347,7 @@ public class WlsDomainConfigTest {
   private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("test-domain");
   private final WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
 
-  /**
-   * Setup test.
-   */
-  @Before
+  @BeforeEach
   public void setup() {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -359,10 +356,7 @@ public class WlsDomainConfigTest {
     mementos.add(TestUtils.silenceJsonPathLogger());
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();

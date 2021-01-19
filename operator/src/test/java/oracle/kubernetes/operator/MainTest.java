@@ -42,9 +42,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -148,7 +148,7 @@ public class MainTest extends ThreadFactoryTestBase {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(loggerControl);
     mementos.add(testSupport.install());
@@ -159,7 +159,7 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(NoopWatcherStarter.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
@@ -335,10 +335,6 @@ public class MainTest extends ThreadFactoryTestBase {
     return Arrays.stream(NAMESPACES).filter(domainNamespaces::isStarting).collect(Collectors.toList());
   }
 
-  private List<String> getStartingNamespaces(String...namespaces) {
-    return Arrays.stream(namespaces).filter(domainNamespaces::isStarting).collect(Collectors.toList());
-  }
-
   @NotNull
   DomainRecheck createDomainRecheck() {
     return new DomainRecheck(delegate);
@@ -427,21 +423,6 @@ public class MainTest extends ThreadFactoryTestBase {
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
     TuningParameters.getInstance().put(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
-  }
-
-  @Test
-  public void whenNamespacesListedInMultipleChunks_allNamespacesStarted() {
-    loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
-
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
-
-    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
-
-    assertThat(getStartingNamespaces("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM),
-            contains("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM));
   }
 
   @Test
@@ -615,7 +596,7 @@ public class MainTest extends ThreadFactoryTestBase {
   @Test
   public void withNamespaceList_onReadExistingNamespaces_whenConfiguredDomainNamespaceMissing_noEventCreated() {
     defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS" + LAST_NAMESPACE_NUM + ",NS" + DEFAULT_CALL_LIMIT;
+    String namespaceString = "NS1,NS" + LAST_NAMESPACE_NUM;
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(LAST_NAMESPACE_NUM - 1);
 

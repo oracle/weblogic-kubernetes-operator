@@ -29,7 +29,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -60,6 +60,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+@SuppressWarnings("ConstantConditions")
 public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static final String SERVER_NAME = "ess_server1";
@@ -119,6 +120,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return configureServer(getConfigurator(), SERVER_NAME);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureServer(serverName);
   }

@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1ResourceRule;
@@ -21,15 +20,15 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+
 /** A Helper Class for checking the health of the WebLogic Operator. */
 public final class HealthCheckHelper {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final Map<Resource, Operation[]>
-      domainNamespaceAccessChecks = new HashMap<>();
-  private static final Map<Resource, Operation[]>
-      operatorNamespaceAccessChecks = new HashMap<>();
+      namespaceAccessChecks = new HashMap<>();
   private static final Map<Resource, Operation[]>
       clusterAccessChecks = new HashMap<>();
 
@@ -85,71 +84,58 @@ public final class HealthCheckHelper {
     clusterAccessChecks.put(Resource.NAMESPACES, glwOperations);
     clusterAccessChecks.put(Resource.CRDS, crdOperations);
 
-    domainNamespaceAccessChecks.put(Resource.DOMAINS, glwupOperations);
-    domainNamespaceAccessChecks.put(Resource.DOMAINSTATUSES, glwupOperations);
+    namespaceAccessChecks.put(Resource.DOMAINS, glwupOperations);
+    namespaceAccessChecks.put(Resource.DOMAINSTATUSES, glwupOperations);
 
-    domainNamespaceAccessChecks.put(Resource.SELFSUBJECTRULESREVIEWS, cOperations);
+    namespaceAccessChecks.put(Resource.TOKENREVIEWS, cOperations);
+    namespaceAccessChecks.put(Resource.SELFSUBJECTRULESREVIEWS, cOperations);
 
-    domainNamespaceAccessChecks.put(Resource.SERVICES, crudOperations);
-    domainNamespaceAccessChecks.put(Resource.CONFIGMAPS, crudOperations);
-    domainNamespaceAccessChecks.put(Resource.PODS, crudOperations);
-    domainNamespaceAccessChecks.put(Resource.EVENTS, crudOperations);
-    domainNamespaceAccessChecks.put(Resource.JOBS, crudOperations);
-    domainNamespaceAccessChecks.put(Resource.SECRETS, glwOperations);
+    namespaceAccessChecks.put(Resource.SERVICES, crudOperations);
+    namespaceAccessChecks.put(Resource.CONFIGMAPS, crudOperations);
+    namespaceAccessChecks.put(Resource.PODS, crudOperations);
+    namespaceAccessChecks.put(Resource.EVENTS, crudOperations);
 
-    domainNamespaceAccessChecks.put(Resource.LOGS, glOperations);
-    domainNamespaceAccessChecks.put(Resource.EXEC, cOperations);
+    namespaceAccessChecks.put(Resource.SECRETS, glwOperations);
 
-    operatorNamespaceAccessChecks.put(Resource.EVENTS, crudOperations);
-    operatorNamespaceAccessChecks.put(Resource.CONFIGMAPS, glwOperations);
-    operatorNamespaceAccessChecks.put(Resource.SECRETS, glwOperations);
+    namespaceAccessChecks.put(Resource.LOGS, glOperations);
+    namespaceAccessChecks.put(Resource.EXEC, cOperations);
+
+    namespaceAccessChecks.put(Resource.JOBS, crudOperations);
   }
 
   private HealthCheckHelper() {
   }
 
   /**
-   * Access the self-subject rules review for the namespace. The namespace may be the operator's
-   * namespace, a domain namespace, or both.
-   *
-   * @param namespace namespace
-   * @return self-subject rules review for the namespace
-   */
-  public static V1SubjectRulesReviewStatus getSelfSubjectRulesReviewStatus(@Nonnull String namespace) {
-    AuthorizationProxy ap = new AuthorizationProxy();
-    return Optional.ofNullable(ap.review(namespace)).map(V1SelfSubjectRulesReview::getStatus).orElse(null);
-  }
-
-  /**
    * Verify Access.
    *
-   * @param status Self-subject rules review status
-   * @param namespace Namespace
-   * @param isDomainNamespace if true, verify domain namespace access; otherwise, verify operator-only namespaces access
+   * @param namespace domain namespace
+   * @return self subject rules review for the domain namespace
    */
-  public static void verifyAccess(@Nonnull V1SubjectRulesReviewStatus status, @Nonnull String namespace,
-                                  boolean isDomainNamespace) {
+  public static V1SubjectRulesReviewStatus getAccessAuthorizations(@Nonnull String namespace) {
+    // Validate namespace
+    if (DEFAULT_NAMESPACE.equals(getOperatorNamespace())) {
+      LOGGER.fine(MessageKeys.NAMESPACE_IS_DEFAULT);
+    }
+
     // Validate policies allow service account to perform required operations
     AuthorizationProxy ap = new AuthorizationProxy();
     LOGGER.fine(MessageKeys.VERIFY_ACCESS_START, namespace);
 
-    if (status != null) {
-      List<V1ResourceRule> rules = status.getResourceRules();
+    V1SelfSubjectRulesReview review = ap.review(namespace);
+    if (review != null) {
+      V1SubjectRulesReviewStatus status = review.getStatus();
 
-      if (isDomainNamespace) {
-        for (Resource r : domainNamespaceAccessChecks.keySet()) {
-          for (Operation op : domainNamespaceAccessChecks.get(r)) {
-            check(rules, r, op, namespace);
-          }
-        }
-      } else {
-        for (Resource r : operatorNamespaceAccessChecks.keySet()) {
-          for (Operation op : operatorNamespaceAccessChecks.get(r)) {
+      if (status != null) {
+        List<V1ResourceRule> rules = status.getResourceRules();
+
+        for (Resource r : namespaceAccessChecks.keySet()) {
+          for (Operation op : namespaceAccessChecks.get(r)) {
             check(rules, r, op, namespace);
           }
         }
 
-        if (!Main.isDedicated()) {
+        if (!Main.isDedicated() && getOperatorNamespace().equals(namespace)) {
           for (Resource r : clusterAccessChecks.keySet()) {
             for (Operation op : clusterAccessChecks.get(r)) {
               check(rules, r, op, namespace);
@@ -157,7 +143,11 @@ public final class HealthCheckHelper {
           }
         }
       }
+
+      return status;
     }
+
+    return null;
   }
 
   /**

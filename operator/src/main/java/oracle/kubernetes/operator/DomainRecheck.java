@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -18,7 +17,6 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.EventHelper;
@@ -63,11 +61,11 @@ class DomainRecheck {
   }
 
   NamespaceRulesReviewStep createOperatorNamespaceReview() {
-    return new NamespaceRulesReviewStep(getOperatorNamespace(), false);
+    return new NamespaceRulesReviewStep(getOperatorNamespace());
   }
 
   NamespaceRulesReviewStep createNamespaceReview(String namespace) {
-    return new NamespaceRulesReviewStep(namespace, true);
+    return new NamespaceRulesReviewStep(namespace);
   }
 
   Step createReadNamespacesStep() {
@@ -80,11 +78,9 @@ class DomainRecheck {
    */
   class NamespaceRulesReviewStep extends Step {
     private final String ns;
-    private final boolean isDomainNamespace;
 
-    private NamespaceRulesReviewStep(@Nonnull String ns, boolean isDomainNamespace) {
+    private NamespaceRulesReviewStep(@Nonnull String ns) {
       this.ns = ns;
-      this.isDomainNamespace = isDomainNamespace;
     }
 
     @Override
@@ -97,23 +93,18 @@ class DomainRecheck {
           LoggingContext.LOGGING_CONTEXT_KEY,
           Component.createFor(new LoggingContext().namespace(ns)));
 
-      V1SubjectRulesReviewStatus status = nss.getRulesReviewStatus().updateAndGet(prev -> {
+      nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
         }
 
         try {
-          return HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+          return HealthCheckHelper.getAccessAuthorizations(ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
         return null;
       });
-
-      AtomicBoolean guard = isDomainNamespace ? nss.verifiedAsDomainNamespace() : nss.verifiedAsOperatorNamespace();
-      if (!guard.getAndSet(true)) {
-        HealthCheckHelper.verifyAccess(status, ns, isDomainNamespace);
-      }
 
       return doNext(packet);
     }
@@ -145,8 +136,6 @@ class DomainRecheck {
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
 
-    private final List<String> namespacesToStart = Collections.synchronizedList(new ArrayList<>());
-
     private NamespaceListResponseStep() {
       super(new Namespaces.NamespaceListAfterStep(domainNamespaces));
     }
@@ -173,14 +162,13 @@ class DomainRecheck {
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
     }
 
-    private Step createNextSteps(Set<String> currentBatchOfNamespacesToStart) {
+    private Step createNextSteps(Set<String> namespacesToStartNow) {
       List<Step> nextSteps = new ArrayList<>();
-      namespacesToStart.addAll(currentBatchOfNamespacesToStart);
-      if (!namespacesToStart.isEmpty()) {
-        nextSteps.add(createStartNamespacesStep(namespacesToStart));
+      if (!namespacesToStartNow.isEmpty()) {
+        nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
         if (Namespaces.getConfiguredDomainNamespaces() == null) {
           nextSteps.add(
-                RunInParallel.perNamespace(namespacesToStart, DomainRecheck.this::createNamespaceReview));
+                RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview));
         }
       }
       nextSteps.add(getNext());

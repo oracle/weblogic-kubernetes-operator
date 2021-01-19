@@ -32,9 +32,9 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -101,11 +101,7 @@ public class ReadHealthStepTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
-  /**
-   * Javadoc to make the stupid style checker happy, probably because it throws an exception.
-   * @throws NoSuchFieldException it's not gonna happen, OK?
-   */
-  @Before
+  @BeforeEach
   public void setup() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, LOG_KEYS)
@@ -148,7 +144,7 @@ public class ReadHealthStepTest {
                                    ADMIN_SERVER_CREDENTIALS_PASSWORD, "password".getBytes())));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
