@@ -130,7 +130,7 @@ public class ItCrossClusterDomainTransaction {
   private static List<String> clusterOneNamespaces = new ArrayList<>();
 
   static {
-    //assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
+    assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
   }
 
 
@@ -399,7 +399,9 @@ public class ItCrossClusterDomainTransaction {
   //@DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
 
   private void testCrossDomainTransactionWithFailInjection() {
-
+    if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
+      assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+    }
     logger.info("Getting admin server external service node port");
     int domain1AdminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
@@ -566,6 +568,7 @@ public class ItCrossClusterDomainTransaction {
 
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
     //injectEnvironmentVariable("KUBECONFIG", kubeconfig);
+    logger.info("switch cluster config to " + kubeconfig);
     testMarina(kubeconfig);
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
 
