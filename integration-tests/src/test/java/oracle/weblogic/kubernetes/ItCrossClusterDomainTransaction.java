@@ -124,6 +124,7 @@ public class ItCrossClusterDomainTransaction {
   private static List<String> clusterOneNamespaces = new ArrayList<>();
 
   static {
+    logger = getLogger();
     KUBECONFIG1 = System.getenv("KUBECONFIG1");
     KUBECONFIG2 = System.getenv("KUBECONFIG2");
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
@@ -139,7 +140,6 @@ public class ItCrossClusterDomainTransaction {
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     //start to setup in cluster2
 
-    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
