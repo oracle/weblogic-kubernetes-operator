@@ -8,35 +8,28 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StepChainTest {
   private final FiberTestSupport testSupport = new FiberTestSupport();
 
   private final List<Memento> mementos = new ArrayList<>();
 
-  /**
-   * Setup test.
-   */
-  @Before
+  @BeforeEach
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
+
     testSupport.throwOnCompletionFailure();
   }
 
@@ -77,9 +70,9 @@ public class StepChainTest {
     assertThat(NamedStep.getNames(packet), contains("one", "two", "six"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenNoNonNullSteps_throwException() {
-    Step.chain();
+    assertThrows(IllegalArgumentException.class, Step::chain);
   }
 
   @Test
