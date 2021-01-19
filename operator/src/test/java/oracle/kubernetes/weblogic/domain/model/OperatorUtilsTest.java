@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.utils.OperatorUtils.compareSortingStrings;
 import static oracle.kubernetes.utils.OperatorUtils.createSortedMap;

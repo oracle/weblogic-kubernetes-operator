@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 
 import com.meterware.simplestub.Memento;
@@ -26,9 +27,9 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -56,11 +57,7 @@ public class IntrospectionStatusTest {
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -73,7 +70,7 @@ public class IntrospectionStatusTest {
     testSupport.defineResources(domain);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -81,7 +78,7 @@ public class IntrospectionStatusTest {
   @Test
   public void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
     V1Pod introspectorJobPod = createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE));
-    introspectorJobPod.getStatus().containerStatuses(null);
+    Objects.requireNonNull(introspectorJobPod.getStatus()).containerStatuses(null);
     
     processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
 
@@ -211,6 +208,7 @@ public class IntrospectionStatusTest {
                             .build());
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1Pod createIntrospectorJobPodWithPhase(String phase, String reason) {
     return createIntrospectorJobPod(UID)
             .status(
@@ -230,6 +228,7 @@ public class IntrospectionStatusTest {
         .build();
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1PodCondition createPodConditions(String reason, String message) {
     return new V1PodConditionBuilder()
             .withReason(reason)

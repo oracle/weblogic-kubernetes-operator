@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.operator.work.AsyncFiber;
@@ -24,9 +23,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
@@ -42,7 +41,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /**
  * Tests async processing of http requests during step processing.
  */
-public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
+public class HttpAsyncRequestStepTest {
 
   private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
   private final Packet packet = new Packet();
@@ -55,10 +54,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleMemento;
 
-  /**
-   * Checkstyle insists on a javadoc comment here. In a unit test *headdesk*.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleMemento = TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
@@ -69,7 +65,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
     requestStep = createStep();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

@@ -31,9 +31,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -57,7 +57,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.install());
@@ -68,7 +68,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(TuningParametersStub.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);

@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
-import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.pseudoserver.PseudoServer;
 import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
@@ -26,17 +26,19 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 @SuppressWarnings("SameParameterValue")
-public class CallBuilderTest extends HttpUserAgentTest {
+public class CallBuilderTest {
   private static final String NAMESPACE = "testspace";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
@@ -48,25 +50,25 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
+  private final PseudoServer server = new PseudoServer();
 
   private static String toJson(Object object) {
     return new GsonBuilder().create().toJson(object);
   }
 
-  @Before
-  public void setUp() throws NoSuchFieldException {
+  @BeforeEach
+  public void setUp() throws NoSuchFieldException, IOException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  private String getHostPath() throws IOException {
+    return "http://localhost:" + server.getConnectedPort();
+  }
+
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -124,20 +126,20 @@ public class CallBuilderTest extends HttpUserAgentTest {
     assertThat(requestBody, equalTo(domain));
   }
 
-  @Test(expected = ApiException.class)
-  public void replaceDomain_errorResponseCode_throws() throws ApiException {
+  @Test
+  public void replaceDomain_errorResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Test(expected = ApiException.class)
-  public void replaceDomain_conflictResponseCode_throws() throws ApiException {
+  @Test
+  public void replaceDomain_conflictResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {
@@ -155,9 +157,12 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return servlet;
   }
 
-  private void defineHttpGetResponse(
-          String resourceName, PseudoServlet pseudoServlet) {
+  private void defineHttpGetResponse(String resourceName, PseudoServlet pseudoServlet) {
     defineResource(resourceName, pseudoServlet);
+  }
+
+  private void defineResource(String resourceName, PseudoServlet servlet) {
+    server.setResource(resourceName, servlet);
   }
 
   private void defineHttpPutResponse(
@@ -305,18 +310,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
   }
 
-  static class JsonPostServlet extends JsonBodyServlet {
-
-    private JsonPostServlet(Object returnValue, Consumer<String> bodyValidation) {
-      super(returnValue, bodyValidation);
-    }
-
-    @Override
-    public WebResource getPostResponse() throws IOException {
-      return getResponse();
-    }
-  }
-
   static class JsonPutServlet extends JsonBodyServlet {
 
     private JsonPutServlet(Object returnValue, Consumer<String> bodyValidation) {
@@ -329,35 +322,4 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
   }
 
-  static class JsonDeleteServlet extends JsonServlet {
-
-    private JsonDeleteServlet(Object returnValue) {
-      super(returnValue);
-    }
-
-    @Override
-    public WebResource getDeleteResponse() throws IOException {
-      return getResponse();
-    }
-  }
-
-  static class Event {
-    static long lastTime;
-    long time;
-    long interval;
-    String description;
-
-    @Override
-    public String toString() {
-      return "Event{"
-          + "time="
-          + time
-          + ", interval="
-          + interval
-          + ", description='"
-          + description
-          + '\''
-          + '}';
-    }
-  }
 }
