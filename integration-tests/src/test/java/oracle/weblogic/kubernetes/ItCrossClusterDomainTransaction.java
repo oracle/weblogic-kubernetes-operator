@@ -365,11 +365,14 @@ public class ItCrossClusterDomainTransaction {
       logger.info("curl command {0}", curlRequest);
       result = assertDoesNotThrow(
           () -> exec(curlRequest, true));
+      logger.info("\n HTTP response is \n " + result.stdout());
+      logger.info("curl command returned {0}", result.toString());
       if (result.exitValue() == 0) {
         logger.info("\n HTTP response is \n " + result.stdout());
         logger.info("curl command returned {0}", result.toString());
         assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
       }
+      testCrossDomainTransactionWithFailInjection();
     } finally {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
@@ -394,8 +397,8 @@ public class ItCrossClusterDomainTransaction {
    */
   //@Test
   //@DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
-  /*
-  public void testCrossDomainTransactionWithFailInjection() {
+
+  private void testCrossDomainTransactionWithFailInjection() {
 
     logger.info("Getting admin server external service node port");
     int domain1AdminServiceNodePort = assertDoesNotThrow(
@@ -404,12 +407,14 @@ public class ItCrossClusterDomainTransaction {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1Namespace, domain2Namespace);
+        K8S_NODEPORT_HOST1, domain1AdminServiceNodePort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
     result = assertDoesNotThrow(
         () -> exec(curlRequest, true));
+    logger.info("\n HTTP response is \n " + result.stdout());
+    logger.info("curl command returned {0}", result.toString());
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
@@ -418,7 +423,6 @@ public class ItCrossClusterDomainTransaction {
     }
 
   }
-  */
 
   private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                             String domainImage) {
