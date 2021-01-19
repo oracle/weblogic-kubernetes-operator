@@ -24,9 +24,9 @@ import oracle.kubernetes.operator.NoopWatcherStarter;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_ENTITY_TOO_LARGE;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -58,7 +58,7 @@ public class WatchBuilderTest {
   private int resourceVersion = INITIAL_RESOURCE_VERSION;
   private final List<Memento> mementos = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(ClientPoolStub.install());
@@ -67,7 +67,7 @@ public class WatchBuilderTest {
     mementos.add(NoopWatcherStarter.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }

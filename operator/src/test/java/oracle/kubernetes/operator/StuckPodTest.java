@@ -21,9 +21,9 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -55,7 +55,7 @@ public class StuckPodTest {
   private Integer gracePeriodSeconds;
   private TestUtils.ConsoleHandlerMemento consoleMemento;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(consoleMemento = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -66,7 +66,7 @@ public class StuckPodTest {
     testSupport.defineResources(domain, managedPod1, managedPod2, foreignPod);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
     

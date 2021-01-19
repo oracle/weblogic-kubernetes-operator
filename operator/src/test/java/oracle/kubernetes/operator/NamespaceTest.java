@@ -23,9 +23,9 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -50,7 +50,7 @@ public class NamespaceTest {
   private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
@@ -60,7 +60,7 @@ public class NamespaceTest {
     mementos.add(testSupport.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
