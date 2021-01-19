@@ -7,8 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpRequest;
 
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static org.hamcrest.Matchers.equalTo;
@@ -52,15 +51,7 @@ public class HttpAsyncTestSupportTest {
     assertThat(support.getResponse(createPostRequest("http://this", "abc")).body(), equalTo("Got it"));
   }
 
-  @Test
-  @Ignore("See if we're actually going to need this")
-  public void whenMultiplePostRequestsDefined_selectBasedOnBody() {
-    support.defineResponse(createPostRequest("http://here", "abc"), createStub(HttpResponseStub.class, 200, "First"));
-    support.defineResponse(createPostRequest("http://here", "def"), createStub(HttpResponseStub.class, 200, "Second"));
-
-    assertThat(support.getResponse(createPostRequest("http://here", "def")).body(), equalTo("Second"));
-  }
-
+  @SuppressWarnings("SameParameterValue")
   private HttpRequest createPostRequest(String urlString, String body) {
     return HttpRequest.newBuilder().POST(HttpRequest.BodyPublishers.ofString(body)).uri(URI.create(urlString)).build();
   }
