@@ -949,20 +949,8 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
-    getMIIOnlineUpdateIntrospectResult(DomainConditionType.OnlineUpdateComplete,
+    getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
         ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
-  }
-
-  @Test
-  public void whenDomainTypeIsFromModelOnlineUpdateCancelUpdate() throws Exception {
-    getMIIOnlineUpdateIntrospectResult(DomainConditionType.OnlineUpdateCanceled,
-        ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED);
-  }
-
-  @Test
-  public void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdate() throws Exception {
-    getMIIOnlineUpdateIntrospectResult(DomainConditionType.OnlineUpdateComplete,
-        ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS);
   }
 
   private void getMIIOnlineUpdateIntrospectResult(DomainConditionType domainConditionType, String updateResult)
@@ -999,26 +987,13 @@ public class DomainProcessorTest {
         + ">>> EOF\n"
         + ">>>  updatedomainResult=%s\n";
 
-    if (domainConditionType == DomainConditionType.OnlineUpdateCanceled) {
-      establishPreviousIntrospection(this::configureForModelInImageOnlineUpdateNonDynamicChangesCancelUpdate);
-    } else {
-      establishPreviousIntrospection(this::configureForModelInImageOnlineUpdate);
-    }
+    establishPreviousIntrospection(this::configureForModelInImageOnlineUpdate);
     domainConfigurator.withIntrospectVersion("after-onlineUpdate");
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
         String.format(introspectorResult, defineTopology(), updateResult));
     makeRightOperation.execute();
-
-    if (domainConditionType != DomainConditionType.OnlineUpdateCanceled) {
-      List<V1Pod> runningPods = getRunningPods();
-      for (V1Pod pod: runningPods) {
-        if (!pod.getMetadata().getName().contains(LegalNames.getIntrospectorJobNameSuffix())) {
-          assertThat(getServerPodIntrospectionVersion(pod), equalTo("after-onlineUpdate"));
-        }
-      }
-    }
 
     boolean found = false;
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);

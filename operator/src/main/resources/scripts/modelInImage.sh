@@ -43,7 +43,7 @@ ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 PROG_RESTART_REQUIRED=103
 PROG_CANCELCHGS_IF_RESTART_EXIT_CODE=104
-MII_UPDATE_CANCELED=false
+MII_UPDATE_NO_CHANGES_TO_APPLY=false
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
@@ -589,8 +589,9 @@ function diff_model() {
 
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
-  
-  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /tmp/compare_model_stdout 2>&1
+
+  # no need to redirect output, -output_dir for compareModel will generate the output file
+  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /dev/null 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
@@ -598,14 +599,22 @@ function diff_model() {
     exitOrLoop
   fi
 
-  if [ ! -f "/tmp/diffed_model.yaml" ] && [ -f "/tmp/compare_model_stdout" ]; then
-    trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'. These changes are not " \
-      "compatible with online changes, such as trying to removing an entire mbean tree. Please correct the referenced" \
-      " attributes listed below:"
-    cat /tmp/compare_model_stdout
-    exitOrLoop
+  if [ "true" == "$MII_USE_ONLINE_UPDATE" ] ; then
+    if [  ! -f "/tmp/diffed_model.yaml" ] ; then
+      if [ -f "/tmp/compare_model_stdout" ] ; then
+        trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'. These changes are not " \
+          "compatible with online changes, such as trying to removing an entire mbean tree. Please correct the referenced" \
+          " attributes listed below:"
+        cat /tmp/compare_model_stdout
+        exitOrLoop
+      else
+        trace SEVERE "WDT Compare Model detected 'No changes apply between two models. You may have changed only " \
+          "the environment variables of a pod which is not supported for online updates, please use offline updates " \
+          "for environment variables changes."
+        exitOrLoop
+      fi
+    fi
   fi
-
 
   #
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
@@ -700,19 +709,20 @@ function createPrimordialDomain() {
     if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
         UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
     fi
-
   fi
 
   # If there is no primordial domain or needs to recreate one due to security changes
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [ "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1 ] ; then
-      trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
-        "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
-        ". You can use offline update to update the domain by setting " \
-        "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
-      exit 1
+    if [ "true" == "$MII_USE_ONLINE_UPDATE" ] ; then
+      if [ "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1 ] ; then
+        trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
+          "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
+          ". You can use offline update to update the domain by setting " \
+          "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
+        exit 1
+      fi
     fi
 
     trace "No primordial domain or need to create again because of changes require domain recreation"
@@ -1007,9 +1017,11 @@ function wdtHandleOnlineUpdate() {
     write_updatedresult ${ret}
     write_non_dynamic_changes_text_file
   elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
-    write_updatedresult ${ret}
-    write_non_dynamic_changes_text_file
-    MII_UPDATE_CANCELED=true
+    trace SEVERE "Online update completed successfully, but the changes require restart and the domain resource " \
+            "specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'" \
+               " option to cancel all changes if restart require. The changes are: "
+    cat /tmp/non_dynamic_changes.file
+    exitOrLoop
   elif [ ${ret} -ne 0 ] ; then
     trace SEVERE "Online update failed. Check error in the logs " \
        "Note: Changes in the optional configmap and/or image may needs to be corrected"

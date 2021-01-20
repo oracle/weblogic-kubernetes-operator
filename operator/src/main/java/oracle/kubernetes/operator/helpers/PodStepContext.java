@@ -945,11 +945,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED.equals(dynamicUpdateResult)) {
-        // We got here because the introspectVersion changed and cancel changes return code from WDT
-        // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
-        //
-        return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
           LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
@@ -974,7 +969,6 @@ public abstract class PodStepContext extends BasePodStepContext {
           }
           return doNext(patchRunningPod(currentPod, updatedPod, getNext(), addRestartRequiredLabel), packet);
         }
-        removeOnlineUpdateConditions();
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
@@ -986,11 +980,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         logPodExists();
         return doNext(packet);
       }
-    }
-
-    private NextAction returnCancelUpdateStep(Packet packet) {
-      setOnlineUpdateCanceledCondition(packet);
-      return doNext(packet);
     }
 
     private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
@@ -1024,37 +1013,12 @@ public abstract class PodStepContext extends BasePodStepContext {
               + " The changes are committed but the domain require manually restart to "
               + " make the changes effective. The changes are: "
               + dynamicUpdateRollBackFile,
-          DomainConditionType.OnlineUpdateComplete);
+          DomainConditionType.ConfigChangesPendingRestart);
     }
 
     private void setOnlineUpdateSuccessCondition() {
-      updateDomainConditions("Online update successful. No restart necessary",
-          DomainConditionType.OnlineUpdateComplete);
-    }
-
-    private void setOnlineUpdateCanceledCondition(Packet packet) {
-      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-          .orElse("");
-      updateDomainConditions("Online update completed successfully, but the changes require restart and "
-              + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'"
-              + " option to cancel all changes if restart require. The changes are: "
-              + dynamicUpdateRollBackFile,
-          DomainConditionType.OnlineUpdateCanceled);
-
-    }
-
-    private void removeOnlineUpdateConditions() {
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete));
-
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled));
-
+    //      updateDomainConditions("Online update successful. No restart necessary",
+    //          DomainConditionType.OnlineUpdateComplete);
     }
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
@@ -1070,7 +1034,10 @@ public abstract class PodStepContext extends BasePodStepContext {
           .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
           .withStatus("True");
 
-      removeOnlineUpdateConditions();
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.ConfigChangesPendingRestart));
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)

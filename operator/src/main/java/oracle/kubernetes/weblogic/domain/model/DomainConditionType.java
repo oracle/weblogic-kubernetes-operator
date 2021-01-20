@@ -11,8 +11,7 @@ public enum DomainConditionType {
     }
   },
   Available,
-  OnlineUpdateComplete,
-  OnlineUpdateCanceled,
+  ConfigChangesPendingRestart,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {

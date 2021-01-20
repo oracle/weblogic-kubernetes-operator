@@ -47,7 +47,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
-import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -64,6 +63,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
@@ -405,20 +405,6 @@ public class DomainStatusUpdater {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
           if (hasBackOffLimitCondition()) {
-            boolean onlineUpdate = Optional.ofNullable(info)
-                .map(DomainPresenceInfo::getDomain)
-                .map(Domain::isUseOnlineUpdate)
-                .orElse(false);
-            if (onlineUpdate && !hasUpdateCanceledCondition()) {
-              newStatus.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete);
-              newStatus.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled);
-
-              DomainCondition onlineUpdateCondition = new DomainCondition(DomainConditionType.OnlineUpdateComplete)
-                  .withMessage("Online update failed haha")
-                  .withReason("Check status or other condition message for reasons")
-                  .withStatus("False");
-              newStatus.addCondition(onlineUpdateCondition);
-            }
             newStatus.incrementIntrospectJobFailureCount();
           }
         }
@@ -435,23 +421,6 @@ public class DomainStatusUpdater {
 
       for (DomainCondition cond : domainConditions) {
         if ("BackoffLimitExceeded".equals(cond.getReason())) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    private boolean hasUpdateCanceledCondition() {
-      List<DomainCondition> domainConditions = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getConditions)
-          .orElse(null);
-
-      for (DomainCondition cond : domainConditions) {
-        LOGGER.info("DEBUG: cond is " + cond.getType());
-        if (cond.getType() == DomainConditionType.OnlineUpdateCanceled) {
-          LOGGER.info("DEBUG: found conditions");
           return true;
         }
       }
@@ -544,11 +513,31 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
         } else if (allIntendedServersRunning()) {
           status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(SERVERS_READY_REASON));
+          if (!stillHasPodPendingRestart(status)
+              && status.hasConditionWith(c -> c.hasType(ConfigChangesPendingRestart))) {
+            status.removeConditionIf(c -> c.hasType(ConfigChangesPendingRestart));
+          }
         } else if (!status.hasConditionWith(c -> c.hasType(Progressing))) {
           status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
         }
 
+      }
+
+      private boolean stillHasPodPendingRestart(DomainStatus status) {
+        boolean found = false;
+
+        for (ServerStatus serverStatus : status.getServers()) {
+          V1Pod pod = super.getInfo().getServerPod(serverStatus.getServerName());
+          if (pod != null) {
+            Map<String, String> labels = pod.getMetadata().getLabels();
+            if (labels.keySet().contains(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL)) {
+              found = true;
+              break;
+            }
+          }
+        }
+        return found;
       }
 
       private boolean allIntendedServersRunning() {
