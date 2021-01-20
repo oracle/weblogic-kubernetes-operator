@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -29,6 +30,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -383,6 +385,12 @@ public class ItKubernetesEvents {
     DateTime timestamp = new DateTime(System.currentTimeMillis() - 30000);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
+    logger.info("EVENTS IN OPERATOR NAMESPACE");
+    assertDoesNotThrow(() -> Yaml.dump(Kubernetes.listNamespacedEvents(opNamespace)));
+    logger.info("EVENTS IN OPERATOR DOMAIN NAMESPACE 1");
+    assertDoesNotThrow(() -> Yaml.dump(Kubernetes.listNamespacedEvents(domainNamespace1)));
+    logger.info("EVENTS IN OPERATOR DOMAIN NAMESPACE 2");
+    assertDoesNotThrow(() -> Yaml.dump(Kubernetes.listNamespacedEvents(domainNamespace2)));
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
   }
 
