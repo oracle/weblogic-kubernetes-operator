@@ -557,7 +557,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSWatchStoppedEvent_eventCreatedWithExpectedInvolvedObject() {
+  public void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
     testSupport.runSteps(createEventStep(
         new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
@@ -585,16 +585,17 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreated_fail403OnReplace_eventCreatedWithExpectedCount() {
-    testSupport.runSteps(createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+  public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
+    Step eventStep = createEventStep(
+        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS));
+
+    testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
     V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
 
-    testSupport.runSteps(createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+    testSupport.runSteps(eventStep);
 
     assertThat("Found 1 NAMESPACE_WATCHING_STOPPED events",
         getNumberOfEvents(getEvents(testSupport),
