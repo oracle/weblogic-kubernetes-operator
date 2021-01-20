@@ -537,16 +537,7 @@ class ItMiiDynamicUpdate {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
@@ -1227,5 +1218,44 @@ class ItMiiDynamicUpdate {
           return false;
         });
     return false;
+  }
+
+  private LinkedHashMap<String, DateTime> addDataSourceAndVerify() {
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+    return pods;
+
   }
 }
