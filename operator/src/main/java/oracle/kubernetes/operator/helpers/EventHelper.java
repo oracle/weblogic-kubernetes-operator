@@ -289,7 +289,7 @@ public class EventHelper {
     },
     DOMAIN_PROCESSING_FAILED {
       @Override
-      public String getType() {
+      protected String getType() {
         return EVENT_WARNING;
       }
 
@@ -323,7 +323,7 @@ public class EventHelper {
     },
     DOMAIN_PROCESSING_ABORTED {
       @Override
-      public String getType() {
+      protected String getType() {
         return EVENT_WARNING;
       }
 
@@ -346,7 +346,7 @@ public class EventHelper {
     },
     DOMAIN_VALIDATION_ERROR {
       @Override
-      public String getType() {
+      protected String getType() {
         return EVENT_WARNING;
       }
 
@@ -373,7 +373,7 @@ public class EventHelper {
       }
 
       @Override
-      protected String getPattern() {
+      public String getPattern() {
         return EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
       }
 
@@ -408,7 +408,7 @@ public class EventHelper {
       }
 
       @Override
-      protected String getPattern() {
+      public String getPattern() {
         return EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN;
       }
 
@@ -468,7 +468,7 @@ public class EventHelper {
       return EVENT_NORMAL;
     }
 
-    abstract String getPattern();
+    public abstract String getPattern();
 
     public abstract String getReason();
   }

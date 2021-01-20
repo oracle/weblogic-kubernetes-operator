@@ -3,11 +3,14 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
@@ -19,7 +22,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_EVENT_LABEL_
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class DomainEventWatcher extends EventWatcher {
+public class DomainEventWatcher extends Watcher<V1Event> {
+  private final String ns;
 
   private DomainEventWatcher(
         String ns,
@@ -27,7 +31,8 @@ public class DomainEventWatcher extends EventWatcher {
         WatchTuning tuning,
         WatchListener<V1Event> listener,
         AtomicBoolean isStopping) {
-    super(ns, initialResourceVersion, tuning, listener, isStopping);
+    super(initialResourceVersion, tuning, isStopping, listener);
+    this.ns = ns;
   }
 
   /**
@@ -58,4 +63,17 @@ public class DomainEventWatcher extends EventWatcher {
     return watchBuilder.withLabelSelector(DOMAIN_EVENT_LABEL_FILTER).createEventWatch(ns);
   }
 
+  @Override
+  public String getNamespace() {
+    return ns;
+  }
+
+  @Override
+  public String getDomainUid(Watch.Response<V1Event> item) {
+    return Optional.ofNullable(item.object)
+        .map(V1Event::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(l -> l.get(LabelConstants.DOMAINUID_LABEL))
+        .orElse(null);
+  }
 }

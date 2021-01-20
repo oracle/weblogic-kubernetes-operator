@@ -85,8 +85,8 @@ public class EventHelperTest {
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private final Map<String, Map<String, EventKubernetesObjects>> domainEventObjects = new ConcurrentHashMap<>();
-  private final Map<String, EventKubernetesObjects> nsEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);

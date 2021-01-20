@@ -123,7 +123,7 @@ public class DomainNamespaces {
     return eventWatchers.getWatcher(namespace);
   }
 
-  EventWatcher getDomainEventWatcher(String namespace) {
+  DomainEventWatcher getDomainEventWatcher(String namespace) {
     return domainEventWatchers.getWatcher(namespace);
   }
 

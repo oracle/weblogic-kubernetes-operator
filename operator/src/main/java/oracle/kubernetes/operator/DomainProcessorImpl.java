@@ -37,8 +37,8 @@ import oracle.kubernetes.operator.helpers.DomainValidationSteps;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
-import oracle.kubernetes.operator.helpers.EventKubernetesObjects;
 import oracle.kubernetes.operator.helpers.JobHelper;
+import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -89,9 +89,9 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
-  private static final Map<String, Map<String, EventKubernetesObjects>> domainEventK8SObjects
+  private static final Map<String, Map<String, KubernetesEventObjects>> domainEventK8SObjects
       = new ConcurrentHashMap<>();
-  private static final Map<String, EventKubernetesObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
+  private static final Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
     this.delegate = delegate;
@@ -145,23 +145,23 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Optional.ofNullable(event).map(V1Event::getInvolvedObject).map(V1ObjectReference::getName).orElse(null);
   }
 
-  public static EventKubernetesObjects getEventK8SObjects(V1Event event) {
+  public static KubernetesEventObjects getEventK8SObjects(V1Event event) {
     return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
   }
 
-  private static EventKubernetesObjects getEventK8SObjects(String ns, String domainUid) {
+  private static KubernetesEventObjects getEventK8SObjects(String ns, String domainUid) {
     return Optional.ofNullable(domainUid)
         .map(d -> getDomainEventK8SObjects(ns, d))
         .orElse(getNamespaceEventK8SObjects(ns));
   }
 
-  private static EventKubernetesObjects getNamespaceEventK8SObjects(String ns) {
-    return namespaceEventK8SObjects.computeIfAbsent(ns, d -> new EventKubernetesObjects());
+  private static KubernetesEventObjects getNamespaceEventK8SObjects(String ns) {
+    return namespaceEventK8SObjects.computeIfAbsent(ns, d -> new KubernetesEventObjects());
   }
 
-  private static EventKubernetesObjects getDomainEventK8SObjects(String ns, String domainUid) {
+  private static KubernetesEventObjects getDomainEventK8SObjects(String ns, String domainUid) {
     return domainEventK8SObjects.computeIfAbsent(ns, k -> new ConcurrentHashMap<>())
-        .computeIfAbsent(domainUid, d -> new EventKubernetesObjects());
+        .computeIfAbsent(domainUid, d -> new KubernetesEventObjects());
   }
 
   private static void deleteEventK8SObjects(V1Event event) {
