@@ -478,44 +478,9 @@ class ItMiiDynamicUpdate {
   @Order(5)
   @DisplayName("Add datasource in MII domain using mii dynamic update")
   public void testMiiAddDataSource() {
-
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
-
-    verifyPodsNotRolled(pods);
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
-
-    // check datasource configuration using REST api
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2", "200"), "JDBCSystemResource not found");
-    logger.info("JDBCSystemResource configuration found");
-
+    addDataSourceAndVerify();
   }
 
   /**
@@ -792,54 +757,23 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(11)
   @DisplayName("Test onNonDynamicChanges value CancelUpdate")
-  public void testOnNonDynamicChangeCancelUpdate() {
+  public void testOnNonDynamicChangesCancelUpdate() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    // Add datasource, replace contents of an existing configMap with previous tests config and datasource
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
-
-    verifyPodsNotRolled(pods);
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
-
-    // check datasource configuration using REST api
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2", "200"), "JDBCSystemResource not found");
-    logger.info("JDBCSystemResource configuration found");
+    final LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
 
     // make non-dynamic change, update datasource JDBCDriver params
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.update.yaml"), withStandardRetryPolicy);
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
+              withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges=CancelUpdate.
     patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
 
     // Patch a running domain with introspectVersion.
-    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
@@ -856,6 +790,75 @@ class ItMiiDynamicUpdate {
     logger.info("Verifying the domain status condition message contains the expected msg");
     verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
 
+  }
+
+  /**
+   * Multiple non-dynamic changes with default CommitUpdateOnly for onNonDynamicChanges and restarting the domain.
+   * Recreate configmap containing non-dynamic change, changing DS attribute.
+   * Patch the domain resource with the configmap, using default value CommitUpdateOnly for onNonDynamicChanges.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete.
+   * Verify the domain status is updated and domain is not restarted, change is not effective.
+   * Recreate configmap containing another non-dynamic change, changing DS JNDI name.
+   * Patch the domain resource with the configmap, using default value CommitUpdateOnly for onNonDynamicChanges.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify the domain status is updated and domain is not restarted, change is not effective.
+   * Restart the domain and verify both the changes are effective using REST Api.
+   */
+  @Test
+  @Order(12)
+  @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly "
+      + "and restart the domain")
+  public void testOnNonDynamicChangesCommitUpdateOnly() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
+
+    // make non-dynamic change, update datasource JDBCDriver params
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
+              withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+    // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
+    verifyPodsNotRolled(pods);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
+    String expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
+        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
+        + " or not set. The changes are committed but the domain require manually restart to "
+        + " make the changes effective.";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly);
+
+    // make another non-dynamic change, update datasource JNDI name
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatedsjndiname.yaml"),
+              withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+    // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
+    verifyPodsNotRolled(pods);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
+    expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
+        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
+        + " or not set. The changes are committed but the domain require manually restart to "
+        + " make the changes effective.";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly);
   }
 
   private void verifyIntrospectorRuns() {
@@ -1134,8 +1137,6 @@ class ItMiiDynamicUpdate {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()
                   + " Condition Msg =" + domainCondition.getMessage());
-              logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
-                  + " msg " + domainCondition.getMessage().contains(conditionMsg));
               if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
                   && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
                 return true;
@@ -1147,4 +1148,42 @@ class ItMiiDynamicUpdate {
     return false;
   }
 
+  private LinkedHashMap<String, DateTime> addDataSourceAndVerify() {
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+    return pods;
+
+  }
 }
