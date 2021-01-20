@@ -380,7 +380,7 @@ public class ItKubernetesEvents {
   @Order(10)
   @Test
   public void testK8SEventsStopWatchingNS() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    DateTime timestamp = new DateTime(System.currentTimeMillis() - 30000);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
