@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -385,6 +387,11 @@ public class ItKubernetesEvents {
     DateTime timestamp = new DateTime(System.currentTimeMillis() - 30000);
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
+    try {
+      Thread.sleep(10 * 60 * 1000);
+    } catch (InterruptedException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
     logger.info("EVENTS IN OPERATOR NAMESPACE");
     assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.listNamespacedEvents(opNamespace))));
     logger.info("EVENTS IN OPERATOR DOMAIN NAMESPACE 1");
