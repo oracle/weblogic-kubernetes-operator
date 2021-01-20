@@ -19,6 +19,10 @@ public class KubernetesEventObjects {
   public KubernetesEventObjects() {
   }
 
+  public int size() {
+    return events.size();
+  }
+
   public void remove(V1Event event) {
     events.remove(new EventIdentifier(event));
   }
