@@ -76,10 +76,14 @@ public class KubernetesUtils {
         Map<String, String> current,
         Map<String, String> required) {
     for (String name : required.keySet()) {
+      // We must encode each '/' and '~' in a JSON patch token using '~1' and '~0', otherwise
+      // the JSON patch will incorrectly treat '/' and '~' as special delimiters. (RFC 6901).
+      // The resulting patched JSON will have '/' and '~' within the token (not ~0 or ~1).
+      String encodedPath = basePath + name.replace("~","~0").replace("/","~1");
       if (!current.containsKey(name)) {
-        patchBuilder.add(basePath + name, required.get(name));
+        patchBuilder.add(encodedPath, required.get(name));
       } else {
-        patchBuilder.replace(basePath + name, required.get(name));
+        patchBuilder.replace(encodedPath, required.get(name));
       }
     }
   }
