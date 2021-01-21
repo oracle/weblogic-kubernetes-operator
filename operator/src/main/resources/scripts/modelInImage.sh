@@ -1019,7 +1019,8 @@ function wdtHandleOnlineUpdate() {
   elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
     trace SEVERE "Online update completed successfully, but the changes require restart and the domain resource " \
             "specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'" \
-               " option to cancel all changes if restart require. The changes are: "
+               " option to cancel all changes if restart require, all changes have been canceled. The non " \
+               "dynamic changes are: "
     cat /tmp/non_dynamic_changes.file
     exitOrLoop
   elif [ ${ret} -ne 0 ] ; then
