@@ -11,10 +11,10 @@ You can use the command to display the domain status
 
 |Scenarios|Domain status ||
   |---------------------|-------------|-------|
-  |Successful updates|Final domain status is Available with ServerReady reason. updated introspectVersion in the pods|
-  |When onNonDynamicChanges=CommitUpdateAndRoll and there is non dynamic changes |Final domain status is Available with ServerReady reason. updated introspectVersion in the pods if the domain rolls because of non dynamic changes or not rolled because there is no non-dynamic changes |
-  |Cancel changes per request|Domain status will have a failed status with message, no introspectVersion updated|
-  |When onNonDynamicChanges=CommitUpdateOnly and there is non dynamic changes | Domain status will have a condition 'ConfigChangesPendingRestart'. |
+  |Successful updates when there is no non-dynamic changes|Final domain status is Available with ServerReady reason. updated introspectVersion in the pods|
+  |When onNonDynamicChanges=CommitUpdateAndRoll and there is non dynamic changes |Final domain status is Available with ServerReady reason. updated introspectVersion in the pods |
+  |When onNonDynamicChanges=CommitUpdateOnly and there is non dynamic changes | Domain status will have a condition 'ConfigChangesPendingRestart'. Each pod will have a label 'weblogic.configurationChangedPendingRestart=true'|
+  |Cancel changes per request|Domain status will have a failed status with message, no introspectVersion updated in the pods|
   |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
 
 For example, after a successful online update, you will see this in the `Domain Status` section
