@@ -48,13 +48,10 @@ public class K8sEvents {
       try {
         List<V1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (V1Event event : events) {
-          if (event.getReason().contains(reason)
+          if (event.getReason().equals(reason)
               && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
-            //verify reason
-            logger.info("Verifying domain event {0}", reason);
-            assertTrue(event.getReason().equals(reason));
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
@@ -94,8 +91,8 @@ public class K8sEvents {
   }
 
   private static boolean isEqualOrAfter(DateTime timestamp, V1Event event) {
-    return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
-            || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
+    return event.getLastTimestamp().isEqual(timestamp.getMillis())
+            || event.getLastTimestamp().isAfter(timestamp.getMillis());
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {
