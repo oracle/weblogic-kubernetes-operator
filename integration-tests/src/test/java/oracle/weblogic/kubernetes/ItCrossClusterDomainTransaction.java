@@ -564,6 +564,7 @@ public class ItCrossClusterDomainTransaction {
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
     logger.info("switch cluster config to " + kubeconfig);
     updateEnvVariable("KUBECONFIG", kubeconfig);
+    logger.info("Updated KUBECONFIG " + System.getenv("KUBECONFIG"));
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
   }
   /*
@@ -657,10 +658,10 @@ public class ItCrossClusterDomainTransaction {
 
 
   private static void updateEnvVariable(String key, String newval) {
-    String[] keys = new String[] { key };
+    String[] keys = { "KUBECONFIG" };
     clearEnvironmentVars(keys);
     HashMap<String, String> newVals = new HashMap<String, String>();
-    newVals.put(key, newval);
+    newVals.put("KUBECONFIG", newval);
     setEnvironmentVars(newVals);
   }
 }
