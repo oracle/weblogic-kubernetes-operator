@@ -187,6 +187,7 @@ public interface TestConstants {
   public static final int ELASTICSEARCH_HTTPS_PORT = 9300;
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
+  public static final String FLUENTD_INDEX_KEY = "fluentd";
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
