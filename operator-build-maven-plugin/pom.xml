@@ -31,9 +31,8 @@
             <version>3.6.0</version>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit-version}</version>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -48,10 +47,6 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <junit-version>4.13.1</junit-version>
-    </properties>
 
     <build>
         <plugins>
