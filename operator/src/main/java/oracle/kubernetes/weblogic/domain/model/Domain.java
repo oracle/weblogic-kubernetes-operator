@@ -511,7 +511,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTActivateTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getActivateTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -521,7 +521,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTConnectTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getConnectTimeoutMillis)
-        .orElse(null);
+        .orElse(120000L);
   }
 
   /**
@@ -531,7 +531,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getDeployTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -541,7 +541,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTUnDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getUndeployTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -551,7 +551,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTReDeployTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getRedeployTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -561,7 +561,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTStartApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getStartApplicationTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -571,7 +571,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTStopApplicationTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getStopApplicationTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   /**
@@ -581,7 +581,7 @@ public class Domain implements KubernetesObject {
   public Long getWDTSetServerGroupsTimeoutMillis() {
     return getWDTOnlineUpdateTimeouts()
         .map(WDTTimeouts::getSetServerGroupsTimeoutMillis)
-        .orElse(null);
+        .orElse(180000L);
   }
 
   private Optional<WDTTimeouts> getWDTOnlineUpdateTimeouts() {

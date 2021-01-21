@@ -71,6 +71,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -392,8 +393,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
-  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
-    return createProgressingStep(patchPod(currentPod, updatedPod, next));
+  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
+    return createProgressingStep(patchPod(currentPod, updatedPod, next, addRestartRequiredLabel));
   }
 
   protected Step patchPod(V1Pod currentPod, Step next) {
@@ -408,7 +409,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   // Method for online update
-  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next) {
+  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
         .map(V1Pod::getMetadata)
@@ -427,6 +428,9 @@ public abstract class PodStepContext extends BasePodStepContext {
           .orElse(null);
       if (introspectVersion != null) {
         updatedLabels.put(INTROSPECTION_STATE_LABEL, introspectVersion);
+        if (addRestartRequiredLabel) {
+          updatedLabels.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
+        }
       }
 
       KubernetesUtils.addPatches(
@@ -941,11 +945,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED.equals(dynamicUpdateResult)) {
-        // We got here because the introspectVersion changed and cancel changes return code from WDT
-        // Changes rolled back per user request in the domain.spec.configuration, keep the pod.
-        //
-        return returnCancelUpdateStep(packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
           LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
@@ -960,14 +959,15 @@ public abstract class PodStepContext extends BasePodStepContext {
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
           }
           updatedPod.setMetadata(updatedMetaData);
-
+          boolean addRestartRequiredLabel = false;
           // if the introspector job tells it needs restart, update the condition with the needed attributes
           if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
             setOnlineUpdateNeedRestartCondition(packet);
+            addRestartRequiredLabel = true;
           } else {
             setOnlineUpdateSuccessCondition();
           }
-          return doNext(patchRunningPod(currentPod, updatedPod, getNext()), packet);
+          return doNext(patchRunningPod(currentPod, updatedPod, getNext(), addRestartRequiredLabel), packet);
         }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
@@ -980,11 +980,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         logPodExists();
         return doNext(packet);
       }
-    }
-
-    private NextAction returnCancelUpdateStep(Packet packet) {
-      setOnlineUpdateCanceledCondition(packet);
-      return doNext(packet);
     }
 
     private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
@@ -1018,26 +1013,13 @@ public abstract class PodStepContext extends BasePodStepContext {
               + " The changes are committed but the domain require manually restart to "
               + " make the changes effective. The changes are: "
               + dynamicUpdateRollBackFile,
-          DomainConditionType.OnlineUpdateComplete);
+          DomainConditionType.ConfigChangesPendingRestart);
     }
 
     private void setOnlineUpdateSuccessCondition() {
-      updateDomainConditions("Online update successful. No restart necessary",
-          DomainConditionType.OnlineUpdateComplete);
+    //      updateDomainConditions("Online update successful. No restart necessary",
+    //          DomainConditionType.OnlineUpdateComplete);
     }
-
-    private void setOnlineUpdateCanceledCondition(Packet packet) {
-      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-          .orElse("");
-      updateDomainConditions("Online update completed successfully, but the changes require restart and "
-              + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'"
-              + " option to cancel all changes if restart require. The changes are: "
-              + dynamicUpdateRollBackFile,
-          DomainConditionType.OnlineUpdateCanceled);
-
-    }
-
 
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
       DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
@@ -1055,12 +1037,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateComplete));
-
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.OnlineUpdateCanceled));
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.ConfigChangesPendingRestart));
 
       Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)

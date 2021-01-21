@@ -851,7 +851,7 @@ class ItMiiDynamicUpdate {
     verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly);
 
     // make another non-dynamic change, update datasource JNDI name
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    /* replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.updatedsjndiname.yaml"),
               withStandardRetryPolicy);
@@ -862,8 +862,8 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorRuns();
     // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
     verifyPodsNotRolled(pods);
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
     // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
     expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
@@ -871,7 +871,8 @@ class ItMiiDynamicUpdate {
         + " or not set. The changes are committed but the domain require manually restart to "
         + " make the changes effective.";
     logger.info("Verifying the domain status condition message contains the expected msg");
-    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly);
+    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly); */
+
   }
 
   private void verifyIntrospectorRuns() {
