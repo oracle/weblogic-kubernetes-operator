@@ -894,15 +894,18 @@ class ItMiiDynamicUpdate {
     // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
     verifyPodsNotRolled(pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    //    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
     // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
-    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
-          + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
-          + "option to cancel all changes if restart require.";
-    logger.info("Verifying the domain status condition message contains the expected msg");
-    verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
 
+    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
+        + "the domain resource  specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
+        + "option to cancel all changes if restart require, all changes have been canceled. "
+        + "You can modify your changes to exclude the non dynamic changes or use another mode for "
+        + "'onNonDynamicChanges'. The non dynamic changes are:";
+    logger.info("Verifying the domain status condition message contains the expected msg");
+
+    verifyIntrospectorFailsWithExpectedErrorMsg(expectedMsgForCancelUpdate);
   }
 
   private void verifyIntrospectorRuns() {

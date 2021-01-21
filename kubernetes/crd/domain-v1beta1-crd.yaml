@@ -10218,8 +10218,7 @@ spec:
                     enum:
                     - Progressing
                     - Available
-                    - OnlineUpdateComplete
-                    - OnlineUpdateCanceled
+                    - ConfigChangesPendingRestart
                     - Failed
                   lastTransitionTime:
                     format: date-time
