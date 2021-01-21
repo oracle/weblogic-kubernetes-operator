@@ -127,7 +127,7 @@ public class ItCrossClusterDomainTransaction {
     KUBECONFIG1 = System.getenv("KUBECONFIG1");
     KUBECONFIG2 = System.getenv("KUBECONFIG2");
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
-    assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2));
+    //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2));
   }
 
 
@@ -562,8 +562,9 @@ public class ItCrossClusterDomainTransaction {
   }
 
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
+    logger.info("Before update KUBECONFIG " + System.getenv("KUBECONFIG"));
     logger.info("switch cluster config to " + kubeconfig);
-    updateEnvVariable("KUBECONFIG", kubeconfig);
+    updateEnvironmentVar("KUBECONFIG", kubeconfig);
     logger.info("Updated KUBECONFIG " + System.getenv("KUBECONFIG"));
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
   }
@@ -629,7 +630,7 @@ public class ItCrossClusterDomainTransaction {
     }
   }
 
-  private Map<String, String> updateEnvironmentVar(String key, String value) {
+  private static Map<String, String> updateEnvironmentVar(String key, String value) {
 
     Map<String,String> modifiableEnv = getModifiableEnvironmentMap();
     modifiableEnv.remove(key);
