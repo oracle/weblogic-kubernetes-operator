@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -54,6 +55,8 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -120,6 +123,8 @@ public class ItKubernetesEvents {
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
+  final String pvName = domainUid + "-pv"; // name of the persistent volume
+  final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
   private static final String domainUid = "k8seventsdomain";
   private final String wlSecretName = "weblogic-credentials";
 
@@ -186,7 +191,7 @@ public class ItKubernetesEvents {
   /**
    * Change a domain resource with adding a managed server not in domain and verify the warning event is generated.
    */
-  @Order(11)
+  @Order(2)
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
   public void testDomainK8sEventsNonExistingMS() {
@@ -366,35 +371,54 @@ public class ItKubernetesEvents {
   /**
    * Replace the pv and pvc and verify the DomainProcessingFailed warning event is generated.
    */
-  @Order(2)
+  @Order(8)
   @Test
   public void testDomainK8sEventsProcessingFailed() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    createPV("sample-pv", domainUid, this.getClass().getSimpleName());
-    createPVC("sample-pv", "sample-pvc", domainUid, domainNamespace1);
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
-    String patchStr
-        = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/name\", \"value\": \"sample-pv\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"sample-pv\"},"
-        + "{\"op\": \"replace\", \"path\": "
-        + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"sample-pvc\"},"
-        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-        + "]";
-    logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+    try {
+      createPV("sample-pv", domainUid, this.getClass().getSimpleName());
+      createPVC("sample-pv", "sample-pvc", domainUid, domainNamespace1);
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+      String patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/name\", \"value\": \"sample-pv\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"sample-pv\"},"
+          + "{\"op\": \"replace\", \"path\": "
+          + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"sample-pvc\"},"
+          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "]";
+      logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
 
-    logger.info("verify the DomainProcessingFailed event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+      logger.info("verify the DomainProcessingFailed event is generated");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    } finally {
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+      String patchStr
+          = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/name\", \"value\": \"" + pvName + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"" + pvName + "\"},"
+          + "{\"op\": \"replace\", \"path\": "
+          + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"" + pvcName + "\"},"
+          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "]";
+      logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+
+      logger.info("verify the DomainProcessingFailed event is generated");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    }
   }
 
 
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
    */
-  @Order(8)
+  @Order(9)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
@@ -412,7 +436,7 @@ public class ItKubernetesEvents {
   /**
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
-  @Order(9)
+  @Order(10)
   @Test
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -424,7 +448,7 @@ public class ItKubernetesEvents {
   /**
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching an another domain namespace.
    */
-  @Order(10)
+  @Order(11)
   @Test
   @Disabled("Bug - OWLS-87181")
   public void testK8SEventsStopWatchingNS() {
@@ -456,8 +480,6 @@ public class ItKubernetesEvents {
 
   // Create and start a WebLogic domain in PV
   private void createDomain() {
-    final String pvName = domainUid + "-pv"; // name of the persistent volume
-    final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
 
     // create WebLogic domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace1,
@@ -661,6 +683,15 @@ public class ItKubernetesEvents {
           managedServerPodNamePrefix + i, domainNamespace1);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
+  }
+
+  /**
+   * Cleanup the persistent volume and persistent volume claim used by the test.
+   */
+  @AfterAll
+  public static void tearDown() {
+    deletePersistentVolume("sample-pv");
+    deletePersistentVolumeClaim(domainNamespace1, "sample-pvc");
   }
 
 }
