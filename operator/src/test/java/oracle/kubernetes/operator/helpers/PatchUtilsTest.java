@@ -10,7 +10,7 @@ import javax.json.JsonPatch;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import oracle.kubernetes.operator.utils.PatchUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;

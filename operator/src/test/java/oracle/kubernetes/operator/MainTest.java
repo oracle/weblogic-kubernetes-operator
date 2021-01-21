@@ -42,9 +42,9 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -150,7 +150,7 @@ public class MainTest extends ThreadFactoryTestBase {
     }
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(loggerControl);
     mementos.add(testSupport.install());
@@ -161,7 +161,7 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(NoopWatcherStarter.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
@@ -513,7 +513,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(domainNamespaces.getPodWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getServiceWatcher(NS), notNullValue());
   }
-  
+
   @Test
   public void afterReadingExistingResourcesForNamespace_ScriptConfigMapIsDefined() {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
@@ -561,7 +561,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     verifyWatchersNotDefined(main.getDomainNamespaces(), ns);
   }
-  
+
   @Test
   public void afterNonDomainNamespaceAdded_WatchersAreNotDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, NS_WEBLOGIC1);
@@ -570,7 +570,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     verifyWatchersNotDefined(main.getDomainNamespaces(), ns);
   }
-  
+
   @Test
   public void afterNamespaceAdded_WatchersAreDefined() {
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, ns);
