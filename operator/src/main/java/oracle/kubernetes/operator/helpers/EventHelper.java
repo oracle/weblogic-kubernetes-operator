@@ -196,7 +196,7 @@ public class EventHelper {
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())
-        .lastTimestamp(eventItem.getLastTimestamp())
+        .lastTimestamp(eventItem.getCurrentTimestamp())
         .type(eventItem.getType())
         .reason(eventItem.getReason())
         .message(eventItem.getMessage(eventData.getResourceName(), eventData))
@@ -442,7 +442,7 @@ public class EventHelper {
       return String.format(getPattern(), resourceName);
     }
 
-    DateTime getLastTimestamp() {
+    DateTime getCurrentTimestamp() {
       return DateTime.now();
     }
 
