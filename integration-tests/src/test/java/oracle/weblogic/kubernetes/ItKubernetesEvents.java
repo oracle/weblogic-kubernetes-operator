@@ -325,12 +325,29 @@ public class ItKubernetesEvents {
    */
   @Order(6)
   @Test
-  @Disabled("Bug - OWLS-87019")
   public void testDomainK8sEventsScalePastMax() {
+    logger.info("Scaling cluster using REST Api");
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    /*
     scaleClusterWithRestApi(domainUid, cluster1Name, 3, externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the DomainValidationError event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
+    */
+
+    logger.info("Scaling cluster using patching");
+    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
+        + "]";
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    logger.info("verify the DomainValidationError event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
+
   }
 
   /**
@@ -338,10 +355,24 @@ public class ItKubernetesEvents {
    */
   @Order(7)
   @Test
-  @Disabled("Bug - OWLS-87019")
   public void testDomainK8sEventsScaleBelowMin() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    /*
     scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount);
+    logger.info("verify the DomainValidationError event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
+    logger.info("Scaling cluster using patching");
+    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    */
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
+        + "]";
+    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
     logger.info("verify the DomainValidationError event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
   }
