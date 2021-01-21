@@ -102,8 +102,8 @@ spec:
                               \ changes will be committed, dynamic changes will take\
                               \ effect immediately, the domain will not automatically\
                               \ restart (roll), and any non-dynamic changes will become\
-                              \ effective only when the domain is restarted. \n\n\
-                              \ If set to 'CommitUpdateAndRoll' and any non-dynamic\
+                              \ effective on a pod only if the pod is later restarted.\
+                              \ \n\n If set to 'CommitUpdateAndRoll' and any non-dynamic\
                               \ changes are detected, then all changes will be committed,\
                               \ dynamic changes will take effect immediately, the\
                               \ domain will automatically restart (roll), and non-dynamic\
@@ -111,17 +111,22 @@ spec:
                               \ restarts. \n\n If set to 'CancelUpdate' and any non-dynamic\
                               \ changes are detected, then  all changes are ignored,\
                               \ the domain continues to run without interruption,\
-                              \  and you must revert non-dynamic changes if you want\
-                              \ dynamic changes to take effect. \n\n For more information,\
-                              \ see the runtime update section of the Model in Image\
-                              \ user guide."
+                              \ and the domain Failed condition will become true ;\
+                              \ there are four ways to correct: either revert non-dynamic\
+                              \ changes to your model resources and retry the online\
+                              \ update, change to `CommitUpdateAndRoll` and retry\
+                              \ the online update, shutdown the domain and then restart\
+                              \ it, or change the domain resource to initiate an offline\
+                              \ update and a roll (such as by changing its `restartVersion`).\
+                              \ \n\n For more information, see the runtime update\
+                              \ section of the Model in Image user guide."
                             enum:
                             - CancelUpdate
                             - CommitUpdateAndRoll
                             - CommitUpdateOnly
                           enabled:
                             type: boolean
-                            description: Enable online update.
+                            description: Enable online update. Default is 'false'.
                           wdtTimeouts:
                             type: object
                             properties:
@@ -2809,7 +2814,7 @@ spec:
                         started. If cluster members are started because of their related
                         entries under `managedServers`, then this cluster may have
                         more cluster members running than its `replicas` count. Defaults
-                        to 0.
+                        to `spec.replicas`, which defaults 0.
                       type: number
                       minimum: 0.0
                     clusterName:

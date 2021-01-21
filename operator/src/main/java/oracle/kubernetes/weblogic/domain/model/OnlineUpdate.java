@@ -11,10 +11,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class OnlineUpdate {
 
-  @Description("Enable online update.")
+  @Description("Enable online update. Default is 'false'.")
   private Boolean enabled = false;
 
-  @Description("Controls behavior when non-dynamic WebLogic configuration changes are detected"
+  @Description(""
+       + "Controls behavior when non-dynamic WebLogic configuration changes are detected"
        + " during an online update."
        + " Non-dynamic changes are changes that require a domain restart to take effect."
        + " Valid values are 'CommitUpdateOnly' (default), 'CommitUpdateAndRoll', and 'CancelUpdate'."
@@ -23,7 +24,8 @@ public class OnlineUpdate {
        + " all changes will be committed,"
        + " dynamic changes will take effect immediately,"
        + " the domain will not automatically restart (roll),"
-       + " and any non-dynamic changes will become effective only when the domain is restarted."
+       + " and any non-dynamic changes will become effective on a pod only if"
+       + " the pod is later restarted."
        + " \n\n"
        + " If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then"
        + " all changes will be committed,"
@@ -33,10 +35,17 @@ public class OnlineUpdate {
        + " \n\n"
        + " If set to 'CancelUpdate' and any non-dynamic changes are detected, then "
        + " all changes are ignored,"
-       + " the domain continues to run without interruption, "
-       + " and you must revert non-dynamic changes if you want dynamic changes to take effect."
+       + " the domain continues to run without interruption,"
+       + " and the domain Failed condition will become true"
+       + " ; there are four ways to correct:"
+       + " either revert non-dynamic changes to your model resources and retry the online update,"
+       + " change to `CommitUpdateAndRoll` and retry the online update,"
+       + " shutdown the domain and then restart it,"
+       + " or change the domain resource to initiate an offline update and a roll"
+       + " (such as by changing its `restartVersion`)."
        + " \n\n"
-       + " For more information, see the runtime update section of the Model in Image user guide.")
+       + " For more information, see the runtime update section of the Model in Image user guide."
+  )
   private MIINonDynamicChangesMethod onNonDynamicChanges = MIINonDynamicChangesMethod.CommitUpdateOnly;
 
   private WDTTimeouts wdtTimeouts;
