@@ -34,7 +34,7 @@ public class EventProcessingTest {
   private static final String UID = "uid";
   private static final String ADMIN_NAME = "admin";
   private final V1ObjectReference serverReference =
-      new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
+      new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME)).kind("Pod");
   private final V1Event event =
       new V1Event()
           .metadata(new V1ObjectMeta().namespace(NS))
