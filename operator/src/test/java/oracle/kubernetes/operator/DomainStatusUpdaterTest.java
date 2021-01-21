@@ -32,9 +32,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -73,11 +73,7 @@ public class DomainStatusUpdaterTest {
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
-  /**
-   * Setup test environment.
-   * @throws NoSuchFieldException if test support fails to install.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
         .ignoringLoggedExceptions(ApiException.class));
@@ -98,15 +94,9 @@ public class DomainStatusUpdaterTest {
     return new V1ObjectMeta().namespace(NS).name(serverName).labels(ImmutableMap.of());
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }

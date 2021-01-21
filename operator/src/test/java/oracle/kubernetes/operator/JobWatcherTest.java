@@ -19,9 +19,9 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -44,13 +44,14 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   private final TerminalStep terminalStep = new TerminalStep();
 
   @Override
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
   }
 
   @Override
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
 
@@ -153,6 +154,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return markJobTimedOut(job, "DeadlineExceeded");
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1Job markJobTimedOut(V1Job job, String reason) {
     return setFailedWithReason(job, reason);
   }
@@ -225,15 +227,6 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   @Test
   public void whenWaitForReadyAppliedToTimedOutJobWithDeadlineExceeded_terminateWithException() {
     startWaitForReady(job -> markJobTimedOut(job, "DeadlineExceeded"));
-
-    assertThat(terminalStep.wasRun(), is(false));
-    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
-  }
-
-  @Test
-  @Ignore
-  public void whenWaitForReadyAppliedToTimedOutJobWithBackoffLimitExceeded_terminateWithException() {
-    startWaitForReady(job -> markJobTimedOut(job, "BackoffLimitExceeded"));
 
     assertThat(terminalStep.wasRun(), is(false));
     testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);

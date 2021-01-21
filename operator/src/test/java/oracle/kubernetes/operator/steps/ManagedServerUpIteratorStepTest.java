@@ -42,9 +42,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
@@ -130,6 +130,7 @@ public class ManagedServerUpIteratorStepTest {
             .withImage(LATEST_IMAGE);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private static void addServer(DomainPresenceInfo domainPresenceInfo, String serverName) {
     if (serverName.equals(ADMIN)) {
       domainPresenceInfo.setServerPod(serverName, createReadyPod(serverName));
@@ -155,7 +156,7 @@ public class ManagedServerUpIteratorStepTest {
             .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
@@ -191,7 +192,7 @@ public class ManagedServerUpIteratorStepTest {
           .addConditionsItem(new V1PodCondition().status("True").type("Ready"));
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
