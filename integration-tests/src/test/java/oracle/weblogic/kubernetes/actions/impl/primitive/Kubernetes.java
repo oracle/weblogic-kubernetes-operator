@@ -995,7 +995,7 @@ public class Kubernetes {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
       events = list.getItems();
-      events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
+      events.sort(Comparator.comparing(e -> e.getLastTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
