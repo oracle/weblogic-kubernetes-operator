@@ -222,8 +222,8 @@ public class ItCrossClusterDomainTransactionSetup {
 
   }
 
-  private static void addToPropertyFile(String propFileName, String domainNamespace
-      , String host, String adminServiceNodePort) throws IOException {
+  private static void addToPropertyFile(String propFileName, String domainNamespace,
+                                        String host, String adminServiceNodePort) throws IOException {
     FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
     Properties props = new Properties();
     props.load(in);
