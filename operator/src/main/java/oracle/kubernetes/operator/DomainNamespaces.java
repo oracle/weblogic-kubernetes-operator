@@ -51,6 +51,8 @@ public class DomainNamespaces {
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
   private final WatcherControl<V1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
+  private final WatcherControl<V1Event, DomainEventWatcher> domainEventWatchers
+      = new WatcherControl<>(DomainEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
@@ -102,6 +104,7 @@ public class DomainNamespaces {
 
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
+    domainEventWatchers.removeWatcher(ns);
     podWatchers.removeWatcher(ns);
     serviceWatchers.removeWatcher(ns);
     configMapWatchers.removeWatcher(ns);
@@ -118,6 +121,10 @@ public class DomainNamespaces {
 
   EventWatcher getEventWatcher(String namespace) {
     return eventWatchers.getWatcher(namespace);
+  }
+
+  DomainEventWatcher getDomainEventWatcher(String namespace) {
+    return domainEventWatchers.getWatcher(namespace);
   }
 
   JobWatcher getJobWatcher(String namespace) {
@@ -184,7 +191,7 @@ public class DomainNamespaces {
     private final WatcherFactory<T,W> factory;
     private final ListenerSelector<T> selector;
 
-    public WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
+    private WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
       this.factory = factory;
       this.selector = selector;
     }
@@ -206,7 +213,7 @@ public class DomainNamespaces {
     }
   }
 
-  NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
+  private NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
     return new WatcherStartupProcessing(ns, domainProcessor);
   }
 
@@ -227,6 +234,11 @@ public class DomainNamespaces {
     @Override
     Consumer<V1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    Consumer<V1EventList> getDomainEventListProcessing() {
+      return l -> domainEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
