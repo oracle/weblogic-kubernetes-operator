@@ -215,8 +215,6 @@ public class ItKubernetesEvents {
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
 
-    timestamp = new DateTime(System.currentTimeMillis() - 2000);
-
     deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
@@ -228,7 +226,6 @@ public class ItKubernetesEvents {
             condition -> logger.info("Waiting for domain event {0} to be logged "
                 + "(elapsed time {1}ms, remaining time {2}ms)",
                 DOMAIN_DELETED,
-                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,

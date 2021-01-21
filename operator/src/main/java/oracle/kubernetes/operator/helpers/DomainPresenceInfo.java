@@ -102,7 +102,7 @@ public class DomainPresenceInfo {
    * @param clusterName cluster name of the pod server
    * @return Number of scheduled servers
    */
-  public long getNumScheduledServers(String clusterName) {
+  long getNumScheduledServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
             .filter(PodHelper::isScheduled)
             .count();
@@ -125,7 +125,7 @@ public class DomainPresenceInfo {
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
-  public long getNumReadyServers(String clusterName) {
+  long getNumReadyServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
             .filter(PodHelper::hasReadyServer)
             .count();
@@ -161,7 +161,7 @@ public class DomainPresenceInfo {
           .filter(p -> hasClusterNameOrNull(p, clusterName));
   }
 
-  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+  private boolean isNotDeletingPod(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
@@ -177,11 +177,11 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
-  public V1Service removeServerService(String serverName) {
+  V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
   }
 
-  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+  static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
@@ -582,7 +582,7 @@ public class DomainPresenceInfo {
   /**
    * Clear all validation warnings.
    */
-  public void clearValidationWarnings() {
+  void clearValidationWarnings() {
     validationWarnings.clear();
   }
 
