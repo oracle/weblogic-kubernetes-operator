@@ -766,7 +766,7 @@ class ItMiiDynamicUpdate {
     // make non-dynamic change, update datasource JDBCDriver params
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
+            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
               withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges=CancelUpdate.
@@ -816,12 +816,24 @@ class ItMiiDynamicUpdate {
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
 
+    // write sparse yaml to change deployment order for app to file
+    Path pathToChangeDeploymentOrderYaml = Paths.get(WORK_DIR + "/changedeploymentorder.yaml");
+    String yamlToChangeDeploymentOrder = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: 'cluster-1'\n"
+        + "      DeploymentOrder: 200";
+
+    assertDoesNotThrow(() -> Files.write(pathToChangeDeploymentOrderYaml, yamlToChangeDeploymentOrder.getBytes()));
     // make non-dynamic change, update datasource JDBCDriver params
+    /* replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
+              withStandardRetryPolicy); */
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
-              withStandardRetryPolicy);
-
+            MODEL_DIR + "/model.jdbc2.yaml", pathToChangeDeploymentOrderYaml.toString()),
+        withStandardRetryPolicy);
     // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
     // Verifying introspector pod is created, runs and deleted
@@ -841,7 +853,7 @@ class ItMiiDynamicUpdate {
     // make another non-dynamic change, update datasource JNDI name
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jdbc2.updatedsjndiname.yaml"),
+            MODEL_DIR + "/model.jdbc2.updatedsjndiname.yaml"),
               withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
@@ -851,6 +863,7 @@ class ItMiiDynamicUpdate {
     // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
     verifyPodsNotRolled(pods);
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
 
     // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
     expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
