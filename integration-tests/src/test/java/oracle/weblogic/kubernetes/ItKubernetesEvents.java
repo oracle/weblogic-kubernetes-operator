@@ -366,6 +366,7 @@ public class ItKubernetesEvents {
     */
     String patchStr
         = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": \"false\"},"
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
         + "]";
     logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
