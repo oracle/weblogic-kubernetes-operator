@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -222,7 +223,8 @@ public class ItCrossClusterDomainTransaction {
   private static void initCluster1() {
 
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-    assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
+    K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
+    //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator in cluster1");
@@ -317,7 +319,7 @@ public class ItCrossClusterDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2);
+    props.setProperty("K8S_NODEPORT_HOST", host);
     props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.store(out, null);
     out.close();
@@ -340,7 +342,8 @@ public class ItCrossClusterDomainTransaction {
     try {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
+        K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
+        //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
       }
 
       int adminServiceNodePort = assertDoesNotThrow(
@@ -368,12 +371,10 @@ public class ItCrossClusterDomainTransaction {
     } finally {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
       }
       oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup(clusterOneNamespaces);
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
-        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2));
       }
     }
 
@@ -395,7 +396,8 @@ public class ItCrossClusterDomainTransaction {
   private void testCrossDomainTransactionWithFailInjection() {
     if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
       assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-      assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
+      K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
+      //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
     }
     logger.info("Getting admin server external service node port");
     int domain1AdminServiceNodePort = assertDoesNotThrow(
