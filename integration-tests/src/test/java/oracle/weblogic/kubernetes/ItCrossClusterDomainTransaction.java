@@ -111,7 +111,6 @@ public class ItCrossClusterDomainTransaction {
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
-  private static String appSource;
   private static String domain1Image;
   private static int adminServiceNodePort;
   private static LoggingFacade logger = null;
@@ -128,6 +127,7 @@ public class ItCrossClusterDomainTransaction {
     KUBECONFIG1 = System.getenv("KUBECONFIG1");
     KUBECONFIG2 = System.getenv("KUBECONFIG2");
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
+    assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2));
   }
 
 
@@ -222,6 +222,7 @@ public class ItCrossClusterDomainTransaction {
   private static void initCluster1() {
 
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+    assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator in cluster1");
@@ -281,10 +282,6 @@ public class ItCrossClusterDomainTransaction {
 
     //create domain1
     createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
-    logger.info("Getting admin server external service node port");
-    adminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
-        "Getting admin server node port failed");
   }
 
   private static void updatePropertyFile() {
@@ -320,11 +317,7 @@ public class ItCrossClusterDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    props.setProperty("K8S_NODEPORT_HOST", host);
-
-
-    //props.setProperty("K8S_NODEPORT_HOST1", K8S_NODEPORT_HOST1);
-    //props.setProperty("K8S_NODEPORT_HOST2", K8S_NODEPORT_HOST2);
+    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2);
     props.setProperty("DBPORT", Integer.toString(dbNodePort));
     props.store(out, null);
     out.close();
@@ -347,9 +340,12 @@ public class ItCrossClusterDomainTransaction {
     try {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
       }
 
-
+      int adminServiceNodePort = assertDoesNotThrow(
+          () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
+          "Getting admin server node port failed");
 
       String curlRequest = String.format("curl -v --show-error --noproxy '*' "
               + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
@@ -372,10 +368,12 @@ public class ItCrossClusterDomainTransaction {
     } finally {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
       }
       oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup(clusterOneNamespaces);
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG1)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG2));
+        assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST2));
       }
     }
 
@@ -397,6 +395,7 @@ public class ItCrossClusterDomainTransaction {
   private void testCrossDomainTransactionWithFailInjection() {
     if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
       assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
+      assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
     }
     logger.info("Getting admin server external service node port");
     int domain1AdminServiceNodePort = assertDoesNotThrow(
@@ -563,20 +562,9 @@ public class ItCrossClusterDomainTransaction {
   }
 
   private static void switchTheClusterConfig(String kubeconfig) throws Exception {
-    //injectEnvironmentVariable("KUBECONFIG", kubeconfig);
     logger.info("switch cluster config to " + kubeconfig);
-    testMarina(kubeconfig);
+    updateEnvVariable("KUBECONFIG", kubeconfig);
     assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
-
-    /*
-    StringBuffer switchContext = new StringBuffer("kubectl config --kubeconfig=")
-    .append(System.getenv("KUBECONFIG"))
-    .append("use-context ")
-    .append(context);
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(switchContext), true));
-
-     */
   }
   /*
   private static void injectEnvironmentVariable(String key, String value)
@@ -668,14 +656,11 @@ public class ItCrossClusterDomainTransaction {
   }
 
 
-  private static void testMarina(String newval) {
-    String[] keys = { "KUBECONFIG" };
-    Map<String, String> savedVars = clearEnvironmentVars(keys);
+  private static void updateEnvVariable(String key, String newval) {
+    String[] keys = new String[] { key };
+    clearEnvironmentVars(keys);
     HashMap<String, String> newVals = new HashMap<String, String>();
     newVals.put("KUBECONFIG", newval);
-
-    // do test
-
     setEnvironmentVars(newVals);
   }
 }
