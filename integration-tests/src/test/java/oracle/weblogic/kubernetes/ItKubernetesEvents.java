@@ -360,7 +360,6 @@ public class ItKubernetesEvents {
 
       logger.info("verify the DomainChanged event is generated");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
     }
   }
 
@@ -398,7 +397,6 @@ public class ItKubernetesEvents {
 
       logger.info("verify the DomainChanged event is generated");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
     }
   }
 
