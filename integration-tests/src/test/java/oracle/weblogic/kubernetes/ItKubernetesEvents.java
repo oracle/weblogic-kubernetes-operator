@@ -406,11 +406,13 @@ public class ItKubernetesEvents {
           + "]";
       logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
+      timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
-      logger.info("verify the DomainProcessingFailed event is generated");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+      logger.info("verify domain changed/processing completed events are logged");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
     }
   }
 
