@@ -326,16 +326,8 @@ public class ItKubernetesEvents {
   @Order(6)
   @Test
   public void testDomainK8sEventsScalePastMax() {
-    logger.info("Scaling cluster using REST Api");
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    /*
-    scaleClusterWithRestApi(domainUid, cluster1Name, 3, externalRestHttpsPort, opNamespace, opServiceAccount);
-    logger.info("verify the DomainValidationError event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
-    */
-
     logger.info("Scaling cluster using patching");
-    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     String patchStr
         = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 3}"
@@ -347,7 +339,6 @@ public class ItKubernetesEvents {
 
     logger.info("verify the DomainValidationError event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
-
   }
 
   /**
@@ -357,16 +348,9 @@ public class ItKubernetesEvents {
   @Test
   public void testDomainK8sEventsScaleBelowMin() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    /*
-    scaleClusterWithRestApi(domainUid, cluster1Name, 1, externalRestHttpsPort, opNamespace, opServiceAccount);
-    logger.info("verify the DomainValidationError event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
-    logger.info("Scaling cluster using patching");
-    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    */
     String patchStr
         = "["
-        + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": \"false\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/allowReplicasBelowMinDynClusterSize\", \"value\": false},"
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": 1}"
         + "]";
     logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
