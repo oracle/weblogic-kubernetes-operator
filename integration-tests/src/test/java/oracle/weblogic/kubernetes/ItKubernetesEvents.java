@@ -81,6 +81,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CREATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_DELETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_ABORTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
@@ -185,7 +186,7 @@ public class ItKubernetesEvents {
   /**
    * Change a domain resource with adding a managed server not in domain and verify the warning event is generated.
    */
-  @Order(2)
+  @Order(11)
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
   public void testDomainK8sEventsNonExistingMS() {
@@ -361,6 +362,33 @@ public class ItKubernetesEvents {
     logger.info("verify the DomainValidationError event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
   }
+
+  /**
+   * Replace the pv and pvc and verify the DomainProcessingFailed warning event is generated.
+   */
+  @Order(2)
+  @Test
+  public void testDomainK8sEventsProcessingFailed() {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    createPV("sample-pv", domainUid, this.getClass().getSimpleName());
+    createPVC("sample-pv", "sample-pvc", domainUid, domainNamespace1);
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumes/0/name\", \"value\": \"sample-pv\"},"
+        + "{\"op\": \"replace\", \"path\": "
+        + "\"/spec/serverPod/volumes/0/persistentVolumeClaim/claimName\", \"value\": \"sample-pvc\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+        + "]";
+    logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    logger.info("verify the DomainProcessingFailed event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+  }
+
 
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
