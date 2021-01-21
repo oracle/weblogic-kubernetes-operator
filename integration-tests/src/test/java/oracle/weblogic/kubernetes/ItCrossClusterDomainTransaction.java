@@ -660,7 +660,7 @@ public class ItCrossClusterDomainTransaction {
     String[] keys = new String[] { key };
     clearEnvironmentVars(keys);
     HashMap<String, String> newVals = new HashMap<String, String>();
-    newVals.put("KUBECONFIG", newval);
+    newVals.put(key, newval);
     setEnvironmentVars(newVals);
   }
 }
