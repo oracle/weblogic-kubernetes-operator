@@ -21,9 +21,9 @@ import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
-import org.junit.Test;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
