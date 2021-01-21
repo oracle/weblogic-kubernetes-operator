@@ -141,7 +141,7 @@ public interface TestConstants {
   public static final String BRANCH_NAME_FROM_JENKINS = Optional.ofNullable(System.getenv("BRANCH"))
       .orElse("");
 
-  public static String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
+  public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
   public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir") + "/it-testsresults");

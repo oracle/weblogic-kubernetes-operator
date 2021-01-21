@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import org.joda.time.DateTime;
 
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 
 
@@ -371,12 +372,27 @@ public class TestAssertions {
    * @param nodePort the node port of the WebLogic administration server service
    * @param userName user name to access WebLogic administration server
    * @param password password to access WebLogic administration server
+   * @param nodeporthost k8s nodeport host
+   * @return true if the WebLogic administration service node port is accessible otherwise false
+   * @throws java.io.IOException when connection to WebLogic administration server fails
+   */
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String nodeporthost)
+      throws IOException {
+    return Domain.adminNodePortAccessible(nodePort, userName, password, nodeporthost);
+  }
+
+  /**
+   * Check if a admin server pod admin node port is accessible.
+   *
+   * @param nodePort the node port of the WebLogic administration server service
+   * @param userName user name to access WebLogic administration server
+   * @param password password to access WebLogic administration server
    * @return true if the WebLogic administration service node port is accessible otherwise false
    * @throws java.io.IOException when connection to WebLogic administration server fails
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+    return adminNodePortAccessible(nodePort, userName, password, K8S_NODEPORT_HOST);
   }
 
   /**

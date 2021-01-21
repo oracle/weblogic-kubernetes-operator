@@ -212,7 +212,7 @@ public class ItCrossClusterDomainTransaction {
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
     //create domain2
-    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
+    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image, K8S_NODEPORT_HOST2);
 
 
     initCluster1();
@@ -223,7 +223,6 @@ public class ItCrossClusterDomainTransaction {
   private static void initCluster1() {
 
     assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-    K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
     //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
 
     // get a new unique opNamespace
@@ -283,7 +282,7 @@ public class ItCrossClusterDomainTransaction {
 
 
     //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
+    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image, K8S_NODEPORT_HOST1);
   }
 
   private static void updatePropertyFile() {
@@ -342,7 +341,7 @@ public class ItCrossClusterDomainTransaction {
     try {
       if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
         assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-        K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
+
         //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
       }
 
@@ -396,7 +395,6 @@ public class ItCrossClusterDomainTransaction {
   private void testCrossDomainTransactionWithFailInjection() {
     if (System.getenv("KUBECONFIG").equals(KUBECONFIG2)) {
       assertDoesNotThrow(() -> switchTheClusterConfig(KUBECONFIG1));
-      K8S_NODEPORT_HOST = K8S_NODEPORT_HOST1;
       //assertDoesNotThrow(() -> updateEnvVariable("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST1));
     }
     logger.info("Getting admin server external service node port");
@@ -424,7 +422,7 @@ public class ItCrossClusterDomainTransaction {
   }
 
   private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
-                            String domainImage) {
+                            String domainImage, String host) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -492,7 +490,7 @@ public class ItCrossClusterDomainTransaction {
 
     logger.info("Validating WebLogic admin server access by login to console");
     boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, host);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
