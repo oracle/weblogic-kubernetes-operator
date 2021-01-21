@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.calls.unprocessable;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
@@ -84,7 +85,11 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   @Override
   public String getReason() {
-    return errorBody.getDetails().getCauses()[0].getReason();
+    return Optional.ofNullable(errorBody.getDetails())
+        .map(ErrorDetails::getCauses)
+        .map(n -> n[0])
+        .map(Cause::getReason)
+        .orElse("");
   }
 
   /**

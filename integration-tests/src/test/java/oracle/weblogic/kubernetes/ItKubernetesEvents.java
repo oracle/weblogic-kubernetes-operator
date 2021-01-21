@@ -215,8 +215,6 @@ public class ItKubernetesEvents {
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             DOMAIN_PROCESSING_ABORTED, "Warning", timestamp));
 
-    timestamp = new DateTime(System.currentTimeMillis());
-
     deleteDomainCustomResource(domainUid, domainNamespace);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace);
     checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace);
