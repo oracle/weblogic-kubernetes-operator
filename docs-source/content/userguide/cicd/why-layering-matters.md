@@ -3,7 +3,7 @@ title: "Why layering matters"
 date: 2019-04-11T13:27:58-04:00
 draft: false
 weight: 2
-description: "Learn why Docker image layering affects CI/CD processes."
+description: "Learn why container image layering affects CI/CD processes."
 ---
 
 

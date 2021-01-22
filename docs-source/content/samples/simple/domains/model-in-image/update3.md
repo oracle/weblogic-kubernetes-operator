@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 5
 ---
 
-The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain using an updated Docker image.
+The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain using an updated image.
 
 In the use case, you will:
 
@@ -114,7 +114,7 @@ Here are the steps for this use case:
      If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
 
      This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
-     - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+     - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
      - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
        - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
        - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -126,7 +126,7 @@ Here are the steps for this use case:
      [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
      ```
 
-     Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v2`.
+     Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v2`.
 
      > **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 

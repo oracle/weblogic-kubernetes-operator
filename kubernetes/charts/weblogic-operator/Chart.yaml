@@ -6,5 +6,5 @@ name: weblogic-operator
 description: Helm chart for configuring the WebLogic operator.
 
 type: application
-version: 3.1.1
-appVersion: 3.1.1
+version: 3.1.2
+appVersion: 3.1.2
