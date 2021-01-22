@@ -371,9 +371,6 @@ public class ItKubernetesEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-
-      logger.info("verify the DomainChanged event is generated");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
   }
 
@@ -409,9 +406,6 @@ public class ItKubernetesEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
-
-      logger.info("verify the DomainChanged event is generated");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
     }
   }
 
