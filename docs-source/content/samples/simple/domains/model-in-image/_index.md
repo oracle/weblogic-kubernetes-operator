@@ -113,15 +113,15 @@ Location | Description |
 
 If you run the sample from a machine that is remote to one or more of your Kubernetes cluster worker nodes, then you need to ensure that the images you create can be accessed from any node in the cluster.
 
-For example, if you have permission to put the image in a Docker repository that the cluster can also access, then:
+For example, if you have permission to put the image in a container registry that the cluster can also access, then:
   - After you've created an image:
     - `docker tag` the image with a target image name (including the registry host name, port, repository name, and the tag, if needed).
     - `docker push` the tagged image to the target repository.
   - Before you deploy a Domain:
-    - Modify the Domain YAML file's `image:` value to match the Docker tag for the image in the repository.
+    - Modify the Domain YAML file's `image:` value to match the image tag for the image in the repository.
     - If the repository requires a login, then also deploy a corresponding Kubernetes `docker secret` to the same namespace that the Domain will use, and modify the Domain YAML file's `imagePullSecrets:` to reference this secret.
 
-Alternatively, if you have access to the local Docker image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
+Alternatively, if you have access to the local image cache on each worker node in the cluster, then you can use a Docker command to save the image to a file, copy the image file to each worker node, and use a `docker` command to load the image file into the node's image cache.
 
 For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
