@@ -82,14 +82,10 @@ public class ItIstioClustersCrossDomainTransactionSetup {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
 
-
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-
-  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
-
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
+  private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
-  private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
 
   private static String op1Namespace = "crosscluster-operator1-cluster1";
 
@@ -101,25 +97,14 @@ public class ItIstioClustersCrossDomainTransactionSetup {
 
 
   private static final String domain1AdminServerPodName = domainUid1 + "-admin-server";
-  private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
-
 
   private static String domain1Image;
 
   private static LoggingFacade logger = null;
   static int istioIngressPort;
 
-  private static final String KUBECONFIG1;
-
 
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
-
-
-  static {
-    logger = getLogger();
-    KUBECONFIG1 = System.getenv("KUBECONFIG1");
-  }
-
 
   /**
    * Install Operator.
@@ -128,7 +113,7 @@ public class ItIstioClustersCrossDomainTransactionSetup {
   @BeforeAll
   public static void initAll() {
 
-
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
