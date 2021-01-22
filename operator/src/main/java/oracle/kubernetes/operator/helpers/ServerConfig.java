@@ -146,7 +146,7 @@ public class ServerConfig {
   }
 
   /**
-   * Gets the WebLogic Docker image.
+   * Gets the WebLogic Server image.
    *
    * @return image
    */
@@ -155,7 +155,7 @@ public class ServerConfig {
   }
 
   /**
-   * Sets the WebLogic Docker image.
+   * Sets the WebLogic Server image.
    *
    * @param image image
    */
@@ -164,7 +164,7 @@ public class ServerConfig {
   }
 
   /**
-   * Sets the WebLogic Docker image.
+   * Sets the WebLogic Server image.
    *
    * @param image image
    * @return this
@@ -205,7 +205,7 @@ public class ServerConfig {
 
   /**
    * Gets the list of references to secrets in the same namespace to use for pulling the WebLogic
-   * Docker image.
+   * Server image.
    *
    * @return image pull secrets
    */
@@ -215,7 +215,7 @@ public class ServerConfig {
 
   /**
    * Sets the list of references to secrets in the same namespace to use for pulling the WebLogic
-   * Docker image.
+   * Server image.
    *
    * @param imagePullSecrets image pull secrets
    */
@@ -225,7 +225,7 @@ public class ServerConfig {
 
   /**
    * Sets the list of references to secrets in the same namespace to use for pulling the WebLogic
-   * Docker image.
+   * Server image.
    *
    * @param imagePullSecrets image pull secrets
    * @return this
