@@ -218,7 +218,7 @@ function validateWeblogicImagePullSecretName {
 # Function to validate the weblogic image pull secret exists
 #
 function validateWeblogicImagePullSecret {
-  # The kubernetes secret for pulling images from the docker store is optional.
+  # The kubernetes secret for pulling images from a container registry is optional.
   # If it was specified, make sure it exists.
   validateSecretExists ${imagePullSecretName} ${namespace}
   failIfValidationErrors

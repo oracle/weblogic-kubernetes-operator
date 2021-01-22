@@ -376,7 +376,7 @@ function createWebLogicDomain {
     bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
     -p ${weblogicAccountPassword} -d ${domainUID}
 
-    # Create Docker Credentials.
+    # Create Container Registry Credentials.
     bash $dirKuberetesSecrets/create-docker-credentials-secret.sh \
       -e ${docker-email} \
       -p ${dockerPassword} \

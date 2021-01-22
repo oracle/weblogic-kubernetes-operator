@@ -12,7 +12,7 @@ your state store, leasing tables, and such, in that database, then you can use t
 sample to install the database.
 
 {{% notice warning %}}
-The Oracle Database Docker images are only supported for non-production use.
+The Oracle Database images are only supported for non-production use.
 For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
@@ -107,7 +107,7 @@ spec:
 If you have not previously done so, you will need to go to the [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the license for the [Oracle database image](https://container-registry.oracle.com/pls/apex/f?p=113:4:11538835301670).
 
-Create a Docker registry secret so that Kubernetes can pull the database image:
+Create a container registry secret so that Kubernetes can pull the database image:
 
 ```
 kubectl create secret docker-registry regsecret \

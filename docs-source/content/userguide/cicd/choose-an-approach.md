@@ -31,7 +31,7 @@ various approaches.  We can start by asking ourselves questions like these:
   so on. All of these kinds of updates can be made with configuration overrides
   for Domain in PV and Domain in Image, and with model updates for Model in Image.
   These are placed in a Kubernetes ConfigMap, meaning that they are outside of the image, so
-  they do not require rebuilding the Docker image.  If all of your changes fit into
+  they do not require rebuilding the image.  If all of your changes fit into
   this category, it is probably much better to just use configuration overrides
   for Domain in PV and Domain in Image, and use model updates for Model in Image.
 
@@ -40,7 +40,7 @@ various approaches.  We can start by asking ourselves questions like these:
   configuration overrides, Model in Image model updates, and such?*  
 
   If your changes fit into this category, and you have used the "domain-in-image"
-  approach and the Docker layering model, then you only need to update the top layer
+  approach and the image layering model, then you only need to update the top layer
   of your image.  This is relatively easy compared to making changes in lower layers.
   You could create a new layer with the changes, or you could rebuild/replace the
   existing top layer with a new one.  Which approach you choose depends mainly on
@@ -72,8 +72,8 @@ The diagram below summarizes these concerns in a decision tree for the “domain
 ![Decision model for the "domain-in-image" approach](/weblogic-kubernetes-operator/images/flowchart.png)
 
 If you are using the "domain-on-PV" or "model-in-image" approach, many of these concerns become
-moot because you have an effective separation between your domain and the Docker image.
-There is still the possibility that an update in the Docker image could affect your domain;
+moot because you have an effective separation between your domain and the image.
+There is still the possibility that an update in the image could affect your domain;
 for example, if you updated the JDK, you may need to update some of your domain scripts
 to reflect the new JDK path.  
 
@@ -81,4 +81,4 @@ However, in this scenario, your environment is much closer to what you are proba
 to in a traditional (non-Kubernetes) environment, and you will probably find that all of
 the practices you used from that pre-Kubernetes environment are directly applicable here
 too, with just some small modifications.  For example, applying a WebLogic patch would
-now involve building a new Docker image.
+now involve building a new image.
