@@ -82,7 +82,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -203,28 +202,35 @@ class ItElasticLoggingFluentd {
    */
   @AfterAll
   void tearDown() {
-    // uninstall ELK Stack
-    if (elasticsearchParams != null) {
-      logger.info("Uninstall Elasticsearch pod");
-      assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
-          "uninstallAndVerifyElasticsearch failed with ApiException");
-    }
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      // uninstall ELK Stack
+      if (elasticsearchParams != null) {
+        logger.info("Uninstall Elasticsearch pod");
+        assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
+            "uninstallAndVerifyElasticsearch failed with ApiException");
+      }
 
-    if (kibanaParams != null) {
-      logger.info("Uninstall Elasticsearch pod");
-      assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
-          "uninstallAndVerifyKibana failed with ApiException");
-    }
+      if (kibanaParams != null) {
+        logger.info("Uninstall Elasticsearch pod");
+        assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
+            "uninstallAndVerifyKibana failed with ApiException");
+      }
 
-    // delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
+      // delete domain custom resource
+      logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
+      assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
+          "deleteDomainCustomResource failed with ApiException");
+      logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
+    }
   }
 
   /**
-   * Use log information send by fluentd to Elasticsearch to query logs of serverName=adminServerPodName.
+   * WebLogic domain is configured to use Fluentd to send log information to Elasticsearch
+   * fluentd runs as a separate container in the Administration Server and Managed Server pods
+   * fluentd tails the domain logs files and exports them to Elasticsearch
+   * Query Elasticsearch repository for WebLogic log of serverName=adminServerPodName.
    * Verify that total number of logs for serverName=adminServerPodName is not zero
    * and failed if count is zero.
    */
@@ -234,8 +240,20 @@ class ItElasticLoggingFluentd {
     // Verify that number of logs is not zero and failed if count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=serverName:" + adminServerPodName;
+    int count = -1;
+    int failedCount = -1;
+    String results = execSearchQuery(queryCriteria, FLUENTD_INDEX_KEY);
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(results);
+    if (matcher.find()) {
+      count = Integer.parseInt(matcher.group(1));
+      failedCount = Integer.parseInt(matcher.group(2));
+    }
 
-    verifyCountsHitsInSearchResults(queryCriteria, regex, FLUENTD_INDEX_KEY, true);
+    logger.info("Total count of logs: " + count);
+    assertTrue(count > 0, "Total count of logs should be more than 0!");
+    assertTrue(failedCount == 0, "Total failed count should be 0!");
+    logger.info("Total failed count: " + failedCount);
 
     logger.info("Query logs of serverName={0} succeeded", adminServerPodName);
   }
@@ -453,39 +471,6 @@ class ItElasticLoggingFluentd {
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
-  }
-
-  private void verifyCountsHitsInSearchResults(String queryCriteria, String regex,
-                                   String index, boolean checkCount, String... args) {
-    String checkExist = (args.length == 0) ? "" : args[0];
-    int count = -1;
-    int failedCount = -1;
-    String hits = "";
-    String results = execSearchQuery(queryCriteria, index);
-    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
-    Matcher matcher = pattern.matcher(results);
-    if (matcher.find()) {
-      count = Integer.parseInt(matcher.group(1));
-      if (checkCount) {
-        failedCount = Integer.parseInt(matcher.group(2));
-      } else {
-        hits = matcher.group(2);
-      }
-    }
-
-    logger.info("Total count of logs: " + count);
-    if (!checkExist.equalsIgnoreCase("notExist")) {
-      assertTrue(kibanaParams != null, "Failed to install Kibana");
-      assertTrue(count > 0, "Total count of logs should be more than 0!");
-      if (checkCount) {
-        assertTrue(failedCount == 0, "Total failed count should be 0!");
-        logger.info("Total failed count: " + failedCount);
-      } else {
-        assertFalse(hits.isEmpty(), "Total hits of search is empty!");
-      }
-    } else {
-      assertTrue(count == 0, "Total count of logs should be zero!");
-    }
   }
 
   private String execSearchQuery(String queryCriteria, String index) {
