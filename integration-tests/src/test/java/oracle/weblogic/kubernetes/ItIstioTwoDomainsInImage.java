@@ -278,7 +278,7 @@ class ItIstioTwoDomainsInImage {
          checkAppUsingHostHeader(consoleUrl, domainNamespace1 + ".org");
     assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
     logger.info("WebLogic console on domain1 is accessible");
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
+    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),

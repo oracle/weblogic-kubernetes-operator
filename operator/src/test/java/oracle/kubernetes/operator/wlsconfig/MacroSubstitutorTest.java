@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.Properties;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;

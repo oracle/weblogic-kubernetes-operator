@@ -17,7 +17,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
    - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
    - [Oracle Container Registry](#oracle-container-registry)
  - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
- - [Create Docker image](#create-docker-image)
+ - [Create an image](#create-an-image)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Invoke the web application](#invoke-the-web-application)
 
@@ -137,7 +137,7 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 
-#### Create Docker image
+#### Create an image
 
 
   - [Image creation prerequisites](#image-creation-prerequisites)
@@ -159,7 +159,7 @@ $ cp -r /root/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-web
 
 **Note**: We will refer to this working copy of the sample as `/tmp/mii-sample`; however, you can use a different location.
 
-Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image Docker images.
+Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
 For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.7` and `1.9.5` respectively, call:
 
@@ -328,7 +328,7 @@ If you don’t see the `imagetool` directory, then you missed a step in the prer
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that’s referenced in the WIT cache into the image.
       - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
       - This lets WIT implicitly assume it’s the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -340,7 +340,7 @@ When the command succeeds, it should end with output like the following:
 [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
 ```
 
-Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v1`.
+Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
 
 > Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
@@ -442,7 +442,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # the image for 'Model in Image' domains.
       domainHome: /u01/domains/sample-domain1
 
-      # The WebLogic Server Docker image that the Operator uses to start the domain
+      # The WebLogic Server image that the Operator uses to start the domain
       image: "model-in-image:WLS-v1"
 
       # Defaults to "Always" if image tag (version) is ':latest'

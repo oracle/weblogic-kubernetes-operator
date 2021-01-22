@@ -20,9 +20,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.hasEntry;
@@ -60,10 +60,7 @@ public class BeforeAdminServiceStepTest {
     return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
-  /**
-   * Setup test environment.
-   */
-  @Before
+  @BeforeEach
   public void setUp()  {
     mementos.add(TestUtils.silenceOperatorLogger());
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
@@ -79,11 +76,7 @@ public class BeforeAdminServiceStepTest {
         .withChannel("default", NODE_PORT_NUM);
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

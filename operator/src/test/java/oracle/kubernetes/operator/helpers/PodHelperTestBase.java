@@ -74,10 +74,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -233,7 +232,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -280,7 +279,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
    * Tear down test.
    * @throws Exception on failure
    */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();
@@ -750,7 +749,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  @Ignore("Ignored: getCreatedPodSpecContainer is returning null because Pod is not yet created")
   public void whenPodCreated_containerUsesListenPort() {
     V1Container v1Container = getCreatedPodSpecContainer();
 
