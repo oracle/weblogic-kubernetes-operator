@@ -65,17 +65,17 @@ public class DomainSpec {
   private Boolean includeServerOutInPodLog;
 
   @ApiModelProperty(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic Server image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   @ApiModelProperty(
-      "The image pull policy for the WebLogic Docker image. "
+      "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
   private String imagePullPolicy;
 
-  @ApiModelProperty("A list of image pull secrets for the WebLogic Docker image.")
+  @ApiModelProperty("A list of image pull secrets for the WebLogic Server image.")
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
 
   @ApiModelProperty(
@@ -87,14 +87,14 @@ public class DomainSpec {
   @Deprecated
   @ApiModelProperty(
       "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+          + " True indicates that the domain home file system is contained in the image"
           + " specified by the image field. False indicates that the domain home file system is located"
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
   @ApiModelProperty(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " Image indicates that the domain home file system is contained in the image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."

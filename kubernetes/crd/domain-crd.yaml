@@ -132,7 +132,7 @@ spec:
                   type: string
               imagePullSecrets:
                 type: array
-                description: A list of image pull Secrets for the WebLogic container
+                description: A list of image pull Secrets for the WebLogic Server
                   image.
                 items:
                   type: object
@@ -5173,11 +5173,11 @@ spec:
                 - ADMIN
               image:
                 type: string
-                description: The WebLogic container image; required when `domainHomeSourceType`
+                description: The WebLogic Server image; required when `domainHomeSourceType`
                   is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
               imagePullPolicy:
                 type: string
-                description: The image pull policy for the WebLogic container image.
+                description: The image pull policy for the WebLogic Server image.
                   Legal values are Always, Never, and IfNotPresent. Defaults to Always
                   if image ends in :latest; IfNotPresent, otherwise.
                 enum:
