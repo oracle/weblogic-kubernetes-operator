@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| January 22, 2021 | v3.1.2 | no | Resolved an issue where the operator failed to start servers where the pods were configured to have an annotation containing a forward slash. |
 | December 17, 2020 | v3.1.1 | no | Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters. |
 | November 24, 2020 | v3.0.4 | no | This release contains a back-ported fix from 3.1.0 for Managed Server pods that do not properly restart following a rolling activity. |
 | November 13, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. Added support for Tanzu Kubernetes Service. |
@@ -32,6 +33,10 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.1.2
+
+* Resolved an issue where the operator failed to start servers where the pods were configured to have an annotation containing a forward slash ([#2089](https://github.com/oracle/weblogic-kubernetes-operator/pull/2089)).
 
 #### Operator 3.1.1
 
