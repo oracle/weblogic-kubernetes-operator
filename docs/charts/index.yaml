@@ -15,7 +15,7 @@ entries:
     appVersion: 3.1.1
     created: "2021-01-13T12:37:48.513192-05:00"
     description: Helm chart for configuring the WebLogic operator.
-    digest: 202d148fd3db1ce45d22d4eab3e84bea9bf774addd9e0bc65f9312207a6e4968
+    digest: d0e371926643a25769de441cc336198e6a7d53b0f33b66d956726612046f89b1
     name: weblogic-operator
     type: application
     urls:
