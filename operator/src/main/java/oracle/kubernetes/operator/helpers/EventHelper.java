@@ -429,6 +429,70 @@ public class EventHelper {
       public String calculateResourceName(DomainPresenceInfo info, String namespace) {
         return namespace;
       }
+    },
+    START_MANAGING_NAMESPACE {
+      @Override
+      public String getReason() {
+        return EventConstants.START_MANAGING_NAMESPACE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public String getMessage(String resourceName, EventData eventData) {
+        return String.format(EventConstants.START_MANAGING_NAMESPACE_PATTERN, resourceName);
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        metadata
+            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createNSEventInvolvedObject(eventData);
+      }
+
+      @Override
+      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
+        return namespace;
+      }
+    },
+    STOP_MANAGING_NAMESPACE {
+      @Override
+      public String getReason() {
+        return EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.STOP_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public String getMessage(String resourceName, EventData eventData) {
+        return String.format(EventConstants.STOP_MANAGING_NAMESPACE_PATTERN, resourceName);
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        metadata
+            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createNSEventInvolvedObject(eventData);
+      }
+
+      @Override
+      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
+        return namespace;
+      }
     };
 
     private static V1ObjectReference createNSEventInvolvedObject(EventData eventData) {

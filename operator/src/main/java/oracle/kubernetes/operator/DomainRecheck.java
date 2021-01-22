@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 class DomainRecheck {
@@ -233,6 +234,8 @@ class DomainRecheck {
     private Step addNSWatchingStartingEventStep() {
       return Step.chain(
           EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          EventHelper.createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(ns)
+              .resourceName(getOperatorNamespace())),
           getNext());
     }
   }

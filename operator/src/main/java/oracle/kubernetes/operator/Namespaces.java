@@ -28,8 +28,10 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /**
  * A class which manages the strategy for recognizing the namespaces in which the operator will manage
@@ -243,7 +245,10 @@ public class Namespaces {
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
       return new StepAndPacket(
-          createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
+          Step.chain(
+              createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
+              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(getOperatorPodName())
+                  .namespace(getOperatorNamespace()))),
           packet.copy());
     }
 
