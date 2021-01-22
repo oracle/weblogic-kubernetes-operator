@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.68.3" />
-    <meta name="description" content="Creating or obtaining WebLogic Docker images.">
+    <meta name="description" content="Creating or obtaining WebLogic Server images.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,18 +12,18 @@
     <title>Base images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611327684" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611344185" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611344185"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611327684"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611344185"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611344185"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611344185"></script>
 
     
   </div>
@@ -1208,9 +1208,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Docker image layering" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Container image layering" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/cicd/layering/">
-        Docker image layering
+        Container image layering
         
         </a>
     </li>
@@ -2365,9 +2365,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Docker image protection" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">
-        Docker image protection
+        Container image protection
         
         </a>
     </li>
@@ -2900,19 +2900,19 @@
 
 	<h4 id="contents">Contents</h4>
 <ul>
-<li><a href="#creating-or-obtaining-weblogic-docker-images">Creating or obtaining WebLogic Docker images</a></li>
+<li><a href="#creating-or-obtaining-weblogic-server-images">Creating or obtaining WebLogic Server images</a></li>
 <li><a href="#setting-up-secrets-to-access-the-oracle-container-registry">Setting up secrets to access the Oracle Container Registry</a></li>
 <li><a href="#obtaining-standard-images-from-the-oracle-container-registry">Obtaining standard images from the Oracle Container Registry</a></li>
 <li><a href="#creating-a-custom-image-with-patches-applied">Creating a custom image with patches applied</a></li>
 <li><a href="#creating-a-custom-image-with-your-domain-inside-the-image">Creating a custom image with your domain inside the image</a></li>
 </ul>
-<h4 id="creating-or-obtaining-weblogic-docker-images">Creating or obtaining WebLogic Docker images</h4>
-<p>You will need Docker images to run your WebLogic domains in Kubernetes.
+<h4 id="creating-or-obtaining-weblogic-server-images">Creating or obtaining WebLogic Server images</h4>
+<p>You will need container images to run your WebLogic domains in Kubernetes.
 There are two main options available:</p>
 <ul>
-<li>Use a Docker image which contains the WebLogic Server binaries but
+<li>Use an image which contains the WebLogic Server binaries but
 not the domain, or</li>
-<li>Use a Docker image which contains both the WebLogic Server binaries
+<li>Use an image which contains both the WebLogic Server binaries
 and the domain directory.</li>
 </ul>
 <p>If you want to use the first option, then you will need to obtain the standard
@@ -2920,14 +2920,14 @@ WebLogic Server image from the Oracle Container Registry; see <a href="#obtainin
 This image already contains the mandatory patches applied, as described in <a href="#creating-a-custom-image-with-patches-applied">Creating a custom image with patches applied</a>.
 If you want to use additional patches, you can customize that process to include additional patches.</p>
 <p>If you want to use the second option, which includes the domain directory
-inside the Docker image, then you will need to build your own Docker images,
+inside the image, then you will need to build your own images,
 as described in <a href="#creating-a-custom-image-with-your-domain-inside-the-image">Creating a custom image with your domain inside the image</a>.</p>
 <h4 id="setting-up-secrets-to-access-the-oracle-container-registry">Setting up secrets to access the Oracle Container Registry</h4>
 
 <div class="notices note" ><p>This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930; the standard image, <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code>, already includes this patch pre-applied. Images for WebLogic Server 12.2.1.4.0 do not require any patches.</p>
 </div>
 
-<p>In order for Kubernetes to obtain the WebLogic Server Docker image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes Secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:</p>
+<p>In order for Kubernetes to obtain the WebLogic Server image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes Secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:</p>
 <pre><code>$ kubectl create secret docker-registry SECRET_NAME \
   -n NAMESPACE \
   --docker-server=container-registry.oracle.com \
@@ -2938,12 +2938,12 @@ as described in <a href="#creating-a-custom-image-with-your-domain-inside-the-im
 <p>It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
 If you choose this approach, you do not require the Kubernetes Secret.</p>
 <h4 id="obtaining-standard-images-from-the-oracle-container-registry">Obtaining standard images from the Oracle Container Registry</h4>
-<p>The Oracle Container Registry contains images for licensed commercial Oracle software products that you may use in your enterprise. To access the Oracle Registry Server, you must have an Oracle Single Sign-On (SSO) account. The Oracle Container Registry provides a web interface that allows an administrator to authenticate and then to select the images for the software that your organization wishes to use. Oracle Standard Terms and Restrictions terms must be agreed to using the web interface. After the Oracle Standard Terms and Restrictions have been accepted, you can pull images of the software from the Oracle Container Registry using the standard Docker pull command.</p>
+<p>The Oracle Container Registry contains images for licensed commercial Oracle software products that you may use in your enterprise. To access the Oracle Registry Server, you must have an Oracle Single Sign-On (SSO) account. The Oracle Container Registry provides a web interface that allows an administrator to authenticate and then to select the images for the software that your organization wishes to use. Oracle Standard Terms and Restrictions terms must be agreed to using the web interface. After the Oracle Standard Terms and Restrictions have been accepted, you can pull images of the software from the Oracle Container Registry using the standard <code>docker pull</code> command.</p>
 <p>To pull an image from the Oracle Container Registry, in a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in
 using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the Sign In link to create them.</p>
 <p>Use the web interface to accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy.
 Your acceptance of these terms is stored in a database that links the software images to your Oracle Single Sign-On login credentials.</p>
-<p>The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.</p>
+<p>The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.</p>
 <p>First, you will need to log in to the Oracle Container Registry:</p>
 <pre><code>$ docker login container-registry.oracle.com
 </code></pre><p>Then, you can pull the image with this command:</p>
@@ -3000,7 +3000,7 @@ $ docker images
 </code></pre></li>
 </ol>
 <h4 id="creating-a-custom-image-with-your-domain-inside-the-image">Creating a custom image with your domain inside the image</h4>
-<p>You can also create a Docker image with the WebLogic domain inside the image.
+<p>You can also create an image with the WebLogic domain inside the image.
 <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/">Samples</a>
 are provided that demonstrate how to create the image using either:</p>
 <ul>
@@ -3013,7 +3013,7 @@ with the mandatory patches installed as this base image.  This image could be ei
 the standard <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code> pre-patched image or an image you created using the instructions above.
 WebLogic Server 12.2.1.4.0 images do not require patches.</p>
 
-<div class="notices note" ><p>Oracle recommends that Docker images containing WebLogic domains
+<div class="notices note" ><p>Oracle recommends that images containing WebLogic domains
 be kept in a private repository.</p>
 </div>
 
@@ -5014,19 +5014,19 @@ be kept in a private repository.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611344185"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611344185"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611327684" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611327684"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611344185" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611344185"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

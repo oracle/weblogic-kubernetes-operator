@@ -28,7 +28,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
       
       <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
- When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
+ When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
  The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
@@ -59,7 +59,7 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
       <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/node-heating/</guid>
-      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary Docker images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
     </item>
     
     <item>

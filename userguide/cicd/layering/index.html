@@ -4,26 +4,26 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.68.3" />
-    <meta name="description" content="Learn about Docker image layering and why it is important.">
+    <meta name="description" content="Learn about Container image layering and why it is important.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Docker image layering :: WebLogic Kubernetes Operator</title>
+    <title>Container image layering :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611327684" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611344185" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611344185"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611327684"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611344185"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611344185"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611344185"></script>
 
     
   </div>
@@ -1208,9 +1208,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Docker image layering" class="dd-item active">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Container image layering" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/userguide/cicd/layering/">
-        Docker image layering
+        Container image layering
         
         </a>
     </li>
@@ -2365,9 +2365,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Docker image protection" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">
-        Docker image protection
+        Container image protection
         
         </a>
     </li>
@@ -2844,7 +2844,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/cicd/'>CI/CD considerations</a> > Docker image layering
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/cicd/'>CI/CD considerations</a> > Container image layering
           
          
           
@@ -2883,7 +2883,7 @@
           
             <h1>
               
-              Docker image layering
+              Container image layering
             </h1>
           
 
@@ -2903,14 +2903,14 @@ if (!doNotTrack) {
 <script async src='https://www.google-analytics.com/analytics.js'></script>
 
 
-<p>Docker images are composed of layers, as shown in the diagram below.  If you download
+<p>Container images are composed of layers, as shown in the diagram below.  If you download
 the standard <code>weblogic:12.2.1.4</code> image from the <a href="https://container-registry.oracle.com">Oracle Container Registry</a>,
 then you can see these layers using the command  <code>docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4</code>
 (the domain layer will not be there).  You are not required to use layers, but
 efficient use of layers is considered a best practice.</p>
-<p><img src="/weblogic-kubernetes-operator/images/layers.png" alt="Docker image layers"></p>
+<p><img src="/weblogic-kubernetes-operator/images/layers.png" alt="Container image layers"></p>
 <h4 id="why-is-it-important-to-maintain-the-layering-of-images">Why is it important to maintain the layering of images?</h4>
-<p>Layering is an important technique in Docker images.  Layers are important because they
+<p>Layering is an important technique in container images.  Layers are important because they
 are shared between images.  Let&rsquo;s consider an example.  In the diagram below, we have
 two domains that we have built using layers.  The second domain has some additional
 patches that we needed on top of those provided in the standard WebLogic image.  Those
@@ -2919,15 +2919,15 @@ layer on top of that.</p>
 <p>Let&rsquo;s assume we have a three-node Kubernetes cluster and we are running both domains
 in this cluster.  Sooner or later, we will end up with servers in each domain running
 on each node, so eventually all of the image layers are going to be needed on all of
-the nodes.  Using the approach shown below (that is, standard Docker layering techniques)
+the nodes.  Using the approach shown below (that is, standard image layering techniques)
 we are going to need to store all six of these layers on each node.  If you add up the
 sizes, then you will see that it comes out to about 1.5GB per node.</p>
-<p><img src="/weblogic-kubernetes-operator/images/more-layers.png" alt="Docker images with layers"></p>
+<p><img src="/weblogic-kubernetes-operator/images/more-layers.png" alt="Container images with layers"></p>
 <p>Now, let&rsquo;s consider the alternative, where we do not use layers, but instead,
 build images for each domain and put everything in one big layer (this is often
 called &ldquo;squashing&rdquo; the layers).  In this case, we have the same content, but if
 you add up the size of the images, you get 2.9GB per node. That’s almost twice the size!</p>
-<p><img src="/weblogic-kubernetes-operator/images/no-layers.png" alt="Docker images without layers"></p>
+<p><img src="/weblogic-kubernetes-operator/images/no-layers.png" alt="Container images without layers"></p>
 <p>With only two domains, you start to see the problem.  In the layered approach, each
 new domain is adding only a relatively very small increment.  In the non-layered
 approach, each new domain is essentially adding the entire stack over again.  Imagine
@@ -4953,19 +4953,19 @@ start the container.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611344185"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611344185"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611327684" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611327684"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611344185" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611344185"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

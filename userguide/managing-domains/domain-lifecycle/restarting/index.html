@@ -12,18 +12,18 @@
     <title>Restarting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611327684" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611327684" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1611344185" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611344185" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611344185"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611327684"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611344185"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611344185"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611327684"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611344185"></script>
 
     
   </div>
@@ -1208,9 +1208,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Docker image layering" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/cicd/layering/" title="Container image layering" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/cicd/layering/">
-        Docker image layering
+        Container image layering
         
         </a>
     </li>
@@ -2365,9 +2365,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Docker image protection" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/image-protection/">
-        Docker image protection
+        Container image protection
         
         </a>
     </li>
@@ -3063,21 +3063,21 @@ in the domain be shut down and restarted.</p>
 <p>Follow these steps to create new rolling-compatible image if you only need to patch your WebLogic Server domain or update application deployment files:</p>
 <p>a. Select a different name for the new image.</p>
 <p>b. For Domain in Image, it is important to keep your original domain home in your new image.</p>
-<p>Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (<code>COPY</code>
-command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.</p>
+<p>Using the same domain home-in-image image as a base, create a new image by copying (<code>COPY</code>
+command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the image during the image build.</p>
 
 <div class="notices note" ><p>The key here is to make sure that you do not re-run WLST or WDT to create a new domain home even though it will
 have the same configuration. Creating a new domain will change the domain encryption secret and you won&rsquo;t be able to do a
 rolling restart.</p>
 </div>
 
-<p>c. Deploy the new Docker image to your Docker repository with the new name.</p>
+<p>c. Deploy the new image to your container registry with the new name.</p>
 <p>d. Update the <code>image</code> field of the Domain YAML file, specifying the new image name.</p>
 <p>For example:</p>
 <pre><code> ```
  domain:
    spec:
-     image: ghcr.io/oracle/weblogic-updated:3.1.1
+     image: ghcr.io/oracle/weblogic-updated:3.1.2
  ```
 </code></pre>
 <p>e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.</p>
@@ -5133,19 +5133,19 @@ value to a large number, for example, 15 minutes.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611344185"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611327684"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611327684"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1611344185"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611344185"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611327684" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611327684"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611344185" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611344185"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

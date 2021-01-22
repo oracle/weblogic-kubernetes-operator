@@ -65,7 +65,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>Security requirements to run WebLogic in OpenShift WebLogic Server Kubernetes Operator Docker images starting with version 3.1 and WebLogic Server Docker images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
+      <description>Security requirements to run WebLogic in OpenShift WebLogic Server Kubernetes Operator images starting with version 3.1 and WebLogic Server images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
 Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
 # Setup filesystem and oracle user # Adjust file permissions, go to /u01 as user &amp;#39;oracle&amp;#39; to proceed with WLS installation # ------------------------------------------------------------ RUN mkdir -p /u01 &amp;amp;&amp;amp; \  chmod 775 /u01 &amp;amp;&amp;amp; \  useradd -b /u01 -d /u01/oracle -m -s /bin/bash oracle &amp;amp;&amp;amp; \  chown oracle:root /u01 COPY --from=builder --chown=oracle:root /u01 /u01 OpenShift, by default, enforces the restricted security context constraint which allocates a high, random UID in the root group for each container.</description>
     </item>

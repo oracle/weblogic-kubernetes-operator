@@ -22,23 +22,23 @@ This FAQ describes some considerations to be aware of when you manage the namesp
     </item>
     
     <item>
-      <title>Docker image layering</title>
+      <title>Container image layering</title>
       <link>/weblogic-kubernetes-operator/userguide/cicd/layering/</link>
       <pubDate>Thu, 11 Apr 2019 13:15:32 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/cicd/layering/</guid>
-      <description>Docker images are composed of layers, as shown in the diagram below. If you download the standard weblogic:12.2.1.4 image from the Oracle Container Registry, then you can see these layers using the command docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4 (the domain layer will not be there). You are not required to use layers, but efficient use of layers is considered a best practice.
-Why is it important to maintain the layering of images? Layering is an important technique in Docker images.</description>
+      <description>Container images are composed of layers, as shown in the diagram below. If you download the standard weblogic:12.2.1.4 image from the Oracle Container Registry, then you can see these layers using the command docker inspect container-registry.oracle.com/middleware/weblogic:12.2.1.4 (the domain layer will not be there). You are not required to use layers, but efficient use of layers is considered a best practice.
+Why is it important to maintain the layering of images? Layering is an important technique in container images.</description>
     </item>
     
     <item>
-      <title>Docker image protection</title>
+      <title>Container image protection</title>
       <link>/weblogic-kubernetes-operator/security/domain-security/image-protection/</link>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
-      <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include Docker Hub and the Oracle Cloud Infrastructure Registry (OCIR).
- The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
+      <description>WebLogic domain in image protection Oracle strongly recommends storing the container images that contain a WebLogic domain home as private in the container registry. In addition to any local registry, public container registries include GItHub Container Registry and the Oracle Cloud Infrastructure Registry (OCIR).
+ The WebLogic domain home that is part of an image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
     </item>
     
     <item>
@@ -161,7 +161,7 @@ You might want to update the domain by:
       
       <guid>/weblogic-kubernetes-operator/faq/cannot-pull-image/</guid>
       <description>My domain will not start and I see errors like ImagePullBackoff or Cannot pull image
- When you see these kinds of errors, it means that Kubernetes cannot find your Docker image. The most common causes are:
+ When you see these kinds of errors, it means that Kubernetes cannot find your container image. The most common causes are:
  The image value in your Domain is set incorrectly, meaning Kubernetes will be trying to pull the wrong image. The image requires authentication or permission in order to pull it and you have not configured Kubernetes with the necessary credentials, for example in an imagePullSecret.</description>
     </item>
     
@@ -272,7 +272,7 @@ When your domain home source type is Domain in PV or Domain in Image, the operat
       
       <guid>/weblogic-kubernetes-operator/userguide/introduction/architecture/</guid>
       <description>The operator consists of the following parts:
- The operator runtime, a process that runs in a Docker container deployed into a Kubernetes Pod and which performs the actual management tasks. The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. A Helm chart for installing the operator runtime and related resources.</description>
+ The operator runtime, a process that runs in a container deployed into a Kubernetes Pod and which performs the actual management tasks. The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. A Helm chart for installing the operator runtime and related resources.</description>
     </item>
     
     <item>
@@ -344,7 +344,7 @@ You can access most of the REST services using GET, for example:
       
       <guid>/weblogic-kubernetes-operator/userguide/overview/database/</guid>
       <description>Run the Oracle database in Kubernetes If you want to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
-The Oracle Database Docker images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.</description>
+The Oracle Database images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1)</description>
     </item>
     
     <item>
@@ -362,10 +362,12 @@ The Oracle Database Docker images are only supported for non-production use. For
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/quickstart/get-images/</guid>
-      <description>Get these images and put them into your local registry.   If you don&amp;rsquo;t already have one, obtain a Docker Store account, log in to the Docker Store, and accept the license agreement for the WebLogic Server image.
-  Log in to the Docker Store from your Docker client:
-$ docker login   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1   Pull the Traefik ingress controller image:</description>
+      <description>Get these images and put them into your local registry.   Pull the operator image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.2   Pull the Traefik ingress controller image:
+$ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
+a. First time users, follow these directions.
+b. Find and then pull the WebLogic 12.2.1.4 install image:
+$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4  The WebLogic Server image, weblogic:12.</description>
     </item>
     
     <item>
@@ -425,7 +427,7 @@ The operator will use this ServiceAccount when calling the Kubernetes API server
       <pubDate>Sat, 23 Feb 2019 17:23:22 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/developerguide/integration-tests/</guid>
-      <description>The project includes integration tests that can be run against a Kubernetes cluster. If you want to use these tests, you will need to provide your own Kubernetes cluster. The Kubernetes cluster must meet the version number requirements and have Helm installed. Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
+      <description>The project includes integration tests that can be run against a Kubernetes cluster. If you want to use these tests, you will need to provide your own Kubernetes cluster. The Kubernetes cluster must meet the version number requirements and have Helm installed. Ensure that the operator container image is in a Docker registry visible to the Kubernetes cluster.
 You will need to obtain the kube.config file for an administrative user and make it available on the machine running the build.</description>
     </item>
     
@@ -468,7 +470,7 @@ In order to manage the operation of WebLogic domains in Kubernetes, the Oracle W
       <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/faq/node-heating/</guid>
-      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary Docker images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
     </item>
     
     <item>
@@ -487,7 +489,7 @@ The best practice/recommended approach is to create a &amp;ldquo;primordial doma
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/</guid>
-      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated Docker image.
+      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated image.
 In the use case, you will:
  Create an image model-in-image:WLS-v2 that is similar to the currently active model-in-image:WLS-v1 image, but with the following updates:  An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
     </item>
@@ -608,7 +610,7 @@ File permission handling on persistent volumes can differ between cloud provider
       <pubDate>Fri, 04 Oct 2019 08:08:08 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/openshift/</guid>
-      <description>Security requirements to run WebLogic in OpenShift WebLogic Server Kubernetes Operator Docker images starting with version 3.1 and WebLogic Server Docker images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
+      <description>Security requirements to run WebLogic in OpenShift WebLogic Server Kubernetes Operator images starting with version 3.1 and WebLogic Server images obtained from Oracle Container Registry after August 2020 have an oracle user with UID 1000 with the default group set to root.
 Here is an excerpt from a standard WebLogic Dockerfile that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
 # Setup filesystem and oracle user # Adjust file permissions, go to /u01 as user &amp;#39;oracle&amp;#39; to proceed with WLS installation # ------------------------------------------------------------ RUN mkdir -p /u01 &amp;amp;&amp;amp; \  chmod 775 /u01 &amp;amp;&amp;amp; \  useradd -b /u01 -d /u01/oracle -m -s /bin/bash oracle &amp;amp;&amp;amp; \  chown oracle:root /u01 COPY --from=builder --chown=oracle:root /u01 /u01 OpenShift, by default, enforces the restricted security context constraint which allocates a high, random UID in the root group for each container.</description>
     </item>
@@ -780,7 +782,7 @@ Check the introspector job If your introspector job failed, then examine the kub
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     December 17, 2020 v3.1.1 no Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters.   November 24, 2020 v3.0.4 no This release contains a back-ported fix from 3.1.0 for Managed Server pods that do not properly restart following a rolling activity.   November 13, 2020 v3.1.0 no Enhanced options for specifying managed namespaces.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     January 22, 2021 v3.1.2 no Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash.   December 17, 2020 v3.1.1 no Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters.   November 24, 2020 v3.</description>
     </item>
     
   </channel>

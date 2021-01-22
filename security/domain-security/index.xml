@@ -12,13 +12,13 @@
     
     
     <item>
-      <title>Docker image protection</title>
+      <title>Container image protection</title>
       <link>/weblogic-kubernetes-operator/security/domain-security/image-protection/</link>
       <pubDate>Fri, 08 Mar 2019 19:00:49 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/security/domain-security/image-protection/</guid>
-      <description>WebLogic domain in Docker image protection Oracle strongly recommends storing the Docker images that contain a WebLogic domain home as private in the Docker registry. In addition to any local registry, public Docker registries include Docker Hub and the Oracle Cloud Infrastructure Registry (OCIR).
- The WebLogic domain home that is part of a Docker image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
+      <description>WebLogic domain in image protection Oracle strongly recommends storing the container images that contain a WebLogic domain home as private in the container registry. In addition to any local registry, public container registries include GItHub Container Registry and the Oracle Cloud Infrastructure Registry (OCIR).
+ The WebLogic domain home that is part of an image contains sensitive information about the domain including keys and credentials that are used to access external resources (for example, the data source password).</description>
     </item>
     
     <item>

@@ -57,7 +57,7 @@
       <pubDate>Sat, 23 Feb 2019 17:32:31 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/</guid>
-      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated Docker image.
+      <description>The Update 3 use case demonstrates deploying an updated WebLogic application to the running Update 1 use case domain using an updated image.
 In the use case, you will:
  Create an image model-in-image:WLS-v2 that is similar to the currently active model-in-image:WLS-v1 image, but with the following updates:  An updated web application v2 at the myapp-v2 directory path within the WDT application archive instead of myapp-v1. An updated model YAML file within the image that points to the new web application path.</description>
     </item>
