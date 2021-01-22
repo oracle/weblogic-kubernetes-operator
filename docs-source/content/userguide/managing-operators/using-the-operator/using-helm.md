@@ -98,9 +98,9 @@ javaLoggingLevel:  "FINE"
 #### Creating the operator pod
 
 ##### `image`
-Specifies the Docker image containing the operator code.
+Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.1.2`.
 
 Example:
 ```
@@ -108,7 +108,7 @@ image:  "ghcr.io/oracle/weblogic-kubernetes-operator:some-tag"
 ```
 
 ##### `imagePullPolicy`
-Specifies the image pull policy for the operator Docker image.
+Specifies the image pull policy for the operator container image.
 
 Defaults to `IfNotPresent`.
 
@@ -118,7 +118,7 @@ image:  "Always"
 ```
 
 ##### `imagePullSecrets`
-Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator Docker image. You are responsible for creating the secret. If no secrets are required, then omit this property.
+Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator image. You are responsible for creating the secret. If no secrets are required, then omit this property.
 
 Example:
 ```
@@ -343,7 +343,7 @@ elkIntegrationEnabled:  true
 ```
 
 ##### `logStashImage`
-Specifies the Docker image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is false.
+Specifies the container image containing Logstash.  This parameter is ignored if `elkIntegrationEnabled` is false.
 
 Defaults to `logstash:6.6.0`.
 

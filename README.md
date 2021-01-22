@@ -3,7 +3,7 @@
 Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
 
 * Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.
-* Create a WebLogic domain in a Docker image.
+* Create a WebLogic domain in a container image.
 * Override certain aspects of the WebLogic domain configuration.
 * Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 * Start servers based on declarative startup parameters and desired states.
@@ -17,8 +17,8 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.1.1.
-This release was published on December 17, 2020.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.1.2.
+This release was published on January 22, 2021.
 ***
 
 # Documentation

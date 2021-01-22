@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
 # This script is to validate if resources are ready for creating a new WebLogic domain.
 # It will validate the following resources:
 #   * Azure resource group: check if it exists
-#   * Azure Kubenetes Service instance: check if it is created
+#   * Azure Kubernetes Service instance: check if it is created
 #   * Azure storage account: check if it is created
 #   * Azure file share: check if it's created
-#   * Kubenetes secret for Docker account: check if it's created
-#   * Kubenetes secret for storage account: check if it's created
-#   * Kubenetes secret for WebLogic domain: check if it's created
+#   * Kubernetes secret for container registry account: check if it's created
+#   * Kubernetes secret for storage account: check if it's created
+#   * Kubernetes secret for WebLogic domain: check if it's created
 #   * Persistent Volume: check if it's mounted and verify the status and storage class
 #   * Persistent Volume Claim: check if it's mounted and verify the status and storage class
 
@@ -21,16 +21,16 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
   echo "Arguments"
-  echo "  --aks-name          [Required] ：Azure Kubernetes Servie instance name. "
+  echo "  --aks-name          [Required] ：Azure Kubernetes Service instance name. "
   echo "  --file-share        [Required] ：File share name."
   echo "  --resource-group -g [Required] ：Resource group name."
-  echo "  --storage-account   [Required] ：Strorage account name."
+  echo "  --storage-account   [Required] ：Storage account name."
   
   echo "  --domain-uid -d     [Required] ：Domain UID."
   echo "  --pv-name    [Required] : Persistent Volume name."
   echo "  --pvc-name   [Required] : Persistent Volume Claim name."
-  echo "  --secret-docker     [Required] : Name of the Kubenetes secret that stores docker account."
-  echo "  --secret-storage    [Required] : Name of the  Kubenetes secret that stores Azure storage file share credentials."
+  echo "  --secret-docker     [Required] : Name of the Kubernetes secret that stores docker account."
+  echo "  --secret-storage    [Required] : Name of the  Kubernetes secret that stores Azure storage file share credentials."
   echo "  --help -h                      ：Help"
   exit $1
 }
@@ -42,7 +42,7 @@ while test $# -gt 0; do
         if test $# -gt 0; then
             export aksName=$1
         else
-            echo "Azure Kubenetes Service instance name is required."
+            echo "Azure Kubernetes Service instance name is required."
             exit 1
         fi
         shift
@@ -112,7 +112,7 @@ while test $# -gt 0; do
         if test $# -gt 0; then
             export secretDocker=$1
         else
-            echo "Secret name for Docker Account is required."
+            echo "Secret name for Container Registry Account is required."
             exit 1
         fi
         shift
@@ -187,7 +187,7 @@ function fail {
 function validateAzLogin {
     az account show
     if [ $? -ne 0 ]; then
-        fail "Pleaze run az login to setup account."
+        fail "Please run az login to setup account."
     fi
 }
 
@@ -203,7 +203,7 @@ function validateStorageAccount {
     echo $ret
     nameAvailable=$(echo "$ret" | grep "AlreadyExists")
     if [ -z "$nameAvailable" ];then
-      fail "Storage account ${storageAccount} is unavaliable."
+      fail "Storage account ${storageAccount} is unavailable."
     fi
 }
 
@@ -221,7 +221,7 @@ function validateFileShare {
     echo Check if file share exists
     ret=$( az storage share exists --name ${fileShare} --account-name ${storageAccount} --connection-string $azureStorageConnectionString | grep "exists" | grep false)
     if [ -n "$ret" ];then 
-      fail "File share ${fileShare} is unavaliable."
+      fail "File share ${fileShare} is unavailable."
     fi
 }
 
@@ -302,7 +302,7 @@ function validatePVC {
 function validateOperator {
     ret=$(kubectl get pods | grep "weblogic-operator" | grep "Running")
     if [ -z "${ret}" ]; then
-        fail "Please make sure weblogic operator is running."
+        fail "Please make sure WebLogic operator is running."
     fi
 }
 
@@ -318,12 +318,12 @@ function pass {
     echo "PASS"
     echo "You can create your domain with the following resources ready:"
     echo "  Azure resource group: ${resourceGroup}"
-    echo "  Azure Kubenetes Service instacne: ${aksName}"
+    echo "  Azure Kubernetes Service instance: ${aksName}"
     echo "  Azure storage account: ${storageAccount}"
     echo "  Azure file share: ${fileShare}"
-    echo "  Kubenetes secret for Azure storage: ${secretStorage}"
-    echo "  Kubenetes secret for Docker Account: ${secretDocker}"
-    echo "  Kubenetes secret for Weblogic domain: ${secretWebLogic}"
+    echo "  Kubernetes secret for Azure storage: ${secretStorage}"
+    echo "  Kubernetes secret for Container Registry Account: ${secretDocker}"
+    echo "  Kubernetes secret for WebLogic domain: ${secretWebLogic}"
     echo "  Persistent Volume: ${pvName}"
     echo "  Persistent Volume Claim: ${pvcName}"
 }

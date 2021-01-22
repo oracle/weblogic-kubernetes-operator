@@ -6,7 +6,7 @@
 persistentVolumeClaimName: <pv-claim-name>
 
 # imagePullSecrets contains an optional list of Kubernetes secrets, that are needed
-# to access the registry containing the apache webtier Docker image.
+# to access the registry containing the apache webtier image.
 # If no secrets are required, then omit this property.
 # 
 # Example : a secret is needed, and has been stored in 'my-apache-webtier-secret'
