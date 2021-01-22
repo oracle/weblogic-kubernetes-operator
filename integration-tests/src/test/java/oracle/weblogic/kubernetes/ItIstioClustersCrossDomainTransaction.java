@@ -285,7 +285,7 @@ public class ItIstioClustersCrossDomainTransaction {
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
+        K8S_NODEPORT_HOST1, istioIngressPort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
@@ -323,7 +323,7 @@ public class ItIstioClustersCrossDomainTransaction {
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST, istioIngressPort, domain1Namespace, domain2Namespace);
+        K8S_NODEPORT_HOST1, istioIngressPort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
