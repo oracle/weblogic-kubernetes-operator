@@ -17,7 +17,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
    - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
    - [Oracle Container Registry](#oracle-container-registry)
  - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
- - [Create Docker image](#create-docker-image)
+ - [Create an image](#create-an-image)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Invoke the web application](#invoke-the-web-application)
 
@@ -137,7 +137,7 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 
-#### Create Docker image
+#### Create an image
 
 
   - [Image creation prerequisites](#image-creation-prerequisites)
