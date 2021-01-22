@@ -269,7 +269,7 @@ For example, given the service principal created above, the following values mus
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | `appId` |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | `password` |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | `tenant` |
-| `dockerEmail` | `yourDockerEmail` | Your Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image from the Oracle Container Registry. |
+| `dockerEmail` | `yourDockerEmail` | Your Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image from the Oracle Container Registry. |
 | `dockerPassword` | `yourDockerPassword`| Your Oracle Single Sign-On (SSO) account password in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`. |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. Make sure the value matches the value of `${NAME_PREFIX}` to keep names in step-by-step commands the same with those in configuration files. |
@@ -441,7 +441,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
 
-2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the container registry credentials as a Kubernetes secret. Please run:
 
    ```bash
    # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
@@ -511,7 +511,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
      Azure storage account: 0730storage1597391432
      Azure file share: 0730-weblogic-1597391432
      Kubenetes secret for Azure storage: 0730azure-secret
-     Kubenetes secret for Docker Account: 0730regcred
+     Kubenetes secret for Container Registry Account: 0730regcred
      Kubenetes secret for Weblogic domain: domain1-weblogic-credentials
      Persistent Volume: 0730-azurefile-1597391432
      Persistent Volume Claim: 0730-azurefile-1597391432
@@ -807,8 +807,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal, refer to the application ID in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
-| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image.  In clear text. |
+| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image. |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server image.  In clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 

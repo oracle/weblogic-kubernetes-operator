@@ -9,7 +9,7 @@ draft: false
 ### Overview
 
 In this section, we will discuss the recommended techniques for managing the evolution
-and mutation of Docker images to run WebLogic in Kubernetes.  There are several
+and mutation of container images to run WebLogic Server in Kubernetes.  There are several
 approaches and techniques available, and the choice of which to use depends very
 much on your particular requirements.  We will start with a review of the "problem
 space," and then talk about the considerations that would lead us to choose various
@@ -18,10 +18,10 @@ CI/CD and links to examples.
 
 ### Review of the problem space
 
-Kubernetes makes a fundamental assumption that Docker images are immutable,
+Kubernetes makes a fundamental assumption that images are immutable,
 that they contain no state, and that updating them is as simple as throwing
 away a pod/container and replacing it with a new one that uses a newer version
-of the Docker image.  These assumptions work very well for microservices
+of the image.  These assumptions work very well for microservices
 applications, but for more traditional workloads, we need to do some extra
 thinking and some extra work to get the behavior we want.
 
@@ -52,21 +52,21 @@ server to consolidate and replicate data (DataGuard).
 There are three common approaches on how to structure these components:
  * The first, "domain on a persistent volume" or Domain in PV,
    places the JDK and WebLogic binaries
-   in the Docker image, but the domain home is kept on a separate persistent storage
+   in the image, but the domain home is kept on a separate persistent storage
    outside of the image.
  * The second, Domain in Image,
-   puts the JDK, WebLogic binaries,
-   and the domain home all in the Docker image.
- * The third approach, Model in Image, puts the JDK, WebLogic binaries, and a domain model
-   in the Docker image, and generates the domain home at runtime
+   puts the JDK, WebLogic Server binaries,
+   and the domain home all in the image.
+ * The third approach, Model in Image, puts the JDK, WebLogic Server binaries, and a domain model
+   in the image, and generates the domain home at runtime
    from the domain model.
 
 All of these approaches are perfectly
 valid (and fully supported) and they have various advantages and disadvantages.
 We have listed the [relative advantages of these approaches here]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
-One of the key differences between these approaches is how many Docker images
+One of the key differences between these approaches is how many images
 you have, and therefore, how you build and maintain them - your image CI/CD
-process.  Let's take a short detour and talk about Docker image layering.
+process.  Let's take a short detour and talk about image layering.
 
 {{% children style="h4" description="true" %}}

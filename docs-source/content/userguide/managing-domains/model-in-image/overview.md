@@ -24,7 +24,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
 It enables:
 
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
- - Embedding model files and archives in a custom Docker image, and using the WebLogic Image Tool (WIT) to generate this image.
+ - Embedding model files and archives in a custom container image, and using the WebLogic Image Tool (WIT) to generate this image.
  - Supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
