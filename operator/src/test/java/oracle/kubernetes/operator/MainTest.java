@@ -9,9 +9,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
+import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -128,6 +131,9 @@ public class MainTest extends ThreadFactoryTestBase {
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final Main main = new Main(delegate);
 
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
+
   static {
     buildProperties = new PropertiesBuilder()
               .withProperty(GIT_BUILD_VERSION_KEY, GIT_BUILD_VERSION)
@@ -159,6 +165,9 @@ public class MainTest extends ThreadFactoryTestBase {
     mementos.add(StubWatchFactory.install());
     mementos.add(StaticStubSupport.install(ThreadFactorySingleton.class, "INSTANCE", this));
     mementos.add(NoopWatcherStarter.install());
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+
   }
 
   @AfterEach
