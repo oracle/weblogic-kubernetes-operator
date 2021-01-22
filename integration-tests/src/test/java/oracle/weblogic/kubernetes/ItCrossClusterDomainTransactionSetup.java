@@ -201,6 +201,12 @@ public class ItCrossClusterDomainTransactionSetup {
     int adminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
+    assertDoesNotThrow(() -> {
+      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,
+          String.valueOf(adminServiceNodePort));
+      String.format("Failed to update %s with namespace %s",
+          WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
+    });
 
   }
 
