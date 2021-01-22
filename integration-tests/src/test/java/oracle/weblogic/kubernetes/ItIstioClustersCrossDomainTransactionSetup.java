@@ -46,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
@@ -271,7 +270,8 @@ public class ItIstioClustersCrossDomainTransactionSetup {
   }
 
   private static void addToPropertyFile(String propFileName, String domainNamespace,
-                                        String host, String adminServiceNodePort, String istioIngressPort) throws IOException {
+                                        String host, String adminServiceNodePort,
+                                        String istioIngressPort) throws IOException {
     FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
     Properties props = new Properties();
     props.load(in);

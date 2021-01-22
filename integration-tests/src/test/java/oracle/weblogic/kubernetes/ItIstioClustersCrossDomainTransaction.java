@@ -119,7 +119,7 @@ public class ItIstioClustersCrossDomainTransaction {
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
-  
+
 
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
