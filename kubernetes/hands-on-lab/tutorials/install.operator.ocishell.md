@@ -65,7 +65,7 @@ Note the arguments and values:
 - The name of the Helm release.
 - The relative path to the Helm chart.
 - **namespace**: The namespace where the operator is to be deployed.
-- **image**: The prebuilt operator 3.1.1 image, available on the public Docker Hub.
+- **image**: The prebuilt operator 3.1.2 image, available on the public GitHub Container Registry.
 - **serviceAccount**: The service account required to run the operator.
 - **enableClusterRoleBinding**: Grants the operator privileges in all cluster namespaces.
 - **domainNamespaceSelectionStrategy**: Chooses how the operator will select namespaces it manages.
@@ -78,7 +78,7 @@ Execute the following `helm install`:
 helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1" \
+  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.2" \
   --set "serviceAccount=sample-weblogic-operator-sa" \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
