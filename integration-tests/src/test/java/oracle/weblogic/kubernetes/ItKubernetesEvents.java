@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -30,7 +29,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -102,6 +100,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests related to Domain events logged by operator.
+ * The tests checks for the following events in the domain name space.
+ * DomainCreated, DomainChanged, DomainDeleted, DomainProcessingStarting, DomainProcessingCompleted,
+ * DomainProcessingFailed, DomainProcessingRetrying, DomainProcessingAborted, NamespaceWatchingStarted, and
+ * NamespaceWatchingStopped.
+ * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
+ * and finally deletes it to generate all the domain related events.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
@@ -189,12 +193,13 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Change a domain resource with adding a managed server not in domain and verify the warning event is generated.
+   * Patch a domain resource with a new managed server not existing in actual WebLogic domain and verify
+   * the warning DomainValidationError event is logged by the operator in the domain namespace.
    */
   @Order(2)
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
-  public void testDomainK8sEventsNonExistingMS() {
+  public void testDomainK8sEventsNonExistingManagedServer() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
     logger.info("patch the domain resource with non-existing managed server");
     String patchStr
@@ -227,7 +232,8 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Change a domain resource with adding a cluster not in domain and verify the warning event is generated.
+   * Patch a domain resource with a new cluster not existing in actual WebLogic domain and verify
+   * the warning DomainValidationError event is logged by the operator in the domain namespace.
    */
   @Order(3)
   @Test
@@ -261,9 +267,12 @@ public class ItKubernetesEvents {
 
   /**
    * Test the following domain events are logged when domain resource goes through various life cycle stages.
-   * Verifies DomainChanged is logged when operator processes the domain resource changes.
-   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource changes.
-   * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries.
+   * Patch the domain resource to remove the webLogicCredentialsSecret and verify DomainChanged is
+   * logged when operator processes the domain resource changes.
+   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource
+   * changes since webLogicCredentialsSecret is still missing.
+   * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries and gives
+   * up processing the domain resource.
    */
   @Order(4)
   @Test
@@ -309,7 +318,11 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Test verifies there is only 1 DomainProcessing Starting/Completed event is logged in a multi cluster domain.
+   * Test verifies there is only 1 DomainProcessing Starting/Completed event is logged
+   * regardless of how many clusters exists in the domain.
+   * Test creates a new cluster in the WebLogic domain, patches the domain resource to add the new cluster
+   * and starts up the new cluster.
+   * Verifies the scaling operation generates only one DomainProcessing Starting/Completed.
    */
   @Order(5)
   @Test
@@ -327,7 +340,8 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Scale the cluster beyond maximum dynamic cluster size and verify the warning event is generated.
+   * Scale the cluster beyond maximum dynamic cluster size and verify the
+   * DomainValidationError warning event is generated.
    */
   @Order(6)
   @Test
@@ -364,7 +378,8 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Scale the cluster below minimum dynamic cluster size and verify the warning event is generated.
+   * Scale the cluster below minimum dynamic cluster size and verify the DomainValidationError
+   * warning event is generated.
    */
   @Order(7)
   @Test
@@ -401,7 +416,8 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Replace the pv and pvc and verify the DomainProcessingFailed warning event is generated.
+   * Replace the pv and pvc in the domain resource with a pv/pvc not containing any WebLogic domain
+   * and verify the DomainProcessingFailed warning event is generated.
    */
   @Order(8)
   @Test
@@ -468,33 +484,61 @@ public class ItKubernetesEvents {
   }
 
   /**
+   * Operator logs a NamespaceWatchingStarted event in the respective domain name space
+   * when it starts watching a new domain namespace.
+   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaces={ns-xghr,ns-idir}"
+   * --set "externalRestEnabled=false"
+   * --set "elkIntegrationEnabled=false"
+   * --set "enableClusterRoleBinding=false"
+   * --set "externalRestHttpsPort=0">
+   * }
+   * </pre>
+   * </p>
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
   @Order(10)
   @Test
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    logger.info("Adding a new domain namespace in the operator watch list");
     upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
     logger.info("verify NamespaceWatchingStarted event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
   }
 
   /**
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching an another domain namespace.
+   * Operator logs a NamespaceWatchingStopped event in the respective domain name space
+   * when it stops watching a domain namespace.
+   * The test upgrades the operator instance through helm to remove domain namespace in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaces={ns-xghr}"
+   * --set "externalRestEnabled=false"
+   * --set "elkIntegrationEnabled=false"
+   * --set "enableClusterRoleBinding=false"
+   * --set "externalRestHttpsPort=0">
+   * }
+   * </pre>
+   * </p>
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
   @Order(11)
   @Test
   @Disabled("Bug - OWLS-87181")
   public void testK8SEventsStopWatchingNS() {
-    DateTime timestamp = new DateTime(System.currentTimeMillis() - 30000);
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    logger.info("Removing domain namespace in the operator watch list");
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
-    logger.info("EVENTS IN OPERATOR NAMESPACE");
-    assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.listNamespacedEvents(opNamespace))));
-    logger.info("EVENTS IN OPERATOR DOMAIN NAMESPACE 1");
-    assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.listNamespacedEvents(domainNamespace1))));
-    logger.info("EVENTS IN OPERATOR DOMAIN NAMESPACE 2");
-    assertDoesNotThrow(() -> logger.info(Yaml.dump(Kubernetes.listNamespacedEvents(domainNamespace2))));
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
   }
 
