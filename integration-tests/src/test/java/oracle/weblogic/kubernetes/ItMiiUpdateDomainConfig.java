@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
@@ -657,9 +658,8 @@ class ItMiiUpdateDomainConfig {
    * Start a WebLogic domain with model-in-imge.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
-   * make sure all the server pods are re-started in a rolling fashion. 
-   * Check the validity of new credentials by accessing 
-   * WebLogic RESTful Management Services.
+   * Make sure all the server pods are re-started in a rolling fashion. 
+   * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
   @Order(8)
@@ -717,6 +717,75 @@ class ItMiiUpdateDomainConfig {
         domainUid, domainNamespace);
   }
 
+  /**
+   * Create a configmap with a sparse model file with following attributes for 
+   * Cluster/cluster-1/DynamicServers
+   *   MaxDynamicClusterSize: 4
+   *   DynamicClusterSize: 4
+   *   MinDynamicClusterSize: 2
+   * Patch the domain resource with the configmap.
+   * Update the restart version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * before and after rolling restart.
+   */
+  @Test
+  @Order(9)
+  @DisplayName("Test modification to Dynamic cluster size parameters")
+  public void testMiiUpdateDynamicClusterSize() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    String configMapName = "dynamic-cluster-size-cm";
+    String yamlString = "\n"
+        + "topology:\n"
+        + "  Cluster: \n"
+        + "    cluster-1: \n"
+        + "         DynamicServers: true \n"
+        + "            MaxDynamicClusterSize: 4 \n"
+        + "            MinDynamicClusterSize: 2 \n"
+        + "            DynamicClusterSize: 4 \n";
+
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+    Map<String, String> data = new HashMap<>();
+    data.put("model.cluster.size.yaml", yamlString);
+
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(new V1ObjectMeta()
+            .labels(labels)
+            .name(configMapName)
+            .namespace(domainNamespace));
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Can't create ConfigMap %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    // Update the introspectVersion field
+    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
+    String patchStr2  =
+        "[" + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+            + "]";
+    logger.info("Updating domain resource using patch string: {0}", patchStr2);
+    V1Patch patch = new V1Patch(patchStr2);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+    logger.info("New Dynamic Cluster Size attribute verified");
+  }
 
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
@@ -761,6 +830,7 @@ class ItMiiUpdateDomainConfig {
                     .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
+                    .allowReplicasBelowMinDynClusterSize(false)
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)

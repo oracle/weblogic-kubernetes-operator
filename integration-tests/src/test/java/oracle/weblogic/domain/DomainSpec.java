@@ -54,6 +54,12 @@ public class DomainSpec {
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
+  @ApiModelProperty("Whether to allow the number of running cluster member Managed Server instances to drop "
+      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
+      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
+  )
+  private Boolean allowReplicasBelowMinDynClusterSize;
+
   @ApiModelProperty(
       "An optional, in-pod location for data storage of default and custom file stores. "
           + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
@@ -251,6 +257,23 @@ public class DomainSpec {
 
   public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
+  }
+
+  public DomainSpec allowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
+    return this;
+  }
+
+  public Boolean allowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
+  }
+
+  public Boolean getAllowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
+  }
+
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
   public DomainSpec dataHome(String dataHome) {
@@ -655,6 +678,7 @@ public class DomainSpec {
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
+            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("dataHome", dataHome)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("image", image)
@@ -689,6 +713,7 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(allowReplicasBelowMinDynClusterSize)
             .append(dataHome)
             .append(includeServerOutInPodLog)
             .append(image)
@@ -731,6 +756,7 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(allowReplicasBelowMinDynClusterSize, rhs.allowReplicasBelowMinDynClusterSize)
             .append(dataHome, rhs.dataHome)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(image, rhs.image)
