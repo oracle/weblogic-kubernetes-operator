@@ -74,16 +74,17 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -735,31 +736,17 @@ class ItMiiUpdateDomainConfig {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
+    
+    // get the creation time of the server pods before patching
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
 
     String configMapName = "dynamic-cluster-size-cm";
-    String yamlString = "\n"
-        + "topology:\n"
-        + "  Cluster: \n"
-        + "    cluster-1: \n"
-        + "         DynamicServers: true \n"
-        + "            MaxDynamicClusterSize: 4 \n"
-        + "            MinDynamicClusterSize: 2 \n"
-        + "            DynamicClusterSize: 4 \n";
-
-    Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
-    Map<String, String> data = new HashMap<>();
-    data.put("model.cluster.size.yaml", yamlString);
-
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(new V1ObjectMeta()
-            .labels(labels)
-            .name(configMapName)
-            .namespace(domainNamespace));
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Can't create ConfigMap %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed %s", configMapName));
+    createClusterConfigMap(configMapName, "model.cluster.size.yaml");
 
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
@@ -775,15 +762,38 @@ class ItMiiUpdateDomainConfig {
         "patchDomainCustomResource(configMap)  failed ");
     assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
 
-    // Update the introspectVersion field
-    String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace));
-    String patchStr2  =
-        "[" + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
-            + "]";
-    logger.info("Updating domain resource using patch string: {0}", patchStr2);
-    V1Patch patch = new V1Patch(patchStr2);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-        "Failed to patch domain");
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    // Scale the cluster to replica count 3
+    boolean p1Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
+        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("repilca patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    
+    //  Make sure the 3rd Managed server comes up
+    checkServiceExists(managedServerPrefix + "3", domainNamespace);
+
+    // Since the MinDynamicClusterSize is set to 2 in the configmap 
+    // and allowReplicasBelowMinDynClusterSize is set false, the repilca
+    // count cannot go below 2. So during the following scale down operation 
+    // only third  manged server pod should be removed.  
+    boolean p2Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("repilca patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p2Success,
+        String.format("Cluster repilca patching failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} available in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
     logger.info("New Dynamic Cluster Size attribute verified");
   }
 
