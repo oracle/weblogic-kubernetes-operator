@@ -19,7 +19,7 @@ spec:
   # the image for 'Model in Image' domains.
   domainHome: /u01/domains/sample-domain1
 
-  # The WebLogic Server Docker image that the Operator uses to start the domain
+  # The WebLogic Server image that the Operator uses to start the domain
   image: "model-in-image:WLS-v2"
 
   # Defaults to "Always" if image tag (version) is ':latest'

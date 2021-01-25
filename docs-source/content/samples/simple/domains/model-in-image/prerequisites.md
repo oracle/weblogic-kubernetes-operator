@@ -129,7 +129,7 @@ weight: 1
 
    c. Select Sign In and accept the license agreement.
 
-   d. Use your terminal to log in to Docker locally: `docker login container-registry.oracle.com`.
+   d. Use your terminal to log in to the container registry: `docker login container-registry.oracle.com`.
 
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the above licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
@@ -137,7 +137,7 @@ weight: 1
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image Docker images.
+1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.1` and `1.9.1` respectively, call:
 
@@ -219,9 +219,9 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
 
-     __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local Docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+     __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
-     **WARNING:** The Oracle Database Docker images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
+     **WARNING:** The Oracle Database images are supported only for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
 
 2. Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema` to create an RCU schema for each domain (schema prefixes `FMW1` and `FMW2`).
@@ -234,7 +234,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
    $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
-   __NOTE__: If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local Docker cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+   __NOTE__: If your Kubernetes cluster nodes do not all have access to the FMW infrastructure image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `./create-rcu-schema.sh` using `-p your-image-pull-secret`. Alternatively, copy the FMW infrastructure image to each local Docker cache in the cluster. For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
    __NOTE__: If you need to drop the repository, use this command:
 

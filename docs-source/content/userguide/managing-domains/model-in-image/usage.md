@@ -25,7 +25,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 ### WebLogic Server image
 
-Model in Image requires creating a Docker image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
+Model in Image requires creating an image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
 
 First, obtain a base image:
 
@@ -133,7 +133,7 @@ The following Domain fields are specific to Model in Image domains.
 
 ### Always use external state
 
-Regardless of the domain home source type, we recommend that you always keep state outside the Docker image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
+Regardless of the domain home source type, we recommend that you always keep state outside the image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
 
 We recommend that state be kept in a database to take advantage of built-in database server high availability features, and the fact that disaster recovery of sites across all but the shortest distances, almost always requires using a single database server to consolidate and replicate data (DataGuard).
 
