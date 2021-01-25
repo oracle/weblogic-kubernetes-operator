@@ -197,11 +197,12 @@ public interface TestConstants {
   public static final String LOGSTASH_IMAGE = LOGSTASH_NAME + ":" + ELK_STACK_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
-  public static final String WLS_LOGGING_EXPORTER_JAR_VERSION = "1.0.0";
-  public static final String WLS_LOGGING_EXPORTER_JAR_REPOS =
-      "https://github.com/oracle/weblogic-logging-exporter/releases/download/v" + WLS_LOGGING_EXPORTER_JAR_VERSION;
-  public static final String WLS_LOGGING_EXPORTER_JAR_NAME =
-      "weblogic-logging-exporter-" + WLS_LOGGING_EXPORTER_JAR_VERSION + ".jar";
+  public static final String WLE_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-logging-exporter/releases/latest";
+  public static final String WLE_DOWNLOAD_URL
+      = System.getProperty("wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
+  public static final String WLE_JAR_FILENAME = "weblogic-logging-exporter.jar";
+
   public static final String SNAKE_YAML_JAR_VERSION = "1.23";
   public static final String SNAKE_YAML_JAR_REPOS =
       "https://repo1.maven.org/maven2/org/yaml/snakeyaml/" + SNAKE_YAML_JAR_VERSION;

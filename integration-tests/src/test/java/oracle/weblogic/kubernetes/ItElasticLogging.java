@@ -47,7 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_JAR_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WLE_JAR_FILENAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -323,7 +323,7 @@ class ItElasticLogging {
         .append(",")
         .append(wlsLoggingExporterArchiveLoc)
         .append("/")
-        .append(WLS_LOGGING_EXPORTER_JAR_NAME)
+        .append(WLE_JAR_FILENAME)
         .append(",")
         .append(wlsLoggingExporterArchiveLoc)
         .append("/")
