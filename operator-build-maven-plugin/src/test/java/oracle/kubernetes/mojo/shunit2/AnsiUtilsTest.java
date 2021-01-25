@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.mojo.shunit2;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.mojo.shunit2.AnsiUtils.Format.BLUE_FG;
 import static oracle.kubernetes.mojo.shunit2.AnsiUtils.Format.BOLD;

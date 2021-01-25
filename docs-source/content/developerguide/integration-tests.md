@@ -6,7 +6,7 @@ weight: 4
 ---
 
 
-The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator Docker image is in a Docker registry visible to the Kubernetes cluster.
+The project includes integration tests that can be run against a Kubernetes cluster.  If you want to use these tests, you will need to provide your own Kubernetes cluster.  The Kubernetes cluster must meet the version number requirements and have Helm installed.  Ensure that the operator image is in a container registry visible to the Kubernetes cluster.
 
 
 You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment variable to point to your config file and then execute:

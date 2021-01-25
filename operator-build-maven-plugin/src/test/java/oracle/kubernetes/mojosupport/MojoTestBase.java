@@ -23,8 +23,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -72,6 +72,11 @@ public abstract class MojoTestBase {
     this.mojo = mojo;
   }
 
+  @SuppressWarnings("unchecked")
+  public <T extends AbstractMojo> T getMojo() {
+    return (T) mojo;
+  }
+
   public void executeMojo() throws MojoFailureException, MojoExecutionException {
     mojo.execute();
   }
@@ -104,14 +109,9 @@ public abstract class MojoTestBase {
     return field.get(mojo);
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
