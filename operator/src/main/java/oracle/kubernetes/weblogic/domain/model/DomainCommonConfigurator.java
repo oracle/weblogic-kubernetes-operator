@@ -323,15 +323,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withMIIOnlineUpdateCancelOnDynamicChanges() {
-    OnlineUpdate onlineUpdate = new OnlineUpdate();
-    onlineUpdate.setEnabled(true);
-    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
-        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CancelUpdate);
-    return this;
-  }
-
-  @Override
   public DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll() {
     OnlineUpdate onlineUpdate = new OnlineUpdate();
     onlineUpdate.setEnabled(true);

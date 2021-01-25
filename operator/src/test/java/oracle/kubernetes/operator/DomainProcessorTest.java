@@ -902,11 +902,6 @@ public class DomainProcessorTest {
       .withMIIOnlineUpate();
   }
 
-  void configureForModelInImageOnlineUpdateNonDynamicChangesCancelUpdate(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
-        .withMIIOnlineUpdateCancelOnDynamicChanges();
-  }
-
   void configureForModelInImageOnlineUpdateNonDynamicChangesUpdateAndRoll(Domain domain) {
     configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
         .withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();

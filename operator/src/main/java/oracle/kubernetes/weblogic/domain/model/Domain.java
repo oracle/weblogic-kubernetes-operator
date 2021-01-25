@@ -29,7 +29,6 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -590,21 +589,6 @@ public class Domain implements KubernetesObject {
         .map(Configuration::getModel)
         .map(Model::getOnlineUpdate)
         .map(OnlineUpdate::getWdtTimeouts);
-  }
-
-  /**
-   * Returns if onlineUpdate.onNonDynamicChanges is set to cancelUpdate.
-   *
-   * @return true if onlineUpdate.onNonDynamicChanges is set to cancelUpdate
-   */
-  public boolean isCancelChangesIfRestartRequired() {
-    return MIINonDynamicChangesMethod.CancelUpdate.equals(
-        Optional.ofNullable(spec)
-          .map(DomainSpec::getConfiguration)
-          .map(Configuration::getModel)
-          .map(Model::getOnlineUpdate)
-          .map(OnlineUpdate::getOnNonDynamicChanges)
-          .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
   }
 
   public boolean isIstioEnabled() {

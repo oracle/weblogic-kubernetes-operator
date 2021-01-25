@@ -348,7 +348,7 @@ Use the following steps to initiate an online configuration update to your model
        `domain.spec.configuration.secrets` array reflects all current secrets.
     1. Set `domain.spec.configuration.model.onlineUpdate.enabled` to `true` (default is `false`).
     1. Set `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to one of 
-       `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `CancelUpdate`.
+       `CommitUpdateOnly` (default), and `CommitUpdateAndRoll`.
        For details, see 
        [online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes)
        below.
@@ -372,8 +372,8 @@ and runs the WebLogic Deploy Tool to process the differences:
 
  - If WDT detects non-dynamic WebLogic configuration MBean changes, then the operator may ignore the updates,
    honor only the online updates, or initiate an offline update (roll) depending on whether you have configured
-   `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to `CommitUpdateOnly` (default),
-   `CommitUpdateAndRoll`, or `CancelUpdate`. 
+   `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` to `CommitUpdateOnly` (default), or
+   `CommitUpdateAndRoll`. 
    For details, see 
    [online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes)
    below.
@@ -391,13 +391,6 @@ When recovering from a failure, please keep the following points in mind:
    To correct the problem, modify and reapply your model resources (ConfigMap and/or secrets),
    plus, if the introspector job has stopped retrying, you must also change your domain resource
    `domain.spec.introspectVersion` again.
-
- - If updating a domain resource YAML with
-   `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` set to `CancelUpdate`
-   and non-dynamic changes are detected,
-   then the domain will enter a failed stated
-   and the user must correct the models, shutdown and restart the entire domain,
-   or use offline update instead.
 
 
 Sample domain resource YAML for an online update:
@@ -432,7 +425,7 @@ The domain resource YAML `domain.spec.configuration.model.onlineUpdate.onNonDyna
 controls behavior when
 non-dynamic WebLogic configuration changes are detected during an online update introspector job.
 Non-dynamic changes are changes that require a domain restart to take effect. 
-Valid values are `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `CancelUpdate`:
+Valid values are `CommitUpdateOnly` (default), or `CommitUpdateAndRoll`:
 
   * If set to `CommitUpdateOnly` and any non-dynamic changes are detected,
     then all changes will be committed,
@@ -445,16 +438,6 @@ Valid values are `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `Cance
     then all changes will be committed, dynamic changes will take effect immediately,
     the domain will automatically restart (roll),
     and non-dynamic changes will take effect on each pod once the pod restarts.
-
-  * If set to `CancelUpdate` and any non-dynamic changes are detected,
-    then all changes are ignored,
-    the domain continues to run without interruption, 
-    and the domain Failed condition will become true.
-    There are four ways to correct:
-    either revert non-dynamic changes to your model resources and retry the online update,
-    change to `CommitUpdateAndRoll` and retry the online update,
-    shutdown the domain and then restart it,
-    or change the domain resource to initiate an offline update and a roll (such as by changing its `restartVersion`).
 
 {{% notice note %}}
 When updating a domain with non-dynamic MBean changes with `onNonDynamicUpdates=CommitUpdateOnly` (the default),
@@ -806,23 +789,6 @@ Status:
     Reason:                      ServersReady
     Status:                      True
     Type:                        Available
-
-```
-
-If the changes involve non-dynamic MBean attributes, and you have specified 'CancelUpdate' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges`, you will see this
-
-```
-  Conditions:
-    Last Transition Time:  2020-11-20T17:13:00.170Z
-    Message:               Online update completed successfully, but the changes require restart and the domain resource specified option to cancel all changes if restart require. The changes are: Server re-start is REQUIRED for the set of changes in progress.
-
-The following non-dynamic attribute(s) have been changed on MBeans 
-that require server re-start:
-MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
-Attributes changed : Value
-    Reason:                      Online update applied, introspectVersion updated to 67
-    Status:                      True
-    Type:                        OnlineUpdateCanceled
 
 ```
 

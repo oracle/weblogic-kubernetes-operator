@@ -23,7 +23,6 @@ import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.KubernetesConstants;
-import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
@@ -755,21 +754,6 @@ public class DomainSpec extends BaseConfiguration {
         .map(Model::getOnlineUpdate)
         .map(OnlineUpdate::getEnabled)
         .orElse(false);
-  }
-
-  /**
-   * Test if the MII domain updates should cancel changes the udpate if it requires restart.
-   *
-   * @return true or false
-   */
-  boolean isCancelChangesIfRestartRequire() {
-
-    return MIINonDynamicChangesMethod.CancelUpdate.equals(
-        Optional.ofNullable(configuration)
-            .map(Configuration::getModel)
-            .map(Model::getOnlineUpdate)
-            .map(OnlineUpdate::getOnNonDynamicChanges)
-            .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
   }
 
   /**

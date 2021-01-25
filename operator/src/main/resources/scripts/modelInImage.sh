@@ -42,7 +42,6 @@ WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./ur
 ARCHIVE_ZIP_CHANGED=0
 WDT_ARTIFACTS_CHANGED=0
 PROG_RESTART_REQUIRED=103
-PROG_CANCELCHGS_IF_RESTART_EXIT_CODE=104
 MII_UPDATE_NO_CHANGES_TO_APPLY=false
 # return codes for model_diff
 UNSAFE_ONLINE_UPDATE=0
@@ -989,11 +988,6 @@ function wdtHandleOnlineUpdate() {
   local admin_user=$(cat /weblogic-operator/secrets/username)
   local admin_pwd=$(cat /weblogic-operator/secrets/password)
 
-  local ROLLBACK_FLAG=""
-  if [ ! -z "${MII_CANCEL_CHANGES_IFRESTART_REQ}" ] && [ "${MII_CANCEL_CHANGES_IFRESTART_REQ}" == "true" ]; then
-      ROLLBACK_FLAG="-cancel_changes_if_restart_required"
-  fi
-
   if [ -z ${AS_SERVICE_NAME} ] || [ -z ${ADMIN_PORT} ] ; then
     trace SEVERE "Cannot find admin service name or port"
     exitOrLoop
@@ -1007,7 +1001,7 @@ function wdtHandleOnlineUpdate() {
   fi
   echo ${admin_pwd} | ${WDT_BINDIR}/updateDomain.sh -oracle_home ${MW_HOME} \
    -admin_url ${admin_url} -admin_user ${admin_user} -model_file \
-   /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${ROLLBACK_FLAG} ${archive_list} \
+   /tmp/diffed_model.yaml -domain_home ${DOMAIN_HOME} ${archive_list} \
    -discard_current_edit -output_dir /tmp  >  ${WDT_OUTPUT} 2>&1
 
   local ret=$?
@@ -1016,15 +1010,6 @@ function wdtHandleOnlineUpdate() {
   if [ ${ret} -eq ${PROG_RESTART_REQUIRED} ] ; then
     write_updatedresult ${ret}
     write_non_dynamic_changes_text_file
-  elif [ ${ret} -eq ${PROG_CANCELCHGS_IF_RESTART_EXIT_CODE} ] ; then
-    trace SEVERE "Online update completed successfully, but the changes require restart and the domain resource " \
-            "specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate'" \
-               " option to cancel all changes if restart require, all changes have been canceled. " \
-               " You can modify your changes to exclude the non dynamic changes or use another mode for " \
-               " 'onNonDynamicChanges'." \
-               " The non dynamic changes are: "
-    cat /tmp/non_dynamic_changes.file
-    exitOrLoop
   elif [ ${ret} -ne 0 ] ; then
     trace SEVERE "Online update failed. Check error in the logs " \
        "Note: Changes in the optional configmap and/or image may needs to be corrected"
