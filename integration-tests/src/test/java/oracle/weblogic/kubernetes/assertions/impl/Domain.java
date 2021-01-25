@@ -24,6 +24,7 @@ import org.joda.time.DateTime;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
@@ -165,18 +166,17 @@ public class Domain {
    * @param nodePort the node port that needs to be tested for access
    * @param userName WebLogic administration server user name
    * @param password WebLogic administration server password
-   * @param host k8s nodeport host
    * @return true if login to WebLogic administration console is successful
    * @throws IOException when connection to console fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password, String host)
+  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
 
     LoggingFacade logger = getLogger();
 
     String consoleUrl = new StringBuffer()
         .append("http://")
-        .append(host)
+        .append(K8S_NODEPORT_HOST)
         .append(":")
         .append(nodePort)
         .append("/console/login/LoginForm.jsp").toString();
