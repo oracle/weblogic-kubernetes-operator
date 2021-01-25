@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -38,6 +39,7 @@ import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.IntrospectionTestUtils;
+import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
@@ -62,9 +64,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -121,6 +123,8 @@ public class DomainProcessorTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
@@ -152,12 +156,14 @@ public class DomainProcessorTest {
         .withCluster(clusterConfig);
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());
@@ -170,7 +176,7 @@ public class DomainProcessorTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
@@ -894,11 +900,6 @@ public class DomainProcessorTest {
   void configureForModelInImageOnlineUpdate(Domain domain) {
     configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
       .withMIIOnlineUpate();
-  }
-
-  void configureForModelInImageOnlineUpdateNonDynamicChangesCancelUpdate(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
-        .withMIIOnlineUpdateCancelOnDynamicChanges();
   }
 
   void configureForModelInImageOnlineUpdateNonDynamicChangesUpdateAndRoll(Domain domain) {

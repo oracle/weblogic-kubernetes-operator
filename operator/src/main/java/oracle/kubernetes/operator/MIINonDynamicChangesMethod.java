@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator;
 
 public enum MIINonDynamicChangesMethod {
-  CancelUpdate,
   CommitUpdateAndRoll,
   CommitUpdateOnly
 }

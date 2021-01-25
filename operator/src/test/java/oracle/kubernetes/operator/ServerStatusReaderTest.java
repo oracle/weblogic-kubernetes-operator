@@ -36,9 +36,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Matchers;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -60,11 +60,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
       new Domain().withMetadata(new V1ObjectMeta().namespace(NS)).withSpec(new DomainSpec());
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
-  /**
-   * Setup test.
-   * @throws NoSuchFieldException on no such field
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "EXEC_FACTORY", execFactory));
@@ -85,15 +81,9 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
         .putLabelsItem(LabelConstants.SERVERNAME_LABEL, serverName);
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }

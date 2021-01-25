@@ -1,0 +1,26 @@
+{
+  "apiVersion":"weblogic.oracle/v8",
+  "items":[
+    {
+      "apiVersion": "weblogic.oracle/v8",
+      "kind": "Domain",
+      "spec": {
+        "clusters": [
+            {
+                "clusterName": "cluster-1",
+                "serverStartState": "RUNNING"
+            }
+        ],
+        "dataHome": "",
+        "domainHome": "/shared/domains/domain1",
+        "domainHomeSourceType": "PersistentVolume",
+        "httpAccessLogInLogHome": true,
+        "image": "container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+        "imagePullPolicy": "IfNotPresent",
+        "includeServerOutInPodLog": false,
+        "logHome": "/shared/logs/domain1",
+        "logHomeEnabled": true
+      }
+    }
+  ]
+}

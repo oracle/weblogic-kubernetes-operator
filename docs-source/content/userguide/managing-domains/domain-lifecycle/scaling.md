@@ -283,7 +283,7 @@ The easiest way to verify and debug the `scalingAction.sh` script is to open a s
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
 
-* The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside a Docker image).
+* The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside an image).
 * The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
@@ -311,7 +311,7 @@ This example assumes the operator and Domain YAML file are configured with the f
   * operator's namespace: `weblogic-operator`
   * operator's hostname is the same as the host shell script is executed on.
 * Domain fields:  
-  * WebLogic cluster name: `DockerCluster`
+  * WebLogic cluster name: `ApplicationCluster`
   * Domain UID: `domain1`
 
 ```

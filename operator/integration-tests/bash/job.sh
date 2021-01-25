@@ -60,7 +60,7 @@ function launchCommandJob {
 
   # setup the yaml
 
-  local template_yaml="$PROJECT_ROOT/src/integration-tests/kubernetes/command-job-template.yaml"
+  local template_yaml="$PROJECT_ROOT/operator/integration-tests/kubernetes/command-job-template.yaml"
   local target_yaml="$TMP_DIR/command-job.yaml"
 
   if [ ! -f "$template_yaml" ]; then
@@ -81,7 +81,7 @@ function launchCommandJob {
 
   # setup configmap for job that includes archive.sh
 
-  local archive_file="$PROJECT_ROOT/src/integration-tests/bash/archive.sh"
+  local archive_file="$PROJECT_ROOT/operator/integration-tests/bash/archive.sh"
   if [ ! -f $archive_file ]; then
     echo "@@ Could not find $archive_file."
   fi

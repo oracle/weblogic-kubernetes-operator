@@ -171,10 +171,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().isUseOnlineUpdate();
   }
 
-  public boolean isCancelChangesIfRestartRequired() {
-    return getDomain().isCancelChangesIfRestartRequired();
-  }
-
   public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }

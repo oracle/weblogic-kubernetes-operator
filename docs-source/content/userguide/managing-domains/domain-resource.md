@@ -101,7 +101,7 @@ The operator automatically updates the `status` section of a deploy domain resou
 
 Here are some references you can use for the fields in these sections:
 
-- See [Domain spec elements](#domain-spec-elements) in this doc.
+- See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
@@ -130,6 +130,8 @@ DESCRIPTION:
 #### Domain spec elements
 
 The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
+
+> Note: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
 
 Elements related to domain identification, container image, and domain home:
 
@@ -178,6 +180,21 @@ Elements related to specifying and overriding WebLogic domain configuration:
   * `domainType`: WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.
   * `runtimeEncryptionSecret`: The name of the Secret containing the runtime encryption password, which must be in a field named `password`. Required when `domainHomeSourceType` is set to `FromModel`.
   * `modelHome`: Location of the WebLogic Deploy Tooling model home directory, which can include model YAML files, `.properties` variable files, and application `.zip` archives. Defaults to `/u01/wdt/models`.
+  * `onlineUpdate.*`: Settings related to the online update option for Model In Image dynamic updates.
+    * `onlineUpdate.enabled`: Enable online update for model changes to a running domain. Default is `false`.
+    * `onlineUpdate.onNonDynamicChanges`:
+      Controls behavior when non-dynamic WebLogic configuration changes are
+      detected during an online update.
+      Non-dynamic changes are changes that require a domain restart to take effect.
+      Valid values are `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `CancelUpdate`.
+      For more information, see
+      [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
+      in the runtime update chapter of the Model in Image user guide.
+    * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for
+       for online update calls to the
+       WebLogic domain from the WebLogic Deploy Tool within the introspector job. All timeouts
+       are specified in milliseconds and default to two or three minutes. For a full list of
+       timeouts, you can call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
 
 * These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`.
 

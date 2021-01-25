@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -46,9 +47,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Matcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -104,11 +105,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
-  /**
-   * Setup test environment.
-   * @throws Exception if setup fails
-   */
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
@@ -122,10 +119,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
           createNiceStub(JobAwaiterStepFactory.class));
   }
 
-  /**
-   * Cleanup test environment.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -455,9 +449,17 @@ public class JobHelperTest extends DomainValidationBaseTest {
     configureDomain()
         .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
     runCreateJob();
-    assertThat(
-        job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
-        hasVolumeMount("volume2", "/source-" + UID));
+    assertThat(getJobVolumeMounts(), hasVolumeMount("volume2", "/source-" + UID));
+  }
+
+  private List<V1VolumeMount> getJobVolumeMounts() {
+    return Optional.ofNullable(job.getSpec())
+          .map(V1JobSpec::getTemplate)
+          .map(V1PodTemplateSpec::getSpec)
+          .map(V1PodSpec::getContainers)
+          .orElseThrow()
+          .get(0)
+          .getVolumeMounts();
   }
 
   @Test
@@ -474,8 +476,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(job.getSpec().getTemplate().getSpec().getContainers().get(0).getVolumeMounts(),
-            hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
+    assertThat(getJobVolumeMounts(), hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
   }
 
   @Test

@@ -5,15 +5,19 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -28,9 +32,9 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
@@ -56,19 +60,19 @@ public class DomainValidationStepTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
-  private Step domainValidationSteps;
-  private Step topologyValidationStep;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
-  /**
-   * Setup test.
-   */
-  @Before
-  public void setUp() {
+  private Step domainValidationSteps;
+  private Step topologyValidationStep;
+
+  @BeforeEach
+  public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
         NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
     mementos.add(consoleControl);
@@ -79,9 +83,11 @@ public class DomainValidationStepTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -246,6 +252,7 @@ public class DomainValidationStepTest {
     assertThat(getEvents(), empty());
   }
 
+  @SuppressWarnings("SameParameterValue")
   private Cluster createCluster(String clusterName) {
     Cluster cluster = new Cluster();
     cluster.setClusterName(clusterName);

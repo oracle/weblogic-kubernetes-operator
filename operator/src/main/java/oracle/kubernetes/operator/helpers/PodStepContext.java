@@ -996,9 +996,6 @@ public abstract class PodStepContext extends BasePodStepContext {
              .map(Model::getOnlineUpdate)
              .map(OnlineUpdate::getOnNonDynamicChanges)
              .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
-      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_UPDATES_CANCELED.equals(dynamicUpdateResult)) {
-        LOGGER.info("DEBUG: should not restart because of cancel");
-        result = true;
       }
       return result;
     }

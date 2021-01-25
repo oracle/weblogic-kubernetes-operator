@@ -8,7 +8,7 @@ import java.nio.file.Path;
 import java.util.Map;
 
 import oracle.kubernetes.operator.utils.InMemoryFileSystem;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;

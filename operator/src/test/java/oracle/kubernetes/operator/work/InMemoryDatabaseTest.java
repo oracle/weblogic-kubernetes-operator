@@ -11,12 +11,13 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InMemoryDatabaseTest {
 
@@ -96,12 +97,13 @@ public class InMemoryDatabaseTest {
     assertThat(database.read(keys().name(NAME1).namespace(NS1).map()), equalTo(replacement));
   }
 
-  @Test(expected = InMemoryDatabaseException.class)
+  @Test
   public void afterItemDeleted_cannotRetrieveIt() {
     createItem(NAME1, NS1);
     database.delete(keys().name(NAME1).namespace(NS1).map());
 
-    database.read(keys().name(NAME1).namespace(NS1).map());
+    assertThrows(InMemoryDatabaseException.class,
+          () -> database.read(keys().name(NAME1).namespace(NS1).map()));
   }
 
   @Test

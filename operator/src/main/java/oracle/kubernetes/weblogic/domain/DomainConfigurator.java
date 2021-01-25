@@ -487,13 +487,6 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withMIIOnlineUpate();
 
   /**
-   * Set onNonDynamicChanges to CancelUpdate for  MII Online Update.
-   *
-   * @return this object
-   */
-  public abstract DomainConfigurator withMIIOnlineUpdateCancelOnDynamicChanges();
-
-  /**
    * Set onNonDynamicChanges to CommitUpdateAndRoll for  MII Online Update.
    *
    * @return this object

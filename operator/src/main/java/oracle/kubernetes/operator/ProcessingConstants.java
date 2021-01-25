@@ -35,7 +35,6 @@ public interface ProcessingConstants {
   String MII_DYNAMIC_UPDATE_WDTROLLBACKFILE = "miiDynamicUpdateRollbackFile";
   String MII_DYNAMIC_UPDATE_SUCCESS = "0";
   String MII_DYNAMIC_UPDATE_RESTART_REQUIRED = "103";
-  String MII_DYNAMIC_UPDATE_UPDATES_CANCELED = "104";
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
@@ -59,4 +58,5 @@ public interface ProcessingConstants {
       + " by adding it to the weblogic-operator-cm configmap.";
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
+  String DOMAIN_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 }
