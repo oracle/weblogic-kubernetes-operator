@@ -232,7 +232,6 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>**/It*</includes-failsafe>
-                <excludes-failsafe>**/ItIstioCrossClusters*</excludes-failsafe>
             </properties>
         </profile>
         <profile>

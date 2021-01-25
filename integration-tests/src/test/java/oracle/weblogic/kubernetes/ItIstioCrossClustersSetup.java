@@ -80,10 +80,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItIstioCrossClustersSetup {
 
-  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
-  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-  private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
+  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossclustersdomaintransaction-domain1.yaml";
+  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
+  private static final String WDT_IMAGE_NAME1 = "crossclustersdomain1-wdt-image";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossclustersdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
 
   private static String op1Namespace = "crosscluster-operator1-cluster1";
@@ -96,6 +96,9 @@ public class ItIstioCrossClustersSetup {
   private static LoggingFacade logger = null;
   static int istioIngressPort;
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
+  private static boolean TWO_CLUSTERS = Boolean.parseBoolean(java.util.Optional.ofNullable(
+      System.getenv("TWO_CLUSTERS"))
+      .orElse("false"));
 
   /**
    * Install Operator.
@@ -103,127 +106,128 @@ public class ItIstioCrossClustersSetup {
    */
   @BeforeAll
   public static void initAll() {
+    if (TWO_CLUSTERS) {
+      logger = getLogger();
+      // create standard, reusable retry/backoff policy
+      withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await();
+      List<String> clusterOneNamespaces = new ArrayList<>();
+      clusterOneNamespaces.add(op1Namespace);
+      clusterOneNamespaces.add(domain1Namespace);
+      //clean before running the test
+      try {
+        oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup(clusterOneNamespaces);
+      } catch (Exception ex) {
+        //ignore
+      }
+      updatePropertyFile();
+      // Label the domain/operator namespace with istio-injection=enabled
+      java.util.Map<String, String> labelMap = new java.util.HashMap();
+      labelMap.put("istio-injection", "enabled");
 
-    logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-    List<String> clusterOneNamespaces = new ArrayList<>();
-    clusterOneNamespaces.add(op1Namespace);
-    clusterOneNamespaces.add(domain1Namespace);
-    //clean before running the test
-    try {
-      oracle.weblogic.kubernetes.utils.CleanupUtil.cleanup(clusterOneNamespaces);
-    } catch (Exception ex) {
-      //ignore
+      assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace, labelMap));
+      assertDoesNotThrow(() -> addLabelsToNamespace(op1Namespace, labelMap));
     }
-    updatePropertyFile();
-    // Label the domain/operator namespace with istio-injection=enabled
-    java.util.Map<String, String> labelMap = new java.util.HashMap();
-    labelMap.put("istio-injection", "enabled");
-
-    assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(op1Namespace,labelMap));
 
   }
 
   @Test
   @DisplayName("Build applications and create operator and domain in cluster1")
   public void testInitCluster1() {
+    if (TWO_CLUSTERS) {
+      logger.info("Creating namespace for Operator in cluster1");
+      assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
+          "Failed to create namespace for operator in cluster1");
 
-    logger.info("Creating namespace for Operator in cluster1");
-    assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
-        "Failed to create namespace for operator in cluster1");
+      logger.info("Creating namespace for Domain in cluster1");
+      assertDoesNotThrow(() -> Kubernetes.createNamespace(domain1Namespace),
+          "Failed to create namespace for domain in cluster1");
 
-    logger.info("Creating namespace for Domain in cluster1");
-    assertDoesNotThrow(() -> Kubernetes.createNamespace(domain1Namespace),
-        "Failed to create namespace for domain in cluster1");
+      // install and verify operator
+      installAndVerifyOperator(op1Namespace, domain1Namespace);
 
-    // install and verify operator
-    installAndVerifyOperator(op1Namespace, domain1Namespace);
+      //build application archive
+      Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+          "build", domain1Namespace);
+      logger.info("distDir is {0}", distDir.toString());
+      assertTrue(Paths.get(distDir.toString(),
+          "txforward.ear").toFile().exists(),
+          "Application archive is not available");
+      String appSource = distDir.toString() + "/txforward.ear";
+      logger.info("Application is in {0}", appSource);
 
-    //build application archive
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "txforward.ear").toFile().exists(),
-        "Application archive is not available");
-    String appSource = distDir.toString() + "/txforward.ear";
-    logger.info("Application is in {0}", appSource);
+      //build application archive
+      distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+          "build", domain1Namespace);
+      logger.info("distDir is {0}", distDir.toString());
+      assertTrue(Paths.get(distDir.toString(),
+          "cdttxservlet.war").toFile().exists(),
+          "Application archive is not available");
+      String appSource1 = distDir.toString() + "/cdttxservlet.war";
+      logger.info("Application is in {0}", appSource1);
 
-    //build application archive
-    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
-        "build", domain1Namespace);
-    logger.info("distDir is {0}", distDir.toString());
-    assertTrue(Paths.get(distDir.toString(),
-        "cdttxservlet.war").toFile().exists(),
-        "Application archive is not available");
-    String appSource1 = distDir.toString() + "/cdttxservlet.war";
-    logger.info("Application is in {0}", appSource1);
+      // build the model file list for domain1
+      final List<String> modelListDomain1 = Arrays.asList(
+          MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
+          MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
 
-    // build the model file list for domain1
-    final List<String> modelListDomain1 = Arrays.asList(
-        MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
-        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
+      final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
 
-    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+      logger.info("Creating image with model file and verify");
+      domain1Image = createImageAndVerify(
+          WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
+      logger.info("Created {0} image", domain1Image);
 
-    logger.info("Creating image with model file and verify");
-    domain1Image = createImageAndVerify(
-        WDT_IMAGE_NAME1, modelListDomain1, appSrcDirList1, WDT_MODEL_DOMAIN1_PROPS, PROPS_TEMP_DIR, domainUid1);
-    logger.info("Created {0} image", domain1Image);
+      // docker login and push image to docker registry if necessary
+      dockerLoginAndPushImageToRegistry(domain1Image);
 
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(domain1Image);
-
-    // create admin credential secret for domain1
-    logger.info("Create admin credential secret for domain1");
-    String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
+      // create admin credential secret for domain1
+      logger.info("Create admin credential secret for domain1");
+      String domain1AdminSecretName = domainUid1 + "-weblogic-credentials";
+      assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+          domain1AdminSecretName, domain1Namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          String.format("createSecret %s failed for %s", domain1AdminSecretName, domainUid1));
 
 
-    //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image, K8S_NODEPORT_HOST1);
-    int adminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
-        "Getting admin server node port failed");
+      //create domain1
+      createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image, K8S_NODEPORT_HOST1);
+      int adminServiceNodePort = assertDoesNotThrow(
+          () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
+          "Getting admin server node port failed");
 
-    String clusterService = domainUid1 + "-cluster-" + clusterName + "." + domain1Namespace + ".svc.cluster.local";
+      String clusterService = domainUid1 + "-cluster-" + clusterName + "." + domain1Namespace + ".svc.cluster.local";
 
-    java.util.Map<String, String> templateMap  = new java.util.HashMap();
-    templateMap.put("NAMESPACE", domain1Namespace);
-    templateMap.put("ADMIN_SERVICE",domain1AdminServerPodName);
-    templateMap.put("CLUSTER_SERVICE", clusterService);
+      java.util.Map<String, String> templateMap = new java.util.HashMap();
+      templateMap.put("NAMESPACE", domain1Namespace);
+      templateMap.put("ADMIN_SERVICE", domain1AdminServerPodName);
+      templateMap.put("CLUSTER_SERVICE", clusterService);
 
-    Path svcYamlSrc = Paths.get(RESOURCE_DIR, "istio", "istio-cdt-http-template-service.yaml");
-    Path svcYmlTarget = assertDoesNotThrow(
-        () -> generateFileFromTemplate(svcYamlSrc.toString(),
-            "istiocrossdomaintransactiontemp/istio-cdt-http-service.yaml", templateMap));
-    logger.info("Generated Http VS/Gateway file path is {0}", svcYmlTarget);
+      Path svcYamlSrc = Paths.get(RESOURCE_DIR, "istio", "istio-cdt-http-template-service.yaml");
+      Path svcYmlTarget = assertDoesNotThrow(
+          () -> generateFileFromTemplate(svcYamlSrc.toString(),
+              "istiocrossdomaintransactiontemp/istio-cdt-http-service.yaml", templateMap));
+      logger.info("Generated Http VS/Gateway file path is {0}", svcYmlTarget);
 
-    boolean deployRes = deployHttpIstioGatewayAndVirtualservice(svcYmlTarget);
-    assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
+      boolean deployRes = deployHttpIstioGatewayAndVirtualservice(svcYmlTarget);
+      assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
 
-    istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+      istioIngressPort = getIstioHttpIngressPort();
+      logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    logger.info("Validating WebLogic admin server access by login to console");
-    String consoleUrl = "http://" + K8S_NODEPORT_HOST1 + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    boolean checkConsole =
-        checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
-    logger.info("WebLogic console on domain1 is accessible");
-    assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,
-          String.valueOf(adminServiceNodePort), String.valueOf(istioIngressPort));
-      String.format("Failed to update %s with namespace %s",
-          WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
-    });
-
+      logger.info("Validating WebLogic admin server access by login to console");
+      String consoleUrl = "http://" + K8S_NODEPORT_HOST1 + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole =
+          checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
+      logger.info("WebLogic console on domain1 is accessible");
+      assertDoesNotThrow(() -> {
+        addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,
+            String.valueOf(adminServiceNodePort), String.valueOf(istioIngressPort));
+        String.format("Failed to update %s with namespace %s",
+            WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
+      });
+    }
   }
 
   private static void updatePropertyFile() {
