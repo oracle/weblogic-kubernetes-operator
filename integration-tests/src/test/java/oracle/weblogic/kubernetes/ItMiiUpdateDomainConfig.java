@@ -113,7 +113,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * This test class verifies the following scenarios
  *
- * <p>testServerLogsAreOnPV
+ * <p>testMiiServerLogsAreOnPV
  * domain logHome is on PV, check server logs are on PV
  *
  * <p>testMiiCheckSystemResources
@@ -268,12 +268,13 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Check server logs are written on PV.
+   * Check server logs are written on PersistentVolume(PV).
+   * The test looks for the string RUNNING in server log
    */
   @Test
   @Order(1)
-  @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
-  public void testServerLogsAreOnPV() {
+  @DisplayName("Check the server logs are written to PersistentVolume")
+  public void testMiiServerLogsAreOnPV() {
 
     // check server logs are written on PV and look for string RUNNING in log
     checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
@@ -289,7 +290,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(2)
-  @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
+  @DisplayName("Verify the pre-configured SystemResources in the domain")
   public void testMiiCheckSystemResources() {
 
     assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
@@ -326,7 +327,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(3)
-  @DisplayName("Delete SystemResources from a model-in-image domain")
+  @DisplayName("Delete SystemResources from the domain")
   public void testMiiDeleteSystemResources() {
 
     String configMapName = "deletesysrescm";
@@ -388,7 +389,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(4)
-  @DisplayName("Add New JDBC/JMS SystemResources to a model-in-image domain")
+  @DisplayName("Add new JDBC/JMS SystemResources to the domain")
   public void testMiiAddSystemResources() {
 
     logger.info("Use same database secret created in befreAll() method");
@@ -455,7 +456,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(5)
-  @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
+  @DisplayName("Add a dynamic cluster to the domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -515,7 +516,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(6)
-  @DisplayName("Add a dynamic cluster to model-in-image domain with non-zero replica count")
+  @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -592,7 +593,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(7)
-  @DisplayName("Add a configured cluster to a model-in-image domain")
+  @DisplayName("Add a configured cluster to the domain")
   public void testMiiAddConfiguredCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -664,7 +665,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(8)
-  @DisplayName("Change the WebLogic Admin credential in model-in-image domain")
+  @DisplayName("Change the WebLogic Admin credential of the domain")
   public void testMiiUpdateWebLogicCredential() {
     final boolean VALID = true;
     final boolean INVALID = false;
@@ -721,13 +722,13 @@ class ItMiiUpdateDomainConfig {
   /**
    * Create a configmap with a sparse model file with following attributes for 
    * Cluster/cluster-1/DynamicServers
-   *   MaxDynamicClusterSize: 4
-   *   DynamicClusterSize: 4
-   *   MinDynamicClusterSize: 2
-   * Patch the domain resource with the configmap.
-   * Update the restart version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
+   *   MaxDynamicClusterSize: 4 (5)
+   *   DynamicClusterSize: 4 (5) 
+   *   MinDynamicClusterSize: 2 (1)
+   * Patch the domain resource with the configmap and update restartVersion.
+   * Make sure a rolling restart is triggered.  
+   * Verify the updated MinDynamicClusterSize size, by scale down the custer 
+   * to count 1. Make sure that the cluster size never goes below 2. 
    */
   @Test
   @Order(9)
@@ -780,7 +781,7 @@ class ItMiiUpdateDomainConfig {
     // Since the MinDynamicClusterSize is set to 2 in the configmap 
     // and allowReplicasBelowMinDynClusterSize is set false, the repilca
     // count cannot go below 2. So during the following scale down operation 
-    // only third  manged server pod should be removed.  
+    // only third managed server pod should be removed.  
     boolean p2Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
         String.format("repilca patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
