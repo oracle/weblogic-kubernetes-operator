@@ -86,7 +86,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-public class ItIstioCrossClusters {
+@org.junit.jupiter.api.Tag("twoclusters")
+public class ItIstioCrossClusters extends ItIstioCrossClustersSetup{
   
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossclustersdomaintransaction-domain2.yaml";
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
@@ -327,7 +328,7 @@ public class ItIstioCrossClusters {
   }
 
 
-  private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
+  private static void createDomain1(String domainUid, String domainNamespace, String adminSecretName,
                                    String domainImage, String host) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
@@ -403,7 +404,7 @@ public class ItIstioCrossClusters {
 
   }
 
-  private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+  private static void createDomainResource1(String domainUid, String domNamespace, String adminSecretName,
                                            String repoSecretName, int replicaCount, String domainImage) {
     logger.info("Image to be used is {0}", domainImage);
     // create the domain CR
