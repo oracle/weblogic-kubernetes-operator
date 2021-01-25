@@ -46,6 +46,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -117,7 +118,7 @@ public class EventHelper {
           .createEventAsync(
               event.getMetadata().getNamespace(),
               event,
-              new CreateEventResponseStep(getNext()));
+              new CreateEventResponseStep(getNext(), event.getReason()));
     }
 
     private Step createReplaceEventCall(V1Event event, @NotNull V1Event existingEvent) {
@@ -147,8 +148,11 @@ public class EventHelper {
     }
 
     private class CreateEventResponseStep extends ResponseStep<V1Event> {
-      CreateEventResponseStep(Step next) {
+      String eventReason;
+
+      CreateEventResponseStep(Step next, String eventReason) {
         super(next);
+        this.eventReason = eventReason;
       }
 
       @Override
@@ -156,6 +160,23 @@ public class EventHelper {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
+        if (isNotAuthorizedForNamespaceWatchingStoppedEvent(callResponse)) {
+          LOGGER.info(MessageKeys.CREATING_EVENT_UNAUTHORIZED,
+                  eventData.eventItem.getReason(), eventData.getResourceName());
+        }
+        return super.onFailure(packet, callResponse);
+      }
+
+      private boolean isNotAuthorizedForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
+        return UnrecoverableErrorBuilder.isUnauthorizedFailure(callResponse) && isNamespaceWatchingStoppedEvent();
+      }
+
+      private boolean isNamespaceWatchingStoppedEvent() {
+        return NAMESPACE_WATCHING_STOPPED_EVENT.equals(Optional.ofNullable(eventReason).orElse(""));
       }
     }
 
@@ -374,7 +395,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
+        return NAMESPACE_WATCHING_STARTED_PATTERN;
       }
 
       @Override
@@ -401,7 +422,7 @@ public class EventHelper {
     NAMESPACE_WATCHING_STOPPED {
       @Override
       public String getReason() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+        return NAMESPACE_WATCHING_STOPPED_EVENT;
       }
 
       @Override

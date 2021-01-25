@@ -69,6 +69,10 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
     return code == 404 || code == 410;
   }
 
+  public static boolean isUnauthorized(ApiException e) {
+    return e.getCode() == 403;
+  }
+
   /**
    * Create unrecoverable error builder.
    */

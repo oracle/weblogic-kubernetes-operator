@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.calls;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Event;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 
 public class UnrecoverableErrorBuilder {
@@ -28,12 +29,20 @@ public class UnrecoverableErrorBuilder {
     return callResponse.isFailure() && isNotFound(callResponse.getE());
   }
 
+  public static boolean isUnauthorizedFailure(CallResponse<V1Event> callResponse) {
+    return callResponse.isFailure() && isUnauthorized(callResponse.getE());
+  }
+
   private static boolean isUnrecoverable(ApiException e) {
     return UnrecoverableErrorBuilderImpl.isUnrecoverable(e);
   }
 
   private static boolean isNotFound(ApiException e) {
     return UnrecoverableErrorBuilderImpl.isNotFound(e);
+  }
+
+  private static boolean isUnauthorized(ApiException e) {
+    return UnrecoverableErrorBuilderImpl.isUnauthorized(e);
   }
 
   /**
@@ -54,4 +63,5 @@ public class UnrecoverableErrorBuilder {
     ApiException apiException = callResponse.getE();
     return new FailureStatusSourceException(fromFailedCall(callResponse), apiException);
   }
+
 }
