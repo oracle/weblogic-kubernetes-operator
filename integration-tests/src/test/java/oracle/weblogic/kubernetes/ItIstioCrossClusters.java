@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
@@ -86,50 +87,45 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-public class ItCrossClusterDomainTransaction {
-
-  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
+public class ItIstioCrossClusters {
+  
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
-
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
   private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
-  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
-  private static final String WDT_IMAGE_NAME2 = "domain2-cdxaction-wdt-image";
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
-  private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
+  private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
 
-  private static String op1Namespace = null;
   private static String op2Namespace = null;
-  private static String domain1Namespace = null;
+  private static String domain1Namespace = "crosscluster-domain1-cluster1";
   private static String domain2Namespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String domainUid1 = "domain1";
   private static String domainUid2 = "domain2";
-  private static String adminServiceDomain1NodePort;
+  private static String istioClusterOneIngressPort;
   private static final String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
-  private static String domain1Image;
-
+  
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
-  private static final String KUBECONFIG1;
-  private static final String KUBECONFIG2;
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
-  private static List<String> clusterOneNamespaces = new ArrayList<>();
-
+  
   static {
-    logger = getLogger();
-    KUBECONFIG1 = System.getenv("KUBECONFIG1");
-    KUBECONFIG2 = System.getenv("KUBECONFIG2");
-
+    try {
+      FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
+      Properties props = new Properties();
+      props.load(in);
+      istioClusterOneIngressPort = props.getProperty("ISTIO_INGRESS_PORT");
+      in.close();
+    } catch (IOException ex) {
+      logger.info("Can't read property file");
+    }
   }
-
 
   /**
    * Install Operator.
@@ -138,8 +134,8 @@ public class ItCrossClusterDomainTransaction {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    logger = getLogger();
     //start to setup in cluster2
-
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -166,12 +162,16 @@ public class ItCrossClusterDomainTransaction {
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
 
+    // Label the domain/operator namespace with istio-injection=enabled
+    Map<String, String> labelMap = new HashMap();
+    labelMap.put("istio-injection", "enabled");
+
+    //assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(op2Namespace,labelMap));
+
     // install and verify operator in cluster2
     installAndVerifyOperator(op2Namespace, domain2Namespace);
-    domain1Namespace = "crosscluster-domain1-cluster1";
-    op1Namespace = "crosscluster-operator1-cluster1";
-    clusterOneNamespaces.add(op1Namespace);
-    clusterOneNamespaces.add(domain1Namespace);
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
     // file with the namespaces. For cross domain transaction to work, we need to have the externalDNSName
@@ -264,35 +264,26 @@ public class ItCrossClusterDomainTransaction {
   @Test
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
-    try {
-      FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
-      Properties props = new Properties();
-      props.load(in);
-      adminServiceDomain1NodePort = props.getProperty("ADMIN_SERVICE_NODE_PORT");
-      in.close();
-    } catch (IOException ex) {
-      logger.info("Can't read property file");
-    }
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST1, adminServiceDomain1NodePort, domain1AdminServerPodName, domain1Namespace,
-        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
+        K8S_NODEPORT_HOST1, istioClusterOneIngressPort, domain1AdminServerPodName, domain1Namespace,
+        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
     result = assertDoesNotThrow(
         () -> exec(curlRequest, true));
-    logger.info("\n HTTP response is \n " + result.stdout());
-    logger.info("curl command returned {0}", result.toString());
+    logger.info("curl result {0}", result.exitValue());
+    result = assertDoesNotThrow(
+        () -> exec(curlRequest, true));
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
     }
-    testCrossDomainTransactionWithFailInjection();
-
   }
 
   /*
@@ -305,38 +296,30 @@ public class ItCrossClusterDomainTransaction {
    * with domain2 and the transaction should commit.
    *
    */
-  //@Test
-  //@DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
-
-  private void testCrossDomainTransactionWithFailInjection() {
+  @Test
+  @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
+  public void testCrossDomainTransactionWithFailInjection() {
 
     logger.info("Getting admin server external service node port");
-    /*
-    int domain1AdminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
-    */
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST1, adminServiceDomain1NodePort, domain1Namespace, domain2Namespace);
+        K8S_NODEPORT_HOST1, istioClusterOneIngressPort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
     result = assertDoesNotThrow(
         () -> exec(curlRequest, true));
-    logger.info("\n HTTP response is \n " + result.stdout());
-    logger.info("curl command returned {0}", result.toString());
     if (result.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + result.stdout());
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=SUCCESS"),
           "crossDomainTransaction with TMAfterTLogBeforeCommitExit failed");
     }
-
   }
 
   private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
-                            String domainImage, String host) {
+                                   String domainImage, String host) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -412,7 +395,7 @@ public class ItCrossClusterDomainTransaction {
   }
 
   private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
-                                    String repoSecretName, int replicaCount, String domainImage) {
+                                           String repoSecretName, int replicaCount, String domainImage) {
     logger.info("Image to be used is {0}", domainImage);
     // create the domain CR
     Domain domain = new Domain()
@@ -474,110 +457,5 @@ public class ItCrossClusterDomainTransaction {
       }
     }
     return -1;
-  }
-
-  private static void switchTheClusterConfig(String kubeconfig) throws Exception {
-    logger.info("Before update KUBECONFIG " + System.getenv("KUBECONFIG"));
-    logger.info("switch cluster config to " + kubeconfig);
-    updateEnvironmentVar("KUBECONFIG", kubeconfig);
-    logger.info("Updated KUBECONFIG " + System.getenv("KUBECONFIG"));
-    assertTrue(System.getenv("KUBECONFIG").equals(kubeconfig));
-  }
-  /*
-  private static void injectEnvironmentVariable(String key, String value)
-      throws Exception {
-
-    Class<?> processEnvironment = Class.forName("java.lang.ProcessEnvironment");
-
-    Field unmodifiableMapField = getAccessibleField(processEnvironment, "theUnmodifiableEnvironment");
-    Object unmodifiableMap = unmodifiableMapField.get(null);
-    injectIntoUnmodifiableMap(key, value, unmodifiableMap);
-
-    Field mapField = getAccessibleField(processEnvironment, "theEnvironment");
-    Map<String, String> map = (Map<String, String>) mapField.get(null);
-    map.put(key, value);
-  }
-
-  private static Field getAccessibleField(Class<?> clazz, String fieldName)
-      throws NoSuchFieldException {
-
-    java.lang.reflect.Field field = clazz.getDeclaredField(fieldName);
-    field.setAccessible(true);
-    return field;
-  }
-
-  private static void injectIntoUnmodifiableMap(String key, String value, Object map)
-      throws ReflectiveOperationException {
-
-    Class unmodifiableMap = Class.forName("java.util.Collections$UnmodifiableMap");
-    Field field = getAccessibleField(unmodifiableMap, "m");
-    Object obj = field.get(map);
-    ((Map<String, String>) obj).put(key, value);
-  }
-  */
-  private static Map<String, String> getModifiableEnvironmentMap() {
-    try {
-      Map<String,String> unmodifiableEnv = System.getenv();
-      Class<?> cl = unmodifiableEnv.getClass();
-      Field field = cl.getDeclaredField("m");
-      field.setAccessible(true);
-      Map<String,String> modifiableEnv = (Map<String,String>) field.get(unmodifiableEnv);
-      return modifiableEnv;
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to access writable environment variable map.");
-    }
-  }
-
-  private static Map<String, String> getModifiableEnvironmentMap2() {
-    try {
-      Class<?> processEnvironmentClass = Class.forName("java.lang.ProcessEnvironment");
-      Field theUnmodifiableEnvironmentField = processEnvironmentClass.getDeclaredField("theUnmodifiableEnvironment");
-      theUnmodifiableEnvironmentField.setAccessible(true);
-      Map<String,String> theUnmodifiableEnvironment = (Map<String,String>)theUnmodifiableEnvironmentField.get(null);
-
-      Class<?> theUnmodifiableEnvironmentClass = theUnmodifiableEnvironment.getClass();
-      Field theModifiableEnvField = theUnmodifiableEnvironmentClass.getDeclaredField("m");
-      theModifiableEnvField.setAccessible(true);
-      Map<String,String> modifiableEnv = (Map<String,String>) theModifiableEnvField.get(theUnmodifiableEnvironment);
-      return modifiableEnv;
-    } catch (Exception e) {
-      throw new RuntimeException("Unable to access writable environment variable map.");
-    }
-  }
-
-  private static Map<String, String> updateEnvironmentVar(String key, String value) {
-
-    Map<String,String> modifiableEnv = getModifiableEnvironmentMap();
-    modifiableEnv.remove(key);
-    modifiableEnv.put(key, value);
-    return modifiableEnv;
-  }
-
-  private static Map<String, String> clearEnvironmentVars(String[] keys) {
-
-    Map<String,String> modifiableEnv = getModifiableEnvironmentMap();
-
-    HashMap<String, String> savedVals = new HashMap<String, String>();
-
-    for (String k : keys) {
-      String val = modifiableEnv.remove(k);
-      if (val != null) {
-        savedVals.put(k, val);
-      }
-    }
-    return savedVals;
-  }
-
-  private static void setEnvironmentVars(Map<String, String> varMap) {
-    getModifiableEnvironmentMap().putAll(varMap);
-  }
-
-
-  private static void updateEnvVariable(String key, String newval) {
-    String[] keys = { "KUBECONFIG" };
-    clearEnvironmentVars(keys);
-    HashMap<String, String> newVals = new HashMap<String, String>();
-    newVals.put("KUBECONFIG", newval);
-    setEnvironmentVars(newVals);
   }
 }

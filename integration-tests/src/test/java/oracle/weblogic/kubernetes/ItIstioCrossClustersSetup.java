@@ -50,9 +50,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -60,9 +63,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -70,47 +76,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify cross domain transaction is successful")
+@DisplayName("Setup operator, domain, applications for cross cluster domain transaction.")
 @IntegrationTest
-public class ItCrossClusterDomainTransactionSetup {
+public class ItIstioCrossClustersSetup {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
-
-
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-
-  private static final String WDT_IMAGE_NAME1 = "domain1-cdxaction-wdt-image";
-
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
+  private static final String WDT_IMAGE_NAME1 = "domain1-wdt-image";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
-  private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
 
   private static String op1Namespace = "crosscluster-operator1-cluster1";
-
   private static String domain1Namespace = "crosscluster-domain1-cluster1";
-
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String domainUid1 = "domain1";
-
+  private static String clusterName = "cluster-1";
   private static final String domain1AdminServerPodName = domainUid1 + "-admin-server";
-  private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
-
-
   private static String domain1Image;
-
   private static LoggingFacade logger = null;
-
-  private static final String KUBECONFIG1;
-
-
+  static int istioIngressPort;
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
-
-
-  static {
-    logger = getLogger();
-    KUBECONFIG1 = System.getenv("KUBECONFIG1");
-  }
-
 
   /**
    * Install Operator.
@@ -119,7 +104,7 @@ public class ItCrossClusterDomainTransactionSetup {
   @BeforeAll
   public static void initAll() {
 
-
+    logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -134,19 +119,24 @@ public class ItCrossClusterDomainTransactionSetup {
       //ignore
     }
     updatePropertyFile();
+    // Label the domain/operator namespace with istio-injection=enabled
+    java.util.Map<String, String> labelMap = new java.util.HashMap();
+    labelMap.put("istio-injection", "enabled");
+
+    assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(op1Namespace,labelMap));
 
   }
 
+  @Test
+  @DisplayName("Build applications and create operator and domain in cluster1")
+  public void testInitCluster1() {
 
-  private static void initCluster1() {
-
-    // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator in cluster1");
-
+    logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");
 
-    logger.info("Creating unique namespace for Domain in cluster1");
+    logger.info("Creating namespace for Domain in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(domain1Namespace),
         "Failed to create namespace for domain in cluster1");
 
@@ -201,9 +191,35 @@ public class ItCrossClusterDomainTransactionSetup {
     int adminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
+
+    String clusterService = domainUid1 + "-cluster-" + clusterName + "." + domain1Namespace + ".svc.cluster.local";
+
+    java.util.Map<String, String> templateMap  = new java.util.HashMap();
+    templateMap.put("NAMESPACE", domain1Namespace);
+    templateMap.put("ADMIN_SERVICE",domain1AdminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
+
+    Path svcYamlSrc = Paths.get(RESOURCE_DIR, "istio", "istio-cdt-http-template-service.yaml");
+    Path svcYmlTarget = assertDoesNotThrow(
+        () -> generateFileFromTemplate(svcYamlSrc.toString(),
+            "istiocrossdomaintransactiontemp/istio-cdt-http-service.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0}", svcYmlTarget);
+
+    boolean deployRes = deployHttpIstioGatewayAndVirtualservice(svcYmlTarget);
+    assertTrue(deployRes, "Could not deploy Http Istio Gateway/VirtualService");
+
+    istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    String consoleUrl = "http://" + K8S_NODEPORT_HOST1 + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+    boolean checkConsole =
+        checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
+    assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
+    logger.info("WebLogic console on domain1 is accessible");
     assertDoesNotThrow(() -> {
       addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,
-          String.valueOf(adminServiceNodePort));
+          String.valueOf(adminServiceNodePort), String.valueOf(istioIngressPort));
       String.format("Failed to update %s with namespace %s",
           WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
     });
@@ -221,7 +237,7 @@ public class ItCrossClusterDomainTransactionSetup {
     });
 
     assertDoesNotThrow(() -> {
-      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,"0");
+      addToPropertyFile(WDT_MODEL_DOMAIN1_PROPS, domain1Namespace, K8S_NODEPORT_HOST1,"0", "0");
       String.format("Failed to update %s with namespace %s",
           WDT_MODEL_DOMAIN1_PROPS, domain1Namespace);
     });
@@ -229,7 +245,8 @@ public class ItCrossClusterDomainTransactionSetup {
   }
 
   private static void addToPropertyFile(String propFileName, String domainNamespace,
-                                        String host, String adminServiceNodePort) throws IOException {
+                                        String host, String adminServiceNodePort,
+                                        String istioIngressPort) throws IOException {
     FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
     Properties props = new Properties();
     props.load(in);
@@ -239,27 +256,9 @@ public class ItCrossClusterDomainTransactionSetup {
     props.setProperty("NAMESPACE", domainNamespace);
     props.setProperty("K8S_NODEPORT_HOST", host);
     props.setProperty("ADMIN_SERVICE_NODE_PORT", adminServiceNodePort);
+    props.setProperty("ISTIO_INGRESS_PORT", istioIngressPort);
     props.store(out, null);
     out.close();
-  }
-
-  /*
-   * This test verifies cross domain transaction is successful. domain in image using wdt is used
-   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
-   * is invoked which starts a transaction that spans both domains.
-   * The application consists of a servlet front-end and a remote object that defines a method to register
-   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
-   * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
-   * listen-addresses are resolvable between the transaction participants, then the transaction should
-   * complete successfully
-   */
-  @Test
-  @DisplayName("create operator and domain in cluster1")
-  public void testInitCluster1() {
-
-    initCluster1();
-
   }
 
   private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
