@@ -12,15 +12,13 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// todo JUnit5 The tests in this class each make lots of assertions using the JUnit 4 Assert
-// and should be converted to use matchers not part of JUnit (such as hamcrest)
 public class DomainTopologyTest {
 
 
@@ -214,8 +212,7 @@ public class DomainTopologyTest {
     assertNotNull(wlsDynamicServersConfig);
     assertEquals("cluster-1", wlsDynamicServersConfig.getName());
     assertEquals("cluster-1-template", wlsDynamicServersConfig.getServerTemplateName());
-    assertFalse(
-        "Expected calculatedListenPorts false", wlsDynamicServersConfig.getCalculatedListenPorts());
+    assertFalse(wlsDynamicServersConfig.getCalculatedListenPorts());
     assertEquals("managed-server", wlsDynamicServersConfig.getServerNamePrefix());
     assertEquals(4, wlsDynamicServersConfig.getDynamicClusterSize().intValue());
     assertEquals(8, wlsDynamicServersConfig.getMaxDynamicClusterSize().intValue());

@@ -27,8 +27,8 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
@@ -44,9 +44,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@SuppressWarnings("UnconstructableJUnitTestCase") // mistaken warning due to private constructor
 public class ShUnit2MojoTest extends MojoTestBase {
 
   private static final String TEST_SCRIPT = "shunit2";
@@ -74,15 +74,11 @@ public class ShUnit2MojoTest extends MojoTestBase {
   private static final File TEST_SOURCE_DIRECTORY = new File("/tests");
 
   public ShUnit2MojoTest() {
-    this(new ShUnit2Mojo());
+    super(new ShUnit2Mojo());
+    mojo = getMojo();
   }
 
-  private ShUnit2MojoTest(ShUnit2Mojo mojo) {
-    super(mojo);
-    this.mojo = mojo;
-  }
-
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ClassReader classReader = new ClassReader(ShUnit2Mojo.class.getName());
     classReader.accept(new Visitor(ShUnit2Mojo.class), 0);
@@ -166,12 +162,12 @@ public class ShUnit2MojoTest extends MojoTestBase {
     assertThat(mojo.getEffectiveShUnit2Directory(), equalTo(EARLIER_SHUNIT2_DIRECTORY));
   }
 
-  @Test(expected = MojoExecutionException.class)
-  public void whenShUnit2NotInstalled_reportFailure() throws MojoFailureException, MojoExecutionException {
+  @Test
+  public void whenShUnit2NotInstalled_reportFailure() {
     fileSystem.clear();
     fileSystem.defineFileContents(TEST_CLASSES_DIRECTORY, "");
 
-    executeMojo();
+    assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
   @Test
@@ -374,8 +370,8 @@ public class ShUnit2MojoTest extends MojoTestBase {
     return AnsiUtils.createFormatter(BOLD, RED_FG).format("ASSERT:") + explanation;
   }
 
-  @Test(expected = MojoFailureException.class)
-  public void whenAnyTestsFail_mojoThrowsException() throws MojoFailureException, MojoExecutionException {
+  @Test
+  public void whenAnyTestsFail_mojoThrowsException() {
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test1.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test2.sh"), "");
     defineExecution()
@@ -385,7 +381,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
           .withOutputs("test3", createExpectedTestFailure("expected blue but was red"),
                        "test4", createExpectedTestFailure("expected left but was right"));
 
-    executeMojo();
+    assertThrows(MojoFailureException.class, this::executeMojo);
   }
 
   // todo print tests run, failures at end of each testsuite
