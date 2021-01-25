@@ -762,10 +762,11 @@ You can use the command to display the domain status
 
 `kubectl -n <ns> describe domain <domain name>`
 
-|Scenarios|Domain status|
-  |---------------------|-------------|
-  |Successful updates|Domain status will have a condition OnlineUpdateComplete with message and introspectionVersion|
-  |Changes rolled back per request|Domain status will have a condition OnlineUpdateCanceled with message and introspectionVersion|
+|Scenarios|Domain status ||
+  |---------------------|-------------|-------|
+  |Successful updates when there is no non-dynamic changes|Final domain status is Available with ServerReady reason. updated introspectVersion in the pods|
+  |When onNonDynamicChanges=CommitUpdateAndRoll and there is non dynamic changes |Final domain status is Available with ServerReady reason. updated introspectVersion in the pods |
+  |When onNonDynamicChanges=CommitUpdateOnly and there is non dynamic changes | Domain status will have a condition 'ConfigChangesPendingRestart'. Each pod will have a label 'weblogic.configurationChangedPendingRestart=true'|
   |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
 
 For example, after a successful online update, you will see this in the `Domain Status` section
@@ -780,11 +781,6 @@ Status:
     Replicas:          2
     Replicas Goal:     2
   Conditions:
-    Last Transition Time:        2020-11-18T15:19:11.837Z
-    Message:                     Online update successful. No restart necessary
-    Reason:                      Online update applied, introspectVersion updated to 67
-    Status:                      True
-    Type:                        OnlineUpdateComplete
     Last Transition Time:        2020-11-18T15:19:11.867Z
     Reason:                      ServersReady
     Status:                      True
@@ -792,21 +788,25 @@ Status:
 
 ```
 
-If the changes involve non-dynamic MBean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
+If the changes involve non-dynamic mbean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
       
 ```
   Conditions:
-    Last Transition Time:  2020-11-20T17:13:00.170Z
-    Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to 
-                                 make the changes effective. The changes are:
+    Last Transition Time:  2021-01-20T15:09:15.209Z
+    Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
 
 The following non-dynamic attribute(s) have been changed on MBeans 
 that require server re-start:
 MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
 Attributes changed : Value
-    Reason:                      Online update applied, introspectVersion updated to 67
+    Reason:                      Online update applied, introspectVersion updated to 82
     Status:                      True
-    Type:                        OnlineUpdateComplete
+    Type:                        ConfigChangesPendingRestart
+```
+and you will see the label in each pod  
 
+```Labels:       weblogic.configurationChangedPendingRestart=true
+                 
 ```
 
+Once the domain and all the pods are recycled, the condition `ConfigChangesPendingRestart` and label are cleared
