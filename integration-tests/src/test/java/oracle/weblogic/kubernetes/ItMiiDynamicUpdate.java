@@ -12,11 +12,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -36,6 +39,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -50,9 +54,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -67,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -794,84 +801,93 @@ class ItMiiDynamicUpdate {
 
   /**
    * Multiple non-dynamic changes with default CommitUpdateOnly for onNonDynamicChanges and restarting the domain.
-   * Recreate configmap containing non-dynamic change, changing DS attribute.
+   * Recreate configmap containing non-dynamic change, changing DS attribute, changing ScatteredReadsEnabled.
    * Patch the domain resource with the configmap, using default value CommitUpdateOnly for onNonDynamicChanges.
    * Update the introspect version of the domain resource.
    * Wait for introspector to complete.
-   * Verify the domain status is updated and domain is not restarted, change is not effective.
-   * Recreate configmap containing another non-dynamic change, changing DS JNDI name.
-   * Patch the domain resource with the configmap, using default value CommitUpdateOnly for onNonDynamicChanges.
-   * Update the introspect version of the domain resource.
-   * Wait for introspector to complete
-   * Verify the domain status is updated and domain is not restarted, change is not effective.
+   * Verify the domain status is updated and domain is not restarted, change is commited.
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
   @Order(12)
-  @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly "
-      + "and restart the domain")
+  @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
+
+    String expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
+        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
+        + " or not set. The changes are committed but the domain require manually restart to "
+        + " make the changes effective.";
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
 
-    // write sparse yaml to change deployment order for app to file
-    Path pathToChangeDeploymentOrderYaml = Paths.get(WORK_DIR + "/changedeploymentorder.yaml");
-    String yamlToChangeDeploymentOrder = "appDeployments:\n"
-        + "  Application:\n"
-        + "    myear:\n"
-        + "      Target: 'cluster-1'\n"
-        + "      DeploymentOrder: 200";
+    // write sparse yaml to change ScatteredReadsEnabled for adminserver
+    Path pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
+    String yamlToChangeReads = "topology:\n"
+        + "    Server:\n"
+        + "        \"admin-server\":\n"
+        + "            ScatteredReadsEnabled: true";
+    assertDoesNotThrow(() -> Files.write(pathToChangReadsYaml, yamlToChangeReads.getBytes()));
 
-    assertDoesNotThrow(() -> Files.write(pathToChangeDeploymentOrderYaml, yamlToChangeDeploymentOrder.getBytes()));
-    // make non-dynamic change, update datasource JDBCDriver params
-    /* replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
-              withStandardRetryPolicy); */
+    // make two non-dynamic changes, add  datasource JDBC driver params and change scatteredreadenabled
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", pathToChangeDeploymentOrderYaml.toString()),
-        withStandardRetryPolicy);
-    // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
-    // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
-    verifyPodsNotRolled(pods);
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
-
-    // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
-    String expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
-        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
-        + " or not set. The changes are committed but the domain require manually restart to "
-        + " make the changes effective.";
-    logger.info("Verifying the domain status condition message contains the expected msg");
-    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly);
-
-    // make another non-dynamic change, update datasource JNDI name
-    /* replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.updatedsjndiname.yaml"),
+            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString()),
               withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
-    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns();
+
     // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
     verifyPodsNotRolled(pods);
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
-    // check that the domain status condition type is "OnlineUpdateComplete" and message contains the expected msg
-    expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
-        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
-        + " or not set. The changes are committed but the domain require manually restart to "
-        + " make the changes effective.";
+    // check the change is committed
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+
+    // check server config for ScatteredReadsEnabled is updated
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "servers/" + adminServerName,
+        "\"scatteredReadsEnabled\": true"), "ScatteredReadsEnabled is not changed to true");
+    logger.info("ScatteredReadsEnabled is changed to true");
+
+    // check datasource configuration using REST api
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams/properties/properties",
+        "\"name\": \"testattrib\""), "JDBCSystemResource new property not found");
+    logger.info("JDBCSystemResource new property found");
+
+    // check that the domain status condition type is "ConfigChangesPendingRestart"
+    // and message contains the expected msg
     logger.info("Verifying the domain status condition message contains the expected msg");
-    verifyDomainStatusCondition("OnlineUpdateComplete", expectedMsgForCommitUpdateOnly); */
+    verifyDomainStatusCondition("ConfigChangesPendingRestart", expectedMsgForCommitUpdateOnly);
+
+    // restart domain and verify the changes are effective
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    // Even if pods are created, need the service to created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    // check datasource runtime after restart
+    assertTrue(checkSystemResourceRuntime(adminServiceNodePort,
+        "serverRuntimes/" + MANAGED_SERVER_NAME_BASE + "1/JDBCServiceRuntime/"
+        + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
+        "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
+    logger.info("JDBCSystemResource new property found");
 
   }
 
@@ -1199,5 +1215,53 @@ class ItMiiDynamicUpdate {
     logger.info("JDBCSystemResource configuration found");
     return pods;
 
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  private static boolean checkSystemResourceConfig(int nodePort, String resourcesType, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
+   * Check the system resource runtime using REST API.
+   * @param nodePort admin node port
+   * @param resourcesUrl url of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected value
+   */
+  private static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainRuntime")
+        .append("/")
+        .append(resourcesUrl)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
   }
 }

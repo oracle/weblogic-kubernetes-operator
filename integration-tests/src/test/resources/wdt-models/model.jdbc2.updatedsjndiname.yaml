@@ -20,5 +20,3 @@ resources:
                     Properties:
                         user:
                             Value: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:username@@'
-                        testattrib:
-                            Value: 'dummy'
