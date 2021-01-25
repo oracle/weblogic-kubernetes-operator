@@ -1062,7 +1062,7 @@ public class ItIntrospectVersion {
         .until((Callable<Boolean>) () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
           if (response.statusCode() != 200) {
-            logger.info("Response code is not 200 retrying");
+            logger.info("Response code is not 200 retrying...");
             return false;
           }
           boolean health = true;
