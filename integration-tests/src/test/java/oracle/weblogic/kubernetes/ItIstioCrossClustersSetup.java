@@ -191,7 +191,7 @@ public class ItIstioCrossClustersSetup {
 
 
     //create domain1
-    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image, K8S_NODEPORT_HOST1);
+    createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
     int adminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
@@ -264,8 +264,17 @@ public class ItIstioCrossClustersSetup {
     out.close();
   }
 
+
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param domainImage name of the image including its tag
+   * @param adminSecretName name of the admin secret
+   */
   public static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
-                                   String domainImage, String host) {
+                                   String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -340,6 +349,16 @@ public class ItIstioCrossClustersSetup {
 
   }
 
+  /**
+   * Create a basic Kubernetes domain resource and wait until the domain is fully up.
+   *
+   * @param domNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param domainImage name of the image including its tag
+   * @param adminSecretName name of the admin secret
+   * @param repoSecretName name of the secret for repo
+   * @param replicaCount number of managed servers to start
+   */
   public static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                            String repoSecretName, int replicaCount, String domainImage) {
     logger.info("Image to be used is {0}", domainImage);

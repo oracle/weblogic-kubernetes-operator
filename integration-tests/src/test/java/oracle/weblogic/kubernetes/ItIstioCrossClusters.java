@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
 @org.junit.jupiter.api.Tag("twoclusters")
-public class ItIstioCrossClusters extends ItIstioCrossClustersSetup{
+public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossclustersdomaintransaction-domain2.yaml";
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
@@ -219,7 +219,7 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup{
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(domain2Image);
     //create domain2
-    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image, K8S_NODEPORT_HOST2);
+    createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
   }
 
 
