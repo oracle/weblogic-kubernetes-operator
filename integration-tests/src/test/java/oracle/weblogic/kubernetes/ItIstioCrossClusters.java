@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -87,11 +88,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItIstioCrossClusters {
   
-  private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
-  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
-  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
-  private static final String WDT_IMAGE_NAME2 = "domain2-wdt-image";
-  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
+  private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossclustersdomaintransaction-domain2.yaml";
+  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
+  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossclustersdomaintransaction-domain2.properties";
+  private static final String WDT_IMAGE_NAME2 = "crossclustersdomain2-wdt-image";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossclustersdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
 
   private static String op2Namespace = null;
@@ -111,7 +112,12 @@ public class ItIstioCrossClusters {
   static String dbUrl;
   static int dbNodePort;
   private static String K8S_NODEPORT_HOST2 = System.getenv("K8S_NODEPORT_HOST2");
+
   private static String K8S_NODEPORT_HOST1 = System.getenv("K8S_NODEPORT_HOST1");
+
+  private static boolean TWO_CLUSTERS = Boolean.parseBoolean(java.util.Optional.ofNullable(
+      System.getenv("TWO_CLUSTERS"))
+      .orElse("false"));
   
   static {
     try {
@@ -132,6 +138,7 @@ public class ItIstioCrossClusters {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
+    Assumptions.assumeTrue(TWO_CLUSTERS);
     logger = getLogger();
     //start to setup in cluster2
     // create standard, reusable retry/backoff policy
@@ -165,8 +172,8 @@ public class ItIstioCrossClusters {
     labelMap.put("istio-injection", "enabled");
 
     //assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
-    assertDoesNotThrow(() -> addLabelsToNamespace(op2Namespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(op2Namespace, labelMap));
 
     // install and verify operator in cluster2
     installAndVerifyOperator(op2Namespace, domain2Namespace);
@@ -177,13 +184,15 @@ public class ItIstioCrossClusters {
     // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
     // property file
     updatePropertyFile();
+  }
 
+  private static void createDomainAndApps() {
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
     //build application archive
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+    Path distDir = BuildApplication.buildApplication(java.nio.file.Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain2Namespace);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
@@ -210,7 +219,6 @@ public class ItIstioCrossClusters {
     dockerLoginAndPushImageToRegistry(domain2Image);
     //create domain2
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image, K8S_NODEPORT_HOST2);
-
   }
 
 
@@ -262,12 +270,13 @@ public class ItIstioCrossClusters {
   @Test
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
-
+    Assumptions.assumeTrue(TWO_CLUSTERS);
+    createDomainAndApps();
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
         K8S_NODEPORT_HOST1, istioClusterOneIngressPort, domain1AdminServerPodName, domain1Namespace,
-        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix,domain2Namespace,
+        domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
     ExecResult result = null;
@@ -284,6 +293,7 @@ public class ItIstioCrossClusters {
     }
   }
 
+
   /*
    * This test verifies cross domain transaction is successful and able to re-establish connection when
    * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
@@ -297,7 +307,7 @@ public class ItIstioCrossClusters {
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   public void testCrossDomainTransactionWithFailInjection() {
-
+    Assumptions.assumeTrue(TWO_CLUSTERS);
     logger.info("Getting admin server external service node port");
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -315,6 +325,7 @@ public class ItIstioCrossClusters {
           "crossDomainTransaction with TMAfterTLogBeforeCommitExit failed");
     }
   }
+
 
   private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                                    String domainImage, String host) {
