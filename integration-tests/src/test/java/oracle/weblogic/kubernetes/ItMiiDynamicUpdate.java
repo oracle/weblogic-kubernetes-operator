@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
+import static oracle.weblogic.kubernetes.TestConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -91,6 +92,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -828,6 +830,11 @@ class ItMiiDynamicUpdate {
 
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
 
+    // check pod label for MII_UPDATED_RESTART_REQUIRED_LABEL
+    assertDoesNotThrow(() -> verifyPodLabelUpdated(pods.keySet(), MII_UPDATED_RESTART_REQUIRED_LABEL + "=true"),
+        "Couldn't check pod label");
+    logger.info("Verified pod label");
+
     // check the change is committed
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -869,6 +876,11 @@ class ItMiiDynamicUpdate {
         + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
         "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
     logger.info("JDBCSystemResource new property found");
+
+    // check pod label MII_UPDATED_RESTART_REQUIRED_LABEL should have been removed
+    assertDoesNotThrow(() -> verifyPodLabelRemoved(pods.keySet(), MII_UPDATED_RESTART_REQUIRED_LABEL + "=true"),
+        "Couldn't check pod label");
+    logger.info("Verified pod label");
 
   }
 
@@ -1103,6 +1115,20 @@ class ItMiiDynamicUpdate {
           .until(
               () ->
                   podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
+    }
+  }
+
+  private void verifyPodLabelUpdated(Set<String> podNames, String label) throws ApiException {
+    for (String podName : podNames) {
+      assertNotNull(getPod(domainNamespace, label, podName),
+          "Pod " + podName + " doesn't have label " + label);
+    }
+  }
+
+  private void verifyPodLabelRemoved(Set<String> podNames, String label) throws ApiException {
+    for (String podName : podNames) {
+      assertNull(getPod(domainNamespace, label, podName),
+          "Pod " + podName + " still have the label " + label);
     }
   }
 
