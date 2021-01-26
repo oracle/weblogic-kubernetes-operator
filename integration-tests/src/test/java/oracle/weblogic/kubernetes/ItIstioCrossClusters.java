@@ -84,7 +84,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify cross domain transaction is successful")
+@DisplayName("Verify cross Kubernetes Cluster domain transaction is successful")
 @IntegrationTest
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
 public class ItIstioCrossClusters {
@@ -123,7 +123,7 @@ public class ItIstioCrossClusters {
       .orElse("false"));
 
   /**
-   * Install Operator.
+   * Install Operator, Database in cluster2.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *     JUnit engine parameter resolution mechanism
    */
@@ -185,6 +185,7 @@ public class ItIstioCrossClusters {
     updatePropertyFile();
   }
 
+  //create domain2 and applications in cluster2
   private static void createDomainAndApps() {
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
@@ -256,8 +257,10 @@ public class ItIstioCrossClusters {
   }
 
   /*
-   * This test verifies cross domain transaction is successful. domain in image using wdt is used
-   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
+   * The test uses Domain-in-image model (with WDT) to start a domain
+   * in a unique namespace in each of the kubernetes clusters
+   * and verifies cross clusters domain transaction is successful.
+   * An app is deployed to both the domains and the servlet
    * is invoked which starts a transaction that spans both domains.
    * The application consists of a servlet front-end and a remote object that defines a method to register
    * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
@@ -267,7 +270,7 @@ public class ItIstioCrossClusters {
    * complete successfully
    */
   @Test
-  @DisplayName("Check cross domain transaction works")
+  @DisplayName("Check cross clusters domain transaction works")
   public void testCrossDomainTransaction() {
     createDomainAndApps();
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
@@ -293,8 +296,10 @@ public class ItIstioCrossClusters {
 
 
   /*
-   * This test verifies cross domain transaction is successful and able to re-establish connection when
-   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
+   * This test verifies cross clusters domain transaction is successful and able to re-establish connection when
+   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in a unique namespace
+   * in each of the kubernetes clusters
+   * and verifies cross clusters domain transaction is successful.
    * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
    * TMAfterTLogBeforeCommitExit transaction property set. The servlet inserts data into oracleDB table and
    * sends a message to a JMS queue as part of a same transaction.The coordinator (server in domain2)
