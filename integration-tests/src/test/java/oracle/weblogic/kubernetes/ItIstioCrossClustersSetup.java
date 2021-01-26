@@ -129,11 +129,12 @@ public class ItIstioCrossClustersSetup {
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(op1Namespace, labelMap));
+    initCluster1();
   }
 
-  @Test
-  @DisplayName("Build applications and create operator and domain in cluster1")
-  public void testInitCluster1() {
+  //@Test
+  //@DisplayName("Build applications and create operator and domain in cluster1")
+  private static void initCluster1() {
     logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");
@@ -271,7 +272,7 @@ public class ItIstioCrossClustersSetup {
    * @param domainImage name of the image including its tag
    * @param adminSecretName name of the admin secret
    */
-  public static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
+  private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                                    String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
@@ -357,7 +358,7 @@ public class ItIstioCrossClustersSetup {
    * @param repoSecretName name of the secret for repo
    * @param replicaCount number of managed servers to start
    */
-  public static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+  private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                            String repoSecretName, int replicaCount, String domainImage) {
     logger.info("Image to be used is {0}", domainImage);
     // create the domain CR
