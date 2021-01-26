@@ -3,6 +3,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -28,14 +36,6 @@ import org.hamcrest.Description;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;

@@ -9,7 +9,6 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1AggregationRuleBuilder;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import org.junit.jupiter.api.Test;
 
