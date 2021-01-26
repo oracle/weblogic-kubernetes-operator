@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -109,7 +108,6 @@ public class ItIstioCrossClustersSetup {
    */
   @BeforeAll
   public static void initAll() {
-    //Assumptions.assumeTrue(TWO_CLUSTERS);
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -136,7 +134,6 @@ public class ItIstioCrossClustersSetup {
   @Test
   @DisplayName("Build applications and create operator and domain in cluster1")
   public void testInitCluster1() {
-    Assumptions.assumeTrue(TWO_CLUSTERS);
     logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");

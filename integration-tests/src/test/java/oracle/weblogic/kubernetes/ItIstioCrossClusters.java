@@ -39,7 +39,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -130,7 +129,6 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
    */
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
-    Assumptions.assumeTrue(TWO_CLUSTERS);
     logger = getLogger();
     try {
       FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
@@ -271,7 +269,6 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   @Test
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
-    Assumptions.assumeTrue(TWO_CLUSTERS);
     createDomainAndApps();
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -308,7 +305,6 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   public void testCrossDomainTransactionWithFailInjection() {
-    Assumptions.assumeTrue(TWO_CLUSTERS);
     logger.info("Getting admin server external service node port");
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "

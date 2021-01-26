@@ -232,7 +232,6 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>**/It*</includes-failsafe>
-                <excludeTags>twoclusters</excludeTags>
             </properties>
         </profile>
         <profile>
