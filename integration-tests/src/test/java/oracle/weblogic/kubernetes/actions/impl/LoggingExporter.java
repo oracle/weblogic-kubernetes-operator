@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
@@ -545,56 +543,6 @@ public class LoggingExporter {
     }
 
     return statusLine.stdout();
-  }
-
-  private static ExecResult downloadWlsLoggingExporterJarsAndVerify(String jarReposUrl,
-                                                                    String jarFileName,
-                                                                    String wlsLoggingExporterArchiveLoc)
-        throws IOException, InterruptedException {
-
-    ExecResult result = null;
-    File wlsLoggingExpFile =
-        new File(wlsLoggingExporterArchiveLoc + "/" + jarFileName);
-    int i = 0;
-
-    StringBuffer getJars = new StringBuffer();
-    getJars
-        .append(" wget -P ")
-        .append(wlsLoggingExporterArchiveLoc)
-        .append(" --server-response --waitretry=5 --retry-connrefused ")
-        .append(jarReposUrl)
-        .append("/")
-        .append(jarFileName);
-    logger.info("Executing cmd " + getJars.toString());
-
-    // Make sure downloading completed
-    while (i < maxIterationsPod) {
-      result = ExecCommand.exec(getJars.toString(), true);
-
-      if (wlsLoggingExpFile.exists()) {
-        break;
-      }
-
-      logger.info("Downloading {0} not done [{1}/{2}], sleeping {3} econds more",
-          jarReposUrl, i, maxIterationsPod, maxIterationsPod);
-
-      try {
-        Thread.sleep(maxIterationsPod * 1000);
-      } catch (Exception ex) {
-        //ignore
-      }
-      i++;
-    }
-
-    assertTrue(wlsLoggingExpFile.exists(), "Failed to download " + wlsLoggingExpFile);
-
-    File wlsLoggingExporterJarRepoDir = new File(wlsLoggingExporterArchiveLoc);
-    File[] jarFiles = wlsLoggingExporterJarRepoDir.listFiles();
-    for (File jarFile : jarFiles) {
-      logger.info("Downloaded jar file {0}", jarFile.getName());
-    }
-
-    return result;
   }
 
   private static void addFilterToElkFile(String filter) throws Exception {
