@@ -519,7 +519,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
 
-    // Scale up the cluster and execute the make right flow again with explicit recheck
+    // Scale down the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
     newDomain.getMetadata().setCreationTimestamp(new DateTime());
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
