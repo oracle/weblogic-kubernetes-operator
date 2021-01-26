@@ -729,72 +729,6 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Recreate configmap containing application config target to none.
-   * Patch the domain resource with the configmap.
-   * Update the introspect version of the domain resource.
-   * Wait for introspector to complete
-   * Verify application target is changed by accessing the application runtime using REST API.
-   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
-   */
-  @Test
-  @Order(11)
-  @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
-  public void testMiiRemoveTarget() {
-
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    // check and wait for the application to be accessible in all server pods
-    verifyApplicationAccessOnCluster();
-
-    // write sparse yaml to file
-    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
-    String yamlToRemoveTarget = "appDeployments:\n"
-        + "  Application:\n"
-        + "    myear:\n"
-        + "      Target: ''";
-
-    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
-
-    // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
-
-    // make sure the application is not deployed on cluster
-    verifyApplicationRuntimeOnCluster("404");
-
-    // make sure the application is not deployed on admin
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for application target to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
-            adminServerName, "404"));
-
-    verifyPodsNotRolled(pods);
-  }
-
-  /**
    * Recreate configmap containing non-dynamic change, changing DS attribute.
    * Patch the domain resource with the configmap.
    * Patch the domain with onNonDynamicChanges value as CancelUpdate.
@@ -805,7 +739,7 @@ class ItMiiDynamicUpdate {
   // with latest dynamicupdate branch, the CancelUpdate behavior got changed. Disable this test now.
   @Disabled("CancelUpdate is removed from dynamic update")
   @Test
-  @Order(12)
+  @Order(11)
   @DisplayName("Test onNonDynamicChanges value CancelUpdate")
   public void testOnNonDynamicChangesCancelUpdate() {
 
@@ -852,7 +786,7 @@ class ItMiiDynamicUpdate {
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
-  @Order(13)
+  @Order(12)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
 
@@ -936,6 +870,72 @@ class ItMiiDynamicUpdate {
         "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
     logger.info("JDBCSystemResource new property found");
 
+  }
+
+  /**
+   * Recreate configmap containing application config target to none.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete
+   * Verify application target is changed by accessing the application runtime using REST API.
+   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
+   */
+  @Test
+  @Order(13)
+  @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
+  public void testMiiRemoveTarget() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // check and wait for the application to be accessible in all server pods
+    verifyApplicationAccessOnCluster();
+
+    // write sparse yaml to file
+    Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
+    String yamlToRemoveTarget = "appDeployments:\n"
+        + "  Application:\n"
+        + "    myear:\n"
+        + "      Target: ''";
+
+    assertDoesNotThrow(() -> Files.write(pathToRemoveTargetYaml, yamlToRemoveTarget.getBytes()));
+
+    // Replace contents of an existing configMap
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // make sure the application is not deployed on cluster
+    verifyApplicationRuntimeOnCluster("404");
+
+    // make sure the application is not deployed on admin
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition ->
+            logger.info("Waiting for application target to be updated. "
+                    + "Elapsed time {0}ms, remaining time {1}ms",
+                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
+                  () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+            adminServerName, "404"));
+
+    verifyPodsNotRolled(pods);
   }
 
   private void verifyIntrospectorRuns() {
