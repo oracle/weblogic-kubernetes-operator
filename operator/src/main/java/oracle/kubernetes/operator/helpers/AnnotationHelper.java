@@ -79,10 +79,6 @@ public class AnnotationHelper {
     return getAnnotation(service.getMetadata(), AnnotationHelper::getSha256Annotation);
   }
 
-  static String getHash(V1beta1PodDisruptionBudget pdb) {
-    return getAnnotation(pdb.getMetadata(), AnnotationHelper::getSha256Annotation);
-  }
-
   static String getDebugString(V1Pod pod) {
     return getAnnotation(pod.getMetadata(), AnnotationHelper::getDebugHashAnnotation);
   }
@@ -102,5 +98,4 @@ public class AnnotationHelper {
   private static String getSha256Annotation(Map<String, String> annotations) {
     return annotations.get(SHA256_ANNOTATION);
   }
-
 }

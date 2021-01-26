@@ -108,7 +108,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
-  private static final String CLUSTER2 = "cluster2";
   private static final int MAX_SERVERS = 60;
   private static final String MS_PREFIX = "managed-server";
   private static final int MIN_REPLICAS = 2;
@@ -277,12 +276,26 @@ public class DomainProcessorTest {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
-    assertThat(getRunningPDBs().size(), equalTo(1));
     assertThat(minAvailableMatches(getRunningPDBs(), MIN_REPLICAS - 1), is(true));
+  }
+
+  @Test
+  public void whenClusterScaleUp_podDisruptionBudgetMinAvailableUpdated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 3));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    domainConfigurator.configureServer(MS_PREFIX + 3);
+
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+
   }
 
   private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {

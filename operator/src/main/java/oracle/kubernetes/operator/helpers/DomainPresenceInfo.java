@@ -422,7 +422,7 @@ public class DomainPresenceInfo {
    * one associated with the event, ignores the event.
    *
    * @param clusterName the name of the cluster associated with the event
-   * @param event the service associated with the event
+   * @param event the pod disruption budget associated with the event
    */
   public void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
     if (clusterName == null) {
@@ -436,7 +436,7 @@ public class DomainPresenceInfo {
    * it is not older than the one recorded.
    *
    * @param clusterName the name of the associated cluster
-   * @param event the service associated with the event
+   * @param event the pod disruption budget associated with the event
    * @return true if the pod disruption budget was actually removed
    */
   public boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {

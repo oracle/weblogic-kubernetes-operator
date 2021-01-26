@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -40,37 +40,8 @@ public class PodDisruptionBudgetHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   public static final String PDB_API_VERSION = "policy/v1beta1";
 
-  public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
-    presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
-  }
-
   /**
-   * get PodDisruptionBudget's domain uid.
-   * @param pdb PodDisruptionBudget
-   * @return Domain uid
-   */
-  public static String getDomainUid(V1beta1PodDisruptionBudget pdb) {
-    return Optional.ofNullable(pdb.getMetadata()).map(V1ObjectMeta::getLabels)
-            .map(s -> s.get(DOMAINUID_LABEL)).orElse(null);
-  }
-
-  /**
-   * get PodDisruptionBudget's cluster name.
-   * @param pdb PodDisruptionBudget
-   * @return cluster name
-   */
-  public static String getClusterName(V1beta1PodDisruptionBudget pdb) {
-    return getLabelValue(pdb);
-  }
-
-  private static String getLabelValue(V1beta1PodDisruptionBudget podDisruptionBudget) {
-    return Optional.ofNullable(podDisruptionBudget).map(V1beta1PodDisruptionBudget::getMetadata)
-            .map(V1ObjectMeta::getLabels)
-            .map(m -> m.get(LabelConstants.CLUSTERNAME_LABEL)).orElse(null);
-  }
-
-  /**
-   * Factory for {@link Step} that creates pod disruption budget.
+   * Factory for {@link Step} that verifies and creates pod disruption budget if needed.
    *
    * @param next the next step
    * @return Step for creating pod disruption budget
@@ -268,4 +239,49 @@ public class PodDisruptionBudgetHelper {
     }
 
   }
+
+  /**
+   * get PodDisruptionBudget's domain uid.
+   * @param pdb PodDisruptionBudget
+   * @return Domain uid
+   */
+  public static String getDomainUid(V1beta1PodDisruptionBudget pdb) {
+    return Optional.ofNullable(pdb.getMetadata()).map(V1ObjectMeta::getLabels)
+            .map(s -> s.get(DOMAINUID_LABEL)).orElse(null);
+  }
+
+  /**
+   * get PodDisruptionBudget's cluster name.
+   * @param pdb PodDisruptionBudget
+   * @return cluster name
+   */
+  public static String getClusterName(V1beta1PodDisruptionBudget pdb) {
+    return getLabelValue(pdb);
+  }
+
+  /**
+   * Update PodDisruptionBudget in domain presence info from the event.
+   * @param presenceInfo the domain presence info
+   * @param event the event associated with pod disruption budget
+   */
+  public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
+    presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
+  }
+
+  /**
+   * Delete PodDisruptionBudget in domain presence info from the event.
+   * @param presenceInfo the domain presence info
+   * @param event the event associated with pod disruption budget
+   * @return true if the pod disruption budget was actually removed
+   */
+  public static boolean deleteFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
+    return presenceInfo.deletePodDisruptionBudgetFromEvent(getClusterName(event), event);
+  }
+
+  private static String getLabelValue(V1beta1PodDisruptionBudget podDisruptionBudget) {
+    return Optional.ofNullable(podDisruptionBudget).map(V1beta1PodDisruptionBudget::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(m -> m.get(LabelConstants.CLUSTERNAME_LABEL)).orElse(null);
+  }
+
 }

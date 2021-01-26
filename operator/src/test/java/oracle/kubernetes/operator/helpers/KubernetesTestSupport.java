@@ -1019,7 +1019,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @Override
-    public T deleteResource(String name, String namespace, String call) {
+    T deleteResource(String name, String namespace, String call) {
       return inNamespace(namespace).deleteResource(name, namespace, call);
     }
 

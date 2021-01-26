@@ -45,7 +45,7 @@ public interface DomainProcessor {
 
   /**
    * Handles a watch event for pod disruption budget in the managed namespaces.
-   * @param item a Kubernetes watch even
+   * @param item a Kubernetes watch event
    */
   void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item);
 

@@ -467,8 +467,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         PodDisruptionBudgetHelper.updatePDBFromEvent(info, item.object);
         break;
       case "DELETED":
-        boolean removed = info.deletePodDisruptionBudgetFromEvent(PodDisruptionBudgetHelper.getClusterName(item.object),
-                item.object);
+        boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
         if (removed && info.isNotDeleting()) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
