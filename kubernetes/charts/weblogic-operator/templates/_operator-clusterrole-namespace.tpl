@@ -20,7 +20,7 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
-  resources: ["services", "configmaps", "pods", "events"]
+  resources: ["services", "configmaps", "pods", "events", "poddisruptionbudgets"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 - apiGroups: [""]
   resources: ["secrets"]
