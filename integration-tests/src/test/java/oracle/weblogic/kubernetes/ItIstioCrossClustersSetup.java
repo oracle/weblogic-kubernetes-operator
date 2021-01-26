@@ -83,8 +83,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
 public class ItIstioCrossClustersSetup {
 
-  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossclustersdomaintransaction-domain1.yaml";
-  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
+  private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
+  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
   private static final String WDT_IMAGE_NAME1 = "crossclustersdomain1-wdt-image";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossclustersdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";

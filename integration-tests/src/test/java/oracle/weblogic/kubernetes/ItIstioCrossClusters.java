@@ -89,10 +89,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
 public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
-  
-  private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossclustersdomaintransaction-domain2.yaml";
-  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossclustersdomaintransaction-domain1.properties";
-  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossclustersdomaintransaction-domain2.properties";
+
+
+  private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
+
+  private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
+  private static final String WDT_MODEL_DOMAIN2_PROPS = "model-crossdomaintransaction-domain2.properties";
   private static final String WDT_IMAGE_NAME2 = "crossclustersdomain2-wdt-image";
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossclustersdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
