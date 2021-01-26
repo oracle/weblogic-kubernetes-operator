@@ -51,6 +51,7 @@ import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPON
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -118,7 +119,7 @@ public class EventHelper {
           .createEventAsync(
               event.getMetadata().getNamespace(),
               event,
-              new CreateEventResponseStep(getNext(), event.getReason()));
+              new CreateEventResponseStep(getNext()));
     }
 
     private Step createReplaceEventCall(V1Event event, @NotNull V1Event existingEvent) {
@@ -148,11 +149,8 @@ public class EventHelper {
     }
 
     private class CreateEventResponseStep extends ResponseStep<V1Event> {
-      String eventReason;
-
-      CreateEventResponseStep(Step next, String eventReason) {
+      CreateEventResponseStep(Step next) {
         super(next);
-        this.eventReason = eventReason;
       }
 
       @Override
@@ -172,11 +170,8 @@ public class EventHelper {
       }
 
       private boolean isNotAuthorizedForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
-        return UnrecoverableErrorBuilder.isUnauthorizedFailure(callResponse) && isNamespaceWatchingStoppedEvent();
-      }
-
-      private boolean isNamespaceWatchingStoppedEvent() {
-        return NAMESPACE_WATCHING_STOPPED_EVENT.equals(Optional.ofNullable(eventReason).orElse(""));
+        return UnrecoverableErrorBuilder.isUnauthorizedFailure(callResponse)
+            && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
       }
     }
 
