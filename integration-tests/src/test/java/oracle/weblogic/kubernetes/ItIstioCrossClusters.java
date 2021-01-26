@@ -45,6 +45,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -86,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-@org.junit.jupiter.api.Tag("twoclusters")
+@DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
 public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossclustersdomaintransaction-domain2.yaml";
@@ -119,18 +120,6 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   private static boolean TWO_CLUSTERS = Boolean.parseBoolean(java.util.Optional.ofNullable(
       System.getenv("TWO_CLUSTERS"))
       .orElse("false"));
-  
-  static {
-    try {
-      FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
-      Properties props = new Properties();
-      props.load(in);
-      istioClusterOneIngressPort = props.getProperty("ISTIO_INGRESS_PORT");
-      in.close();
-    } catch (IOException ex) {
-      logger.info("Can't read property file");
-    }
-  }
 
   /**
    * Install Operator.
@@ -141,6 +130,15 @@ public class ItIstioCrossClusters extends ItIstioCrossClustersSetup {
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     Assumptions.assumeTrue(TWO_CLUSTERS);
     logger = getLogger();
+    try {
+      FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + WDT_MODEL_DOMAIN1_PROPS);
+      Properties props = new Properties();
+      props.load(in);
+      istioClusterOneIngressPort = props.getProperty("ISTIO_INGRESS_PORT");
+      in.close();
+    } catch (IOException ex) {
+      logger.info("Can't read property file");
+    }
     //start to setup in cluster2
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)

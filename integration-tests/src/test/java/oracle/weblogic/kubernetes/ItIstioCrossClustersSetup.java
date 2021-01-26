@@ -40,6 +40,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -79,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Setup operator, domain, applications for cross cluster domain transaction.")
 @IntegrationTest
-@org.junit.jupiter.api.Tag("twoclusters")
+@DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
 public class ItIstioCrossClustersSetup {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossclustersdomaintransaction-domain1.yaml";
