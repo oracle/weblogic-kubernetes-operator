@@ -20,6 +20,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -105,6 +106,13 @@ public class PodDisruptionBudgetHelper {
         logPodDisruptionBudgetCreated(messageKey);
         info.setPodDisruptionBudget(clusterName, callResponse.getResult());
         return doNext(packet);
+      }
+
+      @Override
+      protected NextAction onFailureNoRetry(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+        LOGGER.info(MessageKeys.CREATE_PDB_FAILED, callResponse.getE().getResponseBody());
+        return isNotAuthorizedOrForbidden(callResponse)
+                ? doNext(packet) : super.onFailureNoRetry(packet, callResponse);
       }
     }
 

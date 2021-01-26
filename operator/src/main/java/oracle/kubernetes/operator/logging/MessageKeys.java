@@ -134,6 +134,7 @@ public class MessageKeys {
   public static final String REPLACING_EVENT = "WLSKO-0181";
   public static final String CLUSTER_PDB_CREATED = "WLSKO-0182";
   public static final String CLUSTER_PDB_EXISTS = "WLSKO-0183";
+  public static final String CREATE_PDB_FAILED = "WLSKO-0184";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
