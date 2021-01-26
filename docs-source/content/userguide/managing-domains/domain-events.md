@@ -29,7 +29,7 @@ The operator generates these event types in a domain namespace, which indicate t
  *  `DomainProcessingFailed`: The operator has encountered a problem while it was processing the domain resource. The failure either could be a configuration error or a Kubernetes API error.
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered an failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
- *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error, or a failure that persisted after the specified maximum number of retries.
+ *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
  *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
  *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
  *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
