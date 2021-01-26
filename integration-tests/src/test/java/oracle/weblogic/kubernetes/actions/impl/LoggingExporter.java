@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -315,21 +314,10 @@ public class LoggingExporter {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc,
-                                                  String wlsLoggingExporterArchiveLoc) {
-    try {
-      // Create a dir to hold downloaded WebLogic Logging Exporter archive files
-      FileUtils.cleanupDirectory(wlsLoggingExporterArchiveLoc);
-      FileUtils.checkDirectory(wlsLoggingExporterArchiveLoc);
-    } catch (IOException ioe) {
-      logger.severe("Failed to cleanup and re-create the download directory {0}. Error is {1} ",
-          wlsLoggingExporterArchiveLoc, ioe.getMessage());
-    }
-
+                                                  String wlsLoggingExporterYamlFileLoc) {
     // Copy WebLogic Logging Exporter files to WORK_DIR
     String[] loggingExporterFiles =
         {WLS_LOGGING_EXPORTER_YAML_FILE_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME};
