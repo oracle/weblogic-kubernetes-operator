@@ -320,7 +320,7 @@ function createWLDomain() {
 
   # copy the filter related files to the wdt lib
 
-  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json
   cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
 
   # check to see if any model including changed (or first model in image deploy)
