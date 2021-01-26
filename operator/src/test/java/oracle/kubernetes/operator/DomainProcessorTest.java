@@ -52,7 +52,6 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
-import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -134,7 +133,6 @@ public class DomainProcessorTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
   private final MakeRightDomainOperation makeRightOperation
         = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
@@ -272,33 +270,6 @@ public class DomainProcessorTest {
 
     assertThat((int) getServerServices().count(), equalTo(MAX_SERVERS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
-  }
-
-  @Test
-  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() {
-    defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
-
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
-
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
-
-    assertThat(minAvailableMatches(getRunningPDBs(), MIN_REPLICAS - 1), is(true));
-  }
-
-  @Test
-  public void whenClusterScaleUp_podDisruptionBudgetMinAvailableUpdated()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 3));
-
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    domainConfigurator.configureServer(MS_PREFIX + 3);
-
-    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
-    processor.createMakeRightOperation(info).execute();
-
-    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
-
   }
 
   private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
@@ -510,7 +481,6 @@ public class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
-    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
 
     // Scale up the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
@@ -520,7 +490,41 @@ public class DomainProcessorTest {
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+  }
+
+  @Test
+  public void whenScalingUpDomain_podDisruptionBudgetMinAvailableUpdated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
+
+    // Scale up the cluster and execute the make right flow again with explicit recheck
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+  }
+
+  @Test
+  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+
+    // Scale up the cluster and execute the make right flow again with explicit recheck
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
   }
 
   private static boolean containsEvent(List<V1Event> events, String reason) {
