@@ -129,12 +129,11 @@ public class ItIstioCrossClustersSetup {
 
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(op1Namespace, labelMap));
-    initCluster1();
   }
 
-  //@Test
-  //@DisplayName("Build applications and create operator and domain in cluster1")
-  private static void initCluster1() {
+  @Test
+  @DisplayName("Build applications and create operator and domain in cluster1")
+  public void testInitCluster1() {
     logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");
