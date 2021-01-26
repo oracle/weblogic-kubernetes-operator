@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -43,14 +44,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_REPOS;
-import static oracle.weblogic.kubernetes.TestConstants.WLE_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.TestConstants.WLE_JAR_FILENAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallSnakeParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWleParams;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.isPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -299,6 +298,20 @@ public class LoggingExporter {
     return testVarMap;
   }
 
+  private static boolean downloadWle() {
+    // install WDT if needed
+    return Installer.withParams(
+        defaultInstallWleParams())
+        .download();
+  }
+
+  private static boolean downloadSnake() {
+    // install SnakeYAML if needed
+    return Installer.withParams(
+        defaultInstallSnakeParams())
+        .download();
+  }
+
   /**
    * Install WebLogic Logging Exporter.
    *
@@ -331,46 +344,17 @@ public class LoggingExporter {
       logger.info("Copied {0} to {1}}", srcPath, destPath);
     }
 
-    // Replace tokens in COPY_WLS_LOGGING_EXPORTER_FILE_NAME, copy-logging-files-cmds.txt
-    String fileToReplace = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-
-    logger.info("Replace SNAKEYAML_JAR with {0} in {1}",
-        SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
-    assertDoesNotThrow(
-        () -> FileUtils.replaceStringInFile(fileToReplace, "SNAKEYAML_JAR", SNAKE_YAML_JAR_NAME),
-          String.format("Failed to replace SNAKEYAML_JAR with %s in %s",
-            SNAKE_YAML_JAR_NAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
-
-    logger.info("Replace WEBLOGICLOGGINGEXPORTER_JAR with {0} in {1}",
-        WLE_JAR_FILENAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME);
-    assertDoesNotThrow(
-        () -> FileUtils.replaceStringInFile(fileToReplace,
-          "WEBLOGICLOGGINGEXPORTER_JAR", WLE_JAR_FILENAME),
-          String.format("Failed to replace WEBLOGICLOGGINGEXPORTER_JAR with %s in %s",
-              WLE_JAR_FILENAME, COPY_WLS_LOGGING_EXPORTER_FILE_NAME));
-
     // Add filter to weblogicLoggingExporterFilters in WebLogic Logging Exporter YAML file
     assertDoesNotThrow(() -> addFilterToElkFile(filter),
         "Failed to add WebLogic Logging Exporter filter");
 
-    // Download WebLogic Logging Exporter jar file, WLS_LOGGING_EXPORTER_JAR_NAME
-    ExecResult result = assertDoesNotThrow(
-        () -> downloadWlsLoggingExporterJarsAndVerify(WLE_DOWNLOAD_URL,
-            WLE_JAR_FILENAME, wlsLoggingExporterArchiveLoc),
-          "downloadWlsLoggingExporterJarsAndVerify failed with Exception");
-    if (result.exitValue() != 0) {
-      logger.severe("Failed to download {0} from {1} with error {2}",
-          WLE_JAR_FILENAME, WLE_DOWNLOAD_URL, result.stderr());
+    // Download WebLogic Logging Exporter jar file
+    if (!downloadWle()) {
       return false;
     }
 
-    // Download the YAML parser, snakeyaml-1.23.jar
-    result = assertDoesNotThrow(() -> downloadWlsLoggingExporterJarsAndVerify(SNAKE_YAML_JAR_REPOS,
-        SNAKE_YAML_JAR_NAME, wlsLoggingExporterArchiveLoc),
-        "downloadWlsLoggingExporterJarsAndVerify failed with Exception");
-    if (result.exitValue() != 0) {
-      logger.severe("Failed to download {0} from {1} with error {2}",
-          SNAKE_YAML_JAR_REPOS, SNAKE_YAML_JAR_NAME, result.stderr());
+    // Download the YAML parser, SnakeYAML
+    if (!downloadSnake()) {
       return false;
     }
 

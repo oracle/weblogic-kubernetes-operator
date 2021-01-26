@@ -52,6 +52,24 @@ public interface ActionConstants {
   public static final String IMAGE_TOOL = WORK_DIR + "/imagetool/bin/imagetool.sh";
   public static final String WDT_ZIP_PATH = DOWNLOAD_DIR + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT;
 
+  public static final String WLE = "WLE";
+  public static final String SNAKE = "SNAKE";
+
+  public static final String WLE_DOWNLOAD_URL_DEFAULT
+      = "https://github.com/oracle/weblogic-logging-exporter/releases/latest";
+  public static final String WLE_DOWNLOAD_URL
+      = System.getProperty("wle.download.url", WLE_DOWNLOAD_URL_DEFAULT);
+  public static final String WLE_VERSION    = System.getProperty("wle.version", "latest");
+  public static final String WLE_DOWNLOAD_FILENAME_DEFAULT = "weblogic-logging-exporter.jar";
+
+  public static final String SNAKE_VERSION    = System.getProperty("snake.version", "1.27");
+  public static final String SNAKE_DOWNLOAD_FILENAME_DEFAULT = "snakeyaml-" + SNAKE_VERSION + ".jar";
+  public static final String SNAKE_DOWNLOAD_URL_DEFAULT
+      = "https://repo1.maven.org/maven2/org/yaml/snakeyaml/" + SNAKE_VERSION + "/" + SNAKE_DOWNLOAD_FILENAME_DEFAULT;
+  public static final String SNAKE_DOWNLOAD_URL
+      = System.getProperty("snake.download.url", SNAKE_DOWNLOAD_URL_DEFAULT);
+  public static final String SNAKE_DOWNLOADED_FILENAME = "snakeyaml.jar";
+
   // ------------ WLDF RBAC constants ------------------------------------------
   public static final String WLDF_CLUSTER_ROLE_NAME = "wldf-weblogic-domain-cluster-role";
   public static final String WLDF_CLUSTER_ROLE_BINDING_NAME = "domain-cluster-rolebinding";

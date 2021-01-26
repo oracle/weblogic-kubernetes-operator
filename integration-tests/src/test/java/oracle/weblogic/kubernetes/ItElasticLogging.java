@@ -45,12 +45,12 @@ import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.SNAKE_YAML_JAR_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
-import static oracle.weblogic.kubernetes.TestConstants.WLE_JAR_FILENAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
@@ -323,11 +323,11 @@ class ItElasticLogging {
         .append(",")
         .append(wlsLoggingExporterArchiveLoc)
         .append("/")
-        .append(WLE_JAR_FILENAME)
+        .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
         .append(",")
         .append(wlsLoggingExporterArchiveLoc)
         .append("/")
-        .append(SNAKE_YAML_JAR_NAME);
+        .append(SNAKE_DOWNLOADED_FILENAME);
 
     logger.info("Create image with model file and verify");
     String miiImage =
