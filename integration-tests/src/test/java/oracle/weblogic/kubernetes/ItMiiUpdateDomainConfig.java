@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -111,35 +112,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * This test class verifies the following scenarios
- *
- * <p>testMiiServerLogsAreOnPV
- * domain logHome is on PV, check server logs are on PV
- *
- * <p>testMiiCheckSystemResources
- *  Check the System Resources in a pre-configured ConfigMap
- *
- * <p>testMiiDeleteSystemResources
- *  Delete System Resources defined in a WebLogic domain 
- *
- * <p>testMiiAddSystemResources
- *  Add new System Resources to a running WebLogic domain
- *
- * <p>testMiiAddDynmicClusteriWithNoReplica
- *  Add a new dynamic WebLogic cluster to a running domain with default Replica
- *  count(zero), so that no managed server on the new cluster is activated.
- *
- * <p>testMiiAddDynamicCluster
- *  Add a new dynamic WebLogic cluster to a running domain with non-zero Replica
- *  count so that required number of managed servers(s) on new cluster get  
- *  activated after rolling restart. 
- *
- * <p>testMiiAddConfiguredCluster
- *  Add a new configured WebLogic cluster to a running domain 
- *
- * <p>testMiiUpdateWebLogicCredential
- *  Update the administrative credential of a running domain by updating the 
- *  secret and activating a rolling restart.
+ * This test class verifies dynamic changes to domain resource and configuration
+ * by modifying the associated configmap with a model-in-image domain.
+ * After updating the configmap, the test updates the restartVersion of the
+ * domain resource which triggers the rolling restart to verify the change.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -720,24 +696,62 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
+   * Start a WebLogic domain with a dynamic cluster with the following 
+   * attributes MaxDynamicClusterSize(5) and MinDynamicClusterSize(1)
+   * Set allowReplicasBelowMinDynClusterSize to false.
+   * Make sure that the cluster can be scaled up into 5 servers and
+   * scaled down upto 1 server. 
    * Create a configmap with a sparse model file with following attributes for 
    * Cluster/cluster-1/DynamicServers
-   *   MaxDynamicClusterSize: 4 (5)
-   *   DynamicClusterSize: 4 (5) 
-   *   MinDynamicClusterSize: 2 (1)
+   *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
    * Patch the domain resource with the configmap and update restartVersion.
    * Make sure a rolling restart is triggered.  
-   * Verify the updated MinDynamicClusterSize size, by scale down the custer 
-   * to count 1. Make sure that the cluster size never goes below 2. 
+   * Now with the modified value
+   * Make sure that the cluster can be scaled up to 4 servers and
+   * can not be scaled down below 2 servers
    */
   @Test
   @Order(9)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   public void testMiiUpdateDynamicClusterSize() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-    
+    // Scale the cluster to replica count to 5
+    logger.info("[Before Patching] updaing the Repilca count to 5");
+    boolean p1Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+        String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // Make sure that we can scale upto repilca count 5
+    // since the MaxDynamicClusterSize is set to 5
+    checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPrefix + "4", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPrefix + "5", domainUid, domainNamespace);
+
+    // Make sure that we can scale down upto repilca count 1
+    // since the MinDynamicClusterSize is set to 1
+    logger.info("[Before Patching] updaing the Repilca count to 1");
+    boolean p11Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("replica pacthing to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p11Success,
+        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    checkPodDeleted(managedServerPrefix + "2", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "4", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+
+    // Bring back the cluster to originally configured replica count
+    logger.info("[Before Patching] updaing the Repilca count to 2");
+    boolean p2Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
+        String.format("replica pacthing to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
+
     // get the creation time of the server pods before patching
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
@@ -768,27 +782,33 @@ class ItMiiUpdateDomainConfig {
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    // Scale the cluster to replica count 3
-    boolean p1Success = assertDoesNotThrow(() ->
-            scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
+    // Scale the cluster to replica count 5
+    // Here managed-server5 should not come up as new MaxClusterSize is 4
+    logger.info("[After Patching] updaing the Repilca count to 5");
+    boolean p3Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
         String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("repilca patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
     
     //  Make sure the 3rd Managed server comes up
     checkServiceExists(managedServerPrefix + "3", domainNamespace);
-
+    checkServiceExists(managedServerPrefix + "4", domainNamespace);
+    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+    
     // Since the MinDynamicClusterSize is set to 2 in the configmap 
     // and allowReplicasBelowMinDynClusterSize is set false, the repilca
     // count cannot go below 2. So during the following scale down operation 
-    // only third managed server pod should be removed.  
-    boolean p2Success = assertDoesNotThrow(() ->
+    // only managed-server3 and managed-server4 pod should be removed.  
+    logger.info("[After Patching] updaing the Repilca count to 1");
+    boolean p4Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
         String.format("repilca patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
     assertTrue(p2Success,
         String.format("Cluster repilca patching failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} available in namespace {1}",
           managedServerPrefix + i, domainNamespace);
