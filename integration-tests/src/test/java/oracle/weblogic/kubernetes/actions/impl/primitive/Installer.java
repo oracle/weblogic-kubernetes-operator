@@ -224,7 +224,9 @@ public class Installer {
       if (Command.withParams(params).execute()
           && params.stdout() != null
           && params.stdout().length() != 0) {
-        version = params.stdout();
+        // Because I've updated the name of the logging exporter to remove the version number in the name, but
+        // also preserved the original, there will be two entries located. Take the first.
+        version = params.stdout().lines().findFirst().get().trim();
       } else {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
