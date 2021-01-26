@@ -852,7 +852,7 @@ class ItMiiDynamicUpdate {
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
-  @Order(12)
+  @Order(13)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
 
@@ -878,6 +878,10 @@ class ItMiiDynamicUpdate {
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString()),
               withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges - update with CommitUpdateOnly so that even if previous test
+    // updates onNonDynamicChanges, this test will work
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateOnly");
 
     // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
