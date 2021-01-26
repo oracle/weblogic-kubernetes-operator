@@ -1639,7 +1639,8 @@ public class CallBuilder {
   }
 
   private Call patchPodDisruptionBudgetAsync(
-          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1beta1PodDisruptionBudget> callback)
+          ApiClient client, String name, String namespace, V1Patch patch,
+          ApiCallback<V1beta1PodDisruptionBudget> callback)
           throws ApiException {
     return new PolicyV1beta1Api(client)
             .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
