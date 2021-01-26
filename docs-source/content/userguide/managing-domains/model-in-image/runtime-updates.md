@@ -788,7 +788,7 @@ Status:
 
 ```
 
-If the changes involve non-dynamic mbean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
+If the changes involve non-dynamic MBean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
       
 ```
   Conditions:
