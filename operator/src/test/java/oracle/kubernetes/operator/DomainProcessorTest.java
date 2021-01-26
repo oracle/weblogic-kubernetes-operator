@@ -52,6 +52,7 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -115,6 +116,7 @@ public class DomainProcessorTest {
   private static final int NUM_JOB_PODS = 1;
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
+  public static final String DOMAIN_NAME = "base_domain";
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -132,6 +134,7 @@ public class DomainProcessorTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
+  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
   private final MakeRightDomainOperation makeRightOperation
         = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
   private final WlsDomainConfig domainConfig = createDomainConfig();
@@ -153,7 +156,7 @@ public class DomainProcessorTest {
     for (String serverName : MANAGED_SERVER_NAMES) {
       clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
     }
-    return new WlsDomainConfig("base_domain")
+    return new WlsDomainConfig(DOMAIN_NAME)
         .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001)
         .withCluster(clusterConfig);
   }
@@ -507,6 +510,7 @@ public class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
 
     // Scale up the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
@@ -516,6 +520,7 @@ public class DomainProcessorTest {
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
   }
 
   private static boolean containsEvent(List<V1Event> events, String reason) {

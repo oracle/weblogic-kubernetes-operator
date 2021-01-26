@@ -258,6 +258,15 @@ public class CallBuilder {
                           createPodDisruptionBudgetAsync(
                                   usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
                                           requestParams.body, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchPodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
   private final CallFactory<V1Status> deletePodDisruptionBudget =
           (requestParams, usage, cont, callback) ->
                   wrap(
@@ -1627,6 +1636,32 @@ public class CallBuilder {
                     getDomainUidLabel(Optional.ofNullable(body)
                             .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
             createPodDisruptionBudget);
+  }
+
+  private Call patchPodDisruptionBudgetAsync(
+          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
+                    null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for patching a pod disruption budget.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchPodDisruptionBudgetAsync(
+          String name, String namespace, V1Patch patchBody,
+          ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+    return createRequestAsync(
+            responseStep,
+            new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
+            patchPodDisruptionBudget);
   }
 
   private Call deletePodDisruptionBudgetAsync(

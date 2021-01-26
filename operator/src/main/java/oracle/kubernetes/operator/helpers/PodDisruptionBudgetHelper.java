@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
+import javax.json.Json;
+import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
@@ -73,7 +76,7 @@ public class PodDisruptionBudgetHelper {
     PodDisruptionBudgetContext(Step conflictStep, Packet packet) {
       super(packet.getSpi(DomainPresenceInfo.class));
       this.conflictStep = conflictStep;
-      this.clusterName = (String)packet.get(ProcessingConstants.CLUSTER_NAME);
+      this.clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
     }
 
     Step getConflictStep() {
@@ -171,10 +174,27 @@ public class PodDisruptionBudgetHelper {
       V1beta1PodDisruptionBudget podDisruptionBudget = getPodDisruptionBudgetFromRecord();
       if (podDisruptionBudget == null) {
         return createNewPodDisruptionBudget(next);
+      } else if (mustPatch(podDisruptionBudget)) {
+        return patchPodDisruptionBudgetStep(next);
       } else {
         logPodDisruptionBudgetExists();
         return next;
       }
+    }
+
+    private static Step patchPodDisruptionBudgetStep(Step next) {
+      return new PatchPodDisruptionBudgetStep(next);
+    }
+
+    private boolean mustPatch(V1beta1PodDisruptionBudget existingPdb) {
+      int minAvailable = Optional.ofNullable(existingPdb.getSpec())
+              .map(V1beta1PodDisruptionBudgetSpec::getMinAvailable).map(IntOrString::getIntValue).orElse(0);
+      return minAvailable != expectedMinAvailableValue(info, clusterName);
+    }
+
+    private static int expectedMinAvailableValue(DomainPresenceInfo info, String clusterName) {
+      return Math.max(0, info.getDomain().getReplicaCount(clusterName)
+              - info.getDomain().getMaxUnavailable(clusterName));
     }
 
     private Step createNewPodDisruptionBudget(Step next) {
@@ -187,11 +207,11 @@ public class PodDisruptionBudgetHelper {
 
     private Step createPodDisruptionBudget(String messageKey, Step next) {
       return new CallBuilder()
-                      .createPodDisruptionBudgetAsync(
-                              info.getNamespace(),
-                              createModel(),
-                              new PodDisruptionBudgetHelper.PodDisruptionBudgetContext
-                                      .CreateResponseStep(messageKey, next));
+              .createPodDisruptionBudgetAsync(
+                      info.getNamespace(),
+                      createModel(),
+                      new PodDisruptionBudgetHelper.PodDisruptionBudgetContext
+                              .CreateResponseStep(messageKey, next));
     }
 
     public V1beta1PodDisruptionBudget createModel() {
@@ -246,10 +266,40 @@ public class PodDisruptionBudgetHelper {
       return getDomain().getDomainUid();
     }
 
+    private static class PatchPodDisruptionBudgetStep extends Step {
+
+      PatchPodDisruptionBudgetStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
+        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+        String name = info.getDomainUid() + "-" + clusterName;
+
+        return doNext(new CallBuilder()
+                        .patchPodDisruptionBudgetAsync(
+                                name,
+                                info.getNamespace(),
+                                createPodDisruptionBudgetPatch(clusterName, info),
+                                new DefaultResponseStep<>(getNext())),
+                packet);
+      }
+
+      private V1Patch createPodDisruptionBudgetPatch(String clusterName, DomainPresenceInfo info) {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+        patchBuilder.replace("/spec/minAvailable", Math.max(0, info.getDomain().getReplicaCount(clusterName)
+                - info.getDomain().getMaxUnavailable(clusterName)));
+        return new V1Patch(patchBuilder.build().toString());
+      }
+
+    }
   }
 
   /**
    * get PodDisruptionBudget's domain uid.
+   *
    * @param pdb PodDisruptionBudget
    * @return Domain uid
    */
@@ -260,6 +310,7 @@ public class PodDisruptionBudgetHelper {
 
   /**
    * get PodDisruptionBudget's cluster name.
+   *
    * @param pdb PodDisruptionBudget
    * @return cluster name
    */
@@ -269,8 +320,9 @@ public class PodDisruptionBudgetHelper {
 
   /**
    * Update PodDisruptionBudget in domain presence info from the event.
+   *
    * @param presenceInfo the domain presence info
-   * @param event the event associated with pod disruption budget
+   * @param event        the event associated with pod disruption budget
    */
   public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
     presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
@@ -278,8 +330,9 @@ public class PodDisruptionBudgetHelper {
 
   /**
    * Delete PodDisruptionBudget in domain presence info from the event.
+   *
    * @param presenceInfo the domain presence info
-   * @param event the event associated with pod disruption budget
+   * @param event        the event associated with pod disruption budget
    * @return true if the pod disruption budget was actually removed
    */
   public static boolean deleteFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
@@ -291,5 +344,4 @@ public class PodDisruptionBudgetHelper {
             .map(V1ObjectMeta::getLabels)
             .map(m -> m.get(LabelConstants.CLUSTERNAME_LABEL)).orElse(null);
   }
-
 }
