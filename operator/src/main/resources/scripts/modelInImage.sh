@@ -109,7 +109,6 @@ function compareArtifactsMD5() {
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in image changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
-      echoFilesDifferences ${INTROSPECTCM_IMAGE_MD5} ${INTROSPECTJOB_IMAGE_MD5}
     fi
   fi
 
@@ -120,7 +119,6 @@ function compareArtifactsMD5() {
     if [ $? -ne 0 ] ; then
       trace "WDT artifacts in wdt config map changed: create domain again"
       WDT_ARTIFACTS_CHANGED=1
-      echoFilesDifferences ${INTROSPECTCM_CM_MD5} ${INTROSPECTJOB_CM_MD5}
     fi
   else
     # if no config map before but adding one now
@@ -137,16 +135,6 @@ function compareArtifactsMD5() {
   fi
 
   trace "Exiting checkExistInventory"
-}
-
-# echo file contents
-
-function echoFilesDifferences() {
-  trace "------- from introspector cm -----------------"
-  cat $1
-  trace "------- from introspector job pod ------------"
-  cat $2
-  trace "----------------------------------------------"
 }
 
 # get_opss_key_wallet   returns opss key wallet ewallet.p12 location
@@ -320,7 +308,7 @@ function createWLDomain() {
 
   # copy the filter related files to the wdt lib
 
-  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json
   cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
 
   # check to see if any model including changed (or first model in image deploy)
