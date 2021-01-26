@@ -1017,8 +1017,9 @@ class ItMiiDynamicUpdate {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
-              if (domainCondition.getType().equalsIgnoreCase("Failed")
-                  && domainCondition.getMessage().contains(expectedErrorMsg)) {
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase("Failed"))
+                  && (domainCondition.getMessage() != null
+                  && domainCondition.getMessage().contains(expectedErrorMsg))) {
                 return true;
               }
             }
