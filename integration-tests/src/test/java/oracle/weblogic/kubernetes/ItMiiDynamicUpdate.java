@@ -489,7 +489,7 @@ class ItMiiDynamicUpdate {
   public void testMiiAddDataSource() {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    addDataSourceAndVerify();
+    addDataSourceAndVerify(true);
   }
 
   /**
@@ -507,7 +507,7 @@ class ItMiiDynamicUpdate {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
@@ -747,7 +747,7 @@ class ItMiiDynamicUpdate {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    final LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
+    final LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
 
     // make non-dynamic change, update datasource JDBCDriver params
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -799,7 +799,7 @@ class ItMiiDynamicUpdate {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify();
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
 
     // write sparse yaml to change ScatteredReadsEnabled for adminserver
     Path pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
@@ -1286,7 +1286,7 @@ class ItMiiDynamicUpdate {
     return false;
   }
 
-  private LinkedHashMap<String, DateTime> addDataSourceAndVerify() {
+  private LinkedHashMap<String, DateTime> addDataSourceAndVerify(boolean introspectorRuns) {
 
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
 
@@ -1308,7 +1308,11 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    // if the config map content is not changed, its possible to miss the introspector pod creation/deletion as
+    // it will be very quick, skip the check in those cases
+    if (introspectorRuns) {
+      verifyIntrospectorRuns();
+    }
 
     verifyPodsNotRolled(pods);
 
