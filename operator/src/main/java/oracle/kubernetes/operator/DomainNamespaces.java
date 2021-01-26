@@ -24,6 +24,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -59,6 +61,8 @@ public class DomainNamespaces {
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
         = new WatcherControl<>(ServiceWatcher::create, d -> d::dispatchServiceWatch);
+  private final WatcherControl<V1beta1PodDisruptionBudget, PodDisruptionBudgetWatcher> podDisruptionBudgetWatchers
+          = new WatcherControl<>(PodDisruptionBudgetWatcher::create, d -> d::dispatchPodDisruptionBudgetWatch);
 
   AtomicBoolean isStopping(String ns) {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
@@ -107,6 +111,7 @@ public class DomainNamespaces {
     domainEventWatchers.removeWatcher(ns);
     podWatchers.removeWatcher(ns);
     serviceWatchers.removeWatcher(ns);
+    podDisruptionBudgetWatchers.removeWatcher(ns);
     configMapWatchers.removeWatcher(ns);
     jobWatchers.removeWatcher(ns);
   }
@@ -137,6 +142,10 @@ public class DomainNamespaces {
 
   ServiceWatcher getServiceWatcher(String namespace) {
     return serviceWatchers.getWatcher(namespace);
+  }
+
+  PodDisruptionBudgetWatcher getPodDisruptionBudgetWatcher(String namespace) {
+    return podDisruptionBudgetWatchers.getWatcher(namespace);
   }
 
   /**
@@ -254,6 +263,11 @@ public class DomainNamespaces {
     @Override
     Consumer<V1ServiceList> getServiceListProcessing() {
       return l -> serviceWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      return l -> podDisruptionBudgetWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override

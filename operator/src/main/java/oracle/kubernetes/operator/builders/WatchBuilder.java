@@ -10,12 +10,14 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
@@ -48,6 +50,18 @@ public class WatchBuilder {
    */
   public Watchable<V1Service> createServiceWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(callParams, V1Service.class, new ListNamespacedServiceCall(namespace));
+  }
+
+  /**
+   * Creates a web hook object to track pod disruption budgets.
+   *
+   * @param namespace the namespace
+   * @return the active web hook
+   * @throws ApiException if there is an error on the call that sets up the web hook.
+   */
+  public Watchable<V1beta1PodDisruptionBudget> createPodDisruptionBudgetWatch(String namespace) throws ApiException {
+    return FACTORY.createWatch(callParams, V1beta1PodDisruptionBudget.class,
+            new ListPodDisruptionBudgetCall(namespace));
   }
 
   /**
@@ -309,6 +323,37 @@ public class WatchBuilder {
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
+      } catch (ApiException e) {
+        throw new UncheckedApiException(e);
+      }
+    }
+  }
+
+  private static class ListPodDisruptionBudgetCall implements BiFunction<ApiClient, CallParams, Call> {
+    private final String namespace;
+
+    ListPodDisruptionBudgetCall(String namespace) {
+      this.namespace = namespace;
+    }
+
+    @Override
+    public Call apply(ApiClient client, CallParams callParams) {
+      configureClient(client);
+
+      try {
+        return new PolicyV1beta1Api(client)
+                .listNamespacedPodDisruptionBudgetCall(
+                        namespace,
+                        callParams.getPretty(),
+                        ALLOW_BOOKMARKS,
+                        START_LIST,
+                        callParams.getFieldSelector(),
+                        callParams.getLabelSelector(),
+                        callParams.getLimit(),
+                        callParams.getResourceVersion(),
+                        callParams.getTimeoutSeconds(),
+                        WATCH,
+                        null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
       }
