@@ -810,8 +810,12 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::isDomainSourceTypeFromModel)
           .orElse(false);
 
+      boolean isOnlineUpdate = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::isUseOnlineUpdate)
+          .orElse(false);
 
-      if (isFromModel && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
+      if (isFromModel && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo) && isOnlineUpdate) {
         return false;
       }
       return true;
