@@ -162,16 +162,16 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
-        if (isNotAuthorizedForNamespaceWatchingStoppedEvent(callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_UNAUTHORIZED,
-                  eventData.eventItem.getReason(), eventData.getResourceName());
+        if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
+          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
+              eventData.eventItem.getReason(), eventData.getResourceName());
+          return onFailureNoRetry(packet, callResponse);
         }
         return super.onFailure(packet, callResponse);
       }
 
-      private boolean isNotAuthorizedForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
-        return UnrecoverableErrorBuilder.isUnauthorizedFailure(callResponse)
-            && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
+        return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
       }
     }
 

@@ -74,7 +74,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
-import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_EVENT_UNAUTHORIZED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -607,12 +607,12 @@ public class EventHelperTest {
 
   @Test
   public void whenNSWatchStoppedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_UNAUTHORIZED);
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, NS, 403);
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
-    assertThat(logRecords, containsInfo(CREATING_EVENT_UNAUTHORIZED, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
+    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
   }
 
   private void dispatchAddedEventWatches() {
