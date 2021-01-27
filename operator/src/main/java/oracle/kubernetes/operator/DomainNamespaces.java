@@ -74,7 +74,7 @@ public class DomainNamespaces {
   /**
    * Constructs a DomainNamespace object.
    */
-  public DomainNamespaces() {
+  DomainNamespaces() {
     namespaceStatuses.clear();
     namespaceStoppingMap.clear();
   }
@@ -148,11 +148,11 @@ public class DomainNamespaces {
     return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
   }
 
-  private static WatchTuning getWatchTuning() {
+  static WatchTuning getWatchTuning() {
     return TuningParameters.getInstance().getWatchTuning();
   }
 
-  private static ThreadFactory getThreadFactory() {
+  static ThreadFactory getThreadFactory() {
     return ThreadFactorySingleton.getInstance();
   }
 

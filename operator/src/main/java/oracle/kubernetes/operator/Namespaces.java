@@ -40,11 +40,11 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodN
 public class Namespaces {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  public static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
+  static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
   /**
    * The key in a Packet of the collection of existing namespaces that are designated as domain namespaces.
    */
-  static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
+  private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
   /**
    * Returns true if the specified string is the name of a domain namespace.
@@ -224,7 +224,7 @@ public class Namespaces {
 
     private final DomainNamespaces domainNamespaces;
 
-    public NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
+    NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
       this.domainNamespaces = domainNamespaces;
     }
 
@@ -244,6 +244,7 @@ public class Namespaces {
     }
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
+      LOGGER.info(MessageKeys.STOP_MANAGING_NAMESPACE, namespace);
       return new StepAndPacket(
           Step.chain(
               createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),

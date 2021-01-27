@@ -50,7 +50,9 @@ import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPON
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodUID;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
@@ -454,12 +456,12 @@ public class EventHelper {
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return createNSEventInvolvedObject(eventData);
+        return createOperatorEventInvolvedObject(eventData);
       }
 
       @Override
       public String calculateResourceName(DomainPresenceInfo info, String namespace) {
-        return namespace;
+        return getOperatorPodName();
       }
     },
     STOP_MANAGING_NAMESPACE {
@@ -486,14 +488,23 @@ public class EventHelper {
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return createNSEventInvolvedObject(eventData);
+        return createOperatorEventInvolvedObject(eventData);
       }
 
       @Override
       public String calculateResourceName(DomainPresenceInfo info, String namespace) {
-        return namespace;
+        return getOperatorPodName();
       }
     };
+
+    protected static V1ObjectReference createOperatorEventInvolvedObject(EventData eventData) {
+      return new V1ObjectReference()
+          .name(getOperatorPodName())
+          .namespace(getOperatorNamespace())
+          .uid(getOperatorPodUID())
+          .kind(KubernetesConstants.POD);
+    }
+
 
     private static V1ObjectReference createNSEventInvolvedObject(EventData eventData) {
       return new V1ObjectReference()

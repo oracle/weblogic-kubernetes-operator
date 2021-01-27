@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,6 +34,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -294,7 +296,34 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return Namespaces.getSelection(new StartupStepsVisitor());
+    return Step.chain(Namespaces.getSelection(new StartupStepsVisitor()), createOperatorEventListStep());
+  }
+
+  private Step createOperatorEventListStep() {
+    return new CallBuilder()
+        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .listEventAsync(getOperatorNamespace(),
+            new EventListResponseStep(delegate.getDomainProcessor()));
+  }
+
+  private static class EventListResponseStep extends ResponseStep {
+    DomainProcessor processor;
+
+    EventListResponseStep(DomainProcessor processor) {
+      this.processor = processor;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+      V1EventList list = (V1EventList) callResponse.getResult();
+      startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    DomainEventWatcher startWatcher(String ns, String resourceVersion) {
+      return DomainEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
+          resourceVersion, DomainNamespaces.getWatchTuning(), processor::dispatchEventWatch, null);
+    }
   }
 
   private class StartupStepsVisitor implements NamespaceStrategyVisitor<Step> {
