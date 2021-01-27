@@ -54,6 +54,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
@@ -104,8 +105,6 @@ class ItElasticLoggingFluentd {
 
   private static final String FLUENTD_NAME = "fluentd";
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
-  private static final String FLUENTD_IMAGE_VERSION = "v1.3.3-debian-elasticsearch-1.3";
-  private static final String FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:" + FLUENTD_IMAGE_VERSION;
 
   // constants for Domain
   private static String domainUid = "elk-domain1";
