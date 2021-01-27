@@ -217,7 +217,7 @@ public interface TestConstants {
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
   public static final String MII_TWO_APP_WDT_MODEL_FILE = "model-singlecluster-two-sampleapp-wls.yaml";
-  public static final String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configurationChangedPendingRestart";
+  public static final String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
 
   // application constants
   public static final String MII_APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
