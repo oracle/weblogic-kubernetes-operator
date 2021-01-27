@@ -275,8 +275,8 @@ if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" =
   time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
   if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+    echo "Running mvn -Dit.test=${test_filter}, !ItIstioCrossClusters -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossCLusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
     time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
