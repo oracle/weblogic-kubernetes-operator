@@ -763,15 +763,10 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (shouldRecheck(cachedInfo)) {
 
         if (!isOnlineUpdateIfSpecChgCompatible(cachedInfo)) {
-          // Do not run introspector job
-          return false;
-        }
-
-        if (!isSpecChanged(liveInfo, cachedInfo) && hasDynamicUpdateInCompatibleSpecChange(cachedInfo)) {
-          // we got here because of the makeright decision after previous incompatible dynamic update spec change
-          //  Call this again to make sure introspecJobFailure count incremented and return false
-          // Otherwise, the introspect job will run with the incompatible spec for dynamic update.
-          return false;
+          // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves
+          // more than introspectVersion, this will cause the JobHelper not to set the MII_USE_ONLINE_UPDATE
+          // environment variable and therefore forcing it to use offline update.
+          liveInfo.setCompatibleWithOnlineUpdate(false);
         }
 
         if (hasExceededRetryCount()) {
@@ -815,19 +810,8 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(Domain::isDomainSourceTypeFromModel)
           .orElse(false);
 
-      // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves more than introspectVersion
-      // and onlineUpdate, disable online update ??
 
       if (isFromModel && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
-        // Set it as fatal error now, so that it won't retry by makeright decision.
-        // Otherwise, the next make right decision shouldCo
-        String errorMessage = "DynamicUpdateSpecIncompatibleChange: DomainType is FromModel and onlineUpdate is"
-            + " enabled, but there are changes in the domain"
-            + " spec incompatible for onlineUpdate, e.g. image name, serverPod environment, etc... You can use offline"
-            + " update by setting onlineUpdate.enabled=false and resubmit the introspector job.";
-        LOGGER.severe(errorMessage);
-        Optional.ofNullable(cachedInfo)
-            .ifPresent(c -> c.addValidationWarning(errorMessage));
         return false;
       }
       return true;
