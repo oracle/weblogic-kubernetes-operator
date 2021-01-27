@@ -1193,8 +1193,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
 
         private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
-          Optional.ofNullable(PodDisruptionBudgetHelper.getClusterName(pdb))
-                  .ifPresent(name -> info.setPodDisruptionBudget(name, pdb));
+          PodDisruptionBudgetHelper.addToPresence(info,pdb);
         }
       });
 

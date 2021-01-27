@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -69,8 +68,6 @@ public class PodDisruptionBudgetHelperTest {
     CLUSTER_PDB_EXISTS,
     CLUSTER_PDB_CREATED,
   };
-  private static final String OLD_LABEL = "oldLabel";
-  private static final String OLD_ANNOTATION = "annotation";
   private static final TerminalStep terminalStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
@@ -146,11 +143,6 @@ public class PodDisruptionBudgetHelperTest {
     assertThat(model.getMetadata().getOwnerReferences(), contains(expectedReference));
   }
 
-  public V1beta1PodDisruptionBudget createPDBModel(Packet packet) {
-    return new PodDisruptionBudgetHelper.PodDisruptionBudgetContext(null, packet)
-            .createModel();
-  }
-
   @Test
   public void whenCreated_modelHasExpectedSelectors() {
     V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
@@ -189,18 +181,6 @@ public class PodDisruptionBudgetHelperTest {
     assertThat(logRecords, containsInfo(getPdbCreateLogMessage()));
   }
 
-  public String getPdbCreateLogMessage() {
-    return CLUSTER_PDB_CREATED;
-  }
-
-  private void runPodDisruptionBudgetHelper() {
-    testSupport.runSteps(createSteps(null));
-  }
-
-  public Step createSteps(Step next) {
-    return PodDisruptionBudgetHelper.createPodDisruptionBudgetForClusterStep(next);
-  }
-
   @Test
   public void onRunWithNoPodDisruptionBudget_createIt() {
     consoleHandlerMemento.ignoreMessage(getPdbCreateLogMessage());
@@ -210,18 +190,6 @@ public class PodDisruptionBudgetHelperTest {
     assertThat(
             getRecordedPodDisruptionBudget(domainPresenceInfo),
             is(podDisruptionBudgetWithName(getPdbName())));
-  }
-
-  public V1beta1PodDisruptionBudget getRecordedPodDisruptionBudget(DomainPresenceInfo info) {
-    return info.getPodDisruptionBudget(getTestCluster());
-  }
-
-  static PodDisruptionBudgetHelperTest.PodDisruptionBudgetNameMatcher podDisruptionBudgetWithName(String expectedName) {
-    return new PodDisruptionBudgetHelperTest.PodDisruptionBudgetNameMatcher(expectedName);
-  }
-
-  public String getPdbName() {
-    return UID + "-" + getTestCluster();
   }
 
   @Test
@@ -238,27 +206,56 @@ public class PodDisruptionBudgetHelperTest {
   public void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+            .withReason("FieldValueNotFound")
+            .withMessage("Test this failure")
+            .build());
 
     runPodDisruptionBudgetHelper();
 
     assertThat(getDomain(), hasStatus("FieldValueNotFound",
-        "testcall in namespace junit, for testName: Test this failure"));
+            "testcall in namespace junit, for testName: Test this failure"));
   }
 
   @Test
   public void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
-        .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
-        .build());
+            .withReason("FieldValueNotFound")
+            .withMessage("Test this failure")
+            .build());
 
     runPodDisruptionBudgetHelper();
 
     assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  public V1beta1PodDisruptionBudget createPDBModel(Packet packet) {
+    return new PodDisruptionBudgetHelper.PodDisruptionBudgetContext(null, packet)
+            .createModel();
+  }
+
+  public String getPdbCreateLogMessage() {
+    return CLUSTER_PDB_CREATED;
+  }
+
+  private void runPodDisruptionBudgetHelper() {
+    testSupport.runSteps(createSteps(null));
+  }
+
+  public Step createSteps(Step next) {
+    return PodDisruptionBudgetHelper.createPodDisruptionBudgetForClusterStep(next);
+  }
+
+  public V1beta1PodDisruptionBudget getRecordedPodDisruptionBudget(DomainPresenceInfo info) {
+    return info.getPodDisruptionBudget(getTestCluster());
+  }
+
+  static PodDisruptionBudgetHelperTest.PodDisruptionBudgetNameMatcher podDisruptionBudgetWithName(String expectedName) {
+    return new PodDisruptionBudgetHelperTest.PodDisruptionBudgetNameMatcher(expectedName);
+  }
+
+  public String getPdbName() {
+    return UID + "-" + getTestCluster();
   }
 
   private Domain getDomain() {
@@ -281,60 +278,6 @@ public class PodDisruptionBudgetHelperTest {
 
   public void recordPodDisruptionBudget(DomainPresenceInfo info, V1beta1PodDisruptionBudget pdb) {
     info.setPodDisruptionBudget(getTestCluster(), pdb);
-  }
-
-  @Test
-  public void whenPDBLabelAdded_dontReplacePDB() {
-    verifyPDBNotReplaced(this::addNewLabel);
-  }
-
-  @Test
-  public void whenPodDisruptionBudgetLabelChanged_dontReplacePdb() {
-    verifyPDBNotReplaced(this::changeLabel);
-  }
-
-  @Test
-  public void whenPodDisruptionBudgetAnnotationAdded_dontReplacePdb() {
-    verifyPDBNotReplaced(this::addNewAnnotation);
-  }
-
-  @Test
-  public void whenPodDisruptionBudgetAnnotationChanged_dontReplacePdb() {
-    verifyPDBNotReplaced(this::changeAnnotation);
-  }
-
-  private void verifyPDBNotReplaced(Consumer<V1beta1PodDisruptionBudget> pdbMutator) {
-    runPodDisruptionBudgetHelper();
-    logRecords.clear();
-    pdbMutator.accept(getCreatedPDB());
-
-    runPodDisruptionBudgetHelper();
-
-    assertThat(logRecords, containsFine(getPdbExistsLogMessage()));
-  }
-
-  private void addNewLabel(V1beta1PodDisruptionBudget pdb) {
-    pdb.getMetadata().putLabelsItem("newLabel", "value");
-  }
-
-  private void changeLabel(V1beta1PodDisruptionBudget pdb) {
-    pdb.getMetadata().putLabelsItem(OLD_LABEL, "newValue");
-  }
-
-  private void addNewAnnotation(V1beta1PodDisruptionBudget pdb) {
-    pdb.getMetadata().putAnnotationsItem("newAnnotation", "value");
-  }
-
-  private void changeAnnotation(V1beta1PodDisruptionBudget pdb) {
-    pdb.getMetadata().putLabelsItem(OLD_ANNOTATION, "newValue");
-  }
-
-  private V1beta1PodDisruptionBudget getCreatedPDB() {
-    return getCreatedPdbs().get(0);
-  }
-
-  private List<V1beta1PodDisruptionBudget> getCreatedPdbs() {
-    return testSupport.getResources(PODDISRUPTIONBUDGET);
   }
 
   static class PodDisruptionBudgetNameMatcher

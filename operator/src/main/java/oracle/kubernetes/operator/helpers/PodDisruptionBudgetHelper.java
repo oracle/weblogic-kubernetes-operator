@@ -106,7 +106,7 @@ public class PodDisruptionBudgetHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
         logPodDisruptionBudgetCreated(messageKey);
-        info.setPodDisruptionBudget(clusterName, callResponse.getResult());
+        addPodDisruptionBudgetToRecord(callResponse.getResult());
         return doNext(packet);
       }
     }
@@ -138,9 +138,8 @@ public class PodDisruptionBudgetHelper {
     private class ConflictStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
-        String pdbName = info.getDomainUid() + "-" + clusterName;
         return doNext(
-                new CallBuilder().readPodDisruptionBudgetAsync(pdbName, info.getNamespace(),
+                new CallBuilder().readPodDisruptionBudgetAsync(getPDBName(), info.getNamespace(),
                         new PodDisruptionBudgetContext.ReadResponseStep(conflictStep)), packet);
       }
 
@@ -174,8 +173,24 @@ public class PodDisruptionBudgetHelper {
       }
     }
 
-    private static Step patchPodDisruptionBudgetStep(Step next) {
-      return new PatchPodDisruptionBudgetStep(next);
+    private Step patchPodDisruptionBudgetStep(Step next) {
+      return new CallBuilder()
+                      .patchPodDisruptionBudgetAsync(
+                              getPDBName(),
+                              info.getNamespace(),
+                              createPodDisruptionBudgetPatch(clusterName, info),
+                              new DefaultResponseStep<>(next));
+    }
+
+    private String getPDBName() {
+      return getDomainUid() + "-" + clusterName;
+    }
+
+    private V1Patch createPodDisruptionBudgetPatch(String clusterName, DomainPresenceInfo info) {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      patchBuilder.replace("/spec/minAvailable", Math.max(0, info.getDomain().getReplicaCount(clusterName)
+              - info.getDomain().getMaxUnavailable(clusterName)));
+      return new V1Patch(patchBuilder.build().toString());
     }
 
     private boolean mustPatch(V1beta1PodDisruptionBudget existingPdb) {
@@ -224,7 +239,7 @@ public class PodDisruptionBudgetHelper {
       labels.put(DOMAINUID_LABEL, info.getDomainUid());
       labels.put(CLUSTERNAME_LABEL, clusterName);
       return new V1beta1PodDisruptionBudget()
-              .metadata(new V1ObjectMeta().name(info.getDomainUid() + "-" + clusterName).labels(labels))
+              .metadata(new V1ObjectMeta().name(getPDBName()).labels(labels))
               .apiVersion(PDB_API_VERSION)
               .spec(new V1beta1PodDisruptionBudgetSpec().minAvailable(new IntOrString(minAvailable))
                       .selector(new V1LabelSelector().matchLabels(labels)));
@@ -257,36 +272,6 @@ public class PodDisruptionBudgetHelper {
     String getDomainUid() {
       return getDomain().getDomainUid();
     }
-
-    private static class PatchPodDisruptionBudgetStep extends Step {
-
-      PatchPodDisruptionBudgetStep(Step next) {
-        super(next);
-      }
-
-      @Override
-      public NextAction apply(Packet packet) {
-        String clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-        DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        String name = info.getDomainUid() + "-" + clusterName;
-
-        return doNext(new CallBuilder()
-                        .patchPodDisruptionBudgetAsync(
-                                name,
-                                info.getNamespace(),
-                                createPodDisruptionBudgetPatch(clusterName, info),
-                                new DefaultResponseStep<>(getNext())),
-                packet);
-      }
-
-      private V1Patch createPodDisruptionBudgetPatch(String clusterName, DomainPresenceInfo info) {
-        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-        patchBuilder.replace("/spec/minAvailable", Math.max(0, info.getDomain().getReplicaCount(clusterName)
-                - info.getDomain().getMaxUnavailable(clusterName)));
-        return new V1Patch(patchBuilder.build().toString());
-      }
-
-    }
   }
 
   /**
@@ -318,6 +303,10 @@ public class PodDisruptionBudgetHelper {
    */
   public static void updatePDBFromEvent(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget event) {
     presenceInfo.setPodDisruptionBudgetFromEvent(getClusterName(event), event);
+  }
+
+  public static void addToPresence(DomainPresenceInfo presenceInfo, V1beta1PodDisruptionBudget pdb) {
+    presenceInfo.setPodDisruptionBudget(getClusterName(pdb), pdb);
   }
 
   /**

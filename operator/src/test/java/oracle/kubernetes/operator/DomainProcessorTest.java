@@ -272,11 +272,6 @@ public class DomainProcessorTest {
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
-  private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
-    return runningPDBs.stream().findFirst().map(V1beta1PodDisruptionBudget::getSpec)
-            .map(s -> s.getMinAvailable().getIntValue()).orElse(0) == count;
-  }
-
   @Test
   public void whenStrandedResourcesExist_removeThem() {
     V1Service service1 = createServerService("admin");
@@ -313,6 +308,44 @@ public class DomainProcessorTest {
     assertThat(getRunningServices(), contains(createNonOperatorService()));
     assertThat(getRunningPods(), empty());
     assertThat(getRunningPDBs(), empty());
+  }
+
+  @Test
+  public void whenDomainScaledUp_podDisruptionBudgetMinAvailableUpdated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+  }
+
+  @Test
+  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
+  }
+
+  private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
+    return runningPDBs.stream().findFirst().map(V1beta1PodDisruptionBudget::getSpec)
+            .map(s -> s.getMinAvailable().getIntValue()).orElse(0) == count;
   }
 
   @Test
@@ -490,41 +523,6 @@ public class DomainProcessorTest {
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
-  }
-
-  @Test
-  public void whenScalingUpDomain_podDisruptionBudgetMinAvailableUpdated()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2));
-
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
-    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
-
-    // Scale up the cluster and execute the make right flow again with explicit recheck
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(new DateTime());
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
-            .withExplicitRecheck().execute();
-    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
-  }
-
-  @Test
-  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
-
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
-    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
-
-    // Scale down the cluster and execute the make right flow again with explicit recheck
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    newDomain.getMetadata().setCreationTimestamp(new DateTime());
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
-            .withExplicitRecheck().execute();
-    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
   }
 
   private static boolean containsEvent(List<V1Event> events, String reason) {
