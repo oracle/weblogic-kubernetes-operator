@@ -54,5 +54,4 @@ public class UnrecoverableErrorBuilder {
     ApiException apiException = callResponse.getE();
     return new FailureStatusSourceException(fromFailedCall(callResponse), apiException);
   }
-
 }
