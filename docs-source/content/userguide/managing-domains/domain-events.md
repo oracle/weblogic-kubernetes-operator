@@ -20,7 +20,7 @@ This document describes Kubernetes events that the operator generates about reso
 
 #### Operator-generated event types
 
-The operator generates these event types, which indicate the following:
+The operator generates these event types in a domain namespace, which indicate the following:
 
  *  `DomainCreated`: A new domain is created.
  *  `DomainChanged`: A change has been made to an existing domain.
@@ -32,11 +32,11 @@ The operator generates these event types, which indicate the following:
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
  *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
  *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
- *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace.
+ *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
 
 #### Operator-generated event details
 
-Each operator-generated event contains the following fields:
+Each operator-generated event in a domain namespace contains the following fields:
  *  `metadata`
     *  `namespace`:  Same as the domain resource namespace.
     *  `labels`:   `weblogic.createdByOperator=true` and, for a domain event, `weblogic.domainUID=<domainUID>`.
