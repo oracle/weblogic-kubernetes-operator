@@ -4,10 +4,13 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -71,6 +74,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -91,6 +96,8 @@ public class EventHelperTest {
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
+  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -546,8 +553,7 @@ public class EventHelperTest {
 
   @Test
   public void whenCreateEventStepCalledWithNSWatchStoppedEvent_eventCreatedWithExpectedLabels() {
-    testSupport.runSteps(createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
     Map<String, String> expectedLabels = new HashMap<>();
     expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
@@ -558,8 +564,7 @@ public class EventHelperTest {
 
   @Test
   public void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
-    testSupport.runSteps(createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
         containsEventWithInvolvedObject(getEvents(testSupport),
@@ -569,8 +574,7 @@ public class EventHelperTest {
 
   @Test
   public void whenNSWatchStoppedEventCreated_fail404OnReplace_eventCreatedWithExpectedCount() {
-    testSupport.runSteps(createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
 
     V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
@@ -586,8 +590,7 @@ public class EventHelperTest {
 
   @Test
   public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
-    Step eventStep = createEventStep(
-        new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS));
+    Step eventStep = createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS));
 
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
@@ -600,6 +603,16 @@ public class EventHelperTest {
     assertThat("Found 1 NAMESPACE_WATCHING_STOPPED events",
         getNumberOfEvents(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT), equalTo(1));
+  }
+
+  @Test
+  public void whenNSWatchStoppedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
+    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, NS, 403);
+
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
+
+    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
   }
 
   private void dispatchAddedEventWatches() {
