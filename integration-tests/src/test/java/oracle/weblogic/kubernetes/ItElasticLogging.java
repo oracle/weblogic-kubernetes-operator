@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
@@ -319,8 +320,12 @@ class ItElasticLogging {
         .append("/")
         .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
         .append(",")
+        .append(DOWNLOAD_DIR)
+        .append("/")
         .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
         .append(",")
+        .append(DOWNLOAD_DIR)
+        .append("/")
         .append(SNAKE_DOWNLOADED_FILENAME);
 
     logger.info("Create image with model file and verify");
