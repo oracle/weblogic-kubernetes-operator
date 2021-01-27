@@ -61,7 +61,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -105,8 +104,8 @@ class ItElasticLoggingFluentd {
 
   private static final String FLUENTD_NAME = "fluentd";
   private static final String FLUENTD_CONFIGMAP_YAML = "fluentd.configmap.elk.yaml";
-  private static final String FLUENTD_IMAGE
-      = "fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3";
+  private static final String FLUENTD_IMAGE_VERSION = "v1.3.3-debian-elasticsearch-1.3";
+  private static final String FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:" + FLUENTD_IMAGE_VERSION;
 
   // constants for Domain
   private static String domainUid = "elk-domain1";
@@ -217,12 +216,6 @@ class ItElasticLoggingFluentd {
         assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
             "uninstallAndVerifyKibana failed with ApiException");
       }
-
-      // delete domain custom resource
-      logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-      assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-          "deleteDomainCustomResource failed with ApiException");
-      logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
     }
   }
 
