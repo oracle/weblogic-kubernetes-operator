@@ -50,6 +50,7 @@ public interface ProcessingConstants {
 
   String EVENT_TYPE = "eventType";
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
+  String DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR = "DynamicUpdateSpecIncompatibleChange";
 
   String EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
       + "exceeded configured domainPresenceFailureRetryMaxCount: "
