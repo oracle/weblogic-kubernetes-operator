@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import com.google.common.base.Charsets;
@@ -994,7 +995,7 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = list.getItems();
+      events = Optional.ofNullable(list).map(V1EventList::getItems).orElse(Collections.EMPTY_LIST);
       events.sort(Comparator.comparing(e -> e.getLastTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
