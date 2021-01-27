@@ -779,12 +779,13 @@ class ItMiiDynamicUpdate {
   }
 
   /**
-   * Multiple non-dynamic changes with default CommitUpdateOnly for onNonDynamicChanges and restarting the domain.
-   * Recreate configmap containing non-dynamic change, changing DS attribute, changing ScatteredReadsEnabled.
+   * Two non-dynamic changes with default CommitUpdateOnly for onNonDynamicChanges.
+   * Create a configmap containing two non-dynamic changes, modified DataSource attribute
+   * and Adminstration Sever ScatteredReadsEnabled attribute.
    * Patch the domain resource with the configmap, using default value CommitUpdateOnly for onNonDynamicChanges.
    * Update the introspect version of the domain resource.
    * Wait for introspector to complete.
-   * Verify the domain status is updated and domain is not restarted, change is commited.
+   * Verify the domain status is updated, domain is not restarted and the change is commited.
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
@@ -890,7 +891,6 @@ class ItMiiDynamicUpdate {
    * Update the introspect version of the domain resource.
    * Wait for introspector to complete
    * Verify application target is changed by accessing the application runtime using REST API.
-   * Test is failing https://jira.oraclecorp.com/jira/browse/OWLS-86352.
    */
   @Test
   @Order(13)
