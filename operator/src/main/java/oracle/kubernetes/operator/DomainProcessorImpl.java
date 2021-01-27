@@ -61,16 +61,15 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
-import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -762,7 +761,18 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
-        //disableOnlineUpdateIfSpecChgNotCompatible(cachedInfo);
+
+        if (!isOnlineUpdateIfSpecChgCompatible(cachedInfo)) {
+          // Do not run introspector job
+          return false;
+        }
+
+        if (!isSpecChanged(liveInfo, cachedInfo) && hasDynamicUpdateInCompatibleSpecChange(cachedInfo)) {
+          // we got here because of the makeright decision after previous incompatible dynamic update spec change
+          //  Call this again to make sure introspecJobFailure count incremented and return false
+          // Otherwise, the introspect job will run with the incompatible spec for dynamic update.
+          return false;
+        }
 
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
@@ -771,7 +781,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           logRetryCount(cachedInfo);
           ensureRetryingEventPresent();
         }
-
         return true;
       }
       cachedInfo.setDomain(getDomain());
@@ -800,28 +809,28 @@ public class DomainProcessorImpl implements DomainProcessor {
           >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
     }
 
-    private void disableOnlineUpdateIfSpecChgNotCompatible(DomainPresenceInfo cachedInfo) {
-      DomainSourceType domainSourceType = Optional.ofNullable(liveInfo)
+    private boolean isOnlineUpdateIfSpecChgCompatible(DomainPresenceInfo cachedInfo) {
+      boolean isFromModel = Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getDomainHomeSourceType)
-          .orElse(DomainSourceType.Image);
+          .map(Domain::isDomainSourceTypeFromModel)
+          .orElse(false);
 
       // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves more than introspectVersion
       // and onlineUpdate, disable online update ??
 
-      if (domainSourceType.equals(DomainSourceType.FromModel) && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
-        LOGGER.info("DomainType is FromModel and onlineUpdate is enabled, but there are changes in the domain "
-            + "spec incompatible for onlineUpdate, e.g. image name, serverPod environment, etc... resetting "
-            + "onlineUpdate.enabled=false. The domain will roll after successful updates.");
-        Optional.ofNullable(liveInfo)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
-            .map(DomainSpec::getConfiguration)
-            .map(Configuration::getModel)
-            .map(Model::getOnlineUpdate)
-            .ifPresent(o -> o.setEnabled(false));
+      if (isFromModel && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo)) {
+        // Set it as fatal error now, so that it won't retry by makeright decision.
+        // Otherwise, the next make right decision shouldCo
+        String errorMessage = "DynamicUpdateSpecIncompatibleChange: DomainType is FromModel and onlineUpdate is"
+            + " enabled, but there are changes in the domain"
+            + " spec incompatible for onlineUpdate, e.g. image name, serverPod environment, etc... You can use offline"
+            + " update by setting onlineUpdate.enabled=false and resubmit the introspector job.";
+        LOGGER.severe(errorMessage);
+        Optional.ofNullable(cachedInfo)
+            .ifPresent(c -> c.addValidationWarning(errorMessage));
+        return false;
       }
-
+      return true;
     }
 
     private String getExistingError() {
@@ -848,6 +857,15 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
       return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+    }
+
+    private boolean hasDynamicUpdateInCompatibleSpecChange(DomainPresenceInfo cachedInfo) {
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+      return existingError != null && existingError.contains(DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR);
     }
 
     private boolean isFatalIntrospectorError() {

@@ -487,6 +487,10 @@ public class Domain implements KubernetesObject {
   }
 
   public boolean isNewIntrospectionRequiredForNewServers() {
+    return isDomainSourceTypeFromModel();
+  }
+
+  public boolean isDomainSourceTypeFromModel() {
     return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
