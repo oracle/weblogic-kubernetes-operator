@@ -9,6 +9,7 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -71,6 +72,19 @@ public class DomainPresenceInfoTest {
     info.setServerPod("myserver", pod);
 
     assertThat(info.getServerPod("myserver"), sameInstance(pod));
+  }
+
+  @Test
+  public void whenNoneDefined_getPodDisruptionBudgetReturnsNull() {
+    assertThat(info.getPodDisruptionBudget("cluster"), nullValue());
+  }
+
+  @Test
+  public void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
+    V1beta1PodDisruptionBudget pdb = new V1beta1PodDisruptionBudget();
+    info.setPodDisruptionBudget("cluster", pdb);
+
+    assertThat(info.getPodDisruptionBudget("cluster"), sameInstance(pdb));
   }
 
   @Test
