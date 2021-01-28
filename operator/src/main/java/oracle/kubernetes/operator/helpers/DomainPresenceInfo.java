@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -53,6 +54,7 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1beta1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private EventItem lastEventItem;
@@ -291,6 +293,10 @@ public class DomainPresenceInfo {
     return service == null ? null : service.getMetadata();
   }
 
+  private V1ObjectMeta getMetadata(V1beta1PodDisruptionBudget pdb) {
+    return pdb == null ? null : pdb.getMetadata();
+  }
+
   /**
    * Computes the result of a delete attempt. If the current pod is newer than the one associated
    * with the delete event, returns it; otherwise returns null, thus deleting the value.
@@ -399,6 +405,47 @@ public class DomainPresenceInfo {
     clusters.put(clusterName, service);
   }
 
+  public void setPodDisruptionBudget(String clusterName, V1beta1PodDisruptionBudget pdb) {
+    podDisruptionBudgets.put(clusterName, pdb);
+  }
+
+  public V1beta1PodDisruptionBudget getPodDisruptionBudget(String clusterName) {
+    return podDisruptionBudgets.get(clusterName);
+  }
+
+  void removePodDisruptionBudget(String clusterName) {
+    podDisruptionBudgets.remove(clusterName);
+  }
+
+  /**
+   * Applies an add or modify event for a pod disruption budget. If the current pod disruption budget is newer than the
+   * one associated with the event, ignores the event.
+   *
+   * @param clusterName the name of the cluster associated with the event
+   * @param event the pod disruption budget associated with the event
+   */
+  public void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+    if (clusterName == null) {
+      return;
+    }
+    podDisruptionBudgets.compute(clusterName, (k, s) -> getNewerPDB(s, event));
+  }
+
+  /**
+   * Given the pod disruption budget associated with a cluster pdb-deleted event, removes the pod disruption budget if
+   * it is not older than the one recorded.
+   *
+   * @param clusterName the name of the associated cluster
+   * @param event the pod disruption budget associated with the event
+   * @return true if the pod disruption budget was actually removed
+   */
+  public boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+    return removeIfPresentAnd(
+            podDisruptionBudgets,
+            clusterName,
+            s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
+  }
+
   void setClusterServiceFromEvent(String clusterName, V1Service event) {
     if (clusterName == null) {
       return;
@@ -415,6 +462,10 @@ public class DomainPresenceInfo {
   }
 
   private V1Service getNewerService(V1Service first, V1Service second) {
+    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  }
+
+  private V1beta1PodDisruptionBudget getNewerPDB(V1beta1PodDisruptionBudget first, V1beta1PodDisruptionBudget second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
   }
 
