@@ -7,6 +7,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -41,6 +42,12 @@ public interface DomainProcessor {
    * @param item a Kubernetes watch even
    */
   void dispatchServiceWatch(Watch.Response<V1Service> item);
+
+  /**
+   * Handles a watch event for pod disruption budget in the managed namespaces.
+   * @param item a Kubernetes watch event
+   */
+  void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item);
 
   /**
    * Handles a watch event for config maps in the managed namespaces.
