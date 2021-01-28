@@ -3519,6 +3519,54 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesPath)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
+   * Check the system resource runtime using REST API.
+   * @param nodePort admin node port
+   * @param resourcesUrl url of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected value
+   */
+  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainRuntime")
+        .append("/")
+        .append(resourcesUrl)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
    * Deploy application and access the application once to make sure the app is accessible.
    * @param domainNamespace namespace where domain exists
    * @param domainUid the domain to which the cluster belongs
