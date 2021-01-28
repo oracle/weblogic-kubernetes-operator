@@ -43,7 +43,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainEventProcessingTest {
+public class OperatorEventProcessingTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
   private static final String OPERATOR_UID = "1234-5678-101112";
@@ -160,7 +160,7 @@ public class DomainEventProcessingTest {
     dispatchAddedEventWatch(event1);
     V1Event event2 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", null);
     dispatchDeletedEventWatch(event2);
-    assertThat(getEventK8SObjects(event1).size(), equalTo(1));
+    assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test

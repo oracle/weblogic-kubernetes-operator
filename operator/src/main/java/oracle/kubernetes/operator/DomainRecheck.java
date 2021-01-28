@@ -36,8 +36,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
-import static oracle.kubernetes.operator.logging.MessageKeys.START_MANAGING_NAMESPACE;
+import static oracle.kubernetes.operator.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -226,7 +225,7 @@ class DomainRecheck {
       if (fullRecheck) {
         return doNext(packet);
       } else if (domainNamespaces.shouldStartNamespace(ns)) {
-        LOGGER.info(START_MANAGING_NAMESPACE, ns);
+        LOGGER.info(BEGIN_MANAGING_NAMESPACE, ns);
         return doNext(addNSWatchingStartingEventStep(), packet);
       } else {
         return doEnd(packet);
@@ -239,7 +238,7 @@ class DomainRecheck {
               new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
           EventHelper.createEventStep(
               new EventData(EventHelper.EventItem.START_MANAGING_NAMESPACE)
-                  .namespace(getOperatorNamespace()).resourceName(getOperatorPodName())),
+                  .namespace(getOperatorNamespace()).resourceName(ns)),
           getNext());
     }
   }

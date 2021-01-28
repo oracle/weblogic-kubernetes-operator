@@ -51,8 +51,8 @@ public class DomainNamespaces {
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
   private final WatcherControl<V1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
-  private final WatcherControl<V1Event, DomainEventWatcher> domainEventWatchers
-      = new WatcherControl<>(DomainEventWatcher::create, d -> d::dispatchEventWatch);
+  private final WatcherControl<V1Event, OperatorEventWatcher> operatorEventWatchers
+      = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
@@ -104,7 +104,7 @@ public class DomainNamespaces {
 
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
-    domainEventWatchers.removeWatcher(ns);
+    operatorEventWatchers.removeWatcher(ns);
     podWatchers.removeWatcher(ns);
     serviceWatchers.removeWatcher(ns);
     configMapWatchers.removeWatcher(ns);
@@ -123,8 +123,8 @@ public class DomainNamespaces {
     return eventWatchers.getWatcher(namespace);
   }
 
-  DomainEventWatcher getDomainEventWatcher(String namespace) {
-    return domainEventWatchers.getWatcher(namespace);
+  OperatorEventWatcher getDomainEventWatcher(String namespace) {
+    return operatorEventWatchers.getWatcher(namespace);
   }
 
   JobWatcher getJobWatcher(String namespace) {
@@ -237,8 +237,8 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<V1EventList> getDomainEventListProcessing() {
-      return l -> domainEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    Consumer<V1EventList> getOperatorEventListProcessing() {
+      return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override

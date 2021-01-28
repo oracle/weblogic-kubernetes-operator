@@ -80,6 +80,7 @@ public class Main {
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
+  protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
 
   private static String getConfiguredServiceAccount() {
@@ -114,6 +115,10 @@ public class Main {
                   TuningParameters.getInstance(),
                 ThreadFactory.class,
                 threadFactory));
+  }
+
+  Object getOperatorNamespaceEventWatcher() {
+    return operatorNamespaceEventWatcher;
   }
 
   static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
@@ -296,17 +301,16 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return Step.chain(Namespaces.getSelection(new StartupStepsVisitor()), createOperatorEventListStep());
+    return Namespaces.getSelection(new StartupStepsVisitor());
   }
 
-  private Step createOperatorEventListStep() {
+  private Step createOperatorNamespaceEventListStep() {
     return new CallBuilder()
         .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
-        .listEventAsync(getOperatorNamespace(),
-            new EventListResponseStep(delegate.getDomainProcessor()));
+        .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
-  private static class EventListResponseStep extends ResponseStep {
+  private class EventListResponseStep extends ResponseStep {
     DomainProcessor processor;
 
     EventListResponseStep(DomainProcessor processor) {
@@ -316,12 +320,12 @@ public class Main {
     @Override
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
       V1EventList list = (V1EventList) callResponse.getResult();
-      startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       return doContinueListOrNext(callResponse, packet);
     }
 
-    DomainEventWatcher startWatcher(String ns, String resourceVersion) {
-      return DomainEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
+    OperatorEventWatcher startWatcher(String ns, String resourceVersion) {
+      return OperatorEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
           resourceVersion, DomainNamespaces.getWatchTuning(), processor::dispatchEventWatch, null);
     }
   }
@@ -337,6 +341,7 @@ public class Main {
     public Step getDefaultSelection() {
       return Step.chain(
             new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+            createOperatorNamespaceEventListStep(),
             createDomainRecheckSteps());
     }
   }

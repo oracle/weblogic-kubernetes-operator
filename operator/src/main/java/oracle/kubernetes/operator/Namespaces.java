@@ -31,7 +31,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /**
  * A class which manages the strategy for recognizing the namespaces in which the operator will manage
@@ -244,11 +243,11 @@ public class Namespaces {
     }
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
-      LOGGER.info(MessageKeys.STOP_MANAGING_NAMESPACE, namespace);
+      LOGGER.info(MessageKeys.END_MANAGING_NAMESPACE, namespace);
       return new StepAndPacket(
           Step.chain(
               createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
-              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(getOperatorPodName())
+              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(namespace)
                   .namespace(getOperatorNamespace()))),
           packet.copy());
     }

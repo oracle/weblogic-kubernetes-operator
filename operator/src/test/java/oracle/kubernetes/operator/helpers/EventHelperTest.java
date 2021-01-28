@@ -4,10 +4,12 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -46,6 +48,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithComponent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInstance;
@@ -70,6 +73,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,6 +96,8 @@ public class EventHelperTest {
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
+  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -494,12 +501,12 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+  public void whenCreateEventStepCalledForStartManagingNamespace_eventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
-            EventConstants.NAMESPACE_WATCHING_STARTED_EVENT,
-            String.format(EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN, NS)), is(true));
+            EventConstants.START_MANAGING_NAMESPACE_EVENT,
+            String.format(EventConstants.START_MANAGING_NAMESPACE_PATTERN, NS)), is(true));
   }
 
   @Test
@@ -600,6 +607,111 @@ public class EventHelperTest {
     assertThat("Found 1 NAMESPACE_WATCHING_STOPPED events",
         getNumberOfEvents(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT), equalTo(1));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledForNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
+    assertThat("Found START_MANAGING_NAMESPACE event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            EventConstants.NAMESPACE_WATCHING_STARTED_EVENT,
+            String.format(EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN, NS)), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedNamespace() {
+    testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
+    assertThat("Found START_MANAGING_NAMESPACE event with expected namespace",
+        containsEventWithNamespace(getEvents(testSupport),
+            EventConstants.START_MANAGING_NAMESPACE_EVENT, OP_NS), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedLabels() {
+    testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
+
+    Map<String, String> expectedLabels = new HashMap<>();
+    expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    assertThat("Found START_MANAGING_NAMESPACE event with expected labels",
+        containsEventWithLabels(getEvents(testSupport),
+            EventConstants.START_MANAGING_NAMESPACE_EVENT, expectedLabels), is(true));
+  }
+
+  @Test
+  public void whenStartManagingNSEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
+    Step step = createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
+    testSupport.runSteps(step);
+    dispatchAddedEventWatches();
+    testSupport.runSteps(step);
+
+    assertThat("Found 1 START_MANAGING_NAMESPACE event with expected count",
+        containsOneEventWithCount(getEvents(testSupport),
+            EventConstants.START_MANAGING_NAMESPACE_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenStartManagingNSEventCreated_thenDelete_eventCreatedTwice() {
+    Step step = createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
+    testSupport.runSteps(step);
+    dispatchAddedEventWatches();
+    dispatchDeletedEventWatches();
+    testSupport.runSteps(step);
+
+    assertThat("Found 2 START_MANAGING_NAMESPACE events",
+        containsEventsWithCountOne(getEvents(testSupport),
+            EventConstants.START_MANAGING_NAMESPACE_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedLabels() {
+    testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
+
+    Map<String, String> expectedLabels = new HashMap<>();
+    expectedLabels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected labels",
+        containsEventWithLabels(getEvents(testSupport),
+            STOP_MANAGING_NAMESPACE_EVENT, expectedLabels), is(true));
+  }
+
+  @Test
+  public void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedInvolvedObject() {
+    testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
+
+    assertThat("Found STOP_MANAGING_NAMESPACE event with expected involvedObject",
+        containsEventWithInvolvedObject(getEvents(testSupport),
+            STOP_MANAGING_NAMESPACE_EVENT, OPERATOR_POD_NAME, OP_NS),
+        is(true));
+  }
+
+  @Test
+  public void whenStopManagingNSEventCreated_fail404OnReplace_eventCreatedWithExpectedCount() {
+    Step step = createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
+    testSupport.runSteps(step);
+    dispatchAddedEventWatches();
+
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), OP_NS, 404);
+
+    testSupport.runSteps(step);
+
+    assertThat("Found 2 STOP_MANAGING_NAMESPACE events",
+        getNumberOfEvents(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT), equalTo(2));
+  }
+
+  @Test
+  public void whenStopManagingNSEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
+    Step eventStep = createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
+
+    testSupport.runSteps(eventStep);
+    dispatchAddedEventWatches();
+
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
+
+    testSupport.runSteps(eventStep);
+
+    assertThat("Found 1 STOP_MANAGING_NAMESPACE events",
+        getNumberOfEvents(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT), equalTo(1));
   }
 
   private void dispatchAddedEventWatches() {
