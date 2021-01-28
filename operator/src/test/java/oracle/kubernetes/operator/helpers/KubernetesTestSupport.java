@@ -526,8 +526,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
           && (this.operation == null || this.operation == operation)
-          && Objects.equals(name, operation.getName(requestParams))
-          && Objects.equals(namespace, requestParams.namespace);
+          && (name == null || Objects.equals(name, operation.getName(requestParams)))
+          && (namespace == null || Objects.equals(namespace, requestParams.namespace));
     }
 
     HttpErrorException getException() {

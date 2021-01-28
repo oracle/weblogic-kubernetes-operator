@@ -37,7 +37,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
   echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
@@ -57,6 +57,8 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
+  echo "  -l WLE download URL"
+  echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
   echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
   echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
   echo "  -h Help"
@@ -76,10 +78,11 @@ parallel_run="false"
 threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
+wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 maven_profile_name="integration-tests"
 skip_tests=false
 
-while getopts "v:n:o:t:c:x:p:d:i:m:sh" opt; do
+while getopts "v:n:o:t:c:x:p:d:i:l:m:sh" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -98,6 +101,8 @@ while getopts "v:n:o:t:c:x:p:d:i:m:sh" opt; do
     d) wdt_download_url="${OPTARG}"
     ;;
     i) wit_download_url="${OPTARG}"
+    ;;
+    l) wle_download_url="${OPTARG}"
     ;;
     m) maven_profile_name="${OPTARG}"
     ;;
@@ -271,14 +276,14 @@ rm -rf "${RESULT_ROOT:?}/*"
 
 echo "Run tests..."
 if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-image-cert" ]; then
-  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-  time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+  time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
   if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+    echo "Running mvn -Dit.test=${test_filter}, !ItIstioCrossClusters -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   else
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   fi
 fi
