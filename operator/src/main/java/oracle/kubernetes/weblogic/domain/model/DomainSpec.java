@@ -967,8 +967,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
-            .append(configOverrides, rhs.configOverrides)
-            .append(configOverrideSecrets, rhs.configOverrideSecrets)
             .append(isAllowReplicasBelowMinDynClusterSize(), rhs.isAllowReplicasBelowMinDynClusterSize())
             .append(getMaxClusterConcurrentStartup(), rhs.getMaxClusterConcurrentStartup())
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
