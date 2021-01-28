@@ -35,6 +35,7 @@ import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_EXISTS;
+import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_PATCHED;
 
 /**
  * Operations for dealing with namespaces.
@@ -135,6 +136,25 @@ public class PodDisruptionBudgetHelper {
       }
     }
 
+    private class PatchResponseStep extends ResponseStep<V1beta1PodDisruptionBudget> {
+      PatchResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+                ? onSuccess(packet, callResponse)
+                : onFailure(getConflictStep(), packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
+        logPodDisruptionBudgetPatched();
+        return doNext(packet);
+      }
+    }
+
     private class ConflictStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
@@ -179,7 +199,7 @@ public class PodDisruptionBudgetHelper {
                               getPDBName(),
                               info.getNamespace(),
                               createPodDisruptionBudgetPatch(clusterName, info),
-                              new DefaultResponseStep<>(next));
+                              new PatchResponseStep(next));
     }
 
     private String getPDBName() {
@@ -263,6 +283,10 @@ public class PodDisruptionBudgetHelper {
 
     protected void logPodDisruptionBudgetExists() {
       LOGGER.fine(CLUSTER_PDB_EXISTS, getDomainUid(), clusterName);
+    }
+
+    protected void logPodDisruptionBudgetPatched() {
+      LOGGER.fine(CLUSTER_PDB_PATCHED, getDomainUid(), clusterName);
     }
 
     Domain getDomain() {
