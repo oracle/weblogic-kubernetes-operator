@@ -286,7 +286,7 @@ public class PodDisruptionBudgetHelper {
   }
 
   /**
-   * get PodDisruptionBudget's cluster name.
+   * Get PodDisruptionBudget's cluster name.
    *
    * @param pdb PodDisruptionBudget
    * @return cluster name

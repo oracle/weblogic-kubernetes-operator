@@ -1648,7 +1648,7 @@ public class CallBuilder {
   }
 
   /**
-   * Asynchronous step for patching a pod disruption budget.
+   * Asynchronous step for patching PodDisruptionBudget.
    *
    * @param name Name
    * @param namespace Namespace
