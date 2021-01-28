@@ -2259,7 +2259,35 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
+  /**
+   * Create a secret with username and password and Elasticsearch host and port in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param username username in the secret
+   * @param password passowrd in the secret
+   * @param elasticsearchhost Elasticsearch host in the secret
+   * @param elasticsearchport Elasticsearch port in the secret
+   */
+  public static void createSecretWithUsernamePasswordElk(String secretName,
+                                                         String namespace,
+                                                         String username,
+                                                         String password,
+                                                         String elasticsearchhost,
+                                                         String elasticsearchport) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("elasticsearchhost", elasticsearchhost);
+    secretMap.put("elasticsearchport", elasticsearchport);
 
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
 
   /** Scale the WebLogic cluster to specified number of servers.
    *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
