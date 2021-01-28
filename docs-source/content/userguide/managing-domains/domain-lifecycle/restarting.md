@@ -170,8 +170,8 @@ a. Select a different name for the new image.
 
 b. For Domain in Image, it is important to keep your original domain home in your new image.
 
-Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (`COPY`
-command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.
+Using the same domain home-in-image image as a base, create a new image by copying (`COPY`
+command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the image during the image build.
 
 {{% notice note %}}
 The key here is to make sure that you do not re-run WLST or WDT to create a new domain home even though it will
@@ -179,7 +179,7 @@ The key here is to make sure that you do not re-run WLST or WDT to create a new 
     rolling restart.
 {{% /notice %}}
 
-c. Deploy the new Docker image to your Docker repository with the new name.
+c. Deploy the new image to your container registry with the new name.
 
 d. Update the `image` field of the Domain YAML file, specifying the new image name.
 

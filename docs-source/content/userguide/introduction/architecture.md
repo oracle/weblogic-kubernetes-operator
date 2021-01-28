@@ -8,16 +8,15 @@ description: "The operator consists of several parts: the operator runtime, the 
 
 The operator consists of the following parts:
 
-*	The operator runtime, a process that runs in a Docker container deployed into a Kubernetes Pod and which performs the actual management tasks.
+* The operator runtime, a process that runs in a container deployed into a Kubernetes Pod and which performs the actual management tasks.
 * The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.
-*	A Helm chart for installing the operator runtime and related resources.
+* A Helm chart for installing the operator runtime and related resources.
 * A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.
 * A variety of sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.
 
-The operator is packaged in a [Docker image](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/) which you can access using the following `docker pull` commands:  
+The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
 ```
-$ docker login
 $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0
 ```
 
@@ -60,7 +59,7 @@ The diagram below shows the components inside the containers running WebLogic Se
 
 ![Inside a container](/weblogic-kubernetes-operator/images/inside-a-container.png)
 
-The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same Docker image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
+The Domain specifies a container image, defaulting to `container-registry.oracle.com/middleware/weblogic:12.2.1.4`. All containers running WebLogic Server use this same image. Depending on the use case, this image could contain the WebLogic Server product binaries or also include the domain directory.
 {{% notice note %}}
 During a rolling event caused by a change to the Domain's `image` field, containers will be using a mix of the updated value of the `image` field and its previous value.
 {{% /notice %}}
@@ -71,18 +70,18 @@ Within the container, the following aspects are configured by the operator:
 *	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see [Readiness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}).
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
-### Domain state stored outside Docker images
-The operator expects (and requires) that all state be stored outside of the Docker images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the Docker image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
+### Domain state stored outside container images
+The operator expects (and requires) that all state be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
 
 It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.
 
-The external state approach allows the operator to treat the Docker images as essentially immutable, read-only, binary images.  This means that the image needs to be pulled only once, and that many domains can share the same image.  This helps to minimize the amount of bandwidth and storage needed for WebLogic Server Docker images.
+The external state approach allows the operator to treat the images as essentially immutable, read-only, binary images.  This means that the image needs to be pulled only once, and that many domains can share the same image.  This helps to minimize the amount of bandwidth and storage needed for WebLogic Server images.
 
 This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.
 
-When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched Docker image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers.
+When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers.
 
-It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server Docker images.
+It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 
 The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.
 

@@ -6,7 +6,7 @@ usage() {
 cat << EOF
 
 Usage: buildDockerImage.sh [-t tag]
-Builds a Docker Image for the Oracle WebLogic Kubernetes Operator.
+Builds a container image for the Oracle WebLogic Kubernetes Operator.
 
 Parameters:
    -t: image name and tag in 'name:tag' format
@@ -84,5 +84,5 @@ cat << EOF
 
 EOF
 else
-  echo "WebLogic Kubernetes Operator Docker Image was NOT successfully created. Check the output and correct any reported problems with the docker build operation."
+  echo "WebLogic Kubernetes Operator container image was NOT successfully created. Check the output and correct any reported problems with the docker build operation."
 fi

@@ -8,7 +8,7 @@ description: "My domain will not start and I see errors like `ImagePullBackoff` 
 
 > My domain will not start and I see errors like `ImagePullBackoff` or `Cannot pull image`
 
-When you see these kinds of errors, it means that Kubernetes cannot find your Docker image.
+When you see these kinds of errors, it means that Kubernetes cannot find your container image.
 The most common causes are:
 
 * The `image` value in your Domain is set incorrectly, meaning Kubernetes will be
@@ -17,7 +17,7 @@ The most common causes are:
   configured Kubernetes with the necessary credentials, for example in an `imagePullSecret`.
 * You built the image on a machine that is not where your `kubelet` is running and Kubernetes
   cannot see the image, meaning you need to copy the image to the worker nodes or put it in
-  a Docker registry that is accessible the to all of the worker nodes.
+  a container registry that is accessible the to all of the worker nodes.
 
 Let's review what happens when Kubernetes starts a pod.
 
@@ -26,7 +26,7 @@ Let's review what happens when Kubernetes starts a pod.
 The definition of the pod contains a list of container specifications.  Each container
 specification contains the name (and optionally, tag) of the image that should be used
 to run that container.  In the example above, there is a container called `c1` which is
-configured to use the Docker image `some.registry.com/owner/domain1:1.0`.  This image
+configured to use the container image `some.registry.com/owner/domain1:1.0`.  This image
 name is in the format `registry address / owner / name : tag`, so in this case the
 registry is `some.registry.com`, the owner is `owner`, the image name is `domain`
 and the tag is `1.0`.  Tags are a lot like version numbers, but they are not required
@@ -34,7 +34,7 @@ to be numbers or to be in any particular sequence or format.  If you omit the ta
 is assumed to be `latest`.
 
 {{% notice note %}}
-The Docker tag `latest` is confusing - it does not actually mean the latest version of
+The tag `latest` is confusing - it does not actually mean the latest version of
 the image that was created or published in the registry; it just literally means
 whichever version the owner decided to call "latest".  Docker and Kubernetes make
 some assumptions about latest, and it is generally recommended to avoid using it and instead
@@ -42,23 +42,23 @@ specify the actual version or tag that you really want.
 {{% /notice %}}
 
 First, Kubernetes will check to see if the requested image is available in the local
-Docker image store on whichever worker node the pod was scheduled on.  If it is there,
+container image store on whichever worker node the pod was scheduled on.  If it is there,
 then it will use that image to start the container.  If it is not there, then Kubernetes
-will attempt to pull the image from a remote Docker registry.
+will attempt to pull the image from a remote container registry.
 
 {{% notice note %}}
 There is another setting called `imagePullPolicy` that can be used to force Kubernetes
-to always pull the image, even if it is already present in the local Docker image
+to always pull the image, even if it is already present in the local container image
 store.
 {{% /notice %}}
 
 If the image is available in the remote registry and it is public, that is it does not
-require authentication, then Kubernetes will pull the image to the local Docker image
+require authentication, then Kubernetes will pull the image to the local container image
 store and start the container.
 
 #### Images that require authentication
 
-If the remote Docker registry requires authentication, then you will need to provide
+If the remote container registry requires authentication, then you will need to provide
 the authentication details in a Kubernetes `docker-registry` secret and tell Kubernetes
 to use that secret when pulling the image.
 
@@ -76,7 +76,7 @@ kubectl create secret docker-registry secret1 \
 In this command, you would replace `secret1` with the name of the secret; the `docker-server`
 is set to the registry name, without the `https://` prefix; the `docker-username`, `docker-password`
 and `docker-email` are set to match the credentials you use to authenticate to the remote
-Docker registry; and the `namespace` must be set to the same namespace where you intend to
+container registry; and the `namespace` must be set to the same namespace where you intend to
 use the image.
 
 {{% notice note %}}
@@ -122,9 +122,9 @@ kubectl patch serviceaccount default \
 ```
 
 {{% notice note %}}
-You can provide multiple `imagePullSecrets` if you need to pull Docker images from multiple
-remote Docker registries or if your images require different authentication credentials.
-For more information, see [Docker Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
+You can provide multiple `imagePullSecrets` if you need to pull container images from multiple
+remote container registries or if your images require different authentication credentials.
+For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
 {{% /notice %}}
 
 #### Pushing the image to a repository
@@ -151,8 +151,8 @@ a remote repository, then the Docker steps are:
 
 #### Manually copying the image to your worker nodes
 
-If you are not able to use a remote Docker registry, for example if your Kubernetes cluster is
-in a secure network with no external access, then you can manually copy the Docker images to the
+If you are not able to use a remote container registry, for example if your Kubernetes cluster is
+in a secure network with no external access, then you can manually copy the container images to the
 cluster instead.
 
 On the machine where you created the image, export it into a TAR file using this command:

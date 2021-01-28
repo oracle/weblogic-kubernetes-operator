@@ -9,6 +9,7 @@ draft: false
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
 | December ??, 2020 | v3.2.0 | no | Placeholder |
+| January 22, 2021 | v3.1.2 | no | Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash. |
 | December 17, 2020 | v3.1.1 | no | Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters. |
 | November 24, 2020 | v3.0.4 | no | This release contains a back-ported fix from 3.1.0 for Managed Server pods that do not properly restart following a rolling activity. |
 | November 13, 2020 | v3.1.0 | no | Enhanced options for specifying managed namespaces. Helm 3.1.3+ now required. Added support for Tanzu Kubernetes Service. |
@@ -26,7 +27,7 @@ draft: false
 | March 4, 2019 | v2.0.1 | no  | OpenShift support is now certified.  Many bug fixes, including fixes for configuration overrides, cluster services, and domain status processing.  
 | January 24, 2019 | v2.0 | yes; not compatible with 1.x releases, but is compatible with 2.0-rc2. | Final version numbers and documentation updates.  
 | January 16, 2019 | v2.0-rc2 | yes | Schema updates are completed, and various bugs fixed.
-| December 20, 2018 | v2.0-rc1 | yes | Operator is now installed using Helm charts, replacing the earlier scripts.  The operator now supports the domain home on a persistent volume or in Docker image use cases, which required a redesign of the domain schema.  You can override the domain configuration using configuration override templates.  Now load balancers and ingresses can be independently configured.  You can direct WebLogic logs to a persistent volume or to the pod's log.  Added life cycle support for servers and significantly enhanced configurability for generated pods.  The final v2.0 release will be the initial release where the operator team intends to provide backward compatibility as part of future releases.
+| December 20, 2018 | v2.0-rc1 | yes | Operator is now installed using Helm charts, replacing the earlier scripts.  The operator now supports the domain home on a persistent volume or in image use cases, which required a redesign of the domain schema.  You can override the domain configuration using configuration override templates.  Now load balancers and ingresses can be independently configured.  You can direct WebLogic logs to a persistent volume or to the pod's log.  Added life cycle support for servers and significantly enhanced configurability for generated pods.  The final v2.0 release will be the initial release where the operator team intends to provide backward compatibility as part of future releases.
 | September 11, 2018 | v1.1  | no | Enhanced the documentation and fixed various bugs.
 | May 7, 2018 | v1.0  | no | Added support for dynamic clusters, the Apache HTTP Server, the Voyager Ingress Controller, and for PV in NFS storage for multi-node environments.
 | April 4, 2018 | 0.2 | yes | Many Kubernetes artifact names and labels have changed. Also, the names of generated YAML files for creating a domain's PV and PVC have changed.  Because of these changes, customers must recreate their operators and domains.
@@ -35,6 +36,10 @@ draft: false
 ### Change log
 
 #### Operator 3.2.0
+
+#### Operator 3.1.2
+
+* Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash ([#2089](https://github.com/oracle/weblogic-kubernetes-operator/pull/2089)).
 
 #### Operator 3.1.1
 
