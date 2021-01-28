@@ -48,7 +48,7 @@ spec:
         - name: "OPERATOR_POD_UID"
           valueFrom:
             fieldRef:
-              fieldPath: "metadata.UID"
+              fieldPath: "metadata.uid"
         - name: "OPERATOR_VERBOSE"
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"
