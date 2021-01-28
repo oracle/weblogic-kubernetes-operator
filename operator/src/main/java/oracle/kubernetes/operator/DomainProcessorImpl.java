@@ -28,6 +28,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -40,6 +42,7 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -433,6 +436,38 @@ public class DomainProcessorImpl implements DomainProcessor {
         break;
       case "DELETED":
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
+        if (removed && info.isNotDeleting()) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
+        break;
+      default:
+    }
+  }
+
+  /**
+   * Dispatch PodDisruptionBudget watch event.
+   * @param item watch event
+   */
+  public void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item) {
+    V1beta1PodDisruptionBudget pdb = item.object;
+    String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
+    if (domainUid == null) {
+      return;
+    }
+
+    DomainPresenceInfo info =
+            getExistingDomainPresenceInfo(pdb.getMetadata().getNamespace(), domainUid);
+    if (info == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        PodDisruptionBudgetHelper.updatePDBFromEvent(info, item.object);
+        break;
+      case "DELETED":
+        boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
         if (removed && info.isNotDeleting()) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
@@ -1150,6 +1185,15 @@ public class DomainProcessorImpl implements DomainProcessor {
 
         private void addService(V1Service service) {
           ServiceHelper.addToPresence(info, service);
+        }
+
+        @Override
+        Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+          return list -> list.getItems().forEach(this::addPodDisruptionBudget);
+        }
+
+        private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
+          PodDisruptionBudgetHelper.addToPresence(info,pdb);
         }
       });
 
