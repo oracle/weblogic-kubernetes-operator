@@ -20,7 +20,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-n <terraform config files directory>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
+  echo "usage: ${script} [-n <terraform config files directory>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -n Terraform config files directory "
   echo "  -o Output directory (optional) "
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
@@ -37,6 +37,8 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
+  echo "  -l WLE download URL"
+  echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
   echo "  -m Run integration-tests or oke-cert "
   echo "      (default: integration-tests, supported values: oke-cert) "
   echo "  -h Help"
@@ -58,9 +60,10 @@ parallel_run="false"
 threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
+wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 maven_profile_name="integration-tests"
 
-while getopts ":h:n:o:t:x:s:p:d:i:m:b:" opt; do
+while getopts ":h:n:o:t:x:s:p:d:i:l:m:b:" opt; do
   case $opt in
     n) terraform_script_dir_name="${OPTARG}"
     ;;
@@ -79,6 +82,8 @@ while getopts ":h:n:o:t:x:s:p:d:i:m:b:" opt; do
     d) wdt_download_url="${OPTARG}"
     ;;
     i) wit_download_url="${OPTARG}"
+    ;;
+    l) wle_download_url="${OPTARG}"
     ;;
     m) maven_profile_name="${OPTARG}"
     ;;
@@ -170,9 +175,9 @@ rm -rf "${RESULT_ROOT:?}/*"
 cd ${WORKSPACE}
 echo 'Run tests...'
 if [ "${maven_profile_name}" = "oke-cert" ]; then
-  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
-  mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
+  mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 else
-  echo "Running mvn -Dit.test=${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P integration-tests verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
-  mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+  echo "Running mvn -Dit.test=${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P integration-tests verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
+  mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 fi

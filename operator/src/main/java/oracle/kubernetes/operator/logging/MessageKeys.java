@@ -132,6 +132,7 @@ public class MessageKeys {
   public static final String POD_FORCE_DELETED = "WLSKO-0179";
   public static final String CREATING_EVENT = "WLSKO-0180";
   public static final String REPLACING_EVENT = "WLSKO-0181";
+  public static final String CREATING_EVENT_FORBIDDEN = "WLSKO-0182";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

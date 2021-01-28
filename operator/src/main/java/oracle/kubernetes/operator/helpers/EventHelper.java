@@ -46,10 +46,12 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
@@ -156,6 +158,20 @@ public class EventHelper {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
+        if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
+          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
+              eventData.eventItem.getReason(), eventData.getResourceName());
+          return onFailureNoRetry(packet, callResponse);
+        }
+        return super.onFailure(packet, callResponse);
+      }
+
+      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
+        return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
       }
     }
 
@@ -374,7 +390,7 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
+        return NAMESPACE_WATCHING_STARTED_PATTERN;
       }
 
       @Override
@@ -401,7 +417,7 @@ public class EventHelper {
     NAMESPACE_WATCHING_STOPPED {
       @Override
       public String getReason() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+        return NAMESPACE_WATCHING_STOPPED_EVENT;
       }
 
       @Override

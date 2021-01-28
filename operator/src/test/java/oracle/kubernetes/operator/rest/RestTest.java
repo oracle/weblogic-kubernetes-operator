@@ -32,9 +32,9 @@ import org.glassfish.jersey.test.spi.TestContainerException;
 import org.glassfish.jersey.test.spi.TestContainerFactory;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -66,19 +66,16 @@ public class RestTest extends JerseyTest {
   private boolean includeRequestedByHeader = true;
   private String authorizationHeader = ACCESS_TOKEN_PREFIX + " " + ACCESS_TOKEN;
 
-  @Before
-  public void setupRestTest() {
+  @BeforeEach
+  public void setupRestTest() throws Exception {
+    setUp();
     mementos.add(TestUtils.silenceJsonPathLogger());
   }
 
-  /**
-   * restore mementos.
-   */
-  @After
-  public void restore() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+  @AfterEach
+  public void restore() throws Exception {
+    tearDown();
+    mementos.forEach(Memento::revert);
   }
 
   @Override
