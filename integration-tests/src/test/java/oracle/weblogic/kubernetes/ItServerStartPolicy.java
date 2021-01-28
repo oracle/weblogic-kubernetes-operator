@@ -239,17 +239,14 @@ class ItServerStartPolicy {
     String serverPodName2 = domainUid + "-managed-server2";
 
     // shutdown managed-server1 with keep_replica_constant option not set
-    // This operator MUST fails as the MinDynamicCluster size is 1 
+    // This operator MUST fail as the MinDynamicCluster size is 1 
     // and allowReplicasBelowMinDynClusterSize is false
 
-    // String regex = ".*" + wrongServerName + ".*\\s*is not part";
     String regex = "it is at its minimum";
     String result =  assertDoesNotThrow(() ->
         executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
         String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server to go below Minimum");
-
-    // We can enhance the script to not replace a running server 
 
     // Make sure managed-server1 is deleted 
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
