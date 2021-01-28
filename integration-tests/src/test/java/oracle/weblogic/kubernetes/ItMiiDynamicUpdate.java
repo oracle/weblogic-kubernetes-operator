@@ -498,7 +498,7 @@ class ItMiiDynamicUpdate {
    * Verify domain will rolling restart.
    * Verify introspectVersion is updated.
    * Verify the datasource parameter is updated by checking the MBean using REST api.
-   * Verify domain status should have a condition type OnlineUpdateComplete.
+   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
    */
   @Test
   @Order(6)
@@ -542,6 +542,103 @@ class ItMiiDynamicUpdate {
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
     verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+
+    // change the datasource jndi name back to original in order to create a clean environment for the next test
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
+
+    // Patch a running domain with introspectVersion.
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // Verifying the domain is rolling restarted
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+  }
+
+  /**
+   * Mixed update by changing the DataSource URL (non-dynamic) and undeploying an application (dynamic).
+   * Patched the domain resource and set onNonDynamicChanges to CommitUpdateAndRoll.
+   * Verify domain will rolling restart.
+   * Verify introspectVersion is updated.
+   * Verify the datasource URL is updated by checking the MBean using REST api.
+   * Verify the application is undeployed.
+   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
+   */
+  @Test
+  @Order(7)
+  @DisplayName("Changing Weblogic admin credentail and deleting application with CommitUpdateAndRoll "
+      + "using mii dynamic update")
+  public void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
+
+    // check the application myear is deployed using REST API
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "appDeployments",
+        "myear"), "Application myear is not found");
+    logger.info("Application myear is found");
+
+    // write sparse yaml to undeploy application to file
+    Path pathToUndeployAppYaml = Paths.get(WORK_DIR + "/undeployapp.yaml");
+    String yamlToUndeployApp = "appDeployments:\n"
+        + "  Application:\n"
+        + "    !myear:";
+
+    assertDoesNotThrow(() -> Files.write(pathToUndeployAppYaml, yamlToUndeployApp.getBytes()));
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            MODEL_DIR + "/model.jdbc2.update2.yaml", pathToUndeployAppYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // Verifying the domain is rolling restarted
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration using REST api
+    adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
+        "newdburl"), "JDBCSystemResource DB URL not found");
+    logger.info("JDBCSystemResource DB URL found");
+
+    // verify the application is undeployed
+    assertFalse(checkSystemResourceConfig(adminServiceNodePort,
+        "appDeployments",
+        "myear"), "Application myear found, should be undeployed");
+    logger.info("Application myear is undeployed");
+
+    // check that the domain status condition contains the correct type and expected reason
+    logger.info("verifying the domain status condition contains the correct type and expected reason");
+    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
   }
 
   /**
@@ -552,7 +649,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
     // write sparse yaml to file
@@ -597,7 +694,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   public void testMiiChangeListenPort() {
 
@@ -645,7 +742,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(9)
+  @Order(10)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
   public void testMiiChangeListenAddress() {
     // write sparse yaml to file
@@ -689,7 +786,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(10)
+  @Order(11)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   public void testMiiChangeSSL() {
 
@@ -741,7 +838,7 @@ class ItMiiDynamicUpdate {
   // with latest dynamicupdate branch, the CancelUpdate behavior got changed. Disable this test now.
   @Disabled("CancelUpdate is removed from dynamic update")
   @Test
-  @Order(11)
+  @Order(12)
   @DisplayName("Test onNonDynamicChanges value CancelUpdate")
   public void testOnNonDynamicChangesCancelUpdate() {
 
@@ -789,7 +886,7 @@ class ItMiiDynamicUpdate {
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
-  @Order(12)
+  @Order(13)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
 
@@ -893,7 +990,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    */
   @Test
-  @Order(13)
+  @Order(14)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 
