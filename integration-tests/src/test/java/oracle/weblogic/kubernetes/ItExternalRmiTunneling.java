@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -270,6 +271,36 @@ class ItExternalRmiTunneling {
     javaCmd.append(Paths.get(RESULTS_ROOT));
     javaCmd.append(" JmsTestClient ");
     javaCmd.append(httpUrl);
+    javaCmd.append(" 2");
+    logger.info("java command to be run {0}", javaCmd.toString());
+
+    // Note it takes a couples of iterations before the client success
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for Http JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javaCmd)));
+
+    // Scale the cluster to size 3 
+    boolean scalingSuccess = assertDoesNotThrow(() ->
+        scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
+        String.format("Scaling down cluster cluster-1 of domain %s in namespace %s failed", 
+        domainUid, domainNamespace));
+    assertTrue(scalingSuccess,
+        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
+    checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
+
+    // Make sure the destination member at new server (manged-server3) 
+    // get equal number of message
+    javaCmd = new StringBuffer("java -cp ");
+    javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
+    javaCmd.append(":");
+    javaCmd.append(Paths.get(RESULTS_ROOT));
+    javaCmd.append(" JmsTestClient ");
+    javaCmd.append(httpUrl);
+    javaCmd.append(" 3");
     logger.info("java command to be run {0}", javaCmd.toString());
 
     // Note it takes a couples of iterations before the client success
@@ -352,6 +383,7 @@ class ItExternalRmiTunneling {
     javasCmd.append(jksTrustFile);
     javasCmd.append(" JmsTestClient ");
     javasCmd.append(httpsUrl);
+    javasCmd.append(" 2");
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success

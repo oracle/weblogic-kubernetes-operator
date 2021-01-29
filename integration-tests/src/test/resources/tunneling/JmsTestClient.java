@@ -22,15 +22,18 @@ import javax.jms.JMSConsumer;
 import javax.jms.JMSProducer;
 import javax.jms.JMSRuntimeException;
 
+import weblogic.jms.client.WLConnectionImpl;
+import weblogic.jms.extensions.WLConnection;
 
 /**
  * This JMS client that sends 300 messages to a Uniform Distributed Queue 
  * using load balancer http(s) url which maps to custom channel on cluster 
  * member server on WebLogic cluster.
- * It also verifies that the messages are load balanced across 2 member.
- * The test returns success(0) if it finds 150 messages on each member 
- * else returns failure (-1)  
- * Usage java JmsTestClient http(s)://host:port
+ * It also verifies that the messages are load balanced across all members.
+ * The test returns 
+ *    success(0)  if it finds equal number of messages on each member 
+ *    failure(-1) if it fails to find equal number of messages on each member 
+ * Usage java JmsTestClient http(s)://host:port server-count
  */
 
 public class JmsTestClient {
@@ -41,19 +44,35 @@ public class JmsTestClient {
   public  String clusterurl ="t3://localhost:7001";
   public  String testQueue ="jms/DistributedQueue";
   public  String testcf ="jms.ClusterConnectionFactory";
+  public  int membercount = 2;
 
   public JmsTestClient(String[] args)
   {
     clusterurl = args[0];
+    membercount = Integer.parseInt(args[1]);
     int msgcount = 300;
     boolean loadbalance=true;
     int mc = 0;
 
     try {
 
-     Context ctx = getInitialContext(clusterurl);
+     Context ctx = null;
+     ConnectionFactory qcf= null;
+
+     for ( int i=0; i<10; i++ ) {
+       ctx = getInitialContext(clusterurl);
+       qcf= (ConnectionFactory)ctx.lookup(testcf);
+       javax.jms.Connection con = qcf.createConnection();
+       String server = ((WLConnectionImpl) con).getWLSServerName();
+       System.out.println("Returned WebLogic Server --> " + server);
+       con.close();
+       qcf=null;
+       ctx.close();
+     }
+
+     ctx = getInitialContext(clusterurl);
+     qcf= (ConnectionFactory)ctx.lookup(testcf);
      Destination queue = (Destination)ctx.lookup(testQueue);
-     ConnectionFactory qcf= (ConnectionFactory)ctx.lookup(testcf);
 
      System.out.println("JNDI Cluster Context URL --> " + clusterurl);
 
@@ -62,15 +81,14 @@ public class JmsTestClient {
         context.createProducer().send(queue, "Welcome to Weblogic on K8s");
      ctx.close();
 
-     mc = cleanQueue(clusterurl,
-        "ClusterJmsServer@managed-server1@jms.DistributedQueue");
-     System.out.println("Server@ms1 got ["+mc+"] messages");
-     if ( mc != msgcount/2 ) loadbalance = false;
-
-     mc = cleanQueue(clusterurl,
-      "ClusterJmsServer@managed-server2@jms.DistributedQueue");
-     System.out.println("Server@ms2 got ["+mc+"] messages");
-     if ( mc != msgcount/2 ) loadbalance = false;
+     for ( int i=1; i<= membercount ; i++ ) {
+       String member_jndi = "ClusterJmsServer@managed-server" + i + 
+                      "@jms.DistributedQueue";
+       System.out.println("Member JNDI [" + member_jndi + "]");
+       mc = cleanQueue(clusterurl, member_jndi );
+       System.out.println("Member@managed-server" +i+ " got ["+mc+"] messages");
+       if ( mc != msgcount/membercount ) loadbalance = false;
+     }
 
      if ( ! loadbalance ) {
         System.out.println("ERROR: The messages are not evenly distributed");
