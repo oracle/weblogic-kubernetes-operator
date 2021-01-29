@@ -19,12 +19,12 @@ description = "Updating a running Model in Image domain's images and model files
    - [Online update steps](#online-update-steps)
    - [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes)
    - [Online update handling of deletes](#online-update-handling-of-deletes)
-   - [Online update examples](#online-update-examples)
+   - [Online update status and labels](#online-update-status-and-labels)
+   - [Online update scenarios](#online-update-scenarios)
    - [Online update sample](#online-update-sample)
  - [Appendices](#appendices)
    - [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools) below.
    - [Changing a Domain `restartVersion` or `introspectVersion`](#changing-a-domain-restartversion-or-introspectversion)
-   - [Checking domain status conditions for online update results](#checking-domain-status-conditions-for-online-update-results)
 
 #### Overview
 
@@ -37,26 +37,31 @@ using the WebLogic Server Administration Console or WLST scripts,
 then the update will be ephemeral.
 This is because a Model in Image domain home is regenerated from the model on every pod restart.
 
-There are two approaches for propagating model updates to a running Model in Image domain: 
-
- - _Offline updates_: Offline updates are propagated to WebLogic pods by updating your model
-   and then initiating a domain roll, which generates a new domain configuration,
-   restarts the domain's WebLogic administration server with the updated configuration,
-   and then restarts the other pods in the cluster.
+There are two approaches for propagating model updates to a running Model in Image domain
+without shutting down the domain first:
 
  - _Online updates_: If model changes are configured to fully dynamic configuration MBean attributes,
-   then you can optionally propagate changes to WebLogic pods without a roll using an online update.
-   If an online update request includes model updates that can only be achieved using an offline update,
+   then you can optionally propagate changes to WebLogic pods without a roll using an [online update](#online-updates).
+   If an online update request includes non-dynamic model updates that can only be achieved
+   using an offline update,
    then the resulting behavior is controlled by the Domain Yaml
    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` attribute,
    which is discussed in detail later in this chapter.
 
-The operator does not support all types of WebLogic configuration changes to a running domain.
-If a change is unsupported, then propagating the change requires entirely shutting domain the domain,
+ - _Offline updates_: [Offline updates](#offline-updates) are propagated to WebLogic pods by updating your model
+   and then initiating a domain roll, which generates a new domain configuration,
+   restarts the domain's WebLogic administration server with the updated configuration,
+   and then restarts the other pods in the cluster.
+
+The operator does not support all types of WebLogic configuration changes while a domain is still running.
+If a change is unsupported for an online or offline update, then propagating
+the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are discussed in
 [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 Supported and unsupported changes are discussed in detail later in this chapter in
 [Supported and unsupported updates](#supported-and-unsupported-updates).
+
+_It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct approach for an update._
 
 {{% notice warning %}}
 Custom configuration overrides, which are WebLogic configuration overrides
@@ -72,7 +77,8 @@ the syntax for specifying your model file in the first place.
 
 #### Supported updates
 
-The following updates are *supported* except when they reference an area that is specifically
+The following updates are *supported* for offline or online updates
+except when they reference an area that is specifically
 documented as [unsupported](#unsupported-updates) below:
 
  - You can add a new WebLogic cluster or standalone server.
@@ -101,7 +107,7 @@ documented as [unsupported](#unsupported-updates) below:
    (macros that use the `@@SECRET:secretname:secretkey@@` syntax).
    For example, you can change a database password secret.
 
- - For offline updates, you can change or add environment variables
+ - For offline updates only, you can change or add environment variables
    that your model macros reference
    (macros that use the `@@ENV:myenvvar@@` syntax).
 
@@ -232,8 +238,9 @@ and a discussion of workarounds and alternatives when applicable:
 If you have verified your proposed model updates to a running
 Model in Image domain are supported by consulting
 [Supported and unsupported updates](#supported-and-unsupported-updates) above,
-then you can use one or more of the following approaches for an online or offline
-model update:
+then you can use the following approaches.
+
+For online or offline updates:
 
   - Specify a new or changed WDT ConfigMap that contains model files
     and use your Domain YAML file `configuration.model.configMap` field to reference the map.
@@ -413,7 +420,7 @@ spec:
       runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
       onlineUpdate:
         enabled: true
-        OnNonDynamicChanges: "CommitUpdateAndRoll"
+        onNonDynamicChanges: "CommitUpdateAndRoll"
     secrets:
     - sample-domain1-datasource-secret
     - sample-domain1-another-secret
@@ -427,7 +434,7 @@ non-dynamic WebLogic configuration changes are detected during an online update 
 Non-dynamic changes are changes that require a domain restart to take effect. 
 Valid values are `CommitUpdateOnly` (default), or `CommitUpdateAndRoll`:
 
-  * If set to `CommitUpdateOnly` and any non-dynamic changes are detected,
+  * If set to `CommitUpdateOnly` (the default) and any non-dynamic changes are detected,
     then all changes will be committed,
     dynamic changes will take effect immediately,
     the domain will not automatically restart (roll),
@@ -440,9 +447,10 @@ Valid values are `CommitUpdateOnly` (default), or `CommitUpdateAndRoll`:
     and non-dynamic changes will take effect on each pod once the pod restarts.
 
 {{% notice note %}}
-When updating a domain with non-dynamic MBean changes with `onNonDynamicUpdates=CommitUpdateOnly` (the default),
+When updating a domain with non-dynamic MBean changes with
+`domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly` (the default),
 the non-dynamic changes are not effective on a WebLogic pod until the pod is restarted.
-However, if you scale up a cluster or otherwise start any new servers in the domain, 
+However, if you scale up a cluster or otherwise start any new servers in the domain,
 then the new servers will start with the new non-dynamic changes
 and the domain will then be running in an inconsistent state until its older servers are restarted.
 {{% /notice %}}
@@ -507,7 +515,8 @@ resources:
       '!wm2':
 ```
 
-But the online update will fail if you try replace the ConfigMap with the `SelfTuning` section omitted:
+But the online update will fail if you try replace the ConfigMap
+with the `SelfTuning` section omitted:
 
 ```
 resources:
@@ -515,7 +524,8 @@ resources:
     ...
 ```
 
-The above will fail as this implicitly removes the MBean types `SelfTuning` and `WorkManager`.
+The above will fail as this implicitly removes
+the MBean types `SelfTuning` and `WorkManager`.
 
 **Deleting cross-referenced MBeans**
 
@@ -590,39 +600,201 @@ resources:
         WorkManager:
         MinThreadsConstraint:
         MaxThreadsConstraint:
-
 ```
 
-##### Online update examples
+##### Online update status and labels
 
-**High level examples:**
+During an online update, the Operator will rerun the introspector job which
+in turn attempts online WebLogic configuration changes to the running domain.
+You can monitor an update's status using its domain resource's status conditions
+and its WebLogic Server pod labels.
 
-|Scenarios|Expected Outcome|Actions Required|
-  |---------------------|-------------|-------|
-  | Changing a dynamic WebLogic MBean attribute. | Changes are committed in the running domain and effective immediately. | No action required. |
-  | Changing a non-dynamic WebLogic MBean attribute. | The outcome depends on the `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` attribute. | See [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes). |
-  | Changing any model attribute that is [unsupported](#unsupported-updates). | The expected behavior is often undefined, but in some cases there will be helpful error in the introspector job, events, and/or domain status, and the job will periodically retry until the error is corrected or its maximum error count exceeded. | Use offline updates if they are supported, or, if not, shutdown the entire domain and restart it. |
-  | Changing domain resource YAML other than `domain.spec.introspectVersion`, `spec.configuration.secrets`, `spec.configuration.model.onlineUpdate`, and `spec.configuration.model.configMap`. | No online update is attempted by the introspector job, and changes are treated the same as offline updates (which may result in restarts/roll after job success). | No action required. |
-  | Errors in the model; for example, a syntax error. | Error in the introspector job, domain events, and domain status. The job will retry periodically until the error is corrected or until maximum error count is exceeded. | Correct the model. |
-  | Other errors while updating the domain. | Error in the introspector job, domain events, and/or domain status. A failed introspector job will retry periodically until the error is corrected or until it exceeds its maximum error count. | See  [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}). | 
+For example, for the domain status 
+you can check the domain resource `domain.status` stanza
+using `kubectl -n MY_NAMESPACE get domain MY_DOMAINUID -o yaml`,
+and for the WebLogic pod labels you can use
+`kubectl -n MY_NAMESPACE get pods --show-labels` plus
+optionally add `--watch` to watch the pods as they change over time.
+
+_Here is how to interpret each domain resource's `domain.status.conditions` type:_
+
+ 1. The `Progressing` type.
+    * Status attribute is True when a domain resource change is being processed by the operator,
+      such as when:
+       * The operator is processing a new domain resource or a change to an existing domain resource.
+       * The introspector is running.
+       * Servers are starting.
+       * A roll is in progress
+    * Status becomes False or unset after a failure, but can return to True if/when there is a retry.
+    * Status becomes False or unset after a success.
+    * Note: this condition may 'blink' on and off during a roll or pod restart.
+
+ 1. The `Available` type.
+    * Status attribute is True when:
+      * Processing succesfully completes without error
+        (introspect job, syntax checks, etc)
+      * The operator is starting or has started all desired WebLogic Server pods
+        (not including any servers that may be shutting down).
+    * Status is False or unset:
+      * Servers are rolling/starting or a failure has occurred.
+    * Note: this condition may 'blink' on and off while
+      processing a domain resource change or during a roll.
+    * For example, after a successful online update,
+      you will something like this in the domain resource `domain.status` section:
+      ```
+      status:
+        clusters:
+        - clusterName: cluster-1
+          maximumReplicas: 5
+          minimumReplicas: 0
+          readyReplicas: 2
+          replicas: 2
+          replicasGoal: 2
+        conditions:
+        - lastTransitionTime: "2021-01-26T18:43:14.377Z"
+          reason: ServersReady
+          status: "True"
+          type: Available
+      ```
+ 
+ 1. The `Failed` type.
+    * Status attribute is True after a failure
+      including validation errors or an introspector failure.
+      * In this case, the condition's `message` attribute will display an error message. 
+    * Status becomes False or unset after any succesful retry. 
+    * _Note:_ A `Failed` condition's status is _not_ set to True if the
+      domain resource is successfully processed but one or more WebLogic Server
+      pods is failing to start. In this case, Kubernetes will periodically
+      try and restart the pod(s), and the `Available` type
+      may remain True.
+      
+ 1. The `ConfigChangesPendingRestart` type.
+    * Status attribute is True if all of the following are true:
+      * The domain resource attribute
+        `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly`.
+      * The domain resource attribute
+        `domain.spec.configuration.model.onlineUpdate.enabled` is `True`.
+      * There were model changes and these changes modify non-dynamic WebLogic configuration.
+      * Processing successfully completed, including the introspector job.
+      * The administrator has not subsequently rolled/restarted each WebLogic Server pod
+        (in order to propagate the pending non-dynamic changes).
+        * See the discussion of WebLogic pod labels below to see which pods are awaiting restart.
+    * For example:
+      ```
+      Status:
+        ...
+        Conditions:
+          Last Transition Time:  2021-01-20T15:09:15.209Z
+          Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
+      
+      The following non-dynamic attribute(s) have been changed on MBeans 
+      that require server re-start:
+      MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
+      Attributes changed : Value
+          Reason:                      Online update applied, introspectVersion updated to 82
+          Status:                      True
+          Type:                        ConfigChangesPendingRestart
+      ```
+
+_Here are some of the expected WebLogic pod labels after an online update success:_
+
+ 1. Each WebLogic Server pod's `weblogic.introspectVersion` label value
+    will eventually match the `domain.spec.introspectVersion` value that you defined.
+    * If the domain resource attribute
+      `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly` (the default),
+      then the introspect version label on all pods is immediately updated
+      once the introspect job successfully completes.
+    * If the domain resource attribute
+      `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`
+      and there are no non-dynamic configuration changes to the model,
+      then the introspect version label on all pods is immediately updated
+      once the introspect job successfully completes.
+    * If the domain resource attribute
+      `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`
+      and there are non-dynamic clabel onfiguration changes to the model,
+      then the introspect version label on each pod is updated once the pod is rolled.
+ 
+ 1. There will be a `weblogic.configChangesPendingRestart=true` label on each
+    WebLogic Server pod until the pod is restarted (rolled) by an administrator
+    if all of the following are true:
+    * The domain resource `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges`
+      attribute is `CommitUpdateOnly` (the default).
+    * Non-dynamic WebLogic configuration changes were included in a
+      successful online model update.
+
+##### Online update scenarios
+
+1. _Successful online update that only includes dynamic WebLogic MBean changes._
+   * Example dynamic WebLogic MBean changes:
+     * Changing data source connection pool capacity, password, and targets.
+     * Changing application targets.
+     * Deleting or adding a data source.
+     * Deleting or adding an application.
+     * The MBean changes are committed in the running domain and effective immediately.
+   * Expected outcome once the introspector job completes:
+     * The domain `Available` condition status is set to `True`.
+     * The `weblogic.introspectVersion` label on all pods will be set to match the `domain.spec.introspectVersion`.
+   * Actions required:
+     * None.
+
+1. _Successful online update that includes non-dynamic WebLogic MBean attribute changes when `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateOnly` (the default)._
+   * Example non-dynamic WebLogic MBean change:
+     * Changing a data source driver parameter property (such as `username`). 
+   * Expected outcome once the introspector job completes:
+     * Any dynamic WebLogic configuration changes are committed in the running domain and effective immediately.
+     * Non-dynamic WebLogic configuration changes will not take effect on already running WebLogic Server pods until an administrator subsequently rolls the pod.
+     * The domain status `Available` condition will have a `Status` of `True`.
+     * The domain status `ConfigChangesPendingRestart` condition will have a `Status` of `True` until an administrator subsequently rolls all WebLogic Server pods that are already running.
+     * Each WebLogic Server pod's `weblogic.introspectVersion` label will match `domain.spec.introspectVersion`.
+     * Each WebLogic Server pod that is already running will be given a `weblogic.configChangesPendingRestart=true` label until an administrator subsequently rolls the pod.
+   * Actions required:
+     * If you want the non-dynamic changes to take effect, then restart the pod(s) with the `weblogic.configChangesPendingRestart=true` label (such as by initiating a domain roll).
+     * See [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes).
+
+1. _Successful online update that includes non-dynamic WebLogic MBean attribute changes when `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` is `CommitUpdateAndRoll`._
+   * Expected outcome once the introspector job completes:
+     * Any dynamic WebLogic configuration changes are committed in the running domain and effective immediately.
+     * The operator will initiate a domain roll.
+     * Non-dynamic WebLogic configuration changes will take effect on each pod when the pod is rolled.
+     * Each WebLogic Server pod's `weblogic.introspectVersion` label will match `domain.spec.introspectVersion` once it is rolled.
+     * The domain status `Available` condition will have a `Status` of `True` once the roll completes.
+   * Actions required:
+     * If you want the non-dynamic changes to take effect, then restart the pod(s) with the `weblogic.configChangesPendingRestart=true` label (such as by initiating a domain roll).
+     * See [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes).
+
+1. _Changing any of the domain resource [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}) in addition to `domain.spec.introspectVersion`, `spec.configuration.secrets`, `spec.configuration.model.onlineUpdate`, or `spec.configuration.model.configMap`._
+   * Expected outcome once the introspector job completes:
+     * No online update was attempted by the introspector job.
+     * All model changes are treated the same as offline updates (which may result in restarts/roll after job success).
+   * Actions required:
+     * None.
+
+1. _Changing any model attribute that is [unsupported](#unsupported-updates)._
+   * Expected outcome:
+     * The expected behavior is often undefined, but in some cases there will be helpful error in the introspector job, events, and/or domain status, and the job will periodically retry until the error is corrected or its maximum error count exceeded. 
+   * Actions required:
+     * Use offline updates if they are supported, or, if not, shutdown the entire domain and restart it. 
+     * See [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+
+1. _Errors in the model; for example, a syntax error._
+   * Expected outcome once the introspector job completes:
+     * Error in the introspector job's pod log, domain events, and domain status.
+     * The domain status `Failed` condition will have a `Status` of `True`.
+     * Periodic job retries until the error is corrected or until a maximum error count is exceeded.
+   * Actions required:
+     * Correct the model.
+     * If retries have halted, then alter the `spec.introspectVersion`.
+
+1. _Other errors while updating the domain._
+   * Expected outcome:
+     * Error in the introspector job, domain events, and/or domain status.
+     * The domain status `Failed` condition will have a `Status` of `True`.
+     * If there's a failed introspector job, the job will retry periodically until the error is corrected or until it exceeds its maximum error count. Other types of errors will also usually incur periodic retries.
+   * Actions required:
+     * See [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
+     * Make corrections to the domain resource and/or model.
+     * If retries have halted, then alter the `spec.introspectVersion`.
     
-**Dynamic WebLogic configuration examples:**
-
-The following are examples of WebLogic configuration changes that can be dynamic
-and are effective immediately in an online update once the introspection job completes:
-
-  - Data source connection pool capacity, password, and targets.
-  - Application targets.
-  - Deleting or adding a data source.
-  - Deleting or adding an application.
-
-**Non-dynamic WebLogic configuration examples:**
-
-The following are examples of WebLogic configuration changes that are non-dynamic
-and are only effective after an offline update and subsequent roll:
-
-  - Data source driver parameter properies (such as `username`). 
-
 ##### Online update sample
 
 For an online update sample which alters a data source and work manager, see the 
@@ -747,66 +919,3 @@ thye Domain `spec.introspectVersion`. Here are some common ways to alter either 
    the 
    `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
    Model in Image sample directory.
-
-##### Checking domain status conditions for online update results
-
-**WIP/TBD: DO NOT REVIEW THIS SECTION YET. THIS SECTION IS A WORK IN PROGRESS PENDING ONGING DEV CHANGES IN THIS AREA.**
-TBD this section may fit better in the Debugging chapter or the 'online' section above
-
-During an online update, the Operator will rerun the introspector job, attempting online updates on the running domain. This feature is useful for changing any dynamic attribute of the WebLogic Domain. No pod restarts are necessary, and the changes immediately take effect. 
-Once the job is completed, you can check the domain status to view the online update status: `kubectl -n <namespace> describe domain <domain uid>`.  Upon success, each WebLogic pod will have a `weblogic.introspectVersion` label that matches the `domain.spec.introspectVersion` that you specified.
- 
-When the introspector job finished, the domain status will be updated according to the result.
-
-You can use the command to display the domain status
-
-`kubectl -n <ns> describe domain <domain name>`
-
-|Scenarios|Domain status ||
-  |---------------------|-------------|-------|
-  |Successful updates when there is no non-dynamic changes|Final domain status is Available with ServerReady reason. updated introspectVersion in the pods|
-  |When onNonDynamicChanges=CommitUpdateAndRoll and there is non dynamic changes |Final domain status is Available with ServerReady reason. updated introspectVersion in the pods |
-  |When onNonDynamicChanges=CommitUpdateOnly and there is non dynamic changes | Domain status will have a condition 'ConfigChangesPendingRestart'. Each pod will have a label 'weblogic.configurationChangedPendingRestart=true'|
-  |Any other errors| Domain status message will display the error message. No condition is set in the status condition|
-
-For example, after a successful online update, you will see this in the `Domain Status` section
-
-```
-Status:
-  Clusters:
-    Cluster Name:      cluster-1
-    Maximum Replicas:  5
-    Minimum Replicas:  0
-    Ready Replicas:    2
-    Replicas:          2
-    Replicas Goal:     2
-  Conditions:
-    Last Transition Time:        2020-11-18T15:19:11.867Z
-    Reason:                      ServersReady
-    Status:                      True
-    Type:                        Available
-
-```
-
-If the changes involve non-dynamic MBean attributes, and you have specified 'CommitUpdateOnly' under `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` or not set, you will see this               
-      
-```
-  Conditions:
-    Last Transition Time:  2021-01-20T15:09:15.209Z
-    Message:               Online update completed successfully, but the changes require restart and the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set. The changes are committed but the domain require manually restart to  make the changes effective. The changes are: Server re-start is REQUIRED for the set of changes in progress.
-
-The following non-dynamic attribute(s) have been changed on MBeans 
-that require server re-start:
-MBean Changed : com.bea:Name=oracle.jdbc.fanEnabled,Type=weblogic.j2ee.descriptor.wl.JDBCPropertyBean,Parent=[sample-domain1]/JDBCSystemResources[Bubba-DS],Path=JDBCResource[Bubba-DS]/JDBCDriverParams/Properties/Properties[oracle.jdbc.fanEnabled]
-Attributes changed : Value
-    Reason:                      Online update applied, introspectVersion updated to 82
-    Status:                      True
-    Type:                        ConfigChangesPendingRestart
-```
-and you will see the label in each pod  
-
-```Labels:       weblogic.configurationChangedPendingRestart=true
-                 
-```
-
-Once the domain and all the pods are recycled, the condition `ConfigChangesPendingRestart` and label are cleared

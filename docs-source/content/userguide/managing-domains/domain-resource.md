@@ -290,6 +290,8 @@ Customer provided labels and annotations may not begin with "weblogic" and the o
 * `weblogic.domainUID: <uid>`, where `<uid>` is the domain UID from the Domain resource
 * `weblogic.serverName: <server-name>`, where `<server-name>` is the name of the WebLogic Server instance
 * `weblogic.clusterName: <cluster-name>`, where `<cluster-name>` is the name of the cluster of which this instance is a member, if any
+* `weblogic.domainRestartVersion: <restart-version>`, matches `domain.spec.restartVersion` once the pod is up to date with this version
+* `weblogic.introspectVersion: <introspect-version>`, matches `domain.spec.introspectVersion` once the pod is up to date with this version
 
 Prior to creating a Pod, the operator replaces variable references allowing the Pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where `VARIABLE_NAME` is one of the variable names available in the container for the WebLogic Server instance. The default set of environment variables includes:
 
@@ -298,7 +300,7 @@ Prior to creating a Pod, the operator replaces variable references allowing the 
 * `DOMAIN_HOME`: The domain home location as a file system path within the container.
 * `SERVER_NAME`: The WebLogic Server instance name.
 * `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member.
-* `LOG_HOME`: The WebLogic log location as a file system path within the container.
+* `LOG_HOME`: If the `domain.spec.logHomeEnabled' attribute is set to true, then this contains the WebLogic log location as a file system path within the container
 
 This example domain YAML file specifies that Pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:
 

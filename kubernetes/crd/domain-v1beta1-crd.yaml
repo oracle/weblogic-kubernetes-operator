@@ -10207,7 +10207,7 @@ spec:
                     type: string
                   type:
                     description: The type of the condition. Valid types are Progressing,
-                      Available, and Failed.
+                      Available, Failed, and ConfigChangesPendingRestart.
                     type: string
                     enum:
                     - Progressing
