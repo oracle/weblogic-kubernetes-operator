@@ -272,6 +272,7 @@ class ItExternalRmiTunneling {
     javaCmd.append(" JmsTestClient ");
     javaCmd.append(httpUrl);
     javaCmd.append(" 2");
+    javaCmd.append(" false");
     logger.info("java command to be run {0}", javaCmd.toString());
 
     // Note it takes a couples of iterations before the client success
@@ -301,6 +302,7 @@ class ItExternalRmiTunneling {
     javaCmd.append(" JmsTestClient ");
     javaCmd.append(httpUrl);
     javaCmd.append(" 3");
+    javaCmd.append(" false");
     logger.info("java command to be run {0}", javaCmd.toString());
 
     // Note it takes a couples of iterations before the client success
@@ -383,7 +385,8 @@ class ItExternalRmiTunneling {
     javasCmd.append(jksTrustFile);
     javasCmd.append(" JmsTestClient ");
     javasCmd.append(httpsUrl);
-    javasCmd.append(" 2");
+    javasCmd.append(" 3");
+    javasCmd.append(" true");
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success

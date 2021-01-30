@@ -29,31 +29,43 @@ import weblogic.jms.extensions.WLConnection;
  * This JMS client that sends 300 messages to a Uniform Distributed Queue 
  * using load balancer http(s) url which maps to custom channel on cluster 
  * member server on WebLogic cluster.
- * It also verifies that the messages are load balanced across all members.
+ * The test also verifies
+ * (a) JMS Connection are load balanced across all servers
+ * (b) messages are load balanced across all members.
  * The test returns 
- *    success(0)  if it finds equal number of messages on each member 
- *    failure(-1) if it fails to find equal number of messages on each member 
- * Usage java JmsTestClient http(s)://host:port server-count
+ *    SUCCESS(0)  if all verification criteria are met 
+ *    FAILURE(-1) if any of the verification criteria is not met   
+ * Usage java JmsTestClient http(s)://host:port membercount true|false
+ * Here the 3rd boolean argument is to check JMS connection loadbalancing
  */
 
 public class JmsTestClient {
-
-  public  String username ="weblogic";
-  public  String password ="welcome1";
 
   public  String clusterurl ="t3://localhost:7001";
   public  String testQueue ="jms/DistributedQueue";
   public  String testcf ="jms.ClusterConnectionFactory";
   public  int membercount = 2;
+  public  int msgcount = 300;
+  public  String[] servers = new String[10];
+  public  boolean checkConnection = false;
 
   public JmsTestClient(String[] args)
   {
     clusterurl = args[0];
-    membercount = Integer.parseInt(args[1]);
-    int msgcount = 300;
+
+    if ( args.length >= 2 ) 
+      membercount = Integer.parseInt(args[1]);
+    else 
+      System.out.println("(INFO) Assuming 2 member distributed destination");
+
+    if ( args.length == 3 ) 
+      checkConnection = Boolean.parseBoolean(args[2]);
+    else 
+     System.out.println("(INFO) Assuming no JMS Connection loadbalancing check");
     boolean loadbalance=true;
     int mc = 0;
 
+    System.out.println("WebLogic Cluster Context URL --> " + clusterurl);
     try {
 
      Context ctx = null;
@@ -61,20 +73,33 @@ public class JmsTestClient {
 
      for ( int i=0; i<10; i++ ) {
        ctx = getInitialContext(clusterurl);
-       qcf= (ConnectionFactory)ctx.lookup(testcf);
-       javax.jms.Connection con = qcf.createConnection();
+       javax.jms.Connection con =
+           ((ConnectionFactory) ctx.lookup(testcf)).createConnection();
        String server = ((WLConnectionImpl) con).getWLSServerName();
-       System.out.println("Returned WebLogic Server --> " + server);
        con.close();
-       qcf=null;
        ctx.close();
+       ctx = null;
+       servers[i]=server; 
+     }
+
+     for ( int i=1; i<= membercount ; i++ ) {
+       String server = "managed-server"+i;
+       boolean found = checkServer(servers, server);
+       if ( ! found ) {
+         System.out.println("Found no JMS connection from server " + server);
+         if ( checkConnection ) {
+          System.exit(-1);
+         } else {
+          System.out.println("Skipping JMS Connection loadbalancing check");
+         }
+       } else {
+        System.out.println("Found JMS connection from server " + server);
+       }
      }
 
      ctx = getInitialContext(clusterurl);
      qcf= (ConnectionFactory)ctx.lookup(testcf);
      Destination queue = (Destination)ctx.lookup(testQueue);
-
-     System.out.println("JNDI Cluster Context URL --> " + clusterurl);
 
      JMSContext context = qcf.createContext();
      for (int i=0;i<msgcount;i++)
@@ -91,7 +116,7 @@ public class JmsTestClient {
      }
 
      if ( ! loadbalance ) {
-        System.out.println("ERROR: The messages are not evenly distributed");
+        System.out.println("FAILURE: The messages are not evenly distributed");
         System.exit(-1);
      } else {
         System.out.println("SUCCESS: The messages are evenly distributed");
@@ -104,15 +129,24 @@ public class JmsTestClient {
      }
    } 
   
+  public boolean checkServer(String servers[], String server) {
+     boolean found = false;
+     for (String strTemp : servers){
+       System.out.println("(DEBUG) Found JMS Connection from server ["+strTemp+"]");
+       if ( strTemp.equals(server) ) {
+         found = true;
+         break;
+       }
+     }
+     return found;
+  }
+
   public int cleanQueue(String url, String Queue) throws Exception {
-   // System.out.println("(CQ) Context URL ["+url+"]");
-   // System.out.println("(CQ) Cleaning the Queue ["+Queue+"]");
    Context ctx = getInitialContext(url);
    Destination queue = (Destination)ctx.lookup(Queue);
    ConnectionFactory qcf= (ConnectionFactory)
         ctx.lookup("weblogic.jms.ConnectionFactory");
    JMSContext context = qcf.createContext();
-   // System.out.println("(CQ) JMS Context Created ..");
    JMSConsumer consumer = (JMSConsumer) context.createConsumer(queue);
    Message msg=null;
    int count = 0;
