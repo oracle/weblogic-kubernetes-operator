@@ -280,5 +280,5 @@ public interface TestConstants {
 
   // MII domain dynamic update
   public static final String MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG =
-      "Model in image online update failed because of forbidden changes";
+      "Model in Image online update failed because of forbidden changes";
 }
