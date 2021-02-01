@@ -93,11 +93,11 @@ Here are the steps for this use case:
      Now, you use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
 
      Run the following commands to create the model image and verify that it worked:
-     
+
      {{% notice note %}}
-     If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+     If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
      {{% /notice %}}
-     
+
      ```
      $ cd /tmp/mii-sample/model-images
      $ ./imagetool/bin/imagetool.sh update \
@@ -108,7 +108,7 @@ Here are the steps for this use case:
        --wdtArchive    ./model-in-image__WLS-v2/archive.zip \
        --wdtModelOnly \
        --wdtDomainType WLS \
-       --chown oracle:root 
+       --chown oracle:root
      ```
 
      If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
@@ -422,7 +422,7 @@ Here are the steps for this use case:
     Found 1 local data source:
       Datasource 'mynewdatasource':  State='Running', testPool='Failed'
         ---TestPool Failure Reason---
-        NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
         ---
         ...
         ... invalid host/username/password
@@ -436,7 +436,7 @@ Here are the steps for this use case:
 
 A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
 
-If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide. 
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 If you plan to run the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 

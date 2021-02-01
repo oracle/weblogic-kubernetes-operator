@@ -135,7 +135,7 @@ The Domain `spec` section contains elements for configuring the domain operation
 
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`. 
+* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
@@ -188,13 +188,12 @@ Elements related to specifying and overriding WebLogic domain configuration:
       Non-dynamic changes are changes that require a domain restart to take effect.
       Valid values are `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `CancelUpdate`.
       For more information, see
-      [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
-      in the runtime update chapter of the Model in Image user guide.
-    * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for
-       for online update calls to the
+      [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
+      in the Runtime Updates section of the Model in Image user guide.
+    * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for online update calls to the
        WebLogic domain from the WebLogic Deploy Tool within the introspector job. All timeouts
        are specified in milliseconds and default to two or three minutes. For a full list of
-       timeouts, you can call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
+       timeouts, call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
 
 * These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`.
 
@@ -290,8 +289,8 @@ Customer provided labels and annotations may not begin with "weblogic" and the o
 * `weblogic.domainUID: <uid>`, where `<uid>` is the domain UID from the Domain resource
 * `weblogic.serverName: <server-name>`, where `<server-name>` is the name of the WebLogic Server instance
 * `weblogic.clusterName: <cluster-name>`, where `<cluster-name>` is the name of the cluster of which this instance is a member, if any
-* `weblogic.domainRestartVersion: <restart-version>`, matches `domain.spec.restartVersion` once the pod is up to date with this version
-* `weblogic.introspectVersion: <introspect-version>`, matches `domain.spec.introspectVersion` once the pod is up to date with this version
+* `weblogic.domainRestartVersion: <restart-version>`, matches `domain.spec.restartVersion` after the pod is up to date with this version
+* `weblogic.introspectVersion: <introspect-version>`, matches `domain.spec.introspectVersion` after the pod is up to date with this version
 
 Prior to creating a Pod, the operator replaces variable references allowing the Pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where `VARIABLE_NAME` is one of the variable names available in the container for the WebLogic Server instance. The default set of environment variables includes:
 
