@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -166,7 +167,7 @@ public class EventHelper {
       public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
         if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
           LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getResourceName());
+              eventData.eventItem.getReason(), eventData.getNamespace());
           return onFailureNoRetry(packet, callResponse);
         }
         return super.onFailure(packet, callResponse);
@@ -489,7 +490,8 @@ public class EventHelper {
           .name(getOperatorPodName())
           .namespace(getOperatorNamespace())
           .uid(getOperatorPodUID())
-          .kind(KubernetesConstants.POD);
+          .kind(KubernetesConstants.POD)
+          .apiVersion(V1Pod.SERIALIZED_NAME_API_VERSION);
     }
 
 
