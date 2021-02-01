@@ -20,7 +20,7 @@ public interface TestConstants {
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
   public static final String WLS_DOMAIN_TYPE = "WLS";
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
-  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
+  public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3-ol8, 12.2.1.4-ol8, 14.1.1.0-11-ol8";
 
   // operator constants
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
@@ -53,9 +53,9 @@ public interface TestConstants {
 
   // ocir default image values, these values will be used while running locally
   public static final String OCIR_WEBLOGIC_IMAGE_NAME = "weblogick8s/test-images/weblogic";
-  public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_WEBLOGIC_IMAGE_TAG = "12.2.1.4-ol8";
   public static final String OCIR_FMWINFRA_IMAGE_NAME = "weblogick8s/test-images/fmw-infrastructure";
-  public static final String OCIR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCIR_FMWINFRA_IMAGE_TAG = "12.2.1.4-ol8";
   public static final String OCIR_DB_IMAGE_NAME = "weblogick8s/test-images/database/enterprise";
   public static final String OCIR_DB_IMAGE_TAG = "12.2.0.1-slim";
 
@@ -77,9 +77,9 @@ public interface TestConstants {
 
   // OCR default image values, these values will be used while running locally
   public static final String OCR_WEBLOGIC_IMAGE_NAME = "middleware/weblogic";
-  public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_WEBLOGIC_IMAGE_TAG = "12.2.1.4-ol8";
   public static final String OCR_FMWINFRA_IMAGE_NAME = "middleware/fmw-infrastructure";
-  public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
+  public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4-ol8";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
 
