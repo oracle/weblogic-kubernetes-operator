@@ -222,16 +222,11 @@ public class EventHelper {
   private static V1ObjectMeta createMetadata(
       EventData eventData) {
     final V1ObjectMeta metadata =
-        new V1ObjectMeta().name(generateEventName(eventData)).namespace(eventData.getNamespace());
+        new V1ObjectMeta().name(eventData.eventItem.generateEventName(eventData)).namespace(eventData.getNamespace());
 
     eventData.eventItem.addLabels(metadata, eventData);
 
     return metadata;
-  }
-
-  private static String generateEventName(EventData eventData) {
-    return String.format("%s.%s.%h%h",
-        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), generateRandomLong());
   }
 
   private static long generateRandomLong() {
@@ -456,6 +451,11 @@ public class EventHelper {
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return createOperatorEventInvolvedObject(eventData);
       }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
     },
     STOP_MANAGING_NAMESPACE {
       @Override
@@ -483,7 +483,20 @@ public class EventHelper {
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return createOperatorEventInvolvedObject(eventData);
       }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
     };
+
+    protected String generateEventName(EventData eventData) {
+      return String.format("%s.%s.%h%h",
+              eventData.getResourceName(),
+              eventData.eventItem.getReason(),
+              System.currentTimeMillis(),
+              generateRandomLong());
+    }
 
     protected static V1ObjectReference createOperatorEventInvolvedObject(EventData eventData) {
       return new V1ObjectReference()
@@ -500,6 +513,15 @@ public class EventHelper {
           .name(eventData.getResourceName())
           .namespace(eventData.getNamespace())
           .kind(KubernetesConstants.NAMESPACE);
+    }
+
+    String generateOperatorNSEventName(EventData eventData) {
+      return String.format("%s.%s.%s.%h%h",
+              getOperatorPodName(),
+              eventData.eventItem.getReason(),
+              eventData.getResourceName(),
+              System.currentTimeMillis(),
+              generateRandomLong());
     }
 
     public String getMessage(String resourceName, EventData eventData) {
