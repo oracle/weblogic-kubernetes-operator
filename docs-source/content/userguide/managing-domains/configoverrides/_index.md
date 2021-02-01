@@ -364,27 +364,48 @@ spec:
 ---
 ### Debugging
 
-Incorrectly formatted override files may be accepted without warnings or errors and may not prevent WebLogic Server instance Pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
+__Background notes:__
 
-On WebLogic Server versions that support the `weblogic.SituationalConfig.failBootOnError` system property (Note: It is not supported in WebLogic Server 12.2.1.3.0),
-by default the WebLogic Server will fail to boot if any configuration overrides files are invalid,
-or if it encounters an error while loading configuration overrides files.
-By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
+- The WebLogic Server Administration Console will _not_ reflect any override changes.
+  - You cannot use the Console to verify overrides are taking effect.
+  - Instead, you can check overrides using WLST: see the `wlst.sh` step below for details.
+
+- Incorrect override files may be silently accepted without warnings or errors.
+  - For example, WebLogic Server instance Pods may fully start regardless of XML
+    override syntax errors or if the specified name of an MBean is incorrect.
+  - So, it is important to make sure that the template files are correct in a QA environment,
+    otherwise your WebLogic Servers may start even though critically required
+    overrides are failing to take effect.
+
+- Some incorrect overrides may be detected on WebLogic Server versions that
+  support the `weblogic.SituationalConfig.failBootOnError` system property
+  (not applicable to WebLogic Server 12.2.1.3.0).
+  - If the system property is supported, then, by default, the WebLogic Server will fail to boot
+    if it encounters a syntax error while loading configuration overrides files.
+  - If you want to disable this check so
+    you can start up the WebLogic Servers even with incorrectly formatted override files,
+    then set the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR`
+    environment variable in the Kubernetes
+    containers for the WebLogic Servers to `false`.
+
+
+__Debugging steps:__
 
 * Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 
 * If WebLogic Server instance Pods do not come up at all, then:
   * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
-  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector` and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
+  * Check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
+    * For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
+  * Check the introspector job and its log.
+    * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector`
+      and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
       * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
       * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
+    * The introspector log is mirrored to the Domain resource `spec.logHome` directory
+      when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
   * Check your operator log for Warning/Error/Severe messages.
       * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
-
-{{% notice tip %}}
-The introspector log is mirrored to the Domain resource `spec.logHome` directory
-when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
-{{% /notice %}}
 
 * If WebLogic Server instance Pods do start, then:
   * Search your Administration Server Pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
@@ -412,6 +433,7 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
       * For example:
         * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
       * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
+  * Check for pod related Kubernetes events `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
 * If you'd like to verify that the configuration overrides are taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
@@ -429,12 +451,10 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
   > exit()
   ```
 * To cause the WebLogic configuration overrides feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your Domain YAML file with:
-```
--Dweblogic.debug.DebugSituationalConfig=true
--Dweblogic.debug.DebugSituationalConfigDumpXml=true
-```
-
-* **NOTE**: The WebLogic Server Administration Console will _not_ reflect any override changes. You cannot use the Console to verify overrides are taking effect.
+  ```
+  -Dweblogic.debug.DebugSituationalConfig=true
+  -Dweblogic.debug.DebugSituationalConfigDumpXml=true
+  ```
 
 
 ---
