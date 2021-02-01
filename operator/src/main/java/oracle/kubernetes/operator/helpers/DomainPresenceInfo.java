@@ -47,7 +47,6 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicBoolean isCompatibleWithOnlineUpdate = new AtomicBoolean(true);
   private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
@@ -448,14 +447,6 @@ public class DomainPresenceInfo {
 
   public void setDeleting(boolean deleting) {
     isDeleting.set(deleting);
-  }
-
-  public boolean isCompatibleWithOnlineUpdate() {
-    return isCompatibleWithOnlineUpdate.get();
-  }
-
-  public void setCompatibleWithOnlineUpdate(boolean value) {
-    isCompatibleWithOnlineUpdate.set(value);
   }
 
   public boolean isPopulated() {

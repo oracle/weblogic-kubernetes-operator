@@ -148,32 +148,4 @@ public class Model {
     return builder.isEquals();
   }
 
-  /**
-   * Check to see if the only change in the spec is introspectVersion.
-   * @param other - another DomainSpec object for comparison
-   * @return true if the change is only introspectVersion and/or onlineUpdate.enabled=true
-   */
-
-  public boolean isSpecChangeForOnlineUpdateOnly(Object other) {
-    if (other == this) {
-      return true;
-    } else if (!(other instanceof Model)) {
-      return false;
-    }
-
-    Model rhs = ((Model) other);
-    EqualsBuilder builder =
-        new EqualsBuilder()
-            .append(domainType, rhs.domainType)
-            .append(modelHome,rhs.modelHome)
-            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
-
-    boolean isEqual = builder.isEquals();
-    if (!isEqual) {
-      return isEqual;
-    } else {
-      return onlineUpdate.getEnabled();
-    }
-  }
-
 }

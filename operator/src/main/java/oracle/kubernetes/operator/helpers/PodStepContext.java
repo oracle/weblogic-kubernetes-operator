@@ -949,12 +949,13 @@ public abstract class PodStepContext extends BasePodStepContext {
         if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
           LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
           logPodExists();
-
           //Create dummy meta data for patching
           V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
           V1ObjectMeta updatedMetaData = new V1ObjectMeta();
+
           updatedMetaData.putAnnotationsItem("weblogic.sha256",
-                updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+               updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+
           if (miiDomainZipHash != null) {
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
           }
