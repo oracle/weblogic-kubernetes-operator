@@ -212,7 +212,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static void processServerEvent(V1Event event) {
-    String[] domainAndServer = event.getInvolvedObject().getName().split("-");
+    String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
     String status = getReadinessStatus(event);

@@ -8,6 +8,7 @@ import java.util.Random;
 import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -214,7 +215,7 @@ public class EventHelper {
         .lastTimestamp(eventItem.getCurrentTimestamp())
         .type(eventItem.getType())
         .reason(eventItem.getReason())
-        .message(eventItem.getMessage(eventData.getResourceName(), eventData))
+        .message(eventItem.getMessage(eventData))
         .involvedObject(eventItem.createInvolvedObject(eventData))
         .count(1);
   }
@@ -309,9 +310,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_FAILED_PATTERN,
-            eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
 
     },
@@ -343,9 +343,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, eventData.getResourceNameFromInfo(),
-            Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
 
     },
@@ -366,9 +365,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_VALIDATION_ERROR_PATTERN,
-            eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
     },
     NAMESPACE_WATCHING_STARTED {
@@ -383,14 +381,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(NAMESPACE_WATCHING_STARTED_PATTERN, resourceName);
-      }
-
-      @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
@@ -410,14 +402,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, resourceName);
-      }
-
-      @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
@@ -437,19 +423,13 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(EventConstants.START_MANAGING_NAMESPACE_PATTERN, resourceName);
-      }
-
-      @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return createOperatorEventInvolvedObject(eventData);
+        return createOperatorEventInvolvedObject();
       }
 
       @Override
@@ -469,19 +449,13 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(EventConstants.STOP_MANAGING_NAMESPACE_PATTERN, resourceName);
-      }
-
-      @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
-        return createOperatorEventInvolvedObject(eventData);
+        return createOperatorEventInvolvedObject();
       }
 
       @Override
@@ -489,6 +463,15 @@ public class EventHelper {
         return generateOperatorNSEventName(eventData);
       }
     };
+
+    private static String getMessageFromEventData(EventData eventData) {
+      return String.format(eventData.eventItem.getPattern(),
+          eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
+    }
+
+    private static void addCreatedByOperatorLabel(V1ObjectMeta metadata) {
+      metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    }
 
     protected String generateEventName(EventData eventData) {
       return String.format("%s.%s.%h%h",
@@ -498,7 +481,7 @@ public class EventHelper {
               generateRandomLong());
     }
 
-    protected static V1ObjectReference createOperatorEventInvolvedObject(EventData eventData) {
+    protected static V1ObjectReference createOperatorEventInvolvedObject() {
       return new V1ObjectReference()
           .name(getOperatorPodName())
           .namespace(getOperatorNamespace())
@@ -512,7 +495,8 @@ public class EventHelper {
       return new V1ObjectReference()
           .name(eventData.getResourceName())
           .namespace(eventData.getNamespace())
-          .kind(KubernetesConstants.NAMESPACE);
+          .kind(KubernetesConstants.NAMESPACE)
+          .apiVersion(V1Namespace.SERIALIZED_NAME_API_VERSION);
     }
 
     String generateOperatorNSEventName(EventData eventData) {
@@ -524,8 +508,8 @@ public class EventHelper {
               generateRandomLong());
     }
 
-    public String getMessage(String resourceName, EventData eventData) {
-      return String.format(getPattern(), eventData.getResourceNameFromInfo());
+    public String getMessage(EventData eventData) {
+      return String.format(getPattern(), eventData.getResourceName());
     }
 
     DateTime getCurrentTimestamp() {

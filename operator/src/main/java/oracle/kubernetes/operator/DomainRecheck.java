@@ -226,13 +226,13 @@ class DomainRecheck {
         return doNext(packet);
       } else if (domainNamespaces.shouldStartNamespace(ns)) {
         LOGGER.info(BEGIN_MANAGING_NAMESPACE, ns);
-        return doNext(addNSWatchingStartingEventStep(), packet);
+        return doNext(addNSWatchingStartingEventsStep(), packet);
       } else {
         return doEnd(packet);
       }
     }
 
-    private Step addNSWatchingStartingEventStep() {
+    private Step addNSWatchingStartingEventsStep() {
       return Step.chain(
           EventHelper.createEventStep(
               new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),

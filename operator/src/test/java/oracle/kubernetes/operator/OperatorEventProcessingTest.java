@@ -320,7 +320,7 @@ public class OperatorEventProcessingTest {
         .lastTimestamp(DateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(UID, new EventHelper.EventData(item, message)))
+        .message(item.getMessage(new EventHelper.EventData(item, message)))
         .involvedObject(involvedObj)
         .count(1);
   }
@@ -339,7 +339,7 @@ public class OperatorEventProcessingTest {
         .lastTimestamp(DateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(NS, new EventHelper.EventData(item, "")))
+        .message(item.getMessage(new EventHelper.EventData(item, "")))
         .involvedObject(involvedObj)
         .count(1);
   }

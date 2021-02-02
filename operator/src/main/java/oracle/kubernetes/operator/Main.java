@@ -310,7 +310,7 @@ public class Main {
         .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
-  private class EventListResponseStep extends ResponseStep {
+  private class EventListResponseStep extends ResponseStep<V1EventList> {
     DomainProcessor processor;
 
     EventListResponseStep(DomainProcessor processor) {
@@ -318,8 +318,8 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
-      V1EventList list = (V1EventList) callResponse.getResult();
+    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
+      V1EventList list = callResponse.getResult();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       return doContinueListOrNext(callResponse, packet);
     }
