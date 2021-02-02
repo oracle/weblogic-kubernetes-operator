@@ -233,7 +233,7 @@ function buildWDTParams_MD5() {
        "'spec.configuration.model.walletPasswordSecret' in your domain" \
        "resource and deploying this secret with a 'walletPassword' key," \
        "but the secret does not have this key."
-    exit 1
+    exitOrLoop
   fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
@@ -711,7 +711,7 @@ function createPrimordialDomain() {
         "support online changes for most security realm related mbeans. Use offline update" \
         "to update the domain by setting 'domain.spec.configuration.model.onlineUpdate.enabled'" \
         "to 'false' and trying again."
-      exit 1
+      exitOrLoop
     fi
 
     trace "No primordial domain or need to create again because of changes require domain recreation"
