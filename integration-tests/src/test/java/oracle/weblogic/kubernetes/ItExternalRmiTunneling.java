@@ -69,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyV
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -229,6 +230,7 @@ class ItExternalRmiTunneling {
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
+    buildClientOnPod();
 
     // Prepare the voyager ingress file from the template file by replacing
     // domain namespace, domain UID, cluster service name and tls secret
@@ -260,6 +262,34 @@ class ItExternalRmiTunneling {
     assertTrue(httpTunnelingPort != -1,
         "Could not get the HttpTunnelingPort service node port");
     logger.info("HttpTunnelingPort for Voyager {0}", httpTunnelingPort);
+
+    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
+    // works inside pod before scaling the cluster
+    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
+    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(domainNamespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(adminServerPodName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":.");
+    javapCmd.append(" JmsTestClient ");
+    javapCmd.append(" t3://");
+    javapCmd.append(domainUid);
+    javapCmd.append("-cluster-");
+    javapCmd.append(clusterName);
+    javapCmd.append(":8001 2 true");
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for t3 JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javapCmd)));
 
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
@@ -313,6 +343,33 @@ class ItExternalRmiTunneling {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(runJmsClient(new String(javaCmd)));
+
+    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
+    // works inside pod after scaling the cluster
+    javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(domainNamespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(adminServerPodName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":.");
+    javapCmd.append(" JmsTestClient ");
+    javapCmd.append(" t3://");
+    javapCmd.append(domainUid);
+    javapCmd.append("-cluster-");
+    javapCmd.append(clusterName);
+    javapCmd.append(":8001 3 true");
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for t3 JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javapCmd)));
   }
 
   /**
@@ -386,7 +443,7 @@ class ItExternalRmiTunneling {
     javasCmd.append(" JmsTestClient ");
     javasCmd.append(httpsUrl);
     javasCmd.append(" 3");
-    javasCmd.append(" true");
+    javasCmd.append(" false");
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success
@@ -415,6 +472,34 @@ class ItExternalRmiTunneling {
     javacCmd.append(Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"));
     javacCmd.append(Paths.get(" -d "));
     javacCmd.append(Paths.get(RESULTS_ROOT));
+    logger.info("javac command {0}", javacCmd.toString());
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(javacCmd), true));
+    logger.info("javac returned {0}", result.toString());
+    logger.info("javac returned EXIT value {0}", result.exitValue());
+    assertTrue(result.exitValue() == 0, "Client compilation fails");
+  }
+
+  // Build JMS Client inside the Admin Server Pod
+  private void buildClientOnPod() {
+
+    String destLocation = "/u01/oracle/JmsTestClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+             adminServerPodName, "weblogic-server",
+             Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+             Paths.get(destLocation)));
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
+
+    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    javacCmd.append(domainNamespace);
+    javacCmd.append(" -it ");
+    javacCmd.append(adminServerPodName);
+    javacCmd.append(" -- /bin/bash -c \"");
+    javacCmd.append("javac -cp ");
+    javacCmd.append(jarLocation);
+    javacCmd.append(" JmsTestClient.java ");
+    javacCmd.append(" \"");
     logger.info("javac command {0}", javacCmd.toString());
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(javacCmd), true));

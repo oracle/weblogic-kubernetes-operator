@@ -27,8 +27,16 @@ import weblogic.jms.extensions.WLConnection;
 
 /**
  * This JMS client that sends 300 messages to a Uniform Distributed Queue 
- * using load balancer http(s) url which maps to custom channel on cluster 
- * member server on WebLogic cluster.
+ * using WebLogic cluster url.
+ *
+ * When this standalone client is executed outside of k8s cluster, 
+ *  the cluster url refers to load balancer http(s) url which maps to 
+ *  custom channel on cluster
+ *
+ * When this standalone client is executed inside k8s cluster(inside admin pod) 
+ *  the cluster url refers to cluster service url e.g.
+ *  t3://mii-tunneling-cluster-cluster-1:8001
+ *
  * The test also verifies
  * (a) JMS Connection are load balanced across all servers
  * (b) messages are load balanced across all members.
@@ -37,6 +45,9 @@ import weblogic.jms.extensions.WLConnection;
  *    FAILURE(-1) if any of the verification criteria is not met   
  * Usage java JmsTestClient http(s)://host:port membercount true|false
  * Here the 3rd boolean argument is to check JMS connection loadbalancing
+ * Note: The connection loadbalancing can be only verified inside k8s cluster
+ * When using RMI tunneling, mutiple layer of loadbalancing does not gurantee
+ * WebLogic JMS load balancing.
  */
 
 public class JmsTestClient {
@@ -67,20 +78,17 @@ public class JmsTestClient {
 
     System.out.println("WebLogic Cluster Context URL --> " + clusterurl);
     try {
-
      Context ctx = null;
      ConnectionFactory qcf= null;
-
+     ctx = getInitialContext(clusterurl);
+     qcf = (ConnectionFactory) ctx.lookup(testcf);
      for ( int i=0; i<10; i++ ) {
-       ctx = getInitialContext(clusterurl);
-       javax.jms.Connection con =
-           ((ConnectionFactory) ctx.lookup(testcf)).createConnection();
+       javax.jms.Connection con = qcf.createConnection();
        String server = ((WLConnectionImpl) con).getWLSServerName();
-       con.close();
-       ctx.close();
-       ctx = null;
        servers[i]=server; 
+       // con.close();
      }
+     ctx.close();
 
      for ( int i=1; i<= membercount ; i++ ) {
        String server = "managed-server"+i;
@@ -132,7 +140,6 @@ public class JmsTestClient {
   public boolean checkServer(String servers[], String server) {
      boolean found = false;
      for (String strTemp : servers){
-       System.out.println("(DEBUG) Found JMS Connection from server ["+strTemp+"]");
        if ( strTemp.equals(server) ) {
          found = true;
          break;
