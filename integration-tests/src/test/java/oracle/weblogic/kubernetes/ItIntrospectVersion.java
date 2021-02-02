@@ -1056,12 +1056,15 @@ public class ItIntrospectVersion {
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
+            + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-          assertEquals(200, response.statusCode(), "Status code not equals to 200");
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
           boolean health = true;
           for (String managedServer : managedServerNames) {
             health = health && response.body().contains(managedServer + ":HEALTH_OK");

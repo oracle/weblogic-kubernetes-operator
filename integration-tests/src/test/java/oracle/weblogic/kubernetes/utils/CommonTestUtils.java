@@ -1075,15 +1075,13 @@ public class CommonTestUtils {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installAndVerifyWlsLoggingExporter(String filter,
-                                                           String wlsLoggingExporterYamlFileLoc,
-                                                           String wlsLoggingExporterArchiveLoc) {
+                                                           String wlsLoggingExporterYamlFileLoc) {
     // Install WebLogic Logging Exporter
     assertThat(TestActions.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc))
+        wlsLoggingExporterYamlFileLoc))
         .as("WebLogic Logging Exporter installation succeeds")
         .withFailMessage("WebLogic Logging Exporter installation failed")
         .isTrue();
@@ -2261,7 +2259,35 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
+  /**
+   * Create a secret with username and password and Elasticsearch host and port in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param username username in the secret
+   * @param password passowrd in the secret
+   * @param elasticsearchhost Elasticsearch host in the secret
+   * @param elasticsearchport Elasticsearch port in the secret
+   */
+  public static void createSecretWithUsernamePasswordElk(String secretName,
+                                                         String namespace,
+                                                         String username,
+                                                         String password,
+                                                         String elasticsearchhost,
+                                                         String elasticsearchport) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("elasticsearchhost", elasticsearchhost);
+    secretMap.put("elasticsearchport", elasticsearchport);
 
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
 
   /** Scale the WebLogic cluster to specified number of servers.
    *  Verify the sample app can be accessed through NGINX if curlCmd is not null.

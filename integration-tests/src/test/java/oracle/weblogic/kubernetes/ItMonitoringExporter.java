@@ -1256,7 +1256,7 @@ class ItMonitoringExporter {
 
   private static void buildMonitoringExporterApp(String configFile, String appDir) {
 
-    String command = String.format("cd %s && mvn install -Dmaven.test.skip=true -Dconfiguration=%s/exporter/%s",
+    String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s/exporter/%s",
         monitoringExporterSrcDir,
         RESOURCE_DIR,
         configFile);

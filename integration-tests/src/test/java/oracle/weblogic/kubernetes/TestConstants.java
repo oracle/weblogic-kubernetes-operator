@@ -181,12 +181,15 @@ public interface TestConstants {
   // ELK Stack and WebLogic logging exporter constants
   public static final String ELASTICSEARCH_NAME = "elasticsearch";
   public static final String ELK_STACK_VERSION = "7.8.1";
+  public static final String FLUENTD_IMAGE_VERSION = Optional.ofNullable(System.getenv("FLUENTD_IMAGE_VERSION"))
+      .orElse("v1.3.3-debian-elasticsearch-1.3");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
   public static final int ELASTICSEARCH_HTTPS_PORT = 9300;
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
+  public static final String FLUENTD_INDEX_KEY = "fluentd";
   public static final String WEBLOGIC_INDEX_KEY = "wls";
   public static final String KIBANA_INDEX_KEY = "kibana";
   public static final String KIBANA_NAME = "kibana";
@@ -195,17 +198,9 @@ public interface TestConstants {
   public static final int KIBANA_PORT = 5601;
   public static final String LOGSTASH_NAME = "logstash";
   public static final String LOGSTASH_IMAGE = LOGSTASH_NAME + ":" + ELK_STACK_VERSION;
+  public static final String FLUENTD_IMAGE = "fluent/fluentd-kubernetes-daemonset:" + FLUENTD_IMAGE_VERSION;
   public static final String JAVA_LOGGING_LEVEL_VALUE = "INFO";
 
-  public static final String WLS_LOGGING_EXPORTER_JAR_VERSION = "1.0.0";
-  public static final String WLS_LOGGING_EXPORTER_JAR_REPOS =
-      "https://github.com/oracle/weblogic-logging-exporter/releases/download/v" + WLS_LOGGING_EXPORTER_JAR_VERSION;
-  public static final String WLS_LOGGING_EXPORTER_JAR_NAME =
-      "weblogic-logging-exporter-" + WLS_LOGGING_EXPORTER_JAR_VERSION + ".jar";
-  public static final String SNAKE_YAML_JAR_VERSION = "1.23";
-  public static final String SNAKE_YAML_JAR_REPOS =
-      "https://repo1.maven.org/maven2/org/yaml/snakeyaml/" + SNAKE_YAML_JAR_VERSION;
-  public static final String SNAKE_YAML_JAR_NAME = "snakeyaml-" + SNAKE_YAML_JAR_VERSION + ".jar";
   public static final String WLS_LOGGING_EXPORTER_YAML_FILE_NAME = "WebLogicLoggingExporter.yaml";
   public static final String COPY_WLS_LOGGING_EXPORTER_FILE_NAME = "copy-logging-files-cmds.txt";
 

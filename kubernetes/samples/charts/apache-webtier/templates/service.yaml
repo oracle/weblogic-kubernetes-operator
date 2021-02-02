@@ -11,7 +11,7 @@ spec:
   selector:
     app: {{ template "apache.fullname" . }}
   ports:
-{{- if ( .Values.useNonPriviledgedPorts ) and eq .Values.useNonPriviledgedPorts "true"}}
+{{- if .Values.useNonPriviledgedPorts }}
     - port: 8080
 {{- else}}
     - port: 80
