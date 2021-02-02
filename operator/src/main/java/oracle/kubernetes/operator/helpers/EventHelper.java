@@ -8,10 +8,8 @@ import java.util.Random;
 import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
-import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -486,8 +484,7 @@ public class EventHelper {
           .name(getOperatorPodName())
           .namespace(getOperatorNamespace())
           .uid(getOperatorPodUID())
-          .kind(KubernetesConstants.POD)
-          .apiVersion(V1Pod.SERIALIZED_NAME_API_VERSION);
+          .kind(KubernetesConstants.POD);
     }
 
 
@@ -495,8 +492,7 @@ public class EventHelper {
       return new V1ObjectReference()
           .name(eventData.getResourceName())
           .namespace(eventData.getNamespace())
-          .kind(KubernetesConstants.NAMESPACE)
-          .apiVersion(V1Namespace.SERIALIZED_NAME_API_VERSION);
+          .kind(KubernetesConstants.NAMESPACE);
     }
 
     String generateOperatorNSEventName(EventData eventData) {
