@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -47,10 +48,12 @@ class NamespacedResources {
   Step createListSteps() {
     return Step.chain(
           getConfigMapListSteps(),
-          getEventListSteps(),
+          getPodEventListSteps(),
+          getDomainEventListSteps(),
           getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
+          getPodDisruptionBudgetListSteps(),
           getDomainListSteps(),
           new CompletionStep()
     );
@@ -76,6 +79,13 @@ class NamespacedResources {
     }
 
     /**
+     * Return the processing to be performed on a list of domain events found in Kubernetes. May be null.
+     */
+    Consumer<CoreV1EventList> getDomainEventListProcessing() {
+      return null;
+    }
+
+    /**
      * Return the processing to be performed on a list of jobs found in Kubernetes. May be null.
      */
     Consumer<V1JobList> getJobListProcessing() {
@@ -93,6 +103,13 @@ class NamespacedResources {
      * Return the processing to be performed on a list of services found in Kubernetes. May be null.
      */
     Consumer<V1ServiceList> getServiceListProcessing() {
+      return null;
+    }
+
+    /**
+     * Return the processing to be performed on a list of services found in Kubernetes. May be null.
+     */
+    Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
       return null;
     }
 
@@ -120,14 +137,35 @@ class NamespacedResources {
              .listConfigMapsAsync(namespace, new ListResponseStep<>(processing));
   }
 
-  private Step getEventListSteps() {
-    return getListProcessing(Processors::getEventListProcessing).map(this::createEventListStep).orElse(null);
+  private Step getPodEventListSteps() {
+    return getListProcessing(Processors::getEventListProcessing).map(this::createPodEventListStep).orElse(null);
   }
 
-  private Step createEventListStep(List<Consumer<CoreV1EventList>> processing) {
+  private Step createPodEventListStep(List<Consumer<CoreV1EventList>> processing) {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getDomainEventListSteps() {
+    return getListProcessing(Processors::getDomainEventListProcessing)
+        .map(this::createDomainEventListStep).orElse(null);
+  }
+
+  private Step createDomainEventListStep(List<Consumer<CoreV1EventList>> processing) {
+    return new CallBuilder()
+        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .listEventAsync(namespace, new ListResponseStep<>(processing));
+  }
+
+  private Step getPodDisruptionBudgetListSteps() {
+    return getListProcessing(Processors::getPodDisruptionBudgetListProcessing)
+            .map(this::createPodDisruptionBudgetListStep).orElse(null);
+  }
+
+  private Step createPodDisruptionBudgetListStep(List<Consumer<V1beta1PodDisruptionBudgetList>> processing) {
+    return new CallBuilder()
+            .listPodDisruptionBudgetAsync(namespace, new ListResponseStep<>(processing));
   }
 
   private Step getJobListSteps() {

@@ -48,13 +48,10 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().contains(reason)
+          if (event.getReason().equals(reason)
               && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
-            //verify reason
-            logger.info("Verifying domain event {0}", reason);
-            assertTrue(event.getReason().equals(reason));
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
@@ -66,6 +63,34 @@ public class K8sEvents {
       }
       return false;
     };
+  }
+
+  /**
+   * Get the event count between a specific timestamp.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param timestamp the timestamp after which to see events
+   * @return count number of events count
+   */
+  public static int getEventCount(
+      String domainNamespace, String domainUid, String reason, DateTime timestamp) {
+    int count = 0;
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (event.getReason().contains(reason)
+            && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          count++;
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      return -1;
+    }
+    return count;
   }
 
   /**
@@ -94,8 +119,8 @@ public class K8sEvents {
   }
 
   private static boolean isEqualOrAfter(DateTime timestamp, CoreV1Event event) {
-    return event.getMetadata().getCreationTimestamp().isEqual(timestamp.getMillis())
-            || event.getMetadata().getCreationTimestamp().isAfter(timestamp.getMillis());
+    return event.getLastTimestamp().isEqual(timestamp.getMillis())
+            || event.getLastTimestamp().isAfter(timestamp.getMillis());
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {
@@ -114,8 +139,10 @@ public class K8sEvents {
     logger.info("Verifying operator details");
     String operatorPodName = TestActions.getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
     //verify DOMAIN_API_VERSION
-    assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
-        "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
+    if (domainUid != null) {
+      assertTrue(event.getInvolvedObject().getApiVersion().equals(TestConstants.DOMAIN_API_VERSION),
+          "Expected " + TestConstants.DOMAIN_API_VERSION + " ,Got " + event.getInvolvedObject().getApiVersion());
+    }
     //verify reporting component to be operator release
     assertTrue(event.getReportingComponent().equals("weblogic.operator"),
         "Didn't get reporting component as " + "weblogic.operator");
@@ -127,8 +154,10 @@ public class K8sEvents {
     assertTrue(labels.containsKey("weblogic.createdByOperator")
         && labels.get("weblogic.createdByOperator").equals("true"));
     //verify the domainUID matches
-    assertTrue(labels.containsKey("weblogic.domainUID")
-        && labels.get("weblogic.domainUID").equals(domainUid));
+    if (domainUid != null) {
+      assertTrue(labels.containsKey("weblogic.domainUID")
+          && labels.get("weblogic.domainUID").equals(domainUid));
+    }
   }
 
 
@@ -140,6 +169,9 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
+  public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
+  public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
 

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -43,6 +44,7 @@ public class DeleteDomainStep extends Step {
         Step.chain(
             deletePods(),
             deleteServices(),
+            deletePodDisruptionBudgets(),
             ConfigMapHelper.deleteIntrospectorConfigMapStep(domainUid, namespace, getNext()));
     if (info != null) {
       List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
@@ -67,6 +69,18 @@ public class DeleteDomainStep extends Step {
                 return new DeleteServiceListStep(result.getItems(), next);
               }
             });
+  }
+
+  private Step deletePodDisruptionBudgets() {
+    return new CallBuilder()
+            .withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
+            .listPodDisruptionBudgetAsync(
+                    namespace,
+                    new ActionResponseStep<>() {
+                    public Step createSuccessStep(V1beta1PodDisruptionBudgetList result, Step next) {
+                      return new DeletePodDisruptionBudgetListStep(result.getItems(), next);
+                    }
+                  });
   }
 
   private Step deletePods() {

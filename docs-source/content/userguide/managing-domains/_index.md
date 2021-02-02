@@ -28,11 +28,11 @@ Be aware of the following important considerations for WebLogic domains running 
 
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
-  as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
-  A Docker image that contains a WebLogic domain has sensitive information including
+  as private in the registry (for example, Oracle Cloud Infrastructure Registry, GitHub Container Registry, and such).
+  A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
+  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
@@ -108,10 +108,10 @@ When a domain resource or WebLogic domain configuration violates the limits, the
 
 ### Creating and managing WebLogic domains
 
-You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
+You can locate a WebLogic domain either in a persistent volume (PV) or in an image.
 For examples of each, see the [WebLogic Server Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
-If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
+If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource
 manually to deploy your domain.  This process is documented in [this
 sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}}).

@@ -24,7 +24,7 @@ import oracle.kubernetes.operator.utils.KubernetesArtifactUtils;
 import oracle.kubernetes.operator.utils.OperatorValues;
 import oracle.kubernetes.operator.utils.OperatorYamlFactory;
 import org.apache.commons.codec.binary.Base64;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;

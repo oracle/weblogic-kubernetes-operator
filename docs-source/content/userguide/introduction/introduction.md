@@ -24,7 +24,7 @@ For the current production release 3.2.0:
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 3.1.3+ (check with `helm version --client --short`).
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
-   * The existing WebLogic Docker image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
+   * The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
@@ -97,7 +97,7 @@ There are a number of development-focused distributions of Kubernetes, like kind
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
 present some extra challenges in areas like:
 
-* Separate Docker image stores, making it necessary to save/load images to move them between Docker file systems
+* Separate container image caches, making it necessary to save/load images to move them between Docker file systems
 * Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images
 * Storage providers that do not always support the features that the operator or WebLogic rely on
 * Load balancing implementations that do not always support the features that the operator or WebLogic rely on
@@ -108,7 +108,7 @@ provide support for WebLogic or the operator running in these distributions.
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development/test option.
 
-### Operator Docker image
+### Operator image
 
 You can find the operator image in
-[Docker Hub](https://hub.docker.com/r/oracle/weblogic-kubernetes-operator/).
+[GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
