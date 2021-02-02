@@ -1,0 +1,271 @@
+Code Correctness: Arithmetic Operation on Boolean
+Code Correctness: Function Not Invoked
+Code Correctness: Function Returns Stack Address
+Code Correctness: Macro Misuse
+Code Correctness: Memory Free on Stack Variable
+Code Correctness: Premature Thread Termination
+Dead Code
+Double Free
+Format String: Argument Number Mismatch
+Format String: Argument Type Mismatch
+Memory Leak
+Memory Leak: Reallocation
+Null Dereference
+Obsolete
+Obsolete: Inadequate Pointer Validation
+Poor Style: Redundant Initialization
+Poor Style: Value Never Read
+Poor Style: Variable Never Used
+Portability Flaw
+Redundant Null Check
+Type Mismatch: Integer to Character
+Type Mismatch: Negative to Unsigned
+Type Mismatch: Signed to Unsigned
+Undefined Behavior
+Undefined Behavior: Redundant Delete
+Uninitialized Variable
+Use After Free
+Missing Check against Null
+Often Misused: Authentication(gethostby)
+Often Misused: Authentication(getlogin)
+Often Misused: Exception Handling(_alloca)
+Often Misused: Exception Handling(criticalsection)
+Often Misused: File System(getwd)
+Often Misused: File System(readlink)
+Often Misused: File System(realpath)
+Often Misused: File System(umask)
+Often Misused: File System(windows)
+Often Misused: Privilege Management
+Often Misused: Privilege Management(setuid)
+Often Misused: Strings(_mbs)
+Often Misused: Strings(multibytewidechar)
+Unchecked Return Value
+System Information Leak
+Insecure Compiler Optimization
+Insecure Compiler Optimization: Pointer Arithmetic
+Code Correctness: Erroneous Synchronization
+Insecure Temporary File
+Race Condition: File System Access
+Race Condition: Signal Handling
+ADF Faces Bad Practices: unsecure Attribute
+Castor Bad Practices: Query Mode Not Read-Only
+Castor Bad Practices: Unspecified Query Mode
+Code Correctness: Call to System.gc()
+Code Correctness: Class Does Not Implement equals
+Code Correctness: Erroneous finalize() Method
+Code Correctness: toString on Array
+Dangerous Field
+Dangerous Method
+Dangerous Type
+EJB Bad Practices: Use of AWT/Swing
+EJB Bad Practices: Use of Class Loader
+EJB Bad Practices: Use of Sockets
+EJB Bad Practices: Use of Synchronization Primitives
+EJB Bad Practices: Use of java.io
+Immutable Classes: Field Mutation
+Immutable Classes: Non-final Fields
+Immutable Classes: Public Mutable Fields
+J2EE Bad Practices: Sockets
+J2EE Bad Practices: getConnection()
+Missing Check against Null
+Missing Check for Null Parameter
+Object Model Violation: Erroneous clone() Method
+Object Model Violation: Just one of equals() and hashCode() Defined
+Object Model Violation: Just one of restoreState() and saveState() Defined
+Obsolete: Deprecated by ESAPI
+Often Misused: Authentication
+Often Misused: Encoding
+Password Management: Weak Redundancy
+Poor Style: Explicit Call to finalize()
+Unchecked Return Value
+Code Correctness: Call to Thread.run()
+Code Correctness: Call to notify()
+Code Correctness: Class Does Not Implement Cloneable
+Code Correctness: Erroneous Class Compare
+Code Correctness: Erroneous Negative Value
+Code Correctness: Erroneous String Compare
+Code Correctness: Erroneous Zero Value
+Code Correctness: Incorrect serialPersistentFields Modifier
+Code Correctness: Misspelled Method Name
+Code Correctness: Non-Synchronized Method Overrides Synchronized Method
+Code Correctness: null Argument to equals()
+Dead Code: Empty Try Block
+Dead Code: Expression is Always false
+Dead Code: Expression is Always true
+Dead Code: Unused Field
+Dead Code: Unused Method
+Null Dereference
+Obsolete
+Poor Style: Confusing Naming(class_and_member)
+Poor Style: Confusing Naming(member_and_method)
+Poor Style: Empty Synchronized Block
+Poor Style: Identifier Contains Dollar Symbol ($)
+Poor Style: Redundant Initialization
+Poor Style: Value Never Read
+Redundant Null Check
+Unreleased Resource: Synchronization
+ADF Bad Practices: Default url-invoke-disallowed Setting
+Cross-Site Request Forgery
+Hidden Field
+Insecure Storage: Android External Storage
+J2EE Bad Practices: Leftover Debug Code
+JavaScript Hijacking: Ad Hoc Ajax
+JavaScript Hijacking: Vulnerable Framework
+Poor Logging Practice: Logger Not Declared Static Final
+Poor Logging Practice: Multiple Loggers
+Poor Logging Practice: Use of a System Output Stream
+Poor Style: Non-final Public Static Field
+System Information Leak
+System Information Leak: Apache Axis
+System Information Leak: Apache Axis 2
+System Information Leak: HTML Comment in JSP
+System Information Leak: Incomplete Servlet Error Handling
+System Information Leak: Overly Broad SQL Logging
+Trust Boundary Violation
+Unsafe Mobile Code: Access Violation
+Unsafe Mobile Code: Database Access
+Unsafe Mobile Code: Inner Class
+Unsafe Mobile Code: Public finalize() Method
+Unsafe Mobile Code: Unsafe Array Declaration
+Unsafe Mobile Code: Unsafe Public Field
+Axis 2 Misconfiguration: Debug Information
+Axis 2 Misconfiguration: Insecure Message Security
+Axis 2 Misconfiguration: Insecure Transport Receiver
+Axis 2 Misconfiguration: Insecure Transport Sender
+Axis 2 Service Provider Misconfiguration: Inbound WS-Security Not Enabled
+Axis 2 Service Provider Misconfiguration: Missing Inbound Encryption
+Axis 2 Service Provider Misconfiguration: Missing Inbound Signature
+Axis 2 Service Provider Misconfiguration: Missing Inbound Timestamp
+Axis 2 Service Provider Misconfiguration: Missing Outbound Encryption
+Axis 2 Service Provider Misconfiguration: Missing Outbound Signature
+Axis 2 Service Provider Misconfiguration: Missing Outbound Timestamp
+Axis 2 Service Provider Misconfiguration: Outbound WS-Security Not Enabled
+Axis 2 Service Provider Misconfiguration: Unsigned Inbound Timestamp
+Axis 2 Service Provider Misconfiguration: Unsigned Outbound Timestamp
+Axis 2 Service Provider Misconfiguration: WS-Security Not Enabled
+Axis 2 Service Provider Misconfiguration: Weak Token
+Axis 2 Service Requester Misconfiguration: Inbound WS-Security Not Enabled
+Axis 2 Service Requester Misconfiguration: Missing Inbound Encryption
+Axis 2 Service Requester Misconfiguration: Missing Inbound Signature
+Axis 2 Service Requester Misconfiguration: Missing Inbound Timestamp
+Axis 2 Service Requester Misconfiguration: Missing Outbound Encryption
+Axis 2 Service Requester Misconfiguration: Missing Outbound Signature
+Axis 2 Service Requester Misconfiguration: Missing Outbound Timestamp
+Axis 2 Service Requester Misconfiguration: Outbound WS-Security Not Enabled
+Axis 2 Service Requester Misconfiguration: Plain Text Password
+Axis 2 Service Requester Misconfiguration: Unsigned Inbound Timestamp
+Axis 2 Service Requester Misconfiguration: Unsigned Outbound Timestamp
+Axis 2 Service Requester Misconfiguration: WS-Security Not Enabled
+Axis 2 Service Requester Misconfiguration: Weak Token
+Axis Misconfiguration: Debug Information
+Axis Misconfiguration: Service Enumeration
+Axis Service Provider Misconfiguration: Plain Text Password
+Axis Service Provider Misconfiguration: Weak Token
+Axis Service Requester Misconfiguration: Plain Text Password
+Axis Service Requester Misconfiguration: Weak Token
+Build Misconfiguration: Dynamic Dependency Version Usage
+Build Misconfiguration: External Ant Dependency Repository
+Build Misconfiguration: External Ivy Dependency Repository
+Build Misconfiguration: External Maven Dependency Repository
+Flex Misconfiguration: Debug Information
+J2EE Misconfiguration: Cookies Disabled
+J2EE Misconfiguration: Debug Information
+J2EE Misconfiguration: Direct JSP Access
+J2EE Misconfiguration: Duplicate Security Role
+J2EE Misconfiguration: Duplicate Servlet Mapping
+J2EE Misconfiguration: Excessive Servlet Mappings
+J2EE Misconfiguration: Excessive Session Timeout
+J2EE Misconfiguration: Incomplete Error Handling - (404)
+J2EE Misconfiguration: Incomplete Error Handling - (500)
+J2EE Misconfiguration: Incomplete Error Handling - (throwable)
+J2EE Misconfiguration: Insecure Transport
+J2EE Misconfiguration: Insufficient Session-ID Length
+J2EE Misconfiguration: Invalid Servlet Name
+J2EE Misconfiguration: Missing Authentication Method
+J2EE Misconfiguration: Missing Data Transport Constraint
+J2EE Misconfiguration: Missing Error Handling
+J2EE Misconfiguration: Missing Filter Definition
+J2EE Misconfiguration: Missing Security Role
+J2EE Misconfiguration: Missing Servlet Mapping
+J2EE Misconfiguration: Unsafe Bean Declaration
+J2EE Misconfiguration: Weak Access Permissions
+Password Management: Empty Password in Configuration File
+Password Management: Password in Configuration File
+Struts Misconfiguration: Duplicate Form Bean
+Struts Misconfiguration: Invalid Path
+Struts Misconfiguration: Missing Action Input
+Struts Misconfiguration: Missing Exception Type
+Struts Misconfiguration: Missing Form Bean
+Struts Misconfiguration: Missing Form Bean Name
+Struts Misconfiguration: Missing Form Bean Type
+Struts Misconfiguration: Missing Form Property Type
+Struts Misconfiguration: Missing Forward Name
+Struts Misconfiguration: Missing Forward Path
+Tomcat Configuration: Insecure Transport
+WebSphere Misconfiguration: Missing Nonce
+WebSphere Misconfiguration: Servlets Served By Class Name
+WebSphere Service Provider Misconfiguration: Inbound WS-Security Not Enabled
+WebSphere Service Provider Misconfiguration: Missing Inbound Encryption
+WebSphere Service Provider Misconfiguration: Missing Inbound Signature
+WebSphere Service Provider Misconfiguration: Missing Inbound Timestamp
+WebSphere Service Provider Misconfiguration: Missing Outbound Encryption
+WebSphere Service Provider Misconfiguration: Missing Outbound Signature
+WebSphere Service Provider Misconfiguration: Missing Outbound Timestamp
+WebSphere Service Provider Misconfiguration: Missing Timestamp Expiration
+WebSphere Service Provider Misconfiguration: Outbound WS-Security Not Enabled
+WebSphere Service Provider Misconfiguration: Unsigned Inbound Timestamp
+WebSphere Service Provider Misconfiguration: Unsigned Outbound Timestamp
+WebSphere Service Provider Misconfiguration: Weak Token
+WebSphere Service Requester Misconfiguration: Inbound WS-Security Not Enabled
+WebSphere Service Requester Misconfiguration: Missing Inbound Encryption
+WebSphere Service Requester Misconfiguration: Missing Inbound Signature
+WebSphere Service Requester Misconfiguration: Missing Inbound Timestamp
+WebSphere Service Requester Misconfiguration: Missing Outbound Encryption
+WebSphere Service Requester Misconfiguration: Missing Outbound Signature
+WebSphere Service Requester Misconfiguration: Missing Outbound Timestamp
+WebSphere Service Requester Misconfiguration: Missing Timestamp Expiration
+WebSphere Service Requester Misconfiguration: Outbound WS-Security Not Enabled
+WebSphere Service Requester Misconfiguration: Unsigned Inbound Timestamp
+WebSphere Service Requester Misconfiguration: Unsigned Outbound Timestamp
+WebSphere Service Requester Misconfiguration: Weak Token
+Weblogic Misconfiguration: Missing Timestamp
+Weblogic Misconfiguration: Weak Token
+Poor Error Handling: Empty Catch Block
+Poor Error Handling: Overly Broad Catch
+Poor Error Handling: Overly Broad Throws
+Poor Error Handling: Program Catches NullPointerException
+Poor Error Handling: Return Inside Finally
+Poor Error Handling: Swallowed ThreadDeath
+Poor Error Handling: Throw Inside Finally
+Poor Error Handling: Unhandled SSL Exception
+Weak SecurityManager Check: Overridable Method
+Privacy Violation
+Privilege Management: Amazon Web Services Unchecked Permissions
+Privilege Management: Android Data Storage
+Privilege Management: Android Disable
+Privilege Management: Android Location
+Privilege Management: Android Messaging
+Privilege Management: Android Network
+Privilege Management: Android Telephony
+Privilege Management: Overly Broad Access Specifier
+Missing SecurityManager Check: Cloneable
+Missing SecurityManager Check: Serializable
+Access Control: Amazon Web Services
+Access Control: Android ContentResolver
+Access Control: Anonymous LDAP Bind
+Access Control: Database
+Access Control: LDAP
+Access Control: Weak Security Constraint
+Acegi Misconfiguration: Insecure Channel Mixing
+Acegi Misconfiguration: Run-As Authentication Replacement
+Code Correctness: Call to sleep() in Lock
+Code Correctness: Double-Checked Locking
+J2EE Bad Practices: Non-Serializable Object Stored in Session
+J2EE Bad Practices: System.exit
+J2EE Bad Practices: Threads
+Race Condition: Format Flaw
+Code Correctness: Multiple Stream Commits
+Denial of Service: Parse Double
+File Disclosure: J2EE
+Poor Style: Confusing Naming
+

@@ -64,7 +64,7 @@ save_cksum
 
 # push to remote repo if cluster is remote
 # if [ -z "$REPO_REGISTRY" ] || [ -z "$REPO_USERNAME" ] || [ -z "$REPO_PASSWORD" ]; then
-#   echo "Provide Docker login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository."
+#   echo "Provide container registry login details using REPO_REGISTRY, REPO_USERNAME & REPO_PASSWORD env variables to push the Operator image to the repository."
 #   exit 1
 # fi
 # docker login $REPO_REGISTRY -u $REPO_USERNAME -p $REPO_PASSWORD	

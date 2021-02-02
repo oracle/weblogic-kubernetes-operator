@@ -223,6 +223,45 @@ class ItServerStartPolicy {
   }
 
   /**
+   * Verify the script stopServer.sh can not stop a server below the minimum 
+   * DynamicServer count when allowReplicasBelowMinDynClusterSize is false.
+   * In the current domain configuration the minimum replica count is 1.
+   * The managed-server1 is up and running.
+   * Shutdown the managed-server1 using the script stopServer.sh. 
+   * managed-server1 is shutdown and managed-server2 comes up to mantain the
+   * minimum replica count.
+   */
+  @Order(0)
+  @Test
+  @DisplayName("Stop a server below Limit")
+  public void testStopManagedServerBeyondMinClusterLimit() {
+    String serverPodName = domainUid + "-managed-server1";
+    String serverPodName2 = domainUid + "-managed-server2";
+
+    // shutdown managed-server1 with keep_replica_constant option not set
+    // This operator MUST fail as the MinDynamicCluster size is 1 
+    // and allowReplicasBelowMinDynClusterSize is false
+
+    String regex = "it is at its minimum";
+    String result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
+        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
+    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server to go below Minimum");
+
+    // Make sure managed-server1 is deleted 
+    checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    // Make sure managed-server2 is provisioned to mantain the replica count
+    checkPodReadyAndServiceExists(serverPodName2, domainUid, domainNamespace);
+
+    // start managed-server1 with keep_replica_constant option
+    // to bring the domain to original configuation with only managed-server1
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "-k");
+    checkPodDeleted(serverPodName2, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+
+  }
+
+  /**
    * Stop the Administration server by patching the resource definition with 
    *  spec/adminServer/serverStartPolicy set to NEVER.
    * Make sure that Only the Administration server is stopped. 
@@ -883,14 +922,14 @@ class ItServerStartPolicy {
     String result =  assertDoesNotThrow(() ->
         executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName, "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));
-    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server that is beyond the limit");
+    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
 
     // verify that the script can not start a server in dynamic cluster that exceeds the max cluster size
     regex = ".*outside the range of allowed servers";
     result =  assertDoesNotThrow(() ->
         executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));
-    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server that is beyond the limit");
+    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
   }
 
   /**
@@ -1084,6 +1123,7 @@ class ItServerStartPolicy {
                     .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
+                    .allowReplicasBelowMinDynClusterSize(false)
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)

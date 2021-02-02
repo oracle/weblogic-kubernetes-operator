@@ -119,7 +119,7 @@ public class WlsServerConfig {
    */
   static String getClusterNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster":
-    // ["clusters", "DockerCluster"]
+    // ["clusters", "ApplicationCluster"]
     @SuppressWarnings({"unchecked", "rawtypes"})
     List<String> clusterList = (List) serverMap.get("cluster");
     if (clusterList != null) {

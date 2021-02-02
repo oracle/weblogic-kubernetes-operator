@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Map.of;
 import static org.hamcrest.Matchers.containsString;
@@ -20,7 +20,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class YamlDocGeneratorTest {
   private static final String K8S_VERSION = "1.13.5";
-  private SchemaGenerator schemaGenerator = new SchemaGenerator();
+  private final SchemaGenerator schemaGenerator = new SchemaGenerator();
   @SuppressWarnings("unused")
   @Description("An annotated field")
   private Double annotatedDouble;
@@ -61,7 +61,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() throws NoSuchFieldException {
+  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() {
     Map<String, Object> schema = of("anInt", of("type", "integer"));
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
@@ -211,11 +211,7 @@ public class YamlDocGeneratorTest {
   }
 
   private String tableDivider(int numColumns) {
-    StringBuilder sb = new StringBuilder("|");
-    for (int i = 0; i < numColumns; i++) {
-      sb.append(" --- |");
-    }
-    return sb.toString();
+    return "|" + " --- |".repeat(Math.max(0, numColumns));
   }
 
   @Test

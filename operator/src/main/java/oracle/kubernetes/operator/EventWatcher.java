@@ -15,15 +15,15 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
- * This class handles Domain watching. It receives domain events and sends them into the operator
+ * This class handles Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
 public class EventWatcher extends Watcher<CoreV1Event> {
   private static final String FIELD_SELECTOR = ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER;
   
-  private final String ns;
+  protected final String ns;
 
-  private EventWatcher(
+  EventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
