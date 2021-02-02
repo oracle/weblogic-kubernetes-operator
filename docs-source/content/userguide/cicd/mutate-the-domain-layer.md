@@ -30,7 +30,7 @@ changes up to that point.
 Said another way, each build would start with t=0 as the base image and extend it.
 This eliminates the need to keep each intermediate state, and would also likely
 have benefits when you remove things from the domain, because you would not have
-"lost" ("whited out" is the Docker layer term) space in the intermediate layers.
+"lost" ("whited out" is the image layer term) space in the intermediate layers.
 Although, these layers tend to be relatively small, so this is possibly not a big issue.
 
 ![Rebuilding from a primordial state](/weblogic-kubernetes-operator/images/primordial.png)

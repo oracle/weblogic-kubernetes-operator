@@ -62,14 +62,14 @@ domainNamespaces:
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 enableClusterRoleBinding: false
 
-# image specifies the Docker image containing the operator.
-image: "oracle/weblogic-kubernetes-operator:3.2.0"
+# image specifies the container image containing the operator.
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0"
 
-# imagePullPolicy specifies the image pull policy for the operator's Docker image.
+# imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
 
 # imagePullSecrets contains an optional list of Kubernetes Secrets, in the operator's namespace,
-# that are needed to access the registry containing the operator's Docker image.
+# that are needed to access the registry containing the operator's container image.
 # The customer is responsible for creating the Secret.
 # If no Secrets are required, then omit this property.
 #
@@ -105,7 +105,7 @@ istioEnabled: false
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 
-# logStashImage specifies the Docker image containing logstash.
+# logStashImage specifies the container image containing logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 logStashImage: "logstash:6.6.0"
 

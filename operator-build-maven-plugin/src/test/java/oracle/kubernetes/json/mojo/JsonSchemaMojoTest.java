@@ -17,8 +17,8 @@ import oracle.kubernetes.mojosupport.TestFileSystem;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 
 import static java.util.Collections.singletonList;
@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
 public class JsonSchemaMojoTest extends MojoTestBase {
@@ -51,7 +52,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
     super(new JsonSchemaMojo());
   }
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     ClassReader classReader = new ClassReader(JsonSchemaMojo.class.getName());
     classReader.accept(new Visitor(JsonSchemaMojo.class), 0);
@@ -188,19 +189,20 @@ public class JsonSchemaMojoTest extends MojoTestBase {
         equalTo(toModuleUrl("src/cache/schema.json")));
   }
 
-  @Test(expected = MojoExecutionException.class)
+  @Test
   public void whenUnableToUseDefineSchema_haltTheBuild() throws Exception {
     setMojoParameter(
         "externalSchemas",
         singletonList(new ExternalSchema("abcd://schema.json", "src/cache/schema.json")));
 
-    executeMojo();
+    assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
-  @Test(expected = MojoExecutionException.class)
+  @Test
   public void whenNoClassSpecified_haltTheBuild() throws Exception {
     setMojoParameter("rootClass", null);
-    executeMojo();
+
+    assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
   @Test
@@ -210,10 +212,11 @@ public class JsonSchemaMojoTest extends MojoTestBase {
     assertThat(main.getResourceName(), equalTo(classNameToPath(TEST_ROOT_CLASS) + ".class"));
   }
 
-  @Test(expected = MojoExecutionException.class)
-  public void whenRootClassNotFound_haltTheBuild() throws Exception {
+  @Test
+  public void whenRootClassNotFound_haltTheBuild() {
     main.setClasspathResource(null);
-    executeMojo();
+
+    assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
   @Test

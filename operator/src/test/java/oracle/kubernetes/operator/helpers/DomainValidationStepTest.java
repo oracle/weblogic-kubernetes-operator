@@ -5,15 +5,19 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -61,6 +65,8 @@ public class DomainValidationStepTest {
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
   private Step domainValidationSteps;
   private Step topologyValidationStep;
@@ -77,6 +83,8 @@ public class DomainValidationStepTest {
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
     domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
 
   @AfterEach

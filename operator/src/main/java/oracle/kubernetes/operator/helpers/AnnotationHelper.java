@@ -10,6 +10,7 @@ import java.util.function.Function;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Yaml;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -44,6 +45,10 @@ public class AnnotationHelper {
     return addHash(service);
   }
 
+  public static V1beta1PodDisruptionBudget withSha256Hash(V1beta1PodDisruptionBudget pdb) {
+    return addHash(pdb);
+  }
+
   private static V1Pod addHashAndDebug(V1Pod pod) {
     String dump = Yaml.dump(pod);
     addHash(pod);
@@ -59,6 +64,11 @@ public class AnnotationHelper {
   private static V1Service addHash(V1Service service) {
     service.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(service));
     return service;
+  }
+
+  private static V1beta1PodDisruptionBudget addHash(V1beta1PodDisruptionBudget pdb) {
+    pdb.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pdb));
+    return pdb;
   }
 
   static String getHash(V1Pod pod) {
