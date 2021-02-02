@@ -79,10 +79,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -109,35 +112,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * This test class verifies the following scenarios
- *
- * <p>testServerLogsAreOnPV
- * domain logHome is on PV, check server logs are on PV
- *
- * <p>testMiiCheckSystemResources
- *  Check the System Resources in a pre-configured ConfigMap
- *
- * <p>testMiiDeleteSystemResources
- *  Delete System Resources defined in a WebLogic domain 
- *
- * <p>testMiiAddSystemResources
- *  Add new System Resources to a running WebLogic domain
- *
- * <p>testMiiAddDynmicClusteriWithNoReplica
- *  Add a new dynamic WebLogic cluster to a running domain with default Replica
- *  count(zero), so that no managed server on the new cluster is activated.
- *
- * <p>testMiiAddDynamicCluster
- *  Add a new dynamic WebLogic cluster to a running domain with non-zero Replica
- *  count so that required number of managed servers(s) on new cluster get  
- *  activated after rolling restart. 
- *
- * <p>testMiiAddConfiguredCluster
- *  Add a new configured WebLogic cluster to a running domain 
- *
- * <p>testMiiUpdateWebLogicCredential
- *  Update the administrative credential of a running domain by updating the 
- *  secret and activating a rolling restart.
+ * This test class verifies dynamic changes to domain resource and configuration
+ * by modifying the associated configmap with a model-in-image domain.
+ * After updating the configmap, the test updates the restartVersion of the
+ * domain resource which triggers the rolling restart to verify the change.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -266,12 +244,13 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Check server logs are written on PV.
+   * Check server logs are written on PersistentVolume(PV).
+   * The test looks for the string RUNNING in server log
    */
   @Test
   @Order(1)
-  @DisplayName("Check the server logs are written on PV, look for string RUNNING in server log")
-  public void testServerLogsAreOnPV() {
+  @DisplayName("Check the server logs are written to PersistentVolume")
+  public void testMiiServerLogsAreOnPV() {
 
     // check server logs are written on PV and look for string RUNNING in log
     checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
@@ -287,7 +266,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(2)
-  @DisplayName("Verify the pre-configured SystemResources in a model-in-image domain")
+  @DisplayName("Verify the pre-configured SystemResources in the domain")
   public void testMiiCheckSystemResources() {
 
     assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
@@ -324,7 +303,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(3)
-  @DisplayName("Delete SystemResources from a model-in-image domain")
+  @DisplayName("Delete SystemResources from the domain")
   public void testMiiDeleteSystemResources() {
 
     String configMapName = "deletesysrescm";
@@ -386,7 +365,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(4)
-  @DisplayName("Add New JDBC/JMS SystemResources to a model-in-image domain")
+  @DisplayName("Add new JDBC/JMS SystemResources to the domain")
   public void testMiiAddSystemResources() {
 
     logger.info("Use same database secret created in befreAll() method");
@@ -453,7 +432,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(5)
-  @DisplayName("Add a dynamic cluster to a model-in-image domain with default replica count")
+  @DisplayName("Add a dynamic cluster to the domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -513,7 +492,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(6)
-  @DisplayName("Add a dynamic cluster to model-in-image domain with non-zero replica count")
+  @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -553,10 +532,10 @@ class ItMiiUpdateDomainConfig {
     logger.log(Level.INFO, "Replicas patch string: {0}", patchStr);
 
     patch = new V1Patch(new String(patchStr));
-    boolean repilcaPatched = assertDoesNotThrow(() ->
+    boolean replicaPatched = assertDoesNotThrow(() ->
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
+    assertTrue(replicaPatched, "patchDomainCustomResource(replicas) failed");
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
@@ -590,7 +569,7 @@ class ItMiiUpdateDomainConfig {
    */
   @Test
   @Order(7)
-  @DisplayName("Add a configured cluster to a model-in-image domain")
+  @DisplayName("Add a configured cluster to the domain")
   public void testMiiAddConfiguredCluster() {
 
     // This test uses the WebLogic domain created in BeforeAll method
@@ -631,10 +610,10 @@ class ItMiiUpdateDomainConfig {
     logger.log(Level.INFO, "Replicas patch string: {0}", patchStr);
 
     patch = new V1Patch(new String(patchStr));
-    boolean repilcaPatched = assertDoesNotThrow(() ->
+    boolean replicaPatched = assertDoesNotThrow(() ->
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
         "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(repilcaPatched, "patchDomainCustomResource(repilcas) failed");
+    assertTrue(replicaPatched, "patchDomainCustomResource(replicas) failed");
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
@@ -657,13 +636,12 @@ class ItMiiUpdateDomainConfig {
    * Start a WebLogic domain with model-in-imge.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
-   * make sure all the server pods are re-started in a rolling fashion. 
-   * Check the validity of new credentials by accessing 
-   * WebLogic RESTful Management Services.
+   * Make sure all the server pods are re-started in a rolling fashion. 
+   * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
   @Order(8)
-  @DisplayName("Change the WebLogic Admin credential in model-in-image domain")
+  @DisplayName("Change the WebLogic Admin credential of the domain")
   public void testMiiUpdateWebLogicCredential() {
     final boolean VALID = true;
     final boolean INVALID = false;
@@ -717,6 +695,128 @@ class ItMiiUpdateDomainConfig {
         domainUid, domainNamespace);
   }
 
+  /**
+   * Start a WebLogic domain with a dynamic cluster with the following 
+   * attributes MaxDynamicClusterSize(5) and MinDynamicClusterSize(1)
+   * Set allowReplicasBelowMinDynClusterSize to false.
+   * Make sure that the cluster can be scaled up to 5 servers and
+   * scaled down to 1 server. 
+   * Create a configmap with a sparse model file with following attributes for 
+   * Cluster/cluster-1/DynamicServers
+   *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
+   * Patch the domain resource with the configmap and update restartVersion.
+   * Make sure a rolling restart is triggered.  
+   * Now with the modified value
+   * Make sure that the cluster can be scaled up to 4 servers.
+   * Make sure that the cluster can be scaled down below 2 servers.
+   */
+  @Test
+  @Order(9)
+  @DisplayName("Test modification to Dynamic cluster size parameters")
+  public void testMiiUpdateDynamicClusterSize() {
+
+    // Scale the cluster to replica count to 5
+    logger.info("[Before Patching] updating the replica count to 5");
+    boolean p1Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+        String.format("replica pacthing to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    // Make sure that we can scale upto replica count 5
+    // since the MaxDynamicClusterSize is set to 5
+    checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPrefix + "4", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPrefix + "5", domainUid, domainNamespace);
+
+    // Make sure that we can scale down upto replica count 1
+    // since the MinDynamicClusterSize is set to 1
+    logger.info("[Before Patching] updating the replica count to 1");
+    boolean p11Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("replica pacthing to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p11Success,
+        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    checkPodDeleted(managedServerPrefix + "2", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "4", domainUid, domainNamespace);
+    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+
+    // Bring back the cluster to originally configured replica count
+    logger.info("[Before Patching] updating the replica count to 2");
+    boolean p2Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", replicaCount),
+        String.format("replica pacthing to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("replica patching to 2 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
+
+    // get the creation time of the server pods before patching
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    String configMapName = "dynamic-cluster-size-cm";
+    createClusterConfigMap(configMapName, "model.cluster.size.yaml");
+
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/configuration/model/configMap\",")
+        .append(" \"value\":  \"" + configMapName + "\"")
+        .append(" }]");
+    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
+
+    patch = new V1Patch(new String(patchStr));
+    boolean cmPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(configMap)  failed ");
+    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
+
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    // Scale the cluster to replica count 5
+    // Here managed-server5 should not come up as new MaxClusterSize is 4
+    logger.info("[After Patching] updating the replica count to 5");
+    boolean p3Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
+    assertTrue(p1Success,
+        String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    
+    //  Make sure the 3rd Managed server comes up
+    checkServiceExists(managedServerPrefix + "3", domainNamespace);
+    checkServiceExists(managedServerPrefix + "4", domainNamespace);
+    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+    
+    // Since the MinDynamicClusterSize is set to 2 in the configmap 
+    // and allowReplicasBelowMinDynClusterSize is set false, the replica
+    // count can not go below 2. So during the following scale down operation 
+    // only managed-server3 and managed-server4 pod should be removed.  
+    logger.info("[After Patching] updating the replica count to 1");
+    boolean p4Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p2Success,
+        String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} available in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    logger.info("New Dynamic Cluster Size attribute verified");
+  }
 
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
@@ -761,6 +861,7 @@ class ItMiiUpdateDomainConfig {
                     .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
+                    .allowReplicasBelowMinDynClusterSize(false)
                     .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
