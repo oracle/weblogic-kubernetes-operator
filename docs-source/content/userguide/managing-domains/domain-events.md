@@ -10,7 +10,7 @@ pre = "<b> </b>"
 - [Overview](#overview)
 - [Operator-generated event types](#operator-generated-event-types)
 - [Operator-generated event details](#operator-generated-event-details)
-- [How to access domain events](#how-to-access-the-events)
+- [How to access the events](#how-to-access-the-events)
 - [Examples of generated events](#examples-of-generated-events)
 
 
