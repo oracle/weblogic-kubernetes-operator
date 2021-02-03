@@ -227,10 +227,13 @@ function buildWDTParams_MD5() {
   fi
 
   if [ "${WDT_DOMAIN_TYPE}" == "JRF" ] && [ ! -f "${OPSS_KEY_PASSPHRASE}" ] ; then
-    trace SEVERE "Domain Source Type is 'FromModel' and domain type JRF which requires specifying a " \
-       "walletPasswordSecret in your domain resource and deploying this secret with a 'walletPassword' key, " \
-       " but the secret does not have this key."
-    exit 1
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+       "is 'FromModel' and the 'spec.configuration.model.domainType' is 'JRF';" \
+       "this combination requires specifying a" \
+       "'spec.configuration.model.walletPasswordSecret' in your domain" \
+       "resource and deploying this secret with a 'walletPassword' key," \
+       "but the secret does not have this key."
+    exitOrLoop
   fi
 
   #  We cannot strictly run create domain for JRF type because it's tied to a database schema
@@ -292,8 +295,12 @@ function createWLDomain() {
   trace "Entering createWLDomain"
 
   if [ ! -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
-    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
-    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+       "is 'FromModel';" \
+       "this requires specifying a" \
+       "'spec.configuration.model.runtimeEncryptionSecret' in your domain" \
+       "resource and deploying this secret with a 'password' key," \
+       "but the secret does not have this key."
     exitOrLoop
   fi
   # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
@@ -394,11 +401,11 @@ function checkDirNotExistsOrEmpty() {
 
   if [ $# -eq 1 ] ; then
     if [ ! -d $1 ] ; then
-      trace SEVERE "Directory $1 does not exists"
+      trace SEVERE "Directory '$1' does not exist"
       exitOrLoop
     else
       if [ -z "$(ls -A $1)" ] ; then
-        trace SEVERE "Directory $1 is empty"
+        trace SEVERE "Directory '$1' is empty"
         exitOrLoop
       fi
     fi
@@ -415,20 +422,18 @@ function checkModelDirectoryExtensions() {
   cd ${IMG_MODELS_HOME}
   counter=$(ls  -I  "*.yaml" -I "*.zip" -I "*.properties" | wc -l)
   if [ $counter -ne 0 ] ; then
-    trace SEVERE "Model image directory ${IMG_MODELS_HOME} contains files with unsupported extensions. " \
-      "Expected extensions: .yaml, .properties, or .zip"
-    trace SEVERE "Model image directory files with unsupported extensions: " \
-      "'$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
+    trace SEVERE "Model image home '${IMG_MODELS_HOME}' contains files with unsupported extensions." \
+      "Expected extensions: '.yaml', '.properties', or '.zip'." \
+      "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.zip" -I "*.properties")'"
     exitOrLoop
   fi
   if [ -d ${WDT_CONFIGMAP_ROOT} ] ; then
     cd ${WDT_CONFIGMAP_ROOT}
     counter=$(ls  -I  "*.yaml" -I "*.properties" | wc -l)
     if [ $counter -ne 0 ] ; then
-      trace SEVERE "Model configmap directory ${WDT_CONFIGMAP_ROOT} contains files with unsupported extensions. " \
-      "Expected extensions: .yaml or .properties"
-      trace SEVERE "Model configmap directory files with unsupported extensions: " \
-        "'$(ls -I "*.yaml" -I "*.properties")'"
+      trace SEVERE "Model 'spec.configuration.model.configMap' contains files with unsupported extensions." \
+        "Expected extensions: '.yaml' or '.properties'." \
+        "Files with unsupported extensions: '$(ls -I "*.yaml" -I "*.properties")'"
       exitOrLoop
     fi
   fi
@@ -443,28 +448,23 @@ function checkWDTVersion() {
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
 
-  if [ "true" == "${MII_USE_ONLINE_UPDATE}" ] ; then
-    local required_min_wdt_version="1.9.8"
+  local online_min="1.9.8"
+  local offline_min="1.7.3"
+
+  if [ "true" = "${MII_USE_ONLINE_UPDATE}" ]; then
+    local actual_min="$online_min"
   else
-    local required_min_wdt_version="1.7.3"
+    local actual_min="$offline_min"
   fi
 
-  if  [ ! -z ${wdt_version} ]; then
-    versionGE ${wdt_version} ${required_min_wdt_version}
-    if [ $? != "0" ] ; then
-      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${required_min_wdt_version} installed in the image. The version of the WebLogic Deploy Tool installed " \
-      "in the image is ${wdt_version}, you can create another image with an updated version of the WebLogic Deploy " \
-      "Tool and redeploy the domain again. To bypass this check, set environment variable " \
-      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
-      exitOrLoop
-    fi
-  else
-      trace SEVERE "Domain Source Type is 'FromModel' and it requires WebLogic Deploy Tool with a minimum " \
-      "version of ${required_min_wdt_version} installed in the image. The version of the WebLogic Deploy Tool installed " \
-      "in the image cannot be determined, you can create another image with an updated version of the WebLogic Deploy" \
-      " Tool and redeploy the domain again. To bypass this check, set environment variable " \
-      "'WDT_BYPASS_WDT_VERSION_CHECK' to 'true'"
+  if [ -z "${wdt_version}" ] || ! versionGE "${wdt_version}" "${actual_min}" ; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType' is 'FromModel'" \
+      "and its image's WebLogic Deploy Tool installation has version '${wdt_version:-unknown version}'" \
+      "but introspection requires at least version '${online_min}'" \
+      "when 'spec.configuration.model.onlineUpdate.enabled' is set to 'true'" \
+      "or at least version '${offline_min}' otherwise." \
+      "To fix this, create another image with an updated version of the WebLogic Deploy" \
+      "Tool and redeploy the domain again."
     exitOrLoop
   fi
 
@@ -589,16 +589,16 @@ function diff_model() {
   if [ "true" == "$MII_USE_ONLINE_UPDATE" ] ; then
     if [  ! -f "/tmp/diffed_model.yaml" ] ; then
       if [ -f "/tmp/compare_model_stdout" ] ; then
-        trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'. These changes are not " \
-          "compatible with online changes, such as trying to removing an entire mbean tree. Please correct the referenced" \
-          " attributes listed below:"
+        trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'" \
+          "and 'spec.configuration.model.onlineUpdate.enabled' is set to 'true'. This indicates" \
+          "there may be incompatible changes for online update," \
+          "such as trying to remove an entire mbean type." \
+          "Please correct the attributes listed below or use offline update:"
         cat /tmp/compare_model_stdout
         exitOrLoop
       else
-        trace SEVERE "WDT Compare Model detected 'No changes apply between two models. You may have changed only " \
-          "the environment variables of a pod which is not supported for online updates, please use offline updates " \
-          "for environment variables changes."
-        exitOrLoop
+        # Model is Identical, but env vars unrelated to the model may have changed (such as JAVA_OPTIONS)
+        MII_USE_ONLINE_UPDATE=false
       fi
     fi
   fi
@@ -614,7 +614,7 @@ function diff_model() {
     org.python.util.jython \
     ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
   if [ $? -ne 0 ] ; then
-    trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
+    trace SEVERE "Failed to compare models. Error output:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -667,11 +667,10 @@ function createPrimordialDomain() {
 
     if [ ${cannot_perform_online_update} == "true" ] ; then
       trace SEVERE \
-      "Model in Image online update failed because of forbidden changes:" \
-      "the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true'," \
-      "but the model changes cannot use online update - such as:" \
-      "changing ListenPort, ListenAddress, SSL, changing top level Topology attributes," \
-      "or deleting a ServerTemplate."
+        "The Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true'," \
+        "but there are unsupported model changes for online update. Examples of unsupported" \
+        "changes include: changing ListenPort, ListenAddress, SSL, changing top level Topology attributes," \
+        "or deleting a ServerTemplate."
       exitOrLoop
     fi
 
@@ -704,14 +703,15 @@ function createPrimordialDomain() {
 
   if [ ! -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] || [ ${recreate_domain} -eq 1 ]; then
 
-    if [ "true" == "$MII_USE_ONLINE_UPDATE" ] ; then
-      if [ "true" == "${security_info_updated}" ] && [  ${recreate_domain} -eq 1 ] ; then
-        trace SEVERE "Non dynamic security changes detected and 'spec.configuration.model." \
-          "onlineUpdate.enabled=true', WDT currently does not support online changes to security related mbeans " \
-          ". You can use offline update to update the domain by setting " \
-          "'domain.spec.configuration.model.onlineUpdate.enabled' to false and try again."
-        exit 1
-      fi
+    if [ "true" == "$MII_USE_ONLINE_UPDATE" ] \
+       && [ "true" == "${security_info_updated}" ] \
+       && [  ${recreate_domain} -eq 1 ] ; then
+      trace SEVERE "There are unsupported security realm related changes to a Model In Image model and" \
+        "'spec.configuration.model.onlineUpdate.enabled=true'; WDT currently does not" \
+        "support online changes for most security realm related mbeans. Use offline update" \
+        "to update the domain by setting 'domain.spec.configuration.model.onlineUpdate.enabled'" \
+        "to 'false' and trying again."
+      exitOrLoop
     fi
 
     trace "No primordial domain or need to create again because of changes require domain recreation"
@@ -763,7 +763,7 @@ function generateMergedModel() {
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Failed: Validate Model Failed:"
+    trace SEVERE "Model in Image: the WDT validate model tool detected an error with the fully merged model:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -844,22 +844,18 @@ function wdtCreatePrimordialDomain() {
 
   ret=$?
   if [ $ret -ne 0 ]; then
-    #
-    # FatalIntrospectorError is detected by DomainProcessorImpl.isShouldContinue
+    # Important:
+    # The "FatalIntrospectorError" keyword is detected by DomainProcessorImpl.isShouldContinue
     # If it is detected then it will stop the periodic retry
     # We need to prevent retries with a "MII Fatal Error" because JRF without the OPSS_FLAGS indicates
     # a likely attempt to initialize the RCU DB schema for this domain, and we don't want to retry when this fails
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
-      trace SEVERE "FatalIntrospectorError: WDT Create Primordial Domain Failed ${ret}"
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Create Primordial Domain Failed, ret=${ret}"
     else
-      trace SEVERE "WDT Create Primordial Domain Failed ${ret}"
+      trace SEVERE "Model in Image: WDT Create Primordial Domain Failed, ret=${ret}"
     fi
-    if [ -d ${LOG_HOME} ] && [ ! -z ${LOG_HOME} ] ; then
-      cp  ${WDT_OUTPUT} ${LOG_HOME}/introspectJob_createDomain.log
-    fi
-    trace SEVERE "WDT Create Domain Failed, ret=${ret}:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   else
@@ -892,7 +888,7 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain Failed:"
+    trace SEVERE "WDT Update Domain command Failed:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -902,17 +898,17 @@ function wdtUpdateModelDomain() {
     trace "Updating wallet because schema password changed"
     gunzip ${LOCAL_PRIM_DOMAIN_ZIP}
     if [ $? -ne 0 ] ; then
-      trace SEVERE "wdtUpdateModelDomain: failed to upzip primordial domain"
+      trace SEVERE "WDT Update Domain failed: failed to upzip primordial domain"
       exitOrLoop
     fi
     tar uf ${LOCAL_PRIM_DOMAIN_TAR} ${DOMAIN_HOME}/config/fmwconfig/bootstrap/cwallet.sso
     if [ $? -ne 0 ] ; then
-      trace SEVERE "wdtUpdateModelDomain: failed to tar update wallet file"
+      trace SEVERE "WDT Update Domain failed: failed to tar update wallet file"
       exitOrLoop
     fi
     gzip ${LOCAL_PRIM_DOMAIN_TAR}
     if [ $? -ne 0 ] ; then
-      trace SEVERE "wdtUpdateModelDomain: failed to zip up primordial domain"
+      trace SEVERE "WDT Update Domain failed: failed to zip up primordial domain"
       exitOrLoop
     fi
   fi
@@ -954,7 +950,7 @@ function wdtHandleOnlineUpdate() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Error extracting domain lib '${IMG_ARCHIVES_ROOTDIR}/${file}'"
           exitOrLoop
         fi
 
@@ -965,7 +961,7 @@ function wdtHandleOnlineUpdate() {
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
 
         if [ $? -ne 0 ] ; then
-          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE "Error extracting application archive '${IMG_ARCHIVES_ROOTDIR}/${file}'"
           exitOrLoop
         fi
 
@@ -1001,8 +997,10 @@ function wdtHandleOnlineUpdate() {
     write_updatedresult ${ret}
     write_non_dynamic_changes_text_file
   elif [ ${ret} -ne 0 ] ; then
-    trace SEVERE "Online update failed. Check error in the logs " \
-       "Note: Changes in the optional configmap and/or image may needs to be corrected"
+    trace SEVERE "Online update failed" \
+       "(the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true')." \
+       "Depending on the type of failure, the model may have an unsupported change," \
+       "you may need to try an offline update, or you may need to shutdown the entire domain and then restart it."
     cat ${WDT_OUTPUT}
     write_updatedresult ${ret}
     exitOrLoop
@@ -1067,10 +1065,12 @@ function encrypt_decrypt_model() {
     ${SCRIPTPATH}/model-encryption-util.py $1 "$(cat $2)" $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "Fatal Error: Failed to $1 domain model. This error is irrecoverable.  Check to see if the secret " \
-    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
-    "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain. Failure output:"
+    trace SEVERE "Failed to '$1' domain model. Check to see if the secret" \
+    "referenced in the 'spec.configuration.model.runtimeEncryptionSecret' domain resource field" \
+    "has been changed since the" \
+    "creation of the domain. You can either reset the password to the original one and try again" \
+    "or shutdown the entire domain and restart it." \
+    "Failure output:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -1108,10 +1108,12 @@ function encrypt_decrypt_domain_secret() {
     ${SCRIPTPATH}/model-encryption-util.py $1 "$(cat /tmp/secure.ini)" $3 ${tmp_output} > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
-    trace SEVERE "Fatal Error: Failed to $1 domain secret. This error is irrecoverable.  Check to see if the secret " \
-    "described in the configuration.model.runtimeEncryptionSecret domain resource field has been changed since the " \
-    "creation of the domain. You can either reset the password to the original one and try again or delete "\
-    "and recreate the domain. Failure output:"
+    trace SEVERE "Failed to '$1' domain model. Check to see if the secret" \
+    "referenced in the 'spec.configuration.model.runtimeEncryptionSecret' domain resource field" \
+    "has been changed since the" \
+    "creation of the domain. You can either reset the password to the original one and try again" \
+    "or shutdown the entire domain and restart it." \
+    "Failure output:"
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
