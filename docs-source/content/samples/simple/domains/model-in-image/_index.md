@@ -101,7 +101,7 @@ This sample demonstrates five Model in Image use cases:
    - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
      - Same image as Update 1 or Update 3 use cases
    - Kubernetes ConfigMap with:
-     - A WDT model for Work Manager Min and Max Threads Constraints, plus the same data source as the Update 1 use case
+     - A WDT model for Work Manager minimum and maximum threads constraints, plus the same data source as the Update 1 use case
    - Kubernetes Secrets:
      - Same as the Update 1 and Update 3 use case, except:
      - An updated data source secret with a new password and an increased maximum pool capacity

@@ -12,7 +12,7 @@ In the use case, you will:
  - Update the data source secret created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case to provide the correct password and an increased maximum pool capacity.
  - Update the Domain YAML file to enable the Model in Image online update feature.
  - Update the Domain YAML file to trigger a domain introspection, which applies the new configuration values without restarting servers.
- - Optionally start a database (in order to demonstrate that the updated data source attributes have taken effect).
+ - Optionally, start a database (to demonstrate that the updated data source attributes have taken effect).
 
 Here are the steps:
 
@@ -72,12 +72,12 @@ Here are the steps:
 
 1. Optionally, start the database.
 
-    - If the database is running, then the sample application that we will run at the end of this use case will verify that your updates to the data source secret took effect.
+    - If the database is running, then the sample application that we will run at the end of this use case, will verify that your updates to the data source secret took effect.
 
     - If you are taking the `JRF` path through the sample, then the database will already be running.
 
     - If you are taking the `WLS` path through the sample, then you can deploy the database by:
-      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
+      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/simple/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
       - You can skip the remaining steps (they are only needed for `JRF`).
 
 1. Update your Domain YAML file to enable `onlineUpdate`.

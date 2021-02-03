@@ -467,7 +467,7 @@ Here are the steps for this use case:
     Found 1 local data source:
       Datasource 'mynewdatasource':  State='Running', testPool='Failed'
         ---TestPool Failure Reason---
-        NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
         ---
         ...
         ... invalid host/username/password

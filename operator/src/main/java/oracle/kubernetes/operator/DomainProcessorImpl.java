@@ -762,13 +762,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
 
-        if (!isOnlineUpdateIfSpecChgCompatible(cachedInfo)) {
-          // For MII, reset the onlineUpdate.enabled to false if changes in the spec involves
-          // more than introspectVersion, this will cause the JobHelper not to set the MII_USE_ONLINE_UPDATE
-          // environment variable and therefore forcing it to use offline update.
-          liveInfo.setCompatibleWithOnlineUpdate(false);
-        }
-
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
         }
@@ -802,23 +795,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean hasExceededRetryCount() {
       return getCurrentIntrospectFailureRetryCount()
           >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
-    }
-
-    private boolean isOnlineUpdateIfSpecChgCompatible(DomainPresenceInfo cachedInfo) {
-      boolean isFromModel = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::isDomainSourceTypeFromModel)
-          .orElse(false);
-
-      boolean isOnlineUpdate = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::isUseOnlineUpdate)
-          .orElse(false);
-
-      if (isFromModel && !isSpecChgOk4OnlineUpdate(liveInfo, cachedInfo) && isOnlineUpdate) {
-        return false;
-      }
-      return true;
     }
 
     private String getExistingError() {
@@ -946,21 +922,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           .orElse(true);
   }
 
-  private static boolean isSpecChgOk4OnlineUpdate(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    // Returns true if configuration.sepc.useOnlineUdpate = not set or false
-    // false is useOnline is true but there are other changes in spec other than the introspectVersion
-    boolean isOnlineUpdate = Optional.ofNullable(liveInfo.getDomain())
-        .map(Domain::isUseOnlineUpdate)
-        .orElse(false);
-
-    if (isOnlineUpdate) {
-      return Optional.ofNullable(liveInfo.getDomain())
-          .map(Domain::getSpec)
-          .map(spec -> spec.isSpecChangeForOnlineUpdateOnly(cachedInfo.getDomain().getSpec()))
-          .orElse(true);
-    }
-    return true;
-  }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))

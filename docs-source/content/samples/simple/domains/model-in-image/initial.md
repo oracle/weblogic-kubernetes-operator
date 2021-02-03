@@ -97,7 +97,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     }
     out.println();
 
-    // display work manager configuration created by the sample
+    // display the Work Manager configuration created by the sample
 
     Set<ObjectInstance> minTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*"), null);
     for (ObjectInstance minTCRuntime : minTCRuntimes) {
@@ -116,7 +116,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     out.println();
 
     // display local data sources
-    // - note that data source tests are expected to fail until the MII sample Update 4 use case updates the datasource's secret
+    // - note that data source tests are expected to fail until the sample Update 4 use case updates the data source's secret
 
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
@@ -298,7 +298,7 @@ The model files:
   - Cluster `cluster-1`
   - Administration Server `admin-server`
   - A `cluster-1` targeted `ear` application that's located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
-  - A WorkManager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
+  - A Work Manager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
 
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
@@ -330,7 +330,7 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 Run the following commands to create the model image and verify that it worked:
 
 {{% notice note %}}
-If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
 {{% /notice %}}
   ```
   $ cd /tmp/mii-sample/model-images
@@ -749,14 +749,14 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```
     $ ./wl-pod-wait.sh -?
-  
+
     Usage:
 
       wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
          [-p expected_pod_count] \
          [-t timeout_secs] \
          [-q]
-  
+
       Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
     Parameters:
@@ -892,23 +892,23 @@ You will see output like the following:
    ```
    <html><body><pre>
    *****************************************************************
-   
+
    Hello World! This is version 'v1' of the mii-sample JSP web-app.
-   
+
    Welcome to WebLogic Server 'managed-server2'!
-   
+
      domain UID  = 'sample-domain1'
      domain name = 'domain1'
-   
+
    Found 1 local cluster runtime:
      Cluster 'cluster-1'
-   
+
    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
-   
+
    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
-   
+
    Found 0 local data sources:
-   
+
    *****************************************************************
    </pre></body></html>
    ```
