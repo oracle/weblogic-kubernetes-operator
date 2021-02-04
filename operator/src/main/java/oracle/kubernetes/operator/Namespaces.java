@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -38,11 +39,11 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public class Namespaces {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  public static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
+  static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
   /**
    * The key in a Packet of the collection of existing namespaces that are designated as domain namespaces.
    */
-  static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
+  private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
   /**
    * Returns true if the specified string is the name of a domain namespace.
@@ -222,7 +223,7 @@ public class Namespaces {
 
     private final DomainNamespaces domainNamespaces;
 
-    public NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
+    NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
       this.domainNamespaces = domainNamespaces;
     }
 
@@ -242,8 +243,12 @@ public class Namespaces {
     }
 
     private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
+      LOGGER.info(MessageKeys.END_MANAGING_NAMESPACE, namespace);
       return new StepAndPacket(
-          createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
+          Step.chain(
+              createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
+              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(namespace)
+                  .namespace(getOperatorNamespace()))),
           packet.copy());
     }
 
