@@ -66,6 +66,7 @@ public class ConfigMapHelperTest {
     "tailLog.sh",
     "monitorLog.sh",
     "model-diff.py",
+    "model-diff-v1.py",
     "modelInImage.sh",
     "model-wdt-create-filter.py",
     "model-filters.json",
