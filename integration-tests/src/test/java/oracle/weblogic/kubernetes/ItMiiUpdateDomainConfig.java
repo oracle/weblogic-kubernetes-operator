@@ -809,7 +809,7 @@ class ItMiiUpdateDomainConfig {
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
-    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
     StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
     javapCmd.append(domainNamespace);
     javapCmd.append(" -it ");
@@ -864,7 +864,7 @@ class ItMiiUpdateDomainConfig {
              Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
              Paths.get(destLocation)));
 
-    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
 
     StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
     javacCmd.append(domainNamespace);

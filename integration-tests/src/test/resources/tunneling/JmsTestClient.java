@@ -171,6 +171,7 @@ public class JmsTestClient {
      String user="weblogic";
      String password="welcome1";
      String WLS_JNDI_FACTORY  = "weblogic.jndi.WLInitialContextFactory";
+     System.out.println("Using user ["+user+"] pwd ["+password+"]");
 
      Hashtable env = new Hashtable();
      env.put(Context.INITIAL_CONTEXT_FACTORY, WLS_JNDI_FACTORY);
