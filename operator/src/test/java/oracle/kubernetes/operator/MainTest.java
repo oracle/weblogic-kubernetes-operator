@@ -466,7 +466,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
 
-    assertThat(getStartingNamespaces("NS1", "NS" + lastNSNumber), contains("NS1", "NS" +lastNSNumber));
+    assertThat(getStartingNamespaces("NS1", "NS" + lastNSNumber), contains("NS1", "NS" + lastNSNumber));
   }
 
   @Test
