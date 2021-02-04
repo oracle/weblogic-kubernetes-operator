@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import io.kubernetes.client.Copy;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -92,7 +93,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Kubernetes {
 
@@ -676,7 +676,8 @@ public class Kubernetes {
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
       throws IOException, ApiException, CopyNotSupportedException {
-    copyFileFromPod(pod.getMetadata().getNamespace(), pod.getMetadata().getName(), null, srcPath, destination);
+    Copy copy = new Copy();
+    copy.copyDirectoryFromPod(pod, srcPath, destination);
   }
 
   /**
@@ -692,20 +693,8 @@ public class Kubernetes {
   public static void copyFileToPod(
       String namespace, String pod, String container, Path srcPath, Path destPath)
       throws IOException, ApiException {
-    StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ").append(srcPath).append(" ");
-    if (namespace != null) {
-      sb.append(namespace).append("/");
-    }
-    sb.append(pod).append(":").append(destPath);
-    if (container != null) {
-      sb.append(" -c ").append(container);
-    }
-    String cpCommand = sb.toString();
-    assertTrue(Command
-        .withParams(new CommandParams()
-            .command(cpCommand))
-        .execute(), cpCommand + " failed");
+    Copy copy = new Copy(apiClient);
+    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
   /**
@@ -720,20 +709,8 @@ public class Kubernetes {
    */
   public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
       throws IOException, ApiException {
-    StringBuilder sb = new StringBuilder();
-    sb.append("kubectl cp ");
-    if (namespace != null) {
-      sb.append(namespace).append("/");
-    }
-    sb.append(pod).append(":").append(srcPath).append(" ").append(destPath);
-    if (container != null) {
-      sb.append(" -c ").append(container);
-    }
-    String cpCommand = sb.toString();
-    assertTrue(Command
-        .withParams(new CommandParams()
-          .command(cpCommand))
-        .execute(), cpCommand + " failed");
+    Copy copy = new Copy(apiClient);
+    copy.copyFileFromPod(namespace, pod, container, srcPath, destPath);
   }
 
   // --------------------------- namespaces -----------------------------------
