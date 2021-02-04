@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -936,7 +936,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     List<String> reported = myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket());
     assertThat(reported, hasSize(9));
     for (int i = 0; i < reported.size(); i++) {
-      assertThat(reported.get(i), equalToObject(errors.get(i)));
+      assertThat(reported.get(i), equalTo(errors.get(i)));
     }
   }
 
@@ -967,7 +967,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     // the first 9 servers are fine so we only get 90 errors
     assertThat(reported, hasSize(90));
     for (int i = 0; i < reported.size(); i++) {
-      assertThat(reported.get(i), equalToObject(errors.get(i + 9)));
+      assertThat(reported.get(i), equalTo(errors.get(i + 9)));
     }
   }
 
