@@ -955,7 +955,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
           updatedMetaData.putAnnotationsItem("weblogic.sha256",
                updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
-
           if (miiDomainZipHash != null) {
             updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, miiDomainZipHash);
           }
