@@ -36,6 +36,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -56,7 +57,7 @@ class DomainRecheck {
     this(domainProcessor, domainNamespaces, false);
   }
 
-  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
+  private DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
     this.domainProcessor = domainProcessor;
     this.domainNamespaces = domainNamespaces;
     this.fullRecheck = fullRecheck;
@@ -66,7 +67,7 @@ class DomainRecheck {
     return new NamespaceRulesReviewStep(getOperatorNamespace(), false);
   }
 
-  NamespaceRulesReviewStep createNamespaceReview(String namespace) {
+  private NamespaceRulesReviewStep createNamespaceReview(String namespace) {
     return new NamespaceRulesReviewStep(namespace, true);
   }
 
@@ -204,7 +205,7 @@ class DomainRecheck {
     return RunInParallel.perNamespace(domainNamespaces, this::startNamespaceSteps);
   }
 
-  Step startNamespaceSteps(String ns) {
+  private Step startNamespaceSteps(String ns) {
     return Step.chain(
           createNamespaceReview(ns),
           new StartNamespaceBeforeStep(ns),
@@ -224,15 +225,20 @@ class DomainRecheck {
       if (fullRecheck) {
         return doNext(packet);
       } else if (domainNamespaces.shouldStartNamespace(ns)) {
-        return doNext(addNSWatchingStartingEventStep(), packet);
+        LOGGER.info(BEGIN_MANAGING_NAMESPACE, ns);
+        return doNext(addNSWatchingStartingEventsStep(), packet);
       } else {
         return doEnd(packet);
       }
     }
 
-    private Step addNSWatchingStartingEventStep() {
+    private Step addNSWatchingStartingEventsStep() {
       return Step.chain(
-          EventHelper.createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          EventHelper.createEventStep(
+              new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          EventHelper.createEventStep(
+              new EventData(EventHelper.EventItem.START_MANAGING_NAMESPACE)
+                  .namespace(getOperatorNamespace()).resourceName(ns)),
           getNext());
     }
   }
@@ -244,7 +250,7 @@ class DomainRecheck {
    */
   static class RunInParallel extends Step {
 
-    protected final Function<String, Step> stepFactory;
+    final Function<String, Step> stepFactory;
     private final Collection<String> domainNamespaces;
 
     RunInParallel(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
@@ -252,7 +258,7 @@ class DomainRecheck {
       this.stepFactory = stepFactory;
     }
 
-    public static Step perNamespace(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
+    static Step perNamespace(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
       return new RunInParallel(domainNamespaces, stepFactory);
     }
 
