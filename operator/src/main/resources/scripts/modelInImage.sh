@@ -448,7 +448,7 @@ function checkModelDirectoryExtensions() {
 function checkWDTVersion() {
   trace "Entering checkWDTVersion"
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
-  local wdt_version="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
+  WDT_VERSION="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
 
   local online_min="1.9.8"
   local offline_min="1.7.3"
@@ -459,9 +459,9 @@ function checkWDTVersion() {
     local actual_min="$offline_min"
   fi
 
-  if [ -z "${wdt_version}" ] || ! versionGE "${wdt_version}" "${actual_min}" ; then
+  if [ -z "${WDT_VERSION}" ] || ! versionGE "${WDT_VERSION}" "${actual_min}" ; then
     trace SEVERE "The domain resource 'spec.domainHomeSourceType' is 'FromModel'" \
-      "and its image's WebLogic Deploy Tool installation has version '${wdt_version:-unknown version}'" \
+      "and its image's WebLogic Deploy Tool installation has version '${WDT_VERSION:-unknown version}'" \
       "but introspection requires at least version '${online_min}'" \
       "when 'spec.configuration.model.onlineUpdate.enabled' is set to 'true'" \
       "or at least version '${offline_min}' otherwise." \
@@ -572,6 +572,31 @@ function restoreEncodedTar() {
   tar -xzf /tmp/domain.tar.gz || return 1
 }
 
+# This is before WDT compareModel implementation
+#
+function diff_model_v1() {
+  trace "Entering diff_model"
+
+  #
+  local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
+  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
+  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+  ${JAVA_HOME}/bin/java -cp ${CP} \
+    ${JAVA_PROPS} \
+    org.python.util.jython \
+    ${SCRIPTPATH}/model-diff-v1.py $1 $2 > ${WDT_OUTPUT} 2>&1
+  if [ $? -ne 0 ] ; then
+    trace SEVERE "Failed to compare models. Check logs for error. Comparison output:"
+    cat ${WDT_OUTPUT}
+    exitOrLoop
+  fi
+  trace "Exiting diff_model"
+  return ${rc}
+}
+
+# This is WDT compareModel.sh implementation
 
 function diff_model() {
   trace "Entering diff_model"
@@ -656,7 +681,11 @@ function createPrimordialDomain() {
       gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
     fi
 
-    diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
+    if [ versionGE ${WDT_VERSION} "1.9.8" ] ; then
+      diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
+    else
+      diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
+    fi
 
     diff_rc=$(cat /tmp/model_diff_rc)
     rm ${DECRYPTED_MERGED_MODEL}
