@@ -249,7 +249,9 @@ function buildWDTParams_MD5() {
     OPSS_FLAGS=""
   fi
 
-  overrideWDTTimeoutValues
+  if [ "true" == "${MII_USE_ONLINE_UPDATE}" ] ; then
+    overrideWDTTimeoutValues
+  fi
 
   trace "Exiting setupInventoryList"
 }
