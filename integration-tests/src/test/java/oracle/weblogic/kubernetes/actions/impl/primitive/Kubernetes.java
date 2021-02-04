@@ -93,6 +93,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Kubernetes {
 
@@ -666,6 +667,35 @@ public class Kubernetes {
     return v1PodList;
   }
 
+  // TEST
+
+  private static void listFilesInPod(String namespace, String podName, String container, String path) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("kubectl exec -t ").append(podName);
+    if (namespace != null) {
+      sb.append(" -n ").append(namespace);
+    }
+    if (container != null) {
+      sb.append(" -c ").append(container);
+    }
+    sb.append(" -- ls -lR ").append(path);
+    String listCommand = sb.toString();
+    assertTrue(Command
+        .withParams(new CommandParams()
+            .command(listCommand))
+        .execute(), listCommand + " failed");
+  }
+
+  private static void listFiles(String path) {
+    StringBuilder sb = new StringBuilder();
+    sb.append("ls -lR ").append(path);
+    String listCommand = sb.toString();
+    assertTrue(Command
+        .withParams(new CommandParams()
+            .command(listCommand))
+        .execute(), listCommand + " failed");
+  }
+
   /**
    * Copy a directory from Kubernetes pod to local destination path.
    * @param pod V1Pod object
@@ -676,8 +706,19 @@ public class Kubernetes {
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
       throws IOException, ApiException, CopyNotSupportedException {
+
+    // TEST
+    getLogger().info(
+        "BEFORE copyDirectoryFromPod({0}, {1}, {2})", pod.getMetadata().getName(), srcPath, destination);
+    listFilesInPod(pod.getMetadata().getNamespace(), pod.getMetadata().getName(), null, srcPath);
+    listFiles(destination.toString());
+
     Copy copy = new Copy();
     copy.copyDirectoryFromPod(pod, srcPath, destination);
+
+    getLogger().info(
+        "AFTER copyDirectoryFromPod({0}, {1}, {2})", pod.getMetadata().getName(), srcPath, destination);
+    listFiles(destination.toString());
   }
 
   /**
