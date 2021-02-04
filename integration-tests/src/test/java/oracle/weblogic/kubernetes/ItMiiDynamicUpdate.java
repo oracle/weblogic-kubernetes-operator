@@ -575,7 +575,7 @@ class ItMiiDynamicUpdate {
    */
   @Test
   @Order(7)
-  @DisplayName("Changing Weblogic admin credentail and deleting application with CommitUpdateAndRoll "
+  @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
   public void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
@@ -642,6 +642,62 @@ class ItMiiDynamicUpdate {
   }
 
   /**
+   * Recreate configmap by deleting datasource.
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Wait for introspector to complete.
+   * Verify the domain is not restarted.
+   * Verify the introspector version is updated.
+   * Verify the datasource is deleted.
+   * Verify the domain status condition contains the correct type and expected reason.
+   */
+  @Test
+  @Order(8)
+  @DisplayName("Deleting Datasource")
+  public void testMiiDeleteDatasource() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+    LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
+
+    // write sparse yaml to delete datasource to file
+    Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
+    String yamlToDeleteDS = "resources:\n"
+        + "  JDBCSystemResource:\n"
+        + "    !TestDataSource2:";
+
+    assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
+
+    // Replace contents of an existing configMap with cm config
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
+            pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns();
+
+    // Verifying the domain is not restarted
+    verifyPodsNotRolled(pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+
+    // check datasource configuration is deleted using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertFalse(checkSystemResourceConfig(adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
+    logger.info("JDBCSystemResource Datasource is deleted");
+
+    // check that the domain status condition contains the correct type and expected reason
+    logger.info("verifying the domain status condition contains the correct type and expected reason");
+    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+  }
+
+  /**
    * Negative test: Changing the domain name using mii dynamic update.
    * Check the introspector will fail with error message showed in the introspector pod log.
    * Check the status phase of the introspector pod is failed
@@ -649,7 +705,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   public void testMiiChangeDomainName() {
     // write sparse yaml to file
@@ -694,7 +750,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(9)
+  @Order(10)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   public void testMiiChangeListenPort() {
 
@@ -742,7 +798,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(10)
+  @Order(11)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
   public void testMiiChangeListenAddress() {
     // write sparse yaml to file
@@ -786,7 +842,7 @@ class ItMiiDynamicUpdate {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(11)
+  @Order(12)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   public void testMiiChangeSSL() {
 
@@ -838,7 +894,7 @@ class ItMiiDynamicUpdate {
   // with latest dynamicupdate branch, the CancelUpdate behavior got changed. Disable this test now.
   @Disabled("CancelUpdate is removed from dynamic update")
   @Test
-  @Order(12)
+  @Order(13)
   @DisplayName("Test onNonDynamicChanges value CancelUpdate")
   public void testOnNonDynamicChangesCancelUpdate() {
 
@@ -886,7 +942,7 @@ class ItMiiDynamicUpdate {
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
-  @Order(13)
+  @Order(14)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
 
@@ -990,7 +1046,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    */
   @Test
-  @Order(14)
+  @Order(15)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 

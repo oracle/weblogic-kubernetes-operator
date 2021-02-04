@@ -280,5 +280,6 @@ public interface TestConstants {
 
   // MII domain dynamic update
   public static final String MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG =
-      "Model in image online update failed because of forbidden changes";
+      "The Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true', "
+          + "but there are unsupported model changes for online update";
 }
