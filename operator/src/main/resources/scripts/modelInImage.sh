@@ -589,10 +589,10 @@ function diff_model() {
   if [ "true" == "$MII_USE_ONLINE_UPDATE" ] ; then
     if [  ! -f "/tmp/diffed_model.yaml" ] ; then
       if [ -f "/tmp/compare_model_stdout" ] ; then
-        trace SEVERE "WDT Compare Model detected 'No applicable differences between the models'" \
+        trace SEVERE "WDT Compare Model detected 'There are no changes to apply between the old and new models'" \
           "and 'spec.configuration.model.onlineUpdate.enabled' is set to 'true'. This indicates" \
           "there may be incompatible changes for online update," \
-          "such as trying to remove an entire mbean type." \
+          "such as trying to remove an existing attribute." \
           "Please correct the attributes listed below or use offline update:"
         cat /tmp/compare_model_stdout
         exitOrLoop
