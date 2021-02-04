@@ -186,7 +186,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
       Controls behavior when non-dynamic WebLogic configuration changes are
       detected during an online update.
       Non-dynamic changes are changes that require a domain restart to take effect.
-      Valid values are `CommitUpdateOnly` (default), `CommitUpdateAndRoll`, and `CancelUpdate`.
+      Valid values are `CommitUpdateOnly` (default) and `CommitUpdateAndRoll`.
       For more information, see
       [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
       in the Runtime Updates section of the Model in Image user guide.
