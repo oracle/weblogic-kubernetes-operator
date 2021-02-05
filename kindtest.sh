@@ -120,13 +120,16 @@ function versionprop {
 }
 
 kind_version=$(kind version)
-kind_series="0.9"
+kind_series="0.10"
 case "${kind_version}" in
   "kind v0.7."*)
     kind_series="0.7"
     ;;
   "kind v0.8."*)
     kind_series="0.8"
+    ;;
+  "kind v0.9."*)
+    kind_series="0.9"
     ;;
 esac
 
