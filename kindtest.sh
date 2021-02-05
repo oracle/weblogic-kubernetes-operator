@@ -287,3 +287,7 @@ else
     time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
   fi
 fi
+
+echo "Capture Kind logs..."
+mkdir "${RESULT_ROOT}/kubelogs"
+kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 10
