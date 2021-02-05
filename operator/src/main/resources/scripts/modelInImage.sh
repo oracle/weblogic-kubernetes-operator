@@ -450,6 +450,9 @@ function checkWDTVersion() {
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   WDT_VERSION="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
 
+  # trim out any non numeric character except dot
+  WDT_VERSION=$(echo "${WDT_VERSION}" | tr -dc ^[.0-9]) || exitOrLoop
+
   local online_min="1.9.8"
   local offline_min="1.7.3"
 
@@ -681,7 +684,7 @@ function createPrimordialDomain() {
       gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
     fi
 
-    if [ versionGE ${WDT_VERSION} "1.9.8" ] ; then
+    if  versionGE ${WDT_VERSION} "1.9.8" ; then
       diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
     else
       diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
