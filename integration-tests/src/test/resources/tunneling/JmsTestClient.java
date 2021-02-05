@@ -171,13 +171,13 @@ public class JmsTestClient {
      String user="weblogic";
      String password="welcome1";
      String WLS_JNDI_FACTORY  = "weblogic.jndi.WLInitialContextFactory";
-     System.out.println("Using user ["+user+"] pwd ["+password+"]");
+     // System.out.println("Using user ["+user+"] pwd ["+password+"]");
 
      Hashtable env = new Hashtable();
      env.put(Context.INITIAL_CONTEXT_FACTORY, WLS_JNDI_FACTORY);
      env.put(Context.PROVIDER_URL, url);
-     env.put(Context.SECURITY_PRINCIPAL, user);
-     env.put(Context.SECURITY_CREDENTIALS, password);
+     // env.put(Context.SECURITY_PRINCIPAL, user);
+     // env.put(Context.SECURITY_CREDENTIALS, password);
      // System.out.println("env in getInitialContext(): " + env);
      // System.out.println("JNDI Context URL --> " + url);
       try {
@@ -187,6 +187,7 @@ public class JmsTestClient {
        System.out.println("Unable to getInitialContext "+e);
        System.exit(-1);
       }
+      System.out.println("Got anonymous JNDI Context");
       return jndiContext;
    }
 
