@@ -68,7 +68,7 @@ function usage {
 function captureLogs {
   echo "Capture Kind logs..."
   mkdir "${RESULT_ROOT}/kubelogs"
-  kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 10
+  kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
 }
 
 k8s_version="1.16"
