@@ -578,7 +578,7 @@ function restoreEncodedTar() {
 # This is before WDT compareModel implementation
 #
 function diff_model_v1() {
-  trace "Entering diff_model"
+  trace "Entering diff_model v1"
 
   #
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
@@ -595,7 +595,7 @@ function diff_model_v1() {
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
-  trace "Exiting diff_model"
+  trace "Exiting diff_model v1"
   return ${rc}
 }
 
