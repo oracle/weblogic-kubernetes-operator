@@ -106,6 +106,7 @@ public class JmsTestClient {
      }
 
      ctx = getInitialContext(clusterurl);
+     System.out.println("Got anonymous JNDI Context");
      qcf= (ConnectionFactory)ctx.lookup(testcf);
      Destination queue = (Destination)ctx.lookup(testQueue);
 
@@ -178,8 +179,6 @@ public class JmsTestClient {
      env.put(Context.PROVIDER_URL, url);
      // env.put(Context.SECURITY_PRINCIPAL, user);
      // env.put(Context.SECURITY_CREDENTIALS, password);
-     // System.out.println("env in getInitialContext(): " + env);
-     // System.out.println("JNDI Context URL --> " + url);
       try {
         jndiContext = new InitialContext(env);
         // System.out.println("GOT INITIALCONTEXT(): " + jndiContext);
@@ -187,7 +186,6 @@ public class JmsTestClient {
        System.out.println("Unable to getInitialContext "+e);
        System.exit(-1);
       }
-      System.out.println("Got anonymous JNDI Context");
       return jndiContext;
    }
 
