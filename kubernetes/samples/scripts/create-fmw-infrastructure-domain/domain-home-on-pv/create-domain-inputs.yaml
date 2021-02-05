@@ -140,7 +140,7 @@ createDomainScriptName: create-domain-job.sh
 # as those files are in the specified directory. Files in this directory are put into a
 # Kubernetes config map, which in turn is mounted to the `createDomainScriptsMountPath`,
 # so that the Kubernetes pod can use the scripts and supporting files to create a domain home.
-createDomainFilesDir: wlst
+createDomainFilesDir: wdt
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
