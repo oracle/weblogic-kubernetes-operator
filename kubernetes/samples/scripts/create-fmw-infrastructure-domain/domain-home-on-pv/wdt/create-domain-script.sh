@@ -80,4 +80,4 @@ setup_wdt_shared_dir || exit 1
 
 install_wdt || exit 1
 
-run_wdt || exit 1
+run_wdt "create" || exit 1
