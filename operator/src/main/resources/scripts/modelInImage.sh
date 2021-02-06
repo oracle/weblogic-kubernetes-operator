@@ -53,6 +53,9 @@ RCU_PASSWORD_CHANGED=5
 NOT_FOR_ONLINE_UPDATE=6
 SCRIPT_ERROR=255
 
+WDT_ONLINE_MIN_VERSION="1.9.8"
+WDT_OFFLINE_MIN_VERSION="1.7.3"
+
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
@@ -450,24 +453,21 @@ function checkWDTVersion() {
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   WDT_VERSION="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
 
-  # trim out any non numeric character except dot
+  # trim out any non numeric character except dot and numbers, this avoid handling SNAPSHOT release
   WDT_VERSION=$(echo "${WDT_VERSION}" | tr -dc ^[.0-9]) || exitOrLoop
 
-  local online_min="1.9.8"
-  local offline_min="1.7.3"
-
   if [ "true" = "${MII_USE_ONLINE_UPDATE}" ]; then
-    local actual_min="$online_min"
+    local actual_min="$WDT_ONLINE_MIN_VERSION"
   else
-    local actual_min="$offline_min"
+    local actual_min="$WDT_OFFLINE_MIN_VERSION"
   fi
 
   if [ -z "${WDT_VERSION}" ] || ! versionGE "${WDT_VERSION}" "${actual_min}" ; then
     trace SEVERE "The domain resource 'spec.domainHomeSourceType' is 'FromModel'" \
       "and its image's WebLogic Deploy Tool installation has version '${WDT_VERSION:-unknown version}'" \
-      "but introspection requires at least version '${online_min}'" \
+      "but introspection requires at least version '${WDT_ONLINE_MIN_VERSION}'" \
       "when 'spec.configuration.model.onlineUpdate.enabled' is set to 'true'" \
-      "or at least version '${offline_min}' otherwise." \
+      "or at least version '${WDT_OFFLINE_MIN_VERSION}' otherwise." \
       "To fix this, create another image with an updated version of the WebLogic Deploy" \
       "Tool and redeploy the domain again."
     exitOrLoop
@@ -684,7 +684,7 @@ function createPrimordialDomain() {
       gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
     fi
 
-    if  versionGE ${WDT_VERSION} "1.9.8" ; then
+    if  versionGE ${WDT_VERSION} ${WDT_ONLINE_MIN_VERSION} ; then
       diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
     else
       diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
