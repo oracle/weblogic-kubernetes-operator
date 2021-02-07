@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -154,6 +155,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Verify scaling up and down the clusters in the domain with different domain types.
@@ -271,6 +273,7 @@ class ItParameterizedDomain {
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
           true, ADMIN_SERVER_PORT);
     }
+    // System.setProperty("WEBLOGIC_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
   }
 
   /**
@@ -326,15 +329,15 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
+  @ParameterizedTest(name = "{index} => model=''{0}''")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
@@ -352,12 +355,11 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
+  @ParameterizedTest(name = "{index} => model=''{0}''")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingIngressController(Domain domain) {
-    logger.info("Validating WebLogic admin server access using ingress controller");
-
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
@@ -383,7 +385,6 @@ class ItParameterizedDomain {
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
-
     String serverName;
     if (numClusters > 1) {
       serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
