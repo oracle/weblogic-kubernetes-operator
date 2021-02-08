@@ -23,7 +23,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -126,7 +125,6 @@ class ItIstioDomainInImage {
    */
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
-  @Slow
   public void testIstioDomainHomeInImage() {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
