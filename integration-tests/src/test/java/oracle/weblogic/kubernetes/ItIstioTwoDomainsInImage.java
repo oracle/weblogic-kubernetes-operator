@@ -23,7 +23,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -141,7 +140,6 @@ class ItIstioTwoDomainsInImage {
    */
   @Test
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
-  @Slow
   public void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
