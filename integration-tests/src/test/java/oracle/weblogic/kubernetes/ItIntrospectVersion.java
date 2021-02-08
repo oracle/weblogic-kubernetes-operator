@@ -649,8 +649,9 @@ public class ItIntrospectVersion {
    * a. Creates new WebLogic credentials using WLST.
    * b. Creates new Kubernetes secret for WebLogic credentials.
    * c. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
-   * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
-   * e. Verifies the the admin server console access with old credentials fail.
+   * d. Verifies the servers in the domain are restarted .
+   * e. Make a REST api call to access management console using new password.
+   * f. Make a REST api call to access management console using old password.
    */
   @Order(3)
   @Test

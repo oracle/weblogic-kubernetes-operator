@@ -102,6 +102,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
@@ -166,7 +167,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-//import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Test operator manages multiple domains.
@@ -444,6 +445,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
   public void testNginxTLSPathRoutingAdminServer() {
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
     for (int i = 0; i < numberOfDomains; i++) {
       verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
@@ -482,6 +484,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol")
   public void testVoyagerTLSPathRoutingAdminServer() {
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
     String ingressName = "voyager-tls-pathrouting";
     for (int i = 0; i < numberOfDomains; i++) {
@@ -502,6 +505,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   public void testTraefikHostRoutingAdminServer() {
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyAdminServerAccess(false, getTraefikLbNodePort(false), true,
@@ -745,6 +749,7 @@ public class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol")
   public void testTraefikTLSPathRoutingAdminServer() {
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Traefik path routing with HTTPS protocol");
 
     verifyAdminServerAccess(true, getTraefikLbNodePort(true), false, "", "");
