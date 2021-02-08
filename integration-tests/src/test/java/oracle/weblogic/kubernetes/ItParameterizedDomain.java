@@ -329,8 +329,8 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
+  @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
-  @ParameterizedTest(name = "{index} => domain=''{0}''")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
@@ -355,8 +355,8 @@ class ItParameterizedDomain {
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
-  @DisplayName("Test admin console login using ingress controller")
   @ParameterizedTest
+  @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingIngressController(Domain domain) {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
