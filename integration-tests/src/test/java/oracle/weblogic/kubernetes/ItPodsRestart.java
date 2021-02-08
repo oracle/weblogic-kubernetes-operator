@@ -26,7 +26,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
@@ -228,7 +227,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
-  @Slow
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -283,7 +281,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
-  @Slow
   public void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -349,7 +346,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
-  @Slow
   public void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -414,7 +410,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
-  @Slow
   public void testServerPodsRestartByChangingImagePullPolicy() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
