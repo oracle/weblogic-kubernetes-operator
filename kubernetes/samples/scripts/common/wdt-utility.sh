@@ -79,6 +79,7 @@ WDT_VERSION=${WDT_VERSION:-1.9.7}
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
 
+DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
@@ -158,6 +159,7 @@ function run_wdt {
   local inputs_orig="$WDT_VAR_FILE"
   local model_orig="$WDT_MODEL_FILE"
   local oracle_home="$ORACLE_HOME"
+  local domain_type="$DOMAIN_TYPE"
   local wdt_bin_dir="$WDT_DIR/weblogic-deploy/bin"
   local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
 
@@ -214,7 +216,7 @@ function run_wdt {
 
   $wdt_domain_script \
      -oracle_home $oracle_home \
-     -domain_type WLS \
+     -domain_type $domain_type \
      -domain_home $domain_home_dir \
      -model_file $model_final \
      -variable_file $inputs_final > $out_file 2>&1
@@ -260,7 +262,7 @@ function run_wdt {
   fi
 
   if [ ${action} = "create" ]; then
-    chmod -R g+w $domain_home_dir || return 1
+    # chmod -R g+w $domain_home_dir || return 1
     echo @@ "Info:  WDT createDomain.sh succeeded."
   else
     echo @@ "Info:  WDT updateDomain.sh succeeded."
