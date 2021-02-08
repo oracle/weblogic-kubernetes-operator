@@ -902,11 +902,6 @@ public class DomainProcessorTest {
       .withMIIOnlineUpate();
   }
 
-  void configureForModelInImageOnlineUpdateNonDynamicChangesUpdateAndRoll(Domain domain) {
-    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
-        .withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
-  }
-
   private DomainConfigurator configureDomain(Domain domain) {
     return DomainConfiguratorFactory.forDomain(domain);
   }
@@ -995,7 +990,6 @@ public class DomainProcessorTest {
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
         String.format(introspectorResult, defineTopology(), updateResult));
     makeRightOperation.execute();
-
     boolean found = false;
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     if (updatedDomain.getStatus() != null) {
@@ -1007,6 +1001,14 @@ public class DomainProcessorTest {
       }
     }
     assertThat(found, is(true));
+
+    presenceInfoMap.get("namespace").get("test-domain").getServerPods()
+        .forEach(p -> {
+            Map<String, String> labels = p.getMetadata().getLabels();
+            boolean hasRestartLabel = labels.containsKey("weblogic.configChangesPendingRestart");
+            assertThat(hasRestartLabel, is(true));
+          }
+    );
   }
 
   @Nonnull
