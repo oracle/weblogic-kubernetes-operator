@@ -321,6 +321,7 @@ public class Main {
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
       V1EventList list = callResponse.getResult();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
       return doContinueListOrNext(callResponse, packet);
     }
 
