@@ -72,7 +72,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
-import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_DYNAMICALLY_UPDATED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MII_DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -947,7 +947,15 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
         if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
-          LOGGER.info(DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid());
+          Map<String, String> labels = Optional.of(currentPod)
+              .map(V1Pod::getMetadata)
+              .map(V1ObjectMeta::getLabels)
+              .orElse(new HashMap<>());
+          String serverName = "";
+          if (labels.containsKey(LabelConstants.SERVERNAME_LABEL)) {
+            serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
+          }
+          LOGGER.fine(MII_DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid(), serverName);
           logPodExists();
           //Create dummy meta data for patching
           V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
@@ -1005,13 +1013,9 @@ public abstract class PodStepContext extends BasePodStepContext {
       String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
           ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
           .orElse("");
-      updateDomainConditions("Online update completed successfully, but the changes require "
-              + "restart and the domain resource specified "
-              + "'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly' or not set."
-              + " The changes are committed but the domain require manually restart to "
-              + " make the changes effective. The changes are: "
-              + dynamicUpdateRollBackFile,
-          DomainConditionType.ConfigChangesPendingRestart);
+      String message = String.format("%s\n%s",
+          LOGGER.formatMessage(MessageKeys.MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED), dynamicUpdateRollBackFile);
+      updateDomainConditions(message, DomainConditionType.ConfigChangesPendingRestart);
     }
 
     private void setOnlineUpdateSuccessCondition() {

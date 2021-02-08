@@ -154,7 +154,8 @@ public class MessageKeys {
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
-  public static final String DOMAIN_DYNAMICALLY_UPDATED = "WLSDO-0020";
+  public static final String MII_DOMAIN_DYNAMICALLY_UPDATED = "WLSKO-0183";
+  public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
 
   private MessageKeys() {
   }
