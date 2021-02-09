@@ -306,7 +306,7 @@ public class Main {
 
   private Step createOperatorNamespaceEventListStep() {
     return new CallBuilder()
-        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
         .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
