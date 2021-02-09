@@ -41,7 +41,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -49,8 +51,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -213,7 +214,7 @@ class ItSessionMigration {
 
     finalPrimaryServerName = primaryServerName;
 
-    logger.info("SUCCESS --- testSessionMigration \nThe new primary server is {0}, it was {1}. "
+    logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",
             primaryServerName, origPrimaryServerName, SESSION_STATE);
   }
@@ -244,7 +245,7 @@ class ItSessionMigration {
     assertTrue(myAnnotationValue.equals(annotationValue),
         "Failed to propagate annotation with slash to the server pod");
 
-    logger.info("SUCCESS --- testAnnotationWSlash Value for annotation key:value is {0}:{1}",
+    logger.info("Done testAnnotationWSlash Value for annotation key:value is {0}:{1}",
         annotationKey, myAnnotationValue);
   }
 
@@ -319,7 +320,7 @@ class ItSessionMigration {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        "weblogic", "welcome1"),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
@@ -339,34 +340,19 @@ class ItSessionMigration {
         adminServerPodName, domainNamespace);
     checkPodExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin server pod is ready
+    // check that admin server pod is ready and admin service exists in the domain namespace
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
 
-      // check that the managed server pod exists
-      logger.info("Checking that managed server pod {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodExists(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server pod is ready
+      // check that the managed server pod is ready and the service exists in the domain namespace
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
     }
   }
 
