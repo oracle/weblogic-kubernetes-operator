@@ -1004,9 +1004,13 @@ public class DomainProcessorTest {
 
     presenceInfoMap.get("namespace").get("test-domain").getServerPods()
         .forEach(p -> {
-            Map<String, String> labels = p.getMetadata().getLabels();
-            boolean hasRestartLabel = labels.containsKey("weblogic.configChangesPendingRestart");
-            assertThat(hasRestartLabel, is(true));
+          Map<String, String> labels = Optional.ofNullable(p)
+                .map(V1Pod::getMetadata)
+                .map(V1ObjectMeta::getLabels)
+                .orElse(new HashMap<>());
+          String message = String.format("Server pod (%s) should have label weblogic.configChangesPendingRestart"
+                + " set to true", p.getMetadata().getName());
+          assertThat(message, labels.get("weblogic.configChangesPendingRestart"), is("true"));
           }
     );
   }
