@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -33,7 +34,8 @@ public class ClusterServicesStep extends Step {
         WlsClusterConfig clusterConfig = entry.getValue();
         p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
 
-        startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
+        startDetails.add(new StepAndPacket(PodDisruptionBudgetHelper
+                .createPodDisruptionBudgetForClusterStep(ServiceHelper.createForClusterStep(null)), p));
       }
     }
 

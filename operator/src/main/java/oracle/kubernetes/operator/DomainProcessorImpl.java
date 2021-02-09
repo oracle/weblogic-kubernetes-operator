@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -28,6 +29,8 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -40,6 +43,8 @@ import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.JobHelper;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
+import oracle.kubernetes.operator.helpers.NamespaceHelper;
+import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -142,7 +147,11 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static String getEventDomainUid(V1Event event) {
-    return Optional.ofNullable(event).map(V1Event::getInvolvedObject).map(V1ObjectReference::getName).orElse(null);
+    return Optional.ofNullable(event)
+        .map(V1Event::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .orElse(Collections.emptyMap())
+        .get(LabelConstants.DOMAINUID_LABEL);
   }
 
   public static KubernetesEventObjects getEventK8SObjects(V1Event event) {
@@ -182,7 +191,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     switch (kind) {
       case EventConstants.EVENT_KIND_POD:
-        processServerEvent(event);
+        processPodEvent(event);
         break;
       case EventConstants.EVENT_KIND_DOMAIN:
       case EventConstants.EVENT_KIND_NAMESPACE:
@@ -193,14 +202,21 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void processServerEvent(V1Event event) {
+  private static void processPodEvent(V1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
     if (ref == null || ref.getName() == null) {
       return;
     }
+    if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+      updateEventK8SObjects(event);
+    } else {
+      processServerEvent(event);
+    }
+  }
 
-    String[] domainAndServer = ref.getName().split("-");
+  private static void processServerEvent(V1Event event) {
+    String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
     String status = getReadinessStatus(event);
@@ -231,6 +247,10 @@ public class DomainProcessorImpl implements DomainProcessor {
         deleteEventK8SObjects(event);
         break;
       case EventConstants.EVENT_KIND_POD:
+        if (ref.getName().equals(NamespaceHelper.getOperatorPodName())) {
+          deleteEventK8SObjects(event);
+        }
+        break;
       default:
         break;
     }
@@ -434,6 +454,38 @@ public class DomainProcessorImpl implements DomainProcessor {
         break;
       case "DELETED":
         boolean removed = ServiceHelper.deleteFromEvent(info, item.object);
+        if (removed && info.isNotDeleting()) {
+          createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+        }
+        break;
+      default:
+    }
+  }
+
+  /**
+   * Dispatch PodDisruptionBudget watch event.
+   * @param item watch event
+   */
+  public void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item) {
+    V1beta1PodDisruptionBudget pdb = item.object;
+    String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
+    if (domainUid == null) {
+      return;
+    }
+
+    DomainPresenceInfo info =
+            getExistingDomainPresenceInfo(pdb.getMetadata().getNamespace(), domainUid);
+    if (info == null) {
+      return;
+    }
+
+    switch (item.type) {
+      case "ADDED":
+      case "MODIFIED":
+        PodDisruptionBudgetHelper.updatePDBFromEvent(info, item.object);
+        break;
+      case "DELETED":
+        boolean removed = PodDisruptionBudgetHelper.deleteFromEvent(info, item.object);
         if (removed && info.isNotDeleting()) {
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
@@ -1164,6 +1216,15 @@ public class DomainProcessorImpl implements DomainProcessor {
 
         private void addService(V1Service service) {
           ServiceHelper.addToPresence(info, service);
+        }
+
+        @Override
+        Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+          return list -> list.getItems().forEach(this::addPodDisruptionBudget);
+        }
+
+        private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
+          PodDisruptionBudgetHelper.addToPresence(info,pdb);
         }
       });
 
