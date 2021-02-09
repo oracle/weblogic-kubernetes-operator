@@ -1979,8 +1979,8 @@ public class ItTwoDomainsLoadBalancers {
     if (!isHostRouting) {
       consoleUrl.append(pathLocation);
     }
-    consoleUrl.append("/console/login/LoginForm.jsp");
 
+    consoleUrl.append("/console/login/LoginForm.jsp");
     String curlCmd;
     if (isHostRouting) {
       curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'host: %s' %s",
@@ -2092,34 +2092,64 @@ public class ItTwoDomainsLoadBalancers {
    */
   private static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
-
-    String consoleUrl = new StringBuffer()
-        .append("http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(nodePort)
-        .append("/console/login/LoginForm.jsp").toString();
-
-    boolean adminAccessible = false;
-    for (int i = 1; i <= 10; i++) {
-      getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
-      final WebClient webClient = new WebClient();
-      final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
-          "connection to the WebLogic admin console failed");
-      HtmlForm form = loginPage.getFormByName("loginData");
-      form.getInputByName("j_username").type(userName);
-      form.getInputByName("j_password").type(password);
-      HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
-      getLogger().info("Clicking login button");
-      HtmlPage home = submit.click();
-      if (home.asText().contains("Persistent Stores")) {
-        getLogger().info("Console login passed");
-        adminAccessible = true;
-        break;
+    if (WEBLOGIC_SLIM) { 
+      getLogger().info("Check REST Console for WebLogic slim image");
+      StringBuffer curlCmd  = null;
+      curlCmd  = new StringBuffer("status=$(curl --user ");
+      curlCmd.append(userName)
+          .append(":")
+          .append(password)
+          .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+          .append("/management/tenant-monitoring/servers/")
+          .append(" --silent --show-error ")
+          .append(" -o /dev/null")
+          .append(" -w %{http_code});")
+          .append("echo ${status}");
+      logger.info("checkRestConsole : curl command {0}", new String(curlCmd));
+      try {
+        ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+        String response = result.stdout().trim();
+        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        if (response.contains("200")) {
+          return true;
+        } else {
+          return false;
+        }
+      } catch (IOException | InterruptedException ex) {
+        logger.info("Exception in checkRestConsole {0}", ex);
+        return false;
       }
-    }
+    } else {
+      // generic/dev Image
+      getLogger().info("Check administration Console for generic/dev image");
+      String consoleUrl = new StringBuffer()
+          .append("http://")
+          .append(K8S_NODEPORT_HOST)
+          .append(":")
+          .append(nodePort)
+          .append("/console/login/LoginForm.jsp").toString();
 
-    return adminAccessible;
+      boolean adminAccessible = false;
+      for (int i = 1; i <= 10; i++) {
+        getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
+        final WebClient webClient = new WebClient();
+        final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+             "connection to the WebLogic admin console failed");
+        HtmlForm form = loginPage.getFormByName("loginData");
+        form.getInputByName("j_username").type(userName);
+        form.getInputByName("j_password").type(password);
+        HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
+        getLogger().info("Clicking login button");
+        HtmlPage home = submit.click();
+        if (home.asText().contains("Persistent Stores")) {
+          getLogger().info("Console login passed");
+          adminAccessible = true;
+          break;
+        }
+      }
+      return adminAccessible;
+    }
   }
 
   private static Callable<Boolean> pullImageFromOcirAndPushToKind(String apacheImage) {

@@ -273,7 +273,6 @@ class ItParameterizedDomain {
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
           true, ADMIN_SERVER_PORT);
     }
-    // System.setProperty("WEBLOGIC_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
   }
 
   /**
