@@ -17,7 +17,9 @@ import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
+import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
 import org.joda.time.DateTime;
@@ -28,16 +30,23 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
+import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_UID_ENV;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
-import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainEventProcessingTest {
+public class OperatorEventProcessingTest {
+  private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
+  private static final String OP_NS = "operator-namespace";
+  private static final String OPERATOR_UID = "1234-5678-101112";
   private static final String NS = "namespace";
   private static final String UID = "uid";
   private final V1ObjectReference domainReference =
@@ -46,11 +55,15 @@ public class DomainEventProcessingTest {
   private final V1ObjectReference nsReference =
       new V1ObjectReference().name(NS).kind("Namespace").namespace(NS);
 
+  private final V1ObjectReference opReference =
+      new V1ObjectReference().name(OPERATOR_POD_NAME).kind("Pod").namespace(OP_NS).uid(OPERATOR_UID);
+
   private final List<Memento> mementos = new ArrayList<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
   /**
    * Setup test.
@@ -59,8 +72,13 @@ public class DomainEventProcessingTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(HelmAccessStub.install());
+    HelmAccessStub.defineVariable(OPERATOR_NAMESPACE_ENV, OP_NS);
+    HelmAccessStub.defineVariable(OPERATOR_POD_NAME_ENV, OPERATOR_POD_NAME);
+    HelmAccessStub.defineVariable(OPERATOR_POD_UID_ENV, OPERATOR_UID);
   }
 
   /**
@@ -100,7 +118,6 @@ public class DomainEventProcessingTest {
   public void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd4", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
-    event = createDomainEvent(".acbd4", DOMAIN_CREATED, "", domainReference);
     dispatchDeletedEventWatch(event);
     assertThat("Found NO DOMAIN_CREATED event in the map", getMatchingEvent(event), nullValue());
   }
@@ -139,18 +156,17 @@ public class DomainEventProcessingTest {
 
   @Test
   public void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", domainReference);
-    dispatchAddedEventWatch(event);
-    event = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", null);
-    dispatchDeletedEventWatch(event);
-    assertThat(getEventK8SObjects(event).size(), equalTo(0));
+    CoreV1Event event1 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", domainReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", null);
+    dispatchDeletedEventWatch(event2);
+    assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   public void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd10", DOMAIN_PROCESSING_FAILED, "failureOnDelete2", domainReference);
     dispatchAddedEventWatch(event);
-    event = createDomainEvent(".acbd10", DOMAIN_PROCESSING_FAILED, "failureOnDelete2", domainReference);
     dispatchDeletedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
@@ -166,11 +182,11 @@ public class DomainEventProcessingTest {
 
   @Test
   public void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference);
-    dispatchAddedEventWatch(event);
-    event = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference, 2);
-    dispatchModifiedEventWatch(event);
-    assertThat(getMatchingEventCount(event), equalTo(2));
+    CoreV1Event event1 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference, 2);
+    dispatchModifiedEventWatch(event2);
+    assertThat(getMatchingEventCount(event1), equalTo(2));
   }
 
   @Test
@@ -223,6 +239,39 @@ public class DomainEventProcessingTest {
     assertThat(getMatchingEventCount(event1), equalTo(2));
   }
 
+  @Test
+  public void onCreateStartManagingNSEvent_updateKubernetesEventObjectsMap() {
+    CoreV1Event event = createNamespaceEvent(".aaaa1", START_MANAGING_NAMESPACE, opReference);
+    dispatchAddedEventWatch(event);
+    assertThat(getMatchingEventCount(event), equalTo(1));
+  }
+
+  @Test
+  public void afterAddStopManagingNSEvent_onModifyStopManagingNamespace_updateKubernetesEventObjectsMap() {
+    CoreV1Event event1 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference, 2);
+    dispatchModifiedEventWatch(event2);
+    assertThat(getMatchingEventCount(event1), equalTo(2));
+  }
+
+  @Test
+  public void afterAddStartManagingNSEvent_onDeleteTheEventWithNoInvolvedObject_doNothing() {
+    CoreV1Event event1 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, opReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, null);
+    dispatchDeletedEventWatch(event2);
+    assertThat(getMatchingEvent(event1), notNullValue());
+  }
+
+  @Test
+  public void afterAddStopManaingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
+    CoreV1Event event1 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
+    dispatchAddedEventWatch(event1);
+    CoreV1Event event2 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
+    dispatchDeletedEventWatch(event2);
+    assertThat(getMatchingEvent(event1), nullValue());
+  }
 
   private int getMatchingEventCount(CoreV1Event event) {
     return Optional.ofNullable(getMatchingEvent(event)).map(CoreV1Event::getCount).orElse(0);
@@ -250,13 +299,14 @@ public class DomainEventProcessingTest {
     processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
   }
 
-  private static V1ObjectMeta createMetadata(String name) {
+  private static V1ObjectMeta createMetadata(String name, String namespace, boolean domainEvent) {
     final V1ObjectMeta metadata =
-        new V1ObjectMeta().name(name).namespace(NS);
-    metadata
-        .putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID)
-        .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        new V1ObjectMeta().name(name).namespace(namespace);
+    if (domainEvent) {
+      metadata.putLabelsItem(LabelConstants.DOMAINUID_LABEL, UID);
+    }
 
+    metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     return metadata;
   }
 
@@ -264,14 +314,13 @@ public class DomainEventProcessingTest {
       String nameAppendix, EventItem item, String message, V1ObjectReference involvedObj) {
 
     return new CoreV1Event()
-        .metadata(createMetadata(createDomainEventName(nameAppendix, item)))
-        .involvedObject(domainReference)
+        .metadata(createMetadata(createDomainEventName(nameAppendix, item), NS, true))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(getOperatorPodName())
+        .reportingInstance(OPERATOR_POD_NAME)
         .lastTimestamp(DateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(UID, new EventHelper.EventData(item, message)))
+        .message(item.getMessage(new EventHelper.EventData(item, message)))
         .involvedObject(involvedObj)
         .count(1);
   }
@@ -284,14 +333,13 @@ public class DomainEventProcessingTest {
   private CoreV1Event createNamespaceEvent(String nameAppendix, EventItem item, V1ObjectReference involvedObj) {
 
     return new CoreV1Event()
-        .metadata(createMetadata(createNSEventName(nameAppendix, item)))
-        .involvedObject(nsReference)
+        .metadata(createMetadata(createNSEventName(nameAppendix, item), OP_NS, false))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
-        .reportingInstance(getOperatorPodName())
+        .reportingInstance(OPERATOR_POD_NAME)
         .lastTimestamp(DateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
-        .message(item.getMessage(NS, new EventHelper.EventData(item, "")))
+        .message(item.getMessage(new EventHelper.EventData(item, "")))
         .involvedObject(involvedObj)
         .count(1);
   }

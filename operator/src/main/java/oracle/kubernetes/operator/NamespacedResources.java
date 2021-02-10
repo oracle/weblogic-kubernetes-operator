@@ -81,7 +81,7 @@ class NamespacedResources {
     /**
      * Return the processing to be performed on a list of domain events found in Kubernetes. May be null.
      */
-    Consumer<CoreV1EventList> getDomainEventListProcessing() {
+    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
       return null;
     }
 
@@ -148,7 +148,7 @@ class NamespacedResources {
   }
 
   private Step getDomainEventListSteps() {
-    return getListProcessing(Processors::getDomainEventListProcessing)
+    return getListProcessing(Processors::getOperatorEventListProcessing)
         .map(this::createDomainEventListStep).orElse(null);
   }
 

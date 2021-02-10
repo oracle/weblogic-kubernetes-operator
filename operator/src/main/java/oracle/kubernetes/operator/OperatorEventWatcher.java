@@ -22,10 +22,10 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_EVENT_LABEL_
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class DomainEventWatcher extends Watcher<CoreV1Event> {
+public class OperatorEventWatcher extends Watcher<CoreV1Event> {
   private final String ns;
 
-  private DomainEventWatcher(
+  private OperatorEventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
@@ -45,15 +45,15 @@ public class DomainEventWatcher extends Watcher<CoreV1Event> {
    * @param isStopping an atomic boolean to watch to determine when to stop the watcher
    * @return the domain watcher
    */
-  public static DomainEventWatcher create(
+  public static OperatorEventWatcher create(
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
       WatchListener<CoreV1Event> listener,
       AtomicBoolean isStopping) {
-    DomainEventWatcher watcher =
-        new DomainEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+    OperatorEventWatcher watcher =
+        new OperatorEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
