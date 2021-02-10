@@ -143,8 +143,6 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    System.out.println("DEBUG: In WaitForReadyStep.. initialResource " + initialResource
-            + ", resourceName -> " + resourceName);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
     } else if (isReady(initialResource)) {
@@ -158,7 +156,6 @@ abstract class WaitForReadyStep<T> extends Step {
   // Registers a callback for updates to the specified resource and
   // verifies that we haven't already missed the update.
   private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
-    System.out.println("DEBUG: initialResource is " + initialResource + " for " + resourceName);
     Callback callback = new Callback(fiber, packet);
     addCallback(getName(), callback);
     checkUpdatedResource(packet, fiber, callback);
@@ -177,13 +174,13 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private Step createReadAndIfReadyCheckStep(Callback callback, Packet packet) {
-    if (initialResource != null) {
-      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
-    } else {
+//    if (initialResource != null) {
+//      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+//    } else {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return createReadAsyncStep(getName(), Optional.ofNullable(info).map(i -> i.getNamespace()).orElse(null),
               Optional.ofNullable(info).map(i -> i.getDomainUid()).orElse(null), resumeIfReady(callback));
-    }
+//    }
   }
 
   public String getName() {
@@ -203,16 +200,12 @@ abstract class WaitForReadyStep<T> extends Step {
     return new DefaultResponseStep<>(null) {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-        System.out.println("DEBUG: In onSuccess of resumeIfReady. resourceName is "
-                + resourceName + ", callResponse is " + callResponse);
         if ((callResponse != null) && (callResponse.getResult() instanceof V1Pod)) {
           V1Pod pod = (V1Pod) callResponse.getResult();
           Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
                   .ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod, LabelConstants.SERVERNAME_LABEL), pod));
         }
         if (isReady(callResponse.getResult())) {
-          System.out.println("DEBUG: In onSuccess of resumeIfReady. READY ->> resourceName is "
-                  + resourceName + ", callResponse is " + callResponse);
           callback.proceedFromWait(callResponse.getResult());
           return doNext(packet);
         }
