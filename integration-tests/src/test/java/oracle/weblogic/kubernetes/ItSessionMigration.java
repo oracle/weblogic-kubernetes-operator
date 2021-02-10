@@ -105,6 +105,8 @@ class ItSessionMigration {
 
   private static String annotationKey = "myhome";
   private static String annotationValue = "/u01/oracle";
+  private static String annotationKey2 = "yourhome";
+  private static String annotationValue2 = "/u01/oracle/domain";
 
   /**
    * Install operator, create a custom image using model in image with model files
@@ -226,7 +228,7 @@ class ItSessionMigration {
   @Test
   @Order(2)
   @DisplayName("Test that an annotation containing a slash in the name propagates to the server pod")
-  public void testAnnotationWSlash() {
+  public void testPodAnnotationWithSlash() {
     String managedServerPodName = domainUid + "-" + finalPrimaryServerName;
     V1Pod managedServerPod = null;
 
@@ -241,12 +243,16 @@ class ItSessionMigration {
     assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
     String myAnnotationValue = managedServerMetadata.getAnnotations().get(annotationKey);
+    String myAnnotationValue2 = managedServerMetadata.getAnnotations().get(annotationKey2);
 
+    logger.info("Verify Value for annotation key:value is {0}:{1}",
+        annotationKey, myAnnotationValue);
     assertTrue(myAnnotationValue.equals(annotationValue),
         "Failed to propagate annotation with slash to the server pod");
-
-    logger.info("Done testAnnotationWSlash Value for annotation key:value is {0}:{1}",
-        annotationKey, myAnnotationValue);
+    logger.info("Verify Value for annotation key:value is {0}:{1}",
+        annotationKey2, myAnnotationValue2);
+    assertTrue(myAnnotationValue2.equals(annotationValue2),
+        "Failed to propagate annotation with slash to the server pod");
   }
 
   /**
@@ -363,6 +369,7 @@ class ItSessionMigration {
 
     Map<String, String> annotationKeyValues = new HashMap();
     annotationKeyValues.put(annotationKey, annotationValue);
+    annotationKeyValues.put(annotationKey2, annotationValue2);
 
     // create the domain CR
     Domain domain = new Domain()
