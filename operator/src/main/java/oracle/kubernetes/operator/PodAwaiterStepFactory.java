@@ -17,6 +17,15 @@ public interface PodAwaiterStepFactory {
   Step waitForReady(V1Pod pod, Step next);
 
   /**
+   * Waits until the Pod is Ready.
+   *
+   * @param podName Pod to watch
+   * @param next Next processing step once Pod is ready
+   * @return Asynchronous step
+   */
+  Step waitForReady(String podName, Step next);
+
+  /**
    * Waits until the Pod is deleted.
    *
    * @param pod Pod to watch
