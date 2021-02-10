@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| February 12, 2021 | v3.1.3 | no | Resolved an issue <description tbd>. |
 | January 22, 2021 | v3.1.2 | no | Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash. |
 | December 17, 2020 | v3.1.1 | no | Resolved an issue that caused unexpected server restarts when the domain had multiple WebLogic clusters. |
 | November 24, 2020 | v3.0.4 | no | This release contains a back-ported fix from 3.1.0 for Managed Server pods that do not properly restart following a rolling activity. |
@@ -33,6 +34,10 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.1.3
+
+* Resolved an issue <description tbd>
 
 #### Operator 3.1.2
 

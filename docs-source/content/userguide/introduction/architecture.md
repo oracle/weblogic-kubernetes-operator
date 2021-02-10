@@ -17,7 +17,7 @@ The operator consists of the following parts:
 The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
 ```
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.2
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.3
 ```
 
 For more details on acquiring the operator image and prerequisites for installing the operator, consult the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}).
