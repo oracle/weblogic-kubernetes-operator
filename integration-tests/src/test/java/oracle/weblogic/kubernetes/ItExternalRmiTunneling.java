@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -76,6 +77,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * The use case described in this class verifies that an external RMI client
@@ -222,12 +224,15 @@ class ItExternalRmiTunneling {
    * Queue using load balancer HTTP url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
+   * available to download to build the external rmi JMS Client. 
    */
   @Order(1)
   @Test
   @DisplayName("Verify the RMI access WLS through LoadBalancer tunneling port")
   public void testExternalRmiAccessThruHttpTunneling() {
 
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -377,11 +382,15 @@ class ItExternalRmiTunneling {
    * Queue using load balancer HTTPS url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each destination member gets an equal number of messages.
+   * The test is skipped for slim images, beacuse wlthint3client.jar is not 
+   * available to download to build the external rmi JMS Client. 
    */
   @Order(2)
   @Test
   @DisplayName("Verify tls RMI access WLS through loadBalancer tunneling port")
   public void testExternalRmiAccessThruHttpsTunneling() {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();

@@ -322,12 +322,17 @@ public class ItIstioDomainInPV  {
   
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
+    for (int i = 1; i <= 10; i++) {
+      result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
         String.valueOf(istioIngressPort),
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
+      assertNotNull(result, "Application deployment failed");
+      logger.info("(Loop:{0}) Application deployment returned {1}", i, result.toString());
+      if (result.stdout().equals("202")) {
+        break;
+      }
+    }
     assertEquals("202", result.stdout(), "Application deployment failed with wrong HTTP code");
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";

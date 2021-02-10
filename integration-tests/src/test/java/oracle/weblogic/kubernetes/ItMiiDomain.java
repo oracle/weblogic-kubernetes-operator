@@ -33,7 +33,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -41,14 +40,11 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -66,18 +62,16 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
@@ -90,14 +84,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -242,24 +234,35 @@ class ItMiiDomain {
     assertTrue(sslNodePort != -1,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
-    String curlCmd = "curl -sk --show-error --noproxy '*' "
-        + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-    logger.info("WebLogic console is accessible thru default-secure service");
+    if (!WEBLOGIC_SLIM) {
+      String curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+      logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      logger.info("WebLogic console is accessible thru default-secure service");
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
     
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
-    String curlCmd2 = "curl -s --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
-    logger.info("WebLogic console is accessible thru default service");
+
+    if (!WEBLOGIC_SLIM) {
+      String curlCmd2 = "curl -s --show-error --noproxy '*' "
+          + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+      logger.info("Executing default nodeport curl command {0}", curlCmd2);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
+      logger.info("WebLogic console is accessible thru default service");
+    } else {
+      logger.info("Checking Rest API management console in WebLogic slim image");
+      verifyCredentials(adminServerPodName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
+    }
   }
 
   @Test
@@ -492,106 +495,11 @@ class ItMiiDomain {
           "sample-war/index.jsp",
           MII_APP_RESPONSE_V2 + i);
     }
-
     logger.info("Both of the applications are running correctly after patching");
-  }
-
-  /**
-   * Parameterized test to create model in image domain using different WebLogic version images
-   * as parameters.
-   *
-   * @param imageTag WebLogic image tag
-   * @param namespaces domain namespace
-   */
-  @ParameterizedTest
-  @DisplayName("Create model in image domain using different WebLogic version images as parameters")
-  @MethodSource("oracle.weblogic.kubernetes.utils.Params#webLogicImageTags")
-  public void testParamsCreateMiiDomain(String imageTag, @Namespaces(1) List<String> namespaces) {
-    imageTag = imageTag.trim();
-    assertTrue(!imageTag.isEmpty(), "imageTag can not be empty string");
-    logger.info("Using imageTag {0}", imageTag);
-
-    logger.info("Getting unique namespace for Domain");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
-    domainNamespace = namespaces.get(0);
-
-    // upgrade Operator for the new domain namespace
-    assertTrue(upgradeAndVerifyOperator(opNamespace, domainNamespace),
-        String.format("Failed to upgrade operator in namespace %s", opNamespace));
-
-    // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
-    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
-
-    // create image with model files
-    logger.info("Creating image with model file and verify");
-    miiImage = createMiiImageAndVerify(
-        "mii-image",
-        MII_BASIC_WDT_MODEL_FILE,
-        MII_BASIC_APP_NAME,
-        WEBLOGIC_IMAGE_NAME,
-        imageTag,
-        WLS);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-            "weblogicenc", "weblogicnc");
-
-    // create the domain object
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, miiImage);
-
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    // check and wait for the application to be accessible in all server pods
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppRunning(
-          domainNamespace,
-          managedServerPrefix + i,
-          "8001",
-          "sample-war/index.jsp",
-          MII_APP_RESPONSE_V1 + i);
-    }
-
-    logger.info("Domain {0} is fully started - servers are running and application is available",
-        domainUid);
-
   }
 
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
-
   @AfterEach
   public void tearDown() {
     // delete mii domain images created for parameterized test
@@ -600,24 +508,7 @@ class ItMiiDomain {
     }
   }
 
-  @AfterAll
   public void tearDownAll() {
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
-
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace1),
-            "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid1 + " from " + domainNamespace1);
-
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace1);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace1),
-            "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace1);
-
     // delete the domain images created in the test class
     if (miiImagePatchAppV2 != null) {
       deleteImage(miiImagePatchAppV2);
