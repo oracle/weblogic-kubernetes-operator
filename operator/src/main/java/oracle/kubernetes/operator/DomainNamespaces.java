@@ -53,8 +53,8 @@ public class DomainNamespaces {
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
   private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
-  private final WatcherControl<CoreV1Event, DomainEventWatcher> domainEventWatchers
-      = new WatcherControl<>(DomainEventWatcher::create, d -> d::dispatchEventWatch);
+  private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
+      = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
@@ -78,7 +78,7 @@ public class DomainNamespaces {
   /**
    * Constructs a DomainNamespace object.
    */
-  public DomainNamespaces() {
+  DomainNamespaces() {
     namespaceStatuses.clear();
     namespaceStoppingMap.clear();
   }
@@ -108,7 +108,7 @@ public class DomainNamespaces {
 
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
-    domainEventWatchers.removeWatcher(ns);
+    operatorEventWatchers.removeWatcher(ns);
     podWatchers.removeWatcher(ns);
     serviceWatchers.removeWatcher(ns);
     podDisruptionBudgetWatchers.removeWatcher(ns);
@@ -128,8 +128,8 @@ public class DomainNamespaces {
     return eventWatchers.getWatcher(namespace);
   }
 
-  DomainEventWatcher getDomainEventWatcher(String namespace) {
-    return domainEventWatchers.getWatcher(namespace);
+  OperatorEventWatcher getDomainEventWatcher(String namespace) {
+    return operatorEventWatchers.getWatcher(namespace);
   }
 
   JobWatcher getJobWatcher(String namespace) {
@@ -157,11 +157,11 @@ public class DomainNamespaces {
     return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
   }
 
-  private static WatchTuning getWatchTuning() {
+  static WatchTuning getWatchTuning() {
     return TuningParameters.getInstance().getWatchTuning();
   }
 
-  private static ThreadFactory getThreadFactory() {
+  static ThreadFactory getThreadFactory() {
     return ThreadFactorySingleton.getInstance();
   }
 
@@ -246,8 +246,8 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<CoreV1EventList> getDomainEventListProcessing() {
-      return l -> domainEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override

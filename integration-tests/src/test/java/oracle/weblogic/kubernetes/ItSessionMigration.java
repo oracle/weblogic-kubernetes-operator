@@ -25,8 +25,6 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.MustNotRunInParallel;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
@@ -150,8 +148,6 @@ class ItSessionMigration {
    */
   @Test
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
-  @Slow
-  @MustNotRunInParallel
   public void testSessionMigration() {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
