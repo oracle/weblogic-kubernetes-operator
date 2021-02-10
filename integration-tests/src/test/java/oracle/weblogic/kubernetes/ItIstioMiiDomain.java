@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
@@ -215,13 +216,18 @@ class ItIstioMiiDomain {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    boolean checkConsole = 
-         checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console");
-    logger.info("WebLogic console is accessible");
-
-
+    // We can not verify Rest Management console thru Adminstration NodePort 
+    // in istio, as we can not enable Adminstration NodePort
+    if (!WEBLOGIC_SLIM) {
+      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console");
+      logger.info("WebLogic console is accessible");
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
+  
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
