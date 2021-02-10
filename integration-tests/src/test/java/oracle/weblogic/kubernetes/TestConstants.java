@@ -275,4 +275,6 @@ public interface TestConstants {
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
   public String OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-external";
+  public static final boolean WEBLOGIC_SLIM =
+      WEBLOGIC_IMAGE_TAG.contains("slim") ? true : false;
 }
