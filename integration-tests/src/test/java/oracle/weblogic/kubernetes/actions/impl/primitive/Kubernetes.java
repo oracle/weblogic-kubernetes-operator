@@ -1041,7 +1041,7 @@ public class Kubernetes {
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
       events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
-      events.sort(Comparator.comparing(e -> e.getLastTimestamp()));
+      events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
