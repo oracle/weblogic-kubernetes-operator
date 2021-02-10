@@ -483,6 +483,20 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  public void whenNamespacesListedInMoreThanTwoChunks_allNamespacesStarted() {
+    loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
+    int lastNSNumber = DEFAULT_CALL_LIMIT * 3 + 1;
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1,NS" + lastNSNumber;
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(lastNSNumber);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat(getStartingNamespaces("NS1", "NS" + lastNSNumber), contains("NS1", "NS" + lastNSNumber));
+  }
+
+  @Test
   public void whenNamespacesListedInMultipleChunks_dontDeclarePresentNamespacesAsMissing() {
     loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
 
