@@ -156,6 +156,7 @@ public class ManagedServerUpIteratorStep extends Step {
             factories.computeIfAbsent(ssi.getClusterName(),
                 k -> new StartClusteredServersStepFactory(getMaxConcurrentStartup(domain, ssi)))
                 .add(createManagedServerUpDetails(packet, ssi)));
+
     return factories;
   }
 

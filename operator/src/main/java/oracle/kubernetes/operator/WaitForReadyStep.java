@@ -183,10 +183,6 @@ abstract class WaitForReadyStep<T> extends Step {
     }
   }
 
-  public String getName() {
-    return getMetadata(initialResource).getName();
-  }
-
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
   }
@@ -195,6 +191,9 @@ abstract class WaitForReadyStep<T> extends Step {
     return getDomainUidLabel(getMetadata(initialResource));
   }
 
+  public String getName() {
+    return getMetadata(initialResource).getName();
+  }
 
   private DefaultResponseStep<T> resumeIfReady(Callback callback) {
     return new DefaultResponseStep<>(null) {
