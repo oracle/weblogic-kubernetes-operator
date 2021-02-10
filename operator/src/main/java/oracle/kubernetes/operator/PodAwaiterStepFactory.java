@@ -19,7 +19,7 @@ public interface PodAwaiterStepFactory {
   /**
    * Waits until the Pod is Ready.
    *
-   * @param podName Pod to watch
+   * @param podName Name of the Pod to watch
    * @param next Next processing step once Pod is ready
    * @return Asynchronous step
    */
