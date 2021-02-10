@@ -125,7 +125,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTING event.
    *
    * @param reason Progressing reason
    * @param isPreserveAvailable true, if existing Available=True condition should be preserved
@@ -138,7 +138,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTING event.
    *
    * @param info Domain presence info
    * @param reason Progressing reason
