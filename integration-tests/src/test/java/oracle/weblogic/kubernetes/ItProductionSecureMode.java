@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -190,13 +191,19 @@ class ItProductionSecureMode {
     assertTrue(sslNodePort != -1,
           "Could not get the default-admin external service node port");    
     logger.info("Found the administration service nodePort {0}", sslNodePort);
-    String curlCmd = "curl -sk --show-error --noproxy '*' "
-        + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
-        + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
-    logger.info("WebLogic console is accessible thru default-admin service");
 
+    if (!WEBLOGIC_SLIM) {
+      String curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + " -o /dev/null";
+      logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      logger.info("WebLogic console is accessible thru default-admin service");
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
+  
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort == -1,
