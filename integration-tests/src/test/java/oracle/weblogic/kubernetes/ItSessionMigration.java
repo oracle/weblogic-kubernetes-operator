@@ -103,10 +103,12 @@ class ItSessionMigration {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static LoggingFacade logger = null;
 
-  private static String annotationKey = "myhome";
+  private static String annotationKey = "custDomainHome";
   private static String annotationValue = "/u01/oracle";
-  private static String annotationKey2 = "yourhome";
-  private static String annotationValue2 = "/u01/oracle/domain";
+  private static String annotationKey2 = "custHostName";
+  private static String annotationValue2 = "https://hub.docker.com/a-0/b.c-d.asp";
+  private static String annotationKey3 = "custImageName";
+  private static String annotationValue3 = "nginx:1.14.2-1_1";
 
   /**
    * Install operator, create a custom image using model in image with model files
@@ -240,19 +242,25 @@ class ItSessionMigration {
     }
 
     //check that managed server pod is up and all applicable variable values are initialized.
-    assertNotNull(managedServerPod,"The managed server pod does not exist in namespace " + domainNamespace);
+    assertNotNull(managedServerPod,
+        "The managed server pod does not exist in namespace " + domainNamespace);
     V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
     String myAnnotationValue = managedServerMetadata.getAnnotations().get(annotationKey);
     String myAnnotationValue2 = managedServerMetadata.getAnnotations().get(annotationKey2);
+    String myAnnotationValue3 = managedServerMetadata.getAnnotations().get(annotationKey3);
 
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey, myAnnotationValue);
     assertTrue(myAnnotationValue.equals(annotationValue),
-        "Failed to propagate annotation with slash to the server pod");
+        String.format("Failed to propagate annotation %s to the server pod", annotationValue));
     logger.info("Verify Value for annotation key:value is {0}:{1}",
         annotationKey2, myAnnotationValue2);
     assertTrue(myAnnotationValue2.equals(annotationValue2),
-        "Failed to propagate annotation with slash to the server pod");
+        String.format("Failed to propagate annotation %s to the server pod", annotationValue2));
+    logger.info("Verify Value for annotation key:value is {0}:{1}",
+        annotationKey3, myAnnotationValue3);
+    assertTrue(myAnnotationValue3.equals(annotationValue3),
+        String.format("Failed to propagate annotation %s to the server pod", annotationValue3));
   }
 
   /**
@@ -370,6 +378,7 @@ class ItSessionMigration {
     Map<String, String> annotationKeyValues = new HashMap();
     annotationKeyValues.put(annotationKey, annotationValue);
     annotationKeyValues.put(annotationKey2, annotationValue2);
+    annotationKeyValues.put(annotationKey3, annotationValue3);
 
     // create the domain CR
     Domain domain = new Domain()
