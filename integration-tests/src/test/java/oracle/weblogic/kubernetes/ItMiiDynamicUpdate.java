@@ -944,10 +944,9 @@ class ItMiiDynamicUpdate {
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
   public void testOnNonDynamicChangesCommitUpdateOnly() {
 
-    String expectedMsgForCommitUpdateOnly = "Online update completed successfully, but the changes require restart and"
-        + " the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CommitUpdateOnly'"
-        + " or not set. The changes are committed but the domain require manually restart to "
-        + " make the changes effective.";
+    String expectedMsgForCommitUpdateOnly =
+        "Online WebLogic configuration updates complete but there are pending non-dynamic changes "
+        + "that require pod restarts to take effect";
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
