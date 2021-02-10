@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 
@@ -56,7 +55,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
@@ -67,10 +65,11 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToCha
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMaxThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readMinThreadsConstraintRuntimeForWorkManager;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -88,7 +87,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -118,7 +116,7 @@ class ItMiiDynamicUpdate {
   private static final String domainUid = "mii-dynamic-update";
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
   private static String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
-  private static final String configMapName = "dynamicupdate-test-configmap";//"wmconfigmap";
+  private static final String configMapName = "dynamicupdate-test-configmap";
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String adminServerName = "admin-server";
@@ -298,7 +296,7 @@ class ItMiiDynamicUpdate {
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition ->
@@ -310,9 +308,9 @@ class ItMiiDynamicUpdate {
             workManagerName, "200"));
     logger.info("Found new work manager configuration");
 
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
   /**
@@ -348,7 +346,7 @@ class ItMiiDynamicUpdate {
 
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     verifyMinThreadsConstraintRuntime(2);
 
@@ -356,9 +354,9 @@ class ItMiiDynamicUpdate {
 
     logger.info("Found updated work manager configuration");
 
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
   }
 
@@ -404,7 +402,7 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // check and wait for the application to be accessible in all server pods
     verifyApplicationAccessOnCluster();
@@ -418,9 +416,9 @@ class ItMiiDynamicUpdate {
         "sample-war/index.jsp",
         "Hello World");
 
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
   /**
@@ -461,7 +459,7 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // check the servers are started in newly added cluster and the server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
@@ -470,9 +468,9 @@ class ItMiiDynamicUpdate {
       checkPodReadyAndServiceExists(domainUid + "-dynamic-server" + i, domainUid, domainNamespace);
     }
 
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
   }
 
@@ -522,13 +520,13 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verifying the domain is rolling restarted
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check datasource configuration using REST api
     int adminServiceNodePort
@@ -555,13 +553,13 @@ class ItMiiDynamicUpdate {
     introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verifying the domain is rolling restarted
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
   }
 
   /**
@@ -613,13 +611,13 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verifying the domain is rolling restarted
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check datasource configuration using REST api
     adminServiceNodePort
@@ -677,12 +675,12 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verifying the domain is not restarted
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check datasource configuration is deleted using REST api
     int adminServiceNodePort
@@ -739,7 +737,7 @@ class ItMiiDynamicUpdate {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
   }
 
   /**
@@ -787,7 +785,7 @@ class ItMiiDynamicUpdate {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
   }
 
   /**
@@ -831,7 +829,7 @@ class ItMiiDynamicUpdate {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
   }
 
   /**
@@ -880,7 +878,7 @@ class ItMiiDynamicUpdate {
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
   }
 
   /**
@@ -915,12 +913,12 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
     String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
@@ -977,12 +975,12 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check pod label for MII_UPDATED_RESTART_REQUIRED_LABEL
     assertDoesNotThrow(() -> verifyPodLabelUpdated(pods.keySet(), MII_UPDATED_RESTART_REQUIRED_LABEL + "=true"),
@@ -1084,9 +1082,9 @@ class ItMiiDynamicUpdate {
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns();
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // make sure the application is not deployed on cluster
     verifyApplicationRuntimeOnCluster("404");
@@ -1100,15 +1098,7 @@ class ItMiiDynamicUpdate {
                   () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
             adminServerName, "404"));
 
-    verifyPodsNotRolled(pods);
-  }
-
-  private void verifyIntrospectorRuns() {
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs and deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    verifyPodsNotRolled(domainNamespace, pods);
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {
@@ -1238,38 +1228,6 @@ class ItMiiDynamicUpdate {
       return false;
     }
 
-  }
-
-  private void verifyPodsNotRolled(Map<String, DateTime> podsCreationTimes) {
-    // wait for 2 minutes before checking the pods, make right decision logic
-    // that runs every two minutes in the  Operator
-    try {
-      logger.info("Sleep 2 minutes for operator make right decision logic");
-      Thread.sleep(120 * 1000);
-    } catch (InterruptedException ie) {
-      logger.info("InterruptedException while sleeping for 2 minutes");
-    }
-    for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
-      assertEquals(
-          entry.getValue(),
-          getPodCreationTime(domainNamespace, entry.getKey()),
-          "pod '" + entry.getKey() + "' should not roll");
-    }
-  }
-
-  private void verifyPodIntrospectVersionUpdated(Set<String> podNames, String expectedIntrospectVersion) {
-    for (String podName : podNames) {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition ->
-                  logger.info(
-                      "Checking for updated introspectVersion for pod {0}. "
-                          + "Elapsed time {1}ms, remaining time {2}ms",
-                      podName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
-          .until(
-              () ->
-                  podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
-    }
   }
 
   private void verifyPodLabelUpdated(Set<String> podNames, String label) throws ApiException {
@@ -1465,12 +1423,12 @@ class ItMiiDynamicUpdate {
     // if the config map content is not changed, its possible to miss the introspector pod creation/deletion as
     // it will be very quick, skip the check in those cases
     if (introspectorRuns) {
-      verifyIntrospectorRuns();
+      verifyIntrospectorRuns(domainUid, domainNamespace);
     }
 
-    verifyPodsNotRolled(pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // check datasource configuration using REST api
     int adminServiceNodePort
