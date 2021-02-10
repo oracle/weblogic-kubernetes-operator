@@ -9,12 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ResourceVersionTest {
 
@@ -126,34 +127,34 @@ public class ResourceVersionTest {
     assertThat(rv.getPrereleaseVersion(), equalTo(42));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenNoDigits_throwIllegalArgument() {
-    new ResourceVersion("nonumber");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("nonumber"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenOnlyNumber_throwIllegalArgument() {
-    new ResourceVersion("3");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("3"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenNumberFirst_throwIllegalArgument() {
-    new ResourceVersion("555v");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("555v"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenIllegalPrerelease_throwIllegalArgument() {
-    new ResourceVersion("v10gamma12");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v10gamma12"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenExtraTokenAlpha_throwIllegalArgument() {
-    new ResourceVersion("v5alpha7t");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v5alpha7t"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenExtraTokenBeta_throwIllegalArgument() {
-    new ResourceVersion("v3beta1alpha");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v3beta1alpha"));
   }
 
   @Test

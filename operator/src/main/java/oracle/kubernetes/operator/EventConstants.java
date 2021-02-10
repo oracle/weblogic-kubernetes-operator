@@ -38,4 +38,11 @@ public interface EventConstants {
   String NAMESPACE_WATCHING_STARTED_PATTERN = "Started watching namespace %s";
   String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
   String NAMESPACE_WATCHING_STOPPED_PATTERN = "Stopped watching namespace %s";
+  String EVENT_KIND_POD = "Pod";
+  String EVENT_KIND_DOMAIN = "Domain";
+  String EVENT_KIND_NAMESPACE = "Namespace";
+  String START_MANAGING_NAMESPACE_EVENT = "StartManagingNamespace";
+  String START_MANAGING_NAMESPACE_PATTERN = "Start managing namespace %s";
+  String STOP_MANAGING_NAMESPACE_EVENT = "StopManagingNamespace";
+  String STOP_MANAGING_NAMESPACE_PATTERN = "Stop managing namespace %s";
 }

@@ -131,6 +131,13 @@ public class MessageKeys {
   public static final String CRD_NOT_INSTALLED = "WLSKO-0178";
   public static final String POD_FORCE_DELETED = "WLSKO-0179";
   public static final String CREATING_EVENT = "WLSKO-0180";
+  public static final String REPLACING_EVENT = "WLSKO-0181";
+  public static final String CREATING_EVENT_FORBIDDEN = "WLSKO-0182";
+  public static final String CLUSTER_PDB_CREATED = "WLSKO-0183";
+  public static final String CLUSTER_PDB_EXISTS = "WLSKO-0184";
+  public static final String CLUSTER_PDB_PATCHED = "WLSKO-0185";
+  public static final String BEGIN_MANAGING_NAMESPACE = "WLSKO-0186";
+  public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

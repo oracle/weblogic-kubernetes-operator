@@ -1,0 +1,110 @@
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+------------
+Description:
+------------
+
+This test performs some basic end-to-end introspector tests while emulating (mocking) the operator pod.  It's useful for verifying the introspector is working correctly, and for quickly testing changes to its overall flow.
+
+The test mainly works via a series of yaml and python template files in combination with a set of environment variables.  The environment variables, such as PV_ROOT, DOMAIN_UID, NAMESPACE, IMAGE_NAME, ..., all have defaults, or can be passed in.  See the 'export' calls in introspectTest.sh for the complete list.
+
+The test can work with any arbitrary domain, or it can create a domain.
+
+----------
+Usage:
+----------
+
+(1) Make sure a WebLogic image is available.  This test does not build, tag, or pull images to a local repo.
+    One way to do this when running locally is to run the integration tests.
+    (Note that this test doesn't depend on Operator image as of 2018/10/16, but may in the future.)
+(2) Optionally specify values for input env vars (see introspectTest.sh for the list).
+(3) For a non Model In Image domain type.
+        Run introspectTest.sh
+
+    For a Model In Image domain type.
+        export DOMAIN_SOURCE_TYPE=FromModel
+        Run introspectTest.sh
+
+    To check for ISTIO
+        export ISTIO_ENABELD=true - this only test for Non Model in Image
+
+    To check for introspection of configured clusters with WebLogic 14.1.1.0 image.
+    NOTE: Test for introspection of configured clusters only for Non Model in Image
+          and for verifying OWLS 85530.
+
+        export WEBLOGIC_IMAGE_TAG=14.1.1.0
+        introspectTest.sh
+
+-------------------
+Internal Test Flow:
+-------------------
+
+() Set various env vars to their defaults if not already set.
+
+   See PV_ROOT, DOMAIN_UID, NAMESPACE, in the implementation in introspectTest.sh
+
+() Cleanup test files from previous run.
+
+   Cleanup files in /tmp/introspect
+
+() Cleanup test k8s artifacts and any old created domain.
+
+   <operator-src>/operator/integration-tests/bash/cleanup.sh
+
+() Create a test directory in the k8s cluster via kubectl run.
+
+   See createTestRoot.sh
+
+() Deploy pv/pvc for use by introspector job pod, the domain create step, and wl pods.  (If PV_COMMENT != "#").
+
+   wl-pv.yamlt, wl-pvc.yamlt
+
+() Deploy a secret for the admin credentials.
+
+   wl-secret.yamlt
+
+() Create a domain home.
+
+   wl-create-domain-pod.yamlt, wl-create-domain-pod.sh, wl-create-domain-pod.pyt
+
+() Run the introspector job pod (as a direct pod instead of a job)
+
+   wl-instrospect-pod.yamlt
+   wl-instrospect-pod.sh
+   <operator-src>/operator/src/main/resources/scripts/introspectDomain.sh
+   <operator-src>/operator/src/main/resources/scripts/startNodeManager.sh
+   <operator-src>/operator/src/main/resources/scripts/introspectDomain.py
+
+() Parse the introspector job pod's output into files and deploy them in a configmap.
+
+() Start the admin server pod.   The startServer.sh and start-server.py
+   scripts will use files from the configmap for situational config and login
+   credentials.
+
+   wl-pod.yamlt
+   <operator-src>/operator/src/main/resources/scripts/startServer.sh
+   <operator-src>/operator/src/main/resources/scripts/start-server.py
+
+() Deploy a NodePort service for the admin server pod (used by managed server pod).
+
+   wl-nodeport-svc.yamlt
+
+() Start a managed server pod.   The startServer.sh and start-server.py
+   scripts will use files from the configmap for situational config and login
+   credentials.
+
+   wl-pod.yamlt
+   <operator-src>/operator/src/main/resources/scripts/startServer.sh
+   <operator-src>/operator/src/main/resources/scripts/start-server.py
+
+() Various test verifications (WebLogic version, configuration overrides, etc) are executed.
+
+() For domain types other than Model in Image, a verification test for JIRA OWLS-85530 is executed:
+
+   1. a static configured cluster is created using WLST in online mode.
+   2. a minor cleanup of the test environment is performed in preparation for a rerun of the
+      introspection job.  The minor cleanup function leaves the existing
+      domain-home/pv/pvc/secret/etc, deletes wl pods, deletes the introspect job, then
+      redeploys the custom overrides.
+   3. reruns the introspect job

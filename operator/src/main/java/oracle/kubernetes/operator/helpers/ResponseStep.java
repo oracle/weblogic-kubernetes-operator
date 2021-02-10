@@ -201,6 +201,10 @@ public abstract class ResponseStep<T> extends Step {
     return callResponse.getStatusCode() == 401 || callResponse.getStatusCode() == 403;
   }
 
+  protected boolean isForbidden(CallResponse<T> callResponse) {
+    return callResponse.getStatusCode() == 403;
+  }
+
   /**
    * Callback for API server call success.
    *

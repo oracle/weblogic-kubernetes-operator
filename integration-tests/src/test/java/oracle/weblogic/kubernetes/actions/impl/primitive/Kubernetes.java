@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import com.google.common.base.Charsets;
@@ -994,8 +995,8 @@ public class Kubernetes {
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = list.getItems();
-      events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
+      events = Optional.ofNullable(list).map(V1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events.sort(Comparator.comparing(e -> e.getLastTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -1009,10 +1010,13 @@ public class Kubernetes {
    * Create a Domain Custom Resource.
    *
    * @param domain Domain custom resource model object
+   * @param domVersion custom resource's version
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(Domain domain) throws ApiException {
+  public static boolean createDomainCustomResource(Domain domain, String... domVersion) throws ApiException {
+    String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
+
     if (domain == null) {
       throw new IllegalArgumentException(
           "Parameter 'domain' cannot be null when calling createDomainCustomResource()");
@@ -1036,7 +1040,7 @@ public class Kubernetes {
     try {
       response = customObjectsApi.createNamespacedCustomObject(
           DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // //custom resource's version
+          domainVersion, //custom resource's version
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           json, // JSON schema of the Resource to create

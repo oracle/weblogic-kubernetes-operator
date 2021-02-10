@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.apis.AuthenticationV1Api;
 import io.kubernetes.client.openapi.apis.AuthorizationV1Api;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
+import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -48,6 +49,8 @@ import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
@@ -217,6 +220,15 @@ public class CallBuilder {
           wrap(
               createEventAsync(
                   usage, requestParams.namespace, (V1Event) requestParams.body, callback));
+  private final CallFactory<V1Event> replaceEvent =
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              replaceEventAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Event) requestParams.body,
+                  callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -234,6 +246,36 @@ public class CallBuilder {
                   null,
                   null,
                   callback));
+  private final CallFactory<V1beta1PodDisruptionBudgetList> listPodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createPodDisruptionBudgetAsync(
+                                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
+                                          requestParams.body, callback));
+  private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          patchPodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Patch) requestParams.body,
+                                  callback));
+  private final CallFactory<V1Status> deletePodDisruptionBudget =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          deletePodDisruptionBudgetAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1DeleteOptions) requestParams.body,
+                                  callback));
 
   private RetryStrategy retryStrategy;
 
@@ -1517,6 +1559,154 @@ public class CallBuilder {
         deleteService);
   }
 
+  private Call listPodDisruptionBudgetAsync(
+          ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .listNamespacedPodDisruptionBudgetAsync(
+                    namespace,
+                    pretty,
+                    allowWatchBookmarks,
+                    cont,
+                    fieldSelector,
+                    labelSelector,
+                    limit,
+                    resourceVersion,
+                    timeoutSeconds,
+                    watch,
+                    callback);
+  }
+
+  /**
+   * Asynchronous step for listing PodDisruptionBudget.
+   *
+   * @param ns Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step listPodDisruptionBudgetAsync(String ns, ResponseStep<V1beta1PodDisruptionBudgetList> responseStep) {
+    return createRequestAsync(
+            responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
+              listPodDisruptionBudget);
+  }
+
+  private Call readPodDisruptionBudgetAsync(
+          ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading PodDisruptionBudget.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readPodDisruptionBudgetAsync(
+          String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+    return createRequestAsync(
+            responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
+            readPodDisruptionBudget);
+  }
+
+  private Call createPodDisruptionBudgetAsync(
+          ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
+          ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating PodDisruptionBudget.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createPodDisruptionBudgetAsync(
+          String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+    return createRequestAsync(
+            responseStep,
+            new RequestParams("createPodDisruptionBudget", namespace, null, body,
+                    getDomainUidLabel(Optional.ofNullable(body)
+                            .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
+            createPodDisruptionBudget);
+  }
+
+  private Call patchPodDisruptionBudgetAsync(
+          ApiClient client, String name, String namespace, V1Patch patch,
+          ApiCallback<V1beta1PodDisruptionBudget> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
+                    null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for patching PodDisruptionBudget.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param patchBody instructions on what to patch
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step patchPodDisruptionBudgetAsync(
+          String name, String namespace, V1Patch patchBody,
+          ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+    return createRequestAsync(
+            responseStep,
+            new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
+            patchPodDisruptionBudget);
+  }
+
+  private Call deletePodDisruptionBudgetAsync(
+          ApiClient client,
+          String name,
+          String namespace,
+          V1DeleteOptions deleteOptions,
+          ApiCallback<V1Status> callback)
+          throws ApiException {
+    return new PolicyV1beta1Api(client)
+            .deleteNamespacedPodDisruptionBudgetAsync(
+                    name,
+                    namespace,
+                    pretty,
+                    dryRun,
+                    gracePeriodSeconds,
+                    orphanDependents,
+                    propagationPolicy,
+                    deleteOptions,
+                    callback);
+  }
+
+  /**
+   * Asynchronous step for deleting PodDisruptionBudget.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the service is associated with
+   * @param deleteOptions Delete options
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step deletePodDisruptionBudgetAsync(
+          String name,
+          String namespace,
+          String domainUid,
+          V1DeleteOptions deleteOptions,
+          ResponseStep<V1Status> responseStep) {
+    return createRequestAsync(
+            responseStep,
+            new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
+            deletePodDisruptionBudget);
+  }
+
   /* Secrets */
 
   private Call listEventAsync(
@@ -1571,6 +1761,33 @@ public class CallBuilder {
       throws ApiException {
     return new CoreV1Api(client)
         .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for replacing event.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceEventAsync(
+      String name, String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+    return createRequestAsync(
+        responseStep,
+        new RequestParams("replaceEvent", namespace, name, body, (String) null),
+        replaceEvent);
+  }
+
+  private Call replaceEventAsync(
+      ApiClient client,
+      String name,
+      String namespace,
+      V1Event body,
+      ApiCallback<V1Event> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
   }
 
   private Call listNamespaceAsync(

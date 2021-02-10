@@ -677,7 +677,7 @@ function generateMergedModel() {
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT}
+    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Failed: Validate Model Failed:"
@@ -713,10 +713,10 @@ function wdtCreatePrimordialDomain() {
       trace "Creating JRF Primordial Domain"
     fi
   fi
-  
+
   local wdtArgs=""
   wdtArgs+=" -oracle_home ${ORACLE_HOME}"
-  wdtArgs+=" -domain_home ${DOMAIN_HOME}" 
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}"
   wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
   wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
   wdtArgs+=" ${OPSS_FLAGS}"
@@ -731,8 +731,8 @@ function wdtCreatePrimordialDomain() {
     # JRF wallet generation note:
     #  If this is JRF, the unset OPSS_FLAGS indicates no wallet file was specified
     #  via spec.configuration.opss.walletFileSecret and so we assume that this is
-    #  the first time this domain started for this RCU database. We also assume 
-    #  that 'createDomain.sh' will perform the one time initialization of the 
+    #  the first time this domain started for this RCU database. We also assume
+    #  that 'createDomain.sh' will perform the one time initialization of the
     #  empty RCU schema for the domain in the database (where the empty schema
     #  itself must be setup external to the Operator by calling 'create_rcu_schema.sh'
     #  or similar prior to deploying the domain for the first time).
@@ -805,7 +805,7 @@ function wdtUpdateModelDomain() {
   export __WLSDEPLOY_STORE_MODEL__=1
 
   ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT}
+  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then

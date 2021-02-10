@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,6 +34,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -78,6 +80,7 @@ public class Main {
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
+  protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
 
   private static String getConfiguredServiceAccount() {
@@ -112,6 +115,10 @@ public class Main {
                   TuningParameters.getInstance(),
                 ThreadFactory.class,
                 threadFactory));
+  }
+
+  Object getOperatorNamespaceEventWatcher() {
+    return operatorNamespaceEventWatcher;
   }
 
   static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
@@ -297,6 +304,32 @@ public class Main {
     return Namespaces.getSelection(new StartupStepsVisitor());
   }
 
+  private Step createOperatorNamespaceEventListStep() {
+    return new CallBuilder()
+        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
+  }
+
+  private class EventListResponseStep extends ResponseStep<V1EventList> {
+    DomainProcessor processor;
+
+    EventListResponseStep(DomainProcessor processor) {
+      this.processor = processor;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
+      V1EventList list = callResponse.getResult();
+      operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    OperatorEventWatcher startWatcher(String ns, String resourceVersion) {
+      return OperatorEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
+          resourceVersion, DomainNamespaces.getWatchTuning(), processor::dispatchEventWatch, null);
+    }
+  }
+
   private class StartupStepsVisitor implements NamespaceStrategyVisitor<Step> {
 
     @Override
@@ -308,6 +341,7 @@ public class Main {
     public Step getDefaultSelection() {
       return Step.chain(
             new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+            createOperatorNamespaceEventListStep(),
             createDomainRecheckSteps());
     }
   }
