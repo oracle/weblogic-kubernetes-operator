@@ -181,6 +181,11 @@ public class DomainUpPlanTest {
     }
 
     @Override
+    public Step waitForReady(String podName, Step next) {
+      return null;
+    }
+
+    @Override
     public Step waitForDelete(V1Pod pod, Step next) {
       return null;
     }
