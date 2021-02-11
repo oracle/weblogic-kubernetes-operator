@@ -233,7 +233,6 @@ class ItProductionSecureMode {
   /**
    * Test dynamic update in a domain with secure mode enabled.
    * Specify SSL related environment variables in serverPod for JAVA_OPTIONS and WLSDEPLPOY_PROPERTIES
-   * https://docs.oracle.com/middleware/1213/wls/WLSTG/using_wlst.htm#WLSTG254   see Table 2
    * e.g.
    * - name:  WLSDEPLOY_PROPERTIES
    *   value: "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust"
