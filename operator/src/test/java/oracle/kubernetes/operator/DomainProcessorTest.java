@@ -61,6 +61,8 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -975,6 +977,11 @@ public class DomainProcessorTest {
     configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
   }
 
+  void configureForModelInImageOnlineUpdate(Domain domain) {
+    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
+      .withMIIOnlineUpate();
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return DomainConfiguratorFactory.forDomain(domain);
   }
@@ -1014,6 +1021,78 @@ public class DomainProcessorTest {
 
     assertThat(introspectionRunBeforeUpdates,
           allOf(hasEntry(getManagedPodName(1), true), hasEntry(getManagedPodName(2), true)));
+  }
+
+  @Test
+  public void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
+    getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
+        ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+  }
+
+  private void getMIIOnlineUpdateIntrospectResult(DomainConditionType domainConditionType, String updateResult)
+      throws Exception {
+
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+        + "#WebLogic User Configuration File; 2\n"
+        + "#Thu Oct 04 21:07:06 GMT 2018\n"
+        + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+        + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/domainzip_hash\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xbo\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/topology.yaml\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/topology.yaml\n"
+        + "%s\n"
+        + ">>> EOF\n"
+        + ">>>  updatedomainResult=%s\n";
+
+    establishPreviousIntrospection(this::configureForModelInImageOnlineUpdate);
+    domainConfigurator.withIntrospectVersion("after-onlineUpdate");
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        String.format(introspectorResult, defineTopology(), updateResult));
+    makeRightOperation.execute();
+    boolean found = false;
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    if (updatedDomain.getStatus() != null) {
+      for (DomainCondition domainCondition : updatedDomain.getStatus().getConditions()) {
+        if (domainCondition.getType() == domainConditionType) {
+          found = true;
+          break;
+        }
+      }
+    }
+    assertThat(found, is(true));
+
+    presenceInfoMap.get("namespace").get("test-domain").getServerPods()
+        .forEach(p -> {
+          Map<String, String> labels = Optional.ofNullable(p)
+                .map(V1Pod::getMetadata)
+                .map(V1ObjectMeta::getLabels)
+                .orElse(new HashMap<>());
+          String message = String.format("Server pod (%s) should have label weblogic.configChangesPendingRestart"
+                + " set to true", p.getMetadata().getName());
+          assertThat(message, labels.get("weblogic.configChangesPendingRestart"), is("true"));
+          }
+    );
   }
 
   @Nonnull

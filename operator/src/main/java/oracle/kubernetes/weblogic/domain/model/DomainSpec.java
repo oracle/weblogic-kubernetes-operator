@@ -744,6 +744,19 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Test if the MII domain wants to use online update.
+   *
+   * @return true if using online update
+   */
+  boolean isUseOnlineUpdate() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getEnabled)
+        .orElse(false);
+  }
+
+  /**
    * Test if the domain is deployed under Istio environment.
    *
    * @return istioEnabled
@@ -921,6 +934,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
     return builder.isEquals();
   }
+
 
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {

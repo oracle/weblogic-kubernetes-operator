@@ -64,11 +64,15 @@ function get_curl_command() {
 # testapp
 #
 # Use 'testapp internal|traefik cluster-1|cluster-2 somestring' to invoke the test
-# WebLogic cluster's jsp app and check that the given string is
-# is reflected there-in.
+# WebLogic cluster's jsp app and check that the given string is reflected there-in.
 #
-#   "internal" invokes curl on the admin server
-#   "traefik" invokes curl locally through the traefik node port
+# $1 "internal" invokes curl using kubectl exec on the admin server pod
+#               with an URL that has the cluster service name
+#    "traefik"  invokes curl locally using the traefik node port
+# $2 cluster-1 or cluster-2
+# $3 search string expected in curl output
+# $4 quiet mode: 'true' or 'false' (anything not 'false' is treated as true)
+# $5 max retries (default 15)
 #
 # For example, 'testapp internal "Hello World!"'.
 
@@ -79,6 +83,11 @@ function testapp() {
 
   local num_tries=0
   local traefik_nodeport=''
+  local max_tries="${4:-15}"
+  local quiet="${5:-false}"
+  local target_file_prefix="$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0})"
+  local target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
+  local start_secs=$SECONDS
 
   while [ 1 = 1 ] 
   do
@@ -110,9 +119,15 @@ EOF
 
     fi
 
-    target_file=$WORKDIR/test-out/$PPID.$(printf "%3.3u" ${COMMAND_OUTFILE_COUNT:-0}).$(timestamp).testapp.curl.$1.out
 
-    echo -n "@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command'. Output file '$target_file'."
+    local outstr="@@ Info: Searching for '$3' in '$1' mode curl app invoke of cluster '$2' using '$command', "
+    if [ $quiet = 'false' ]; then
+      echo -n "${outstr} output file '$target_file'."
+    else
+      if [ $num_tries -eq 0 ]; then
+        echo -n "${outstr} output file prefix '$target_file_prefix'."
+      fi
+    fi
 
     set +e
     bash -c "$command" > $target_file 2>&1
@@ -124,23 +139,78 @@ EOF
     local after=$(cat $target_file | sed "s/$3/ADIFFERENTVALUE/g")
 
     if [ "$before" = "$after" ]; then
-      echo
-      echo "@@ Error: '$3' not found in app response for command '$command'. Contents of response file '$target_file':"
-      cat $target_file
 
       num_tries=$((num_tries + 1))
-      [ $num_tries -gt 15 ] && return 1
-      echo "@@ Info: Curl command failed on try number '$num_tries'. Sleeping 5 seconds and retrying."
+      if [ $num_tries -gt $max_tries ]; then
+        echo
+        echo "@@ Error: '$3' not found in app response for command '$command' after try number '$num_tries'. Total seconds=$((SECONDS-start_secs)). Contents of response file '$target_file':"
+        cat $target_file
+        return 1
+      fi
+      if [ $quiet = 'false' ]; then
+        echo
+        echo -n "@@ Info: Curl command failed on try number '$num_tries' with curl output file '$target_file'. Total seconds=$((SECONDS-start_secs)). Sleeping 5 seconds and retrying."
+      fi
+      target_file=${target_file_prefix}.$(timestamp).testapp.curl.$1.$((num_tries + 1)).out
       sleep 5
 
     else
-      echo ".. Success!"
+      echo ".. Output file '$target_file'. Total seconds=$((SECONDS-start_secs)). Success!"
       return 0
     fi
 
   done
 }
 
+#
+# getPodInfo
+#   outputs interesting labels, timestamps, and other info for current DOMAIN_UID and DOMAIN_NAMESPACE pods
+#
+
+function getPodInfo() {
+  local jpath=''
+  jpath+='{range .items[*]}'
+  jpath+='{" name="}'
+  jpath+='{"\""}{.metadata.name}{"\""}'
+  jpath+='{"\n   creationTimestamp="}'
+  jpath+='{"\""}{.metadata.creationTimestamp}{"\""}'
+  jpath+='{"\n   domainRestartVersion="}'
+  jpath+='{"\""}{.metadata.labels.weblogic\.domainRestartVersion}{"\""}'
+  jpath+='{"\n   introspectVersion="}'
+  jpath+='{"\""}{.metadata.labels.weblogic\.introspectVersion}{"\""}'
+  jpath+='{"\n   image="}'
+  jpath+='{"\""}{.spec.containers[?(@.name=="weblogic-server")].image}{"\""}'
+  jpath+='{"\n   ready="}'
+  jpath+='{"\""}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{"\""}'
+  jpath+='{"\n   phase="}'
+  jpath+='{"\""}{.status.phase}{"\""}'
+  jpath+='{"\n   startTime="}'
+  jpath+='{"\""}{.status.startTime}{"\""}'
+  jpath+='{"\n"}'
+  jpath+='{end}'
+
+  local cur_pods="$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
+                  -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
+                  -o=jsonpath="$jpath" )"
+
+  echo "$cur_pods"
+}
+
+# dumpInfo
+#
+#   dump pod info to a file (for tracing/debugging purposes)
+#   file name is $WORKDIR/test-out/$PPID.$COUNT.$(timestamp).getPodInfo.out
+#
+
+function dumpInfo() {
+  [ "$DRY_RUN" = "true" ] && return
+  COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:-0}
+  COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
+  mkdir -p $WORKDIR/test-out
+  local out_file="$WORKDIR/test-out/$PPID.$(printf "%3.3u" $COMMAND_OUTFILE_COUNT).$(timestamp).getPodInfo.out"
+  trace Info: Running command "'getPodInfo'," "output='$out_file'."
+  getPodInfo > $out_file 2>&1
+}
 
 # doCommand
 #
@@ -209,13 +279,12 @@ function doCommand() {
   set +e
   eval $command > $out_file 2>&1
   local err_code=$?
+  printdots_end
   if [ $err_code -ne 0 ]; then
-    echo
     trace "Error: Error running command '$command', output='$out_file'. Output contains:"
     cat $out_file
     trace "Error: Error running command '$command', output='$out_file'. Output dumped above."
   fi
-  printdots_end
   set -e
 
   return $err_code

@@ -1,0 +1,24 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+resources:
+    JDBCSystemResource:
+        TestDataSource2:
+            Target: 'cluster-1'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    MinCapacity: 0
+                    MaxCapacity: 15
+                JDBCDataSourceParams:
+                    GlobalTransactionsProtocol: OnePhaseCommit
+                    RowPrefetchSize: 200
+                    JNDIName: jdbc/TestDataSource2
+                JDBCDriverParams:
+                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
+                    PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:username@@'
+                        testattrib:
+                            Value: 'dummy'

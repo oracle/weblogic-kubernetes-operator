@@ -120,6 +120,19 @@ public class Pod {
   }
 
   /**
+   * Returns the status phase of the pod.
+   *
+   * @param namespace in which to check for the pod status
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to check
+   * @return the status phase of the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+    return Kubernetes.getPodStatusPhase(namespace, labelSelectors, podName);
+  }
+
+  /**
    * Patch domain to shutdown a WebLogic  server by changing the value of
    * its serverStartPolicy property to NEVER.
    *

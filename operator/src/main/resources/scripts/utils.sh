@@ -103,7 +103,7 @@ function trace() {
       shift
       shift
     else
-      logLoc="`basename $0`:${BASH_LINENO[0]}"
+      logLoc="$(basename ${BASH_SOURCE[1]}):${BASH_LINENO[0]}"
     fi
   else
     if [ "$1" = "-cloc" ]; then

@@ -11,6 +11,7 @@ public enum DomainConditionType {
     }
   },
   Available,
+  ConfigChangesPendingRestart,
   Failed {
     @Override
     String getStatusMessage(DomainCondition condition) {

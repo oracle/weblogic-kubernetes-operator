@@ -22,6 +22,9 @@ Here are some suggestions for debugging problems with Model in Image after your 
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
 
+If you are performing an online update to a running domain's WebLogic configuration,
+then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
+
 #### Check the Domain events
 
 To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
@@ -88,7 +91,10 @@ If a model file error references a model file in your `spec.configuration.model.
 
 If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic Server pods.
 
-If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME` and `kubectl -n MY_NAMESPACE logs POD_NAME` to debug.
+If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods have errors, then use `kubectl -n MY_NAMESPACE describe pod POD_NAME`, `kubectl -n MY_NAMESPACE logs POD_NAME`, and/or `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'` to debug.
+
+If you are performing an online update to a running domain's WebLogic configuration,
+then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
 
 #### Check the operator log
 
