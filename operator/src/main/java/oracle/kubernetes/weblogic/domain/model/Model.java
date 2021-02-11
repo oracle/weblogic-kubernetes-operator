@@ -26,6 +26,23 @@ public class Model {
   @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
 
+  @Description("Online update option for Model In Image dynamic update.")
+  private OnlineUpdate onlineUpdate;
+
+  @Nullable
+  public OnlineUpdate getOnlineUpdate() {
+    return onlineUpdate;
+  }
+
+  public void setOnlineUpdate(OnlineUpdate onlineUpdate) {
+    this.onlineUpdate = onlineUpdate;
+  }
+
+  public Model withOnlineUpdate(@Nullable OnlineUpdate onlineUpdate) {
+    this.onlineUpdate = onlineUpdate;
+    return this;
+  }
+
   @Valid
   @Nullable
   @Description("Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel.")
@@ -92,6 +109,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
+            .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
     return builder.toString();
@@ -103,6 +121,7 @@ public class Model {
         .append(domainType)
         .append(configMap)
         .append(modelHome)
+        .append(onlineUpdate)
         .append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
@@ -123,8 +142,10 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
+            .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 
     return builder.isEquals();
   }
+
 }

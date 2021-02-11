@@ -122,6 +122,10 @@ spec:
   # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
 
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
+
   configuration:
 
     # Settings for domainHomeSourceType 'FromModel'

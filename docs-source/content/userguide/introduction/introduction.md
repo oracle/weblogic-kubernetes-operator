@@ -23,6 +23,8 @@ For the current production release 3.2.0:
  *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1 (check with `docker version`) *or* CRI-O 1.14.7 (check with `crictl version | grep RuntimeVersion`).
 * Helm 3.1.3+ (check with `helm version --client --short`).
+* For domain home source type `Model in Image` using only offline updates, WebLogic Deploy Tooling 1.7.4.
+* For domain home source type `Model in Image` using both online and offline updates, WebLogic Deploy Tooling 1.9.9.
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
    * The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3 `,
    has all the necessary patches applied.

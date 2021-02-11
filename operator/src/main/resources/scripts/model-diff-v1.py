@@ -293,7 +293,7 @@ class ModelDiffer:
                     changed_items.append(RCU_PASSWORD_CHANGED)
 
                 if rcu_db_info.has_key('rcu_db_conn_string') \
-                    or rcu_db_info.has_key('rcu_prefix'):
+                        or rcu_db_info.has_key('rcu_prefix'):
                     changed_items.append(SECURITY_INFO_UPDATED)
 
         return 0
@@ -342,7 +342,6 @@ class ModelDiffer:
         check whether the keys is in the dictionary
         :param dictionary dictonary to check
         :param keylist  dot separted key list
-
         return 1 if it is in model
                0 if it is not in model
         """
@@ -511,5 +510,4 @@ if __name__ == "__main__":
     all_removed = []
     changed_items = []
     main()
-
 

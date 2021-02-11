@@ -63,6 +63,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
@@ -399,26 +400,31 @@ public class DomainStatusUpdater {
           .map(DomainStatus::getMessage)
           .orElse(null);
 
+
+      if (newStatus.getMessage() == null) {
+        newStatus.setMessage(info.getValidationWarningsAsString());
+        if (existingError != null) {
+          if (hasBackOffLimitCondition()) {
+            newStatus.incrementIntrospectJobFailureCount();
+          }
+        }
+      }
+      return newStatus;
+    }
+
+    private boolean hasBackOffLimitCondition() {
       List<DomainCondition> domainConditions = Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getConditions)
           .orElse(null);
 
-      if (newStatus.getMessage() == null) {
-        newStatus.setMessage(info.getValidationWarningsAsString());
-        if (existingError != null) {
-          if (domainConditions != null && domainConditions.size() > 0) {
-            String reason = domainConditions.get(0).getReason();
-            // Only increase the instrospect job failure count if the job failed or timeout
-            // e.g. domain validation error is not counted as introspection error
-            if ("BackoffLimitExceeded".equals(reason)) {
-              newStatus.incrementIntrospectJobFailureCount();
-            }
-          }
+      for (DomainCondition cond : domainConditions) {
+        if ("BackoffLimitExceeded".equals(cond.getReason())) {
+          return true;
         }
       }
-      return newStatus;
+      return false;
     }
 
     String getDomainUid() {
@@ -507,11 +513,31 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
         } else if (allIntendedServersRunning()) {
           status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(SERVERS_READY_REASON));
+          if (!stillHasPodPendingRestart(status)
+              && status.hasConditionWith(c -> c.hasType(ConfigChangesPendingRestart))) {
+            status.removeConditionIf(c -> c.hasType(ConfigChangesPendingRestart));
+          }
         } else if (!status.hasConditionWith(c -> c.hasType(Progressing))) {
           status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
         }
 
+      }
+
+      private boolean stillHasPodPendingRestart(DomainStatus status) {
+        boolean found = false;
+
+        for (ServerStatus serverStatus : status.getServers()) {
+          V1Pod pod = super.getInfo().getServerPod(serverStatus.getServerName());
+          if (pod != null) {
+            Map<String, String> labels = pod.getMetadata().getLabels();
+            if (labels.keySet().contains(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL)) {
+              found = true;
+              break;
+            }
+          }
+        }
+        return found;
       }
 
       private boolean allIntendedServersRunning() {

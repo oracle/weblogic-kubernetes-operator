@@ -14,13 +14,15 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
      - [Sample directory structure](#sample-directory-structure)
      - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
    - [References](#references)
-   - [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
-   - [Additional prerequisites for JRF domains]({{< relref "/samples/simple/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-   - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case: An initial WebLogic domain
-   - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap
-   - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-   - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application in an image
-   - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
+   - Sample steps
+     - [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
+     - [Additional prerequisites for JRF domains]({{< relref "/samples/simple/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
+     - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
+     - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
+     - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
+     - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
+     - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
+     - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
 
 
 ### Introduction
@@ -40,7 +42,7 @@ The `JRF` domain path through the sample includes additional steps required for 
 
 #### Use cases
 
-This sample demonstrates four Model in Image use cases:
+This sample demonstrates five Model in Image use cases:
 
 - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
 
@@ -61,7 +63,7 @@ This sample demonstrates four Model in Image use cases:
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap.
+- [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change.
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
@@ -84,7 +86,7 @@ This sample demonstrates four Model in Image use cases:
     - Its secret/ConfigMap references are decorated with `sample-domain2` instead of `sample-domain1`
     - Has a changed `env` variable that sets a new domain name
 
-- [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated image with an updated application to the Update 1 use case domain.
+- [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change.
 
   - Image `model-in-image:WLS-v2`, similar to `model-in-image:WLS-v1` image with:
     - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
@@ -93,6 +95,18 @@ This sample demonstrates four Model in Image use cases:
     - Same as the Update 1 use case
   - A Domain:
     - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
+
+- [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).
+
+   - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
+     - Same image as Update 1 or Update 3 use cases
+   - Kubernetes ConfigMap with:
+     - A WDT model for Work Manager minimum and maximum threads constraints, plus the same data source as the Update 1 use case
+   - Kubernetes Secrets:
+     - Same as the Update 1 and Update 3 use case, except:
+     - An updated data source secret with a new password and an increased maximum pool capacity
+   - A Domain, same as Update 1 or Update 3 use case, plus:
+     - `spec.configuration.model.onlineUpdate` set to `enabled: true`
 
 #### Sample directory structure
 
@@ -103,10 +117,13 @@ Location | Description |
 `domain-resources` | JRF and WLS Domain YAML files. |
 `archives` | Source code location for WebLogic Deploy Tooling application ZIP archives. |
 `model-images` | Staging for each model image's WDT YAML files, WDT properties, and WDT archive ZIP files. The directories in `model images` are named for their respective images. |
-`model-configmaps` | Staging files for a model ConfigMap that configures a data source. |
+`model-configmaps/datasource` | Staging files for a model ConfigMap that configures a data source. |
+`model-configmaps/workmanager` | Staging files for a model ConfigMap that configures the Work Manager threads constraints. |
 `ingresses` | Ingress resources. |
-`utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, image name, and ready state. |
+`utils/wl-pod-wait.sh` | Utility script for watching the pods in a domain reach their expected `restartVersion`, `introspectVersion`, image name, and ready state. |
+`utils/patch-introspect-version.sh` | Utility script for updating a running domain `spec.introspectVersion` field (which causes it to 're-instrospect' and 'roll' only if non-dynamic attributes are updated). |
 `utils/patch-restart-version.sh` | Utility script for updating a running domain `spec.restartVersion` field (which causes it to 're-instrospect' and 'roll'). |
+`utils/patch-enable-online-update.sh` | Utility script for updating a running domain `spec.configuration.model.onlineUpdate` field to `enabled: true` (which enables the online update feature). |
 `utils/opss-wallet.sh` | Utility script for exporting or importing a JRF domain OPSS wallet file. |
 
 #### Ensuring your Kubernetes cluster can access images
