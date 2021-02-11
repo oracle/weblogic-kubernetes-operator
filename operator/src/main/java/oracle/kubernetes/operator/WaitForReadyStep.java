@@ -192,7 +192,8 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   public String getName() {
-    return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
+    return initialResource != null ? getMetadata(initialResource).getName() :
+            Optional.ofNullable(resourceName).orElse(null);
   }
 
   private DefaultResponseStep<T> resumeIfReady(Callback callback) {
