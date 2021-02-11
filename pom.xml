@@ -676,7 +676,7 @@
     <assertj.core.version>3.17.2</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
     <awaitility-version>4.0.3</awaitility-version>
-    <client-java-version>11.0.0</client-java-version>
+    <client-java-version>10.0.0</client-java-version>
     <junit.jupiter.version>5.7.0</junit.jupiter.version>
     <junit.vintage.version>5.7.0</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>

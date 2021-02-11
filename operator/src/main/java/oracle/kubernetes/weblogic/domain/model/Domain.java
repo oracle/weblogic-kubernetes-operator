@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 
+import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
@@ -43,7 +44,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
-import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -508,7 +508,7 @@ public class Domain implements KubernetesObject {
    * @return domain home
    */
   public String getDomainHome() {
-    return emptyToNull(spec.getDomainHome());
+    return Strings.emptyToNull(spec.getDomainHome());
   }
 
   /**
@@ -517,7 +517,7 @@ public class Domain implements KubernetesObject {
    * @return Full path of the liveness probe custom script
    */
   public String getLivenessProbeCustomScript() {
-    return emptyToNull(spec.getLivenessProbeCustomScript());
+    return Strings.emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
   public boolean isShuttingDown() {

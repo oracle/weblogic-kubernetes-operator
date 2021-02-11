@@ -10,10 +10,10 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.primitives.Ints;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
@@ -24,7 +24,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -33,24 +32,18 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -72,9 +65,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * Verify that when the primary server is down, another server takes on its clients
  * to become the new primary server and HTTP session state is migrated to the new primary server.
- * Also verify that an annotation containing a slash in the name propagates to the server pod
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
 class ItSessionMigration {
@@ -92,22 +83,14 @@ class ItSessionMigration {
   // constants for operator and WebLogic domain
   private static String domainUid = "sessmigr-domain-1";
   private static String clusterName = "cluster-1";
-  private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static String finalPrimaryServerName = null;
+  private static String adminServerPodName = domainUid + "-admin-server";
+  private static String managedServerPrefix = domainUid + "-managed-server";
   private static int managedServerPort = 8001;
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static LoggingFacade logger = null;
-
-  private static String annotationKey = "custDomainHome";
-  private static String annotationValue = "/u01/oracle";
-  private static String annotationKey2 = "custHostName";
-  private static String annotationValue2 = "https://hub.docker.com/a-0/b.c-d.asp";
-  private static String annotationKey3 = "custImageName";
-  private static String annotationValue3 = "nginx:1.14.2-1_1";
 
   /**
    * Install operator, create a custom image using model in image with model files
@@ -165,7 +148,6 @@ class ItSessionMigration {
    * session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
   @Test
-  @Order(1)
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
   public void testSessionMigration() {
     final String primaryServerAttr = "primary";
@@ -200,7 +182,7 @@ class ItSessionMigration {
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
     String countStr = httpDataInfo.get(countAttr);
-    int count = Optional.ofNullable(countStr).map(Integer::valueOf).orElse(0);
+    int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
     logger.info("After patching the domain, the primary server changes to {0} "
         + ", session create time {1} and session state {2}",
             primaryServerName, sessionCreateTime, countStr);
@@ -215,51 +197,9 @@ class ItSessionMigration {
             "After the primary server stopped, HTTP session state should be migrated to the new primary server")
     );
 
-    finalPrimaryServerName = primaryServerName;
-
-    logger.info("Done testSessionMigration \nThe new primary server is {0}, it was {1}. "
+    logger.info("SUCCESS --- testSessionMigration \nThe new primary server is {0}, it was {1}. "
         + "\nThe session state was set to {2}, it is migrated to the new primary server.",
             primaryServerName, origPrimaryServerName, SESSION_STATE);
-  }
-
-  /**
-   * Test that when updating a domain resource yaml, serverPod with annotations/labels
-   * where the key contains slash propagated to the server pod.
-   */
-  @Test
-  @Order(2)
-  @DisplayName("Test that an annotation containing a slash in the name propagates to the server pod")
-  public void testPodAnnotationWithSlash() {
-    String managedServerPodName = domainUid + "-" + finalPrimaryServerName;
-    V1Pod managedServerPod = null;
-
-    try {
-      managedServerPod = Kubernetes.getPod(domainNamespace, null, managedServerPodName);
-    } catch (Exception ex) {
-      ex.printStackTrace();
-      fail("Failed to process HTTP request " + ex.getMessage());
-    }
-
-    //check that managed server pod is up and all applicable variable values are initialized.
-    assertNotNull(managedServerPod,
-        "The managed server pod does not exist in namespace " + domainNamespace);
-    V1ObjectMeta managedServerMetadata = managedServerPod.getMetadata();
-    String myAnnotationValue = managedServerMetadata.getAnnotations().get(annotationKey);
-    String myAnnotationValue2 = managedServerMetadata.getAnnotations().get(annotationKey2);
-    String myAnnotationValue3 = managedServerMetadata.getAnnotations().get(annotationKey3);
-
-    logger.info("Verify Value for annotation key:value is {0}:{1}",
-        annotationKey, myAnnotationValue);
-    assertTrue(myAnnotationValue.equals(annotationValue),
-        String.format("Failed to propagate annotation %s to the server pod", annotationValue));
-    logger.info("Verify Value for annotation key:value is {0}:{1}",
-        annotationKey2, myAnnotationValue2);
-    assertTrue(myAnnotationValue2.equals(annotationValue2),
-        String.format("Failed to propagate annotation %s to the server pod", annotationValue2));
-    logger.info("Verify Value for annotation key:value is {0}:{1}",
-        annotationKey3, myAnnotationValue3);
-    assertTrue(myAnnotationValue3.equals(annotationValue3),
-        String.format("Failed to propagate annotation %s to the server pod", annotationValue3));
   }
 
   /**
@@ -333,7 +273,7 @@ class ItSessionMigration {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+        "weblogic", "welcome1"),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
@@ -353,19 +293,34 @@ class ItSessionMigration {
         adminServerPodName, domainNamespace);
     checkPodExists(adminServerPodName, domainUid, domainNamespace);
 
-    // check that admin server pod is ready and admin service exists in the domain namespace
+    // check that admin server pod is ready
     logger.info("Checking that admin server pod {0} is ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check that admin service exists in the domain namespace
+    logger.info("Checking that admin service {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
 
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
 
-      // check that the managed server pod is ready and the service exists in the domain namespace
+      // check that the managed server pod exists
+      logger.info("Checking that managed server pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodExists(managedServerPodName, domainUid, domainNamespace);
+
+      // check that the managed server pod is ready
       logger.info("Checking that managed server pod {0} is ready in namespace {1}",
           managedServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      checkPodReady(managedServerPodName, domainUid, domainNamespace);
+
+      // check that the managed server service exists in the domain namespace
+      logger.info("Checking that managed server service {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkServiceExists(managedServerPodName, domainNamespace);
     }
   }
 
@@ -373,12 +328,6 @@ class ItSessionMigration {
                                               String repoSecretName,
                                               String encryptionSecretName,
                                               String miiImage) {
-
-    Map<String, String> annotationKeyValues = new HashMap();
-    annotationKeyValues.put(annotationKey, annotationValue);
-    annotationKeyValues.put(annotationKey2, annotationValue2);
-    annotationKeyValues.put(annotationKey3, annotationValue3);
-
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -398,7 +347,6 @@ class ItSessionMigration {
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
-                .annotations(annotationKeyValues)
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))

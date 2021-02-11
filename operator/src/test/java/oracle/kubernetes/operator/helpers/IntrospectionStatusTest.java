@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -27,6 +26,7 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.apache.commons.lang.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,9 +41,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** Tests updates to a domain status from progress of the introspection job. */
 public class IntrospectionStatusTest {
-  private static final String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
-  private static final Random random = new Random();
-
   private static final String IMAGE_NAME = "abc";
   private static final String MESSAGE = "asdf";
   private static final String IMAGE_PULL_FAILURE = "ErrImagePull";
@@ -238,22 +235,7 @@ public class IntrospectionStatusTest {
 
 
   private String getPodSuffix() {
-    return "-" + randomAlphabetic(5);
-  }
-
-  private static String randomAlphabetic(int length) {
-    if (length < 1) {
-      throw new IllegalArgumentException();
-    }
-
-    StringBuilder sb = new StringBuilder(length);
-    for (int i = 0; i < length; i++) {
-      int rndCharAt = random.nextInt(CHAR_LOWER.length());
-      char rndChar = CHAR_LOWER.charAt(rndCharAt);
-      sb.append(rndChar);
-    }
-
-    return sb.toString();
+    return "-" + RandomStringUtils.randomAlphabetic(5).toLowerCase();
   }
 
   private V1ObjectMeta withIntrospectorJobLabels(V1ObjectMeta meta, String domainUid) {
