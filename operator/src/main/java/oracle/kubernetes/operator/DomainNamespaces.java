@@ -14,10 +14,10 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -51,9 +51,9 @@ public class DomainNamespaces {
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<Domain, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
-  private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
+  private final WatcherControl<V1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
-  private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
+  private final WatcherControl<V1Event, OperatorEventWatcher> operatorEventWatchers
       = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
@@ -241,12 +241,12 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<CoreV1EventList> getEventListProcessing() {
+    Consumer<V1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
-    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+    Consumer<V1EventList> getOperatorEventListProcessing() {
       return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 

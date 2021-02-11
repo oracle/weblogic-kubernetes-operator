@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.kubernetes.client.util.Streams;
+import com.google.common.io.ByteStreams;
 
 /** 
  * Class for executing shell commands from java. 
@@ -74,7 +74,7 @@ public class ExecCommand {
             new Thread(
                 () -> {
                   try {
-                    Streams.copy(i, copyOut);
+                    ByteStreams.copy(i, copyOut);
                   } catch (IOException ex) {
                     ex.printStackTrace();
                   }

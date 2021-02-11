@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -36,8 +37,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
-
-import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -197,7 +196,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getConfigOverrides() {
-    return emptyToNull(getDomain().getConfigOverrides());
+    return Strings.emptyToNull(getDomain().getConfigOverrides());
   }
 
   private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
@@ -208,7 +207,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   // ---------------------- model methods ------------------------------
 
   String getWdtConfigMap() {
-    return emptyToNull(getDomain().getWdtConfigMap());
+    return Strings.emptyToNull(getDomain().getWdtConfigMap());
   }
 
   private ResponseStep<V1Job> createResponse(Step next) {

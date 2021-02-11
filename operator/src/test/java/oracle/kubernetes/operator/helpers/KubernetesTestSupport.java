@@ -42,11 +42,11 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
@@ -154,7 +154,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
-    supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
+    supportNamespaced(EVENT, V1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
@@ -174,8 +174,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
-  private CoreV1EventList createEventList(List<CoreV1Event> items) {
-    return new CoreV1EventList().metadata(createListMeta()).items(items);
+  private V1EventList createEventList(List<V1Event> items) {
+    return new V1EventList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
