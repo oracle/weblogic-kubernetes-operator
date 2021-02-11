@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -19,6 +18,8 @@ import oracle.kubernetes.weblogic.domain.model.WlsDomain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
@@ -357,7 +358,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @return True if the WebLogic domain contains a server with the given server name
    */
   public synchronized boolean containsServer(String serverName) {
-    if (!Strings.isNullOrEmpty(serverName)) {
+    if (!isNullOrEmpty(serverName)) {
       return getServers().stream().anyMatch(s -> serverName.equals(s.getName()))
           || getConfiguredClusters().stream().anyMatch(c -> c.containsServer(serverName));
     }

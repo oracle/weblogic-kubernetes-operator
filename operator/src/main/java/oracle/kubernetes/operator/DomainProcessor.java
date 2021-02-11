@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
@@ -59,7 +59,7 @@ public interface DomainProcessor {
    * Handles a watch event for events in the managed namespaces.
    * @param item a Kubernetes watch even
    */
-  void dispatchEventWatch(Watch.Response<V1Event> item);
+  void dispatchEventWatch(Watch.Response<CoreV1Event> item);
 
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.
