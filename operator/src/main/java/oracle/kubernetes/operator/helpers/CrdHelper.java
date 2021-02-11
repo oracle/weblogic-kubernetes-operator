@@ -14,7 +14,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -178,24 +177,19 @@ public class CrdHelper {
     }
 
     static V1CustomResourceDefinition createModel(KubernetesVersion version, SemanticVersion productVersion) {
-      V1CustomResourceDefinition model = new V1CustomResourceDefinition()
+      return new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
           .spec(createSpec(version));
-      return AnnotationHelper.withSha256Hash(model,
-          Objects.requireNonNull(
-              model.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
     }
 
     static V1beta1CustomResourceDefinition createBetaModel(KubernetesVersion version, SemanticVersion productVersion) {
-      V1beta1CustomResourceDefinition model = new V1beta1CustomResourceDefinition()
+      return new V1beta1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1beta1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
           .spec(createBetaSpec(version));
-      return AnnotationHelper.withSha256Hash(model,
-          Objects.requireNonNull(model.getSpec().getValidation()).getOpenAPIV3Schema());
     }
 
     static V1ObjectMeta createMetadata(SemanticVersion productVersion) {
@@ -694,7 +688,8 @@ public class CrdHelper {
         }
       }
 
-      return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
+      return getSchemaValidation(actual) == null
+          || !getSchemaValidation(expected).equals(getSchemaValidation(actual));
     }
 
     @Override
@@ -717,7 +712,8 @@ public class CrdHelper {
         }
       }
 
-      return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
+      return getBetaSchemaValidation(actual) == null
+          || !getBetaSchemaValidation(expected).equals(getBetaSchemaValidation(actual));
     }
 
     private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
@@ -751,6 +747,30 @@ public class CrdHelper {
         return true;
       }
       return version.getPrereleaseVersion() >= base.getPrereleaseVersion();
+    }
+
+    private V1JSONSchemaProps getSchemaValidation(V1CustomResourceDefinition crd) {
+      if (crd != null && crd.getSpec() != null && crd.getSpec().getVersions() != null) {
+        for (V1CustomResourceDefinitionVersion version : crd.getSpec().getVersions()) {
+          if (KubernetesConstants.DOMAIN_VERSION.equals(version.getName())) {
+            V1CustomResourceValidation schema = version.getSchema();
+            if (schema != null) {
+              return schema.getOpenAPIV3Schema();
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    private V1beta1JSONSchemaProps getBetaSchemaValidation(V1beta1CustomResourceDefinition crd) {
+      if (crd != null && crd.getSpec() != null) {
+        V1beta1CustomResourceValidation validation = crd.getSpec().getValidation();
+        if (validation != null) {
+          return validation.getOpenAPIV3Schema();
+        }
+      }
+      return null;
     }
   }
 }

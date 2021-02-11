@@ -19,10 +19,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.CoreV1EventList;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -56,6 +55,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -176,9 +176,7 @@ public class Main {
     }
 
     private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
-      configuredDomainNamespaces.stream().collect(Collectors.joining(", "));
-      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES,
-          configuredDomainNamespaces.stream().collect(Collectors.joining(", ")));
+      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
     }
 
     @Override
@@ -312,7 +310,7 @@ public class Main {
         .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
-  private class EventListResponseStep extends ResponseStep<CoreV1EventList> {
+  private class EventListResponseStep extends ResponseStep<V1EventList> {
     DomainProcessor processor;
 
     EventListResponseStep(DomainProcessor processor) {
@@ -320,8 +318,8 @@ public class Main {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse<CoreV1EventList> callResponse) {
-      CoreV1EventList list = callResponse.getResult();
+    public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
+      V1EventList list = callResponse.getResult();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
       return doContinueListOrNext(callResponse, packet);
     }

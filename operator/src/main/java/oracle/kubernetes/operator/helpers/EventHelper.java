@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.Random;
 import javax.validation.constraints.NotNull;
 
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.EventConstants;
@@ -109,12 +109,12 @@ public class EventHelper {
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
-    private Step createEventAPICall(CoreV1Event event) {
-      CoreV1Event existingEvent = getExistingEvent(event);
+    private Step createEventAPICall(V1Event event) {
+      V1Event existingEvent = getExistingEvent(event);
       return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
     }
 
-    private Step createCreateEventCall(CoreV1Event event) {
+    private Step createCreateEventCall(V1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
       return new CallBuilder()
@@ -124,7 +124,7 @@ public class EventHelper {
               new CreateEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
+    private Step createReplaceEventCall(V1Event event, @NotNull V1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
@@ -136,7 +136,7 @@ public class EventHelper {
               new ReplaceEventResponseStep(getNext()));
     }
 
-    private CoreV1Event getExistingEvent(CoreV1Event event) {
+    private V1Event getExistingEvent(V1Event event) {
       return Optional.ofNullable(getEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
@@ -150,20 +150,20 @@ public class EventHelper {
       return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
-    private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
+    private class CreateEventResponseStep extends ResponseStep<V1Event> {
       CreateEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
         if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
           LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
               eventData.eventItem.getReason(), eventData.getNamespace());
@@ -172,26 +172,26 @@ public class EventHelper {
         return super.onFailure(packet, callResponse);
       }
 
-      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
+      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<V1Event> callResponse) {
         return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
       }
     }
 
-    private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
+    private class ReplaceEventResponseStep extends ResponseStep<V1Event> {
 
       ReplaceEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
       }
 
       @Override
-      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+      public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
         return UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
             ? doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet)
             : super.onFailure(packet, callResponse);
@@ -199,14 +199,14 @@ public class EventHelper {
     }
   }
 
-  private static CoreV1Event createEventModel(
+  private static V1Event createEventModel(
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     EventItem eventItem = eventData.eventItem;
     eventData.domainPresenceInfo(info);
 
-    return new CoreV1Event()
+    return new V1Event()
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())

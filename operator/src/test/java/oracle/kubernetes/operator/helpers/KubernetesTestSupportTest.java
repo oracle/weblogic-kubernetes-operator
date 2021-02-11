@@ -18,10 +18,10 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.CoreV1Event;
-import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -477,15 +477,15 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void listEventWithSelector_returnsMatches() {
-    CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
-    CoreV1Event s2 = createEvent("ns1", "event2", "walk");
-    CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
-    CoreV1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
-    CoreV1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
-    CoreV1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
+    V1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
+    V1Event s2 = createEvent("ns1", "event2", "walk");
+    V1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
+    V1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
+    V1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
+    V1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
     testSupport.defineResources(s1, s2, s3, s4, s5, s6);
 
-    TestResponseStep<CoreV1EventList> responseStep = new TestResponseStep<>();
+    TestResponseStep<V1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
           new CallBuilder()
                 .withFieldSelector("action=walk,involvedObject.kind=bird")
@@ -498,8 +498,8 @@ public class KubernetesTestSupportTest {
     return new V1ObjectReference().kind(kind);
   }
 
-  private CoreV1Event createEvent(String namespace, String name, String act) {
-    return new CoreV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  private V1Event createEvent(String namespace, String name, String act) {
+    return new V1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
   }
 
   @Test

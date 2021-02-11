@@ -14,7 +14,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -252,7 +252,7 @@ public class EventHelperTest {
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
     dispatchAddedEventWatches();
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 404);
 
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
@@ -268,7 +268,7 @@ public class EventHelperTest {
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 410);
 
@@ -285,7 +285,7 @@ public class EventHelperTest {
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
     dispatchAddedEventWatches();
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
 
@@ -580,7 +580,7 @@ public class EventHelperTest {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 404);
 
     testSupport.runSteps(createEventStep(
@@ -598,7 +598,7 @@ public class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
 
     testSupport.runSteps(eventStep);
@@ -688,7 +688,7 @@ public class EventHelperTest {
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), OP_NS, 404);
 
     testSupport.runSteps(step);
@@ -704,7 +704,7 @@ public class EventHelperTest {
     testSupport.runSteps(eventStep);
     dispatchAddedEventWatches();
 
-    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
+    V1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), STOP_MANAGING_NAMESPACE_EVENT);
     testSupport.failOnReplace(KubernetesTestSupport.EVENT, EventTestUtils.getName(event), NS, 403);
 
     testSupport.runSteps(eventStep);
@@ -724,24 +724,24 @@ public class EventHelperTest {
   }
 
   private void dispatchAddedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<V1Event> events = getEvents(testSupport);
+    for (V1Event event : events) {
       dispatchAddedEventWatch(event);
     }
   }
 
-  private void dispatchAddedEventWatch(CoreV1Event event) {
+  private void dispatchAddedEventWatch(V1Event event) {
     processor.dispatchEventWatch(WatchEvent.createAddedEvent(event).toWatchResponse());
   }
 
   private void dispatchDeletedEventWatches() {
-    List<CoreV1Event> events = getEvents(testSupport);
-    for (CoreV1Event event : events) {
+    List<V1Event> events = getEvents(testSupport);
+    for (V1Event event : events) {
       dispatchDeletedEventWatch(event);
     }
   }
 
-  private void dispatchDeletedEventWatch(CoreV1Event event) {
+  private void dispatchDeletedEventWatch(V1Event event) {
     processor.dispatchEventWatch(WatchEvent.createDeletedEvent(event).toWatchResponse());
   }
 }
