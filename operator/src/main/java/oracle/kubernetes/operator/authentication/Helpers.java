@@ -26,8 +26,6 @@ public class Helpers {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final CoreV1Api coreApi;
 
-  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
-
   /**
    * Construct helpers.
    * @param authenticator authenticator
@@ -111,7 +109,6 @@ public class Helpers {
             4096, // limit size for list
             "false", // pretty
             "", // resourceVersion
-            RESOURCE_VERSION_MATCH_UNSET,
             0, // timeout (seconds)
             Boolean.FALSE // watch indicator
             );

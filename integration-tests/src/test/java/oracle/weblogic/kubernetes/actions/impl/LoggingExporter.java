@@ -383,9 +383,9 @@ public class LoggingExporter {
                         .name(elasticsearchName)
                         .image(elasticsearchImage)
                         .addPortsItem(new V1ContainerPort()
-                            .containerPort(Integer.valueOf(elasticsearchHttpPort)))
+                            .containerPort(new Integer(elasticsearchHttpPort)))
                         .addPortsItem(new V1ContainerPort()
-                            .containerPort(Integer.valueOf(elasticsearchHttpsPort)))
+                            .containerPort(new Integer(elasticsearchHttpsPort)))
                         .addEnvItem(new V1EnvVar()
                             .name("ES_JAVA_OPTS")
                             .value("-Xms1024m -Xmx1024m"))
@@ -425,7 +425,7 @@ public class LoggingExporter {
                         .name(kibanaName)
                         .image(kibanaImage)
                         .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(Integer.valueOf(kibanaContainerPort)))))))));
+                            .containerPort(new Integer(kibanaContainerPort)))))))));
 
     return kibanaDeployment;
   }

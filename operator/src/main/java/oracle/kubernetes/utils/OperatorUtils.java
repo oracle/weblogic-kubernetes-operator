@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.utils;
 
-import java.io.IOException;
-import java.io.Reader;
-import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -15,10 +12,6 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class OperatorUtils {
-
-  // 2K chars (4K bytes)
-  private static final int DEFAULT_BUF_SIZE = 0x800;
-
   /**
    * Converts a list of strings to a comma-separated list, using "and" for the last item.
    *
@@ -115,65 +108,4 @@ public class OperatorUtils {
     }
     return word;
   }
-
-  /**
-   * Checks if String is null or empty.
-   * @param str String
-   * @return true, if the String is null or empty
-   */
-  public static boolean isNullOrEmpty(String str) {
-    return str == null || str.isEmpty();
-  }
-
-  /**
-   * Checks if array is null or empty.
-   * @param array Array
-   * @return true, if the array is null or empty
-   */
-  public static boolean isNullOrEmpty(Object[] array) {
-    return array == null || Array.getLength(array) == 0;
-  }
-
-  /**
-   * Checks if map is null or empty.
-   * @param map Map
-   * @return true, if the map is null or empty
-   */
-  public static boolean isNullOrEmpty(Map<?,?> map) {
-    return map == null || map.isEmpty();
-  }
-
-  /**
-   * Converts empty String to null.
-   * @param str String
-   * @return null, if the String is empty or null; otherwise, returns the original value
-   */
-  public static String emptyToNull(String str) {
-    if (str != null && !str.isEmpty()) {
-      return str;
-    }
-    return null;
-  }
-
-  /**
-   * Copies characters from a reader stream to a string and does not close the stream.
-   *
-   * @param from the reader stream
-   * @return string containing all the characters
-   * @throws IOException if an I/O error occurs
-   */
-  public static String toString(Reader from) throws IOException {
-    return toStringBuilder(from).toString();
-  }
-
-  private static StringBuilder toStringBuilder(Reader from) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    char[] buf = new char[DEFAULT_BUF_SIZE];
-    int numRead;
-    while ((numRead = from.read(buf)) != -1) {
-      sb.append(buf, 0, numRead);
-    }
-    return sb;
-  }
-
 }
