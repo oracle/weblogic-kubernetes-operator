@@ -528,6 +528,25 @@ public class Kubernetes {
   }
 
   /**
+   * Returns the status phase of the pod.
+   *
+   * @param namespace in which to check for the pod status
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to check
+   * @return the status phase of the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelectors, podName);
+    if (pod != null && pod.getStatus() != null) {
+      return pod.getStatus().getPhase();
+    } else {
+      getLogger().info("Pod does not exist or pod status is null");
+      return "";
+    }
+  }
+
+  /**
    * Get the creationTimestamp for a given pod with following parameters.
    *
    * @param namespace in which to check for the pod existence
@@ -631,6 +650,27 @@ public class Kubernetes {
       return pod.getMetadata().getLabels().get("weblogic.domainRestartVersion");
     } else {
       getLogger().info("getPodRestartVersion(): Pod doesn't exist");
+      return null;
+    }
+  }
+
+  /**
+   * Get the introspectVersion label from a given pod.
+   *
+   * @param namespace in which to check for the pod existence
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName  name of the pod
+   * @return value of introspectVersion label, null if unset or the pod is not available
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static String getPodIntrospectVersion(String namespace, String labelSelector, String podName)
+      throws ApiException {
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null) {
+      // return the value of the introspectVersion label
+      return pod.getMetadata().getLabels().get("weblogic.introspectVersion");
+    } else {
+      getLogger().info("getPodIntrospectVersion(): Pod doesn't exist");
       return null;
     }
   }

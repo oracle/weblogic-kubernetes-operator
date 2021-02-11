@@ -202,7 +202,7 @@ class ItMiiMultiModel {
     logger.info("Create ConfigMap {0} in namespace {1} with WDT models {3} and {4}",
         configMapName, domainNamespace, modelFileName3, modelFileName4);
 
-    List<String> modelFiles = Arrays.asList(modelFileName3, modelFileName4);
+    List<String> modelFiles = Arrays.asList(MODEL_DIR + "/" + modelFileName3, MODEL_DIR + "/" + modelFileName4);
     createConfigMapAndVerify(
         configMapName, domainUid1, domainNamespace, modelFiles);
 
@@ -322,7 +322,7 @@ class ItMiiMultiModel {
     logger.info("Create ConfigMap {0} in namespace {1} with WDT models {2} and {3}",
         configMapName, domainNamespace, modelFileName4, modelFileName3);
 
-    List<String> modelFiles = Arrays.asList(modelFileName4, modelFileName3);
+    List<String> modelFiles = Arrays.asList(MODEL_DIR + "/" + modelFileName4, MODEL_DIR + "/" + modelFileName3);
     createConfigMapAndVerify(
         configMapName, domainUid3, domainNamespace, modelFiles);
 

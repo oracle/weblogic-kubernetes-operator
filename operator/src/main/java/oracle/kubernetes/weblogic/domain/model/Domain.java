@@ -487,6 +487,10 @@ public class Domain implements KubernetesObject {
   }
 
   public boolean isNewIntrospectionRequiredForNewServers() {
+    return isDomainSourceTypeFromModel();
+  }
+
+  public boolean isDomainSourceTypeFromModel() {
     return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
@@ -494,9 +498,107 @@ public class Domain implements KubernetesObject {
     return spec.getHttpAccessLogInLogHome();
   }
 
+  /**
+   * Returns if the domain is using online update.
+   * return true if using online update
+   */
+
+  public boolean isUseOnlineUpdate() {
+    return spec.isUseOnlineUpdate();
+  }
+
+  /**
+   * Returns WDT activate changes timeout.
+   * @return WDT activate timeout
+   */
+  public Long getWDTActivateTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getActivateTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT connect timeout.
+   * @return WDT connect timeout
+   */
+  public Long getWDTConnectTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getConnectTimeoutMillis)
+        .orElse(120000L);
+  }
+
+  /**
+   * Returns WDT deploy application timeout.
+   * @return WDT deploy timeout
+   */
+  public Long getWDTDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getDeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT undeploy application timeout.
+   * @return WDT undeploy timeout
+   */
+  public Long getWDTUnDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getUndeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT redeploy application timeout.
+   * @return WDT redeploy timeout
+   */
+  public Long getWDTReDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getRedeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT start application timeout.
+   * @return WDT start application timeout
+   */
+  public Long getWDTStartApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStartApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT stop application timeout.
+   * @return WDT stop application timeout
+   */
+  public Long getWDTStopApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStopApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT set server groups timeout when setting JRF domain server group targeting.
+   * @return WDT set server groups timeout
+   */
+  public Long getWDTSetServerGroupsTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getSetServerGroupsTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  private Optional<WDTTimeouts> getWDTOnlineUpdateTimeouts() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getWdtTimeouts);
+  }
+
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
+
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();

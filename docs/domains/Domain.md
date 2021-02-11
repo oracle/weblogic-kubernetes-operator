@@ -81,7 +81,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `maxConcurrentShutdown` | number | The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1. |
 | `maxConcurrentStartup` | number | The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
-| `replicas` | number | The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to 0. |
+| `replicas` | number | The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of Kubernetes Services for WebLogic Server instances. |
@@ -167,7 +167,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
-| `type` | string | The type of the condition. Valid types are Progressing, Available, and Failed. |
+| `type` | string | The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart. |
 
 ### Server Status
 
@@ -209,6 +209,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
 | `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
+| `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
 
 ### Opss
@@ -249,6 +250,14 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
 
+### Online Update
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `enabled` | Boolean | Enable online update. Default is 'false'. |
+| `onNonDynamicChanges` | string | Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are 'CommitUpdateOnly' (default), and 'CommitUpdateAndRoll'. <br/><br/> If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. <br/><br/> If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. <br/><br/> For more information, see the runtime update section of the Model in Image user guide. |
+| `wdtTimeouts` | [WDT Timeouts](#wdt-timeouts) |  |
+
 ### Subsystem Health
 
 | Name | Type | Description |
@@ -256,3 +265,16 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `health` | string | Server health of this WebLogic Server instance. |
 | `subsystemName` | string | Name of subsystem providing symptom information. |
 | `symptoms` | array of string | Symptoms provided by the reporting subsystem. |
+
+### WDT Timeouts
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `activateTimeoutMillis` | number | WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000. |
+| `connectTimeoutMillis` | number | WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000. |
+| `deployTimeoutMillis` | number | WDT application or library deployment timeout in milliseconds. Default: 180000. |
+| `redeployTimeoutMillis` | number | WDT application or library redeployment timeout in milliseconds. Default: 180000. |
+| `setServerGroupsTimeoutMillis` | number | WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. Default: 180000. |
+| `startApplicationTimeoutMillis` | number | WDT application start timeout in milliseconds. Default: 180000. |
+| `stopApplicationTimeoutMillis` | number | WDT application stop timeout in milliseconds. Default: 180000. |
+| `undeployTimeoutMillis` | number | WDT application or library undeployment timeout in milliseconds. Default: 180000. |
