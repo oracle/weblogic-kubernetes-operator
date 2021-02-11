@@ -3,10 +3,10 @@
 
 package oracle.kubernetes.operator.http;
 
+import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 
-import io.sundr.shaded.com.github.javaparser.ast.body.ModifierSet;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -33,7 +33,7 @@ public class HttpResponseStepTest {
 
   @Test
   public void classIsAbstract() {
-    assertThat(ModifierSet.isAbstract(HttpResponseStep.class.getModifiers()), is(true));
+    assertThat(Modifier.isAbstract(HttpResponseStep.class.getModifiers()), is(true));
   }
 
   @Test
@@ -44,15 +44,15 @@ public class HttpResponseStepTest {
   @Test
   public void classHasOnSuccessMethod() throws NoSuchMethodException {
     assertThat(
-          HttpResponseStep.class.getDeclaredMethod("onSuccess", Packet.class, HttpResponse.class),
-          notNullValue());
+        HttpResponseStep.class.getDeclaredMethod("onSuccess", Packet.class, HttpResponse.class),
+        notNullValue());
   }
 
   @Test
   public void classHasOnFailureMethod() throws NoSuchMethodException {
     assertThat(
-          HttpResponseStep.class.getDeclaredMethod("onFailure", Packet.class, HttpResponse.class),
-          notNullValue());
+        HttpResponseStep.class.getDeclaredMethod("onFailure", Packet.class, HttpResponse.class),
+        notNullValue());
   }
 
   @Test

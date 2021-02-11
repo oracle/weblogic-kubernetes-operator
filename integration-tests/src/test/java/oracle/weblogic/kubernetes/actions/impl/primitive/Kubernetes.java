@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,8 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.ByteStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import io.kubernetes.client.Copy;
@@ -34,6 +33,8 @@ import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.CustomObjectsApi;
 import io.kubernetes.client.openapi.apis.NetworkingV1beta1Api;
 import io.kubernetes.client.openapi.apis.RbacAuthorizationV1Api;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
@@ -46,8 +47,6 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Namespace;
@@ -76,6 +75,7 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
+import io.kubernetes.client.util.Streams;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -94,21 +94,19 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-// TODO ryan - in here we want to implement all of the kubernetes
-// primitives that we need, using the API, not spawning a process
-// to run kubectl.
 public class Kubernetes {
 
-  private static String PRETTY = "true";
-  private static Boolean ALLOW_WATCH_BOOKMARKS = false;
-  private static String RESOURCE_VERSION = "";
-  private static Integer TIMEOUT_SECONDS = 5;
-  private static String DOMAIN_GROUP = "weblogic.oracle";
-  private static String DOMAIN_VERSION = "v8";
-  private static String DOMAIN_PLURAL = "domains";
-  private static String FOREGROUND = "Foreground";
-  private static String BACKGROUND = "Background";
-  private static int GRACE_PERIOD = 0;
+  private static final String PRETTY = "true";
+  private static final Boolean ALLOW_WATCH_BOOKMARKS = false;
+  private static final String RESOURCE_VERSION = "";
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private static final Integer TIMEOUT_SECONDS = 5;
+  private static final String DOMAIN_GROUP = "weblogic.oracle";
+  private static final String DOMAIN_VERSION = "v8";
+  private static final String DOMAIN_PLURAL = "domains";
+  private static final String FOREGROUND = "Foreground";
+  private static final String BACKGROUND = "Background";
+  private static final int GRACE_PERIOD = 0;
 
   // Core Kubernetes API clients
   private static ApiClient apiClient = null;
@@ -345,6 +343,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -688,17 +687,18 @@ public class Kubernetes {
     try {
       v1PodList
           = coreV1Api.listNamespacedPod(
-              namespace, // namespace in which to look for the pods.
-              Boolean.FALSE.toString(), // pretty print output.
-              Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-              null, // continue to query when there is more results to return.
-              null, // selector to restrict the list of returned objects by their fields
-              labelSelectors, // selector to restrict the list of returned objects by their labels.
-              null, // maximum number of responses to return for a list call.
-              null, // shows changes that occur after that particular version of a resource.
-              null, // Timeout for the list/watch call.
-              Boolean.FALSE // Watch for changes to the described resources.
-          );
+          namespace, // namespace in which to look for the pods.
+          Boolean.FALSE.toString(), // pretty print output.
+          Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // continue to query when there is more results to return.
+          null, // selector to restrict the list of returned objects by their fields
+          labelSelectors, // selector to restrict the list of returned objects by their labels.
+          null, // maximum number of responses to return for a list call.
+          null, // shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          null, // Timeout for the list/watch call.
+          Boolean.FALSE // Watch for changes to the described resources.
+      );
     } catch (ApiException apex) {
       getLogger().severe(apex.getResponseBody());
       throw apex;
@@ -885,6 +885,7 @@ public class Kubernetes {
           labelSelector, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -916,6 +917,7 @@ public class Kubernetes {
           null, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -943,6 +945,7 @@ public class Kubernetes {
           null, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1017,13 +1020,13 @@ public class Kubernetes {
    * List events in a namespace.
    *
    * @param namespace name of the namespace in which to list events
-   * @return List of {@link V1Event} objects
+   * @return List of {@link CoreV1Event} objects
    * @throws ApiException when listing events fails
    */
-  public static List<V1Event> listNamespacedEvents(String namespace) throws ApiException {
-    List<V1Event> events = null;
+  public static List<CoreV1Event> listNamespacedEvents(String namespace) throws ApiException {
+    List<CoreV1Event> events = null;
     try {
-      V1EventList list = coreV1Api.listNamespacedEvent(
+      CoreV1EventList list = coreV1Api.listNamespacedEvent(
           namespace, // String | namespace.
           PRETTY, // String | If 'true', then the output is pretty printed.
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
@@ -1032,11 +1035,12 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
-      events = Optional.ofNullable(list).map(V1EventList::getItems).orElse(Collections.EMPTY_LIST);
-      events.sort(Comparator.comparing(e -> e.getMetadata().getCreationTimestamp()));
+      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events.sort(Comparator.comparing(e -> e.getLastTimestamp()));
       Collections.reverse(events);
     } catch (ApiException apex) {
       getLogger().warning(apex.getResponseBody());
@@ -1121,14 +1125,14 @@ public class Kubernetes {
     if (!response.isSuccess()) {
       getLogger().warning(
           "Failed to delete Domain Custom Resource '" + domainUid + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "domain custom resource in background!");
+              + "domain custom resource in background!");
     }
 
     return true;
@@ -1181,7 +1185,7 @@ public class Kubernetes {
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonPatch(String domainUid, String namespace,
-      String patchString) {
+                                                           String patchString) {
     return patchDomainCustomResource(
         domainUid, // name of custom resource domain
         namespace, // name of namespace
@@ -1205,7 +1209,7 @@ public class Kubernetes {
    * @return true if patch is successful otherwise false
    */
   public static boolean patchCustomResourceDomainJsonMergePatch(String domainUid, String namespace,
-      String patchString) {
+                                                                String patchString) {
     return patchDomainCustomResource(
         domainUid, // name of custom resource domain
         namespace, // name of namespace
@@ -1225,7 +1229,7 @@ public class Kubernetes {
    * @return true if successful, false otherwise
    */
   public static boolean patchDomainCustomResource(String domainUid, String namespace,
-      V1Patch patch, String patchFormat) {
+                                                  V1Patch patch, String patchFormat) {
 
     // GenericKubernetesApi uses CustomObjectsApi calls
     KubernetesApiResponse<Domain> response = crdClient.patch(
@@ -1367,17 +1371,17 @@ public class Kubernetes {
     LoggingFacade logger = getLogger();
     if (configMap == null) {
       throw new IllegalArgumentException(
-              "Parameter 'configMap' cannot be null when calling patchConfigMap()");
+          "Parameter 'configMap' cannot be null when calling patchConfigMap()");
     }
 
     if (configMap.getMetadata() == null) {
       throw new IllegalArgumentException(
-              "'metadata' field of the parameter 'configMap' cannot be null when calling patchConfigMap()");
+          "'metadata' field of the parameter 'configMap' cannot be null when calling patchConfigMap()");
     }
 
     if (configMap.getMetadata().getNamespace() == null) {
       throw new IllegalArgumentException(
-              "'namespace' field in the metadata cannot be null when calling patchConfigMap()");
+          "'namespace' field in the metadata cannot be null when calling patchConfigMap()");
     }
 
     String namespace = configMap.getMetadata().getNamespace();
@@ -1385,12 +1389,12 @@ public class Kubernetes {
     V1ConfigMap cm;
     try {
       cm = coreV1Api.replaceNamespacedConfigMap(
-              configMap.getMetadata().getName(),
-              namespace,
-              configMap, // config map configuration data
-              PRETTY, // pretty print output
-              null, // indicates that modifications should not be persisted
-              null // name associated with the actor or entity that is making these changes
+          configMap.getMetadata().getName(),
+          namespace,
+          configMap, // config map configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // name associated with the actor or entity that is making these changes
       );
       assertNotNull(cm, "cm replace failed ");
     } catch (ApiException apex) {
@@ -1421,6 +1425,7 @@ public class Kubernetes {
           null, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1451,7 +1456,7 @@ public class Kubernetes {
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "config map in background!");
+              + "config map in background!");
     }
 
     return true;
@@ -1520,7 +1525,7 @@ public class Kubernetes {
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "secret in background!");
+              + "secret in background!");
     }
 
     return true;
@@ -1575,7 +1580,7 @@ public class Kubernetes {
    * Create a Kubernetes Persistent Volume Claim.
    *
    * @param persistentVolumeClaim V1PersistentVolumeClaim object containing Kubernetes persistent volume claim
-    configuration data
+  configuration data
    * @return true if successful
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -1633,7 +1638,7 @@ public class Kubernetes {
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume in background!");
+              + "persistent volume in background!");
     }
 
     return true;
@@ -1653,14 +1658,14 @@ public class Kubernetes {
     if (!response.isSuccess()) {
       getLogger().warning(
           "Failed to delete persistent volume claim '" + name + "' from namespace: "
-          + namespace + " with HTTP status code: " + response.getHttpStatusCode());
+              + namespace + " with HTTP status code: " + response.getHttpStatusCode());
       return false;
     }
 
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "persistent volume claim in background!");
+              + "persistent volume claim in background!");
     }
 
     return true;
@@ -1698,6 +1703,7 @@ public class Kubernetes {
           labels, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           RESOURCE_VERSION, // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -1820,7 +1826,7 @@ public class Kubernetes {
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "service account in background!");
+              + "service account in background!");
       V1ServiceAccount serviceAccount = (V1ServiceAccount) response.getObject();
       getLogger().info(
           "Deleting Service Account " + serviceAccount.getMetadata().getName() + " in background.");
@@ -1908,7 +1914,7 @@ public class Kubernetes {
     if (response.getObject() != null) {
       getLogger().info(
           "Received after-deletion status of the requested object, will be deleting "
-          + "service in background!");
+              + "service in background!");
     }
 
     return true;
@@ -2086,6 +2092,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -2166,6 +2173,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -2292,6 +2300,7 @@ public class Kubernetes {
           null, // Integer | limit is a maximum number of responses to return for a list call.
           PRETTY, // String | If true, then the output is pretty printed.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -2306,7 +2315,7 @@ public class Kubernetes {
    * List cluster role bindings.
    *
    * @param labelSelector labels to narrow the list
-   * @return V1ClusterRoleBindingList list of {@link V1CLusterRoleBinding} objects
+   * @return V1ClusterRoleBindingList list of {@link V1ClusterRoleBinding} objects
    * @throws ApiException if Kubernetes client API call fails
    */
   public static V1ClusterRoleBindingList listClusterRoleBindings(String labelSelector) throws ApiException {
@@ -2320,6 +2329,7 @@ public class Kubernetes {
           labelSelector, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -2378,6 +2388,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -2433,6 +2444,7 @@ public class Kubernetes {
           labelSelector, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -2489,6 +2501,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources.
       );
@@ -2519,6 +2532,7 @@ public class Kubernetes {
           null, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           TIMEOUT_SECONDS, // Integer | Timeout for the list/watch call.
           ALLOW_WATCH_BOOKMARKS // Boolean | Watch for changes to the described resources.
       );
@@ -2598,7 +2612,7 @@ public class Kubernetes {
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static ExecResult exec(V1Pod pod, String containerName, boolean redirectToStdout,
-      String... command)
+                                String... command)
       throws IOException, ApiException, InterruptedException {
 
     // Execute command using Kubernetes API
@@ -2655,12 +2669,12 @@ public class Kubernetes {
   }
 
   private static Thread createStreamReader(InputStream inputStream, CopyingOutputStream copyOut,
-      String s) {
+                                           String s) {
     return
         new Thread(
             () -> {
               try {
-                ByteStreams.copy(inputStream, copyOut);
+                Streams.copy(inputStream, copyOut);
               } catch (IOException ex) {
                 // "Pipe broken" is expected when process is finished so don't log
                 if (ex.getMessage() != null && !ex.getMessage().contains("Pipe broken")) {
@@ -2719,7 +2733,7 @@ public class Kubernetes {
   private static String readExecCmdData(InputStream is) {
     StringBuilder sb = new StringBuilder();
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(is, Charsets.UTF_8))) {
+        new InputStreamReader(is, StandardCharsets.UTF_8))) {
       int c = 0;
       while ((c = reader.read()) != -1) {
         sb.append((char) c);
