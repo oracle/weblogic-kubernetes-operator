@@ -97,7 +97,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return Integer.valueOf(result.stdout());
+      return new Integer(result.stdout());
     }
   }
 
@@ -123,7 +123,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return Integer.valueOf(result.stdout());
+      return new Integer(result.stdout());
     }
   }
 
@@ -149,7 +149,7 @@ public class IstioUtils {
     if (result.stdout() == null) {
       return 0;
     } else {
-      return Integer.valueOf(result.stdout());
+      return new Integer(result.stdout());
     }
   }
 

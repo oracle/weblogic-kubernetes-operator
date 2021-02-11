@@ -23,8 +23,8 @@ import javax.annotation.Nullable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -254,8 +254,8 @@ public class DomainProcessorTest {
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
-  private List<CoreV1Event> getEventsAfterTimestamp(long timestamp) {
-    return testSupport.<CoreV1Event>getResources(KubernetesTestSupport.EVENT).stream()
+  private List<V1Event> getEventsAfterTimestamp(long timestamp) {
+    return testSupport.<V1Event>getResources(KubernetesTestSupport.EVENT).stream()
             .filter(e -> e.getLastTimestamp().isAfter(timestamp)).collect(Collectors.toList());
   }
 
@@ -500,7 +500,7 @@ public class DomainProcessorTest {
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
-  private static boolean doesNotContainEvent(List<CoreV1Event> events, String reason) {
+  private static boolean doesNotContainEvent(List<V1Event> events, String reason) {
     return Optional.ofNullable(events).get()
             .stream()
             .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) == null;
@@ -525,7 +525,7 @@ public class DomainProcessorTest {
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
-  private static boolean containsEvent(List<CoreV1Event> events, String reason) {
+  private static boolean containsEvent(List<V1Event> events, String reason) {
     return Optional.ofNullable(events).get()
             .stream()
             .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) != null;

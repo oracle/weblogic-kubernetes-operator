@@ -3,10 +3,10 @@
 
 package oracle.kubernetes.operator.http;
 
-import java.lang.reflect.Modifier;
 import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 
+import io.sundr.shaded.com.github.javaparser.ast.body.ModifierSet;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -33,7 +33,7 @@ public class HttpResponseStepTest {
 
   @Test
   public void classIsAbstract() {
-    assertThat(Modifier.isAbstract(HttpResponseStep.class.getModifiers()), is(true));
+    assertThat(ModifierSet.isAbstract(HttpResponseStep.class.getModifiers()), is(true));
   }
 
   @Test
