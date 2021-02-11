@@ -168,18 +168,16 @@ abstract class WaitForReadyStep<T> extends Step {
     fiber
         .createChildFiber()
         .start(
-            createReadAndIfReadyCheckStep(callback, packet),
+            createReadAndIfReadyCheckStep(callback),
             packet.clone(),
             null);
   }
 
-  private Step createReadAndIfReadyCheckStep(Callback callback, Packet packet) {
+  private Step createReadAndIfReadyCheckStep(Callback callback) {
     if (initialResource != null) {
       return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return createReadAsyncStep(getName(), Optional.ofNullable(info).map(i -> i.getNamespace()).orElse(null),
-              Optional.ofNullable(info).map(i -> i.getDomainUid()).orElse(null), resumeIfReady(callback));
+      return new ReadAndIfReadyCheckStep(getName(), callback, getNext());
     }
   }
 
@@ -192,8 +190,7 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   public String getName() {
-    return initialResource != null ? getMetadata(initialResource).getName() :
-            Optional.ofNullable(resourceName).orElse(null);
+    return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
   private DefaultResponseStep<T> resumeIfReady(Callback callback) {
@@ -209,7 +206,7 @@ abstract class WaitForReadyStep<T> extends Step {
           callback.proceedFromWait(callResponse.getResult());
           return doNext(packet);
         }
-        return doDelay(createReadAndIfReadyCheckStep(callback, packet), packet,
+        return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                 getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
       }
 
@@ -221,6 +218,25 @@ abstract class WaitForReadyStep<T> extends Step {
                 .orElse(null);
       }
     };
+  }
+
+  private class ReadAndIfReadyCheckStep extends Step {
+    private final Callback callback;
+    private final String resourceName;
+
+    ReadAndIfReadyCheckStep(String resourceName, Callback callback, Step next) {
+      super(next);
+      this.callback = callback;
+      this.resourceName = resourceName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return doNext(createReadAsyncStep(resourceName, info.getNamespace(),
+              info.getDomainUid(), resumeIfReady(callback)), packet);
+    }
+
   }
 
   private class Callback implements Consumer<T> {
