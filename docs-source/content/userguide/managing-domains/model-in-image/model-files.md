@@ -155,7 +155,7 @@ Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentials
 
 ##### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file, or the built-in `DOMAIN_UID` environment variable.
+You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file using `domain.spec.serverPod.env` or `domain.spec.adminServer.serverPod.env`, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 

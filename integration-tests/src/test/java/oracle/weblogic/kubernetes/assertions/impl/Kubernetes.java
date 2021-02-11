@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -286,6 +287,34 @@ public class Kubernetes {
     }
     logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
         podName, restartVersion, expectedRestartVersion);
+    return false;
+  }
+
+  /**
+   * Checks if a pod in a given namespace has been updated with an expected
+   * weblogic.introspectVersion label.
+   *
+   * @param namespace in which to check for the pod
+   * @param podName name of the pod to check for
+   * @param expectedIntrospectVersion introspectVersion that is expected
+   * @return true if pod has been updated as expected
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean podIntrospectVersionUpdated(
+      String namespace,
+      String podName,
+      String expectedIntrospectVersion
+  ) throws ApiException {
+    LoggingFacade logger = getLogger();
+    String introspectVersion = getPodIntrospectVersion(namespace, "", podName);
+
+    if (introspectVersion != null && introspectVersion.equals(expectedIntrospectVersion)) {
+      logger.info("Pod {0}: introspectVersion has been updated to expected value {1}",
+          podName, expectedIntrospectVersion);
+      return true;
+    }
+    logger.info("Pod {0}: introspectVersion {1} does not match expected value {2}",
+        podName, introspectVersion, expectedIntrospectVersion);
     return false;
   }
 

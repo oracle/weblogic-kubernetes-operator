@@ -74,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
+import static oracle.kubernetes.operator.ProcessingConstants.DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -799,21 +800,20 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean shouldContinue() {
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
 
-      String existingError = getExistingError();
-
       if (isNewDomain(cachedInfo)) {
         return true;
       } else if (shouldReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.fine(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+        LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
         return false;
-      } else if (isFatalIntrospectorError(existingError)) {
+      } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
         return false;
       } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
+
         if (hasExceededRetryCount()) {
           resetIntrospectorJobFailureCount();
         }
@@ -821,7 +821,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           logRetryCount(cachedInfo);
           ensureRetryingEventPresent();
         }
-
         return true;
       }
       cachedInfo.setDomain(getDomain());
@@ -876,7 +875,21 @@ public class DomainProcessorImpl implements DomainProcessor {
       return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
     }
 
-    private boolean isFatalIntrospectorError(String existingError) {
+    private boolean hasDynamicUpdateInCompatibleSpecChange(DomainPresenceInfo cachedInfo) {
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
+      return existingError != null && existingError.contains(DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR);
+    }
+
+    private boolean isFatalIntrospectorError() {
+      String existingError = Optional.ofNullable(liveInfo)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getMessage)
+          .orElse(null);
       return existingError != null && existingError.contains(FATAL_INTROSPECTOR_ERROR);
     }
 
@@ -960,6 +973,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
           .orElse(true);
   }
+
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))

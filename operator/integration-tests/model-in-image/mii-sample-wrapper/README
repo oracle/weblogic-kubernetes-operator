@@ -78,6 +78,14 @@ INCLUDE_MODEL_CONFIGMAP ::: Tell sample to include a configuration.model.configM
   in the domain resource, and to add a configuration.model.secrets reference
   to a secret that's used by the configMap. Also used by './create-secrets.sh' to
   deploy a secret the configMap uses. 
+  See also CORRECTED_DATASOURCE_SECRET.
+  Valid values are 'false' (default), and 'true'.
+
+CORRECTED_DATASOURCE_SECRET ::: Use correct values in datasource secret
+  The DS secret is used by the configMap's DS to point to a DB.
+  It's deliberately incorrect by default so the sample
+  can demonstrate dynamically updating the DS params using online.
+  See also INCLUDE_MODEL_CONFIGMAP.
   Valid values are 'false' (default), and 'true'.
 
 http_proxy https_proxy ::: Proxies

@@ -1018,7 +1018,7 @@ window.onload = function() {
           "minimum": 1.0
         },
         "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to 0.",
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
           "type": "number",
           "minimum": 0.0
         },
@@ -1151,11 +1151,12 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Progressing, Available, and Failed.",
+          "description": "The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
             "Progressing",
             "Available",
+            "ConfigChangesPendingRestart",
             "Failed"
           ]
         },
@@ -1483,9 +1484,33 @@ window.onload = function() {
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
         },
+        "onlineUpdate": {
+          "description": "Online update option for Model In Image dynamic update.",
+          "$ref": "#/definitions/OnlineUpdate"
+        },
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
+        }
+      }
+    },
+    "OnlineUpdate": {
+      "type": "object",
+      "properties": {
+        "onNonDynamicChanges": {
+          "description": "Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are \u0027CommitUpdateOnly\u0027 (default), and \u0027CommitUpdateAndRoll\u0027. \n\n If set to \u0027CommitUpdateOnly\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. \n\n If set to \u0027CommitUpdateAndRoll\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. \n\n For more information, see the runtime update section of the Model in Image user guide.",
+          "type": "string",
+          "enum": [
+            "CommitUpdateAndRoll",
+            "CommitUpdateOnly"
+          ]
+        },
+        "enabled": {
+          "description": "Enable online update. Default is \u0027false\u0027.",
+          "type": "boolean"
+        },
+        "wdtTimeouts": {
+          "$ref": "#/definitions/WDTTimeouts"
         }
       }
     },
@@ -1741,6 +1766,43 @@ window.onload = function() {
         "subsystemName": {
           "description": "Name of subsystem providing symptom information.",
           "type": "string"
+        }
+      }
+    },
+    "WDTTimeouts": {
+      "type": "object",
+      "properties": {
+        "setServerGroupsTimeoutMillis": {
+          "description": "WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "connectTimeoutMillis": {
+          "description": "WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.",
+          "type": "number"
+        },
+        "undeployTimeoutMillis": {
+          "description": "WDT application or library undeployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "deployTimeoutMillis": {
+          "description": "WDT application or library deployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "startApplicationTimeoutMillis": {
+          "description": "WDT application start timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "activateTimeoutMillis": {
+          "description": "WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "stopApplicationTimeoutMillis": {
+          "description": "WDT application stop timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "redeployTimeoutMillis": {
+          "description": "WDT application or library redeployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
         }
       }
     }
