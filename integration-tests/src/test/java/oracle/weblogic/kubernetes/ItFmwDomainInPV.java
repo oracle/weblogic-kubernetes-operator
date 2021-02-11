@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItJrfDomainInPV {
+public class ItFmwDomainInPV {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -131,7 +131,7 @@ public class ItJrfDomainInPV {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
 
-    logger.info("For ItJrfDomainInPV using DB image: {0}, FMW image {1}",
+    logger.info("For ItFmwDomainInPV using DB image: {0}, FMW image {1}",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
 
   }

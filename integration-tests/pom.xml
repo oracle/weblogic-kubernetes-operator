@@ -245,7 +245,7 @@
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItMiiFmwSample.java,**/ItFmwDomainInPV.java,**/ItFmwMiiDomain.java</includes-failsafe>
+                <includes-failsafe>**/ItMiiFmwSample.java,**/ItFmwDomainInPV.java,**/ItFmwMiiDomain.java,**/ItFmwSample.java</includes-failsafe>
             </properties>
         </profile>
         <profile>
