@@ -143,7 +143,7 @@ public class ItFmwDomainInPV {
    */
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
-  public void testJrfDomainInPvUsingWlst() {
+  public void testFmwDomainInPvUsingWlst() {
     final String clusterName = "cluster-jrfdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;

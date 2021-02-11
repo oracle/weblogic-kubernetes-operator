@@ -73,7 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create JRF model in image domain and start the domain")
 @IntegrationTest
-public class ItJrfMiiDomain {
+public class ItFmwMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -145,7 +145,7 @@ public class ItJrfMiiDomain {
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
 
-    logger.info("For ItJrfMiiDomain using DB image: {0}, FMW image {1}",
+    logger.info("For ItFmwMiiDomain using DB image: {0}, FMW image {1}",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
 
   }
@@ -157,8 +157,8 @@ public class ItJrfMiiDomain {
    */
   @Order(1)
   @Test
-  @DisplayName("Create JRF Domain model in image")
-  public void testJrfModelInImage() {
+  @DisplayName("Create FMW Domain model in image")
+  public void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(jrfDomainNamespace);
