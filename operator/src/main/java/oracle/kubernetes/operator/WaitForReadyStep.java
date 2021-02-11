@@ -178,7 +178,7 @@ abstract class WaitForReadyStep<T> extends Step {
       return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return createReadAsyncStep(resourceName, Optional.ofNullable(info).map(i -> i.getNamespace()).orElse(null),
+      return createReadAsyncStep(getName(), Optional.ofNullable(info).map(i -> i.getNamespace()).orElse(null),
               Optional.ofNullable(info).map(i -> i.getDomainUid()).orElse(null), resumeIfReady(callback));
     }
   }
@@ -192,7 +192,7 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   public String getName() {
-    return getMetadata(initialResource).getName();
+    return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
   private DefaultResponseStep<T> resumeIfReady(Callback callback) {
