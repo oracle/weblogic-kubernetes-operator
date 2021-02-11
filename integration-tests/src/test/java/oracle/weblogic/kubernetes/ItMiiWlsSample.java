@@ -23,15 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -47,12 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests to verify MII sample.
+ * Tests to verify MII sample with WebLogic Image.
  */
-@DisplayName("Test model in image sample")
+@DisplayName("Test model in image sample with WebLogic Image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiSample {
+public class ItMiiWlsSample {
 
   private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
@@ -62,8 +56,6 @@ public class ItMiiSample {
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -163,7 +155,7 @@ public class ItMiiSample {
   @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
-  public void testCheckSampleSource() {
+  public void testCheckWlsSampleSource() {
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
@@ -242,118 +234,6 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify WLS update4 use case.
-   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
-   * domain resource introspectVersion.
-   * Verifies the sample application is running
-   * and detects the updated configured count for the Min and Max Threads Constraints.
-   */
-  @Test
-  @Order(6)
-  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS update4 use case")
-  public void testWlsUpdate4UseCase() {
-    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
-  }
-
-  /**
-   * Test to verify MII sample JRF initial use case.
-   * Deploys a database and initializes it for RCU, 
-   * uses an FMW infra base image instead of WLS 
-   * base image, and uses a WDT model that's 
-   * specialized for JRF, but is otherwise similar to
-   * the WLS initial use case.
-   * @see #testWlsInitialUseCase for more...
-   */
-  @Test
-  @Order(7)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF initial use case")
-  public void testJrfInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF, 
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
-  }
-
-
-  /**
-   * Test to verify JRF update1 use case.
-   * @see #testWlsUpdate1UseCase for more...
-   */
-  @Test
-  @Order(8)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update1 use case")
-  public void testJrfUpdate1UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
-  }
-
-  /**
-   * Test to verify JRF update2 use case.
-   * @see #testWlsUpdate2UseCase for more...
-   */
-  @Test
-  @Order(9)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update2 use case")
-  public void testJrfUpdate2UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
-  }
-
-  /**
-   * Test to verify JRF update3 use case.
-   * @see #testWlsUpdate3UseCase for more...
-   */
-  @Test
-  @Order(10)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update3 use case")
-  public void testJrfUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-update3-image,-check-image-and-push,-update3-main", 
-        "Update3 use case failed"
-    );
-  }
-
-  /**
-   * Test to verify WLS update4 use case.
-   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
-   * domain resource introspectVersion.
-   * Verifies the sample application is running
-   * and detects the updated configured count for the Min and Max Threads Constraints.
-   */
-  @Test
-  @Order(11)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update4 use case")
-  public void testJrfUpdate4UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
-  }
-
-  /**
    * Delete DB deployment and Uninstall traefik.
    */
   @AfterAll
@@ -384,12 +264,6 @@ public class ItMiiSample {
     }
     if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) { 
       imageVer = "WLS-v2"; 
-    }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) { 
-      imageVer = "JRF-v1"; 
-    }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) { 
-      imageVer = "JRF-v2"; 
     }
     String image = imageName + ":" + imageVer;
 
