@@ -27,7 +27,7 @@ It enables:
  - Embedding model files and archives in a custom container image, and using the WebLogic Image Tool (WIT) to generate this image.
  - Supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
- - Updating WDT model files at runtime. For example, you can add a data source to a running domain. Note that all such updates currently cause the domain to 'roll' in order to take effect.
+ - Updating WDT model files at runtime. For example, you can add a data source to a running domain. See [Runtime updates](#runtime-updates) for details.
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 
@@ -53,7 +53,14 @@ When you deploy a Model in Image Domain YAML file:
 
 #### Runtime updates
 
-Model updates can be applied at runtime by changing the image, secrets, or WDT model ConfigMap after initial deployment. If the image name changes, or the Domain `restartVersion` changes, then this will cause the introspector job to rerun and generate a new domain home, and subsequently the changed domain home will be propagated to the domain's WebLogic Server pods using a rolling upgrade (each pod restarting one at a time). See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+Model updates can be applied at runtime by changing the image, secrets, domain resource, or WDT model ConfigMap after initial deployment.
+
+Some updates may be applied to a running domain without requiring any WebLogic pod restarts (an online update),
+but others may require rolling the pods in order to propagate the update's changes (an offline update),
+and still others may require shutting down the entire domain before applying the update (a full domain restart update).
+_It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct type of update._
+
+See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 #### Continuous integration and delivery (CI/CD)
 

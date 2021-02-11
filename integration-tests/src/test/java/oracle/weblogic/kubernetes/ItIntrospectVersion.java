@@ -580,10 +580,7 @@ public class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    assertTrue(assertDoesNotThrow(() ->
-            patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
-        "Patch domain with new IntrospectVersion threw ApiException"),
-        "Failed to patch domain with new IntrospectVersion");
+    patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);

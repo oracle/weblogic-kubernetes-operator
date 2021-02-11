@@ -177,6 +177,22 @@ public class TestAssertions {
     return Kubernetes.podRestartVersionUpdated(namespace, domainUid, podName, expectedRestartVersion);
   }
 
+  /**
+   * Check if a pod's introspectVersion has been updated.
+   *
+   * @param podName   name of the pod to check
+   * @param namespace in which the pod is running
+   * @param expectedIntrospectVersion introspectVersion that is expected
+   * @return true if the pod's introspectVersion has been updated
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean podIntrospectVersionUpdated(
+      String podName,
+      String namespace,
+      String expectedIntrospectVersion
+  ) throws ApiException {
+    return Kubernetes.podIntrospectVersionUpdated(namespace, podName, expectedIntrospectVersion);
+  }
 
   /**
    * Check if a WebLogic domain custom resource has been patched with a new WebLogic credentials secret.

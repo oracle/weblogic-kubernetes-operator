@@ -167,6 +167,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
+  public boolean isUseOnlineUpdate() {
+    return getDomain().isUseOnlineUpdate();
+  }
+
   public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }

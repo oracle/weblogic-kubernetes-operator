@@ -11,6 +11,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+
 public class Configuration {
 
   @Description("Model in image model files and properties.")
@@ -163,5 +164,6 @@ public class Configuration {
 
     return builder.isEquals();
   }
+
 }
 

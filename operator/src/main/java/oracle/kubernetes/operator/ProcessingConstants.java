@@ -31,6 +31,10 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
   String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
+  String MII_DYNAMIC_UPDATE = "miiDynamicUpdate";
+  String MII_DYNAMIC_UPDATE_WDTROLLBACKFILE = "miiDynamicUpdateRollbackFile";
+  String MII_DYNAMIC_UPDATE_SUCCESS = "0";
+  String MII_DYNAMIC_UPDATE_RESTART_REQUIRED = "103";
 
   String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
@@ -46,6 +50,7 @@ public interface ProcessingConstants {
 
   String EVENT_TYPE = "eventType";
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
+  String DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR = "DynamicUpdateSpecIncompatibleChange";
 
   String EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
       + "exceeded configured domainPresenceFailureRetryMaxCount: "

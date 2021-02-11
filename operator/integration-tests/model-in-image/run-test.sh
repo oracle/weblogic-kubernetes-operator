@@ -26,6 +26,7 @@ DRY_RUN=false
 DO_CLEANUP=false
 DO_CLEANDB=false
 DO_DB=false
+DO_ASSUME_DB=false
 DO_RCU=false
 DO_OPER=false
 DO_TRAEFIK=false
@@ -36,6 +37,7 @@ DO_UPDATE1=false
 DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
+DO_UPDATE4=false
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -68,6 +70,10 @@ function usage() {
                 Note that this depends on the db being deployed
                 and initialized via rcu. So either pre-deploy
                 the db and run rcu or pass '-db' and '-rcu' too.
+    -assume-db: Assume Oracle DB is running.
+                If set, then the 'update4' test will include DB tests.
+                Defaults to true for '-jrf' or '-db'.
+                See 'test-env.sh' for DB settings.
 
   Precleanup (occurs first):
 
@@ -76,7 +82,7 @@ function usage() {
     -precleandb : Deletes db leftover from running -db.
 
 
-  Setup dependencies:
+  Deploying prerequisites:
 
     -oper     : Build and deploy Operator. This
                 operator will monitor '\$DOMAIN_NAMESPACE'
@@ -84,8 +90,10 @@ function usage() {
     -traefik  : Deploy Traefik. This will monitor
                 'DOMAIN_NAMESPACE' which defaults 
                 to 'sample-domain1-ns', and open port 30305.
-    -db       : Deploy Oracle DB. A DB is needed for JRF mode.
+    -db       : Deploy Oracle DB. A DB is needed for JRF mode
+                and optionally for 'update4'.
                 See 'test-env.sh' for DB settings.
+                See also '-assume-db'.
     -rcu      : Initialize FMWdomain1 and FMWdomain2 schemas
                 in the DB. Needed for JRF.
                 See 'test-env.sh' for DB settings.
@@ -98,7 +106,7 @@ function usage() {
     -initial-image: Build image required for initial use case.
                     Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1'
 
-    -initial-main : Deployinitial use case (domain resource, secrets, etc).
+    -initial-main : Deploy initial use case (domain resource, secrets, etc).
                     Domain uid 'sample-domain1'.
                     Depends on '-initial-image'.
 
@@ -116,8 +124,17 @@ function usage() {
                     Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2'
 
     -update3-main : Run update3 use case (update initial domain's app via new image).
+                    Domain uid 'sample-domain1'.
                     Depends on '-update3-image'.
                     Rolls 'sample-domain1' if already running.
+
+    -update4      : Run update4 use case
+                    (Online config update of work manager and data source.)
+                    Domain uid 'sample-domain1'.
+                    Deploys updated configmap and db secret.
+                    Should _not_ roll 'sample-domain1' if already running.
+                    Tests if datasource can contact db if also -assume-db, -jrf, or -db.
+                    Depends on '-initial-image' and '-initial-main'.
 
     -all          : All of the above tests.
 
@@ -129,10 +146,15 @@ while [ ! -z "${1:-}" ]; do
     -dry)            DRY_RUN="true" ;;
     -precleanup)     DO_CLEANUP="true" ;;
     -precleandb)     DO_CLEANDB="true" ;;
-    -db)             DO_DB="true" ;;
+    -db)             DO_DB="true" 
+                     DO_ASSUME_DB="true"
+                     ;;
+    -assume-db)      DO_ASSUME_DB="true" ;;
     -oper)           DO_OPER="true" ;;
     -traefik)        DO_TRAEFIK="true" ;;
-    -jrf)            WDT_DOMAIN_TYPE="JRF" ;;
+    -jrf)            WDT_DOMAIN_TYPE="JRF"
+                     DO_ASSUME_DB="true"
+                     ;;
     -rcu)            DO_RCU="true" ;;
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
@@ -141,6 +163,7 @@ while [ ! -z "${1:-}" ]; do
     -update2)        DO_UPDATE2="true" ;;
     -update3-image)  DO_UPDATE3_IMAGE="true" ;;  
     -update3-main)   DO_UPDATE3_MAIN="true" ;;  
+    -update4)        DO_UPDATE4="true" ;;
     -all)            DO_CHECK_SAMPLE="true" 
                      DO_INITIAL_IMAGE="true" 
                      DO_INITIAL_MAIN="true" 
@@ -148,6 +171,7 @@ while [ ! -z "${1:-}" ]; do
                      DO_UPDATE2="true" 
                      DO_UPDATE3_IMAGE="true" 
                      DO_UPDATE3_MAIN="true" 
+                     DO_UPDATE4="true" 
                      ;;  
     -?)              usage; exit 0; ;;
     *)               trace "Error: Unrecognized parameter '${1}', pass '-?' for usage."; exit 1; ;;
@@ -328,6 +352,9 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
   doCommand -c "export INCLUDE_CONFIGMAP=false"
+  doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
+
+  dumpInfo
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -344,6 +371,8 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
     testapp internal cluster-1 "Hello World!"
     testapp traefik  cluster-1 "Hello World!"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -358,6 +387,9 @@ if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
+
+  dumpInfo
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -372,6 +404,8 @@ if [ "$DO_UPDATE1" = "true" ]; then
     testapp internal cluster-1 "mynewdatasource"
     testapp traefik  cluster-1 "mynewdatasource"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -387,7 +421,10 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID2"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
   doCommand -c "export CUSTOM_DOMAIN_NAME=domain2"
+
+  dumpInfo
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
@@ -405,6 +442,8 @@ if [ "$DO_UPDATE2" = "true" ]; then
     testapp internal cluster-1 "name....domain1"
     testapp traefik  cluster-1 "name....domain1"
   fi
+
+  dumpInfo
 fi
 
 #
@@ -423,9 +462,12 @@ fi
 if [ "$DO_UPDATE3_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE3-MAIN ======"
 
+  dumpInfo
+
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
   doCommand -c "export CUSTOM_DOMAIN_NAME=domain1"
   doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
 
@@ -438,6 +480,60 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
     testapp internal cluster-1 "v2"
     testapp traefik  cluster-1 "v2"
   fi
+
+  dumpInfo
+fi
+
+#
+# Update work manager configuration and datasource on the running domain
+# using online update. Specifically:
+#   - Update WM config in the MII configmap
+#   - Update secret containing DB config
+#   - Patch running domain resource to enable online update
+#   - Patch introspect version
+#   - Wait for introspector to complete
+#   - Use the test app to verify the updated WM and data source configurations.
+#   - Use the test app to verify updated data source can contact DB
+#     (this last check is skipped if DO_ASSUME_DB is not 'true'.)
+#
+
+if [ "$DO_UPDATE4" = "true" ]; then
+  doCommand -c "echo ====== USE CASE: UPDATE4 ======"
+
+  doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
+  doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
+  doCommand -c "export CORRECTED_DATASOURCE_SECRET=true"
+
+  dumpInfo
+  podInfoBefore="$(getPodInfo | grep -v introspectVersion)"
+
+  doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
+  doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
+  doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f  \${WORKDIR}/model-configmaps/datasource -f \${WORKDIR}/model-configmaps/workmanager -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+
+  doCommand    "\$WORKDIR/utils/patch-enable-online-update.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doCommand    "\$WORKDIR/utils/patch-introspect-version.sh -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
+  doPodWait 3
+
+  if [ ! "$DRY_RUN" = "true" ]; then
+    testapp internal cluster-1 "'SampleMinThreads' with configured count: 2" 60 quiet
+    testapp internal cluster-1 "'SampleMaxThreads' with configured count: 20" 
+    if [ "$DO_ASSUME_DB" = "true" ]; then
+      testapp internal cluster-1 "Datasource 'mynewdatasource':  State='Running', testPool='Passed'"
+    fi
+
+    podInfoAfter="$(getPodInfo | grep -v introspectVersion)"
+    if [ "$podInfoBefore" = "$podInfoAfter" ]; then
+      trace "No roll detected. Good!"
+    else
+      dumpInfo
+      trace "Info: Pods before:" && echo "${podInfoBefore}"
+      trace "Info: Pods after:" && echo "${podInfoAfter}"
+      trace "Error: Unexpected roll detected."
+      exit 1
+    fi
+  fi
+  dumpInfo
 fi
 
 trace "Woo hoo! Finished without errors! Total runtime $SECONDS seconds."

@@ -242,6 +242,21 @@ public class ItMiiSample {
   }
 
   /**
+   * Test to verify WLS update4 use case.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(6)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update4 use case")
+  public void testWlsUpdate4UseCase() {
+    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+  }
+
+  /**
    * Test to verify MII sample JRF initial use case.
    * Deploys a database and initializes it for RCU, 
    * uses an FMW infra base image instead of WLS 
@@ -251,7 +266,7 @@ public class ItMiiSample {
    * @see #testWlsInitialUseCase for more...
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testJrfInitialUseCase() {
@@ -287,7 +302,7 @@ public class ItMiiSample {
    * @see #testWlsUpdate1UseCase for more...
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testJrfUpdate1UseCase() {
@@ -299,7 +314,7 @@ public class ItMiiSample {
    * @see #testWlsUpdate2UseCase for more...
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testJrfUpdate2UseCase() {
@@ -311,7 +326,7 @@ public class ItMiiSample {
    * @see #testWlsUpdate3UseCase for more...
    */
   @Test
-  @Order(9)
+  @Order(10)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testJrfUpdate3UseCase() {
@@ -321,6 +336,21 @@ public class ItMiiSample {
         "-update3-image,-check-image-and-push,-update3-main", 
         "Update3 use case failed"
     );
+  }
+
+  /**
+   * Test to verify WLS update4 use case.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(11)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update4 use case")
+  public void testJrfUpdate4UseCase() {
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
   }
 
   /**

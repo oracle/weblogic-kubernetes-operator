@@ -480,6 +480,21 @@ public abstract class DomainConfigurator {
   public abstract DomainConfigurator withRuntimeEncryptionSecret(String secret);
 
   /**
+   * Enable MII Online Update.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withMIIOnlineUpate();
+
+  /**
+   * Set onNonDynamicChanges to CommitUpdateAndRoll for  MII Online Update.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+
+
+  /**
    * Add OPSS wallet password secret for the domain resource.
    *
    * @param secret the OPSS wallet password secret

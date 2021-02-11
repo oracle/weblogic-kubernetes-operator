@@ -101,7 +101,7 @@ The operator automatically updates the `status` section of a deploy domain resou
 
 Here are some references you can use for the fields in these sections:
 
-- See [Domain spec elements](#domain-spec-elements) in this doc.
+- See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
@@ -131,9 +131,11 @@ DESCRIPTION:
 
 The Domain `spec` section contains elements for configuring the domain operation and sub-sections specific to the Administration Server, specific clusters, or specific Managed Servers.
 
+> Note: This section details elements that are unique to the operator. For more general Kubernetes pod elements such as environment variables, node affinity, and volumes, see [Domain resource attribute references](#domain-resource-attribute-references).
+
 Elements related to domain identification, container image, and domain home:
 
-* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`. 
+* `domainUID`: Domain unique identifier. This identifier is required to be no more than 45 characters, and practically, should be shorter in order to help ensure Kubernetes restrictions are met (for more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})). It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.
 * `image`: The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
 * `imagePullPolicy`: The image pull policy for the WebLogic container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
 * `imagePullSecrets`: A list of image pull Secrets for the WebLogic container image.
@@ -178,6 +180,20 @@ Elements related to specifying and overriding WebLogic domain configuration:
   * `domainType`: WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.
   * `runtimeEncryptionSecret`: The name of the Secret containing the runtime encryption password, which must be in a field named `password`. Required when `domainHomeSourceType` is set to `FromModel`.
   * `modelHome`: Location of the WebLogic Deploy Tooling model home directory, which can include model YAML files, `.properties` variable files, and application `.zip` archives. Defaults to `/u01/wdt/models`.
+  * `onlineUpdate.*`: Settings related to the online update option for Model In Image dynamic updates.
+    * `onlineUpdate.enabled`: Enable online update for model changes to a running domain. Default is `false`.
+    * `onlineUpdate.onNonDynamicChanges`:
+      Controls behavior when non-dynamic WebLogic configuration changes are
+      detected during an online update.
+      Non-dynamic changes are changes that require a domain restart to take effect.
+      Valid values are `CommitUpdateOnly` (default) and `CommitUpdateAndRoll`.
+      For more information, see
+      [Online update handling of non-dynamic WebLogic configuration changes]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-handling-of-non-dynamic-weblogic-configuration-changes" >}})
+      in the Runtime Updates section of the Model in Image user guide.
+    * `onlineUpdate.wdtTimeouts.*`: Rarely needed timeout settings for online update calls to the
+       WebLogic domain from the WebLogic Deploy Tool within the introspector job. All timeouts
+       are specified in milliseconds and default to two or three minutes. For a full list of
+       timeouts, call `kubectl explain domain.spec.configuration.model.onlineUpdate.wdtTimeouts`.
 
 * These elements are under `configuration.opss`, and only apply if the `domainHomeSourceType` is `FromModel` and the `domainType` is `JRF`.
 
@@ -218,6 +234,7 @@ You can use the following environment variables to specify JVM memory and JVM op
 * `NODEMGR_JAVA_OPTIONS`: Java options for starting a Node Manager instance.
 * `NODEMGR_MEM_ARGS`: JVM memory arguments for starting a Node Manager instance.
 * `WLST_PROPERTIES`: System properties for WLST commands in introspector jobs or WebLogic Server instance containers.
+* `WLST_EXTRA_PROPERTIES`: System properties appended to WLST_PROPERTIES for  WLST commands in introspector jobs or WebLogic Server instance containers.
 * `WLSDEPLOY_PROPERTIES`: System properties for WebLogic Deploy Tool commands during Model in Image introspector jobs or WebLogic Server instance containers.
 * `PRE_CLASSPATH`: Path(s) that are *prepended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
 * `CLASSPATH`: Path(s) that are *appended* to the WebLogic Server system classpath; delimit multiple paths with a colon `:`.
@@ -227,8 +244,8 @@ You can use the following environment variables to specify JVM memory and JVM op
 * The following behavior occurs depending on whether or not `NODEMGR_JAVA_OPTIONS` and `NODEMGR_MEM_ARGS` are defined:
   * If `NODEMGR_JAVA_OPTIONS` is not defined and `JAVA_OPTIONS` is defined, then the `JAVA_OPTIONS` value will be applied to the Node Manager instance.
   * If `NODEMGR_MEM_ARGS` is not defined, then default memory and Java security property values (`-Xms64m -Xmx100m -Djava.security.egd=file:/dev/./urandom`) will be applied to the Node Manager instance. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
-* The `USER_MEM_ARGS` environment variable defaults to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. It can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
-* Notice that the `NODEMGR_MEM_ARGS` and `USER_MEM_ARGS` environment variables both set `-Djava.security.egd=file:/dev/./urandom` by default. This respectively helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy.
+* The `USER_MEM_ARGS` and `WLST_EXTRA_PROPERTIES` environment variables both default to `-Djava.security.egd=file:/dev/./urandom` in all WebLogic Server pods and the WebLogic introspection job. They can be explicitly set to another value in your Domain YAML file using the `env` attribute under the `serverPod` configuration.
+* Notice that the `NODEMGR_MEM_ARGS`, `USER_MEM_ARGS`, and `WLST_EXTRA_PROPERTIES` environment variables all include `-Djava.security.egd=file:/dev/./urandom` by default. This helps to speed up the Node Manager and WebLogic Server startup on systems with low entropy, plus similarly helps to speed up introspection job usage of the WLST `encrypt` command.
 * For a detailed discussion of Java and pod memory tuning see the [Pod memory and CPU resources FAQ]({{<relref "/faq/resource-settings.md">}}).
 * You can use `JAVA_OPTIONS` and `WLSDEPLOY_PROPERTIES` to disable Fast Application Notifications (FAN); see the [Disable Fast Application Notifications FAQ]({{<relref "/faq/fan.md">}}) for details.
 
@@ -273,6 +290,8 @@ Customer provided labels and annotations may not begin with "weblogic" and the o
 * `weblogic.domainUID: <uid>`, where `<uid>` is the domain UID from the Domain resource
 * `weblogic.serverName: <server-name>`, where `<server-name>` is the name of the WebLogic Server instance
 * `weblogic.clusterName: <cluster-name>`, where `<cluster-name>` is the name of the cluster of which this instance is a member, if any
+* `weblogic.domainRestartVersion: <restart-version>`, matches `domain.spec.restartVersion` after the pod is up to date with this version
+* `weblogic.introspectVersion: <introspect-version>`, matches `domain.spec.introspectVersion` after the pod is up to date with this version
 
 Prior to creating a Pod, the operator replaces variable references allowing the Pod content to be templates.  The format of these variable references is `$(VARIABLE_NAME)` where `VARIABLE_NAME` is one of the variable names available in the container for the WebLogic Server instance. The default set of environment variables includes:
 
@@ -281,7 +300,7 @@ Prior to creating a Pod, the operator replaces variable references allowing the 
 * `DOMAIN_HOME`: The domain home location as a file system path within the container.
 * `SERVER_NAME`: The WebLogic Server instance name.
 * `CLUSTER_NAME`: The WebLogic cluster name, if this is a cluster member.
-* `LOG_HOME`: The WebLogic log location as a file system path within the container.
+* `LOG_HOME`: If the `domain.spec.logHomeEnabled' attribute is set to true, then this contains the WebLogic log location as a file system path within the container
 
 This example domain YAML file specifies that Pods for WebLogic Server instances in the `cluster-1` cluster will have a per-Managed Server volume and volume mount (similar to a Kubernetes StatefulSet), an init container to initialize some files in that volume, and anti-affinity scheduling so that the server instances are scheduled, as much as possible, on different Nodes:
 

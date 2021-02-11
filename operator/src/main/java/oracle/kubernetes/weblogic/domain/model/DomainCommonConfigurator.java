@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -311,6 +312,25 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     getOrCreateModel().withRuntimeEncryptionSecret(secret);
     return this;
   }
+
+  @Override
+  public DomainConfigurator withMIIOnlineUpate() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateOnly);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateAndRoll);
+    return this;
+  }
+
 
   @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
