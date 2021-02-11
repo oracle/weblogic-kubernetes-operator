@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -40,7 +41,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -57,6 +61,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
@@ -65,10 +72,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -512,22 +523,55 @@ public class CommonMiiTestUtils {
    */
   public static boolean checkWeblogicMBean(String domainNamespace,
          String adminServerPodName,  String resourcePath, String expectedStatusCode) {
+    return checkWeblogicMBean(domainNamespace, adminServerPodName, resourcePath, expectedStatusCode, false, "");
+  }
+
+  /**
+   * Use REST APIs to check a runtime mbean from the WebLogic server.
+   *
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcePath Path of the system resource to be used in the REST API call
+   * @param expectedStatusCode the expected response to verify
+   * @param isSecureMode whether use SSL
+   * @param sslChannelName the channel name for SSL
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkWeblogicMBean(String domainNamespace,
+                                           String adminServerPodName,
+                                           String resourcePath,
+                                           String expectedStatusCode,
+                                           boolean isSecureMode,
+                                           String sslChannelName) {
     LoggingFacade logger = getLogger();
 
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append(resourcePath)
-         .append(" --silent --show-error ")
-         .append(" -o /dev/null ")
-         .append(" -w %{http_code});")
-         .append("echo ${status}");
+    int adminServiceNodePort;
+    if (isSecureMode) {
+      adminServiceNodePort =
+          getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), sslChannelName);
+    } else {
+      adminServiceNodePort =
+          getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    }
+
+    StringBuffer curlString;
+    if (isSecureMode) {
+      curlString = new StringBuffer("status=$(curl -k --user weblogic:welcome1 https://");
+    } else {
+      curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 http://");
+    }
+
+    curlString.append(K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append(resourcePath)
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
     return new Command()
-          .withParams(new CommandParams()
-              .command(curlString.toString()))
-          .executeAndVerify(expectedStatusCode);
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedStatusCode);
   }
 
   /**
@@ -689,5 +733,67 @@ public class CommonMiiTestUtils {
             .namespace(domNamespace))
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
+  }
+
+  /**
+   * Verify the introspector runs, completed and deleted.
+   * @param domainUid domain uid for which the introspector runs
+   * @param domainNamespace domain namespace where the domain exists
+   */
+  public static void verifyIntrospectorRuns(String domainUid, String domainNamespace) {
+    //verify the introspector pod is created and runs
+    LoggingFacade logger = getLogger();
+    logger.info("Verifying introspector pod is created, runs and deleted");
+    String introspectJobName = getIntrospectJobName(domainUid);
+    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+  }
+
+  /**
+   * Verify the pods of the domain are not rolled.
+   * @param domainNamespace namespace where pods exists
+   * @param podsCreationTimes map of pods name and pod creation times
+   */
+  public static void verifyPodsNotRolled(String domainNamespace, Map<String, DateTime> podsCreationTimes) {
+    // wait for 2 minutes before checking the pods, make right decision logic
+    // that runs every two minutes in the  Operator
+    try {
+      getLogger().info("Sleep 2 minutes for operator make right decision logic");
+      Thread.sleep(120 * 1000);
+    } catch (InterruptedException ie) {
+      getLogger().info("InterruptedException while sleeping for 2 minutes");
+    }
+    for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
+      assertEquals(
+          entry.getValue(),
+          getPodCreationTime(domainNamespace, entry.getKey()),
+          "pod '" + entry.getKey() + "' should not roll");
+    }
+  }
+
+  /**
+   * Verify the pod introspect version is updated.
+   * @param podNames name of the pod
+   * @param expectedIntrospectVersion expected introspect version
+   * @param domainNamespace domain namespace where pods exist
+   */
+  public static void verifyPodIntrospectVersionUpdated(Set<String> podNames,
+                                                 String expectedIntrospectVersion,
+                                                 String domainNamespace) {
+
+    for (String podName : podNames) {
+      with().pollDelay(2, SECONDS)
+          .and().with().pollInterval(10, SECONDS)
+          .atMost(5, MINUTES).await()
+          .conditionEvaluationListener(
+              condition ->
+                  getLogger().info(
+                      "Checking for updated introspectVersion for pod {0}. "
+                          + "Elapsed time {1}ms, remaining time {2}ms",
+                      podName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
+          .until(
+              () ->
+                  podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
+    }
   }
 }
