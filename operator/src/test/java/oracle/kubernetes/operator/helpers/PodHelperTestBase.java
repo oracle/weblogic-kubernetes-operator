@@ -1467,6 +1467,11 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     }
 
     @Override
+    public Step waitForReady(String podName, Step next) {
+      return next;
+    }
+
+    @Override
     public Step waitForDelete(V1Pod pod, Step next) {
       return next;
     }
@@ -1481,6 +1486,11 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
+      return new DelayStep(next, delaySeconds);
+    }
+
+    @Override
+    public Step waitForReady(String podName, Step next) {
       return new DelayStep(next, delaySeconds);
     }
 
