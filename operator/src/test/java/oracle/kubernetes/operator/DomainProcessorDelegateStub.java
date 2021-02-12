@@ -76,6 +76,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
 
     @Override
+    public Step waitForReady(String podName, Step next) {
+      return next;
+    }
+
+    @Override
     public Step waitForDelete(V1Pod pod, Step next) {
       return next;
     }

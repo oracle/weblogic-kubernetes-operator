@@ -337,6 +337,10 @@ public class MainTest extends ThreadFactoryTestBase {
     return Arrays.stream(NAMESPACES).filter(domainNamespaces::isStarting).collect(Collectors.toList());
   }
 
+  private List<String> getStartingNamespaces(String...namespaces) {
+    return Arrays.stream(namespaces).filter(domainNamespaces::isStarting).collect(Collectors.toList());
+  }
+
   @NotNull
   DomainRecheck createDomainRecheck() {
     return new DomainRecheck(delegate);
@@ -425,6 +429,35 @@ public class MainTest extends ThreadFactoryTestBase {
 
   private void defineSelectionStrategy(SelectionStrategy selectionStrategy) {
     TuningParameters.getInstance().put(Namespaces.SELECTION_STRATEGY_KEY, selectionStrategy.toString());
+  }
+
+  @Test
+  public void whenNamespacesListedInMultipleChunks_allNamespacesStarted() {
+    loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
+
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1,NS" + MULTICHUNK_LAST_NAMESPACE_NUM;
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(MULTICHUNK_LAST_NAMESPACE_NUM);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat(getStartingNamespaces("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM),
+        contains("NS1", "NS" + MULTICHUNK_LAST_NAMESPACE_NUM));
+  }
+
+  @Test
+  public void whenNamespacesListedInMoreThanTwoChunks_allNamespacesStarted() {
+    loggerControl.withLogLevel(Level.WARNING).collectLogMessages(logRecords, MessageKeys.NAMESPACE_IS_MISSING);
+    int lastNSNumber = DEFAULT_CALL_LIMIT * 3 + 1;
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1,NS" + lastNSNumber;
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(lastNSNumber);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat(getStartingNamespaces("NS1", "NS" + lastNSNumber), contains("NS1", "NS" + lastNSNumber));
   }
 
   @Test
