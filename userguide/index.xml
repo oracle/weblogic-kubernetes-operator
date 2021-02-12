@@ -6,11 +6,7 @@
     <description>Recent content in User Guide on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 22 Feb 2019 15:27:48 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/userguide/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Fri, 22 Feb 2019 15:27:48 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/userguide/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Istio support</title>
       <link>/weblogic-kubernetes-operator/userguide/istio/istio/</link>

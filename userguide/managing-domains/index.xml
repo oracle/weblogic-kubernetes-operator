@@ -6,11 +6,7 @@
     <description>Recent content in Manage WebLogic domains on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 16:43:45 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 23 Feb 2019 16:43:45 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Prepare to run a domain</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/prepare/</link>

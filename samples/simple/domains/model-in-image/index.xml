@@ -6,11 +6,7 @@
     <description>Recent content in Model in image on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Prerequisites</title>
       <link>/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/</link>

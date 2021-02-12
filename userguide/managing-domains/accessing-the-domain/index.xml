@@ -6,11 +6,7 @@
     <description>Recent content in Access the domain on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 17:39:00 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 23 Feb 2019 17:39:00 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Use WLST</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/</link>

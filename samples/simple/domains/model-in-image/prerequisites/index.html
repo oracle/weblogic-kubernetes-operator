@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.68.3" />
+    <meta name="generator" content="Hugo 0.80.0" />
     <meta name="description" content="">
 
 
@@ -12,18 +12,18 @@
     <title>Prerequisites :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611348082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1613159925" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1613159925"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611348082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1613159925"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1613159925"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1613159925"></script>
 
     
   </div>
@@ -2964,59 +2964,59 @@ $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-webl
 <ul>
 <li>
 <p>Option 1: To create the ingresses, use the following YAML file to create a file called <code>/tmp/mii-sample/ingresses/myingresses.yaml</code> and then call <code>kubectl apply -f /tmp/mii-sample/ingresses/myingresses.yaml</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: traefik.containo.us/v1alpha1
-<span style="color:#66d9ef">kind</span>: IngressRoute
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: traefik-ingress-sample-domain1-admin-server
-  <span style="color:#66d9ef">namespace</span>: sample-domain1-ns
-  <span style="color:#66d9ef">labels</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: sample-domain1
-  <span style="color:#66d9ef">annotations</span>:
-    <span style="color:#66d9ef">kubernetes.io/ingress.class</span>: traefik
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">routes</span>:
-  - <span style="color:#66d9ef">kind</span>: Rule
-    <span style="color:#66d9ef">match</span>: PathPrefix(`/console`)
-    <span style="color:#66d9ef">services</span>:
-    - <span style="color:#66d9ef">kind</span>: Service
-      <span style="color:#66d9ef">name</span>: sample-domain1-admin-server
-      <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">7001</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-admin-server</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+  <span style="color:#f92672">annotations</span>:
+    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">routes</span>:
+  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">PathPrefix(`/console`)</span>
+    <span style="color:#f92672">services</span>:
+    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-admin-server</span>
+      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
 ---
-<span style="color:#66d9ef">apiVersion</span>: traefik.containo.us/v1alpha1
-<span style="color:#66d9ef">kind</span>: IngressRoute
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: traefik-ingress-sample-domain1-cluster-cluster<span style="color:#ae81ff">-1</span>
-  <span style="color:#66d9ef">namespace</span>: sample-domain1-ns
-  <span style="color:#66d9ef">labels</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: sample-domain1
-  <span style="color:#66d9ef">annotations</span>:
-    <span style="color:#66d9ef">kubernetes.io/ingress.class</span>: traefik
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">routes</span>:
-  - <span style="color:#66d9ef">kind</span>: Rule
-    <span style="color:#66d9ef">match</span>: Host(`sample-domain1-cluster-cluster<span style="color:#ae81ff">-1.</span>mii-sample.org`)
-    <span style="color:#66d9ef">services</span>:
-    - <span style="color:#66d9ef">kind</span>: Service
-      <span style="color:#66d9ef">name</span>: sample-domain1-cluster-cluster<span style="color:#ae81ff">-1</span>
-      <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">8001</span>
+<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain1-cluster-cluster-1</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+  <span style="color:#f92672">annotations</span>:
+    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">routes</span>:
+  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain1-cluster-cluster-1.mii-sample.org`)</span>
+    <span style="color:#f92672">services</span>:
+    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-cluster-cluster-1</span>
+      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
 ---
-<span style="color:#66d9ef">apiVersion</span>: traefik.containo.us/v1alpha1
-<span style="color:#66d9ef">kind</span>: IngressRoute
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: traefik-ingress-sample-domain2-cluster-cluster<span style="color:#ae81ff">-1</span>
-  <span style="color:#66d9ef">namespace</span>: sample-domain1-ns
-  <span style="color:#66d9ef">labels</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: sample-domain2
-  <span style="color:#66d9ef">annotations</span>:
-    <span style="color:#66d9ef">kubernetes.io/ingress.class</span>: traefik
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">routes</span>:
-  - <span style="color:#66d9ef">kind</span>: Rule
-    <span style="color:#66d9ef">match</span>: Host(`sample-domain2-cluster-cluster<span style="color:#ae81ff">-1.</span>mii-sample.org`)
-    <span style="color:#66d9ef">services</span>:
-    - <span style="color:#66d9ef">kind</span>: Service
-      <span style="color:#66d9ef">name</span>: sample-domain2-cluster-cluster<span style="color:#ae81ff">-1</span>
-      <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">8001</span>
+<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">traefik.containo.us/v1alpha1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">IngressRoute</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">traefik-ingress-sample-domain2-cluster-cluster-1</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain2</span>
+  <span style="color:#f92672">annotations</span>:
+    <span style="color:#f92672">kubernetes.io/ingress.class</span>: <span style="color:#ae81ff">traefik</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">routes</span>:
+  - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Rule</span>
+    <span style="color:#f92672">match</span>: <span style="color:#ae81ff">Host(`sample-domain2-cluster-cluster-1.mii-sample.org`)</span>
+    <span style="color:#f92672">services</span>:
+    - <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain2-cluster-cluster-1</span>
+      <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
 </code></pre></div></li>
 <li>
 <p>Option 2: Run <code>kubectl apply -f</code> on each of the ingress YAML files that are already included in the sample source <code>/tmp/mii-sample/ingresses</code> directory:</p>
@@ -5210,19 +5210,19 @@ $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1613159925"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1613159925"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611348082" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611348082"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1613159925" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1613159925"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

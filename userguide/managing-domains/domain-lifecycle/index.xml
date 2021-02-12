@@ -6,11 +6,7 @@
     <description>Recent content in Domain life cycle on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 16:50:09 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 23 Feb 2019 16:50:09 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Startup and shutdown</title>
       <link>/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/</link>

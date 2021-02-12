@@ -6,10 +6,6 @@
     <description>Recent content in Delete resources associated with the domain on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sat, 23 Feb 2019 17:32:31 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

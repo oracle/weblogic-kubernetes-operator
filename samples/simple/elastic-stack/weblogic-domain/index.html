@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.68.3" />
+    <meta name="generator" content="Hugo 0.80.0" />
     <meta name="description" content="Sample for using Fluentd for WebLogic domain and operator&#39;s logs.">
 
 
@@ -12,18 +12,18 @@
     <title>WebLogic domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611348082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1613159925" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1613159925"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611348082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1613159925"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1613159925"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1613159925"></script>
 
     
   </div>
@@ -2930,16 +2930,16 @@
 </ul>
 <p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
 <p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and make the following edits:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">logHome</span>: /scratch/logs/bobs-bookstore
-  <span style="color:#66d9ef">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#66d9ef">serverPod</span>:
-    <span style="color:#66d9ef">volumes</span>:
-    - <span style="color:#66d9ef">emptyDir</span>: {}
-      <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
-    <span style="color:#66d9ef">volumeMounts</span>:
-    - <span style="color:#66d9ef">mountPath</span>: /scratch
-      <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">logHome</span>: <span style="color:#ae81ff">/scratch/logs/bobs-bookstore</span>
+  <span style="color:#f92672">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#f92672">serverPod</span>:
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#f92672">emptyDir</span>: {}
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+    <span style="color:#f92672">volumeMounts</span>:
+    - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/scratch</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
 </code></pre></div><h4 id="add-elasticsearch-secrets-to-weblogic-domain-credentials">Add Elasticsearch secrets to WebLogic domain credentials</h4>
 <p>The <code>fluentd</code> container will be configured to look for Elasticsearch parameters in the domain credentials.  Edit the domain credentials and add the parameters shown in the example below.</p>
 <p>Example: <code>kubectl edit secret bobs-bookstore-weblogic-credentials -n bob</code> and add the base64 encoded values of each Elasticsearch parameter:</p>
@@ -3021,13 +3021,13 @@ elasticsearchpassword: d2VsY29tZTE=
 <p>Edit the domain definition and configure a volume for the <code>ConfigMap</code> containing the <code>fluentd</code> configuration.</p>
 <p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
 <p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and add the following portions to the domain definition.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">serverPod</span>:
-    <span style="color:#66d9ef">volumes</span>:
-    - <span style="color:#66d9ef">configMap</span>:
-        <span style="color:#66d9ef">defaultMode</span>: <span style="color:#ae81ff">420</span>
-        <span style="color:#66d9ef">name</span>: fluentd-config
-      <span style="color:#66d9ef">name</span>: fluentd-config-volume
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">serverPod</span>:
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#f92672">configMap</span>:
+        <span style="color:#f92672">defaultMode</span>: <span style="color:#ae81ff">420</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config-volume</span>
 </code></pre></div><h4 id="add-fluentd-container">Add <code>fluentd</code> container</h4>
 <p>Add a container to the domain that will run <code>fluentd</code> in the Administration Server and Managed Server pods.</p>
 <p>Notice the container definition:</p>
@@ -3038,59 +3038,59 @@ elasticsearchpassword: d2VsY29tZTE=
 </ul>
 <p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
 <p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and add the following container definition.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">serverPod</span>:
-    <span style="color:#66d9ef">containers</span>:
-    - <span style="color:#66d9ef">args</span>:
-      - -c
-      - /etc/fluent.conf
-      <span style="color:#66d9ef">env</span>:
-      - <span style="color:#66d9ef">name</span>: DOMAIN_UID
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">fieldRef</span>:
-            <span style="color:#66d9ef">fieldPath</span>: metadata.labels[<span style="color:#e6db74">&#39;weblogic.domainUID&#39;</span>]
-      - <span style="color:#66d9ef">name</span>: SERVER_NAME
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">fieldRef</span>:
-            <span style="color:#66d9ef">fieldPath</span>: metadata.labels[<span style="color:#e6db74">&#39;weblogic.serverName&#39;</span>]
-      - <span style="color:#66d9ef">name</span>: LOG_PATH
-        <span style="color:#66d9ef">value</span>: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
-      - <span style="color:#66d9ef">name</span>: FLUENTD_CONF
-        <span style="color:#66d9ef">value</span>: fluentd.conf
-      - <span style="color:#66d9ef">name</span>: FLUENT_ELASTICSEARCH_SED_DISABLE
-        <span style="color:#66d9ef">value</span>: <span style="color:#e6db74">&#34;true&#34;</span>
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_HOST
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchhost
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_PORT
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchport
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_USER
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchuser
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-            <span style="color:#66d9ef">optional</span>: <span style="color:#66d9ef">true</span>
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_PASSWORD
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchpassword
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-            <span style="color:#66d9ef">optional</span>: <span style="color:#66d9ef">true</span>
-      <span style="color:#66d9ef">image</span>: fluent/fluentd-kubernetes-daemonset:v1<span style="color:#ae81ff">.3.3</span>-debian-elasticsearch<span style="color:#ae81ff">-1.3</span>
-      <span style="color:#66d9ef">imagePullPolicy</span>: IfNotPresent
-      <span style="color:#66d9ef">name</span>: fluentd
-      <span style="color:#66d9ef">resources</span>: {}
-      <span style="color:#66d9ef">volumeMounts</span>:
-      - <span style="color:#66d9ef">mountPath</span>: /fluentd/etc/fluentd.conf
-        <span style="color:#66d9ef">name</span>: fluentd-config-volume
-        <span style="color:#66d9ef">subPath</span>: fluentd.conf
-      - <span style="color:#66d9ef">mountPath</span>: /scratch
-        <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">serverPod</span>:
+    <span style="color:#f92672">containers</span>:
+    - <span style="color:#f92672">args</span>:
+      - -<span style="color:#ae81ff">c</span>
+      - <span style="color:#ae81ff">/etc/fluent.conf</span>
+      <span style="color:#f92672">env</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">fieldRef</span>:
+            <span style="color:#f92672">fieldPath</span>: <span style="color:#ae81ff">metadata.labels[&#39;weblogic.domainUID&#39;]</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVER_NAME</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">fieldRef</span>:
+            <span style="color:#f92672">fieldPath</span>: <span style="color:#ae81ff">metadata.labels[&#39;weblogic.serverName&#39;]</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">LOG_PATH</span>
+        <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/scratch/logs/bobs-bookstore/$(SERVER_NAME).log</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">FLUENTD_CONF</span>
+        <span style="color:#f92672">value</span>: <span style="color:#ae81ff">fluentd.conf</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">FLUENT_ELASTICSEARCH_SED_DISABLE</span>
+        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_HOST</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchhost</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_PORT</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchport</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_USER</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchuser</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+            <span style="color:#f92672">optional</span>: <span style="color:#66d9ef">true</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_PASSWORD</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchpassword</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+            <span style="color:#f92672">optional</span>: <span style="color:#66d9ef">true</span>
+      <span style="color:#f92672">image</span>: <span style="color:#ae81ff">fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3</span>
+      <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd</span>
+      <span style="color:#f92672">resources</span>: {}
+      <span style="color:#f92672">volumeMounts</span>:
+      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/fluentd/etc/fluentd.conf</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config-volume</span>
+        <span style="color:#f92672">subPath</span>: <span style="color:#ae81ff">fluentd.conf</span>
+      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/scratch</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
 </code></pre></div><h4 id="verify-logs-are-exported-to-elasticsearch">Verify logs are exported to Elasticsearch</h4>
 <p>After the Administration Server and Managed Server pods have started with all the changes described above, the logs should now be sent to Elasticsearch.</p>
 <p>You can check if the <code>fluentd</code> container is successfully tailing the log by executing a command like <code>kubectl logs -f bobs-bookstore-admin-server -n bob fluentd</code>.  The log output should look similar to this:</p>
@@ -3106,113 +3106,113 @@ messageID:BEA-141107 message:Version: WebLogic Server 12.2.1.3.0 Thu Aug 17 13:3
 _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
 </code></pre></div><h4 id="domain-example">Domain example</h4>
 <p>The following is a complete example of a domain custom resource with a <code>fluentd</code> container configured.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: weblogic.oracle/v8
-<span style="color:#66d9ef">kind</span>: Domain
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">labels</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: bobs-bookstore
-  <span style="color:#66d9ef">name</span>: bobs-bookstore
-  <span style="color:#66d9ef">namespace</span>: bob
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">adminServer</span>:
-    <span style="color:#66d9ef">adminService</span>:
-      <span style="color:#66d9ef">channels</span>:
-      - <span style="color:#66d9ef">channelName</span>: default
-        <span style="color:#66d9ef">nodePort</span>: <span style="color:#ae81ff">32401</span>
-      - <span style="color:#66d9ef">channelName</span>: T3Channel
-        <span style="color:#66d9ef">nodePort</span>: <span style="color:#ae81ff">32402</span>
-  <span style="color:#66d9ef">clusters</span>:
-  - <span style="color:#66d9ef">clusterName</span>: cluster<span style="color:#ae81ff">-1</span>
-    <span style="color:#66d9ef">serverPod</span>:
-  <span style="color:#66d9ef">domainHome</span>: /u01/oracle/user_projects/domains/bobs-bookstore
-  <span style="color:#66d9ef">domainHomeSourceType</span>: Image
-  <span style="color:#66d9ef">domainUID</span>: bobs-bookstore
-  <span style="color:#66d9ef">experimental</span>:
-    <span style="color:#66d9ef">istio</span>:
-      <span style="color:#66d9ef">enabled</span>: <span style="color:#66d9ef">true</span>
-      <span style="color:#66d9ef">readinessPort</span>: <span style="color:#ae81ff">8888</span>
-  <span style="color:#66d9ef">image</span>: phx.ocir.io/bobs-bookstore
-  <span style="color:#66d9ef">imagePullPolicy</span>: IfNotPresent
-  <span style="color:#66d9ef">imagePullSecrets</span>:
-  - <span style="color:#66d9ef">name</span>: ocir
-  <span style="color:#66d9ef">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#66d9ef">logHome</span>: /scratch/logs/bobs-bookstore
-  <span style="color:#66d9ef">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
-  <span style="color:#66d9ef">replicas</span>: <span style="color:#ae81ff">2</span>
-  <span style="color:#66d9ef">serverPod</span>:
-    <span style="color:#66d9ef">containers</span>:
-    - <span style="color:#66d9ef">args</span>:
-      - -c
-      - /etc/fluent.conf
-      <span style="color:#66d9ef">env</span>:
-      - <span style="color:#66d9ef">name</span>: DOMAIN_UID
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">fieldRef</span>:
-            <span style="color:#66d9ef">fieldPath</span>: metadata.labels[<span style="color:#e6db74">&#39;weblogic.domainUID&#39;</span>]
-      - <span style="color:#66d9ef">name</span>: SERVER_NAME
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">fieldRef</span>:
-            <span style="color:#66d9ef">fieldPath</span>: metadata.labels[<span style="color:#e6db74">&#39;weblogic.serverName&#39;</span>]
-      - <span style="color:#66d9ef">name</span>: LOG_PATH
-        <span style="color:#66d9ef">value</span>: /scratch/logs/bobs-bookstore/$(SERVER_NAME).log
-      - <span style="color:#66d9ef">name</span>: FLUENTD_CONF
-        <span style="color:#66d9ef">value</span>: fluentd.conf
-      - <span style="color:#66d9ef">name</span>: FLUENT_ELASTICSEARCH_SED_DISABLE
-        <span style="color:#66d9ef">value</span>: <span style="color:#e6db74">&#34;true&#34;</span>
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_HOST
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchhost
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_PORT
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchport
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_USER
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchuser
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-            <span style="color:#66d9ef">optional</span>: <span style="color:#66d9ef">true</span>
-      - <span style="color:#66d9ef">name</span>: ELASTICSEARCH_PASSWORD
-        <span style="color:#66d9ef">valueFrom</span>:
-          <span style="color:#66d9ef">secretKeyRef</span>:
-            <span style="color:#66d9ef">key</span>: elasticsearchpassword
-            <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
-            <span style="color:#66d9ef">optional</span>: <span style="color:#66d9ef">true</span>
-      <span style="color:#66d9ef">image</span>: fluent/fluentd-kubernetes-daemonset:v1<span style="color:#ae81ff">.3.3</span>-debian-elasticsearch<span style="color:#ae81ff">-1.3</span>
-      <span style="color:#66d9ef">imagePullPolicy</span>: IfNotPresent
-      <span style="color:#66d9ef">name</span>: fluentd
-      <span style="color:#66d9ef">resources</span>: {}
-      <span style="color:#66d9ef">volumeMounts</span>:
-      - <span style="color:#66d9ef">mountPath</span>: /fluentd/etc/fluentd.conf
-        <span style="color:#66d9ef">name</span>: fluentd-config-volume
-        <span style="color:#66d9ef">subPath</span>: fluentd.conf
-      - <span style="color:#66d9ef">mountPath</span>: /scratch
-        <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
-    <span style="color:#66d9ef">env</span>:
-    - <span style="color:#66d9ef">name</span>: JAVA_OPTIONS
-      <span style="color:#66d9ef">value</span>: -Dweblogic.StdoutDebugEnabled=<span style="color:#66d9ef">false</span>
-    - <span style="color:#66d9ef">name</span>: USER_MEM_ARGS
-      <span style="color:#66d9ef">value</span>: <span style="color:#e6db74">&#39;-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m &#39;</span>
-    - <span style="color:#66d9ef">name</span>: WL_HOME
-      <span style="color:#66d9ef">value</span>: /u01/oracle/wlserver
-    - <span style="color:#66d9ef">name</span>: MW_HOME
-      <span style="color:#66d9ef">value</span>: /u01/oracle
-    <span style="color:#66d9ef">volumeMounts</span>:
-    - <span style="color:#66d9ef">mountPath</span>: /scratch
-      <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
-    <span style="color:#66d9ef">volumes</span>:
-    - <span style="color:#66d9ef">emptyDir</span>: {}
-      <span style="color:#66d9ef">name</span>: weblogic-domain-storage-volume
-    - <span style="color:#66d9ef">configMap</span>:
-        <span style="color:#66d9ef">defaultMode</span>: <span style="color:#ae81ff">420</span>
-        <span style="color:#66d9ef">name</span>: fluentd-config
-      <span style="color:#66d9ef">name</span>: fluentd-config-volume
-  <span style="color:#66d9ef">serverStartPolicy</span>: IF_NEEDED
-  <span style="color:#66d9ef">webLogicCredentialsSecret</span>:
-    <span style="color:#66d9ef">name</span>: bobs-bookstore-weblogic-credentials
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">weblogic.oracle/v8</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">bobs-bookstore</span>
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">bob</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">adminServer</span>:
+    <span style="color:#f92672">adminService</span>:
+      <span style="color:#f92672">channels</span>:
+      - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">default</span>
+        <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">32401</span>
+      - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">T3Channel</span>
+        <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">32402</span>
+  <span style="color:#f92672">clusters</span>:
+  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+    <span style="color:#f92672">serverPod</span>:
+  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/oracle/user_projects/domains/bobs-bookstore</span>
+  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">Image</span>
+  <span style="color:#f92672">domainUID</span>: <span style="color:#ae81ff">bobs-bookstore</span>
+  <span style="color:#f92672">experimental</span>:
+    <span style="color:#f92672">istio</span>:
+      <span style="color:#f92672">enabled</span>: <span style="color:#66d9ef">true</span>
+      <span style="color:#f92672">readinessPort</span>: <span style="color:#ae81ff">8888</span>
+  <span style="color:#f92672">image</span>: <span style="color:#ae81ff">phx.ocir.io/bobs-bookstore</span>
+  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+  <span style="color:#f92672">imagePullSecrets</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ocir</span>
+  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#f92672">logHome</span>: <span style="color:#ae81ff">/scratch/logs/bobs-bookstore</span>
+  <span style="color:#f92672">logHomeEnabled</span>: <span style="color:#66d9ef">true</span>
+  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+  <span style="color:#f92672">serverPod</span>:
+    <span style="color:#f92672">containers</span>:
+    - <span style="color:#f92672">args</span>:
+      - -<span style="color:#ae81ff">c</span>
+      - <span style="color:#ae81ff">/etc/fluent.conf</span>
+      <span style="color:#f92672">env</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">fieldRef</span>:
+            <span style="color:#f92672">fieldPath</span>: <span style="color:#ae81ff">metadata.labels[&#39;weblogic.domainUID&#39;]</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">SERVER_NAME</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">fieldRef</span>:
+            <span style="color:#f92672">fieldPath</span>: <span style="color:#ae81ff">metadata.labels[&#39;weblogic.serverName&#39;]</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">LOG_PATH</span>
+        <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/scratch/logs/bobs-bookstore/$(SERVER_NAME).log</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">FLUENTD_CONF</span>
+        <span style="color:#f92672">value</span>: <span style="color:#ae81ff">fluentd.conf</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">FLUENT_ELASTICSEARCH_SED_DISABLE</span>
+        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;true&#34;</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_HOST</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchhost</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_PORT</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchport</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_USER</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchuser</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+            <span style="color:#f92672">optional</span>: <span style="color:#66d9ef">true</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">ELASTICSEARCH_PASSWORD</span>
+        <span style="color:#f92672">valueFrom</span>:
+          <span style="color:#f92672">secretKeyRef</span>:
+            <span style="color:#f92672">key</span>: <span style="color:#ae81ff">elasticsearchpassword</span>
+            <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
+            <span style="color:#f92672">optional</span>: <span style="color:#66d9ef">true</span>
+      <span style="color:#f92672">image</span>: <span style="color:#ae81ff">fluent/fluentd-kubernetes-daemonset:v1.3.3-debian-elasticsearch-1.3</span>
+      <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd</span>
+      <span style="color:#f92672">resources</span>: {}
+      <span style="color:#f92672">volumeMounts</span>:
+      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/fluentd/etc/fluentd.conf</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config-volume</span>
+        <span style="color:#f92672">subPath</span>: <span style="color:#ae81ff">fluentd.conf</span>
+      - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/scratch</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+    <span style="color:#f92672">env</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+      <span style="color:#f92672">value</span>: -<span style="color:#ae81ff">Dweblogic.StdoutDebugEnabled=false</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#39;-Djava.security.egd=file:/dev/./urandom -Xms64m -Xmx256m &#39;</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">WL_HOME</span>
+      <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/u01/oracle/wlserver</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">MW_HOME</span>
+      <span style="color:#f92672">value</span>: <span style="color:#ae81ff">/u01/oracle</span>
+    <span style="color:#f92672">volumeMounts</span>:
+    - <span style="color:#f92672">mountPath</span>: <span style="color:#ae81ff">/scratch</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+    <span style="color:#f92672">volumes</span>:
+    - <span style="color:#f92672">emptyDir</span>: {}
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">weblogic-domain-storage-volume</span>
+    - <span style="color:#f92672">configMap</span>:
+        <span style="color:#f92672">defaultMode</span>: <span style="color:#ae81ff">420</span>
+        <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config</span>
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">fluentd-config-volume</span>
+  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#ae81ff">IF_NEEDED</span>
+  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">bobs-bookstore-weblogic-credentials</span>
 </code></pre></div>
 
 
@@ -5210,19 +5210,19 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1613159925"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1613159925"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611348082" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611348082"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1613159925" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1613159925"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.68.3" />
+    <meta name="generator" content="Hugo 0.80.0" />
     <meta name="description" content="OpenShift information for the operator">
 
 
@@ -12,18 +12,18 @@
     <title>OpenShift :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611348082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1613159925" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1613159925"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611348082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1613159925"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1613159925"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1613159925"></script>
 
     
   </div>
@@ -2938,43 +2938,43 @@ content.  This example assumes that your OpenShift project is called <code>weblo
 that the service account you will use to run the operator and domains
 is called <code>weblogic-operator</code>.  You should change these
 in the <code>groups</code> and <code>users</code> sections to match your environment.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">kind</span>: SecurityContextConstraints
-<span style="color:#66d9ef">apiVersion</span>: v1
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: uid1000
-<span style="color:#66d9ef">allowHostDirVolumePlugin</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">allowHostIPC</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">allowHostNetwork</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">allowHostPID</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">allowHostPorts</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">allowPrivilegeEscalation</span>: <span style="color:#66d9ef">true</span>
-<span style="color:#66d9ef">allowPrivilegedContainer</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">fsGroup</span>:
-  <span style="color:#66d9ef">type</span>: MustRunAs
-<span style="color:#66d9ef">groups</span>:
-- system:serviceaccounts:weblogic
-<span style="color:#66d9ef">readOnlyRootFilesystem</span>: <span style="color:#66d9ef">false</span>
-<span style="color:#66d9ef">requiredDropCapabilities</span>:
-- KILL
-- MKNOD
-- SETUID
-- SETGID
-<span style="color:#66d9ef">runAsUser</span>:
-  <span style="color:#66d9ef">type</span>: MustRunAs
-  <span style="color:#66d9ef">uid</span>: <span style="color:#ae81ff">1000</span>
-<span style="color:#66d9ef">seLinuxContext</span>:
-  <span style="color:#66d9ef">type</span>: MustRunAs
-<span style="color:#66d9ef">supplementalGroups</span>:
-  <span style="color:#66d9ef">type</span>: RunAsAny
-<span style="color:#66d9ef">users</span>:
-- system:serviceaccount:weblogic:weblogic-operator
-<span style="color:#66d9ef">volumes</span>:
-- configMap
-- downwardAPI
-- emptyDir
-- persistentVolumeClaim
-- projected
-- secret
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">kind</span>: <span style="color:#ae81ff">SecurityContextConstraints</span>
+<span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">uid1000</span>
+<span style="color:#f92672">allowHostDirVolumePlugin</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">allowHostIPC</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">allowHostNetwork</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">allowHostPID</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">allowHostPorts</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">allowPrivilegeEscalation</span>: <span style="color:#66d9ef">true</span>
+<span style="color:#f92672">allowPrivilegedContainer</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">fsGroup</span>:
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
+<span style="color:#f92672">groups</span>:
+- <span style="color:#ae81ff">system:serviceaccounts:weblogic</span>
+<span style="color:#f92672">readOnlyRootFilesystem</span>: <span style="color:#66d9ef">false</span>
+<span style="color:#f92672">requiredDropCapabilities</span>:
+- <span style="color:#ae81ff">KILL</span>
+- <span style="color:#ae81ff">MKNOD</span>
+- <span style="color:#ae81ff">SETUID</span>
+- <span style="color:#ae81ff">SETGID</span>
+<span style="color:#f92672">runAsUser</span>:
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
+  <span style="color:#f92672">uid</span>: <span style="color:#ae81ff">1000</span>
+<span style="color:#f92672">seLinuxContext</span>:
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">MustRunAs</span>
+<span style="color:#f92672">supplementalGroups</span>:
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">RunAsAny</span>
+<span style="color:#f92672">users</span>:
+- <span style="color:#ae81ff">system:serviceaccount:weblogic:weblogic-operator</span>
+<span style="color:#f92672">volumes</span>:
+- <span style="color:#ae81ff">configMap</span>
+- <span style="color:#ae81ff">downwardAPI</span>
+- <span style="color:#ae81ff">emptyDir</span>
+- <span style="color:#ae81ff">persistentVolumeClaim</span>
+- <span style="color:#ae81ff">projected</span>
+- <span style="color:#ae81ff">secret</span>
 </code></pre></div><p>Assuming you called that file <code>uid1000.yaml</code>, you can create the security context constraint
 using the following command:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ oc create -f uid1000.yaml
@@ -4979,19 +4979,19 @@ see the <a href="/weblogic-kubernetes-operator/userguide/introduction/introducti
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1613159925"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1613159925"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611348082" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611348082"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1613159925" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1613159925"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

@@ -5,10 +5,6 @@
     <link>/weblogic-kubernetes-operator/tags/</link>
     <description>Recent content in Tags on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language>
-    
-	<atom:link href="/weblogic-kubernetes-operator/tags/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <language>en-us</language><atom:link href="/weblogic-kubernetes-operator/tags/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

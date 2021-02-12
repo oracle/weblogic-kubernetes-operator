@@ -6,10 +6,6 @@
     <description>Recent content in Azure Kubernetes Service on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 12 Jul 2020 18:22:31 -0500</lastBuildDate>
-    
-	<atom:link href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/index.xml" rel="self" type="application/rss+xml" />
-    
-    
+    <lastBuildDate>Sun, 12 Jul 2020 18:22:31 -0500</lastBuildDate><atom:link href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/index.xml" rel="self" type="application/rss+xml" />
   </channel>
 </rss>

@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="generator" content="Hugo 0.68.3" />
+    <meta name="generator" content="Hugo 0.80.0" />
     <meta name="description" content="Sample for using the operator to set up a WLS cluster on the Azure Kubernetes Service.">
 
 
@@ -12,18 +12,18 @@
     <title>Azure Kubernetes Service :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1611348082" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1611348082" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1613159925" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1613159925" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1613159925"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1611348082"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1613159925"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1613159925"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1611348082"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1613159925"></script>
 
     
   </div>
@@ -3127,39 +3127,39 @@ Completed
 <h5 id="apply-generated-configuration-files">Apply generated configuration files</h5>
 <p>In order to mount the file share as a persistent volume, we have provided a configuration file <code>pv.yaml</code>. You can find it in your output directory. The following content is an example that uses the value <code>0730-weblogic-1597391432</code> as &ldquo;shareName&rdquo;, <code>0730azure-secret</code> as &ldquo;secretName&rdquo;, and the persistent volume name is <code>0730-azurefile-1597391432</code>.</p>
 <p>We will use the storage class <code>azurefile</code>. If you want to create a new class, follow this document <a href="https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class">Create a storage class</a>. For more information, see the page <a href="https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes">Storage options for applications in Azure Kubernetes Service (AKS)</a>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
-<span style="color:#66d9ef">kind</span>: PersistentVolume
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: <span style="color:#ae81ff">0730</span>-azurefile<span style="color:#ae81ff">-1597391432</span>
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">capacity</span>:
-    <span style="color:#66d9ef">storage</span>: 5Gi
-  <span style="color:#66d9ef">accessModes</span>:
-    - ReadWriteMany
-  <span style="color:#66d9ef">storageClassName</span>: azurefile
-  <span style="color:#66d9ef">azureFile</span>:
-    <span style="color:#66d9ef">secretName</span>: 0730azure-secret
-    <span style="color:#66d9ef">shareName</span>: <span style="color:#ae81ff">0730</span>-weblogic<span style="color:#ae81ff">-1597391432</span>
-    <span style="color:#66d9ef">readOnly</span>: <span style="color:#66d9ef">false</span>
-  <span style="color:#66d9ef">mountOptions</span>:
-  - dir_mode=<span style="color:#ae81ff">0777</span>
-  - file_mode=<span style="color:#ae81ff">0777</span>
-  - uid=<span style="color:#ae81ff">1000</span>
-  - gid=<span style="color:#ae81ff">1000</span>
-  - mfsymlinks
-  - nobrl
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolume</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">0730</span>-<span style="color:#ae81ff">azurefile-1597391432</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">capacity</span>:
+    <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">5Gi</span>
+  <span style="color:#f92672">accessModes</span>:
+    - <span style="color:#ae81ff">ReadWriteMany</span>
+  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">azurefile</span>
+  <span style="color:#f92672">azureFile</span>:
+    <span style="color:#f92672">secretName</span>: <span style="color:#ae81ff">0730azure-secret</span>
+    <span style="color:#f92672">shareName</span>: <span style="color:#ae81ff">0730</span>-<span style="color:#ae81ff">weblogic-1597391432</span>
+    <span style="color:#f92672">readOnly</span>: <span style="color:#66d9ef">false</span>
+  <span style="color:#f92672">mountOptions</span>:
+  - <span style="color:#ae81ff">dir_mode=0777</span>
+  - <span style="color:#ae81ff">file_mode=0777</span>
+  - <span style="color:#ae81ff">uid=1000</span>
+  - <span style="color:#ae81ff">gid=1000</span>
+  - <span style="color:#ae81ff">mfsymlinks</span>
+  - <span style="color:#ae81ff">nobrl</span>
 </code></pre></div><p>We have provided another configuration file <code>pvc.yaml</code> for the PersistentVolumeClaim.  Both <code>pv.yaml</code> and <code>pvc.yaml</code> have exactly the same content for <code>storageClassName</code> attributes. This is required. We set the same value to the <code>metadata</code> property in both files. The following content is an example that uses the persistent volume claim name <code>0730-azurefile-1597391432</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
-<span style="color:#66d9ef">kind</span>: PersistentVolumeClaim
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: <span style="color:#ae81ff">0730</span>-azurefile<span style="color:#ae81ff">-1597391432</span>
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">accessModes</span>:
-    - ReadWriteMany
-  <span style="color:#66d9ef">storageClassName</span>: azurefile
-  <span style="color:#66d9ef">resources</span>:
-    <span style="color:#66d9ef">requests</span>:
-      <span style="color:#66d9ef">storage</span>: 5Gi
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">0730</span>-<span style="color:#ae81ff">azurefile-1597391432</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">accessModes</span>:
+    - <span style="color:#ae81ff">ReadWriteMany</span>
+  <span style="color:#f92672">storageClassName</span>: <span style="color:#ae81ff">azurefile</span>
+  <span style="color:#f92672">resources</span>:
+    <span style="color:#f92672">requests</span>:
+      <span style="color:#f92672">storage</span>: <span style="color:#ae81ff">5Gi</span>
 </code></pre></div><p>Use the <code>kubectl</code> command to create the persistent volume and persistent volume claim.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
 $ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
@@ -3363,44 +3363,44 @@ step.</p>
 <li>
 <p>You must create <code>LoadBalancer</code> services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.</p>
 <p>Use the configuration file in <code>~/azure/weblogic-on-aks/admin-lb.yaml</code> to create a load balancer service for the Administration Server. The following content is an example of <code>admin-lb.yaml</code>, with default domain UID  <code>domain1</code>, server name <code>admin-server</code>, and default port <code>7001</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
-<span style="color:#66d9ef">kind</span>: Service
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: domain1-admin-server-external-lb
-  <span style="color:#66d9ef">namespace</span>: default
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">ports</span>:
-  - <span style="color:#66d9ef">name</span>: default
-    <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">7001</span>
-    <span style="color:#66d9ef">protocol</span>: TCP
-    <span style="color:#66d9ef">targetPort</span>: <span style="color:#ae81ff">7001</span>
-  <span style="color:#66d9ef">selector</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: domain1
-    <span style="color:#66d9ef">weblogic.serverName</span>: admin-server
-  <span style="color:#66d9ef">sessionAffinity</span>: None
-  <span style="color:#66d9ef">type</span>: LoadBalancer
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-admin-server-external-lb</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">ports</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
+    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
+    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">7001</span>
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+    <span style="color:#f92672">weblogic.serverName</span>: <span style="color:#ae81ff">admin-server</span>
+  <span style="color:#f92672">sessionAffinity</span>: <span style="color:#ae81ff">None</span>
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">LoadBalancer</span>
 </code></pre></div><p>Create the load balancer service using the following command:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
 </code></pre></div><p>You will see the following output:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
 service/domain1-admin-server-external-lb created
 </code></pre></div><p>Use the configuration file in <code>~/azure/weblogic-on-aks/cluster-lb.yaml</code> to create a load balancer service for the managed servers. The following content is an example of <code>cluster-lb.yaml</code>, with default domain UID <code>domain1</code>, cluster name <code>cluster-1</code>, and default managed server port <code>8001</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">apiVersion</span>: v1
-<span style="color:#66d9ef">kind</span>: Service
-<span style="color:#66d9ef">metadata</span>:
-  <span style="color:#66d9ef">name</span>: domain1-cluster<span style="color:#ae81ff">-1</span>-lb
-  <span style="color:#66d9ef">namespace</span>: default
-<span style="color:#66d9ef">spec</span>:
-  <span style="color:#66d9ef">ports</span>:
-  - <span style="color:#66d9ef">name</span>: default
-    <span style="color:#66d9ef">port</span>: <span style="color:#ae81ff">8001</span>
-    <span style="color:#66d9ef">protocol</span>: TCP
-    <span style="color:#66d9ef">targetPort</span>: <span style="color:#ae81ff">8001</span>
-  <span style="color:#66d9ef">selector</span>:
-    <span style="color:#66d9ef">weblogic.domainUID</span>: domain1
-    <span style="color:#66d9ef">weblogic.clusterName</span>: cluster<span style="color:#ae81ff">-1</span>
-  <span style="color:#66d9ef">sessionAffinity</span>: None
-  <span style="color:#66d9ef">type</span>: LoadBalancer
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">domain1-cluster-1-lb</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">ports</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">default</span>
+    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">8001</span>
+    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">8001</span>
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">domain1</span>
+    <span style="color:#f92672">weblogic.clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+  <span style="color:#f92672">sessionAffinity</span>: <span style="color:#ae81ff">None</span>
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">LoadBalancer</span>
 </code></pre></div><p>Create the load balancer service using the following command:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl apply -f ~/azure/weblogic-on-aks/cluster-lb.yaml
 </code></pre></div><p>You will see the following output:</p>
@@ -3444,44 +3444,44 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
 <p>If the WLS Administration Console is still not available, use <code>kubectl describe domain</code> to check domain status.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe domain domain1
 </code></pre></div><p>Make sure the status of cluster-1 is <code>ServersReady</code> and <code>Available</code>.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">Status</span>:
- <span style="color:#66d9ef">Clusters</span>:
-   <span style="color:#66d9ef">Cluster Name</span>:      cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
-   <span style="color:#66d9ef">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
-   <span style="color:#66d9ef">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
-   <span style="color:#66d9ef">Replicas</span>:          <span style="color:#ae81ff">2</span>
-   <span style="color:#66d9ef">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
- <span style="color:#66d9ef">Conditions</span>:
-   <span style="color:#66d9ef">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
-   <span style="color:#66d9ef">Reason</span>:                ServersReady
-   <span style="color:#66d9ef">Status</span>:                True
-   <span style="color:#66d9ef">Type</span>:                  Available
- <span style="color:#66d9ef">Replicas</span>:                <span style="color:#ae81ff">2</span>
- <span style="color:#66d9ef">Servers</span>:
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    admin-server
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    managed-server1
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    managed-server2
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server3
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server4
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server5
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">Status</span>:
+ <span style="color:#f92672">Clusters</span>:
+   <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
+   <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
+   <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
+   <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
+   <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
+ <span style="color:#f92672">Conditions</span>:
+   <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
+   <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
+   <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
+   <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
+ <span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
+ <span style="color:#f92672">Servers</span>:
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
 </code></pre></div><h4 id="automation">Automation</h4>
 <p>If you want to automate the above steps from <a href="#create-the-aks-cluster">Create the AKS cluster</a> onward, you can use the <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh</code> script with the <code>-e</code> option. This option applies the YAML files generated by the script.</p>
 <p>For input values, you can edit <code>kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml</code> directly, or copy the file and edit your copy. The following values must be specified:</p>
@@ -3649,44 +3649,44 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
 </code></pre></div><p>If services are up but the WLS Administration Console is still not available, use <code>kubectl describe domain</code> to check domain status.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe domain domain1
 </code></pre></div><p>Make sure the status of cluster-1 is <code>ServersReady</code> and <code>Available</code>. The status of admin-server, managed-server1 and managed-server2 should be <code>RUNNING</code>. Otherwise, the cluster is likely still in the process of becoming fully ready.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#66d9ef">Status</span>:
- <span style="color:#66d9ef">Clusters</span>:
-   <span style="color:#66d9ef">Cluster Name</span>:      cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
-   <span style="color:#66d9ef">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
-   <span style="color:#66d9ef">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
-   <span style="color:#66d9ef">Replicas</span>:          <span style="color:#ae81ff">2</span>
-   <span style="color:#66d9ef">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
- <span style="color:#66d9ef">Conditions</span>:
-   <span style="color:#66d9ef">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
-   <span style="color:#66d9ef">Reason</span>:                ServersReady
-   <span style="color:#66d9ef">Status</span>:                True
-   <span style="color:#66d9ef">Type</span>:                  Available
- <span style="color:#66d9ef">Replicas</span>:                <span style="color:#ae81ff">2</span>
- <span style="color:#66d9ef">Servers</span>:
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    admin-server
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    managed-server1
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  RUNNING
-   <span style="color:#66d9ef">Node Name</span>:      aks-nodepool1<span style="color:#ae81ff">-11471722</span>-vmss000001
-   <span style="color:#66d9ef">Server Name</span>:    managed-server2
-   <span style="color:#66d9ef">State</span>:          RUNNING
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server3
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server4
-   <span style="color:#66d9ef">Cluster Name</span>:   cluster<span style="color:#ae81ff">-1</span>
-   <span style="color:#66d9ef">Desired State</span>:  SHUTDOWN
-   <span style="color:#66d9ef">Server Name</span>:    managed-server5
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">Status</span>:
+ <span style="color:#f92672">Clusters</span>:
+   <span style="color:#f92672">Cluster Name</span>:      <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Maximum Replicas</span>:  <span style="color:#ae81ff">5</span>
+   <span style="color:#f92672">Minimum Replicas</span>:  <span style="color:#ae81ff">1</span>
+   <span style="color:#f92672">Ready Replicas</span>:    <span style="color:#ae81ff">2</span>
+   <span style="color:#f92672">Replicas</span>:          <span style="color:#ae81ff">2</span>
+   <span style="color:#f92672">Replicas Goal</span>:     <span style="color:#ae81ff">2</span>
+ <span style="color:#f92672">Conditions</span>:
+   <span style="color:#f92672">Last Transition Time</span>:  <span style="color:#e6db74">2020-07-06T05:39:32.539Z</span>
+   <span style="color:#f92672">Reason</span>:                <span style="color:#ae81ff">ServersReady</span>
+   <span style="color:#f92672">Status</span>:                <span style="color:#66d9ef">True</span>
+   <span style="color:#f92672">Type</span>:                  <span style="color:#ae81ff">Available</span>
+ <span style="color:#f92672">Replicas</span>:                <span style="color:#ae81ff">2</span>
+ <span style="color:#f92672">Servers</span>:
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">admin-server</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server1</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Node Name</span>:      <span style="color:#ae81ff">aks-nodepool1-11471722-vmss000001</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server2</span>
+   <span style="color:#f92672">State</span>:          <span style="color:#ae81ff">RUNNING</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server3</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server4</span>
+   <span style="color:#f92672">Cluster Name</span>:   <span style="color:#ae81ff">cluster-1</span>
+   <span style="color:#f92672">Desired State</span>:  <span style="color:#ae81ff">SHUTDOWN</span>
+   <span style="color:#f92672">Server Name</span>:    <span style="color:#ae81ff">managed-server5</span>
 </code></pre></div></li>
 <li>
 <p><strong>Domain debugging</strong></p>
@@ -5700,19 +5700,19 @@ az group delete --yes --no-wait --name MC_ejb8191resourcegroup1597641911_ejb8191
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1613159925"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1611348082"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1611348082"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1613159925"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1613159925"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1611348082" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1611348082"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1613159925" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1613159925"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>
