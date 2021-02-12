@@ -22,7 +22,6 @@ import java.util.concurrent.Callable;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import io.kubernetes.client.Copy;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
@@ -706,6 +705,10 @@ public class Kubernetes {
     return v1PodList;
   }
 
+  private static boolean isNullOrEmpty(String str) {
+    return str == null || str.isEmpty();
+  }
+
   /**
    * Copy a directory from Kubernetes pod to local destination path.
    * @param pod V1Pod object
@@ -716,8 +719,23 @@ public class Kubernetes {
    */
   public static void copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
       throws IOException, ApiException, CopyNotSupportedException {
-    Copy copy = new Copy();
-    copy.copyDirectoryFromPod(pod, srcPath, destination);
+    String namespace = pod.getMetadata().getNamespace();
+    String podName = pod.getMetadata().getName();
+
+    // kubectl exec -n <some-namespace> <some-pod> -- tar cf - /tmp/foo | tar xf - -C /tmp/bar
+    StringBuilder sb = new StringBuilder();
+    sb.append("kubectl exec -n ");
+    sb.append(isNullOrEmpty(namespace) ? "default" : namespace);
+    sb.append(" ");
+    sb.append(podName);
+    sb.append(" -- tar cf - ");
+    sb.append(srcPath);
+    sb.append(" | tar xf - -C ");
+    sb.append(destination.toString());
+    String cmdToExecute = sb.toString();
+    Command
+        .withParams(new CommandParams().command(cmdToExecute))
+        .execute();
   }
 
   /**
@@ -733,8 +751,22 @@ public class Kubernetes {
   public static void copyFileToPod(
       String namespace, String pod, String container, Path srcPath, Path destPath)
       throws IOException, ApiException {
-    Copy copy = new Copy(apiClient);
-    copy.copyFileToPod(namespace, pod, container, srcPath, destPath);
+    // kubectl cp /tmp/foo <some-pod>:/tmp/bar -c <specific-container>
+    StringBuilder sb = new StringBuilder();
+    sb.append("kubectl cp ");
+    sb.append(srcPath.toString());
+    sb.append(" ");
+    sb.append(pod);
+    sb.append(":");
+    sb.append(destPath.toString());
+    if (!isNullOrEmpty(container)) {
+      sb.append(" -c ");
+      sb.append(container);
+    }
+    String cmdToExecute = sb.toString();
+    Command
+        .withParams(new CommandParams().command(cmdToExecute))
+        .execute();
   }
 
   /**
@@ -749,8 +781,24 @@ public class Kubernetes {
    */
   public static void copyFileFromPod(String namespace, String pod, String container, String srcPath, Path destPath)
       throws IOException, ApiException {
-    Copy copy = new Copy(apiClient);
-    copy.copyFileFromPod(namespace, pod, container, srcPath, destPath);
+    // kubectl cp <some-namespace>/<some-pod>:/tmp/foo /tmp/bar -c <container>
+    StringBuilder sb = new StringBuilder();
+    sb.append("kubectl cp ");
+    sb.append(isNullOrEmpty(namespace) ? "default" : namespace);
+    sb.append("/");
+    sb.append(pod);
+    sb.append(":");
+    sb.append(srcPath);
+    sb.append(" ");
+    sb.append(destPath.toString());
+    if (!isNullOrEmpty(container)) {
+      sb.append(" -c ");
+      sb.append(container);
+    }
+    String cmdToExecute = sb.toString();
+    Command
+        .withParams(new CommandParams().command(cmdToExecute))
+        .execute();
   }
 
   // --------------------------- namespaces -----------------------------------
