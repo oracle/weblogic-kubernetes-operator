@@ -9,7 +9,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.AsyncFiber;
@@ -35,6 +37,7 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private final T initialResource;
+  private final String resourceName;
 
   /**
    * Creates a step which will only proceed once the specified resource is ready.
@@ -42,8 +45,13 @@ abstract class WaitForReadyStep<T> extends Step {
    * @param next the step to run once it the resource is ready
    */
   WaitForReadyStep(T resource, Step next) {
+    this(null, resource, next);
+  }
+
+  WaitForReadyStep(String resourceName, T resource, Step next) {
     super(next);
     this.initialResource = resource;
+    this.resourceName = resourceName;
   }
 
   /**
@@ -166,7 +174,11 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private Step createReadAndIfReadyCheckStep(Callback callback) {
-    return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+    if (initialResource != null) {
+      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+    } else {
+      return new ReadAndIfReadyCheckStep(getName(), callback, getNext());
+    }
   }
 
   private String getNamespace() {
@@ -178,13 +190,18 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   public String getName() {
-    return getMetadata(initialResource).getName();
+    return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
   private DefaultResponseStep<T> resumeIfReady(Callback callback) {
     return new DefaultResponseStep<>(null) {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+        if ((callResponse != null) && (callResponse.getResult() instanceof V1Pod)) {
+          V1Pod pod = (V1Pod) callResponse.getResult();
+          Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+                  .ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod, LabelConstants.SERVERNAME_LABEL), pod));
+        }
         if (isReady(callResponse.getResult())) {
           callback.proceedFromWait(callResponse.getResult());
           return doNext(packet);
@@ -192,7 +209,34 @@ abstract class WaitForReadyStep<T> extends Step {
         return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                 getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
       }
+
+      private String getPodLabel(V1Pod pod, String labelName) {
+        return Optional.ofNullable(pod)
+                .map(V1Pod::getMetadata)
+                .map(V1ObjectMeta::getLabels)
+                .map(m -> m.get(labelName))
+                .orElse(null);
+      }
     };
+  }
+
+  private class ReadAndIfReadyCheckStep extends Step {
+    private final Callback callback;
+    private final String resourceName;
+
+    ReadAndIfReadyCheckStep(String resourceName, Callback callback, Step next) {
+      super(next);
+      this.callback = callback;
+      this.resourceName = resourceName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      return doNext(createReadAsyncStep(resourceName, info.getNamespace(),
+              info.getDomainUid(), resumeIfReady(callback)), packet);
+    }
+
   }
 
   private class Callback implements Consumer<T> {
