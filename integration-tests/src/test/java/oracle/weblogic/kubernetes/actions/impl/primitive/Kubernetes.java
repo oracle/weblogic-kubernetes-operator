@@ -724,9 +724,12 @@ public class Kubernetes {
 
     // kubectl exec -n <some-namespace> <some-pod> -- tar cf - /tmp/foo | tar xf - -C /tmp/bar
     StringBuilder sb = new StringBuilder();
-    sb.append("kubectl exec -n ");
-    sb.append(isNullOrEmpty(namespace) ? "default" : namespace);
-    sb.append(" ");
+    sb.append("kubectl exec ");
+    if (!isNullOrEmpty(namespace)) {
+      sb.append("-n ");
+      sb.append(namespace);
+      sb.append(" ");
+    }
     sb.append(podName);
     sb.append(" -- tar cf - ");
     sb.append(srcPath);
@@ -751,11 +754,15 @@ public class Kubernetes {
   public static void copyFileToPod(
       String namespace, String pod, String container, Path srcPath, Path destPath)
       throws IOException, ApiException {
-    // kubectl cp /tmp/foo <some-pod>:/tmp/bar -c <specific-container>
+    // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
     sb.append("kubectl cp ");
     sb.append(srcPath.toString());
     sb.append(" ");
+    if (!isNullOrEmpty(namespace)) {
+      sb.append(namespace);
+      sb.append("/");
+    }
     sb.append(pod);
     sb.append(":");
     sb.append(destPath.toString());
@@ -784,8 +791,10 @@ public class Kubernetes {
     // kubectl cp <some-namespace>/<some-pod>:/tmp/foo /tmp/bar -c <container>
     StringBuilder sb = new StringBuilder();
     sb.append("kubectl cp ");
-    sb.append(isNullOrEmpty(namespace) ? "default" : namespace);
-    sb.append("/");
+    if (!isNullOrEmpty(namespace)) {
+      sb.append(namespace);
+      sb.append("/");
+    }
     sb.append(pod);
     sb.append(":");
     sb.append(srcPath);
