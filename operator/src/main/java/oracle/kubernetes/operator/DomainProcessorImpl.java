@@ -138,7 +138,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void updateEventK8SObjects(V1Event event) {
+  public static void updateEventK8SObjects(V1Event event) {
     getEventK8SObjects(event).update(event);
   }
 
