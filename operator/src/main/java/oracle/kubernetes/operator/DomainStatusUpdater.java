@@ -358,7 +358,7 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
         return onFailure(createRetry(context, getNext()), packet, callResponse);

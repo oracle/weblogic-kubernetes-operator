@@ -22,8 +22,10 @@ import java.util.stream.IntStream;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import oracle.kubernetes.operator.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -51,9 +53,12 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessageForNamespaces;
@@ -61,6 +66,8 @@ import static oracle.kubernetes.operator.EventTestUtils.getEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.Main.GIT_BRANCH_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_TIME_KEY;
 import static oracle.kubernetes.operator.Main.GIT_BUILD_VERSION_KEY;
@@ -81,6 +88,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -273,6 +281,35 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  public void whenOperatorStarted_withoutExistingEvent_nsEventK8SObjectsEmpty() {
+    main.startOperator(null);
+    assertThat(getNSEventMapSize(), equalTo(0));
+  }
+
+  @Test
+  public void whenOperatorStarted_withExistingEvents_nsEventK8SObjectsPopulated() {
+    V1Event event1 = createNSEvent("event1").reason(START_MANAGING_NAMESPACE_EVENT);
+    V1Event event2 = createNSEvent("event2").reason(STOP_MANAGING_NAMESPACE_EVENT);
+
+    testSupport.defineResources(event1, event2);
+    main.startOperator(null);
+    assertThat(getNSEventMapSize(), equalTo(2));
+  }
+
+  private int getNSEventMapSize() {
+    return Optional.ofNullable(nsEventObjects.get(OP_NS)).map(KubernetesEventObjects::size).orElse(0);
+  }
+
+  private V1Event createNSEvent(String name) {
+    return new V1Event()
+        .metadata(new V1ObjectMeta()
+            .name(name)
+            .namespace(OP_NS)
+            .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true"))
+        .involvedObject(new V1ObjectReference().name("Op1").namespace(OP_NS).uid("1234"));
+  }
+
+  @Test
   public void whenOperatorStartedInDedicatedMode_namespaceWatcherIsNotCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
 
@@ -354,7 +391,6 @@ public class MainTest extends ThreadFactoryTestBase {
 
     assertThat(logRecords, containsSevere(CRD_NOT_INSTALLED));
   }
-
 
   @Test
   public void withNamespaceList_onStartNamespaceStep_startsNamespaces() {
@@ -569,6 +605,44 @@ public class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
 
     assertThat(getScriptMap(NS), notNullValue());
+  }
+
+  @Test
+  public void afterReadingExistingResourcesForNamespace_withoutExistingEvent_domainEventK8SObjectsEmpty() {
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+    assertThat(getDomainEventMapSize(), equalTo(0));
+  }
+
+  @Test
+  public void afterReadingExistingResourcesForNamespace_withExistingEvents_domainEventK8SObjectsPopulated() {
+    V1Event event1 = createDomainEvent("event1").reason(DOMAIN_CREATED_EVENT);
+    V1Event event2 = createDomainEvent("event2").reason(DOMAIN_CHANGED_EVENT);
+
+    testSupport.defineResources(event1, event2);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
+
+    assertThat(getDomainEventMapSize(), equalTo(2));
+  }
+
+  private int getDomainEventMapSize() {
+    return Optional.ofNullable(domainEventObjects.get(NS))
+        .map(m -> this.getEventMapForDomain(m, DOMAIN_UID))
+        .map(KubernetesEventObjects::size)
+        .orElse(0);
+  }
+
+  private KubernetesEventObjects getEventMapForDomain(Map map, String domainUid) {
+    return (KubernetesEventObjects) map.get(domainUid);
+  }
+
+  private V1Event createDomainEvent(String name) {
+    return new V1Event()
+        .metadata(new V1ObjectMeta()
+            .name(name)
+            .namespace(NS)
+            .putLabelsItem(CREATEDBYOPERATOR_LABEL, "true")
+            .putLabelsItem(DOMAINUID_LABEL, DOMAIN_UID))
+        .involvedObject(new V1ObjectReference().name(DOMAIN_UID).namespace(NS).uid("abcd"));
   }
 
   @SuppressWarnings("SameParameterValue")

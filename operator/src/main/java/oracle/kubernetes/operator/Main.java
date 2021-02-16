@@ -306,7 +306,7 @@ public class Main {
 
   private Step createOperatorNamespaceEventListStep() {
     return new CallBuilder()
-        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
         .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
   }
 
@@ -321,6 +321,7 @@ public class Main {
     public NextAction onSuccess(Packet packet, CallResponse<V1EventList> callResponse) {
       V1EventList list = callResponse.getResult();
       operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
       return doContinueListOrNext(callResponse, packet);
     }
 
