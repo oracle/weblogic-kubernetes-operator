@@ -16,7 +16,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER;
+import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER;
 
 /**
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
@@ -60,7 +60,7 @@ public class OperatorEventWatcher extends Watcher<V1Event> {
 
   @Override
   public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-    return watchBuilder.withLabelSelector(DOMAIN_EVENT_LABEL_FILTER).createEventWatch(ns);
+    return watchBuilder.withLabelSelector(OPERATOR_EVENT_LABEL_FILTER).createEventWatch(ns);
   }
 
   @Override

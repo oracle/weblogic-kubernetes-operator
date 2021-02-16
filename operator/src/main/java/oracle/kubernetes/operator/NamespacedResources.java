@@ -49,7 +49,7 @@ class NamespacedResources {
     return Step.chain(
           getConfigMapListSteps(),
           getPodEventListSteps(),
-          getDomainEventListSteps(),
+          getOperatorEventListSteps(),
           getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
@@ -147,14 +147,14 @@ class NamespacedResources {
             .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 
-  private Step getDomainEventListSteps() {
+  private Step getOperatorEventListSteps() {
     return getListProcessing(Processors::getOperatorEventListProcessing)
-        .map(this::createDomainEventListStep).orElse(null);
+        .map(this::createOperatorEventListStep).orElse(null);
   }
 
-  private Step createDomainEventListStep(List<Consumer<V1EventList>> processing) {
+  private Step createOperatorEventListStep(List<Consumer<V1EventList>> processing) {
     return new CallBuilder()
-        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
         .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 
@@ -238,7 +238,5 @@ class NamespacedResources {
       processors.forEach(p -> p.accept(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
-
   }
-
 }

@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -133,7 +134,7 @@ public class EventHelper {
               existingEvent.getMetadata().getName(),
               existingEvent.getMetadata().getNamespace(),
               existingEvent,
-              new ReplaceEventResponseStep(getNext()));
+              new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }
 
     private V1Event getExistingEvent(V1Event event) {
@@ -178,9 +179,13 @@ public class EventHelper {
     }
 
     private class ReplaceEventResponseStep extends ResponseStep<V1Event> {
+      Step replaceEventStep;
+      V1Event existingEvent;
 
-      ReplaceEventResponseStep(Step next) {
+      ReplaceEventResponseStep(Step replaceEventStep, V1Event existingEvent, Step next) {
         super(next);
+        this.existingEvent = existingEvent;
+        this.replaceEventStep = replaceEventStep;
       }
 
       @Override
@@ -192,9 +197,44 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
-        return UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-            ? doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet)
-            : super.onFailure(packet, callResponse);
+        restoreExistingEvent();
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
+          return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
+        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return onFailure(createRetry(existingEvent), packet, callResponse);
+        }
+      }
+
+      private void restoreExistingEvent() {
+        if (existingEvent == null || existingEvent.getCount() == null) {
+          return;
+        }
+        existingEvent.count(existingEvent.getCount() - 1);
+      }
+
+      Step createRetry(V1Event event) {
+        return Step.chain(createEventRefreshStep(event), replaceEventStep);
+      }
+
+      private Step createEventRefreshStep(V1Event event) {
+        return new CallBuilder().readEventAsync(
+            event.getMetadata().getName(),
+            event.getMetadata().getNamespace(),
+            new ReadEventResponseStep(getNext()));
+      }
+    }
+
+    private static class ReadEventResponseStep extends ResponseStep<V1Event> {
+      ReadEventResponseStep(Step next) {
+        super(next);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
+        DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
+        return doNext(packet);
       }
     }
   }
