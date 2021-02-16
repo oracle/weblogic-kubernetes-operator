@@ -27,7 +27,7 @@ public abstract class ActionResponseStep<T> extends DefaultResponseStep<T> {
     return callResponse.getResult() == null
             ? doNext(packet)
             : doNext(createSuccessStep(callResponse.getResult(),
-            new ContinueOrNextStep(callResponse, getNext())), packet);
+              new ContinueOrNextStep(callResponse, getNext())), packet);
   }
 
   private class ContinueOrNextStep extends Step {
