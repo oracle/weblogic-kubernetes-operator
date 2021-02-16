@@ -370,7 +370,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     return new CallBuilder()
             .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+              new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
   private Map<String, String> getNonHashedPodLabels() {
