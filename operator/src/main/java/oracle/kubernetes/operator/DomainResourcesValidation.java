@@ -10,6 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -52,6 +54,11 @@ class DomainResourcesValidation {
       }
 
       @Override
+      Consumer<V1EventList> getOperatorEventListProcessing() {
+        return l -> addOperatorEventList(l);
+      }
+
+      @Override
       Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
         return l -> addPodDisruptionBudgetList(l);
       }
@@ -72,6 +79,14 @@ class DomainResourcesValidation {
 
   private void addPodList(V1PodList list) {
     list.getItems().forEach(this::addPod);
+  }
+
+  private void addEvent(V1Event event) {
+    DomainProcessorImpl.updateEventK8SObjects(event);
+  }
+
+  private void addOperatorEventList(V1EventList list) {
+    list.getItems().forEach(this::addEvent);
   }
 
   private void addPod(V1Pod pod) {
