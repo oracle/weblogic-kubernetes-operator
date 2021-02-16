@@ -188,7 +188,7 @@ d. Update the `image` field of the Domain YAML file, specifying the new image na
      ```
      domain:
        spec:
-         image: ghcr.io/oracle/weblogic-updated:3.1.3
+         image: ghcr.io/oracle/weblogic-updated:3.1.4
      ```
 e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.
 
