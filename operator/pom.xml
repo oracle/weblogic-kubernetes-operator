@@ -318,6 +318,19 @@
       <artifactId>javaee-web-api</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+    </dependency>
+
     <!--  not included with jdk 9 -->
     <dependency>
       <groupId>javax.xml.bind</groupId>
