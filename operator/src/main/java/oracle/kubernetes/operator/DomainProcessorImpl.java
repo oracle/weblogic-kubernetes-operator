@@ -662,8 +662,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
-      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
-        return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         if (exceededFailureRetryCount) {
           Optional.ofNullable(liveInfo)
