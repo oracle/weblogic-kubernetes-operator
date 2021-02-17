@@ -291,6 +291,7 @@ class ItMonitoringExporter {
     logger.info("NGINX https node port: {0}", nodeportshttps);
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
+    clusterNameMsPortMap.put("cluster-2", managedServerPort);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
     logger.info("create pv and pvc for monitoring");
@@ -706,7 +707,7 @@ class ItMonitoringExporter {
 
   @AfterAll
   public void tearDownAll() {
-
+/*
     // uninstall NGINX release
     logger.info("Uninstalling NGINX");
     if (nginxHelmParams != null) {
@@ -752,7 +753,7 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> deleteDomainCustomResource(domain4Uid, domain4Namespace),
         "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domain4Uid + " from " + domain4Namespace);
-
+*/
     uninstallPrometheusGrafana();
 
     deletePersistentVolumeClaim("pvc-alertmanager",monitoringNS);
@@ -1414,7 +1415,7 @@ class ItMonitoringExporter {
         adminServerPodName, namespace);
     checkPodReady(adminServerPodName, domainUid, namespace);
 
-    String managedServerPrefix = domainUid + "-managed-server";
+    String managedServerPrefix = domainUid + "-cluster-1-managed-server";
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
@@ -1484,6 +1485,10 @@ class ItMonitoringExporter {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-2")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
@@ -1536,11 +1541,11 @@ class ItMonitoringExporter {
     }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + domainUid + "-managed-server1 -- curl -k %s://"
+        "kubectl exec -n " + domainNS + "  " + domainUid + "-cluster-1-managed-server1 -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domainUid + "-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-cluster-1-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
@@ -1800,8 +1805,8 @@ class ItMonitoringExporter {
     Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
-            "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+            "heap_free_current%7Bname%3D%22cluster-2-managed-server1%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-2-managed-server1");
   }
 
   /**
@@ -1977,8 +1982,8 @@ class ItMonitoringExporter {
     Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
-        "heap_free_current%7Bname%3D%22managed-server1%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+        "heap_free_current%7Bname%3D%22cluster2-managed-server1%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-2-managed-server1");
   }
 
   /**
