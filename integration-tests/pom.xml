@@ -239,29 +239,43 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   **/ItParameterizedDomain.java,
-                   **/ItTwoDomainsLoadBalancers.java,
-                   **/ItServerStartPolicy.java,
-                   **/ItIntrospectVersion.java,
-                   **/ItMiiDomain.java,
-                   **/ItMiiDomainModelInPV.java,
-                   **/ItMiiMultiModel.java,
-                   **/ItMiiUpdateDomainConfig.java,
-                   **/ItMiiSample.java,
-                   **/ItIstioMiiDomain.java,
-                   **/ItIstioDomainInImage.java,
-                   **/ItIstioDomainInPV.java,
-                   **/ItIstioTwoDomainsInImage.java,
-                   **/ItStickySession.java,
-                   **/ItSessionMigration.java,
-                   **/ItMonitoringExporter.java,
-                   **/ItElasticLogging.java,
-                   **/ItCrossDomainTransaction.java,
-                   **/ItPodsRestart.java,
-                   **/ItOperatorRestart.java,
-                   **/ItProductionSecureMode.java,
-                   **/ItExternalRmiTunneling.java,
-                   **/ItKubernetesEvents.java
+                   **/ItCoherenceTests,
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItExternalRmiTunneling,
+                   **/ItInitContainers,
+                   **/ItIntrospectVersion,
+                   **/ItIstioCrossDomainTransaction,
+                   **/ItIstioDomainInImage,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItIstioTwoDomainsInImage,
+                   **/ItKubernetesEvents,
+                   **/ItManageNs,
+                   **/ItManagedCoherence,
+                   **/ItMiiDomain,
+                   **/ItMiiDomainModelInPV,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiMultiModel,
+                   **/ItMiiMultiModel,
+                   **/ItMiiSample,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItOperatorRestart,
+                   **/ItParameterizedDomain,
+                   **/ItPodTemplates,
+                   **/ItPodsRestart,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItSamples,
+                   **/ItServerStartPolicy,
+                   **/ItSessionMigration,
+                   **/ItStickySession,
+                   **/ItSystemResOverrides,
+                   **/ItTwoDomainsLoadBalancer,
+                   **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
@@ -270,10 +284,10 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItMiiSample.java,
-                  **/ItFmwDomainInPV.java,
-                  **/ItFmwMiiDomain.java,
-                  **/ItFmwSample.java
+                  **/ItMiiSample,
+                  **/ItFmwDomainInPV,
+                  **/ItFmwMiiDomain,
+                  **/ItFmwSample
                 </includes-failsafe>
             </properties>
         </profile>
@@ -281,9 +295,23 @@
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItFmwDomainInPV.java,
-                    **/ItStickySession.java,**/ItSessionMigration.java,**/ItIstioTwoDomainsInImage,**/ItPodsRestart,**/ItUsabilityOperatorHelmChart,**/ItInitContainers,**/ItOperatorUpgrade,**/ItOperatorRestart,
-                    **/ItPodsShutdownOption,**/ItManageNs</includes-failsafe>
+                <includes-failsafe>
+                  **/ItParameterizedDomain,
+                  **/ItServerStartPolicy,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItIntrospectVersion,
+                  **/ItFmwDomainInPV,
+                  **/ItStickySession,
+                  **/ItSessionMigration,
+                  **/ItIstioTwoDomainsInImage,
+                  **/ItPodsRestart,
+                  **/ItUsabilityOperatorHelmChart,
+                  **/ItInitContainers,
+                  **/ItOperatorUpgrade,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItManageNs
+               </includes-failsafe>
             </properties>
         </profile>
     </profiles>

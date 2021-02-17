@@ -163,7 +163,7 @@ public class ItMiiSample {
   @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
-  public void testCheckSampleSource() {
+  public void testCheckMiiSampleSource() {
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
