@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import javax.annotation.Nonnull;
 
-import com.google.common.base.Strings;
 import com.google.gson.reflect.TypeToken;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiCallback;
@@ -28,12 +27,12 @@ import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
 import io.kubernetes.client.openapi.apis.VersionApi;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
@@ -73,9 +72,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.apache.commons.lang.ArrayUtils;
 
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /** Simplifies synchronous and asynchronous call patterns to the Kubernetes API Server. */
 @SuppressWarnings({"WeakerAccess", "UnusedReturnValue"})
@@ -84,6 +83,8 @@ public class CallBuilder {
 
   /** HTTP status code for "Not Found". */
   public static final int NOT_FOUND = 404;
+
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -215,22 +216,22 @@ public class CallBuilder {
           wrap(
               createSelfSubjectRulesReviewAsync(
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
-  private final CallFactory<V1Event> readEvent =
+  private final CallFactory<CoreV1Event> readEvent =
       (requestParams, usage, cont, callback) ->
           wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
-  private final CallFactory<V1Event> createEvent =
+  private final CallFactory<CoreV1Event> createEvent =
       (requestParams, usage, cont, callback) ->
           wrap(
               createEventAsync(
-                  usage, requestParams.namespace, (V1Event) requestParams.body, callback));
-  private final CallFactory<V1Event> replaceEvent =
+                  usage, requestParams.namespace, (CoreV1Event) requestParams.body, callback));
+  private final CallFactory<CoreV1Event> replaceEvent =
       (requestParams, usage, cont, callback) ->
           wrap(
               replaceEventAsync(
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  (V1Event) requestParams.body,
+                  (CoreV1Event) requestParams.body,
                   callback));
   private final CallFactory<String> readPodLog =
       (requestParams, usage, cont, callback) ->
@@ -250,35 +251,35 @@ public class CallBuilder {
                   null,
                   callback));
   private final CallFactory<V1beta1PodDisruptionBudgetList> listPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(listPodDisruptionBudgetAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> readPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(readPodDisruptionBudgetAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> createPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          createPodDisruptionBudgetAsync(
-                                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
-                                          requestParams.body, callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              createPodDisruptionBudgetAsync(
+                  usage, requestParams.namespace, (V1beta1PodDisruptionBudget)
+                      requestParams.body, callback));
   private final CallFactory<V1beta1PodDisruptionBudget> patchPodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchPodDisruptionBudgetAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              patchPodDisruptionBudgetAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1Patch) requestParams.body,
+                  callback));
   private final CallFactory<V1Status> deletePodDisruptionBudget =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          deletePodDisruptionBudgetAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1DeleteOptions) requestParams.body,
-                                  callback));
+      (requestParams, usage, cont, callback) ->
+          wrap(
+              deletePodDisruptionBudgetAsync(
+                  usage,
+                  requestParams.name,
+                  requestParams.namespace,
+                  (V1DeleteOptions) requestParams.body,
+                  callback));
 
   private RetryStrategy retryStrategy;
 
@@ -310,7 +311,7 @@ public class CallBuilder {
   private final CallFactory<V1ServiceList> listService =
       (requestParams, usage, cont, callback) ->
           wrap(listServiceAsync(usage, requestParams.namespace, cont, callback));
-  private final CallFactory<V1EventList> listEvent =
+  private final CallFactory<CoreV1EventList> listEvent =
       (requestParams, usage, cont, callback) ->
           wrap(listEventAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1NamespaceList> listNamespace =
@@ -489,7 +490,7 @@ public class CallBuilder {
    * @return this CallBuilder
    */
   public CallBuilder withLabelSelectors(String... selectors) {
-    this.labelSelector = !ArrayUtils.isEmpty(selectors) ? String.join(",", selectors) : null;
+    this.labelSelector = !isNullOrEmpty(selectors) ? String.join(",", selectors) : null;
     return this;
   }
 
@@ -914,6 +915,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -930,7 +932,7 @@ public class CallBuilder {
     return createRequestAsync(
         responseStep,
         new RequestParams("listConfigMap", namespace, null, null, callParams),
-          listConfigMaps);
+        listConfigMaps);
   }
 
   private Call readConfigMapAsync(
@@ -1086,6 +1088,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1187,13 +1190,13 @@ public class CallBuilder {
       V1DeleteOptions deleteOptions,
       ResponseStep<Object> responseStep) {
     return createRequestAsync(
-            responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
-            deletePod, retryStrategy);
+        responseStep, new RequestParams("deletePod", namespace, name, deleteOptions, domainUid),
+        deletePod, retryStrategy);
   }
 
   private Call deleteNamespacedPodAsync(ApiClient client, String name, String namespace, String pretty, String dryRun,
-                                       Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
-                                       V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
+                                        Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
+                                        V1DeleteOptions body, ApiCallback<Object> callback) throws ApiException {
     Call localVarCall = this.deleteNamespacedPodValidateBeforeCall(client, name, namespace, pretty, dryRun,
         gracePeriodSeconds, orphanDependents, propagationPolicy, body, callback);
     Type localVarReturnType = (new TypeToken<>() {
@@ -1218,11 +1221,11 @@ public class CallBuilder {
   }
 
   private Call deleteNamespacedPodCall(ApiClient client, String name, String namespace, String pretty, String dryRun,
-                                      Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
-                                      V1DeleteOptions body, ApiCallback callback) throws ApiException {
+                                       Integer gracePeriodSeconds, Boolean orphanDependents, String propagationPolicy,
+                                       V1DeleteOptions body, ApiCallback callback) throws ApiException {
     String localVarPath = "/api/v1/namespaces/{namespace}/pods/{name}".replaceAll("\\{name\\}",
-            client.escapeString(name)).replaceAll("\\{namespace\\}",
-            client.escapeString(namespace));
+        client.escapeString(name)).replaceAll("\\{namespace\\}",
+        client.escapeString(namespace));
     List<Pair> localVarQueryParams = new ArrayList<>();
     List<Pair> localVarCollectionQueryParams = new ArrayList<>();
     if (pretty != null) {
@@ -1261,7 +1264,7 @@ public class CallBuilder {
     localVarHeaderParams.put("Content-Type", localVarContentType);
     String[] localVarAuthNames = new String[]{"BearerToken"};
     return client.buildCall(localVarPath, "DELETE", localVarQueryParams, localVarCollectionQueryParams, body,
-            localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
+        localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
   }
 
   private Call patchPodAsync(
@@ -1305,6 +1308,7 @@ public class CallBuilder {
             orphanDependents,
             propagationPolicy,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             deleteOptions,
             callback);
@@ -1337,6 +1341,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1441,7 +1446,7 @@ public class CallBuilder {
       ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("deleteJob", namespace, name, deleteOptions, domainUid),
-            deleteJob, timeoutSeconds);
+        deleteJob, timeoutSeconds);
   }
 
   private Call listServiceAsync(
@@ -1457,6 +1462,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1563,21 +1569,22 @@ public class CallBuilder {
   }
 
   private Call listPodDisruptionBudgetAsync(
-          ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
-          throws ApiException {
+      ApiClient client, String namespace, String cont, ApiCallback<V1beta1PodDisruptionBudgetList> callback)
+      throws ApiException {
     return new PolicyV1beta1Api(client)
-            .listNamespacedPodDisruptionBudgetAsync(
-                    namespace,
-                    pretty,
-                    allowWatchBookmarks,
-                    cont,
-                    fieldSelector,
-                    labelSelector,
-                    limit,
-                    resourceVersion,
-                    timeoutSeconds,
-                    watch,
-                    callback);
+        .listNamespacedPodDisruptionBudgetAsync(
+            namespace,
+            pretty,
+            allowWatchBookmarks,
+            cont,
+            fieldSelector,
+            labelSelector,
+            limit,
+            resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
+            timeoutSeconds,
+            watch,
+            callback);
   }
 
   /**
@@ -1589,15 +1596,15 @@ public class CallBuilder {
    */
   public Step listPodDisruptionBudgetAsync(String ns, ResponseStep<V1beta1PodDisruptionBudgetList> responseStep) {
     return createRequestAsync(
-            responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
-              listPodDisruptionBudget);
+        responseStep, new RequestParams("listPodDisruptionBudget", ns, null, null, callParams),
+        listPodDisruptionBudget);
   }
 
   private Call readPodDisruptionBudgetAsync(
-          ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
-          throws ApiException {
+      ApiClient client, String name, String namespace, ApiCallback<V1beta1PodDisruptionBudget> callback)
+      throws ApiException {
     return new PolicyV1beta1Api(client)
-            .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, exact, export, callback);
+        .readNamespacedPodDisruptionBudgetAsync(name, namespace, pretty, exact, export, callback);
   }
 
   /**
@@ -1609,18 +1616,18 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readPodDisruptionBudgetAsync(
-          String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      String name, String namespace, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-            responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
-            readPodDisruptionBudget);
+        responseStep, new RequestParams("readPodDisruptionBudget", namespace, name, null, callParams),
+        readPodDisruptionBudget);
   }
 
   private Call createPodDisruptionBudgetAsync(
-          ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
-          ApiCallback<V1beta1PodDisruptionBudget> callback)
-          throws ApiException {
+      ApiClient client, String namespace, V1beta1PodDisruptionBudget body,
+      ApiCallback<V1beta1PodDisruptionBudget> callback)
+      throws ApiException {
     return new PolicyV1beta1Api(client)
-            .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
+        .createNamespacedPodDisruptionBudgetAsync(namespace, body, pretty, null, null, callback);
   }
 
   /**
@@ -1632,22 +1639,22 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createPodDisruptionBudgetAsync(
-          String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      String namespace, V1beta1PodDisruptionBudget body, ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-            responseStep,
-            new RequestParams("createPodDisruptionBudget", namespace, null, body,
-                    getDomainUidLabel(Optional.ofNullable(body)
-                            .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
-            createPodDisruptionBudget);
+        responseStep,
+        new RequestParams("createPodDisruptionBudget", namespace, null, body,
+            getDomainUidLabel(Optional.ofNullable(body)
+                .map(V1beta1PodDisruptionBudget::getMetadata).orElse(null))),
+        createPodDisruptionBudget);
   }
 
   private Call patchPodDisruptionBudgetAsync(
-          ApiClient client, String name, String namespace, V1Patch patch,
-          ApiCallback<V1beta1PodDisruptionBudget> callback)
-          throws ApiException {
+      ApiClient client, String name, String namespace, V1Patch patch,
+      ApiCallback<V1beta1PodDisruptionBudget> callback)
+      throws ApiException {
     return new PolicyV1beta1Api(client)
-            .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
-                    null, null, callback);
+        .patchNamespacedPodDisruptionBudgetAsync(name, namespace, patch, pretty, null,
+            null, null, callback);
   }
 
   /**
@@ -1660,32 +1667,32 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step patchPodDisruptionBudgetAsync(
-          String name, String namespace, V1Patch patchBody,
-          ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
+      String name, String namespace, V1Patch patchBody,
+      ResponseStep<V1beta1PodDisruptionBudget> responseStep) {
     return createRequestAsync(
-            responseStep,
-            new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
-            patchPodDisruptionBudget);
+        responseStep,
+        new RequestParams("patchPodDisruptionBudget", namespace, name, patchBody, callParams),
+        patchPodDisruptionBudget);
   }
 
   private Call deletePodDisruptionBudgetAsync(
-          ApiClient client,
-          String name,
-          String namespace,
-          V1DeleteOptions deleteOptions,
-          ApiCallback<V1Status> callback)
-          throws ApiException {
+      ApiClient client,
+      String name,
+      String namespace,
+      V1DeleteOptions deleteOptions,
+      ApiCallback<V1Status> callback)
+      throws ApiException {
     return new PolicyV1beta1Api(client)
-            .deleteNamespacedPodDisruptionBudgetAsync(
-                    name,
-                    namespace,
-                    pretty,
-                    dryRun,
-                    gracePeriodSeconds,
-                    orphanDependents,
-                    propagationPolicy,
-                    deleteOptions,
-                    callback);
+        .deleteNamespacedPodDisruptionBudgetAsync(
+            name,
+            namespace,
+            pretty,
+            dryRun,
+            gracePeriodSeconds,
+            orphanDependents,
+            propagationPolicy,
+            deleteOptions,
+            callback);
   }
 
   /**
@@ -1699,21 +1706,21 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step deletePodDisruptionBudgetAsync(
-          String name,
-          String namespace,
-          String domainUid,
-          V1DeleteOptions deleteOptions,
-          ResponseStep<V1Status> responseStep) {
+      String name,
+      String namespace,
+      String domainUid,
+      V1DeleteOptions deleteOptions,
+      ResponseStep<V1Status> responseStep) {
     return createRequestAsync(
-            responseStep,
-            new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
-            deletePodDisruptionBudget);
+        responseStep,
+        new RequestParams("deletePodDisruptionBudget", namespace, name, deleteOptions, domainUid),
+        deletePodDisruptionBudget);
   }
 
   /* Secrets */
 
   private Call listEventAsync(
-      ApiClient client, String namespace, String cont, ApiCallback<V1EventList> callback)
+      ApiClient client, String namespace, String cont, ApiCallback<CoreV1EventList> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .listNamespacedEventAsync(
@@ -1725,6 +1732,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1737,13 +1745,13 @@ public class CallBuilder {
    * @param responseStep Response step for when call completes
    * @return Asynchronous step
    */
-  public Step listEventAsync(String namespace, ResponseStep<V1EventList> responseStep) {
+  public Step listEventAsync(String namespace, ResponseStep<CoreV1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
   }
 
   private Call readEventAsync(
-      ApiClient client, String name, String namespace, ApiCallback<V1Event> callback)
+      ApiClient client, String name, String namespace, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .readNamespacedEventAsync(name, namespace, pretty, exact, export, callback);
@@ -1758,7 +1766,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step readEventAsync(
-      String name, String namespace, ResponseStep<V1Event> responseStep) {
+      String name, String namespace, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("readEvent", namespace, name, null, callParams),
         readEvent);
@@ -1773,16 +1781,16 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step createEventAsync(
-      String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+      String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("createEvent", namespace, null, body,
-            getDomainUidLabel(Optional.ofNullable(body).map(V1Event::getMetadata).orElse(null))),
+            getDomainUidLabel(Optional.ofNullable(body).map(CoreV1Event::getMetadata).orElse(null))),
         createEvent);
   }
 
   private Call createEventAsync(
-      ApiClient client, String namespace, V1Event body, ApiCallback<V1Event> callback)
+      ApiClient client, String namespace, CoreV1Event body, ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .createNamespacedEventAsync(namespace, body, pretty, null, null, callback);
@@ -1797,7 +1805,7 @@ public class CallBuilder {
    * @return Asynchronous step
    */
   public Step replaceEventAsync(
-      String name, String namespace, V1Event body, ResponseStep<V1Event> responseStep) {
+      String name, String namespace, CoreV1Event body, ResponseStep<CoreV1Event> responseStep) {
     return createRequestAsync(
         responseStep,
         new RequestParams("replaceEvent", namespace, name, body, (String) null),
@@ -1808,8 +1816,8 @@ public class CallBuilder {
       ApiClient client,
       String name,
       String namespace,
-      V1Event body,
-      ApiCallback<V1Event> callback)
+      CoreV1Event body,
+      ApiCallback<CoreV1Event> callback)
       throws ApiException {
     return new CoreV1Api(client)
         .replaceNamespacedEventAsync(name, namespace, body, pretty, dryRun, null, callback);
@@ -1827,6 +1835,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1879,6 +1888,7 @@ public class CallBuilder {
             labelSelector,
             limit,
             resourceVersion,
+            RESOURCE_VERSION_MATCH_UNSET,
             timeoutSeconds,
             watch,
             callback);
@@ -1895,7 +1905,7 @@ public class CallBuilder {
     return createRequestAsync(
         responseStep,
         new RequestParams("listSecret", namespace, null, null, callParams),
-          listSecrets);
+        listSecrets);
   }
 
   /**
@@ -2024,35 +2034,35 @@ public class CallBuilder {
   }
 
   private <T> Step createRequestAsync(
-          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
+      ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, RetryStrategy retryStrategy) {
     return STEP_FACTORY.createRequestAsync(
-            next,
-            requestParams,
-            factory,
-            retryStrategy,
-            helper,
-            timeoutSeconds,
-            maxRetryCount,
-            gracePeriodSeconds,
-            fieldSelector,
-            labelSelector,
-            resourceVersion);
+        next,
+        requestParams,
+        factory,
+        retryStrategy,
+        helper,
+        timeoutSeconds,
+        maxRetryCount,
+        gracePeriodSeconds,
+        fieldSelector,
+        labelSelector,
+        resourceVersion);
   }
 
   private <T> Step createRequestAsync(
-          ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
+      ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory, int timeoutSeconds) {
     return STEP_FACTORY.createRequestAsync(
-            next,
-            requestParams,
-            factory,
-            retryStrategy,
-            helper,
-            timeoutSeconds,
-            maxRetryCount,
-            gracePeriodSeconds,
-            fieldSelector,
-            labelSelector,
-            resourceVersion);
+        next,
+        requestParams,
+        factory,
+        retryStrategy,
+        helper,
+        timeoutSeconds,
+        maxRetryCount,
+        gracePeriodSeconds,
+        fieldSelector,
+        labelSelector,
+        resourceVersion);
   }
 
   private CancellableCall wrap(Call call) {
@@ -2070,7 +2080,7 @@ public class CallBuilder {
    * @return - this CallBuilder instance
    */
   public CallBuilder withAuthentication(String accessToken) {
-    if (!Strings.isNullOrEmpty(accessToken)) {
+    if (!isNullOrEmpty(accessToken)) {
       this.helper = new ClientPool().withApiClient(createApiClient(accessToken));
     }
     return this;

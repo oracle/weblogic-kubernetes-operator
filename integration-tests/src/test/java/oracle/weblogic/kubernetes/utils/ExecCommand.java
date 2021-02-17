@@ -14,10 +14,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.google.common.io.ByteStreams;
+import io.kubernetes.client.util.Streams;
 
-/** 
- * Class for executing shell commands from java. 
+/**
+ * Class for executing shell commands from java.
  */
 public class ExecCommand {
 
@@ -26,7 +26,7 @@ public class ExecCommand {
   }
 
   public static ExecResult exec(
-      String command, 
+      String command,
       boolean isRedirectToOut
   ) throws IOException, InterruptedException {
     return exec(command, isRedirectToOut, null);
@@ -42,7 +42,7 @@ public class ExecCommand {
    * @throws InterruptedException if the process was interrupted
    */
   public static ExecResult exec(
-      String command, 
+      String command,
       boolean isRedirectToOut,
       Map<String, String> additionalEnvMap
   ) throws IOException, InterruptedException {
@@ -74,7 +74,7 @@ public class ExecCommand {
             new Thread(
                 () -> {
                   try {
-                    ByteStreams.copy(i, copyOut);
+                    Streams.copy(i, copyOut);
                   } catch (IOException ex) {
                     ex.printStackTrace();
                   }
@@ -91,7 +91,7 @@ public class ExecCommand {
       }
 
       return new ExecResult(p.exitValue(), read(in.getInputStream()), read(p.getErrorStream()));
-    
+
     } finally {
       // we try to join again if for any reason the code failed before the previous attempt
       if (out != null) {
