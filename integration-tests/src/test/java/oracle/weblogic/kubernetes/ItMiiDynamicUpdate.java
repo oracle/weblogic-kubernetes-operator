@@ -1044,8 +1044,8 @@ class ItMiiDynamicUpdate {
 
   /**
    * Modify MaxDynamicClusterSize and MinDynamicClusterSize using dynamic update.
-   * Verify the cluster can not be scaled beyond the modified MaxDynamicClusterSize value
-   * and can not be scaled below MinDynamicClusterSize when allowReplicasBelowMinDynClusterSize is set false.
+   * Verify the cluster cannot be scaled beyond the modified MaxDynamicClusterSize value
+   * and cannot be scaled below MinDynamicClusterSize when allowReplicasBelowMinDynClusterSize is set false.
    * Verify JMS message and connection distribution/load balance after scaling the cluster.
    */
   @Test
@@ -1061,15 +1061,13 @@ class ItMiiDynamicUpdate {
     assertTrue(p1Success,
         String.format("Patching replica to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    // Make sure the cluster can be scaled to replica count 5
-    // since the MaxDynamicClusterSize is set to 5
+    // Make sure the cluster can be scaled to replica count 5 as MaxDynamicClusterSize is set to 5
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPrefix + "4", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPrefix + "5", domainUid, domainNamespace);
 
-    // Make sure the cluster can be scaled to replica count 1
-    // since the MinDynamicClusterSize is set to 1
+    // Make sure the cluster can be scaled to replica count 1 as MinDynamicClusterSize is set to 1
     logger.info("[Before Patching] updating the replica count to 1");
     boolean p11Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
@@ -1149,7 +1147,7 @@ class ItMiiDynamicUpdate {
             "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"));
 
     // Since the MinDynamicClusterSize is set to 2 in the config map and allowReplicasBelowMinDynClusterSize is set
-    // false, the replica count can not go below 2. So during the following scale down operation
+    // false, the replica count cannot go below 2. So during the following scale down operation
     // only managed-server3 and managed-server4 pod should be removed.
     logger.info("[After Patching] updating the replica count to 1");
     boolean p4Success = assertDoesNotThrow(() ->
