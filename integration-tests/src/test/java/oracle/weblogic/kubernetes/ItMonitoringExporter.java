@@ -343,8 +343,8 @@ class ItMonitoringExporter {
       logger.info("Create domain and verify that it's running");
       createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
 
-      String oldRegex = String.format("regex: %s;%s;%s", domain2Namespace, domain2Uid, clusterName);
-      String newRegex = String.format("regex: %s;%s;%s", domain1Namespace, domain1Uid, clusterName);
+      String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
+      String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
       editPrometheusCM(oldRegex, newRegex);
       String sessionAppPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
@@ -577,7 +577,7 @@ class ItMonitoringExporter {
                                         String domainNS,
                                         String domainUid
                                         ) throws IOException, ApiException {
-    final String prometheusRegexValue = String.format("regex: %s;%s;%s", domainNS, domainUid, clusterName);
+    final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
       logger.info("create a staging location for monitoring creation scripts");
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
@@ -588,7 +588,7 @@ class ItMonitoringExporter {
       Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
       Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
       Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING);
-      String oldValue = "regex: default;domain1;cluster-1";
+      String oldValue = "regex: default;domain1";
       replaceStringInFile(targetPromFile.toString(),
               oldValue,
               prometheusRegexValue);
