@@ -1442,15 +1442,18 @@ class ItMonitoringExporter {
                 .clusterName(clusterName)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-2")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    if (!miiImage.equals(wdtImage)) {
+      domain.getSpec().addClustersItem(new Cluster()
+          .clusterName("cluster-2")
+          .replicas(replicaCount)
+          .serverStartState("RUNNING"));
+    }
+
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
@@ -1762,8 +1765,8 @@ class ItMonitoringExporter {
     Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
-            "heap_free_current%7Bname%3D%22cluster-2-managed-server1%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-2-managed-server1");
+            "heap_free_current%7Bname%3D%22cluster-1-managed-server1%22%7D%5B15s%5D";
+    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-1-managed-server1");
   }
 
   /**
