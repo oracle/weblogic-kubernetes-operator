@@ -216,6 +216,9 @@ public class CallBuilder {
           wrap(
               createSelfSubjectRulesReviewAsync(
                   usage, (V1SelfSubjectRulesReview) requestParams.body, callback));
+  private final CallFactory<CoreV1Event> readEvent =
+      (requestParams, usage, cont, callback) ->
+          wrap(readEventAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<CoreV1Event> createEvent =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1745,6 +1748,28 @@ public class CallBuilder {
   public Step listEventAsync(String namespace, ResponseStep<CoreV1EventList> responseStep) {
     return createRequestAsync(
         responseStep, new RequestParams("listEvent", namespace, null, null, callParams), listEvent);
+  }
+
+  private Call readEventAsync(
+      ApiClient client, String name, String namespace, ApiCallback<CoreV1Event> callback)
+      throws ApiException {
+    return new CoreV1Api(client)
+        .readNamespacedEventAsync(name, namespace, pretty, exact, export, callback);
+  }
+
+  /**
+   * Asynchronous step for reading event.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step readEventAsync(
+      String name, String namespace, ResponseStep<CoreV1Event> responseStep) {
+    return createRequestAsync(
+        responseStep, new RequestParams("readEvent", namespace, name, null, callParams),
+        readEvent);
   }
 
   /**

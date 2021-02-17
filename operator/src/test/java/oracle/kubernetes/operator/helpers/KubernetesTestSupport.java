@@ -1130,7 +1130,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object execute() {
       if (failure != null && failure.matches(resourceType, requestParams, operation)) {
-        throw failure.getException();
+        try {
+          throw failure.getException();
+        } finally {
+          failure = null;
+        }
       }
 
       return operation.execute(this, selectRepository(resourceType));
