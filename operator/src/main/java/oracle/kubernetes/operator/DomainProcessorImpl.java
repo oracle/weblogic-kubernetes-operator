@@ -17,10 +17,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -138,23 +138,23 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  public static void updateEventK8SObjects(V1Event event) {
+  public static void updateEventK8SObjects(CoreV1Event event) {
     getEventK8SObjects(event).update(event);
   }
 
-  private static String getEventNamespace(V1Event event) {
-    return Optional.ofNullable(event).map(V1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
+  private static String getEventNamespace(CoreV1Event event) {
+    return Optional.ofNullable(event).map(CoreV1Event::getMetadata).map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
-  private static String getEventDomainUid(V1Event event) {
+  private static String getEventDomainUid(CoreV1Event event) {
     return Optional.ofNullable(event)
-        .map(V1Event::getMetadata)
+        .map(CoreV1Event::getMetadata)
         .map(V1ObjectMeta::getLabels)
         .orElse(Collections.emptyMap())
         .get(LabelConstants.DOMAINUID_LABEL);
   }
 
-  public static KubernetesEventObjects getEventK8SObjects(V1Event event) {
+  public static KubernetesEventObjects getEventK8SObjects(CoreV1Event event) {
     return getEventK8SObjects(getEventNamespace(event), getEventDomainUid(event));
   }
 
@@ -173,11 +173,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         .computeIfAbsent(domainUid, d -> new KubernetesEventObjects());
   }
 
-  private static void deleteEventK8SObjects(V1Event event) {
+  private static void deleteEventK8SObjects(CoreV1Event event) {
     getEventK8SObjects(event).remove(event);
   }
 
-  private static void onCreateModifyEvent(V1Event event) {
+  private static void onCreateModifyEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
     if (ref == null || ref.getName() == null) {
@@ -202,7 +202,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void processPodEvent(V1Event event) {
+  private static void processPodEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
     if (ref == null || ref.getName() == null) {
@@ -215,7 +215,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static void processServerEvent(V1Event event) {
+  private static void processServerEvent(CoreV1Event event) {
     String[] domainAndServer = Objects.requireNonNull(event.getInvolvedObject().getName()).split("-");
     String domainUid = domainAndServer[0];
     String serverName = domainAndServer[1];
@@ -229,7 +229,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           .ifPresent(info -> info.updateLastKnownServerStatus(serverName, status));
   }
 
-  private void onDeleteEvent(V1Event event) {
+  private void onDeleteEvent(CoreV1Event event) {
     V1ObjectReference ref = event.getInvolvedObject();
 
     if (ref == null || ref.getName() == null) {
@@ -256,7 +256,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static String getReadinessStatus(V1Event event) {
+  private static String getReadinessStatus(CoreV1Event event) {
     return Optional.ofNullable(event.getMessage())
           .filter(m -> m.contains(WebLogicConstants.READINESS_PROBE_NOT_READY_STATE))
           .map(m -> m.substring(m.lastIndexOf(':') + 1).trim())
@@ -519,8 +519,8 @@ public class DomainProcessorImpl implements DomainProcessor {
    * Dispatch event watch event.
    * @param item watch event
    */
-  public void dispatchEventWatch(Watch.Response<V1Event> item) {
-    V1Event e = item.object;
+  public void dispatchEventWatch(Watch.Response<CoreV1Event> item) {
+    CoreV1Event e = item.object;
     if (e != null) {
       switch (item.type) {
         case "ADDED":
