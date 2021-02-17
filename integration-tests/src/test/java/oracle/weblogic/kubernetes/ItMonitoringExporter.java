@@ -126,10 +126,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
@@ -707,21 +705,7 @@ class ItMonitoringExporter {
 
   @AfterAll
   public void tearDownAll() {
-/*
-    // uninstall NGINX release
-    logger.info("Uninstalling NGINX");
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx1 returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
-
-    // shutdown domain1
-    logger.info("Shutting down domain1");
-    assertTrue(shutdownDomain(domain1Uid, domain1Namespace),
-            String.format("shutdown domain %s in namespace %s failed", domain1Uid, domain1Namespace));
-
+    uninstallPrometheusGrafana();
     // delete mii domain images created for parameterized test
     if (miiImage != null) {
       deleteImage(miiImage);
@@ -729,33 +713,6 @@ class ItMonitoringExporter {
     if (wdtImage != null) {
       deleteImage(miiImage);
     }
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain1Uid, domain1Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain1Uid + " from " + domain1Namespace);
-
-    // Delete wdt domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain2Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain2Uid, domain2Namespace),
-            "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain2Uid + " from " + domain2Namespace);
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain3Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain3Uid, domain3Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain3Uid + " from " + domain3Namespace);
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domain1Namespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domain4Uid, domain4Namespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domain4Uid + " from " + domain4Namespace);
-*/
-    uninstallPrometheusGrafana();
-
     deletePersistentVolumeClaim("pvc-alertmanager",monitoringNS);
     deletePersistentVolume("pv-testalertmanager");
     deletePersistentVolumeClaim("pvc-prometheus",monitoringNS);
