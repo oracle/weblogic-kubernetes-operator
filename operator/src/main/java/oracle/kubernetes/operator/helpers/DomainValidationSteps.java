@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
@@ -75,9 +76,13 @@ public class DomainValidationSteps {
       return doContinueListOrNext(callResponse, packet);
     }
 
-    @SuppressWarnings("unchecked")
     static List<V1Secret> getSecrets(Packet packet) {
-      return Optional.ofNullable((List<V1Secret>) packet.get(SECRETS)).orElse(new ArrayList<>());
+      return Optional.ofNullable(getSecretsIfContinue(packet)).orElse(new ArrayList<>());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<V1Secret> getSecretsIfContinue(Packet packet) {
+      return packet.get(AsyncRequestStep.CONTINUE) != null ? (List<V1Secret>) packet.get(SECRETS) : null;
     }
   }
 
@@ -96,9 +101,13 @@ public class DomainValidationSteps {
       return doContinueListOrNext(callResponse, packet);
     }
 
-    @SuppressWarnings("unchecked")
     static List<V1ConfigMap> getConfigMaps(Packet packet) {
-      return Optional.ofNullable((List<V1ConfigMap>) packet.get(CONFIGMAPS)).orElse(new ArrayList<>());
+      return Optional.ofNullable(getConfigMapsIfContinue(packet)).orElse(new ArrayList<>());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<V1ConfigMap> getConfigMapsIfContinue(Packet packet) {
+      return packet.get(AsyncRequestStep.CONTINUE) != null ? (List<V1ConfigMap>) packet.get(CONFIGMAPS) : null;
     }
   }
 
