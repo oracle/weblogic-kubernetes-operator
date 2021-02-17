@@ -253,12 +253,11 @@
                    **/ItIstioMiiDomain,
                    **/ItIstioTwoDomainsInImage,
                    **/ItKubernetesEvents,
-                   **/ItManageNs,
+                   **/ItManageNameSpace,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
                    **/ItMiiDomainModelInPV,
                    **/ItMiiDynamicUpdate,
-                   **/ItMiiMultiModel,
                    **/ItMiiMultiModel,
                    **/ItMiiSample,
                    **/ItMiiUpdateDomainConfig,
@@ -269,7 +268,7 @@
                    **/ItPodsRestart,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
-                   **/ItSamples,
+                   **/ItWlsSamples,
                    **/ItServerStartPolicy,
                    **/ItSessionMigration,
                    **/ItStickySession,
@@ -310,7 +309,7 @@
                   **/ItOperatorUpgrade,
                   **/ItOperatorRestart,
                   **/ItPodsShutdownOption,
-                  **/ItManageNs
+                  **/ItManageNameSpace
                </includes-failsafe>
             </properties>
         </profile>
