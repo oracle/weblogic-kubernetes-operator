@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -47,7 +48,7 @@ public class DomainValidationSteps {
               new DomainValidationStep(next));
   }
 
-  public static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
+  static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
@@ -59,7 +60,7 @@ public class DomainValidationSteps {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
-  public static Step createValidateDomainTopologyStep(Step next) {
+  static Step createValidateDomainTopologyStep(Step next) {
     return new ValidateDomainTopologyStep(next);
   }
 
@@ -67,9 +68,16 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
-      packet.put(SECRETS, callResponse.getResult().getItems());
+      List<V1Secret> list = getSecrets(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(SECRETS, list);
 
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<V1Secret> getSecrets(Packet packet) {
+      return Optional.ofNullable((List<V1Secret>) packet.get(SECRETS)).orElse(new ArrayList<>());
     }
   }
 
@@ -81,9 +89,16 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
-      packet.put(CONFIGMAPS, callResponse.getResult().getItems());
+      List<V1ConfigMap> list = getConfigMaps(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(CONFIGMAPS, list);
 
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<V1ConfigMap> getConfigMaps(Packet packet) {
+      return Optional.ofNullable((List<V1ConfigMap>) packet.get(CONFIGMAPS)).orElse(new ArrayList<>());
     }
   }
 
