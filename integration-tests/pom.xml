@@ -238,14 +238,14 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiWlsSample.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItMiiFmwSample.java,**/ItFmwDomainInPV.java,**/ItFmwMiiDomain.java,**/ItFmwSample.java</includes-failsafe>
+                <includes-failsafe>**/ItMiiSample.java,**/ItFmwDomainInPV.java,**/ItFmwMiiDomain.java,**/ItFmwSample.java</includes-failsafe>
             </properties>
         </profile>
         <profile>
