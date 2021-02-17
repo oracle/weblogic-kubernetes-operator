@@ -132,7 +132,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   @Test
   public void whenJobConditionTypeFailedWithTrueStatus_reportFailed() {
-    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed").status("True")));
+    markJobConditionFailed(cachedJob);
 
     assertThat(JobWatcher.isFailed(cachedJob), is(true));
   }
@@ -203,7 +203,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   @Test
   public void whenJobHasNoStatusAndFailedCondition_reportFailed() {
-    markJobFailed(cachedJob);
+    markJobConditionFailed(cachedJob);
     assertThat(JobWatcher.isFailed(cachedJob), is(true));
   }
 
