@@ -662,7 +662,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         LOGGER.fine("Stop introspection retry - MII Fatal Error: "
             + existingError);
         return false;
-      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
+      } else if (!liveInfo.isPopulated() && isCachedInfoNewer(liveInfo, cachedInfo)) {
+        LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         if (exceededFailureRetryCount) {
@@ -677,7 +678,7 @@ public class DomainProcessorImpl implements DomainProcessor {
               currentIntrospectFailureRetryCount,
               DomainPresence.getDomainPresenceFailureRetryMaxCount());
         }
-
+        LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
         return true;
       }
       cachedInfo.setDomain(getDomain());
