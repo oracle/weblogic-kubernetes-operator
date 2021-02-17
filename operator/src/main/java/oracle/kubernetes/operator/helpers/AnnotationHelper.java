@@ -7,10 +7,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Yaml;
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -41,12 +40,12 @@ public class AnnotationHelper {
     return DEBUG ? addHashAndDebug(pod) : addHash(pod);
   }
 
-  public static V1Service withSha256Hash(V1Service service) {
-    return addHash(service);
+  public static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject) {
+    return withSha256Hash(kubernetesObject, kubernetesObject);
   }
 
-  public static V1beta1PodDisruptionBudget withSha256Hash(V1beta1PodDisruptionBudget pdb) {
-    return addHash(pdb);
+  public static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject, Object objectToHash) {
+    return addHash(kubernetesObject, objectToHash);
   }
 
   private static V1Pod addHashAndDebug(V1Pod pod) {
@@ -56,27 +55,17 @@ public class AnnotationHelper {
     return pod;
   }
 
-  private static V1Pod addHash(V1Pod pod) {
-    pod.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pod));
-    return pod;
+  private static <K extends KubernetesObject> K addHash(K kubernetesObject) {
+    return addHash(kubernetesObject, kubernetesObject);
   }
 
-  private static V1Service addHash(V1Service service) {
-    service.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(service));
-    return service;
+  private static <K extends KubernetesObject> K addHash(K kubernetesObject, Object objectToHash) {
+    kubernetesObject.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(objectToHash));
+    return kubernetesObject;
   }
 
-  private static V1beta1PodDisruptionBudget addHash(V1beta1PodDisruptionBudget pdb) {
-    pdb.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(pdb));
-    return pdb;
-  }
-
-  static String getHash(V1Pod pod) {
-    return getAnnotation(pod.getMetadata(), AnnotationHelper::getSha256Annotation);
-  }
-
-  static String getHash(V1Service service) {
-    return getAnnotation(service.getMetadata(), AnnotationHelper::getSha256Annotation);
+  static String getHash(KubernetesObject kubernetesObject) {
+    return getAnnotation(kubernetesObject.getMetadata(), AnnotationHelper::getSha256Annotation);
   }
 
   static String getDebugString(V1Pod pod) {

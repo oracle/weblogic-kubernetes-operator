@@ -21,8 +21,8 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -288,8 +288,8 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenOperatorStarted_withExistingEvents_nsEventK8SObjectsPopulated() {
-    V1Event event1 = createNSEvent("event1").reason(START_MANAGING_NAMESPACE_EVENT);
-    V1Event event2 = createNSEvent("event2").reason(STOP_MANAGING_NAMESPACE_EVENT);
+    CoreV1Event event1 = createNSEvent("event1").reason(START_MANAGING_NAMESPACE_EVENT);
+    CoreV1Event event2 = createNSEvent("event2").reason(STOP_MANAGING_NAMESPACE_EVENT);
 
     testSupport.defineResources(event1, event2);
     main.startOperator(null);
@@ -300,8 +300,8 @@ public class MainTest extends ThreadFactoryTestBase {
     return Optional.ofNullable(nsEventObjects.get(OP_NS)).map(KubernetesEventObjects::size).orElse(0);
   }
 
-  private V1Event createNSEvent(String name) {
-    return new V1Event()
+  private CoreV1Event createNSEvent(String name) {
+    return new CoreV1Event()
         .metadata(new V1ObjectMeta()
             .name(name)
             .namespace(OP_NS)
@@ -615,8 +615,8 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void afterReadingExistingResourcesForNamespace_withExistingEvents_domainEventK8SObjectsPopulated() {
-    V1Event event1 = createDomainEvent("event1").reason(DOMAIN_CREATED_EVENT);
-    V1Event event2 = createDomainEvent("event2").reason(DOMAIN_CHANGED_EVENT);
+    CoreV1Event event1 = createDomainEvent("event1").reason(DOMAIN_CREATED_EVENT);
+    CoreV1Event event2 = createDomainEvent("event2").reason(DOMAIN_CHANGED_EVENT);
 
     testSupport.defineResources(event1, event2);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, createStrictStub(DomainProcessor.class)));
@@ -635,8 +635,8 @@ public class MainTest extends ThreadFactoryTestBase {
     return (KubernetesEventObjects) map.get(domainUid);
   }
 
-  private V1Event createDomainEvent(String name) {
-    return new V1Event()
+  private CoreV1Event createDomainEvent(String name) {
+    return new CoreV1Event()
         .metadata(new V1ObjectMeta()
             .name(name)
             .namespace(NS)
