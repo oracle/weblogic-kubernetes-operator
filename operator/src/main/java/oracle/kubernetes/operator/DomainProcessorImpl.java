@@ -663,7 +663,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             + existingError);
         return false;
       } else if (!liveInfo.isPopulated() && isCachedInfoNewer(liveInfo, cachedInfo)) {
-        LOGGER.fine("Cached domain info from watch event is newer than the live info.");
+        LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
         return false;  // we have already cached this
       } else if (explicitRecheck || isSpecChanged(liveInfo, cachedInfo)) {
         if (exceededFailureRetryCount) {
