@@ -238,14 +238,43 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>
+                   **/ItParameterizedDomain.java,
+                   **/ItTwoDomainsLoadBalancers.java,
+                   **/ItServerStartPolicy.java,
+                   **/ItIntrospectVersion.java,
+                   **/ItMiiDomain.java,
+                   **/ItMiiDomainModelInPV.java,
+                   **/ItMiiMultiModel.java,
+                   **/ItMiiUpdateDomainConfig.java,
+                   **/ItMiiSample.java,
+                   **/ItIstioMiiDomain.java,
+                   **/ItIstioDomainInImage.java,
+                   **/ItIstioDomainInPV.java,
+                   **/ItIstioTwoDomainsInImage.java,
+                   **/ItStickySession.java,
+                   **/ItSessionMigration.java,
+                   **/ItMonitoringExporter.java,
+                   **/ItElasticLogging.java,
+                   **/ItCrossDomainTransaction.java,
+                   **/ItPodsRestart.java,
+                   **/ItOperatorRestart.java,
+                   **/ItProductionSecureMode.java,
+                   **/ItExternalRmiTunneling.java,
+                   **/ItKubernetesEvents.java
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItMiiSample.java,**/ItFmwDomainInPV.java,**/ItFmwMiiDomain.java,**/ItFmwSample.java</includes-failsafe>
+                <includes-failsafe>
+                  **/ItMiiSample.java,
+                  **/ItFmwDomainInPV.java,
+                  **/ItFmwMiiDomain.java,
+                  **/ItFmwSample.java
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
