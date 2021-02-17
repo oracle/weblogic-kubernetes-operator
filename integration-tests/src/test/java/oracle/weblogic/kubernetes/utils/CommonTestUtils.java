@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.Quantity;
@@ -3703,4 +3704,75 @@ public class CommonTestUtils {
       }
     }
   }
+
+
+  /**
+   * Compile java class inside the pod.
+   * @param podName name of the pod
+   * @param namespace name of namespace
+   * @param destLocation location of java class
+   */
+  public static void runJavacInsidePod(String podName, String namespace, String destLocation) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    javacCmd.append(namespace);
+    javacCmd.append(" -it ");
+    javacCmd.append(podName);
+    javacCmd.append(" -- /bin/bash -c \"");
+    javacCmd.append("javac -cp ");
+    javacCmd.append(jarLocation);
+    javacCmd.append(" ");
+    javacCmd.append(destLocation);
+    javacCmd.append(" \"");
+    logger.info("javac command {0}", javacCmd.toString());
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(javacCmd), true));
+    logger.info("javac returned {0}", result.toString());
+    logger.info("javac returned EXIT value {0}", result.exitValue());
+    assertTrue(result.exitValue() == 0, "Client compilation fails");
+  }
+
+  /**
+   * Run java client inside the pod using weblogic.jar.
+   *
+   * @param podName    name of the pod
+   * @param namespace  name of the namespace
+   * @param javaClientLocation location(path) of java class
+   * @param javaClientClass java class name
+   * @param args       arguments to the java command
+   * @return true if the client ran successfully
+   */
+  public static Callable<Boolean> runClientInsidePod(String podName, String namespace, String javaClientLocation,
+                                                     String javaClientClass, String... args) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(namespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(podName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":");
+    javapCmd.append(javaClientLocation);
+    javapCmd.append(" ");
+    javapCmd.append(javaClientClass);
+    javapCmd.append(" ");
+    for (String arg:args) {
+      javapCmd.append(arg).append(" ");
+    }
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    return (() -> {
+      ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
+      logger.info("java returned {0}", result.toString());
+      logger.info("java returned EXIT value {0}", result.exitValue());
+      return ((result.exitValue() == 0));
+    });
+  }
+
 }
