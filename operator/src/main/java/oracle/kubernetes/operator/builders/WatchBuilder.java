@@ -11,8 +11,8 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.BatchV1Api;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.apis.PolicyV1beta1Api;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -22,7 +22,8 @@ import io.kubernetes.client.util.Watchable;
 import okhttp3.Call;
 import oracle.kubernetes.weblogic.domain.api.WeblogicApi;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.apache.commons.lang.ArrayUtils;
+
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 public class WatchBuilder {
   /** Always true for watches. */
@@ -32,6 +33,8 @@ public class WatchBuilder {
   private static final String START_LIST = null;
 
   private static final Boolean ALLOW_BOOKMARKS = true;
+
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Leave non-final for unit test
   private static WatchFactory FACTORY = new WatchFactoryImpl();
@@ -61,7 +64,7 @@ public class WatchBuilder {
    */
   public Watchable<V1beta1PodDisruptionBudget> createPodDisruptionBudgetWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(callParams, V1beta1PodDisruptionBudget.class,
-            new ListPodDisruptionBudgetCall(namespace));
+        new ListPodDisruptionBudgetCall(namespace));
   }
 
   /**
@@ -73,7 +76,7 @@ public class WatchBuilder {
    */
   public Watchable<V1Pod> createPodWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams, V1Pod.class, new ListPodCall(namespace));
+        callParams, V1Pod.class, new ListPodCall(namespace));
   }
 
   /**
@@ -85,7 +88,7 @@ public class WatchBuilder {
    */
   public Watchable<V1Job> createJobWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams, V1Job.class, new ListJobCall(namespace));
+        callParams, V1Job.class, new ListJobCall(namespace));
   }
 
   /**
@@ -95,9 +98,9 @@ public class WatchBuilder {
    * @return the active web hook
    * @throws ApiException if there is an error on the call that sets up the web hook.
    */
-  public Watchable<V1Event> createEventWatch(String namespace) throws ApiException {
+  public Watchable<CoreV1Event> createEventWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams, V1Event.class, new ListEventCall(namespace));
+        callParams, CoreV1Event.class, new ListEventCall(namespace));
   }
 
   /**
@@ -109,7 +112,7 @@ public class WatchBuilder {
    */
   public Watchable<Domain> createDomainWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams, Domain.class, new ListDomainsCall(namespace));
+        callParams, Domain.class, new ListDomainsCall(namespace));
   }
 
   /**
@@ -121,9 +124,9 @@ public class WatchBuilder {
    */
   public Watchable<V1ConfigMap> createConfigMapWatch(String namespace) throws ApiException {
     return FACTORY.createWatch(
-          callParams,
+        callParams,
         V1ConfigMap.class,
-          new ListNamespacedConfigMapCall(namespace));
+        new ListNamespacedConfigMapCall(namespace));
   }
 
   /**
@@ -134,9 +137,9 @@ public class WatchBuilder {
    */
   public Watchable<V1Namespace> createNamespacesWatch() throws ApiException {
     return FACTORY.createWatch(
-          callParams,
+        callParams,
         V1Namespace.class,
-          new ListNamespaceCall());
+        new ListNamespaceCall());
   }
 
   /**
@@ -157,7 +160,7 @@ public class WatchBuilder {
   }
 
   public WatchBuilder withLabelSelectors(String... labelSelectors) {
-    callParams.setLabelSelector(!ArrayUtils.isEmpty(labelSelectors) ? String.join(",", labelSelectors) : null);
+    callParams.setLabelSelector(!isNullOrEmpty(labelSelectors) ? String.join(",", labelSelectors) : null);
     return this;
   }
 
@@ -179,18 +182,18 @@ public class WatchBuilder {
 
   public interface WatchFactory {
     <T> Watchable<T> createWatch(
-          CallParams callParams,
-          Class<?> responseBodyType,
-          BiFunction<ApiClient, CallParams, Call> function)
+        CallParams callParams,
+        Class<?> responseBodyType,
+        BiFunction<ApiClient, CallParams, Call> function)
         throws ApiException;
   }
 
   static class WatchFactoryImpl implements WatchFactory {
     @Override
     public <T> Watchable<T> createWatch(
-          CallParams callParams,
-          Class<?> responseBodyType,
-          BiFunction<ApiClient, CallParams, Call> function)
+        CallParams callParams,
+        Class<?> responseBodyType,
+        BiFunction<ApiClient, CallParams, Call> function)
         throws ApiException {
       try {
         return new WatchImpl<>(callParams, responseBodyType, function);
@@ -222,6 +225,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -258,6 +262,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -289,6 +294,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -320,6 +326,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -342,18 +349,19 @@ public class WatchBuilder {
 
       try {
         return new PolicyV1beta1Api(client)
-                .listNamespacedPodDisruptionBudgetCall(
-                        namespace,
-                        callParams.getPretty(),
-                        ALLOW_BOOKMARKS,
-                        START_LIST,
-                        callParams.getFieldSelector(),
-                        callParams.getLabelSelector(),
-                        callParams.getLimit(),
-                        callParams.getResourceVersion(),
-                        callParams.getTimeoutSeconds(),
-                        WATCH,
-                        null);
+            .listNamespacedPodDisruptionBudgetCall(
+                namespace,
+                callParams.getPretty(),
+                ALLOW_BOOKMARKS,
+                START_LIST,
+                callParams.getFieldSelector(),
+                callParams.getLabelSelector(),
+                callParams.getLimit(),
+                callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
+                callParams.getTimeoutSeconds(),
+                WATCH,
+                null);
       } catch (ApiException e) {
         throw new UncheckedApiException(e);
       }
@@ -412,6 +420,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
@@ -437,6 +446,7 @@ public class WatchBuilder {
                 callParams.getLabelSelector(),
                 callParams.getLimit(),
                 callParams.getResourceVersion(),
+                RESOURCE_VERSION_MATCH_UNSET,
                 callParams.getTimeoutSeconds(),
                 WATCH,
                 null);
