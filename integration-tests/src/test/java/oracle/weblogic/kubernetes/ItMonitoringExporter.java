@@ -209,7 +209,8 @@ class ItMonitoringExporter {
   private static final String MONEXP_IMAGE_NAME = "monexp-image";
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
 
-  private static String clusterName = "cluster-1";
+  private static String cluster1Name = "cluster-1";
+  private static String cluster2Name = "cluster-1";
   private static String miiImage = null;
   private static String wdtImage = null;
   private static String webhookImage = null;
@@ -288,8 +289,8 @@ class ItMonitoringExporter {
     logger.info("NGINX http node port: {0}", nodeportshttp);
     logger.info("NGINX https node port: {0}", nodeportshttps);
     clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    clusterNameMsPortMap.put("cluster-2", managedServerPort);
+    clusterNameMsPortMap.put(cluster1Name, managedServerPort);
+    clusterNameMsPortMap.put(cluster2Name, managedServerPort);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
     logger.info("create pv and pvc for monitoring");
@@ -317,7 +318,7 @@ class ItMonitoringExporter {
     wdtImage = createAndVerifyDomainInImage();
     try {
       logger.info("Create wdt domain and verify that it's running");
-      createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount);
+      createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount, false);
       ingressHost2List =
               createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
       logger.info("Installing Prometheus and Grafana");
@@ -341,7 +342,7 @@ class ItMonitoringExporter {
 
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1);
+      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1, true);
 
       String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
       String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
@@ -372,7 +373,7 @@ class ItMonitoringExporter {
     try {
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1);
+      createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1, true);
       // create ingress for the domain
       logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
       ingressHost1List =
@@ -441,7 +442,7 @@ class ItMonitoringExporter {
 
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1);
+      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1, true);
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
       assertFalse(verifyMonExpAppAccess("wls-exporter",
@@ -502,9 +503,9 @@ class ItMonitoringExporter {
   private void fireAlert() throws ApiException {
     // scale domain2
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-            clusterName, domain2Uid, domain2Namespace, 1);
+            cluster1Name, domain2Uid, domain2Namespace, 1);
     managedServersCount = 1;
-    scaleAndVerifyCluster(clusterName, domain2Uid, domain2Namespace,
+    scaleAndVerifyCluster(cluster1Name, domain2Uid, domain2Namespace,
             domain2Uid + "-" + MANAGED_SERVER_NAME_BASE, replicaCount, managedServersCount,
             null, null);
 
@@ -1289,7 +1290,7 @@ class ItMonitoringExporter {
     p.setProperty("DOMAIN_NAME", domain2Uid);
     p.setProperty("ADMIN_NAME", "admin-server");
     p.setProperty("PRODUCTION_MODE_ENABLED", "true");
-    p.setProperty("CLUSTER_NAME", clusterName);
+    p.setProperty("CLUSTER_NAME", cluster1Name);
     p.setProperty("CLUSTER_TYPE", "DYNAMIC");
     p.setProperty("CONFIGURED_MANAGED_SERVER_COUNT", "2");
     p.setProperty("MANAGED_SERVER_NAME_BASE", "managed-server");
@@ -1336,7 +1337,8 @@ class ItMonitoringExporter {
                                             String domainUid,
                                             String namespace,
                                             String domainHomeSource,
-                                            int replicaCount) {
+                                            int replicaCount,
+                                            boolean twoClusters) {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     // create secret for admin credentials
@@ -1359,7 +1361,7 @@ class ItMonitoringExporter {
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, namespace, miiImage);
     createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
-            namespace, domainHomeSource, replicaCount);
+            namespace, domainHomeSource, replicaCount, true);
     String adminServerPodName = domainUid + "-admin-server";
 
     // check that admin service exists in the domain namespace
@@ -1372,8 +1374,20 @@ class ItMonitoringExporter {
         adminServerPodName, namespace);
     checkPodReady(adminServerPodName, domainUid, namespace);
 
-    String managedServerPrefix = domainUid + "-cluster-1-managed-server";
     // check for managed server pods existence in the domain namespace
+    if (twoClusters) {
+      checkManagedServersPodsReady(domainUid, namespace, replicaCount, domainUid
+          + "-" + cluster1Name + "-managed-server");
+      checkManagedServersPodsReady(domainUid, namespace, replicaCount, domainUid
+          + "-" + cluster2Name + "-managed-server");
+    } else {
+      checkManagedServersPodsReady(domainUid, namespace, replicaCount, domainUid
+          + "-managed-server");
+    }
+  }
+
+  private static void checkManagedServersPodsReady(String domainUid, String namespace,
+                                                   int replicaCount, String managedServerPrefix) {
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = managedServerPrefix + i;
 
@@ -1401,7 +1415,8 @@ class ItMonitoringExporter {
                                               String domainUid,
                                               String namespace,
                                               String domainHomeSource,
-                                              int replicaCount) {
+                                              int replicaCount,
+                                              boolean twoClusters) {
     int t3ChannelPort = getNextFreePort(31570, 32767);
     // create the domain CR
     Domain domain = new Domain()
@@ -1439,7 +1454,7 @@ class ItMonitoringExporter {
                     .channelName("T3Channel")
                     .nodePort(t3ChannelPort))))
             .addClustersItem(new Cluster()
-                .clusterName(clusterName)
+                .clusterName(cluster1Name)
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
@@ -1447,9 +1462,9 @@ class ItMonitoringExporter {
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
-    if (!miiImage.equals(wdtImage)) {
+    if (twoClusters) {
       domain.getSpec().addClustersItem(new Cluster()
-          .clusterName("cluster-2")
+          .clusterName(cluster2Name)
           .replicas(replicaCount)
           .serverStartState("RUNNING"));
     }
@@ -1501,11 +1516,11 @@ class ItMonitoringExporter {
     }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + domainUid + "-cluster-1-managed-server1 -- curl -k %s://"
+        "kubectl exec -n " + domainNS + "  " + domainUid + "-" + cluster1Name + "-managed-server1 -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domainUid + "-cluster-1-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-" + cluster1Name + "-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
