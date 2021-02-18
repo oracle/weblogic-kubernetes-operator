@@ -39,7 +39,9 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -47,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
@@ -56,6 +59,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -79,6 +83,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test sticky sessions management with Voyager and Traefik")
 @IntegrationTest
+@Tag("okdenv")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -147,12 +152,16 @@ class ItStickySession {
     domainNamespace = namespaces.get(3);
 
     // install and verify Voyager
-    voyagerHelmParams =
-        installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    if (!OKD) {
+      voyagerHelmParams =
+          installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    }
 
     // install and verify Traefik
-    traefikHelmParams =
-        installAndVerifyTraefik(traefikNamespace, 0, 0);
+    if (!OKD) {
+      traefikHelmParams =
+          installAndVerifyTraefik(traefikNamespace, 0, 0);
+    }
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -199,6 +208,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessUsingVoyager() {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
@@ -226,6 +236,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessUsingTraefik() {
     final String ingressServiceName = traefikHelmParams.getReleaseName();
     final String channelName = "web";
@@ -248,6 +259,39 @@ class ItStickySession {
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(hostName, ingressServiceNodePort);
   }
+
+  /**
+   * Verify that using OKD routes, two HTTP requests sent to WebLogic
+   * are directed to same WebLogic server.
+   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
+   * server-affinity is achieved by Traefik ingress controller based on HTTP session information.
+   */
+  @Test
+  @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  public void testSameSessionStickinessinOKD() {
+    final String serviceName = domainUid + "-cluster-" + clusterName;
+    //final String channelName = "web";
+
+    // create Traefik ingress resource
+    String ingressHost = createRouteForOKD(serviceName, domainNamespace);
+
+    //String ingressServiceName = serviceName + "-" + domainNamespace;
+    /*
+    String ingressServiceName = serviceName;
+    String hostName = new StringBuffer()
+        .append(domainUid)
+        .append(".")
+        .append(domainNamespace)
+        .append(".")
+        .append(clusterName)
+        .append(".test").toString();
+
+     */
+
+    // verify that two HTTP connections are sticky to the same server
+    sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
+  }
+
 
   private static String createAndVerifyDomainImage() {
     // create image with model files
@@ -433,13 +477,12 @@ class ItStickySession {
 
     final String httpHeaderFile = LOGS_DIR + "/headers";
 
+    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + ingressServiceNodePort;
     StringBuffer curlCmd =
         new StringBuffer("curl --show-error --noproxy '*' -H 'host: ");
     curlCmd.append(hostName)
         .append("' http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(ingressServiceNodePort)
+        .append(hostAndPort)
         .append("/")
         .append(curlUrlPath)
         .append(headerOption)

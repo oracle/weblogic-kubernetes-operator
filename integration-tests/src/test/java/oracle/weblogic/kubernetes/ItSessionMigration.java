@@ -34,6 +34,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -70,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
+@Tag("okdenv")
 class ItSessionMigration {
 
   // constants for creating domain image using model in image
@@ -397,7 +399,7 @@ class ItSessionMigration {
 
   private static String buildCurlCommand(String curlUrlPath,
                                          String headerOption) {
-    final String httpHeaderFile = "/u01/oracle/header";
+    final String httpHeaderFile = "/u01/domains/header";
     final String clusterAddress = domainUid + "-cluster-" + clusterName;
     logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
         clusterAddress, curlUrlPath, headerOption);

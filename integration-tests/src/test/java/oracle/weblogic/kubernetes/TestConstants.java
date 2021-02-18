@@ -22,7 +22,7 @@ public interface TestConstants {
   public static final String WLS_DEFAULT_CHANNEL_NAME = "default";
   public static final String DEFAULT_WLS_IMAGE_TAGS = "12.2.1.3, 12.2.1.4, 14.1.1.0-11";
 
-  // operator constants
+  // operator constants:
   public static final String OPERATOR_RELEASE_NAME = "weblogic-operator";
   public static final String OPERATOR_CHART_DIR =
       "../kubernetes/charts/weblogic-operator";
@@ -275,6 +275,10 @@ public interface TestConstants {
       .orElse("");
   public static final String FSS_DIR = Optional.ofNullable(System.getenv("FSS_DIR"))
       .orElse("");
+
+  //OKD constants
+  public static final boolean OKD = Boolean.parseBoolean(Optional.ofNullable(System.getenv("OKD"))
+          .orElse("false"));
 
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";

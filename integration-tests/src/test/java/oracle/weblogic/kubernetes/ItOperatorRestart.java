@@ -15,6 +15,7 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -27,6 +28,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -42,6 +44,7 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRest
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
@@ -57,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // domain custom resource that uses model-in-image.
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
+@Tag("okdenv")
 public class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -67,6 +71,7 @@ public class ItOperatorRestart {
   private static String managedServerPrefix = String.format("%s-%s", domainUid, MANAGED_SERVER_NAME_BASE);
   private static int replicaCount = 2;
   private static LoggingFacade logger = null;
+  private static String ingressHost = null; //only used for OKD
 
   /**
    * Perform initialization for all the tests in this class.
@@ -264,9 +269,15 @@ public class ItOperatorRestart {
         },
         String.format("Failed to get creationTimestamp for managed server pods"));
 
+    if (OKD) {
+      ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    }
+
     logger.info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID);
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, INVALID);
+    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT, VALID);
+    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH, INVALID);
 
     // create a new secret for admin credentials
     logger.info("Create a new secret that contains new WebLogic admin credentials");
@@ -314,8 +325,10 @@ public class ItOperatorRestart {
 
     // check if the new credentials are valid and the old credentials are not valid any more
     logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
+    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT, INVALID);
+    verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH, VALID);
 
     logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
         domainUid, domainNamespace);
@@ -360,5 +373,52 @@ public class ItOperatorRestart {
     assertFalse(opPodNameNew.equals(opPodName),
         "The operator names before and after a restart should be different");
   }
+
+  /*
+  private String createIngressForOKD(String podName, String namespace) {
+    String asExtSvcName = getExternalServicePodName(podName);
+    getLogger().info("admin server external svc = {0}", asExtSvcName);
+
+    //String host = asExtSvcName + "-" + namespace;
+    String host = asExtSvcName;
+
+    int adminServicePort
+        = getServicePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
+    getLogger().info("BR: admin service external port = {0}", adminServicePort);
+
+    String ingressName = asExtSvcName + "ingress-path-routing";
+
+    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+
+    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+        .path("/")
+        .backend(new NetworkingV1beta1IngressBackend()
+            .serviceName(asExtSvcName)
+            .servicePort(new IntOrString(7001))
+        );
+    httpIngressPaths.add(httpIngressPath);
+
+    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+        .host(host)
+        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
+
+    ingressRules.add(ingressRule);
+
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+
+    // check the ingress was found in the domain namespace
+
+    assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+        .contains(ingressName);
+
+    getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
+    return host;
+  }
+
+   */
 
 }

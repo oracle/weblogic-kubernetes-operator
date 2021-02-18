@@ -44,6 +44,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -55,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -68,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializ
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -93,6 +96,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
+@Tag("okdenv")
 class ItServerStartPolicy {
 
   public static final String SERVER_LIFECYCLE = "Server";
@@ -119,6 +123,8 @@ class ItServerStartPolicy {
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
   private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+  private static String ingressHost = null; //only used for OKD
+  private static boolean ingressCreated = false; //only used for OKD
 
   /**
    * Install Operator.
@@ -207,16 +213,24 @@ class ItServerStartPolicy {
                 domainUid, domainNamespace);
     }
 
+    // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
+    if ((OKD) && (!ingressCreated)) {
+      ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+      if (ingressHost != null) {
+        ingressCreated = true;
+      }
+    }
+
     // Check configured cluster configuration is available 
     boolean isServerConfigured = 
-         checkManagedServerConfiguration("config-cluster-server1");
+         checkManagedServerConfiguration(ingressHost, "config-cluster-server1");
     assertTrue(isServerConfigured, 
         "Could not find managed server from configured cluster");
     logger.info("Found managed server from configured cluster");
 
     // Check standalone server configuration is available 
     boolean isStandaloneServerConfigured = 
-         checkManagedServerConfiguration("standalone-managed");
+         checkManagedServerConfiguration(ingressHost, "standalone-managed");
     assertTrue(isStandaloneServerConfigured, 
         "Could not find standalone managed server from configured cluster");
     logger.info("Found standalone managed server configuration");
@@ -1159,12 +1173,16 @@ class ItServerStartPolicy {
    * @param managedServer name of the managed server
    * @returns true if MBEAN is found otherwise false
    **/
-  private boolean checkManagedServerConfiguration(String managedServer) {
+  private boolean checkManagedServerConfiguration(String ingressHost, String managedServer) {
     ExecResult result = null;
+
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+
+    String url = OKD ? ingressHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("url = {0}", url);
+    checkCluster = new StringBuffer("status=$(curl -v --user weblogic:welcome1 ");
+    checkCluster.append("http://" + url)
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
           .append(" --silent --show-error ")

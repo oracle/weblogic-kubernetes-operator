@@ -34,6 +34,7 @@ import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -42,7 +43,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
@@ -67,13 +67,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // which load and verify the cache.
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
+@Tag("okdenv")
 class ItCoherenceTests {
 
   // constants for Coherence
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
   private static final String PROXY_SERVER_APP_NAME = "coherence-proxy-server";
   private static final String APP_LOC_ON_HOST = APP_DIR + "/" + PROXY_CLIENT_APP_NAME;
-  private static final String APP_LOC_IN_POD = "/u01/oracle/apps/" + PROXY_CLIENT_APP_NAME;
+  private static final String APP_LOC_IN_POD = "/u01/apps/" + PROXY_CLIENT_APP_NAME;
   private static final String PROXY_CLIENT_SCRIPT = "buildRunProxyClient.sh";
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
@@ -131,8 +132,8 @@ class ItCoherenceTests {
   void tearDown() {
     // Delete domain custom resource
     logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
+    //assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
+    //    "deleteDomainCustomResource failed with ApiException");
     logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
@@ -143,7 +144,7 @@ class ItCoherenceTests {
    */
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  public void testCohernceServerRollingRestart() {
+  public void testCoherenceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create a DomainHomeInImage image using WebLogic Image Tool
