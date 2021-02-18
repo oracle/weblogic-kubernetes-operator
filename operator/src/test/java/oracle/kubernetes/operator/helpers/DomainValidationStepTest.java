@@ -4,16 +4,19 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.LogRecord;
+import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
@@ -28,10 +31,12 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.Model;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +47,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
@@ -57,6 +63,17 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainValidationStepTest {
+  /** More than one chunk's worth of secrets or configmaps. */
+  private static final int MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK = DEFAULT_CALL_LIMIT + 1;
+  private static final int MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK = DEFAULT_CALL_LIMIT / 2;
+  private static final int MULTI_CHUNKS_LAST_NUM = DEFAULT_CALL_LIMIT * 2 + 1;
+
+  private static final String SECRETS = "secrets";
+  private static final String CONFIGMAPS = "configmaps";
+
+  private static final String TEST_SECRET_PREFIX = "TEST_SECRET";
+  private static final String TEST_CONFIGMAP_PREFIX = "TEST_CM";
+
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
@@ -181,6 +198,146 @@ public class DomainValidationStepTest {
   }
 
   @Test
+  public void whenDomainValidationStepsCalled_withSecretInMultiChunks_packetContainsAllSecrets() {
+    createSecrets(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(getMatchingSecretsCount(), is(MULTI_CHUNKS_LAST_NUM));
+  }
+
+  private int getMatchingSecretsCount() {
+    List<V1Secret> list =
+        (List<V1Secret>) Optional.ofNullable(testSupport.getPacket().get(SECRETS)).orElse(Collections.EMPTY_LIST);
+    return Math.toIntExact(list.stream().filter(secret -> matchesExpectedSecretNamePattern(secret)).count());
+  }
+
+  private boolean matchesExpectedSecretNamePattern(V1Secret secret) {
+    return Optional.of(secret).map(V1Secret::getMetadata).map(V1ObjectMeta::getName).orElse("")
+        .startsWith(TEST_SECRET_PREFIX);
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedSecretInMiddleChunk_runNextStep() {
+    domain.getSpec().withWebLogicCredentialsSecret(
+            new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK).namespace(NS));
+    createSecrets(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedSecretInFirstChunk_runNextStep() {
+    domain.getSpec().withWebLogicCredentialsSecret(
+        new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK).namespace(NS));
+    createSecrets(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedSecretInLastChunk_runNextStep() {
+    domain.getSpec().withWebLogicCredentialsSecret(
+        new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_LAST_NUM).namespace(NS));
+    createSecrets(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  private void createSecrets(int lastSecretNum) {
+    IntStream.rangeClosed(1, lastSecretNum)
+        .boxed()
+        .map(i -> TEST_SECRET_PREFIX + i)
+        .map(this::createSecret)
+        .forEach(testSupport::defineResources);
+  }
+
+  private V1Secret createSecret(String secret) {
+    return new V1Secret().metadata(new V1ObjectMeta().name(secret).namespace(NS));
+  }
+
+  @Test
+  public void whenDomainValidationStepsCalled_withConfigMapInMultiChunks_packetContainsAllConfigMaps() {
+    createConfigMaps(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(getMatchingConfigMapsCount(), is(MULTI_CHUNKS_LAST_NUM));
+  }
+
+  private int getMatchingConfigMapsCount() {
+    List<V1ConfigMap> list =
+        (List<V1ConfigMap>) Optional.ofNullable(testSupport.getPacket().get(CONFIGMAPS)).orElse(Collections.EMPTY_LIST);
+    return Math.toIntExact(list.stream().filter(cm -> matchesExpectedConfigMapNamePattern(cm)).count());
+  }
+
+  private boolean matchesExpectedConfigMapNamePattern(V1ConfigMap cm) {
+    return Optional.of(cm).map(V1ConfigMap::getMetadata).map(V1ObjectMeta::getName).orElse("")
+        .startsWith(TEST_CONFIGMAP_PREFIX);
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedConfigMapInMiddleChunk_runNextStep() {
+    domain.getSpec()
+        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .setConfiguration(new Configuration().withModel(
+            new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK)
+                .withRuntimeEncryptionSecret("name")));
+
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
+
+    createConfigMaps(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedConfigMapInFirstChunk_runNextStep() {
+    domain.getSpec()
+        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .setConfiguration(new Configuration().withModel(
+            new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK)
+                .withRuntimeEncryptionSecret("name")));
+
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
+
+    createConfigMaps(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenDomainRefersToDefinedConfigMapInLastChunk_runNextStep() {
+    domain.getSpec()
+        .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
+        .setConfiguration(new Configuration().withModel(
+            new Model().withConfigMap(TEST_CONFIGMAP_PREFIX + MULTI_CHUNKS_LAST_NUM)
+                .withRuntimeEncryptionSecret("name")));
+
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
+
+    createConfigMaps(MULTI_CHUNKS_LAST_NUM);
+    testSupport.runSteps(domainValidationSteps);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  private void createConfigMaps(int lastConfigMapNum) {
+    IntStream.rangeClosed(1, lastConfigMapNum)
+        .boxed()
+        .map(i -> TEST_CONFIGMAP_PREFIX + i)
+        .map(this::createConfigMap)
+        .forEach(testSupport::defineResources);
+  }
+
+  private V1ConfigMap createConfigMap(String cm) {
+    return new V1ConfigMap().metadata(new V1ObjectMeta().name(cm).namespace(NS));
+  }
+
+  @Test
   public void whenClusterDoesNotExistInDomain_logWarning() {
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
@@ -241,7 +398,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenIsExplictRecheck_doNotCreateEvent() {
+  public void whenIsExplicitRecheck_doNotCreateEvent() {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     setExplicitRecheck();
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
