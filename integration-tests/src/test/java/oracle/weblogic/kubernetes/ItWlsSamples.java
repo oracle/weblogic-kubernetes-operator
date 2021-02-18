@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
-public class ItSamples {
+public class ItWlsSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
   public static final String CLUSTER_LIFECYCLE = "Cluster";
