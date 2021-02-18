@@ -15,6 +15,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.awaitility.core.ConditionFactory;
@@ -84,7 +85,8 @@ public class ItOperatorUpgrade {
    * to all test methods.
    */
   @BeforeAll
-  public static void init() {
+  public void init(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(10, SECONDS)
@@ -107,7 +109,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to latest")
   public void testOperatorWlsUpgradeFrom2_6_0() {
-    this.namespaces = namespaces;
     upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -122,7 +123,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.0.0 to latest")
   public void testOperatorWlsUpgradeFrom3_0_0() {
-    this.namespaces = namespaces;
     upgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -137,7 +137,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to latest")
   public void testOperatorWlsUpgradeFrom3_0_3() {
-    this.namespaces = namespaces;
     upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -152,7 +151,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to latest")
   public void testOperatorWlsUpgradeFrom3_0_4() {
-    this.namespaces = namespaces;
     upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -167,7 +165,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.1.1 to latest")
   public void testOperatorWlsUpgradeFrom3_1_1() {
-    this.namespaces = namespaces;
     upgradeOperator("3.1.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -182,7 +179,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.1.2 to latest")
   public void testOperatorWlsUpgradeFrom3_1_2() {
-    this.namespaces = namespaces;
     upgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -197,7 +193,6 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to latest")
   public void testOperatorWlsUpgradeFrom3_1_3() {
-    this.namespaces = namespaces;
     upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
