@@ -210,7 +210,7 @@ class ItMonitoringExporter {
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
 
   private static String cluster1Name = "cluster-1";
-  private static String cluster2Name = "cluster-1";
+  private static String cluster2Name = "cluster-2";
   private static String miiImage = null;
   private static String wdtImage = null;
   private static String webhookImage = null;
@@ -1367,6 +1367,9 @@ class ItMonitoringExporter {
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
             adminServerPodName, namespace);
+    try {
+      Thread.sleep(800000);
+    }catch (Exception ex) {}
     checkServiceExists(adminServerPodName, namespace);
 
     // check that admin server pod is ready
