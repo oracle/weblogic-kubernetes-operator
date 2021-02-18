@@ -975,80 +975,80 @@ class ItMonitoringExporter {
                                         String imagePullPolicy,
                                         String namespace,
                                         String secretName) throws ApiException {
-    if (coordinatorDepl == null) {
-      Map labels = new HashMap<String, String>();
-      labels.put("app", "coordinator");
-      coordinatorDepl = new V1Deployment()
-              .apiVersion("apps/v1")
-              .kind("Deployment")
-              .metadata(new V1ObjectMeta()
-                      .name("coordinator")
-                      .namespace(namespace)
-                      .labels(labels))
-              .spec(new V1DeploymentSpec()
-                      .replicas(1)
-                      .selector(new V1LabelSelector()
-                              .matchLabels(labels))
-                      .strategy(new V1DeploymentStrategy()
-                              .type("Recreate"))
-                      .template(new V1PodTemplateSpec()
-                              .metadata(new V1ObjectMeta()
-                                      .labels(labels))
-                              .spec(new V1PodSpec()
-                                      .containers(Arrays.asList(
-                                              new V1Container()
-                                                      .image(image)
-                                                      .imagePullPolicy(imagePullPolicy)
-                                                      .name("coordinator")
-                                                      .ports(Arrays.asList(
-                                                              new V1ContainerPort()
-                                                                      .containerPort(8999)))))
-                                      .imagePullSecrets(Arrays.asList(
-                                              new V1LocalObjectReference()
-                                                      .name(secretName))))));
 
-      logger.info("Create deployment for coordinator in namespace {0}",
-              namespace);
-      boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(coordinatorDepl),
-              String.format("Create deployment failed with ApiException for coordinator in namespace %s",
-                      namespace));
-      assertTrue(deploymentCreated, String.format(
-              "Create deployment failed with ApiException for coordinator in namespace %s ",
-              namespace));
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                condition -> logger.info("Waiting for deployment {0} to be completed in namespace {1} "
-                                      + "(elapsed time {2} ms, remaining time {3} ms)",
-                              "coordinator",
-                              namespace,
-                              condition.getElapsedTimeInMS(),
-                              condition.getRemainingTimeInMS()))
-              .until(Deployment.isReady("coordinator", labels, namespace));
+    Map labels = new HashMap<String, String>();
+    labels.put("app", "coordinator");
+    coordinatorDepl = new V1Deployment()
+            .apiVersion("apps/v1")
+            .kind("Deployment")
+            .metadata(new V1ObjectMeta()
+                    .name("coordinator")
+                    .namespace(namespace)
+                    .labels(labels))
+            .spec(new V1DeploymentSpec()
+                    .replicas(1)
+                    .selector(new V1LabelSelector()
+                            .matchLabels(labels))
+                    .strategy(new V1DeploymentStrategy()
+                            .type("Recreate"))
+                    .template(new V1PodTemplateSpec()
+                            .metadata(new V1ObjectMeta()
+                                    .labels(labels))
+                            .spec(new V1PodSpec()
+                                    .containers(Arrays.asList(
+                                            new V1Container()
+                                                    .image(image)
+                                                    .imagePullPolicy(imagePullPolicy)
+                                                    .name("coordinator")
+                                                    .ports(Arrays.asList(
+                                                            new V1ContainerPort()
+                                                                    .containerPort(8999)))))
+                                    .imagePullSecrets(Arrays.asList(
+                                            new V1LocalObjectReference()
+                                                    .name(secretName))))));
 
-      HashMap<String,String> annotations = new HashMap<>();
-      annotations.put("kubectl.kubernetes.io/last-applied-configuration","");
-      coordinatorService = new V1Service()
-              .metadata(new V1ObjectMeta()
-                      .name("coordinator")
-                      .annotations(annotations)
-                      .namespace(namespace)
-                      .labels(labels))
-              .spec(new V1ServiceSpec()
-                      .ports(Arrays.asList(
-                              new V1ServicePort()
-                                      .port(8999)
-                                      .targetPort(new IntOrString(8999))))
-                      .type("NodePort")
-                      .selector(labels));
+    logger.info("Create deployment for coordinator in namespace {0}",
+            namespace);
+    boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(coordinatorDepl),
+            String.format("Create deployment failed with ApiException for coordinator in namespace %s",
+                    namespace));
+    assertTrue(deploymentCreated, String.format(
+            "Create deployment failed with ApiException for coordinator in namespace %s ",
+            namespace));
+    withStandardRetryPolicy
+            .conditionEvaluationListener(
+              condition -> logger.info("Waiting for deployment {0} to be completed in namespace {1} "
+                                    + "(elapsed time {2} ms, remaining time {3} ms)",
+                            "coordinator",
+                            namespace,
+                            condition.getElapsedTimeInMS(),
+                            condition.getRemainingTimeInMS()))
+            .until(Deployment.isReady("coordinator", labels, namespace));
 
-      logger.info("Create service for coordinator in namespace {0}",
-              namespace);
-      boolean success = assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
-              String.format("Create service failed with ApiException for coordinator in namespace %s",
-                      namespace));
-      assertTrue(success, "Coordinator service creation failed");
-    }
+    HashMap<String,String> annotations = new HashMap<>();
+    annotations.put("kubectl.kubernetes.io/last-applied-configuration","");
+    coordinatorService = new V1Service()
+            .metadata(new V1ObjectMeta()
+                    .name("coordinator")
+                    .annotations(annotations)
+                    .namespace(namespace)
+                    .labels(labels))
+            .spec(new V1ServiceSpec()
+                    .ports(Arrays.asList(
+                            new V1ServicePort()
+                                    .port(8999)
+                                    .targetPort(new IntOrString(8999))))
+                    .type("NodePort")
+                    .selector(labels));
+
+    logger.info("Create service for coordinator in namespace {0}",
+            namespace);
+    boolean success = assertDoesNotThrow(() -> Kubernetes.createService(coordinatorService),
+            String.format("Create service failed with ApiException for coordinator in namespace %s",
+                    namespace));
+    assertTrue(success, "Coordinator service creation failed");
   }
+
 
   /**
    * Checks if the pod is running in a given namespace.
@@ -1955,11 +1955,15 @@ class ItMonitoringExporter {
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
     //needs 10 secs to fetch the metrics to prometheus
-    Thread.sleep(10 * 1000);
+    Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     String prometheusSearchKey1 =
-        "heap_free_current%7Bname%3D%22cluster2-managed-server1%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-2-managed-server1");
+        "heap_free_current";
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+    prometheusSearchKey1 =
+        "heap_free_current%7Bname%3D%22cluster-2-managed-server1%22%7D%5B15s%5D";
+
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
   }
 
   /**
