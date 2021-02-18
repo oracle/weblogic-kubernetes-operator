@@ -1367,9 +1367,7 @@ class ItMonitoringExporter {
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
             adminServerPodName, namespace);
-    try {
-      Thread.sleep(800000);
-    }catch (Exception ex) {}
+    
     checkServiceExists(adminServerPodName, namespace);
 
     // check that admin server pod is ready
