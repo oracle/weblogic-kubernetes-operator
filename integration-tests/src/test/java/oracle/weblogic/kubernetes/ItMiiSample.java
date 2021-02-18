@@ -163,7 +163,7 @@ public class ItMiiSample {
   @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
-  public void testCheckSampleSource() {
+  public void testCheckMiiSampleSource() {
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
   }
 
@@ -269,7 +269,7 @@ public class ItMiiSample {
   @Order(7)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
-  public void testJrfInitialUseCase() {
+  public void testFmwInitialUseCase() {
     String dbImageName = (KIND_REPO != null
         ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
     String jrfBaseImageName = (KIND_REPO != null
@@ -305,7 +305,7 @@ public class ItMiiSample {
   @Order(8)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
-  public void testJrfUpdate1UseCase() {
+  public void testFmwUpdate1UseCase() {
     execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
   }
 
@@ -317,7 +317,7 @@ public class ItMiiSample {
   @Order(9)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
-  public void testJrfUpdate2UseCase() {
+  public void testFmwUpdate2UseCase() {
     execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
   }
 
@@ -329,7 +329,7 @@ public class ItMiiSample {
   @Order(10)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
-  public void testJrfUpdate3UseCase() {
+  public void testFmwUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
     execTestScriptAndAssertSuccess(
         DomainType.JRF,
@@ -349,7 +349,7 @@ public class ItMiiSample {
   @Order(11)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case")
-  public void testJrfUpdate4UseCase() {
+  public void testFmwUpdate4UseCase() {
     execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
   }
 
