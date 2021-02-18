@@ -382,7 +382,7 @@ class ItMonitoringExporter {
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
           domain4Namespace,
           domain4Uid);
-
+      installCoordinator(domain4Namespace);
       logger.info("Testing replace configuration");
       replaceConfiguration();
       logger.info("Testing append configuration");
@@ -1367,7 +1367,7 @@ class ItMonitoringExporter {
     // check that admin service exists in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
             adminServerPodName, namespace);
-    
+
     checkServiceExists(adminServerPodName, namespace);
 
     // check that admin server pod is ready
