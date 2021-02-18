@@ -1463,7 +1463,7 @@ class ItMonitoringExporter {
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     if (twoClusters) {
-      domain.getSpec().addClustersItem(new Cluster()
+      domain.getSpec().getClusters().add(new Cluster()
           .clusterName(cluster2Name)
           .replicas(replicaCount)
           .serverStartState("RUNNING"));
