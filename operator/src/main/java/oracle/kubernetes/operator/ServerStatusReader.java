@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import com.google.common.io.CharStreams;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -37,6 +36,7 @@ import oracle.kubernetes.operator.utils.KubernetesExecFactoryImpl;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.joda.time.DateTime;
 
@@ -183,7 +183,7 @@ public class ServerStatusReader {
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
 
                 try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-                  state = CharStreams.toString(reader);
+                  state = OperatorUtils.toString(reader);
                 }
 
                 if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
@@ -214,7 +214,7 @@ public class ServerStatusReader {
             }
 
             try (LoggingContext stack =
-                      LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
               serverStateMap.put(serverName, state);

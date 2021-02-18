@@ -12,6 +12,7 @@ import java.util.Map;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
+import static java.util.Map.of;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -60,8 +61,8 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenSchemaHasUnknownTypeAndNoReference_useAsSpecified() {
-    Map<String, Object> schema = Map.of("anInt", Map.of("type", "integer"));
+  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() {
+    Map<String, Object> schema = of("anInt", of("type", "integer"));
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
 
