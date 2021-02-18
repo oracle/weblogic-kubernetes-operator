@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -80,13 +81,27 @@ public class ItOperatorUpgrade {
   private List<String> namespaces;
   private String latestOperatorImageName;
 
+
+  /**
+   * For each test:
+   * Assigns unique namespaces for operator and domain.
+   *
+   * @param namespaces injected by JUnit
+   */
+  @BeforeEach
+  public void beforeEach(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    assertNotNull(namespaces.get(0), "Namespace[0] is null");
+    assertNotNull(namespaces.get(1), "Namespace[1] is null");
+    assertNotNull(namespaces.get(2), "Namespace[2] is null");
+  }
+  
   /**
    * Does some initialization of logger, conditionfactory, etc common
    * to all test methods.
    */
   @BeforeAll
-  public void init(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
+  public static void init() {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(10, SECONDS)
