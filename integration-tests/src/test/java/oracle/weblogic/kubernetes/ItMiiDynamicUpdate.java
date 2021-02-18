@@ -130,7 +130,6 @@ class ItMiiDynamicUpdate {
   private final String workManagerName = "newWM";
   private static Path pathToChangeTargetYaml = null;
   private static Path pathToAddClusterYaml = null;
-  private static Path pathToRemoveSystemResourcesYaml = null;
   private static LoggingFacade logger = null;
 
   /**
@@ -207,7 +206,7 @@ class ItMiiDynamicUpdate {
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName, dbSecretName, false,true);
+        replicaCount, pvName, pvcName, "cluster-1", configMapName, dbSecretName, false, true);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -912,7 +911,7 @@ class ItMiiDynamicUpdate {
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
-              withStandardRetryPolicy);
+        withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges=CancelUpdate.
     patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
@@ -930,8 +929,8 @@ class ItMiiDynamicUpdate {
 
     // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
     String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
-          + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
-          + "option to cancel all changes if restart require.";
+        + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
+        + "option to cancel all changes if restart require.";
     logger.info("Verifying the domain status condition message contains the expected msg");
     verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
 
@@ -954,7 +953,7 @@ class ItMiiDynamicUpdate {
 
     String expectedMsgForCommitUpdateOnly =
         "Online WebLogic configuration updates complete but there are pending non-dynamic changes "
-        + "that require pod restarts to take effect";
+            + "that require pod restarts to take effect";
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -972,7 +971,7 @@ class ItMiiDynamicUpdate {
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString()),
-              withStandardRetryPolicy);
+        withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges - update with CommitUpdateOnly so that even if previous test
     // updates onNonDynamicChanges, this test will work
@@ -1032,7 +1031,7 @@ class ItMiiDynamicUpdate {
     // check datasource runtime after restart
     assertTrue(checkSystemResourceRuntime(adminServiceNodePort,
         "serverRuntimes/" + MANAGED_SERVER_NAME_BASE + "1/JDBCServiceRuntime/"
-        + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
+            + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
         "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
     logger.info("JDBCSystemResource new property found");
 
@@ -1107,95 +1106,64 @@ class ItMiiDynamicUpdate {
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    try {
-      // Verifying introspector pod is created, runs and deleted
-      verifyIntrospectorRuns(domainUid, domainNamespace);
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns(domainUid, domainNamespace);
 
-      verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
-      verifyPodsNotRolled(domainNamespace, pods);
+    verifyPodsNotRolled(domainNamespace, pods);
 
-      // build the standalone JMS Client on Admin pod after rolling restart
-      String destLocation = "/u01/JmsTestClient.java";
-      assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
-          adminServerPodName, "",
-          Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
-          Paths.get(destLocation)));
-      runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
+    // build the standalone JMS Client on Admin pod after rolling restart
+    String destLocation = "/u01/JmsTestClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "",
+        Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+        Paths.get(destLocation)));
+    runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 
-      // Scale the cluster using replica count 5, managed-server5 should not come up as new MaxClusterSize is 4
-      logger.info("[After Patching] updating the replica count to 5");
-      boolean p3Success = assertDoesNotThrow(() ->
-              scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
-          String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed",
-              domainUid, domainNamespace));
-      assertTrue(p3Success,
-          String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
-      //  Make sure the 3rd Managed server comes up
-      checkServiceExists(managedServerPrefix + "3", domainNamespace);
-      checkServiceExists(managedServerPrefix + "4", domainNamespace);
-      checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+    // Scale the cluster using replica count 5, managed-server5 should not come up as new MaxClusterSize is 4
+    logger.info("[After Patching] updating the replica count to 5");
+    boolean p3Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 5),
+        String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed",
+            domainUid, domainNamespace));
+    assertTrue(p3Success,
+        String.format("replica patching to 5 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    //  Make sure the 3rd Managed server comes up
+    checkServiceExists(managedServerPrefix + "3", domainNamespace);
+    checkServiceExists(managedServerPrefix + "4", domainNamespace);
+    checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
 
-      // Run standalone JMS Client inside the pod using weblogic.jar in classpath.
-      // The client sends 300 messsage to a Uniform Distributed Queue.
-      // Make sure the messages are distributed across the members evenly
-      // and JMS connection is load balanced across all servers
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                      + "(elapsed time {0}ms, remaining time {1}ms)",
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(runClientInsidePod(adminServerPodName, domainNamespace,
-              "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"));
+    // Run standalone JMS Client inside the pod using weblogic.jar in classpath.
+    // The client sends 300 messsage to a Uniform Distributed Queue.
+    // Make sure the messages are distributed across the members evenly
+    // and JMS connection is load balanced across all servers
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for t3 JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runClientInsidePod(adminServerPodName, domainNamespace,
+            "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"));
 
-      // Since the MinDynamicClusterSize is set to 2 in the config map and allowReplicasBelowMinDynClusterSize is set
-      // false, the replica count cannot go below 2. So during the following scale down operation
-      // only managed-server3 and managed-server4 pod should be removed.
-      logger.info("[After Patching] updating the replica count to 1");
-      boolean p4Success = assertDoesNotThrow(() ->
-              scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
-          String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
-      assertTrue(p4Success,
-          String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
+    // Since the MinDynamicClusterSize is set to 2 in the config map and allowReplicasBelowMinDynClusterSize is set
+    // false, the replica count cannot go below 2. So during the following scale down operation
+    // only managed-server3 and managed-server4 pod should be removed.
+    logger.info("[After Patching] updating the replica count to 1");
+    boolean p4Success = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(p4Success,
+        String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-      checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
-      checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
-      checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
-      for (int i = 1; i <= replicaCount; i++) {
-        logger.info("Check managed server service {0} available in namespace {1}",
-            managedServerPrefix + i, domainNamespace);
-        checkServiceExists(managedServerPrefix + i, domainNamespace);
-      }
-    } finally {
-      // remove file store, jms server and jms module
-      // write sparse yaml to file
-      pathToRemoveSystemResourcesYaml = Paths.get(WORK_DIR + "/removesystemresources.yaml");
-      String yamlToRemoveSystemResources = "resources:\n"
-          + "    FileStore:\n"
-          + "        !ClusterFileStore:\n"
-          + "    JMSServer:\n"
-          + "        !ClusterJmsServer:\n"
-          + "    JMSSystemResource:\n"
-          + "        !ClusterJmsModule:\n"
-          + "    JDBCSystemResource:\n"
-          + "        !TestDataSource2:";
-
-      assertDoesNotThrow(() -> Files.write(pathToRemoveSystemResourcesYaml, yamlToRemoveSystemResources.getBytes()));
-
-      replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-          Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-               pathToRemoveSystemResourcesYaml.toString()), withStandardRetryPolicy);
-
-      // Patch a running domain with introspectVersion.
-      introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-      // Verifying introspector pod is created, runs and deleted
-      verifyIntrospectorRuns(domainUid, domainNamespace);
-
-      verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
-
-      verifyPodsNotRolled(domainNamespace, pods);
+    checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
+    checkPodDoesNotExist(managedServerPrefix + "4", domainUid, domainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed server service {0} available in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
   }
 
@@ -1239,7 +1207,8 @@ class ItMiiDynamicUpdate {
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
+            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.cluster.size.yaml",
+            pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -1497,8 +1466,9 @@ class ItMiiDynamicUpdate {
 
   /**
    * Verify domain status conditions contains the given condition type and message.
+   *
    * @param conditionType condition type
-   * @param conditionMsg messsage in condition
+   * @param conditionMsg  messsage in condition
    * @return true if the condition matches
    */
   private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
@@ -1532,7 +1502,8 @@ class ItMiiDynamicUpdate {
 
   /**
    * Verify domain status conditions contains the given condition type and reason.
-   * @param conditionType condition type
+   *
+   * @param conditionType   condition type
    * @param conditionReason reason in condition
    * @return true if the condition matches
    */
