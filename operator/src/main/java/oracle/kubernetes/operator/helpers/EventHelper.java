@@ -64,7 +64,18 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param eventData event item
+   * @param eventItem event item
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(
+      EventItem eventItem) {
+    return createEventStep(new EventData(eventItem));
+  }
+
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
+   * @param eventData event data
    * @return Step for creating an event
    */
   public static Step createEventStep(
@@ -168,7 +179,7 @@ public class EventHelper {
         if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
           LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
               eventData.eventItem.getReason(), eventData.getNamespace());
-          return onFailureNoRetry(packet, callResponse);
+          return doNext(packet);
         }
         return super.onFailure(packet, callResponse);
       }

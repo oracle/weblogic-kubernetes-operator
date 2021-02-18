@@ -74,7 +74,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
-import static oracle.kubernetes.operator.ProcessingConstants.DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -95,7 +94,13 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
+
+  // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, Map<String, KubernetesEventObjects>> domainEventK8SObjects = new ConcurrentHashMap<>();
+
+  // Map namespace to KubernetesEventObjects; tests may replace this value.
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
@@ -474,7 +479,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     DomainPresenceInfo info =
-            getExistingDomainPresenceInfo(pdb.getMetadata().getNamespace(), domainUid);
+            getExistingDomainPresenceInfo(getPDBNamespace(pdb), domainUid);
     if (info == null) {
       return;
     }
@@ -492,6 +497,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         break;
       default:
     }
+  }
+
+  private String getPDBNamespace(V1beta1PodDisruptionBudget pdb) {
+    return Optional.ofNullable(pdb).map(V1beta1PodDisruptionBudget::getMetadata)
+        .map(V1ObjectMeta::getNamespace).orElse(null);
   }
 
   /**
@@ -849,14 +859,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
     }
 
-    private String getExistingError() {
-      return Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
-    }
-
     private Integer getCurrentIntrospectFailureRetryCount() {
       return Optional.ofNullable(liveInfo)
           .map(DomainPresenceInfo::getDomain)
@@ -873,15 +875,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
       return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
-    }
-
-    private boolean hasDynamicUpdateInCompatibleSpecChange(DomainPresenceInfo cachedInfo) {
-      String existingError = Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
-      return existingError != null && existingError.contains(DYNAMICUPDATE_INCOMPAT_SPECCHG_ERROR);
     }
 
     private boolean isFatalIntrospectorError() {
@@ -1102,7 +1095,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
+        EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         new TailStep());
 
     Step domainUpStrategy =
@@ -1123,10 +1116,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     return EventHelper.createEventStep(eventData);
   }
 
-  private Step createEventStep(EventItem eventItem) {
-    return EventHelper.createEventStep(new EventData(eventItem));
-  }
-
   private Step createDomainUpInitialStep(DomainPresenceInfo info) {
     return new UpHeadStep(info);
   }
@@ -1138,7 +1127,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
         new UnregisterStep(info),
-        createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
+        EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
   }
 
   private static class UnregisterStep extends Step {
@@ -1365,7 +1354,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
-      return statuses.stream().filter(this::hasInstrospectorJobName).findFirst();
+      return statuses.stream().filter(this::hasIntrospectorJobName).findFirst();
     }
 
     private V1PodCondition getMatchingPodCondition() {
@@ -1379,7 +1368,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       return conditions.stream().findFirst();
     }
 
-    private boolean hasInstrospectorJobName(V1ContainerStatus s) {
+    private boolean hasIntrospectorJobName(V1ContainerStatus s) {
       return toJobIntrospectorName(domainUid).equals(s.getName());
     }
   }
