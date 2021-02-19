@@ -221,6 +221,7 @@ class ItMonitoringExporter {
   private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
+  private static List<String> clusterNames = new ArrayList<>();
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -291,6 +292,8 @@ class ItMonitoringExporter {
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(cluster1Name, managedServerPort);
     clusterNameMsPortMap.put(cluster2Name, managedServerPort);
+    clusterNames.add(cluster1Name);
+    clusterNames.add(cluster2Name);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
     logger.info("create pv and pvc for monitoring");
@@ -445,25 +448,30 @@ class ItMonitoringExporter {
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1, true);
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
-      assertFalse(verifyMonExpAppAccess("wls-exporter",
-          "restPort",
-          domain3Uid,
-          domain3Namespace,
-          false));
-      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-          "wls_servlet_invocation_total_count",
-          domain3Uid,
-          domain3Namespace,
-          false));
+
+      clusterNames.stream().forEach((clusterName) -> {
+        assertFalse(verifyMonExpAppAccess("wls-exporter",
+            "restPort",
+            domain3Uid,
+            domain3Namespace,
+            false, clusterName));
+        assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+            "wls_servlet_invocation_total_count",
+            domain3Uid,
+            domain3Namespace,
+            false, clusterName));
+      });
       logger.info("checking access to wl metrics via https connection");
       //set to listen only ssl
       changeListenPort(domain3Uid, domain3Namespace,"False");
-      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-          "wls_servlet_invocation_total_count",
-          domain3Uid,
-          domain3Namespace,
-          true),
-          "monitoring exporter metrics page can't be accessed via https");
+      clusterNames.stream().forEach((clusterName) -> {
+        assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+            "wls_servlet_invocation_total_count",
+            domain3Uid,
+            domain3Namespace,
+            true, clusterName),
+            "monitoring exporter metrics page can't be accessed via https");
+      });
     } finally {
       logger.info("Shutting down domain3");
       shutdownDomain(domain3Uid, domain3Namespace);
@@ -1508,7 +1516,7 @@ class ItMonitoringExporter {
    * through direct access to managed server dashboard.
    */
   private boolean verifyMonExpAppAccess(String uri, String searchKey, String domainUid,
-                                        String domainNS, boolean isHttps) {
+                                        String domainNS, boolean isHttps, String clusterName) {
     String protocol = "http";
     String port = "8001";
     if (isHttps) {
@@ -1517,11 +1525,11 @@ class ItMonitoringExporter {
     }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + domainUid + "-" + cluster1Name + "-managed-server1 -- curl -k %s://"
+        "kubectl exec -n " + domainNS + "  " + domainUid + "-" + clusterName + "-managed-server1 -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domainUid + "-" + cluster1Name + "-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + domainUid + "-" + clusterName + "-managed-server1:%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;
@@ -1780,9 +1788,10 @@ class ItMonitoringExporter {
     //needs 10 secs to fetch the metrics to prometheus
     Thread.sleep(10 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-    String prometheusSearchKey1 =
-            "heap_free_current%7Bname%3D%22cluster-1-managed-server1%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "cluster-1-managed-server1");
+    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
+        cluster1Name + "-managed-server1");
+    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server1%22%7D%5B15s%5D",
+        cluster2Name + "-managed-server1");
   }
 
   /**
@@ -1838,8 +1847,8 @@ class ItMonitoringExporter {
    */
   private void replaceWithEmptyConfiguration() throws Exception {
     submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_empty.yaml");
-    assertFalse(verifyMonExpAppAccess("wls-exporter","values", domain4Uid, domain4Namespace,false));
-    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", domain4Uid, domain4Namespace,false));
+    assertFalse(verifyMonExpAppAccess("wls-exporter","values", domain4Uid, domain4Namespace,false, cluster1Name));
+    assertTrue(verifyMonExpAppAccess("wls-exporter","queries", domain4Uid, domain4Namespace,false, cluster1Name));
   }
 
   /**
