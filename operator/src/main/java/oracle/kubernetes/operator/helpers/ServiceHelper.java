@@ -534,10 +534,10 @@ public class ServiceHelper {
     protected abstract String getServiceCreatedMessageKey();
 
     private Step deleteAndReplaceService(Step next) {
-      V1DeleteOptions deleteOptions = new V1DeleteOptions();
       if (getSpecType().equals(NODE_PORT_TYPE)) {
         return deleteAndReplaceNodePortService();
       } else {
+        V1DeleteOptions deleteOptions = new V1DeleteOptions();
         return new CallBuilder()
             .deleteServiceAsync(
                 createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
@@ -552,14 +552,9 @@ public class ServiceHelper {
                       new ActionResponseStep<V1ServiceList>() {
                       public Step createSuccessStep(V1ServiceList result, Step next) {
                         Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
-                                  .filter(s -> isNodePortService(s))
+                                  .filter(s -> isNodePortType(s))
                                   .collect(Collectors.toList())).orElse(new ArrayList<>());
                         return new DeleteServiceListStep(c, createReplacementService(next));
-                      }
-
-                      private boolean isNodePortService(V1Service svc) {
-                        return Optional.ofNullable(svc).map(s -> s.getSpec())
-                                  .map(s -> s.getType()).map(t -> t.equals(NODE_PORT_TYPE)).orElse(false);
                       }
                     });
     }
