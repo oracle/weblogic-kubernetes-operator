@@ -122,23 +122,9 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to latest")
+  @DisplayName("Upgrade Operator from 2.6.0 to develop")
   public void testOperatorWlsUpgradeFrom2_6_0() {
     upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.0 to latest.
-   * Install 3.0.0 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.0 to latest")
-  public void testOperatorWlsUpgradeFrom3_0_0() {
-    upgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -150,7 +136,7 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.3 to latest")
+  @DisplayName("Upgrade Operator from 3.0.3 to develop")
   public void testOperatorWlsUpgradeFrom3_0_3() {
     upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -164,23 +150,9 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  @DisplayName("Upgrade Operator from 3.0.4 to develop")
   public void testOperatorWlsUpgradeFrom3_0_4() {
     upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.1.1 to latest.
-   * Install 3.1.1 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.1.1 to latest")
-  public void testOperatorWlsUpgradeFrom3_1_1() {
-    upgradeOperator("3.1.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -192,7 +164,7 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.2 to latest")
+  @DisplayName("Upgrade Operator from 3.1.2 to develop")
   public void testOperatorWlsUpgradeFrom3_1_2() {
     upgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -206,7 +178,7 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.3 to latest")
+  @DisplayName("Upgrade Operator from 3.1.3 to develop")
   public void testOperatorWlsUpgradeFrom3_1_3() {
     upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }

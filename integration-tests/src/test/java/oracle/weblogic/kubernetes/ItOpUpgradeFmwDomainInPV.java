@@ -211,22 +211,9 @@ public class ItOpUpgradeFmwDomainInPV {
    * Delete Operator and install latest Operator and verify CRD version is updated.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to latest")
+  @DisplayName("Upgrade Operator from 2.6.0 to develop")
   public void testOperatorFmwUpgradeFrom2_6_0() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.0 to latest.
-   * Install 3.0.0 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.0 to latest")
-  public void testOperatorFmwUpgradeFrom3_0_0() {
-    installAndUpgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -237,7 +224,7 @@ public class ItOpUpgradeFmwDomainInPV {
    * Upgrade operator with latest Operator image and verify CRD version and image are updated.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.3 to latest")
+  @DisplayName("Upgrade Operator from 3.0.3 to develop")
   public void testOperatorFmwUpgradeFrom3_0_3() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -251,23 +238,10 @@ public class ItOpUpgradeFmwDomainInPV {
    * Upgrade operator with latest Operator image and verify CRD version and image are updated.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  @DisplayName("Upgrade Operator from 3.0.4 to develop")
   public void testOperatorFmwUpgradeFrom3_0_4() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.1.1 to latest.
-   * Install 3.1.1 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.1.1 to latest")
-  public void testOperatorFmwUpgradeFrom3_1_1() {
-    installAndUpgradeOperator("3.1.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -278,7 +252,7 @@ public class ItOpUpgradeFmwDomainInPV {
    * Upgrade operator with latest Operator image and verify CRD version and image are updated.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.2 to latest")
+  @DisplayName("Upgrade Operator from 3.1.2 to develop")
   public void testOperatorFmwUpgradeFrom3_1_2() {
     installAndUpgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -291,7 +265,7 @@ public class ItOpUpgradeFmwDomainInPV {
    * Upgrade operator with latest Operator image and verify CRD version and image are updated.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.3 to latest")
+  @DisplayName("Upgrade Operator from 3.1.3 to develop")
   public void testOperatorFmwUpgradeFrom3_1_3() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
