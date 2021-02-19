@@ -526,17 +526,14 @@ public class DomainStatusUpdater {
       }
 
       private boolean stillHasPodPendingRestart(DomainStatus status) {
-        boolean found = false;
+        return status.getServers().stream()
+            .map(this::getServerPod)
+            .map(this::getLabels)
+            .anyMatch(m -> m.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL));
+      }
 
-        for (ServerStatus serverStatus : status.getServers()) {
-          V1Pod pod = super.getInfo().getServerPod(serverStatus.getServerName());
-          Map<String, String> labels = getLabels(pod);
-          if (labels.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL)) {
-            found = true;
-            break;
-          }
-        }
-        return found;
+      private V1Pod getServerPod(ServerStatus serverStatus) {
+        return getInfo().getServerPod(serverStatus.getServerName());
       }
 
       private Map<String, String> getLabels(V1Pod pod) {

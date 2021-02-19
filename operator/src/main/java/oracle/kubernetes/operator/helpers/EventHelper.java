@@ -67,8 +67,7 @@ public class EventHelper {
    * @param eventItem event item
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventItem eventItem) {
+  public static Step createEventStep(EventItem eventItem) {
     return createEventStep(new EventData(eventItem));
   }
 
@@ -78,8 +77,7 @@ public class EventHelper {
    * @param eventData event data
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData) {
+  public static Step createEventStep(EventData eventData) {
     return new CreateEventStep(eventData);
   }
 
@@ -90,8 +88,7 @@ public class EventHelper {
    * @param next next step
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData, Step next) {
+  public static Step createEventStep(EventData eventData, Step next) {
     return new CreateEventStep(eventData, next);
   }
 
