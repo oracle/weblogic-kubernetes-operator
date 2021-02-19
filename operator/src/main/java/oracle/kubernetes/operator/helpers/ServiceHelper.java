@@ -4,16 +4,19 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Status;
@@ -24,7 +27,9 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.ActionResponseStep;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.steps.DeleteServiceListStep;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -40,6 +45,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
@@ -528,9 +535,33 @@ public class ServiceHelper {
 
     private Step deleteAndReplaceService(Step next) {
       V1DeleteOptions deleteOptions = new V1DeleteOptions();
+      if (getSpecType().equals(NODE_PORT_TYPE)) {
+        return deleteAndReplaceNodePortService();
+      } else {
+        return new CallBuilder()
+            .deleteServiceAsync(
+                createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
+      }
+    }
+
+    private Step deleteAndReplaceNodePortService() {
       return new CallBuilder()
-          .deleteServiceAsync(
-              createServiceName(), getNamespace(), getDomainUid(), deleteOptions, new DeleteServiceResponse(next));
+              .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedbyOperatorSelector())
+              .listServiceAsync(
+                      getNamespace(),
+                      new ActionResponseStep<V1ServiceList>() {
+                      public Step createSuccessStep(V1ServiceList result, Step next) {
+                        Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
+                                  .filter(s -> isNodePortService(s))
+                                  .collect(Collectors.toList())).orElse(new ArrayList<>());
+                        return new DeleteServiceListStep(c, createReplacementService(next));
+                      }
+
+                      private boolean isNodePortService(V1Service svc) {
+                        return Optional.ofNullable(svc).map(s -> s.getSpec())
+                                  .map(s -> s.getType()).map(t -> t.equals(NODE_PORT_TYPE)).orElse(false);
+                      }
+                    });
     }
 
     private Step createReplacementService(Step next) {
