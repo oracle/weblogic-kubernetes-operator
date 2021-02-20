@@ -48,6 +48,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedbyOperatorSelector;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+import static oracle.kubernetes.operator.helpers.OperatorServiceType.EXTERNAL;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
@@ -534,7 +535,7 @@ public class ServiceHelper {
     protected abstract String getServiceCreatedMessageKey();
 
     private Step deleteAndReplaceService(Step next) {
-      if (getSpecType().equals(NODE_PORT_TYPE)) {
+      if (serviceType == EXTERNAL) {
         return deleteAndReplaceNodePortService();
       } else {
         V1DeleteOptions deleteOptions = new V1DeleteOptions();
@@ -824,7 +825,7 @@ public class ServiceHelper {
     private final String adminServerName;
 
     ExternalServiceStepContext(Step conflictStep, Packet packet) {
-      super(conflictStep, packet, OperatorServiceType.EXTERNAL);
+      super(conflictStep, packet, EXTERNAL);
       adminServerName = (String) packet.get(ProcessingConstants.SERVER_NAME);
     }
 
