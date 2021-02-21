@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -39,9 +40,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -77,8 +76,9 @@ public class ItLivenessProbeCustomization {
   // domain constants
   private static final String domainUid = "liveprobecustom";
   private static final String MII_IMAGE_NAME = "liveprobecustom-mii";
-  private static final String clusterName = "cluster-1";
+  private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int replicaCount = 1;
+  private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String APPCHECK_SCRIPT = "appcheck.sh";
@@ -121,11 +121,11 @@ public class ItLivenessProbeCustomization {
 
   /**
    * Verify the customization of liveness probe.
-   * Build modle in image with liveness probe custom script.
+   * Build model in image with liveness probe custom script for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * After domain is created copy the file named tempfile.txt into tested managed server pod, which
-   * is used by custom script to trigger liveness probe.
-   * Verify the the container managed server pod is restarted
+   * After domain is created copy the file named tempfile.txt into tested managed server pods in
+   * both clusters, whichis used by custom script to trigger liveness probe.
+   * Verify the the container managed server pods in both clusters are restarted
    */
   @Test
   @Order(1)
@@ -136,14 +136,6 @@ public class ItLivenessProbeCustomization {
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
 
-    String serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-    // get the restart count of the container in pod before liveness probe restarts
-    final int beforeRestartCount =
-        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                serverName, domainNamespace));
-    logger.info("Restart count before liveness probe {0}", beforeRestartCount);
-
     // create temp file
     String fileName = "tempFile";
     String content = "This one line file is to test livenessProbe custom script";
@@ -151,45 +143,73 @@ public class ItLivenessProbeCustomization {
         "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
 
-    // copy script to pod
-    String destLocation = "/u01/tempFile.txt";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, serverName, "weblogic-server",
-        tempFile.toPath(), Paths.get(destLocation)),
-        String.format("Failed to copy file %s to pod %s in namespace %s",
-            tempFile, serverName, domainNamespace));
-    logger.info("File copied to Pod {0} in namespace {1}", serverName, domainNamespace);
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
-    try {
-      Thread.sleep(10 * 1000);
-    } catch (InterruptedException ie) {
+        // get the restart count of the container in pod before liveness probe restarts
+        final int beforeRestartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
+            managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                managedServerPodName, domainNamespace));
+        logger.info("For server {0} restart count before liveness probeis: {1}",
+            managedServerPodName, beforeRestartCount);
+
+        // copy script to pod
+        String destLocation = "/u01/tempFile.txt";
+        assertDoesNotThrow(() -> copyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
+            tempFile.toPath(), Paths.get(destLocation)),
+            String.format("Failed to copy file %s to pod %s in namespace %s",
+            tempFile, managedServerPodName, domainNamespace));
+        logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
+
+        try {
+          Thread.sleep(10 * 1000);
+        } catch (InterruptedException ie) {
         // ignore
+        }
+
+        String expectedStr = "Hello World, you have reached server "
+            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
+
+
+        checkAppNotRunning(
+            domainNamespace,
+            managedServerPodName,
+            "8001",
+            "sample-war/index.jsp",
+            expectedStr);
+
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            "8001",
+            "sample-war/index.jsp",
+            expectedStr);
+
+        // get the restart count of the container in pod after liveness probe restarts
+        int afterRestartCount = assertDoesNotThrow(() ->
+            getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            managedServerPodName, domainNamespace));
+        logger.info("Restart count after liveness probe {0}", afterRestartCount);
+        assertTrue(afterRestartCount - beforeRestartCount == 1,
+            String.format("Liveness probe did not start the container in pod %s in namespace %s",
+            managedServerPodName, domainNamespace));
+      }
     }
-
-    checkAppNotRunning(domainNamespace, serverName, "8001",
-        "sample-war/index.jsp", MII_APP_RESPONSE_V1 + "1");
-
-    checkAppIsRunning(domainNamespace, serverName, "8001",
-        "sample-war/index.jsp", MII_APP_RESPONSE_V1 + "1");
-
-    // get the restart count of the container in pod after liveness probe restarts
-    int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(domainNamespace, null, serverName, null),
-        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-            serverName, domainNamespace));
-    logger.info("Restart count after liveness probe {0}", afterRestartCount);
-    assertTrue(afterRestartCount - beforeRestartCount == 1,
-        String.format("Liveness probe did not start the container in pod %s in namespace %s",
-            serverName, domainNamespace));
 
   }
 
   /**
    * Verify the negative test case of customization of liveness probe.
-   * Build modle in image with liveness probe custom script.
+   * Build model in image with liveness probe custom script for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * After domain is created copy a temp file named "fun.txt" into tested managed server pod, which
-   * is NOT used by custom script to trigger liveness probe.
-   * Verify the the container managed server pod is not restarted
+   * After domain is created copy a temp file named "testFile.txt" into tested managed server pods in
+   * both clusters, which is NOT used by custom script to trigger liveness probe.
+   * Verify the the container managed server pods in both clusters are NOT restarted
    */
   @Test
   @Order(2)
@@ -200,14 +220,6 @@ public class ItLivenessProbeCustomization {
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
 
-    String serverName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + "1";
-    // get the restart count of the container in pod before liveness probe restarts
-    final int beforeRestartCount =
-        assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null, serverName, null),
-            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-                serverName, domainNamespace));
-    logger.info("Restart count before liveness probe {0}", beforeRestartCount);
-
     // create temp file
     String fileName = "testFile";
     String content = "This file is created for negative test case";
@@ -215,47 +227,63 @@ public class ItLivenessProbeCustomization {
         "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
 
-    // copy script to pod
-    String destLocation = "/u01/testFile.txt";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace, serverName, "weblogic-server",
-        tempFile.toPath(), Paths.get(destLocation)),
-        String.format("Failed to copy file %s to pod %s in namespace %s",
-            tempFile, serverName, domainNamespace));
-    logger.info("File copied to Pod {0} in namespace {1}", serverName, domainNamespace);
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
-    try {
-      Thread.sleep(10 * 1000);
-    } catch (InterruptedException ie) {
+        // get the restart count of the container in pod before liveness probe restarts
+        final int beforeRestartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
+            managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                managedServerPodName, domainNamespace));
+        logger.info("For server {0} restart count before liveness probeis: {1}",
+            managedServerPodName, beforeRestartCount);
+
+        // copy script to pod
+        String destLocation = "/u01/test.txt";
+        assertDoesNotThrow(() -> copyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
+            tempFile.toPath(), Paths.get(destLocation)),
+            String.format("Failed to copy file %s to pod %s in namespace %s",
+            tempFile, managedServerPodName, domainNamespace));
+        logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
+
+        try {
+          Thread.sleep(10 * 1000);
+        } catch (InterruptedException ie) {
         // ignore
+        }
+
+        String expectedStr = "Hello World, you have reached server "
+            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            "8001",
+            "sample-war/index.jsp",
+            expectedStr);
+
+        // get the restart count of the container
+        int afterRestartCount = assertDoesNotThrow(() ->
+            getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+            managedServerPodName, domainNamespace));
+        logger.info("Restart count after liveness probe {0}", afterRestartCount);
+        assertTrue(afterRestartCount - beforeRestartCount == 0,
+            String.format("Liveness probe starts the container in pod %s in namespace %s",
+            managedServerPodName, domainNamespace));
+
+      }
     }
 
-    /*checkAppNotRunning(domainNamespace, serverName, "8001",
-        "sample-war/index.jsp", MII_APP_RESPONSE_V1 + "1");*/
-
-    checkAppIsRunning(domainNamespace, serverName, "8001",
-        "sample-war/index.jsp", MII_APP_RESPONSE_V1 + "1");
-
-    // get the restart count of the container
-    int afterRestartCount = assertDoesNotThrow(() ->
-            getContainerRestartCount(domainNamespace, null, serverName, null),
-        String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
-            serverName, domainNamespace));
-    logger.info("Restart count after liveness probe {0}", afterRestartCount);
-    assertTrue(afterRestartCount - beforeRestartCount == 0,
-        String.format("Liveness probe starts the container in pod %s in namespace %s",
-            serverName, domainNamespace));
-
   }
-
 
 
   /**
    * Create a model in image domain and verify the server pods are ready.
    */
   private static void createAndVerifyMiiDomain(String miiImage) {
-
-    // get the pre-built image created by IntegrationTestWatcher
-    //String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -275,6 +303,14 @@ public class ItLivenessProbeCustomization {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
+    // construct the cluster list used for domain custom resource
+    List<Cluster> clusterList = new ArrayList<>();
+    for (int i = NUMBER_OF_CLUSTERS_MIIDOMAIN; i >= 1; i--) {
+      clusterList.add(new Cluster()
+          .clusterName(CLUSTER_NAME_PREFIX + i)
+          .replicas(replicaCount)
+          .serverStartState("RUNNING"));
+    }
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -307,10 +343,7 @@ public class ItLivenessProbeCustomization {
                     .runAsUser(0L)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+            .clusters(clusterList)
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
@@ -324,26 +357,41 @@ public class ItLivenessProbeCustomization {
     // verify the admin server service and pod is created
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
-    // verify managed server services created and pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    // check the readiness for the managed servers in each cluster
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        // check managed server pod is ready and service exists in the namespace
+        logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
+            managedServerPodName, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
     }
 
     //check and wait for the application to be accessible in all server pods
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppIsRunning(
-          domainNamespace,
-          managedServerPrefix + i,
-          "8001",
-          "sample-war/index.jsp",
-          MII_APP_RESPONSE_V1 + i);
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        String expectedStr = "Hello World, you have reached server "
+            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
+
+        // check managed server pod is ready and service exists in the namespace
+        logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
+             + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
+        checkAppIsRunning(
+            domainNamespace,
+            managedServerPodName,
+            "8001",
+            "sample-war/index.jsp",
+            expectedStr);
+      }
     }
 
     logger.info("Domain {0} is fully started - servers are running and application is available",
         domainUid);
-
   }
 
   private static void checkAppIsRunning(
@@ -412,9 +460,10 @@ public class ItLivenessProbeCustomization {
         .append(APPCHECK_SCRIPT);
     logger.info("additionalBuildFilesVarargsBuff: " + additionalBuildFilesVarargsBuff.toString());
 
+    final String wdtModelFileForMiiDomain = "model-multiclusterdomain-singlesampleapp-wls.yaml";
     logger.info("Create image with model file and verify");
     String miiImage =
-        createMiiImageAndVerify(MII_IMAGE_NAME, MII_BASIC_WDT_MODEL_FILE, MII_BASIC_APP_NAME,
+        createMiiImageAndVerify(MII_IMAGE_NAME, wdtModelFileForMiiDomain, MII_BASIC_APP_NAME,
             additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
 
     // docker login and push image to docker registry if necessary
