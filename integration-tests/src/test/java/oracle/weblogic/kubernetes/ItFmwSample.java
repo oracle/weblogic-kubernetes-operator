@@ -138,8 +138,8 @@ public class ItFmwSample {
    * Verify EM console is accessible.
    */
   @Test
-  @DisplayName("Test FMW domain on PV sample")
-  public void testFmwDomainInPvUsingWlst() {
+  @DisplayName("Test FMW Sample domain on PV")
+  public void testFmwSampleDomainInPvUsingWlst() {
     setupSample();
     // create persistent volume and persistent volume claims used by the samples
     createPvPvc(domainUid);

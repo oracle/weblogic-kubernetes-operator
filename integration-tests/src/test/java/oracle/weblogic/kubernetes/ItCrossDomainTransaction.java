@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
@@ -408,12 +409,16 @@ public class ItCrossDomainTransaction {
         getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
+    if (!WEBLOGIC_SLIM) {
+      logger.info("Validating WebLogic admin console");
+      boolean loginSuccessful = assertDoesNotThrow(() -> {
+        return TestAssertions.adminNodePortAccessible(serviceNodePort, 
+                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      }, "Access to admin server node port failed");
+      assertTrue(loginSuccessful, "Console login validation failed");
+    } else {
+      logger.info("Skipping WebLogic Console check for Weblogic slim images");
+    }
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,

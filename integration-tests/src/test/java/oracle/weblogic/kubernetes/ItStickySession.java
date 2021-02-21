@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.google.common.primitives.Ints;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -510,8 +509,8 @@ class ItStickySession {
   private int getIngressServiceNodePort(String nameSpace, String ingressServiceName, String channelName) {
     // get ingress service Nodeport
     int ingressServiceNodePort = assertDoesNotThrow(() ->
-        getServiceNodePort(nameSpace, ingressServiceName, channelName),
-          "Getting web node port for Traefik loadbalancer failed");
+            getServiceNodePort(nameSpace, ingressServiceName, channelName),
+        "Getting web node port for Traefik loadbalancer failed");
     logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
 
     return ingressServiceNodePort;
@@ -528,7 +527,7 @@ class ItStickySession {
     // send a HTTP request to set http session state(count number) and save HTTP session info
     Map<String, String> httpDataInfo =
         getServerAndSessionInfoAndVerify(hostname,
-          ingressServiceNodePort, webServiceSetUrl, " -D ");
+            ingressServiceNodePort, webServiceSetUrl, " -D ");
     // get server and session info from web service deployed on the cluster
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
@@ -537,24 +536,24 @@ class ItStickySession {
 
     // send a HTTP request again to get server and session info
     httpDataInfo =
-      getServerAndSessionInfoAndVerify(hostname,
-        ingressServiceNodePort, webServiceGetUrl, " -b ");
+        getServerAndSessionInfoAndVerify(hostname,
+            ingressServiceNodePort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String serverName2 = httpDataInfo.get(serverNameAttr);
     String sessionId2 = httpDataInfo.get(sessionIdAttr);
     String countStr = httpDataInfo.get(countAttr);
-    int count = Optional.ofNullable(countStr).map(Ints::tryParse).orElse(0);
+    int count = Optional.ofNullable(countStr).map(Integer::valueOf).orElse(0);
     logger.info("Got the server {0}, session ID {1} and session state {2} "
         + "from the second HTTP connection", serverName2, sessionId2, count);
 
     // verify that two HTTP connections are sticky to the same server
     assertAll("Check that the sticky session is supported",
         () -> assertEquals(serverName1, serverName2,
-          "HTTP connections should be sticky to the server " + serverName1),
+            "HTTP connections should be sticky to the server " + serverName1),
         () -> assertEquals(sessionId1, sessionId2,
-          "HTTP session ID should be same for all HTTP connections " + sessionId1),
+            "HTTP session ID should be same for all HTTP connections " + sessionId1),
         () -> assertEquals(count, SESSION_STATE,
-          "HTTP session state should equels " + SESSION_STATE)
+            "HTTP session state should equels " + SESSION_STATE)
     );
 
     logger.info("SUCCESS --- test same session stickiness \n"

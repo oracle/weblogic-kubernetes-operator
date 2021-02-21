@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -318,14 +319,18 @@ public class ItIstioCrossDomainTransaction {
     istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    logger.info("Validating WebLogic admin server access by login to console");
-
-    String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-    boolean checkConsole =
-        checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
-    assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
-    logger.info("WebLogic console on domain1 is accessible");
-
+    // We can not verify Rest Management console thru Adminstration NodePort 
+    // in istio, as we can not enable Adminstration NodePort
+    if (!WEBLOGIC_SLIM) {
+      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
+      logger.info("WebLogic console on domain1 is accessible");
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
+  
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",

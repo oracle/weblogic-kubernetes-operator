@@ -9,12 +9,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.base.Strings;
-
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_UID_ENV;
 import static oracle.kubernetes.operator.helpers.HelmAccess.getHelmVariable;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /**
  * Operations for dealing with namespaces.
@@ -42,7 +41,7 @@ public class NamespaceHelper {
   public static Collection<String> parseNamespaceList(String namespaceString) {
     Collection<String> namespaces
           = Stream.of(namespaceString.split(","))
-          .filter(s -> !Strings.isNullOrEmpty(s))
+          .filter(s -> !isNullOrEmpty(s))
           .map(String::trim)
           .collect(Collectors.toUnmodifiableList());
 

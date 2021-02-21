@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
@@ -49,7 +49,7 @@ class NamespacedResources {
     return Step.chain(
           getConfigMapListSteps(),
           getPodEventListSteps(),
-          getDomainEventListSteps(),
+          getOperatorEventListSteps(),
           getJobListSteps(),
           getPodListSteps(),
           getServiceListSteps(),
@@ -74,14 +74,14 @@ class NamespacedResources {
     /**
      * Return the processing to be performed on a list of events found in Kubernetes. May be null.
      */
-    Consumer<V1EventList> getEventListProcessing() {
+    Consumer<CoreV1EventList> getEventListProcessing() {
       return null;
     }
 
     /**
      * Return the processing to be performed on a list of domain events found in Kubernetes. May be null.
      */
-    Consumer<V1EventList> getOperatorEventListProcessing() {
+    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
       return null;
     }
 
@@ -141,20 +141,20 @@ class NamespacedResources {
     return getListProcessing(Processors::getEventListProcessing).map(this::createPodEventListStep).orElse(null);
   }
 
-  private Step createPodEventListStep(List<Consumer<V1EventList>> processing) {
+  private Step createPodEventListStep(List<Consumer<CoreV1EventList>> processing) {
     return new CallBuilder()
             .withFieldSelector(ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER)
             .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 
-  private Step getDomainEventListSteps() {
+  private Step getOperatorEventListSteps() {
     return getListProcessing(Processors::getOperatorEventListProcessing)
-        .map(this::createDomainEventListStep).orElse(null);
+        .map(this::createOperatorEventListStep).orElse(null);
   }
 
-  private Step createDomainEventListStep(List<Consumer<V1EventList>> processing) {
+  private Step createOperatorEventListStep(List<Consumer<CoreV1EventList>> processing) {
     return new CallBuilder()
-        .withLabelSelectors(ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER)
+        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
         .listEventAsync(namespace, new ListResponseStep<>(processing));
   }
 
@@ -238,7 +238,5 @@ class NamespacedResources {
       processors.forEach(p -> p.accept(callResponse.getResult()));
       return doContinueListOrNext(callResponse, packet);
     }
-
   }
-
 }

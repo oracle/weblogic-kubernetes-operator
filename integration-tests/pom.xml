@@ -238,23 +238,79 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>
+                   **/ItCoherenceTests,
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItExternalRmiTunneling,
+                   **/ItInitContainers,
+                   **/ItIntrospectVersion,
+                   **/ItIstioCrossDomainTransaction,
+                   **/ItIstioDomainInImage,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItIstioTwoDomainsInImage,
+                   **/ItKubernetesEvents,
+                   **/ItManageNameSpace,
+                   **/ItManagedCoherence,
+                   **/ItMiiDomain,
+                   **/ItMiiDomainModelInPV,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiMultiModel,
+                   **/ItMiiSample,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItOperatorRestart,
+                   **/ItParameterizedDomain,
+                   **/ItPodTemplates,
+                   **/ItPodsRestart,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItServerStartPolicy,
+                   **/ItSessionMigration,
+                   **/ItStickySession,
+                   **/ItSystemResOverrides,
+                   **/ItTwoDomainsLoadBalancer,
+                   **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItMiiSample.java,**/ItJrfDomainInPV.java</includes-failsafe>
+                <includes-failsafe>
+                  **/ItMiiSample,
+                  **/ItFmwDomainInPV,
+                  **/ItFmwMiiDomain,
+                  **/ItFmwSample
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,
-                    **/ItStickySession.java,**/ItSessionMigration.java,**/ItIstioTwoDomainsInImage,**/ItPodsRestart,**/ItUsabilityOperatorHelmChart,**/ItInitContainers,**/ItOperatorUpgrade,**/ItOperatorRestart,
-                    **/ItPodsShutdownOption,**/ItManageNs</includes-failsafe>
+                <includes-failsafe>
+                  **/ItParameterizedDomain,
+                  **/ItServerStartPolicy,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItIntrospectVersion,
+                  **/ItFmwDomainInPV,
+                  **/ItStickySession,
+                  **/ItSessionMigration,
+                  **/ItIstioTwoDomainsInImage,
+                  **/ItPodsRestart,
+                  **/ItUsabilityOperatorHelmChart,
+                  **/ItInitContainers,
+                  **/ItOperatorUpgrade,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItManageNameSpace
+               </includes-failsafe>
             </properties>
         </profile>
     </profiles>

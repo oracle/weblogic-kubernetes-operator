@@ -25,8 +25,8 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.net.HttpURLConnection.HTTP_GONE;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /**
  * This class handles the Watching interface and drives the watch support for a specific type of

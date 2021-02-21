@@ -1,7 +1,7 @@
 ---
 title: "Cleanup"
 date: 2019-02-23T17:32:31-05:00
-weight: 6
+weight: 7
 ---
 
 To remove the resources you have created in these samples:
@@ -25,7 +25,7 @@ To remove the resources you have created in these samples:
    $ kubectl delete namespace traefik
    ```
 
-3. If you set up a database for `JRF`:
+3. If you set up a database for `JRF` or the Update 4 use case:
    ```
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```

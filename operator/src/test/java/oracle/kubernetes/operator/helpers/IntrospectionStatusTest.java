@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -26,7 +27,6 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import org.apache.commons.lang.RandomStringUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,6 +41,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** Tests updates to a domain status from progress of the introspection job. */
 public class IntrospectionStatusTest {
+  private static final String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
+  private static final Random random = new Random();
+
   private static final String IMAGE_NAME = "abc";
   private static final String MESSAGE = "asdf";
   private static final String IMAGE_PULL_FAILURE = "ErrImagePull";
@@ -76,7 +79,7 @@ public class IntrospectionStatusTest {
   public void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
     V1Pod introspectorJobPod = createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE));
     Objects.requireNonNull(introspectorJobPod.getStatus()).containerStatuses(null);
-    
+
     processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
@@ -99,7 +102,7 @@ public class IntrospectionStatusTest {
   public void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
-                createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
+            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
             .toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
@@ -111,7 +114,7 @@ public class IntrospectionStatusTest {
   public void whenNewIntrospectorJobPodCreatedWithNullMessage_ignoreIt() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
-                createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, null)))
+            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, null)))
             .toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
@@ -123,7 +126,7 @@ public class IntrospectionStatusTest {
   public void whenNewIntrospectorJobPodCreatedWithImagePullBackupStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
-                createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, MESSAGE)))
+            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, MESSAGE)))
             .toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
@@ -134,9 +137,9 @@ public class IntrospectionStatusTest {
   @Test
   public void whenIntrospectorJobPodPendingWithUnschedulableStatus_patchDomain() {
     processor.dispatchPodWatch(
-            WatchEvent.createModifiedEvent(
-                    createIntrospectorJobPodWithConditions(createPodConditions(UNSCHEDULABLE, MESSAGE)))
-                    .toWatchResponse());
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithConditions(createPodConditions(UNSCHEDULABLE, MESSAGE)))
+            .toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(UNSCHEDULABLE));
@@ -146,9 +149,9 @@ public class IntrospectionStatusTest {
   @Test
   public void whenIntrospectorJobPodPhaseFailed_patchDomain() {
     processor.dispatchPodWatch(
-            WatchEvent.createModifiedEvent(
-                    createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
-                    .toWatchResponse());
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
+            .toWatchResponse());
 
     Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(DEADLINE_EXCEEDED));
@@ -159,7 +162,7 @@ public class IntrospectionStatusTest {
   public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_dontPatchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
-                createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
+            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
             .toWatchResponse());
 
     processor.dispatchPodWatch(
@@ -199,21 +202,21 @@ public class IntrospectionStatusTest {
 
   private V1Pod createIntrospectorJobPodWithConditions(V1PodCondition condition) {
     return createIntrospectorJobPod(UID)
-            .status(
-                    new V1PodStatusBuilder()
-                            .withConditions(condition)
-                            .build());
+        .status(
+            new V1PodStatusBuilder()
+                .withConditions(condition)
+                .build());
   }
 
   @SuppressWarnings("SameParameterValue")
   private V1Pod createIntrospectorJobPodWithPhase(String phase, String reason) {
     return createIntrospectorJobPod(UID)
-            .status(
-                    new V1PodStatusBuilder()
-                            .withPhase(phase)
-                            .withReason(reason)
-                            .withMessage(MESSAGE)
-                            .build());
+        .status(
+            new V1PodStatusBuilder()
+                .withPhase(phase)
+                .withReason(reason)
+                .withMessage(MESSAGE)
+                .build());
   }
 
   private V1ContainerState createWaitingState(String reason, String message) {
@@ -228,14 +231,29 @@ public class IntrospectionStatusTest {
   @SuppressWarnings("SameParameterValue")
   private V1PodCondition createPodConditions(String reason, String message) {
     return new V1PodConditionBuilder()
-            .withReason(reason)
-            .withMessage(message)
-            .build();
+        .withReason(reason)
+        .withMessage(message)
+        .build();
   }
 
 
   private String getPodSuffix() {
-    return "-" + RandomStringUtils.randomAlphabetic(5).toLowerCase();
+    return "-" + randomAlphabetic(5);
+  }
+
+  private static String randomAlphabetic(int length) {
+    if (length < 1) {
+      throw new IllegalArgumentException();
+    }
+
+    StringBuilder sb = new StringBuilder(length);
+    for (int i = 0; i < length; i++) {
+      int rndCharAt = random.nextInt(CHAR_LOWER.length());
+      char rndChar = CHAR_LOWER.charAt(rndCharAt);
+      sb.append(rndChar);
+    }
+
+    return sb.toString();
   }
 
   private V1ObjectMeta withIntrospectorJobLabels(V1ObjectMeta meta, String domainUid) {
