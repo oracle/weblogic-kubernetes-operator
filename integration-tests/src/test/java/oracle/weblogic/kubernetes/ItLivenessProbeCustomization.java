@@ -64,7 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to FMW domain samples.
+ * Test liveness probe customization in a multicluster mii domain.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify liveness probe customization")
@@ -124,7 +124,7 @@ public class ItLivenessProbeCustomization {
    * Build model in image with liveness probe custom script for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * After domain is created copy the file named tempfile.txt into tested managed server pods in
-   * both clusters, whichis used by custom script to trigger liveness probe.
+   * both clusters, which is used by custom script to trigger liveness probe.
    * Verify the the container managed server pods in both clusters are restarted
    */
   @Test
@@ -174,7 +174,6 @@ public class ItLivenessProbeCustomization {
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
 
-
         checkAppNotRunning(
             domainNamespace,
             managedServerPodName,
@@ -200,7 +199,6 @@ public class ItLivenessProbeCustomization {
             managedServerPodName, domainNamespace));
       }
     }
-
   }
 
   /**
@@ -273,7 +271,6 @@ public class ItLivenessProbeCustomization {
         assertTrue(afterRestartCount - beforeRestartCount == 0,
             String.format("Liveness probe starts the container in pod %s in namespace %s",
             managedServerPodName, domainNamespace));
-
       }
     }
 
@@ -378,7 +375,7 @@ public class ItLivenessProbeCustomization {
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
 
-        // check managed server pod is ready and service exists in the namespace
+
         logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
              + "expectedString {3}", managedServerPodName, domainNamespace, expectedStr);
         checkAppIsRunning(
@@ -473,7 +470,6 @@ public class ItLivenessProbeCustomization {
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
-
     return miiImage;
   }
 
@@ -484,7 +480,6 @@ public class ItLivenessProbeCustomization {
     try (FileWriter fw = new FileWriter(tempFile)) {
       fw.write(content);
     }
-
     return tempFile;
   }
 
