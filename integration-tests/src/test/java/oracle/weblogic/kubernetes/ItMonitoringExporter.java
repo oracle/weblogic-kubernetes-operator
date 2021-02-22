@@ -126,6 +126,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -715,6 +716,14 @@ class ItMonitoringExporter {
   @AfterAll
   public void tearDownAll() {
     uninstallPrometheusGrafana();
+    // uninstall NGINX release
+    logger.info("Uninstalling NGINX");
+    if (nginxHelmParams != null) {
+      assertThat(uninstallNginx(nginxHelmParams))
+          .as("Test uninstallNginx1 returns true")
+          .withFailMessage("uninstallNginx() did not return true")
+          .isTrue();
+    }
     // delete mii domain images created for parameterized test
     if (miiImage != null) {
       deleteImage(miiImage);
