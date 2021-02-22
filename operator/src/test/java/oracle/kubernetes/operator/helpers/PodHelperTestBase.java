@@ -1020,7 +1020,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodPatched();
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
   }
 
   @Test
@@ -1068,6 +1071,41 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
+    initializeExistingPod();
+    testSupport.addToPacket(ProcessingConstants.MII_DYNAMIC_UPDATE, ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodNotReplaced();
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalZip");
+
+    initializeExistingPod();
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newZipHash");
+    testSupport.addToPacket(ProcessingConstants.MII_DYNAMIC_UPDATE, ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodMiiThingie();  // TODO should act as though pod patched
+    assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
+  }
+
+  private void verifyPodMiiThingie() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsFine(getExistsMessageKey()));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+  }
+
+  private String getPodLabel(String labelName) {
+    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  }
+
+  private String paddedZipHash(String hash) {
+    return "md5." + hash + ".md5";
   }
 
   @Test
@@ -1519,6 +1557,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
   }
+
+  // TODO: add tests for dynamic updates
+  // 1. Only dynamic changes - patch the pods with new zip hash value, introspect version, sha256 hash.
+  //       mbeans changes that do not require restart.
+  // 2. non dynamic changes (default)
+  // 3. non dynamic changes (auto roll)
+
 
   interface PodMutator {
     void mutate(V1Pod pod);
