@@ -171,13 +171,10 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
             .putLabelsItem(SERVERNAME_LABEL, serverName);
   }
 
-  protected TestUtils.ConsoleHandlerMemento configureOperatorLogger() {
-    return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class, InterruptedException.class);
-  }
-
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(configureOperatorLogger());
+    mementos.add(TestUtils.silenceOperatorLogger()
+            .ignoringLoggedExceptions(ApiException.class, InterruptedException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(StubWatchFactory.install());
