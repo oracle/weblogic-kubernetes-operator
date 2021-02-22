@@ -46,6 +46,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
@@ -123,7 +125,7 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
-  public void testOperatorWlsUpgradeFrom2_6_0() {
+  public void testOperatorWlsUpgradeFrom260ToDevelop() {
     upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -137,7 +139,7 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to develop")
-  public void testOperatorWlsUpgradeFrom3_0_3() {
+  public void testOperatorWlsUpgradeFrom303ToDevelop() {
     upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -151,7 +153,7 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to develop")
-  public void testOperatorWlsUpgradeFrom3_0_4() {
+  public void testOperatorWlsUpgradeFrom304ToDevelop() {
     upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -165,7 +167,7 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.2 to develop")
-  public void testOperatorWlsUpgradeFrom3_1_2() {
+  public void testOperatorWlsUpgradeFrom312ToDevelop() {
     upgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -179,7 +181,7 @@ public class ItOperatorUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to develop")
-  public void testOperatorWlsUpgradeFrom3_1_3() {
+  public void testOperatorWlsUpgradeFrom313ToDevelop() {
     upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -348,9 +350,11 @@ public class ItOperatorUpgrade {
         false, "", "", 0, "", "", null, null);
 
     scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 1,
+        managedServerPodNamePrefix, replicaCount, 2,
         true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
+
+    restartDomain(domainUid, domainNamespace);
   }
 
   private void createDomainHomeInImageAndVerify(
@@ -455,6 +459,17 @@ public class ItOperatorUpgrade {
     }
   }
 
+  private void checkDomainStopped(String domainUid, String domainNamespace) {
+    // verify admin server pod is deleted
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    // verify managed server pods are deleted
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be deleted in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+  }
+
   private Callable<Boolean> getOpContainerImageName(String namespace) {
     return () -> {
       String imageName = getOperatorContainerImageName(namespace);
@@ -480,6 +495,24 @@ public class ItOperatorUpgrade {
       }
     }
     return true;
+  }
+
+  /**
+   * Restart the domain after upgrade by changing serverStartPolicy. 
+   */
+  private void restartDomain(String domainUid, String domainNamespace) {
+
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/serverStartPolicy", "NEVER"),
+         "Failed to patch Domain's serverStartPolicy to NEVER");
+    logger.info("Domain is patched to shutdown");
+    checkDomainStopped(domainUid, domainNamespace);
+
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/serverStartPolicy", "IF_NEEDED"),
+         "Failed to patch Domain's serverStartPolicy to IF_NEEDED");
+    logger.info("Domain is patched to re start");
+    checkDomainStarted(domainUid, domainNamespace);
   }
 
 }

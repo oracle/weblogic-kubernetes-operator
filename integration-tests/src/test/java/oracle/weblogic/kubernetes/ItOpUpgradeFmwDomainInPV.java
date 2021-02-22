@@ -212,7 +212,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
-  public void testOperatorFmwUpgradeFrom2_6_0() {
+  public void testOperatorFmwUpgradeFrom260ToDevelop() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -225,7 +225,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to develop")
-  public void testOperatorFmwUpgradeFrom3_0_3() {
+  public void testOperatorFmwUpgradeFrom303ToDevelop() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -239,7 +239,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to develop")
-  public void testOperatorFmwUpgradeFrom3_0_4() {
+  public void testOperatorFmwUpgradeFrom304ToDevelop() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -253,7 +253,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.2 to develop")
-  public void testOperatorFmwUpgradeFrom3_1_2() {
+  public void testOperatorFmwUpgradeFrom312ToDevelop() {
     installAndUpgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -266,7 +266,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to develop")
-  public void testOperatorFmwUpgradeFrom3_1_3() {
+  public void testOperatorFmwUpgradeFrom313ToDevelop() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
