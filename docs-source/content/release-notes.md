@@ -38,6 +38,9 @@ draft: false
 
 #### Operator 3.2.0
 
+* Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore ([#2196](https://github.com/oracle/weblogic-kubernetes-operator/pull/2196)).
+* Updated Kubernetes Java Client and Bouncy Castle dependencies.
+
 #### Operator 3.1.3
 
 * Resolved an issue that caused some WebLogic Servers to fail to start in large Kubernetes clusters where Kubernetes watch notifications were not reliably delivered ([#2188](https://github.com/oracle/weblogic-kubernetes-operator/pull/2188)).

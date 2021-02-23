@@ -820,7 +820,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
         return false;
-      } else if (isCachedInfoNewer(liveInfo, cachedInfo)) {
+      } else if (!liveInfo.isPopulated() && isCachedInfoNewer(liveInfo, cachedInfo)) {
+        LOGGER.fine("Cached domain info is newer than the live info from the watch event .");
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
 
@@ -831,6 +832,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           logRetryCount(cachedInfo);
           ensureRetryingEventPresent();
         }
+        LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
         return true;
       }
       cachedInfo.setDomain(getDomain());
