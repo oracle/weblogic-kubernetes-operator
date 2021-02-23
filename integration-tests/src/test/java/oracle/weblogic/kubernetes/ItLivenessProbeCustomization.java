@@ -82,7 +82,6 @@ public class ItLivenessProbeCustomization {
   private static final int replicaCount = 1;
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-  //private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static final String APPCHECK_SCRIPT = "customLivenessProbe.sh";
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
@@ -144,7 +143,6 @@ public class ItLivenessProbeCustomization {
 
     // create temp file
     String fileName = "tempFile";
-    String content = "This one line file is to test livenessProbe custom script";
     File tempFile = assertDoesNotThrow(() -> createTempfile(fileName),
         "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
