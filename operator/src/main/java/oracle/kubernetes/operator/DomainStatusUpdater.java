@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -134,7 +135,7 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+    return Step.chain(EventHelper.createEventStep(DOMAIN_PROCESSING_STARTING),
         createProgressingStep(reason, isPreserveAvailable, next));
   }
 
@@ -149,7 +150,7 @@ public class DomainStatusUpdater {
    */
   public static Step createProgressingStartedEventStep(
       DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+    return Step.chain(EventHelper.createEventStep(DOMAIN_PROCESSING_STARTING),
         createProgressingStep(info, reason, isPreserveAvailable, next));
   }
 
@@ -361,11 +362,11 @@ public class DomainStatusUpdater {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
-        return onFailure(createRetry(context, getNext()), packet, callResponse);
+        return onFailure(createRetry(context), packet, callResponse);
       }
     }
 
-    public Step createRetry(DomainStatusUpdaterContext context, Step next) {
+    public Step createRetry(DomainStatusUpdaterContext context) {
       return Step.chain(createDomainRefreshStep(context), updaterStep);
     }
 
@@ -417,7 +418,7 @@ public class DomainStatusUpdater {
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getConditions)
-          .orElse(null);
+          .orElse(Collections.emptyList());
 
       for (DomainCondition cond : domainConditions) {
         if ("BackoffLimitExceeded".equals(cond.getReason())) {
@@ -525,19 +526,21 @@ public class DomainStatusUpdater {
       }
 
       private boolean stillHasPodPendingRestart(DomainStatus status) {
-        boolean found = false;
+        return status.getServers().stream()
+            .map(this::getServerPod)
+            .map(this::getLabels)
+            .anyMatch(m -> m.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL));
+      }
 
-        for (ServerStatus serverStatus : status.getServers()) {
-          V1Pod pod = super.getInfo().getServerPod(serverStatus.getServerName());
-          if (pod != null) {
-            Map<String, String> labels = pod.getMetadata().getLabels();
-            if (labels.keySet().contains(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL)) {
-              found = true;
-              break;
-            }
-          }
-        }
-        return found;
+      private V1Pod getServerPod(ServerStatus serverStatus) {
+        return getInfo().getServerPod(serverStatus.getServerName());
+      }
+
+      private Map<String, String> getLabels(V1Pod pod) {
+        return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .orElse(Collections.emptyMap());
       }
 
       private boolean allIntendedServersRunning() {
