@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -21,6 +22,7 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -36,10 +38,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -47,6 +52,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -119,10 +125,17 @@ class ItInitContainers {
 
     // install and verify operator
     logger.info("Installing and verifying operator");
+
     opHelmParams = installAndVerifyOperator(opNamespace,
         domain1Namespace, domain2Namespace,
         domain3Namespace, domain4Namespace);
 
+    // operator chart values to override
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .javaLoggingLevel(("FINE"));
+    assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+        "Failed to upgrade operator to FINE  logging leve");
   }
 
   private static void createSecrets(String domainNamespace) {
@@ -168,18 +181,25 @@ class ItInitContainers {
         "can't start or verify domain in namespace " + domain1Namespace);
 
     //check if init container got executed in the server pods
-    assertTrue(checkPodLogContainMsg(domain1Uid + "-admin-server",domain1Namespace,"Hi from Domain"),
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-admin-server",domain1Namespace,
+        domain1Uid,"Hi from Domain"),
          "failed to init busybox container command for admin server");
-    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server1",domain1Namespace,"Hi from Domain"),
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server1",domain1Namespace,
+        domain1Uid, "Hi from Domain"),
         "failed to init busybox container command for managed server1");
-    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server2",domain1Namespace,"Hi from Domain"),
+    assertTrue(checkPodLogContainMsg(domain1Uid + "-managed-server2",domain1Namespace,
+        domain1Uid,"Hi from Domain"),
         "failed to init busybox container command for managed server2");
 
   }
 
-  private boolean checkPodLogContainMsg(String podName, String podNamespace, String msg) {
+  private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {
     String podLog = null;
     try {
+      // check that pod is ready in the domain namespace
+      logger.info("Checking that pod {0} exists in namespace {1}",
+          podName, podNamespace);
+      checkPodReady(podName, domainUid, podNamespace);
       podLog = getPodLog(podName, podNamespace,"busybox");
     } catch (Exception ex) {
       logger.info("Caught unexpected exception while calling getPodLog for pod "
@@ -189,6 +209,7 @@ class ItInitContainers {
       return false;
     }
     if (podLog != null) {
+      logger.info("PodLog " + podLog);
       return podLog.contains(msg);
     } else {
       logger.info("getPodLog returns null , can't retrieve pod's log for " + podName);
