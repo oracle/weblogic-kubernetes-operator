@@ -123,7 +123,7 @@ function createServerStartPolicyPatch {
     serverStartPolicyPatch=$(echo ${domainJson} | jq .spec.managedServers | jq -c "${addPolicyCmd}")
   elif [ "${managedServers}" != "null" ]; then
     extractSpecCmd="(.spec.managedServers)"
-    mapCmd=". |= (map(.serverName) | index (\"${serverName}\")) as \$idx | if \$idx then .[\$idx][\"serverStartPolicy\"] = \"${policy}\" else .+  [{serverName: \"${serverName}\" , value: \"${policy}\"}] end"
+    mapCmd=". |= (map(.serverName) | index (\"${serverName}\")) as \$idx | if \$idx then .[\$idx][\"serverStartPolicy\"] = \"${policy}\" else .+  [{serverName: \"${serverName}\" , serverStartPolicy: \"${policy}\"}] end"
     serverStartPolicyPatch=$(echo ${domainJson} | jq "${extractSpecCmd}" | jq "${mapCmd}")
   else
     # Server start policy exists, replace policy value 
