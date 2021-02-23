@@ -1,2 +1,2 @@
 [final-build-commands]
-COPY files/appcheck.sh /u01
+COPY files/customLivenessProbe.sh /u01

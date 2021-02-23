@@ -65,6 +65,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test liveness probe customization in a multicluster mii domain.
+ * Build model in image with liveness probe custom script named customLivenessProbe.sh
+ * Enable
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify liveness probe customization")
@@ -81,7 +83,7 @@ public class ItLivenessProbeCustomization {
   private static final int NUMBER_OF_CLUSTERS_MIIDOMAIN = 2;
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   //private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-  private static final String APPCHECK_SCRIPT = "appcheck.sh";
+  private static final String APPCHECK_SCRIPT = "customLivenessProbe.sh";
   private static final String COPY_CMD = "copy-cmd.txt";
   private static final String internalPort = "8001";
   private static final String appPath = "sample-war/index.jsp";
@@ -124,7 +126,8 @@ public class ItLivenessProbeCustomization {
 
   /**
    * Verify the customization of liveness probe.
-   * Build model in image with liveness probe custom script for a 2 clusters domain.
+   * Build model in image with liveness probe custom script named customLivenessProbe.sh
+   * for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * After domain is created copy the file named tempfile.txt into tested managed server pods in
    * both clusters, which is used by custom script to trigger liveness probe.
@@ -133,7 +136,7 @@ public class ItLivenessProbeCustomization {
   @Test
   @Order(1)
   @DisplayName("Test customization of the liveness probe")
-  public void testLivenessProbe() {
+  public void testCustomLivenessProbe() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -142,7 +145,7 @@ public class ItLivenessProbeCustomization {
     // create temp file
     String fileName = "tempFile";
     String content = "This one line file is to test livenessProbe custom script";
-    File tempFile = assertDoesNotThrow(() -> createTempfile(fileName, content),
+    File tempFile = assertDoesNotThrow(() -> createTempfile(fileName),
         "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
 
@@ -167,12 +170,6 @@ public class ItLivenessProbeCustomization {
             String.format("Failed to copy file %s to pod %s in namespace %s",
             tempFile, managedServerPodName, domainNamespace));
         logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
-
-        try {
-          Thread.sleep(10 * 1000);
-        } catch (InterruptedException ie) {
-        // ignore
-        }
 
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
@@ -206,7 +203,8 @@ public class ItLivenessProbeCustomization {
 
   /**
    * Verify the negative test case of customization of liveness probe.
-   * Build model in image with liveness probe custom script for a 2 clusters domain.
+   * Build model in image with liveness probe custom script named customLivenessProbe.sh
+   * or a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * Since there is no temp file named "tempFile.txt" in the tested managed server pods, based on
    * custom script logic, liveness probe will not be triggered.
@@ -214,8 +212,8 @@ public class ItLivenessProbeCustomization {
    */
   @Test
   @Order(2)
-  @DisplayName("Test customization of the liveness probe")
-  public void testLivenessProbeNegative() {
+  @DisplayName("Test custom liveness probe is not trigged")
+  public void testCustomLivenessProbeNotTrigged() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -226,13 +224,6 @@ public class ItLivenessProbeCustomization {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
-
-        //Wait for potential liveness probe to be triggered
-        try {
-          Thread.sleep(10 * 1000);
-        } catch (InterruptedException ie) {
-        // ignore
-        }
 
         String expectedStr = "Hello World, you have reached server "
             + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
@@ -313,7 +304,7 @@ public class ItLivenessProbeCustomization {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("LIVENESS_PROBE_CUSTOM_SCRIPT")
-                    .value("/u01/appcheck.sh"))
+                    .value("/u01/customLivenessProbe.sh"))
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>()))
@@ -454,12 +445,12 @@ public class ItLivenessProbeCustomization {
     return miiImage;
   }
 
-  private File createTempfile(String filename, String content) throws IOException {
+  private File createTempfile(String filename) throws IOException {
     File tempFile = File.createTempFile(filename, ".txt");
     //deletes the file when VM terminates
     tempFile.deleteOnExit();
     try (FileWriter fw = new FileWriter(tempFile)) {
-      fw.write(content);
+      fw.write("This one line file is to test liveness Probe custom script");
     }
     return tempFile;
   }
