@@ -64,11 +64,20 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param eventData event item
+   * @param eventItem event item
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData) {
+  public static Step createEventStep(EventItem eventItem) {
+    return createEventStep(new EventData(eventItem));
+  }
+
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
+   * @param eventData event data
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(EventData eventData) {
     return new CreateEventStep(eventData);
   }
 
@@ -79,8 +88,7 @@ public class EventHelper {
    * @param next next step
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData, Step next) {
+  public static Step createEventStep(EventData eventData, Step next) {
     return new CreateEventStep(eventData, next);
   }
 
@@ -168,7 +176,7 @@ public class EventHelper {
         if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
           LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
               eventData.eventItem.getReason(), eventData.getNamespace());
-          return onFailureNoRetry(packet, callResponse);
+          return doNext(packet);
         }
         return super.onFailure(packet, callResponse);
       }
