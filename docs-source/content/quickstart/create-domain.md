@@ -19,7 +19,7 @@ weight: 6
     ```
 
     The sample will create a secret named `domainUID-weblogic-credentials` where the `domainUID` is replaced
-    with the value you provided.  For example, the command above would create a secret named
+    with the value specified by the `-d` flag.  For example, the command above would create a secret named
     `sample-domain1-weblogic-credentials`.
 
 1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
