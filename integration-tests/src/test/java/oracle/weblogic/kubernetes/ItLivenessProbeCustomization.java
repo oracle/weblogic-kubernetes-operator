@@ -175,15 +175,11 @@ public class ItLivenessProbeCustomization {
         checkAppNotRunning(
             domainNamespace,
             managedServerPodName,
-            internalPort,
-            appPath,
             expectedStr);
 
         checkAppIsRunning(
             domainNamespace,
             managedServerPodName,
-            internalPort,
-            appPath,
             expectedStr);
 
         // get the restart count of the container in pod after liveness probe restarts
@@ -206,7 +202,7 @@ public class ItLivenessProbeCustomization {
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * Since there is no temp file named "tempFile.txt" in the tested managed server pods, based on
    * custom script logic, liveness probe will not be triggered.
-   * Verify the the container managed server pods in both clusters are NOT restarted
+   * Verify the container managed server pods in both clusters are NOT restarted
    */
   @Test
   @Order(2)
@@ -227,8 +223,6 @@ public class ItLivenessProbeCustomization {
         checkAppIsRunning(
             domainNamespace,
             managedServerPodName,
-            internalPort,
-            appPath,
             expectedStr);
 
         // get the restart count of the container, which should be 1 after positive test case
@@ -349,8 +343,6 @@ public class ItLivenessProbeCustomization {
         checkAppIsRunning(
             domainNamespace,
             managedServerPodName,
-            internalPort,
-            appPath,
             expectedStr);
       }
     }
@@ -362,8 +354,6 @@ public class ItLivenessProbeCustomization {
   private static void checkAppIsRunning(
       String namespace,
       String podName,
-      String internalPort,
-      String appPath,
       String expectedStr
   ) {
 
@@ -389,8 +379,6 @@ public class ItLivenessProbeCustomization {
   private static void checkAppNotRunning(
       String namespace,
       String podName,
-      String internalPort,
-      String appPath,
       String expectedStr
   ) {
 
