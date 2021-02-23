@@ -217,7 +217,6 @@ public class ItLivenessProbeCustomization {
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
 
-
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
@@ -243,7 +242,6 @@ public class ItLivenessProbeCustomization {
             managedServerPodName, domainNamespace));
       }
     }
-
   }
 
 
@@ -343,7 +341,7 @@ public class ItLivenessProbeCustomization {
         String managedServerPodName =
             domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
         String expectedStr = "Hello World, you have reached server "
-            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;;
+            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
 
         logger.info("Checking that application is running on managed server pod {0}  in namespace {1} with "
