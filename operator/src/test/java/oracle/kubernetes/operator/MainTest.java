@@ -598,6 +598,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(domainNamespaces.getDomainEventWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getPodWatcher(NS), notNullValue());
     assertThat(domainNamespaces.getServiceWatcher(NS), notNullValue());
+    assertThat(domainNamespaces.getPodDisruptionBudgetWatcher(NS), notNullValue());
   }
 
   @Test
