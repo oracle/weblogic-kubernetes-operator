@@ -259,8 +259,8 @@ public class Namespaces {
     static class NamespaceWatchStopEventsStep extends Step {
       final List<StepAndPacket> nsStopEventDetails;
 
-      NamespaceWatchStopEventsStep(List<StepAndPacket> nsStopeventDetails) {
-        this.nsStopEventDetails = nsStopeventDetails;
+      NamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
+        this.nsStopEventDetails = nsStopEventDetails;
       }
 
       @Override
