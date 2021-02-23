@@ -129,7 +129,7 @@ public class ItLivenessProbeCustomization {
    * Build model in image with liveness probe custom script named customLivenessProbe.sh
    * for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
-   * After domain is created copy the file named tempfile.txt into tested managed server pods in
+   * After the domain is created copy the file named tempfile.txt into tested managed server pods for
    * both clusters, which is used by custom script to trigger liveness probe.
    * Verify the container managed server pods in both clusters are restarted
    */
@@ -204,7 +204,7 @@ public class ItLivenessProbeCustomization {
   /**
    * Verify the negative test case of customization of liveness probe.
    * Build model in image with liveness probe custom script named customLivenessProbe.sh
-   * or a 2 clusters domain.
+   * for a 2 clusters domain.
    * Enable "LIVENESS_PROBE_CUSTOM_SCRIPT" while creating domain CR.
    * Since there is no temp file named "tempFile.txt" in the tested managed server pods, based on
    * custom script logic, liveness probe will not be triggered.
