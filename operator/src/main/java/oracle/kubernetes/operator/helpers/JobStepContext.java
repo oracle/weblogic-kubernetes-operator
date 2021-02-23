@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -23,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -36,6 +36,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+
+import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -166,6 +168,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getDomainHomeSourceType();
   }
 
+  public boolean isUseOnlineUpdate() {
+    return getDomain().isUseOnlineUpdate();
+  }
+
   public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
   }
@@ -195,7 +201,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getConfigOverrides() {
-    return Strings.emptyToNull(getDomain().getConfigOverrides());
+    return emptyToNull(getDomain().getConfigOverrides());
   }
 
   private long getIntrospectorJobActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
@@ -206,7 +212,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   // ---------------------- model methods ------------------------------
 
   String getWdtConfigMap() {
-    return Strings.emptyToNull(getDomain().getWdtConfigMap());
+    return emptyToNull(getDomain().getWdtConfigMap());
   }
 
   private ResponseStep<V1Job> createResponse(Step next) {
@@ -277,7 +283,7 @@ public abstract class JobStepContext extends BasePodStepContext {
                 new V1Volume().name(SCRIPTS_VOLUME).configMap(getConfigMapVolumeSource()))
             .addVolumesItem(
                 new V1Volume()
-                    .name("mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+                    .name("mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
                     .configMap(getIntrospectMD5VolumeSource()));
     if (getOpssWalletPasswordSecretVolume() != null) {
       podSpec.addVolumesItem(new V1Volume().name(OPSS_KEYPASSPHRASE_VOLUME).secret(
@@ -342,7 +348,7 @@ public abstract class JobStepContext extends BasePodStepContext {
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(
           volumeMount(
-              "mii" + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
+              "mii" + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX,
               "/weblogic-operator/introspectormii")
               .readOnly(false));
 
@@ -446,7 +452,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
     V1ConfigMapVolumeSource result =
         new V1ConfigMapVolumeSource()
-            .name(getDomainUid() + KubernetesConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
+            .name(getDomainUid() + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
             .defaultMode(ALL_READ_AND_EXECUTE);
     result.setOptional(true);
     return result;
@@ -467,7 +473,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
         return super.onFailure(packet, callResponse);
@@ -493,7 +499,4 @@ public abstract class JobStepContext extends BasePodStepContext {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getOpssKeyWalletVolumeSource(String name) {
-    return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
-  }
 }

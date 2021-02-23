@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -41,12 +41,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final ThreadLocal<Container> containerThreadLocal =
-      new ThreadLocal<Container>() {
-        @Override
-        protected Container initialValue() {
-          return Container.NONE;
-        }
-      };
+      ThreadLocal.withInitial(() -> Container.NONE);
 
   public Container getContainer() {
     return containerThreadLocal.get();
@@ -80,51 +75,39 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
     }
 
     Function<Runnable, Runnable> wrap =
-        (x) -> {
-          return () -> {
-            Container old = enterContainer(container);
-            try {
-              x.run();
-            } catch (RuntimeException runtime) {
-              LOGGER.severe(MessageKeys.EXCEPTION, runtime);
-              throw runtime;
-            } catch (Error error) {
-              LOGGER.severe(MessageKeys.EXCEPTION, error);
-              throw error;
-            } catch (Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              throw new RuntimeException(throwable);
-            } finally {
-              exitContainer(old);
-            }
-          };
+        (x) -> () -> {
+          Container old = enterContainer(container);
+          try {
+            x.run();
+          } catch (RuntimeException | Error runtime) {
+            LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+            throw runtime;
+          } catch (Throwable throwable) {
+            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            throw new RuntimeException(throwable);
+          } finally {
+            exitContainer(old);
+          }
         };
 
     Function<Callable<?>, Callable<?>> wrap2 =
-        (x) -> {
-          return () -> {
-            Container old = enterContainer(container);
-            try {
-              return x.call();
-            } catch (RuntimeException runtime) {
-              LOGGER.severe(MessageKeys.EXCEPTION, runtime);
-              throw runtime;
-            } catch (Error error) {
-              LOGGER.severe(MessageKeys.EXCEPTION, error);
-              throw error;
-            } catch (Throwable throwable) {
-              LOGGER.severe(MessageKeys.EXCEPTION, throwable);
-              throw new RuntimeException(throwable);
-            } finally {
-              exitContainer(old);
-            }
-          };
+        (x) -> () -> {
+          Container old = enterContainer(container);
+          try {
+            return x.call();
+          } catch (RuntimeException | Error runtime) {
+            LOGGER.severe(MessageKeys.EXCEPTION, runtime);
+            throw runtime;
+          } catch (Throwable throwable) {
+            LOGGER.severe(MessageKeys.EXCEPTION, throwable);
+            throw new RuntimeException(throwable);
+          } finally {
+            exitContainer(old);
+          }
         };
 
     Function<Collection<? extends Callable<?>>, Collection<? extends Callable<?>>> wrap2c =
-        (x) -> {
-          return x.stream().map(wrap2).collect(Collectors.toList());
-        };
+        (x) -> x.stream().map(wrap2).collect(Collectors.toList());
 
     return new ScheduledExecutorService() {
 
@@ -188,16 +171,14 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
         return (Future) ex.submit(wrap2.apply(task));
       }
 
-      @SuppressWarnings({"rawtypes"})
       @Override
       public Future<?> submit(Runnable task) {
-        return (Future) ex.submit(wrap.apply(task));
+        return ex.submit(wrap.apply(task));
       }
 
-      @SuppressWarnings({"rawtypes", "unchecked"})
       @Override
       public <T> Future<T> submit(Runnable task, T result) {
-        return (Future) ex.submit(wrap.apply(task), result);
+        return ex.submit(wrap.apply(task), result);
       }
 
       @Override

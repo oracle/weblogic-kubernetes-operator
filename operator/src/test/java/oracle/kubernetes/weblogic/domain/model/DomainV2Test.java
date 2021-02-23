@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -24,8 +24,8 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
@@ -62,7 +62,7 @@ public class DomainV2Test extends DomainTestBase {
       new V1Sysctl().name("kernel.shm_rmid_forced").value("0");
   public static final String LIVENESS_PROBE_CUSTOM_SCRIPT = "/u01/customLiveness.sh";
 
-  @Before
+  @BeforeEach
   public void setUp() {
     configureDomain(domain);
   }

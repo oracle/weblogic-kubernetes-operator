@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -11,9 +11,9 @@ import java.util.Objects;
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
@@ -33,27 +33,18 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainStatusTest {
 
   private DomainStatus domainStatus;
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(SystemClockTestSupport.installClock());
 
     domainStatus = new DomainStatus();
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -425,7 +416,7 @@ public class DomainStatusTest {
   }
 
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
-    private String name;
+    private final String name;
     private Integer replicas;
     private Integer maximumReplicas;
     private Integer minimumReplicas;
@@ -452,11 +443,6 @@ public class DomainStatusTest {
 
     ClusterStatusMatcher withMinimumReplicas(int minimumReplicas) {
       this.minimumReplicas = minimumReplicas;
-      return this;
-    }
-
-    ClusterStatusMatcher withReadyReplicas(int readyReplicas) {
-      this.readyReplicas = readyReplicas;
       return this;
     }
 
@@ -500,7 +486,7 @@ public class DomainStatusTest {
   }
 
   static class OptionalFieldMatcher {
-    private Description description;
+    private final Description description;
     private boolean matches = true;
 
     OptionalFieldMatcher(Description description) {

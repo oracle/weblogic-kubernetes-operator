@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -11,7 +11,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 /** A matcher for events returned by a Watch object or sent to an event listener. */
 public class EventMatcher extends TypeSafeDiagnosingMatcher<Watch.Response<?>> {
-  private String expectedType;
+  private final String expectedType;
   private Object expectedObject;
   private int expectedStatusCode;
 

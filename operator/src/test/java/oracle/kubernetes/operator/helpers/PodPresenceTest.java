@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,9 +30,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.junit.MatcherAssert;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -74,11 +74,7 @@ public class PodPresenceTest {
               KubernetesUtils.withOperatorLabels(
                   "uid", new V1ObjectMeta().name(POD_NAME).namespace(NS)));
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -116,7 +112,7 @@ public class PodPresenceTest {
     info.setDeleting(false);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -331,7 +327,7 @@ public class PodPresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedServerPod_ignoreIt() {
     V1Pod service = createServerPod();
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -343,7 +339,7 @@ public class PodPresenceTest {
     V1Pod oldPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(oldPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(oldPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -354,7 +350,7 @@ public class PodPresenceTest {
   public void onDeleteEventWithSameServerPod_removeIt() {
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(currentPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(currentPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -366,7 +362,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -378,7 +374,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -391,7 +387,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 

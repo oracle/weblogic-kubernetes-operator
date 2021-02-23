@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2020, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.  Please read through the comments which explain
@@ -20,10 +20,10 @@ spec:
   # Note that this might be in the image itself or in a mounted volume or network storage.
   domainHome: /u01/oracle/user_projects/domains/sample-domain1
 
-  # If the domain home is inside the Docker image, set this to `true`, otherwise set `false`:
+  # If the domain home is inside the image, set this to `true`, otherwise set `false`:
   domainHomeInImage: true
 
-  # Update this with the name of the Docker image that will be used to run your domain:
+  # Update this with the name of the container image that will be used to run your domain:
   #image: "YOUR_OCI_REGION_CODE.ocir.io/YOUR_TENANCY_NAME/weblogic-operator-tutorial:latest"
   image: "iad.ocir.io/weblogick8s/weblogic-operator-tutorial-store:1.0"
 
@@ -68,7 +68,7 @@ spec:
 #    nodeSelector:
 #      node-for-weblogic: "true"
 
-    # If you are storing your domain on a persistent volume (as opposed to inside the Docker image),
+    # If you are storing your domain on a persistent volume (as opposed to inside the image),
     # then uncomment this section and provide the PVC details and mount path here (standard images
     # from Oracle assume the mount path is `/shared`):
     # volumes:

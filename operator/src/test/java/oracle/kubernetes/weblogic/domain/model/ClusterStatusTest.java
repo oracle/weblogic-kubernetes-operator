@@ -1,9 +1,9 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -12,10 +12,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ClusterStatusTest {
 
-  static ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
-  static ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
-  static ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster10");
-  static ClusterStatus nullCluster = new ClusterStatus();
+  static final ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
+  static final ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
+  static final ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster10");
+  static final ClusterStatus nullCluster = new ClusterStatus();
 
   @Test
   public void verify_Equal_compareTo() {

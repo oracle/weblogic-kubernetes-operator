@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -9,8 +9,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
@@ -19,13 +19,14 @@ import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SchemaGeneratorTest {
 
   private static final String K8S_SCHEMA_URL =
       "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json";
   private static final String K8S_CACHE_FILE = "caches/kubernetes-1.9.0.json";
-  private SchemaGenerator generator = new SchemaGenerator();
+  private final SchemaGenerator generator = new SchemaGenerator();
 
   private URL schemaUrl;
   private URL cacheUrl;
@@ -67,7 +68,7 @@ public class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   private SimpleObject simpleObject;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     schemaUrl = new URL(K8S_SCHEMA_URL);
     cacheUrl = getClass().getResource(K8S_CACHE_FILE);
@@ -369,9 +370,10 @@ public class SchemaGeneratorTest {
             equalTo(schemaUrl + "#/definitions/io.k8s.api.core.v1.EnvVar")));
   }
 
-  @Test(expected = IOException.class)
+  @Test
   public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
-    generator.useKubernetesVersion("1.12.0");
+    assertThrows(IOException.class,
+          () -> generator.useKubernetesVersion("1.12.0"));
   }
 
   @SuppressWarnings("unused")

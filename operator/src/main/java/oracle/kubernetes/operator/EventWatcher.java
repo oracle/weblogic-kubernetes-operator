@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -7,7 +7,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Watch.Response;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -15,19 +15,19 @@ import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
 /**
- * This class handles Domain watching. It receives domain events and sends them into the operator
+ * This class handles Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class EventWatcher extends Watcher<V1Event> {
+public class EventWatcher extends Watcher<CoreV1Event> {
   private static final String FIELD_SELECTOR = ProcessingConstants.READINESS_PROBE_FAILURE_EVENT_FILTER;
   
-  private final String ns;
+  protected final String ns;
 
-  private EventWatcher(
+  EventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<V1Event> listener,
+        WatchListener<CoreV1Event> listener,
         AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -48,7 +48,7 @@ public class EventWatcher extends Watcher<V1Event> {
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<V1Event> listener,
+        WatchListener<CoreV1Event> listener,
         AtomicBoolean isStopping) {
     EventWatcher watcher =
         new EventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
@@ -57,7 +57,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+  public Watchable<CoreV1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder.withFieldSelector(FIELD_SELECTOR).createEventWatch(ns);
   }
 
@@ -67,7 +67,7 @@ public class EventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public String getDomainUid(Response<V1Event> item) {
+  public String getDomainUid(Response<CoreV1Event> item) {
     return null;
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.Fiber.ExitCallback;
 
 /**
  * Allows at most one running Fiber per key value. However, rather than queue later arriving Fibers
@@ -22,7 +21,7 @@ import oracle.kubernetes.operator.work.Fiber.ExitCallback;
  */
 public class FiberGate {
   private final Engine engine;
-  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<String, Fiber>();
+  private final ConcurrentMap<String, Fiber> gateMap = new ConcurrentHashMap<>();
 
   private final Fiber placeholder;
 
@@ -147,12 +146,9 @@ public class FiberGate {
             boolean isWillCall =
                 o.cancelAndExitCallback(
                     true,
-                    new ExitCallback() {
-                      @Override
-                      public void onExit() {
-                        current.set(o.getSpi(WaitForOldFiberStep.class));
-                        fiber.resume(packet);
-                      }
+                    () -> {
+                      current.set(o.getSpi(WaitForOldFiberStep.class));
+                      fiber.resume(packet);
                     });
 
             if (!isWillCall) {

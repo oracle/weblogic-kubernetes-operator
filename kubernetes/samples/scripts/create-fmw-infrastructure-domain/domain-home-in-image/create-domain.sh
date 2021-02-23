@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -28,8 +28,8 @@ function usage {
   echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
-  echo "  -u Username used in building the Docker image for WebLogic domain in image."
-  echo "  -p Password used in building the Docker image for WebLogic domain in image."
+  echo "  -u Username used in building the image for WebLogic domain in image."
+  echo "  -p Password used in building the image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "

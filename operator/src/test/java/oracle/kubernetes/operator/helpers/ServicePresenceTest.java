@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -26,9 +27,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -52,19 +53,15 @@ public class ServicePresenceTest {
   private static final String CLUSTER = "cluster1";
   private static final String SERVER = "server1";
   private static final String RESOURCE_VERSION = "1233489";
-  private DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
-  private DomainProcessorImpl processor =
+  private final DomainPresenceInfo info = new DomainPresenceInfo(NS, UID);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Map<String, Map<String, DomainPresenceInfo>> domains = new HashMap<>();
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
+  private final Packet packet = new Packet();
   private long clock;
-  private Packet packet = new Packet();
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", domains));
@@ -92,10 +89,7 @@ public class ServicePresenceTest {
     info.setDeleting(true);
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
@@ -209,7 +203,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedClusterService_ignoreIt() {
     V1Service service = createClusterService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -221,7 +215,7 @@ public class ServicePresenceTest {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -233,7 +227,7 @@ public class ServicePresenceTest {
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -245,7 +239,7 @@ public class ServicePresenceTest {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -338,7 +332,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedServerService_ignoreIt() {
     V1Service service = createServerService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -350,7 +344,7 @@ public class ServicePresenceTest {
     V1Service oldService = createServerService();
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -362,7 +356,7 @@ public class ServicePresenceTest {
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -374,7 +368,7 @@ public class ServicePresenceTest {
     V1Service currentService = createServerService();
     V1Service newerService = createServerService();
     info.setServerService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -468,7 +462,7 @@ public class ServicePresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedExternalService_ignoreIt() {
     V1Service service = createExternalService();
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -480,7 +474,7 @@ public class ServicePresenceTest {
     V1Service oldService = createExternalService();
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(oldService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(oldService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -492,7 +486,7 @@ public class ServicePresenceTest {
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
     Watch.Response<V1Service> event =
-        WatchEvent.createDeleteEvent(currentService).toWatchResponse();
+        WatchEvent.createDeletedEvent(currentService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -504,7 +498,7 @@ public class ServicePresenceTest {
     V1Service currentService = createExternalService();
     V1Service newerService = createExternalService();
     info.setExternalService(SERVER, currentService);
-    Watch.Response<V1Service> event = WatchEvent.createDeleteEvent(newerService).toWatchResponse();
+    Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(newerService).toWatchResponse();
 
     processor.dispatchServiceWatch(event);
 
@@ -540,7 +534,7 @@ public class ServicePresenceTest {
   }
 
   private V1Service withTimeAndVersion(V1Service service) {
-    service.getMetadata().creationTimestamp(getDateTime()).resourceVersion(RESOURCE_VERSION);
+    Objects.requireNonNull(service.getMetadata()).creationTimestamp(getDateTime()).resourceVersion(RESOURCE_VERSION);
     return service;
   }
 

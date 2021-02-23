@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -33,7 +34,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
+import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
 /**
  * Operator's mapping between custom resource Domain and runtime details about that domain,
@@ -51,8 +54,10 @@ public class DomainPresenceInfo {
 
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, V1beta1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
+  private EventItem lastEventItem;
 
   /**
    * Create presence for a domain.
@@ -95,23 +100,46 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Counts the number of unclustered servers and servers in the specified cluster that are scheduled.
+   * Counts the number of non-clustered servers and servers in the specified cluster that are scheduled.
    * @param clusterName cluster name of the pod server
    * @return Number of scheduled servers
    */
-  public long getNumScheduledServers(String clusterName) {
+  long getNumScheduledServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
+            .filter(PodHelper::isScheduled)
+            .count();
+  }
+
+  /**
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are scheduled.
+   * @param clusterName cluster name of the pod server
+   * @param adminServerName Name of the admin server
+   * @return Number of scheduled managed servers
+   */
+  public long getNumScheduledManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
           .filter(PodHelper::isScheduled)
           .count();
   }
 
   /**
-   * Counts the number of unclustered servers and servers in the specified cluster that are ready.
+   * Counts the number of non-clustered servers (including admin) and servers in the specified cluster that are ready.
    * @param clusterName cluster name of the pod server
    * @return Number of ready servers
    */
-  public long getNumReadyServers(String clusterName) {
+  long getNumReadyServers(String clusterName) {
     return getServersInNoOtherCluster(clusterName)
+            .filter(PodHelper::hasReadyServer)
+            .count();
+  }
+
+  /**
+   * Counts the number of non-clustered managed servers and managed servers in the specified cluster that are ready.
+   * @param clusterName cluster name of the pod server
+   * @return Number of ready servers
+   */
+  public long getNumReadyManagedServers(String clusterName, String adminServerName) {
+    return getManagedServersInNoOtherCluster(clusterName, adminServerName)
           .filter(PodHelper::hasReadyServer)
           .count();
   }
@@ -119,13 +147,23 @@ public class DomainPresenceInfo {
   @Nonnull
   private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
     return getServers().values().stream()
+            .map(ServerKubernetesObjects::getPod)
+            .map(AtomicReference::get)
+            .filter(this::isNotDeletingPod)
+            .filter(p -> hasClusterNameOrNull(p, clusterName));
+  }
+
+  @Nonnull
+  private Stream<V1Pod> getManagedServersInNoOtherCluster(String clusterName, String adminServerName) {
+    return getServers().values().stream()
           .map(ServerKubernetesObjects::getPod)
           .map(AtomicReference::get)
           .filter(this::isNotDeletingPod)
+          .filter(p -> isNotAdminServer(p, adminServerName))
           .filter(p -> hasClusterNameOrNull(p, clusterName));
   }
 
-  boolean isNotDeletingPod(@Nullable V1Pod pod) {
+  private boolean isNotDeletingPod(@Nullable V1Pod pod) {
     return Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isEmpty();
   }
 
@@ -141,11 +179,11 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().get();
   }
 
-  public V1Service removeServerService(String serverName) {
+  V1Service removeServerService(String serverName) {
     return getSko(serverName).getService().getAndSet(null);
   }
 
-  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+  static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
@@ -253,6 +291,10 @@ public class DomainPresenceInfo {
 
   private V1ObjectMeta getMetadata(V1Service service) {
     return service == null ? null : service.getMetadata();
+  }
+
+  private V1ObjectMeta getMetadata(V1beta1PodDisruptionBudget pdb) {
+    return pdb == null ? null : pdb.getMetadata();
   }
 
   /**
@@ -363,6 +405,47 @@ public class DomainPresenceInfo {
     clusters.put(clusterName, service);
   }
 
+  public void setPodDisruptionBudget(String clusterName, V1beta1PodDisruptionBudget pdb) {
+    podDisruptionBudgets.put(clusterName, pdb);
+  }
+
+  public V1beta1PodDisruptionBudget getPodDisruptionBudget(String clusterName) {
+    return podDisruptionBudgets.get(clusterName);
+  }
+
+  void removePodDisruptionBudget(String clusterName) {
+    podDisruptionBudgets.remove(clusterName);
+  }
+
+  /**
+   * Applies an add or modify event for a pod disruption budget. If the current pod disruption budget is newer than the
+   * one associated with the event, ignores the event.
+   *
+   * @param clusterName the name of the cluster associated with the event
+   * @param event the pod disruption budget associated with the event
+   */
+  public void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+    if (clusterName == null) {
+      return;
+    }
+    podDisruptionBudgets.compute(clusterName, (k, s) -> getNewerPDB(s, event));
+  }
+
+  /**
+   * Given the pod disruption budget associated with a cluster pdb-deleted event, removes the pod disruption budget if
+   * it is not older than the one recorded.
+   *
+   * @param clusterName the name of the associated cluster
+   * @param event the pod disruption budget associated with the event
+   * @return true if the pod disruption budget was actually removed
+   */
+  public boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+    return removeIfPresentAnd(
+            podDisruptionBudgets,
+            clusterName,
+            s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
+  }
+
   void setClusterServiceFromEvent(String clusterName, V1Service event) {
     if (clusterName == null) {
       return;
@@ -379,6 +462,10 @@ public class DomainPresenceInfo {
   }
 
   private V1Service getNewerService(V1Service first, V1Service second) {
+    return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
+  }
+
+  private V1beta1PodDisruptionBudget getNewerPDB(V1beta1PodDisruptionBudget first, V1beta1PodDisruptionBudget second) {
     return KubernetesUtils.isFirstNewer(getMetadata(first), getMetadata(second)) ? first : second;
   }
 
@@ -436,6 +523,14 @@ public class DomainPresenceInfo {
   /** Sets the last completion time to now. */
   public void complete() {
     resetFailureCount();
+  }
+
+  EventItem getLastEventItem() {
+    return lastEventItem;
+  }
+
+  void setLastEventItem(EventItem lastEventItem) {
+    this.lastEventItem = lastEventItem;
   }
 
   /**
@@ -538,7 +633,7 @@ public class DomainPresenceInfo {
   /**
    * Clear all validation warnings.
    */
-  public void clearValidationWarnings() {
+  void clearValidationWarnings() {
     validationWarnings.clear();
   }
 

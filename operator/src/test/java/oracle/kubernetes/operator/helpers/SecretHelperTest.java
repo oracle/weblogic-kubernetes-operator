@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,11 +12,11 @@ import org.junit.After;
 import org.junit.Before;
 
 public class SecretHelperTest {
-  KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  List<Memento> mementos = new ArrayList<>();
+  final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  final List<Memento> mementos = new ArrayList<>();
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
   }

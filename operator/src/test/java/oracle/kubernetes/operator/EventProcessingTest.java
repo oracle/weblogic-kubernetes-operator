@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -9,10 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -21,9 +20,9 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static org.hamcrest.Matchers.equalTo;
@@ -35,39 +34,30 @@ public class EventProcessingTest {
   private static final String UID = "uid";
   private static final String ADMIN_NAME = "admin";
   private final V1ObjectReference serverReference =
-      new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME));
-  private final V1Event event =
-      new V1Event()
+      new V1ObjectReference().name(LegalNames.toEventName(UID, ADMIN_NAME)).kind("Pod");
+  private final CoreV1Event event =
+      new CoreV1Event()
           .metadata(new V1ObjectMeta().namespace(NS))
           .involvedObject(serverReference)
           .message(createReadinessProbeMessage(WebLogicConstants.UNKNOWN_STATE));
-  private List<Memento> mementos = new ArrayList<>();
-  private Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
+  private final Domain domain = new Domain().withMetadata(new V1ObjectMeta().name(UID).namespace(NS));
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private DomainProcessorImpl processor =
+  private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
 
-    presenceInfoMap.put(NS, ImmutableMap.of(UID, info));
+    presenceInfoMap.put(NS, Map.of(UID, info));
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test

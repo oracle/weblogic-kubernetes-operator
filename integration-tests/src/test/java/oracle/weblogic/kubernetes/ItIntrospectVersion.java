@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -43,6 +43,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
@@ -60,7 +61,6 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -90,7 +90,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
@@ -114,7 +113,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeSt
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -125,7 +125,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -223,7 +222,7 @@ public class ItIntrospectVersion {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
 
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int managedServerPort = 8001;
 
@@ -367,12 +366,24 @@ public class ItIntrospectVersion {
     logger.info("default channel port: {0}", defaultChannelPort);
     assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
+    int serviceNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    logger.info("Admin Server default node port : {0}", serviceNodePort);
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    deployUsingWlst(adminServerPodName, Integer.toString(defaultChannelPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminServerName + "," + clusterName, clusterViewAppPath,
-        introDomainNamespace);
+    ExecResult result = null;
+    String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
+    result = deployUsingRest(K8S_NODEPORT_HOST,
+        Integer.toString(serviceNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        targets, clusterViewAppPath, null, "clusterview");
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Application deploymen failed with wrong HTTP status code");
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -520,11 +531,19 @@ public class ItIntrospectVersion {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
 
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
     final int replicaCount = 3;
     final int newAdminPort = 7005;
+
+    checkServiceExists(adminServerPodName, introDomainNamespace);
+    checkPodReady(adminServerPodName, domainUid, introDomainNamespace);
+    // verify managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      checkServiceExists(managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
 
     // get the pod creation time stamps
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
@@ -561,10 +580,7 @@ public class ItIntrospectVersion {
     Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
     executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
 
-    assertTrue(assertDoesNotThrow(() ->
-            patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace),
-        "Patch domain with new IntrospectVersion threw ApiException"),
-        "Failed to patch domain with new IntrospectVersion");
+    patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
 
     //verify the introspector pod is created and runs
     String introspectPodNameBase = getIntrospectJobName(domainUid);
@@ -630,8 +646,9 @@ public class ItIntrospectVersion {
    * a. Creates new WebLogic credentials using WLST.
    * b. Creates new Kubernetes secret for WebLogic credentials.
    * c. Patch the Domain Resource with new credentials, restartVerion and introspectVersion.
-   * d. Verifies the servers in the domain restarted and accessing the admin server console with new password works.
-   * e. Verifies the the admin server console access with old credentials fail.
+   * d. Verifies the servers in the domain are restarted .
+   * e. Make a REST api call to access management console using new password.
+   * f. Make a REST api call to access management console using old password.
    */
   @Order(3)
   @Test
@@ -641,7 +658,7 @@ public class ItIntrospectVersion {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
 
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
     int replicaCount = 3;
@@ -750,17 +767,16 @@ public class ItIntrospectVersion {
         introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(()
-        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH),
-        "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
-    logger.info("Validating WebLogic admin server access by login to console using old credentials");
-    assertThrows(AssertionFailedError.class, ()
-        -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        "Accessing using old user/password succeeded, supposed to fail");
+ 
+    // Make a REST API call to access management console
+    // So that the test will also work with WebLogic slim image
+    final boolean VALID = true;
+    final boolean INVALID = false;
+    logger.info("Check that after patching current credentials are not valid and new credentials are");
+    verifyCredentials(adminServerPodName, introDomainNamespace, 
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
+    verifyCredentials(adminServerPodName, introDomainNamespace, 
+         ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -958,7 +974,7 @@ public class ItIntrospectVersion {
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
   public void testDedicatedModeSameNamespaceScale() {
     final String adminServerName = "admin-server";
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 
@@ -1043,12 +1059,15 @@ public class ItIntrospectVersion {
 
     withStandardRetryPolicy.conditionEvaluationListener(
         condition -> logger.info("Verifying the health of all cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
+            + "(elapsed time {0} ms, remaining time {1} ms)",
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
         .until((Callable<Boolean>) () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
-          assertEquals(200, response.statusCode(), "Status code not equals to 200");
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
           boolean health = true;
           for (String managedServer : managedServerNames) {
             health = health && response.body().contains(managedServer + ":HEALTH_OK");
@@ -1064,7 +1083,7 @@ public class ItIntrospectVersion {
 
   private void verifyIntrospectVersionLabelInPod(int replicaCount) {
     final String adminServerName = "admin-server";
-    final String managedServerNameBase = "ms-";
+    final String managedServerNameBase = "managed-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
 

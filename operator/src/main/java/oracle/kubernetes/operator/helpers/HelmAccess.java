@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,7 +14,7 @@ public class HelmAccess {
   /** Helm variable to specify list of domain namespace. */
   public static final String OPERATOR_DOMAIN_NAMESPACES = "OPERATOR_DOMAIN_NAMESPACES";
 
-  @SuppressWarnings("FieldMayBeFinal") // Not final in order to allow unit tests to set its value
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // Not final in order to allow unit tests to set its value
   private static Function<String,String> getHelmVariableFunction = System::getenv;
 
   /**

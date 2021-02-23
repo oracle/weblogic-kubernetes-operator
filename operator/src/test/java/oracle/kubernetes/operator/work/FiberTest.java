@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -8,14 +8,15 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FiberTest {
 
@@ -38,8 +39,8 @@ public class FiberTest {
   private final Step error = new ThrowableStep();
   private final Step suspend = new SuspendingStep(this::recordFiber);
 
-  @Before
-  public void setUp() throws Exception {
+  @BeforeEach
+  public void setUp() {
     packet.put(STEPS, stepList);
     packet.put(FIBERS, fiberList);
   }
@@ -103,22 +104,20 @@ public class FiberTest {
     assertThat(stepList, contains(step1, suspend));
   }
 
-  @Test(expected = RuntimeException.class)
+  @Test
   public void whenSuspendActionThrowsRuntimeException_rethrowFromFiber() {
-    runSteps(step1, new SuspendingStep(this::throwException), step3);
-
-    assertThat(fiberList, contains(sameInstance(fiber)));
+    assertThrows(RuntimeException.class,
+          () -> runSteps(step1, new SuspendingStep(this::throwException), step3));
   }
 
   void throwException(Packet packet, AsyncFiber fiber) {
     throw new RuntimeException("from test");
   }
 
-  @Test(expected = Error.class)
+  @Test
   public void whenSuspendActionThrowsError_rethrowFromFiber() {
-    runSteps(step1, new SuspendingStep(this::throwError), step3);
-
-    assertThat(fiberList, contains(sameInstance(fiber)));
+    assertThrows(Error.class,
+          () -> runSteps(step1, new SuspendingStep(this::throwError), step3));
   }
 
   void throwError(Packet packet, AsyncFiber fiber) {

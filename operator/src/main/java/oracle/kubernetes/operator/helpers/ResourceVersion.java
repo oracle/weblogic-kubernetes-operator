@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -154,7 +154,7 @@ public class ResourceVersion implements Comparable<ResourceVersion> {
         return -1;
       }
 
-      // Reverse order of comparision is intentional
+      // Reverse order of comparison is intentional
       return o.value.compareTo(value);
     }
   }

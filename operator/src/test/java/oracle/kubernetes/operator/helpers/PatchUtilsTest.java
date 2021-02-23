@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,15 +10,12 @@ import javax.json.JsonPatch;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import oracle.kubernetes.operator.utils.PatchUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class PatchUtilsTest {
-  private String expectedString =
-      "[{\"op\":\"add\",\"path\":\"/metadata/labels/age\",\"value\":27},{\"op\":\"replace\","
-          + "\"path\":\"/metadata/labels/run\",\"value\":\"456\"}]";
 
   @Test
   public void convertJsonPatch_toKubernetesPatch() {
@@ -29,6 +26,8 @@ public class PatchUtilsTest {
             .build();
     List<JsonObject> collect = PatchUtils.toKubernetesPatch(build);
 
+    String expectedString = "[{\"op\":\"add\",\"path\":\"/metadata/labels/age\",\"value\":27},{\"op\":\"replace\","
+        + "\"path\":\"/metadata/labels/run\",\"value\":\"456\"}]";
     assertThat(serialize(collect), equalTo(expectedString));
   }
 

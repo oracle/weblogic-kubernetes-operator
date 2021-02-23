@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file. Do not modify.
@@ -19,10 +19,10 @@ azureServicePrincipalClientSecret: azure-service-principal-client-secret
 # Tenant (Directory) id of the service principal.
 azureServicePrincipalTenantId: azure-service-principal-tenant-id
 
-# Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image.
+# Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image.
 dockerEmail: docker-email
 
-# Oracle SSO account password, used to pull the WebLogic Server Docker image.
+# Oracle SSO account password, used to pull the WebLogic Server image.
 dockerPassword: docker-password
 
 # The same value as dockerEmail.
@@ -64,8 +64,8 @@ azureStorageClassName: azurefile
 # The suffix of azure storage file share name, the complete value is ${namePrefix}-${azureStorageShareNameSuffix}-<timestamp>, used to create file share, and mount file share. 
 azureStorageShareNameSuffix: weblogic
 
-# The suffix of the Kubernetes secret name, the complete value is ${namePrefix}${imagePullSecretNameSuffix}. The secret name is used to access the Docker Store to pull the WebLogic Server Docker image
-# Used to create kubenetes secret for docker hub account.
+# The suffix of the Kubernetes secret name, the complete value is ${namePrefix}${imagePullSecretNameSuffix}. The secret name is used to access the container registry to pull the WebLogic Server image
+# Used to create Kubernetes secret for container registry account.
 # Parameter "imagePullSecretName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 imagePullSecretNameSuffix: regcred
 
@@ -73,10 +73,10 @@ imagePullSecretNameSuffix: regcred
 # Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 persistentVolumeClaimNameSuffix: azurefile
 
-# Password for weblogic account.
+# Password for WebLogic account.
 weblogicAccountPassword: welcome1
 
-# WebLogic Server Docker image.
+# WebLogic Server image.
 # Parameter "image" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 weblogicDockerImage: container-registry.oracle.com/middleware/weblogic:12.2.1.3
 

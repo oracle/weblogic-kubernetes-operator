@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -13,9 +13,9 @@ import io.kubernetes.client.openapi.JSON;
 public class LoggingFactory {
 
   // map from resourceBundleName to facade
-  private static final Map<String, LoggingFacade> facade = new HashMap<String, LoggingFacade>();
+  private static final Map<String, LoggingFacade> facade = new HashMap<>();
 
-  private static JSON json = new JSON();
+  private static final JSON json = new JSON();
 
   private LoggingFactory() {
     // hide implicit public constructor
@@ -23,10 +23,6 @@ public class LoggingFactory {
 
   public static JSON getJson() {
     return json;
-  }
-
-  public static void setJson(JSON json) {
-    LoggingFactory.json = json;
   }
 
   /**

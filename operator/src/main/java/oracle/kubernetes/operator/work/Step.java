@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -198,21 +198,6 @@ public abstract class Step {
   }
 
   /**
-   * Create {@link NextAction} that indicates the the current fiber resume with the next step after.
-   * a delay.
-   *
-   * @param packet Packet to provide when retrying this step
-   * @param delay Delay time
-   * @param unit Delay time unit
-   * @return The next action
-   */
-  protected NextAction doDelay(Packet packet, long delay, TimeUnit unit) {
-    NextAction na = new NextAction();
-    na.delay(next, packet, delay, unit);
-    return na;
-  }
-
-  /**
    * Create {@link NextAction} that indicates the the current fiber resume with the indicated step
    * after a delay.
    *
@@ -323,7 +308,7 @@ public abstract class Step {
     protected final AsyncFiber fiber;
     protected final Packet packet;
     protected final AtomicInteger count;
-    protected final List<Throwable> throwables = new ArrayList<Throwable>();
+    protected final List<Throwable> throwables = new ArrayList<>();
 
     JoinCompletionCallback(AsyncFiber fiber, Packet packet, int initialCount) {
       this.fiber = fiber;

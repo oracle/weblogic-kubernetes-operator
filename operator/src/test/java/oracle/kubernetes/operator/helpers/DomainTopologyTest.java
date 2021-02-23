@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,12 +12,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DomainTopologyTest {
 
@@ -212,8 +212,7 @@ public class DomainTopologyTest {
     assertNotNull(wlsDynamicServersConfig);
     assertEquals("cluster-1", wlsDynamicServersConfig.getName());
     assertEquals("cluster-1-template", wlsDynamicServersConfig.getServerTemplateName());
-    assertFalse(
-        "Expected calculatedListenPorts false", wlsDynamicServersConfig.getCalculatedListenPorts());
+    assertFalse(wlsDynamicServersConfig.getCalculatedListenPorts());
     assertEquals("managed-server", wlsDynamicServersConfig.getServerNamePrefix());
     assertEquals(4, wlsDynamicServersConfig.getDynamicClusterSize().intValue());
     assertEquals(8, wlsDynamicServersConfig.getMaxDynamicClusterSize().intValue());

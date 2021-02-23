@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,9 +8,9 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.TuningParameters;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.DNS_1123_FIELDS_PARAM;
 import static oracle.kubernetes.operator.helpers.LegalNames.toClusterServiceName;
@@ -21,34 +21,29 @@ import static org.hamcrest.Matchers.is;
 
 public class LegalNamesTest {
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setup() throws Exception {
     mementos.add(TuningParametersStub.install());
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
     LegalNames.dns1123Fields = null;
   }
 
 
   @Test
-  public void createValidServerServiceNames() throws Exception {
+  public void createValidServerServiceNames() {
     assertThat(toServerServiceName("abc", "cls1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cLs1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cls_1"), equalTo("abc-cls-1"));
   }
 
   @Test
-  public void createValidClusterServiceNames() throws Exception {
+  public void createValidClusterServiceNames() {
     assertThat(toClusterServiceName("abc", "cls1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cLs1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cls_1"), equalTo("abc-cluster-cls-1"));
@@ -90,7 +85,7 @@ public class LegalNamesTest {
 
   @Test
   public void verify_requiresDns1123Names_returnFalse_for_invalidValues() {
-    assertThat(LegalNames.isDns1123Required((String)null), is(false));
+    assertThat(LegalNames.isDns1123Required(null), is(false));
     assertThat(LegalNames.isDns1123Required(""), is(false));
   }
 

@@ -90,7 +90,7 @@ For a description of model file macro references to secrets and environment vari
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model, and property files are first loaded from the `/u01/model_home/models` directory within the image and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
+During domain home creation, model, and property files are first loaded from the `configuration.models.modelHome` directory within the image, which defaults to `/u01/wdt/models`, and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
@@ -103,7 +103,7 @@ The loading order within each of these locations is first determined using the c
 
 If an image file and ConfigMap file both have the same name, then both files are loaded.
 
-For example, if you have these files in the image directory `/u01/model_home/models`:
+For example, if you have these files in the model home directory `/u01/wdt/models`:
 
 ```
 jdbc.20.yaml
@@ -155,7 +155,7 @@ Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentials
 
 ##### Using environment variables in model files
 
-You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file, or the built-in `DOMAIN_UID` environment variable.
+You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file using `domain.spec.serverPod.env` or `domain.spec.adminServer.serverPod.env`, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 

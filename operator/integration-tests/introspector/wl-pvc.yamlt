@@ -1,0 +1,19 @@
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    weblogic.domainName: ${DOMAIN_NAME}
+    weblogic.domainUID: ${DOMAIN_UID}
+  name: ${DOMAIN_UID}-weblogic-domain-pvc
+  namespace: ${NAMESPACE}
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: ${DOMAIN_UID}-weblogic-domain-storage-class
+  volumeName: ${DOMAIN_UID}-weblogic-domain-pv

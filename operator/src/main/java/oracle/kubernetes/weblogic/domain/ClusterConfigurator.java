@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -7,7 +7,6 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import io.kubernetes.client.openapi.models.V1Toleration;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -124,8 +123,6 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withRuntimeClassName(String runtimeClassName);
 
   ClusterConfigurator withPriorityClassName(String priorityClassName);
-
-  ClusterConfigurator withToleration(V1Toleration toleration);
 
   ClusterConfigurator withPrecreateServerService(boolean precreateServerService);
 

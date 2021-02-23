@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -33,6 +33,8 @@ import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
@@ -63,6 +65,7 @@ public class DbUtils {
 
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
+  private static int suffixCount = 0;
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
@@ -405,7 +408,13 @@ public class DbUtils {
     return true;
   }
 
-  private static String getPodNameOfDb(String dbNamespace) throws ApiException {
+  /**
+   * Get database pod name.
+   * @param dbNamespace namespace where database exists
+   * @return pod name of database
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodNameOfDb(String dbNamespace) throws ApiException {
 
     V1PodList  pod = null;
     pod = Kubernetes.listPods(dbNamespace, null);
@@ -420,7 +429,15 @@ public class DbUtils {
     return podName;
   }
 
-  private static boolean checkPodLogContains(String matchStr, String podName, String namespace)
+  /**
+   * Check if the pod log contains the certain text.
+   * @param matchStr text to be searched in the log
+   * @param podName the name of the pod
+   * @param namespace namespace where pod exists
+   * @return true if the text exists in the log otherwise false
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean checkPodLogContains(String matchStr, String podName, String namespace)
       throws ApiException {
 
     return Kubernetes.getPodLog(podName,namespace,null).contains(matchStr);
@@ -432,7 +449,13 @@ public class DbUtils {
     return () -> checkPodLogContains(matchStr, podName, dbNamespace);
   }
 
-  private static void checkDbReady(String matchStr, String podName, String dbNamespace) {
+  /**
+   * Check if the database service is ready.
+   * @param matchStr text to be searched in the log
+   * @param podName the name of the pod
+   * @param dbNamespace database namespace where pod exists
+   */
+  public static void checkDbReady(String matchStr, String podName, String dbNamespace) {
     LoggingFacade logger = getLogger();
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -447,4 +470,35 @@ public class DbUtils {
             String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)));
   }
 
+  /**
+   * Delete all db in the given namespace, if any exists.
+   *
+   * @param dbNamespace name of the namespace
+   */
+  public static void deleteDb(String dbNamespace) {
+    LoggingFacade logger = getLogger();
+
+    try {
+      // delete db resources in dbNamespace
+      new Command()
+          .withParams(new CommandParams()
+              .command("kubectl delete all --all -n " + dbNamespace + " --ignore-not-found"))
+          .execute();
+    } catch (Exception ex) {
+      logger.severe(ex.getMessage());
+      logger.severe("Failed to delete db or the {0} is not a db namespace", dbNamespace);
+    }
+  }
+
+  /**
+   * Returns a new suffixCount value which can be used to make ports unique.
+   *
+   * @return new suffixCount
+   */
+  public static int getNewSuffixCount() {
+    synchronized (DbUtils.class) {
+      suffixCount = suffixCount + 1;
+      return suffixCount;
+    }
+  }
 }

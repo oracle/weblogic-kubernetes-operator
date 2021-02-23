@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -21,11 +21,11 @@ public final class CallResponse<T> {
   }
 
   public static CallResponse<Void> createFailure(RequestParams requestParams, ApiException ex, int statusCode) {
-    return new CallResponse<Void>(requestParams, null, ex, statusCode);
+    return new CallResponse<>(requestParams, null, ex, statusCode);
   }
 
   public static <R> CallResponse<R> createNull() {
-    return new CallResponse<R>(null, null, null, 0);
+    return new CallResponse<>(null, null, null, 0);
   }
 
   CallResponse<T> withResponseHeaders(Map<String, List<String>> responseHeaders) {

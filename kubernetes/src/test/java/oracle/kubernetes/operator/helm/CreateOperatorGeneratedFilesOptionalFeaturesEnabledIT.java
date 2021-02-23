@@ -1,16 +1,16 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
 
 import oracle.kubernetes.operator.create.CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CreateOperatorGeneratedFilesOptionalFeaturesEnabledIT
     extends CreateOperatorGeneratedFilesOptionalFeaturesEnabledTestBase {
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws Exception {
     defineOperatorYamlFactory(new HelmOperatorYamlFactory());
   }

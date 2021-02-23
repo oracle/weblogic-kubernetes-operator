@@ -1,9 +1,7 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
-
-import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import org.hamcrest.Description;
@@ -12,20 +10,6 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 class DomainPresenceInfoMatcher extends TypeSafeDiagnosingMatcher<DomainPresenceInfo> {
   private String expectedUid;
   private String expectedNamespace;
-
-  private DomainPresenceInfoMatcher(String expectedUid) {
-    this.expectedUid = expectedUid;
-  }
-
-  static DomainPresenceInfoMatcher domain(@Nonnull String expectedUid) {
-    return new DomainPresenceInfoMatcher(expectedUid);
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  DomainPresenceInfoMatcher withNamespace(@Nonnull String expectedNamespace) {
-    this.expectedNamespace = expectedNamespace;
-    return this;
-  }
 
   @Override
   protected boolean matchesSafely(DomainPresenceInfo item, Description mismatchDescription) {

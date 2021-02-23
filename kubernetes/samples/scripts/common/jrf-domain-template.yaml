@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -18,7 +18,7 @@ spec:
   # Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
   domainHomeSourceType: %DOMAIN_HOME_SOURCE_TYPE%
 
-  # The WebLogic Server Docker image that the Operator uses to start the domain
+  # The WebLogic Server image that the Operator uses to start the domain
   image: "%WEBLOGIC_IMAGE%"
 
   # imagePullPolicy defaults to "Always" if image version is :latest

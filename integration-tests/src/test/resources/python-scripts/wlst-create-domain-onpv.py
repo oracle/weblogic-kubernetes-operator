@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import sys, traceback
@@ -72,6 +72,7 @@ def create_domain():
   set('ServerNamePrefix', managed_server_name_base)
   set('DynamicClusterSize', int(number_of_ms))
   set('MaxDynamicClusterSize', int(number_of_ms))
+  set('MinDynamicClusterSize', int(number_of_ms))
   set('CalculatedListenPorts', false)
 
   print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);

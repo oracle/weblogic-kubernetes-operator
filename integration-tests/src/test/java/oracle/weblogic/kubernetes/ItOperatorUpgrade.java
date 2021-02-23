@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -21,6 +21,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -39,25 +40,24 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -83,6 +83,21 @@ public class ItOperatorUpgrade {
   private List<String> namespaces;
   private String latestOperatorImageName;
 
+
+  /**
+   * For each test:
+   * Assigns unique namespaces for operator and domain.
+   *
+   * @param namespaces injected by JUnit
+   */
+  @BeforeEach
+  public void beforeEach(@Namespaces(3) List<String> namespaces) {
+    this.namespaces = namespaces;
+    assertNotNull(namespaces.get(0), "Namespace[0] is null");
+    assertNotNull(namespaces.get(1), "Namespace[1] is null");
+    assertNotNull(namespaces.get(2), "Namespace[2] is null");
+  }
+  
   /**
    * Does some initialization of logger, conditionfactory, etc common
    * to all test methods.
@@ -109,56 +124,9 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to latest")
-  public void testOperatorUpgradeFrom2_6_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
+  @DisplayName("Upgrade Operator from 2.6.0 to develop")
+  public void testOperatorWlsUpgradeFrom260ToDevelop() {
     upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.0 to latest.
-   * Install 3.0.0 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.0 to latest")
-  public void testOperatorUpgradeFrom3_0_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("3.0.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.0.1 to latest.
-   * Install 3.0.1 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.1 to latest")
-  public void testOperatorUpgradeFrom3_0_1(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("3.0.1", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-
-  /**
-   * Operator upgrade from 3.0.2 to latest.
-   * Install 3.0.2 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
-   */
-  @Test
-  @DisplayName("Upgrade Operator from 3.0.2 to latest")
-  public void testOperatorUpgradeFrom3_0_2(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("3.0.2", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -170,9 +138,8 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.3 to latest")
-  public void testOperatorUpgradeFrom3_0_3(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
+  @DisplayName("Upgrade Operator from 3.0.3 to develop")
+  public void testOperatorWlsUpgradeFrom303ToDevelop() {
     upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -185,25 +152,37 @@ public class ItOperatorUpgrade {
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to latest")
-  public void testOperatorUpgradeFrom3_0_4(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
+  @DisplayName("Upgrade Operator from 3.0.4 to develop")
+  public void testOperatorWlsUpgradeFrom304ToDevelop() {
     upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.1.0 to latest.
-   * Install 3.1.0 Operator from GitHub chart repository and create a domain.
+   * Operator upgrade from 3.1.2 to latest.
+   * Install 3.1.2 Operator from GitHub chart repository and create a domain.
    * Deploy an application to the cluster in domain and verify the application can be
    * accessed while the operator is upgraded and after the upgrade.
    * Upgrade operator with latest Operator image and verify CRD version and image are updated
    * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.0 to latest")
-  public void testOperatorUpgradeFrom3_1_0(@Namespaces(3) List<String> namespaces) {
-    this.namespaces = namespaces;
-    upgradeOperator("3.1.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.1.2 to develop")
+  public void testOperatorWlsUpgradeFrom312ToDevelop() {
+    upgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.1.3 to latest.
+   * Install 3.1.3 Operator from GitHub chart repository and create a domain.
+   * Deploy an application to the cluster in domain and verify the application can be
+   * accessed while the operator is upgraded and after the upgrade.
+   * Upgrade operator with latest Operator image and verify CRD version and image are updated
+   * and the domain can be managed by scaling the cluster using operator REST api.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.1.3 to develop")
+  public void testOperatorWlsUpgradeFrom313ToDevelop() {
+    upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -263,9 +242,16 @@ public class ItOperatorUpgrade {
         domainNamespace, operatorVersion, externalServiceNameSuffix);
 
     if (useHelmUpgrade) {
-      // application high availability check only for 3.x releases and later
       // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(domainNamespace, externalServiceNameSuffix);
+      deployAndAccessApplication(domainNamespace,
+                                 domainUid,
+                                "cluster-1",
+                                "admin-server",
+                                 adminServerPodName,
+                                 managedServerPodNamePrefix,
+                                 replicaCount,
+                                "7001",
+                                "8001");
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
@@ -278,9 +264,12 @@ public class ItOperatorUpgrade {
                     domainNamespace,
                     opNamespace1,
                     appAvailability,
-                    managedServerPodNamePrefix,
                     adminServerPodName,
-                    replicaCount);
+                    managedServerPodNamePrefix,
+                    replicaCount,
+                    "7001",
+                    "8001",
+                    "testwebapp/index.jsp");
               });
       accountingThread.start();
 
@@ -361,9 +350,11 @@ public class ItOperatorUpgrade {
         false, "", "", 0, "", "", null, null);
 
     scaleAndVerifyCluster("cluster-1", domainUid, domainNamespace,
-        managedServerPodNamePrefix, replicaCount, 1,
+        managedServerPodNamePrefix, replicaCount, 2,
         true, externalRestHttpsPort, opNamespace, opServiceAccount,
         false, "", "", 0, "", "", null, null);
+
+    restartDomain(domainUid, domainNamespace);
   }
 
   private void createDomainHomeInImageAndVerify(
@@ -468,6 +459,17 @@ public class ItOperatorUpgrade {
     }
   }
 
+  private void checkDomainStopped(String domainUid, String domainNamespace) {
+    // verify admin server pod is deleted
+    checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
+    // verify managed server pods are deleted
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Waiting for managed server pod {0} to be deleted in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace);
+      checkPodDeleted(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+    }
+  }
+
   private Callable<Boolean> getOpContainerImageName(String namespace) {
     return () -> {
       String imageName = getOperatorContainerImageName(namespace);
@@ -485,86 +487,6 @@ public class ItOperatorUpgrade {
     };
   }
 
-  private void deployAndAccessApplication(String namespace, String externalServiceNameSuffix) {
-    Path archivePath = Paths.get(ITTESTS_DIR, "../src/integration-tests/apps/testwebapp.war");
-    logger.info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
-        archivePath, domainUid, namespace);
-    logger.info("Deploying webapp {0} to admin server and cluster", archivePath);
-    deployUsingWlst(adminServerPodName, 
-          "7001", ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-          "cluster-1,admin-server", archivePath, namespace);
-
-    // check if the application is accessible inside of a server pod using quick retry policy
-    logger.info("Check and wait for the application to become ready");
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppIsRunning(withQuickRetryPolicy, namespace, managedServerPodNamePrefix + i,
-          "8001", "testwebapp/index.jsp", managedServerPodNamePrefix + i);
-    }
-    checkAppIsRunning(withQuickRetryPolicy, namespace, adminServerPodName,
-          "7001", "testwebapp/index.jsp", adminServerPodName);
-  }
-
-  /**
-   * Check application availability in the admin and managed server(s) during 
-   * operator upgrade and once the ugprade is complete by accessing the 
-   * application inside the server pods.
-   */
-  private static void collectAppAvailability(
-      String domainNamespace,
-      String operatorNamespace,
-      List<Integer> appAvailability,
-      String managedServerPrefix,
-      String adminPodName,
-      int replicaCount
-  ) {
-    // Access the pod periodically to check application's availability during 
-    // upgrade and after upgrade is complete.
-    // appAccessedAfterUpgrade is used to access the app once after upgrade is complete
-    boolean appAccessedAfterUpgrade = false;
-    String appPath = "testwebapp/index.jsp";
-
-    while (!appAccessedAfterUpgrade) {
-      boolean isUpgradeComplete = checkHelmReleaseRevision(OPERATOR_RELEASE_NAME, operatorNamespace, "2");
-      // upgrade is not complete or app is not accessed after upgrade
-      if (!isUpgradeComplete || !appAccessedAfterUpgrade) {
-        // Check application accessibility on admin server 
-        if (appAccessibleInPod(
-              domainNamespace,
-              adminPodName,
-              "7001",
-              appPath,
-              adminPodName)) {
-          appAvailability.add(1);
-          logger.info("application accessible in admin pod " + adminPodName);
-        } else {
-          appAvailability.add(0);
-          logger.info("application not accessible in admin pod " + adminPodName);
-        }
-        
-        // Check application accessibility on managed servers
-        for (int i = 1; i <= replicaCount; i++) {
-          if (appAccessibleInPod(
-              domainNamespace,
-              managedServerPrefix + i,
-              "8001",
-              appPath,
-              managedServerPrefix + i)) {
-            appAvailability.add(1);
-            logger.info("application is accessible in pod " + managedServerPrefix + i);
-          } else {
-            appAvailability.add(0);
-            logger.info("application is not accessible in pod " + managedServerPrefix + i);
-          }
-        }
-      }
-      if (isUpgradeComplete) {
-        logger.info("Upgrade is complete and app is accessed after upgrade");
-        appAccessedAfterUpgrade = true;
-      }
-
-    }
-  }
-
   private static boolean appAlwaysAvailable(List<Integer> appAvailability) {
     for (Integer count : appAvailability) {
       if (count == 0) {
@@ -573,6 +495,24 @@ public class ItOperatorUpgrade {
       }
     }
     return true;
+  }
+
+  /**
+   * Restart the domain after upgrade by changing serverStartPolicy. 
+   */
+  private void restartDomain(String domainUid, String domainNamespace) {
+
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/serverStartPolicy", "NEVER"),
+         "Failed to patch Domain's serverStartPolicy to NEVER");
+    logger.info("Domain is patched to shutdown");
+    checkDomainStopped(domainUid, domainNamespace);
+
+    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
+         "/spec/serverStartPolicy", "IF_NEEDED"),
+         "Failed to patch Domain's serverStartPolicy to IF_NEEDED");
+    logger.info("Domain is patched to re start");
+    checkDomainStarted(domainUid, domainNamespace);
   }
 
 }

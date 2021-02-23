@@ -1,13 +1,14 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.Properties;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class MacroSubstitutorTest {
 
@@ -27,8 +28,7 @@ public class MacroSubstitutorTest {
         "",
         macroSubstitutor.substituteMacro(""));
 
-    assertEquals(
-        "null input string should return null", null, macroSubstitutor.substituteMacro(null));
+    assertNull("null input string should return null", macroSubstitutor.substituteMacro(null));
 
     assertEquals(
         "string without macro should remains unchanged",

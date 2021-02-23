@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -117,6 +117,19 @@ public class Pod {
    */
   public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
     return Kubernetes.getPodIP(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Returns the status phase of the pod.
+   *
+   * @param namespace in which to check for the pod status
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to check
+   * @return the status phase of the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+    return Kubernetes.getPodStatusPhase(namespace, labelSelectors, podName);
   }
 
   /**

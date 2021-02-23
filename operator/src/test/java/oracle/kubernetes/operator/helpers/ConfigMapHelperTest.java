@@ -1,14 +1,17 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
@@ -21,12 +24,13 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.utils.InMemoryFileSystem;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
@@ -61,11 +65,12 @@ public class ConfigMapHelperTest {
     "wlst.sh",
     "tailLog.sh",
     "monitorLog.sh",
-    "model_diff.py",
+    "model-diff.py",
+    "model-diff-v1.py",
     "modelInImage.sh",
-    "wdt_create_filter.py",
-    "model_filters.json",
-    "encryption_util.py"
+    "model-wdt-create-filter.py",
+    "model-filters.json",
+    "model-encryption-util.py"
   };
   private static final String DOMAIN_NS = "namespace";
 
@@ -77,6 +82,8 @@ public class ConfigMapHelperTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
+  private final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
+  private final Function<URI, Path> pathFunction = fileSystem::getPath;
 
 
   @SuppressWarnings("SameParameterValue")
@@ -108,11 +115,7 @@ public class ConfigMapHelperTest {
         .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -120,17 +123,21 @@ public class ConfigMapHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(TestComparator.install());
+    mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
+
+    defineInMemoryFiles(SCRIPT_NAMES);
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
-  public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
+  private void defineInMemoryFiles(String... scriptNames) {
+    final String scriptRoot = getClass().getResource("/scripts/").getPath();
+    for (String scriptName : scriptNames) {
+      fileSystem.defineFile(scriptRoot + scriptName, "");
     }
+  }
+
+  @AfterEach
+  public void tearDown() throws Exception {
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }

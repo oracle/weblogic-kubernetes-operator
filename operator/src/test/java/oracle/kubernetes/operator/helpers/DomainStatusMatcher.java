@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,16 +12,12 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 class DomainStatusMatcher extends TypeSafeDiagnosingMatcher<Domain> {
-  private String expectedReason;
-  private String expectMessage;
+  private final String expectedReason;
+  private final String expectMessage;
 
   private DomainStatusMatcher(String expectedReason, String expectMessage) {
     this.expectedReason = expectedReason;
     this.expectMessage = expectMessage;
-  }
-
-  static DomainStatusMatcher hasNormalStatus() {
-    return new DomainStatusMatcher(null, null);
   }
 
   static DomainStatusMatcher hasStatus(String expectedReason, String expectMessage) {

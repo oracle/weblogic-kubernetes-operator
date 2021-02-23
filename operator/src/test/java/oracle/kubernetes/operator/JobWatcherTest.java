@@ -1,9 +1,11 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -19,9 +21,9 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.JobWatcher.NULL_LISTENER;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -37,8 +39,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
-  private static final String NS = "ns1";
-  private static final String VERSION = "123";
   private final V1Job cachedJob = createJob();
   private long clock;
 
@@ -46,13 +46,14 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   private final TerminalStep terminalStep = new TerminalStep();
 
   @Override
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
   }
 
   @Override
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     super.tearDown();
 
@@ -129,6 +130,28 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
+  public void whenJobConditionTypeFailedWithTrueStatus_reportFailed() {
+    markJobConditionFailed(cachedJob);
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(true));
+  }
+
+  @Test
+  public void whenJobConditionTypeFailedWithNoStatus_reportNotFailed() {
+    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed").status("")));
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(false));
+  }
+
+  @Test
+  public void whenJobHasStatusWithNoConditionsAndNotFailed_reportNotFailed() {
+    cachedJob.status(new V1JobStatus().conditions(Collections.emptyList()));
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(false));
+  }
+
+
+  @Test
   public void whenJobRunningAndReadyConditionIsTrue_reportComplete() {
     markJobCompleted(cachedJob);
 
@@ -151,16 +174,26 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return setFailedWithReason(job, null);
   }
 
+  private V1Job markJobConditionFailed(V1Job job) {
+    return setFailedConditionWithReason(job, null);
+  }
+
   private V1Job markJobTimedOut(V1Job job) {
     return markJobTimedOut(job, "DeadlineExceeded");
   }
 
+  @SuppressWarnings("SameParameterValue")
   private V1Job markJobTimedOut(V1Job job, String reason) {
     return setFailedWithReason(job, reason);
   }
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(createCondition("Failed").reason(reason)));
+  }
+
+  private V1Job setFailedConditionWithReason(V1Job job, String reason) {
+    return job.status(new V1JobStatus().conditions(
+            new ArrayList<>(Arrays.asList(new V1JobCondition().type("Failed").status("True").reason(reason)))));
   }
 
   @Test
@@ -233,17 +266,15 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  @Ignore
-  public void whenWaitForReadyAppliedToTimedOutJobWithBackoffLimitExceeded_terminateWithException() {
-    startWaitForReady(job -> markJobTimedOut(job, "BackoffLimitExceeded"));
+  public void whenWaitForReadyAppliedToFailedJob_performNextStep() {
+    startWaitForReady(this::markJobFailed);
 
-    assertThat(terminalStep.wasRun(), is(false));
-    testSupport.verifyCompletionThrowable(JobWatcher.DeadlineExceededException.class);
+    assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenWaitForReadyAppliedToFailedJob_performNextStep() {
-    startWaitForReady(this::markJobFailed);
+  public void whenWaitForReadyAppliedToJobWithFailedCondition_performNextStep() {
+    startWaitForReady(this::markJobConditionFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
   }

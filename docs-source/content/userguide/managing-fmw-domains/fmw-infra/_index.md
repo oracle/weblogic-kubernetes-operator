@@ -9,8 +9,8 @@ the prerequisite for upper stack products like Oracle SOA Suite."
 #### Contents
 
 * [Limitations](#limitations)
-* [Obtaining the FMW Infrastructure Docker image](#obtaining-the-fmw-infrastructure-docker-image)
-* [Creating an FMW Infrastructure Docker image](#creating-an-fmw-infrastructure-docker-image)
+* [Obtaining the FMW Infrastructure image](#obtaining-the-fmw-infrastructure-image)
+* [Creating an FMW Infrastructure image](#creating-an-fmw-infrastructure-image)
 * [Configuring access to your database](#configuring-access-to-your-database)
 * [Running the Repository Creation Utility to set up your database schema](#running-the-repository-creation-utility-to-set-up-your-database-schema)
 * [Create a Kubernetes Secret with the RCU credentials](#create-a-kubernetes-secret-with-the-rcu-credentials)
@@ -58,7 +58,7 @@ following limitations currently exist for FMW Infrastructure domains:
   before version 2.2.0.
 
 
-#### Obtaining the FMW Infrastructure Docker Image
+#### Obtaining the FMW Infrastructure image
 
 The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
@@ -92,14 +92,14 @@ Additional information about using this image is available in the
 [Oracle Container Registry](https://container-registry.oracle.com).
 
 
-#### Creating an FMW Infrastructure Docker image
+#### Creating an FMW Infrastructure image
 
-You can also create a Docker image containing the FMW Infrastructure binaries.
+You can also create an image containing the FMW Infrastructure binaries.
 We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure)
- in the Oracle GitHub account that demonstrates how to create a Docker image
+ in the Oracle GitHub account that demonstrates how to create an image
 to run the FMW Infrastructure. Please consult the [README](https://github.com/oracle/docker-images/blob/master/OracleFMWInfrastructure/dockerfiles/12.2.1.4/README.md)
 file associated with this sample for important prerequisite steps,
-such as building or pulling the Server JRE Docker image and downloading the Fusion Middleware
+such as building or pulling the Server JRE image and downloading the Fusion Middleware
 Infrastructure installer binary.
 
 After cloning the repository and downloading the installer from Oracle Technology Network
@@ -114,7 +114,7 @@ The image produced will be named `oracle/fmw-infrastructure:12.2.1.4`.
 
 You must also install the [required patch]({{< relref "/userguide/introduction/introduction/_index.md#prerequisites" >}})
 to use this image with the operator.  We provide a [sample](https://github.com/oracle/docker-images/tree/master/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s)
- that demonstrates how to create a Docker image with the necessary patch installed.
+ that demonstrates how to create an image with the necessary patch installed.
 
 After downloading the patch from My Oracle Support, you create the patched image
 by running the provided script:
@@ -128,10 +128,10 @@ This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
 
 All samples and instructions reference the pre-built image, `container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4`. Because these samples build an image based on WebLogic Server 12.2.1.3 and use the tag, `oracle/fmw-infrastructure:12213-update-k8s`, be sure to update your sample inputs to use this `image` value.
 
-These samples allow you to create a Docker image containing the FMW Infrastructure
+These samples allow you to create an image containing the FMW Infrastructure
 binaries and the necessary patch.  You can use this image to run the Repository Creation Utility
 and to run your domain using the "domain on a persistent volume" model. If you want to use
-the "domain in a Docker image" model, you will need to go one step further and add another
+the "domain in an image" model, you will need to go one step further and add another
 layer with your domain in it.  You can use WLST or WDT to create your domain.
 
 Before creating a domain, you will need to set up the necessary schemas in your database.
@@ -147,16 +147,15 @@ same existing requirements apply.
 For testing and development, you may choose to run your database inside Kubernetes or outside of Kubernetes.
 
 {{% notice warning %}}
-The Oracle Database Docker images are only supported for non-production use.
+The Oracle Database images are only supported for non-production use.
 For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
 
 ##### Running the database inside Kubernetes
 
-If you wish to run the database inside Kubernetes, you can use the official Docker image
-[from Docker Hub](https://hub.docker.com/_/oracle-database-enterprise-edition) or
-the [Oracle Container Registry](https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3).
+If you wish to run the database inside Kubernetes, you can use the official container image
+from the [Oracle Container Registry](https://container-registry.oracle.com/pls/apex/f?p=113:1:10859199204803::NO:1:P1_BUSINESS_AREA:3).
 Please note that there is a Slim Variant (`12.2.0.1-slim` tag) of EE that has reduced
 disk space (4GB) requirements and a quicker container startup.
 
@@ -306,7 +305,7 @@ machine on your network.
 
 #### Running the Repository Creation Utility to set up your database schema
 
-If you want to run RCU from a pod inside the Kubernetes cluster, you can use the Docker
+If you want to run RCU from a pod inside the Kubernetes cluster, you can use the container
 image that you built earlier as a "service" pod to run RCU.  To do this, start up a
 pod using that image as follows:
 
@@ -408,7 +407,7 @@ password will be the password you provided for regular schema users during RCU c
 
 #### Creating an FMW Infrastructure domain
 
-Now that you have your Docker images and you have created your RCU schemas, you are ready
+Now that you have your images and you have created your RCU schemas, you are ready
 to create your domain.  We provide a [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
 that demonstrates how to create an FMW Infrastructure domain.
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.json;
@@ -9,11 +9,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.ImmutableMap;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static com.google.common.collect.ImmutableMap.of;
+import static java.util.Map.of;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
@@ -21,7 +20,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class YamlDocGeneratorTest {
   private static final String K8S_VERSION = "1.13.5";
-  private SchemaGenerator schemaGenerator = new SchemaGenerator();
+  private final SchemaGenerator schemaGenerator = new SchemaGenerator();
   @SuppressWarnings("unused")
   @Description("An annotated field")
   private Double annotatedDouble;
@@ -62,8 +61,8 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() throws NoSuchFieldException {
-    Map<String, Object> schema = ImmutableMap.of("anInt", of("type", "integer"));
+  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() {
+    Map<String, Object> schema = of("anInt", of("type", "integer"));
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
 
@@ -212,11 +211,7 @@ public class YamlDocGeneratorTest {
   }
 
   private String tableDivider(int numColumns) {
-    StringBuilder sb = new StringBuilder("|");
-    for (int i = 0; i < numColumns; i++) {
-      sb.append(" --- |");
-    }
-    return sb.toString();
+    return "|" + " --- |".repeat(Math.max(0, numColumns));
   }
 
   @Test

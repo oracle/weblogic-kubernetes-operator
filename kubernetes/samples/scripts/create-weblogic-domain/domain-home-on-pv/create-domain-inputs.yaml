@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # The version of this inputs file.  Do not modify.
@@ -37,10 +37,10 @@ managedServerNameBase: managed-server
 # Port number for each managed server
 managedServerPort: 8001
 
-# WebLogic Server Docker image.
+# WebLogic Server image.
 # The operator requires WebLogic Server 12.2.1.3.0 with patch 29135930 applied or 12.2.1.4.0.
-# The WebLogic Docker image, `weblogic:12.2.1.3`, has all the necessary patches applied.
-# Refer to [WebLogic Docker images](../../../../../site/weblogic-docker-images.md) for details on how
+# The WebLogic Server image, `weblogic:12.2.1.3`, has all the necessary patches applied.
+# Refer to [WebLogic Server images](../../../../../site/weblogic-server-images.md) for details on how
 # to obtain or create the image.
 image: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 
@@ -48,7 +48,7 @@ image: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 # Legal values are "IfNotPresent", "Always", or "Never"
 imagePullPolicy: IfNotPresent
 
-# Name of the Kubernetes secret to access the Docker Store to pull the WebLogic Server Docker image
+# Name of the Kubernetes secret to access the container registry to pull the WebLogic Server image
 # The presence of the secret will be validated when this parameter is enabled.
 #imagePullSecretName:
 

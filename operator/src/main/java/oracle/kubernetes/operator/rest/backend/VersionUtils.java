@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.backend;
@@ -11,7 +11,7 @@ public class VersionUtils {
 
   private static final String LATEST = "latest";
   private static final String V1 = "v1";
-  private static final List<String> versions = new ArrayList<String>();
+  private static final List<String> versions = new ArrayList<>();
 
   static {
     getVersions().add(V1);
@@ -56,7 +56,7 @@ public class VersionUtils {
    *
    * @param version - the version's name (can be aliased). The caller is responsible for calling
    *     isVersion first and should not call this method if the version does not exist.
-   * @return the version's lifecyle (either 'active' or 'deprecated')
+   * @return the version's lifecycle (either 'active' or 'deprecated')
    */
   public static String getLifecycle(String version) {
     return (isLatest(getVersion(version))) ? "active" : "deprecated";

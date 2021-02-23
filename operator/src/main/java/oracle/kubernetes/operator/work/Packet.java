@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -13,8 +13,8 @@ import java.util.concurrent.ConcurrentMap;
 /** Context of a single processing flow. Acts as a map and as a registry of components. */
 public class Packet extends AbstractMap<String, Object> implements ComponentRegistry, ComponentEx {
   private final ConcurrentMap<String, Component> components =
-      new ConcurrentHashMap<String, Component>();
-  private final ConcurrentMap<String, Object> delegate = new ConcurrentHashMap<String, Object>();
+      new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Object> delegate = new ConcurrentHashMap<>();
 
   public Packet() {
   }
@@ -25,11 +25,11 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   }
 
   /**
-   * Clones a packet so that the new packet starts with identical values and components.
+   * Copies a packet so that the new packet starts with identical values and components.
    *
    * @return Cloned packet
    */
-  public Packet clone() {
+  public Packet copy() {
     return new Packet(this);
   }
 

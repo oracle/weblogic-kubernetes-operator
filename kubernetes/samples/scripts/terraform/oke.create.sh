@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 function prop {
@@ -11,13 +11,12 @@ function generateTFVarFile {
     rm -f ${tfVarsFiletfVarsFile}
     cp ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
     chmod 777 ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
-
     sed -i -e "s:@TENANCYOCID@:${tenancy_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@USEROCID@:${user_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@COMPARTMENTOCID@:${compartment_ocid}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@COMPARTMENTNAME@:${compartment_name}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@OKECLUSTERNAME@:${okeclustername}:g" ${tfVarsFiletfVarsFile}
-    sed -i -e "s:@OCIAPIPUBKEYFINGERPRINT@:"${ociapi_pubkey_fingerprint}":g" ${tfVarsFiletfVarsFile}
+    sed -i -e "s/@OCIAPIPUBKEYFINGERPRINT@/"${ociapi_pubkey_fingerprint}"/g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@OCIPRIVATEKEYPATH@:${ocipk_path}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@VCNCIDRPREFIX@:${vcn_cidr_prefix}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@VCNCIDR@:${vcn_cidr_prefix}.0.0/16:g" ${tfVarsFiletfVarsFile}
@@ -27,7 +26,6 @@ function generateTFVarFile {
     sed -i -e "s:@NODEPOOLSSHPUBKEY@:${nodepool_ssh_pubkey}:g" ${tfVarsFiletfVarsFile}
     sed -i -e "s:@REGION@:${region}:g" ${tfVarsFiletfVarsFile}
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
-
 }
 
 function setupTerraform () {
@@ -37,14 +35,13 @@ function setupTerraform () {
       curl -O https://releases.hashicorp.com/terraform/0.11.10/terraform_0.11.10_darwin_amd64.zip
       unzip terraform_0.11.10_darwin_amd64.zip
     elif [[ "${OSTYPE}" == "linux"* ]]; then
-       curl -O https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
-       unzip terraform_0.11.8_linux_amd64.zip
+       curl -LO --retry 3 https://releases.hashicorp.com/terraform/0.11.8/terraform_0.11.8_linux_amd64.zip
+       unzip -o terraform_0.11.8_linux_amd64.zip -d ${terraformDir}
     else
        echo "Unsupported OS"
     fi
-    chmod 777 ${terraformDir}/terraform
+    chmod +x ${terraformDir}/terraform
     export PATH=${terraformDir}:${PATH}
-
 }
 
 function deleteOlderVersionTerraformOCIProvider() {
@@ -66,6 +63,58 @@ function createCluster () {
     terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
     terraform plan -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
     terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+}
+
+function createRoleBindings () {
+    kubectl -n kube-system create serviceaccount $okeclustername-sa
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
+    TOKENNAME=`kubectl -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
+    TOKEN=`kubectl -n kube-system get secret $TOKENNAME -o jsonpath='{.data.token}'| base64 --decode`
+    kubectl config set-credentials $okeclustername-sa --token=$TOKEN
+    kubectl config set-context --current --user=$okeclustername-sa
+}
+
+function checkClusterRunning () {
+
+    echo 'Confirm we have kubectl working...'
+    myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
+    status="NotReady"
+    max=50
+    count=1
+
+    privateIP=${vcn_cidr_prefix//./\\.}\\.10\\.
+    myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+    NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+    echo $myline
+    status=$myline
+    max=100
+    count=1
+    while [ "$myline" != "Ready" -a $count -le $max ] ; do
+      echo "echo '[ERROR] Some Nodes in the Cluster are not in the Ready Status , sleep 10s more ..."
+      sleep 10
+      myline=`kubectl get nodes -o wide | grep "${privateIP}" | awk '{print $2}'`
+      NODE_IP=`kubectl get nodes -o wide| grep "${privateIP}" | awk '{print $7}'`
+      [[ ${myline} -eq "Ready"  ]]
+      echo "Status is ${myline} Iter [$count/$max]"
+      count=`expr $count + 1`
+    done
+
+    NODES=`kubectl get nodes -o wide | grep "${privateIP}" | wc -l`
+    if [ "$NODES" == "1" ]; then
+      echo '- looks good'
+    else
+      echo '- could not talk to cluster, aborting'
+      cd ${terraformVarDir}
+      terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+      exit 1
+    fi
+
+    if [ $count -gt $max ] ; then
+       echo "[ERROR] Unable to start the nodes in oke cluster after 200s ";
+       cd ${terraformVarDir}
+       terraform destroy -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
+       exit 1
+    fi
 }
 
 #MAIN
@@ -106,4 +155,8 @@ chmod 600 ${ocipk_path}
 
 # run terraform init,plan,apply to create OKE cluster based on the provided tfvar file ${clusterTFVarsFile).tfvar
 createCluster
+#check status of OKE cluster nodes, destroy if can not access them
 export KUBECONFIG=${terraformVarDir}/${okeclustername}_kubeconfig
+checkClusterRunning
+createRoleBindings
+echo "$okeclustername is up and running"

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,24 +11,19 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
+import org.junit.jupiter.api.AfterEach;
 
 public class ServiceHelperTestBase {
   static final String DOMAIN_NAME = "domain1";
   static final String NS = "namespace";
   static final String UID = "uid1";
   static final String KUBERNETES_UID = "12345";
-  List<Memento> mementos = new ArrayList<>();
-  DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
+  final List<Memento> mementos = new ArrayList<>();
+  final DomainPresenceInfo domainPresenceInfo = createPresenceInfo();
 
-  /**
-   * Tear down test.
-   */
-  @After
-  public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+  @AfterEach
+  public void tearDown() throws Exception {
+    mementos.forEach(Memento::revert);
   }
 
   private DomainPresenceInfo createPresenceInfo() {

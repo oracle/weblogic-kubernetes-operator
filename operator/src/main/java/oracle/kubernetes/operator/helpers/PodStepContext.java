@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -36,9 +37,10 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -54,13 +56,23 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.Model;
+import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
+import static oracle.kubernetes.operator.logging.MessageKeys.MII_DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -73,6 +85,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String READINESS_PATH = "/weblogic/ready";
 
   final WlsServerConfig scan;
+  @Nonnull
+  private final Packet packet;
   private final WlsDomainConfig domainTopology;
   private final Step conflictStep;
   private V1Pod podModel;
@@ -84,10 +98,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     super(packet.getSpi(DomainPresenceInfo.class));
     this.conflictStep = conflictStep;
     domainTopology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapKeys.SECRETS_MD_5);
-    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapKeys.DOMAINZIP_HASH);
-    domainRestartVersion = (String)packet.get(IntrospectorConfigMapKeys.DOMAIN_RESTART_VERSION);
+    miiModelSecretsHash = (String)packet.get(IntrospectorConfigMapConstants.SECRETS_MD_5);
+    miiDomainZipHash = (String)packet.get(IntrospectorConfigMapConstants.DOMAINZIP_HASH);
+    domainRestartVersion = (String)packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
+    this.packet = packet;
   }
 
   private static boolean isPatchableItem(Map.Entry<String, String> entry) {
@@ -116,6 +131,22 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   String getNamespace() {
     return info.getNamespace();
+  }
+
+  private int getNumIntrospectorConfigMaps() {
+    return Optional.ofNullable(getSpecifiedNumConfigMaps()).orElse(1);
+  }
+
+  private Integer getSpecifiedNumConfigMaps() {
+    return Optional.ofNullable(packet.<String>getValue(NUM_CONFIG_MAPS)).map(this::parseOrNull).orElse(null);
+  }
+
+  private Integer parseOrNull(String count) {
+    try {
+      return Integer.parseInt(count);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   // ------------------------ data methods ----------------------------
@@ -151,7 +182,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   /**
-   * Check if the server is listening on a secure port. NOTE: If the targetted server is a managed
+   * Check if the server is listening on a secure port. NOTE: If the targeted server is a managed
    * server, this method is overridden to check if the managed server has a secure listen port rather
    * than the admin server. See PodHelper.ManagedPodStepContext
    *
@@ -200,6 +231,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
+
       List<V1ContainerPort> ports = new ArrayList<>();
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
@@ -361,16 +393,56 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
+  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
+    return createProgressingStep(patchPod(currentPod, updatedPod, next, addRestartRequiredLabel));
+  }
+
   protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
-
     return new CallBuilder()
-            .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
+  }
+
+  // Method for online update
+  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
+    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+    Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getLabels)
+        .orElse(null);
+
+    Map<String, String> updatedAnnotations = Optional.ofNullable(updatedPod)
+        .map(V1Pod::getMetadata)
+        .map(V1ObjectMeta::getAnnotations)
+        .orElse(null);
+    if (updatedLabels != null) {
+      String introspectVersion = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getSpec)
+          .map(DomainSpec::getIntrospectVersion)
+          .orElse(null);
+      if (introspectVersion != null) {
+        updatedLabels.put(INTROSPECTION_STATE_LABEL, introspectVersion);
+        if (addRestartRequiredLabel) {
+          updatedLabels.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
+        }
+      }
+
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/labels/", getLabels(currentPod), updatedLabels);
+    }
+    if (updatedAnnotations != null) {
+      KubernetesUtils.addPatches(
+          patchBuilder, "/metadata/annotations/", getAnnotations(currentPod),
+          updatedAnnotations);
+    }
+    return new CallBuilder()
+        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
@@ -425,8 +497,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
+
     boolean useCurrent =
         AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.fine(
           MessageKeys.POD_DUMP,
@@ -614,7 +688,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private List<V1Volume> getVolumes(String domainUid) {
-    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid);
+    List<V1Volume> volumes = PodDefaults.getStandardVolumes(domainUid, getNumIntrospectorConfigMaps());
     volumes.addAll(getServerSpec().getAdditionalVolumes());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       volumes.add(createRuntimeEncryptionSecretVolume());
@@ -657,7 +731,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
-    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid());
+    List<V1VolumeMount> mounts = PodDefaults.getStandardVolumeMounts(getDomainUid(), getNumIntrospectorConfigMaps());
     mounts.addAll(getServerSpec().getAdditionalVolumeMounts());
     if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
       mounts.add(createRuntimeEncryptionSecretVolumeMount());
@@ -859,17 +933,51 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
-
       // reset introspect failure job count - if any
 
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
-          .ifPresent(a -> a.resetIntrospectJobFailureCount());
+          .ifPresent(DomainStatus::resetIntrospectJobFailureCount);
+
+      String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
+          .orElse(null);
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
+        if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
+          Map<String, String> labels = Optional.of(currentPod)
+              .map(V1Pod::getMetadata)
+              .map(V1ObjectMeta::getLabels)
+              .orElse(new HashMap<>());
+          String serverName = "";
+          if (labels.containsKey(LabelConstants.SERVERNAME_LABEL)) {
+            serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
+          }
+          LOGGER.fine(MII_DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid(), serverName);
+          logPodExists();
+          //Create dummy meta data for patching
+          V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
+          V1ObjectMeta updatedMetaData = new V1ObjectMeta();
+
+          updatedMetaData.putAnnotationsItem("weblogic.sha256",
+               updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
+          if (miiDomainZipHash != null) {
+            updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH,
+                formatHashLabel(miiDomainZipHash));
+          }
+          updatedPod.setMetadata(updatedMetaData);
+          boolean addRestartRequiredLabel = false;
+          // if the introspector job tells it needs restart, update the condition with the needed attributes
+          if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
+            setOnlineUpdateNeedRestartCondition(packet);
+            addRestartRequiredLabel = true;
+          } else {
+            setOnlineUpdateSuccessCondition();
+          }
+          return doNext(patchRunningPod(currentPod, updatedPod, getNext(), addRestartRequiredLabel), packet);
+        }
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
@@ -882,6 +990,63 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(packet);
       }
     }
+
+    private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
+      boolean result = false;
+      if (ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
+        result = true;
+      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
+        result = MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
+            Optional.ofNullable(info)
+             .map(DomainPresenceInfo::getDomain)
+             .map(Domain::getSpec)
+             .map(DomainSpec::getConfiguration)
+             .map(Configuration::getModel)
+             .map(Model::getOnlineUpdate)
+             .map(OnlineUpdate::getOnNonDynamicChanges)
+             .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
+      }
+      return result;
+    }
+
+    private void setOnlineUpdateNeedRestartCondition(Packet packet) {
+      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
+          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+          .orElse("");
+      String message = String.format("%s\n%s",
+          LOGGER.formatMessage(MessageKeys.MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED), dynamicUpdateRollBackFile);
+      updateDomainConditions(message, DomainConditionType.ConfigChangesPendingRestart);
+    }
+
+    private void setOnlineUpdateSuccessCondition() {
+    //      updateDomainConditions("Online update successful. No restart necessary",
+    //          DomainConditionType.OnlineUpdateComplete);
+    }
+
+    private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
+      DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
+      String introspectVersion = Optional.ofNullable(info)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getSpec)
+            .map(DomainSpec::getIntrospectVersion)
+            .orElse("");
+
+      onlineUpdateCondition
+          .withMessage(message)
+          .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
+          .withStatus("True");
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.ConfigChangesPendingRestart));
+
+      Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .ifPresent(o -> o.addCondition(onlineUpdateCondition));
+    }
+
   }
 
   private abstract class BaseResponseStep extends ResponseStep<V1Pod> {
@@ -895,7 +1060,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
         return onFailure(getConflictStep(), packet, callResponse);

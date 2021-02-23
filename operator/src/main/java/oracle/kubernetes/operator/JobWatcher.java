@@ -1,8 +1,9 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -29,7 +31,6 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
@@ -64,10 +65,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     completeCallbackRegistrations.remove(jobName, callback);
   }
 
-  private static String getNamespace(Domain domain) {
-    return domain.getMetadata().getNamespace();
-  }
-  
   @Override
   public String getNamespace() {
     return namespace;
@@ -137,15 +134,37 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return false;
     }
 
-    V1JobStatus status = job.getStatus();
-    if (status != null) {
-      if (status.getFailed() != null && status.getFailed() > 0) {
-        LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
-        return true;
-      }
+    if (isStatusFailed(job) || isConditionFailed(job)) {
+      LOGGER.severe(MessageKeys.JOB_IS_FAILED, job.getMetadata().getName());
+      return true;
     }
     return false;
   }
+
+  private static boolean isStatusFailed(V1Job job) {
+    return Optional.ofNullable(job.getStatus()).map(V1JobStatus::getFailed).map(failed -> (failed > 0)).orElse(false);
+  }
+
+  private static boolean isConditionFailed(V1Job job) {
+    return getJobConditions(job).stream().anyMatch(JobWatcher::isJobConditionFailed);
+  }
+
+  private static List<V1JobCondition> getJobConditions(@Nonnull V1Job job) {
+    return Optional.ofNullable(job.getStatus()).map(V1JobStatus::getConditions).orElse(Collections.emptyList());
+  }
+
+  private static boolean isJobConditionFailed(V1JobCondition jobCondition) {
+    return getType(jobCondition).equals("Failed") && getStatus(jobCondition).equals("True");
+  }
+
+  private static String getType(V1JobCondition jobCondition) {
+    return Optional.ofNullable(jobCondition).map(V1JobCondition::getType).orElse("");
+  }
+
+  private static String getStatus(V1JobCondition jobCondition) {
+    return Optional.ofNullable(jobCondition).map(V1JobCondition::getStatus).orElse("");
+  }
+
 
   static String getFailedReason(V1Job job) {
     V1JobStatus status = job.getStatus();

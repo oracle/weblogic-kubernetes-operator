@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.backend;
@@ -20,7 +20,7 @@ public interface RestBackend {
    *
    * @return a Set of domain UIDs.
    */
-  public Set<String> getDomainUids();
+  Set<String> getDomainUids();
 
   /**
    * Determines whether or not a WebLogic domain has been registered with the WebLogic operator.
@@ -28,7 +28,7 @@ public interface RestBackend {
    * @param domainUid - the unique identifier assigned to a WebLogic domain.
    * @return whether or not this domainUID has been registered with the WebLogic operator.
    */
-  public boolean isDomainUid(String domainUid);
+  boolean isDomainUid(String domainUid);
 
   /**
    * Applies the specified command to the specified domain.
@@ -45,7 +45,7 @@ public interface RestBackend {
    *     calling this method if the domain has not been registered.
    * @return a Set of Weblogic cluster names.
    */
-  public Set<String> getClusters(String domainUid);
+  Set<String> getClusters(String domainUid);
 
   /**
    * Determines whether or not a cluster exists in a WebLogic domain.
@@ -56,7 +56,7 @@ public interface RestBackend {
    * @param cluster - the name of the cluster in the WebLogic domain.
    * @return whether or not a cluster with this name exists in the WebLogic domain.
    */
-  public boolean isCluster(String domainUid, String cluster);
+  boolean isCluster(String domainUid, String cluster);
 
   /**
    * Scales the number of managed servers in a WebLogic cluster. This method configures the desired
@@ -71,5 +71,5 @@ public interface RestBackend {
    *     calling isCluster first and not calling this method if the cluster does not exist.
    * @param managedServerCount - the desired number of WebLogic managed servers.
    */
-  public void scaleCluster(String domainUid, String cluster, int managedServerCount);
+  void scaleCluster(String domainUid, String cluster, int managedServerCount);
 }

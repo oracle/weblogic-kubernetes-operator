@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
@@ -43,7 +43,7 @@ public class DomainsResource extends BaseResource {
   @Produces(MediaType.APPLICATION_JSON)
   public CollectionModel<DomainModel> get() {
     LOGGER.entering(href());
-    CollectionModel<DomainModel> collection = new CollectionModel<DomainModel>();
+    CollectionModel<DomainModel> collection = new CollectionModel<>();
     for (String domainUid : getBackend().getDomainUids()) {
       DomainModel item = new DomainModel(domainUid);
       item.addSelfLinks(href(item.getDomainUid()));

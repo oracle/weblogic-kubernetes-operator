@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -14,7 +14,7 @@ public class Container implements ComponentRegistry, ComponentEx {
    * #getSpi(Class)}.
    */
   public static final Container NONE = new NoneContainer();
-  private final Map<String, Component> components = new ConcurrentHashMap<String, Component>();
+  private final Map<String, Component> components = new ConcurrentHashMap<>();
 
   @Override
   public <S> S getSpi(Class<S> spiType) {

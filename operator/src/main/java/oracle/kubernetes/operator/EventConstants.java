@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -14,6 +14,7 @@ public interface EventConstants {
   String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
   String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetrying";
   String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
+  String DOMAIN_VALIDATION_ERROR_EVENT = "DomainValidationError";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
@@ -31,4 +32,17 @@ public interface EventConstants {
       = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
       = "Aborting the processing of domain resource %s permanently due to: %s";
+  String DOMAIN_VALIDATION_ERROR_PATTERN
+      = "Validation error in domain resource %s: %s";
+  String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
+  String NAMESPACE_WATCHING_STARTED_PATTERN = "Started watching namespace %s";
+  String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
+  String NAMESPACE_WATCHING_STOPPED_PATTERN = "Stopped watching namespace %s";
+  String EVENT_KIND_POD = "Pod";
+  String EVENT_KIND_DOMAIN = "Domain";
+  String EVENT_KIND_NAMESPACE = "Namespace";
+  String START_MANAGING_NAMESPACE_EVENT = "StartManagingNamespace";
+  String START_MANAGING_NAMESPACE_PATTERN = "Start managing namespace %s";
+  String STOP_MANAGING_NAMESPACE_EVENT = "StopManagingNamespace";
+  String STOP_MANAGING_NAMESPACE_PATTERN = "Stop managing namespace %s";
 }

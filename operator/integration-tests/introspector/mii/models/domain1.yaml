@@ -1,0 +1,108 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+topology:
+    Name: base_domain
+    AdminServerName: 'admin-server'
+    ProductionModeEnabled: true
+    Cluster:
+        mycluster:
+            DynamicServers:
+                ServerNamePrefix: 'managed-server'
+                MaxDynamicClusterSize: 2
+                CalculatedListenPorts: false
+                ServerTemplate: 'mycluster-template'
+                DynamicClusterSize: 2
+    Server:
+        'admin-server':
+            AdministrationPortEnabled: true
+            AdministrationPort: 7099
+            MaxMessageSize: 999999
+            NetworkAccessPoint:
+                T3Channel1:
+                    PublicPort: 22222
+                    ListenPort: 30012
+                    ListenAddress: '@@PROP:T3CHANNEL1_LISTEN_ADDR@@'
+                    PublicAddress: '@@PROP:T3CHANNEL1_PUBLIC_LISTEN_ADDR@@'
+                T3Channel2:
+                    PublicPort: 22222
+                    ListenPort: 30013
+                    ListenAddress: '@@PROP:T3CHANNEL2_LISTEN_ADDR@@'
+                    PublicAddress: '@@PROP:T3CHANNEL2_PUBLIC_LISTEN_ADDR@@'
+                T3Channel3:
+                    ListenPort: 30014
+            SSL:
+                Enabled: true
+        standalone1:
+            ListenPort: 6123
+            MaxMessageSize: 7777777
+        standalone2:
+            ListenPort: 6124
+    ServerTemplate:
+        'mycluster-template':
+            ListenPort: 8001
+            Cluster: mycluster
+            SSL:
+                ListenPort: 8100
+        'mycluster-template-dummy1':
+            ListenPort: 8001
+            SSL:
+                ListenPort: 8100
+        'mycluster-template-dummy2':
+            ListenPort: 8001
+            SSL:
+                ListenPort: 8100
+resources:
+    JDBCSystemResource:
+        testDS:
+            Target: 'admin-server'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    CapacityIncrement: 1
+                    TestConnectionsOnReserve: true
+                    MinCapacity: 0
+                    TestTableName: SQL SELECT 1 FROM DUAL
+                    MaxCapacity: 10
+                JDBCDataSourceParams:
+                    JNDIName: testDS
+                JDBCDriverParams:
+                    URL: '@@PROP:TESTDS_URL@@'
+                    PasswordEncrypted: '@@SECRET:my-secret:encryptd@@'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: '@@SECRET:my-secret:key1@@'
+        mysqlDS:
+            Target: 'admin-server'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    CapacityIncrement: 1
+                    TestConnectionsOnReserve: true
+                    MinCapacity: 0
+                    TestTableName: SQL SELECT 1
+                    MaxCapacity: 10
+                JDBCDataSourceParams:
+                    JNDIName: mysqlDS
+                JDBCDriverParams:
+                    URL: 'jdbc:mysql://invalid-host:3306/invalid-db-name'
+                    PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-mysql-secret:root-password@@'
+                    DriverName: com.mysql.jdbc.Driver
+                    Properties:
+                        user:
+                            Value: '@@PROP:MYSQL-USER@@'
+    FileStore:
+        AdminServerCustomFileStore:
+            Directory: 'stores/AdminServerCustomFileStore/'
+            Target: 'admin-server'
+    JMSServer:
+        AdminServerJMSServer:
+            PersistentStore: AdminServerCustomFileStore
+            Target: 'admin-server'
+    WLDFSystemResource:
+        myWLDF:

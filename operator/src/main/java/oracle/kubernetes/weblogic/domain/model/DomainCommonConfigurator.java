@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -313,6 +314,25 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withMIIOnlineUpate() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateOnly);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateAndRoll);
+    return this;
+  }
+
+
+  @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {
     getOrCreateOpss().withWalletPasswordSecret(secret);
     return this;
@@ -563,11 +583,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       return this;
     }
 
-    @Override
-    public ServerConfigurator withToleration(V1Toleration toleration) {
-      getDomainSpec().addToleration(toleration);
-      return this;
-    }
   }
 
   class ClusterConfiguratorImpl implements ClusterConfigurator {
@@ -762,12 +777,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withPriorityClassName(String priorityClassName) {
       getDomainSpec().setPriorityClassName(priorityClassName);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withToleration(V1Toleration toleration) {
-      getDomainSpec().addToleration(toleration);
       return this;
     }
 

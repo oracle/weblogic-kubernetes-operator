@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls;
@@ -25,9 +25,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,13 +44,13 @@ public class AsyncRequestStepTest {
   private static final int MAX_RETRY_COUNT = 2;
   private static final String CONTINUE = "continue-value";
 
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private CallParams callParams = new CallParamsStub();
-  private RequestParams requestParams
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final CallParams callParams = new CallParamsStub();
+  private final RequestParams requestParams
       = new RequestParams("testcall", "junit", "testName", "body", callParams);
-  private CallFactoryStub callFactory = new CallFactoryStub();
-  private TestStep nextStep = new TestStep();
-  private ClientPool helper = ClientPool.getInstance();
+  private final CallFactoryStub callFactory = new CallFactoryStub();
+  private final TestStep nextStep = new TestStep();
+  private final ClientPool helper = ClientPool.getInstance();
   private final AsyncRequestStep<DomainList> asyncRequestStep =
       new AsyncRequestStep<>(
           nextStep,
@@ -62,7 +62,7 @@ public class AsyncRequestStepTest {
           null,
           null,
           null);
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
   private final DomainList smallList = generateDomainList(5);
   private final DomainList largeListPartOne
       = generateDomainList(50).withMetadata(new V1ListMeta()._continue(CONTINUE));
@@ -75,11 +75,7 @@ public class AsyncRequestStepTest {
     return new DomainList().withItems(domains);
   }
 
-  /**
-   * Setup test.
-   * @throws NoSuchFieldException if StaticStubSupport fails to install
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(ClientFactoryStub.install());
@@ -87,10 +83,7 @@ public class AsyncRequestStepTest {
     testSupport.runSteps(asyncRequestStep);
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
@@ -170,6 +163,7 @@ public class AsyncRequestStepTest {
     assertThat(nextStep.result, equalTo(smallList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void sendMultipleFailedCallback(int statusCode, int maxRetries) {
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       testSupport.schedule(
@@ -191,6 +185,7 @@ public class AsyncRequestStepTest {
     assertThat(nextStep.result, equalTo(smallList));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private void sendMultipleFailedCallbackWithSetTime(int statusCode, int maxRetries) {
     for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
       testSupport.schedule(
@@ -268,17 +263,17 @@ public class AsyncRequestStepTest {
   }
 
   static class CallParamsStub implements CallParams {
-    private Integer limit = 50;
-    private Integer timeoutSeconds = 30;
+    private static final Integer LIMIT = 50;
+    private static final Integer TIMEOUT_SECONDS = 30;
 
     @Override
     public Integer getLimit() {
-      return limit;
+      return LIMIT;
     }
 
     @Override
     public Integer getTimeoutSeconds() {
-      return timeoutSeconds;
+      return TIMEOUT_SECONDS;
     }
 
     @Override

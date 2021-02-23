@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -30,10 +30,12 @@ public class HttpAsyncRequestStep extends Step {
   }
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static FutureFactory DEFAULT_FACTORY = HttpAsyncRequestStep::createFuture;
 
   private static final long DEFAULT_TIMEOUT_SECONDS = 5;
 
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
@@ -84,7 +86,7 @@ public class HttpAsyncRequestStep extends Step {
   }
 
   class AsyncProcessing {
-    private Packet packet;
+    private final Packet packet;
     private CompletableFuture<HttpResponse<String>> future;
 
     AsyncProcessing(Packet packet) {

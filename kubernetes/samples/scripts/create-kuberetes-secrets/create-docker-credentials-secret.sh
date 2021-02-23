@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a Kubernetes secret for Docker credentials for use with the WLS Operator on AKS.
+#  This sample script creates a Kubernetes secret for container registry credentials for use with the WLS Operator on AKS.
 #
 #  The following pre-requisites must be handled prior to running this script:
 #    * The kubernetes namespace must already be created

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -9,7 +9,8 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
-import org.junit.Test;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -71,6 +72,19 @@ public class DomainPresenceInfoTest {
     info.setServerPod("myserver", pod);
 
     assertThat(info.getServerPod("myserver"), sameInstance(pod));
+  }
+
+  @Test
+  public void whenNoneDefined_getPodDisruptionBudgetReturnsNull() {
+    assertThat(info.getPodDisruptionBudget("cluster"), nullValue());
+  }
+
+  @Test
+  public void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
+    V1beta1PodDisruptionBudget pdb = new V1beta1PodDisruptionBudget();
+    info.setPodDisruptionBudget("cluster", pdb);
+
+    assertThat(info.getPodDisruptionBudget("cluster"), sameInstance(pdb));
   }
 
   @Test

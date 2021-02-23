@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
@@ -33,9 +32,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -62,23 +61,19 @@ public class DomainStatusUpdaterTest {
   private static final String NAME = UID;
   private final TerminalStep endStep = new TerminalStep();
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private List<Memento> mementos = new ArrayList<>();
-  private Domain domain = DomainProcessorTestSetup.createTestDomain();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private RandomStringGenerator generator = new RandomStringGenerator();
+  private final RandomStringGenerator generator = new RandomStringGenerator();
   private final String message = generator.getUniqueString();
-  private String reason = generator.getUniqueString();
-  private RuntimeException failure = new RuntimeException(message);
-  private String validationWarning = generator.getUniqueString();
+  private final String reason = generator.getUniqueString();
+  private final RuntimeException failure = new RuntimeException(message);
+  private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
 
-  /**
-   * Setup test environment.
-   * @throws NoSuchFieldException if test support fails to install.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger()
         .ignoringLoggedExceptions(ApiException.class));
@@ -99,15 +94,9 @@ public class DomainStatusUpdaterTest {
     return new V1ObjectMeta().namespace(NS).name(serverName).labels(ImmutableMap.of());
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -742,10 +731,6 @@ public class DomainStatusUpdaterTest {
 
   private ServerConfigurator configureServer(String serverName) {
     return configureDomain().configureServer(serverName);
-  }
-
-  private ClusterConfigurator configureCluster(String clusterName) {
-    return configureDomain().configureCluster(clusterName);
   }
 
   private void generateServiceOnlyStartupInfos(String... serverNames) {

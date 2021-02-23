@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -21,9 +21,8 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -80,11 +79,6 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   @Override
   ServerConfigurator configureServer() {
     return getConfigurator().configureAdminServer();
-  }
-
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
-    return configurator.configureAdminServer();
   }
 
   @Override
@@ -346,7 +340,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
 
     assertThat(
-        getCreatedPod().getSpec().getVolumes(),
+        Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
         allOf(
             hasVolume("volume1", "/source-ADMIN_SERVER"),
             hasVolume("volume2", "/source-domain1")));
@@ -357,10 +351,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     configureAdminServer()
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
-    assertThat(
-        getCreatedPodSpecContainer().getVolumeMounts(),
-        allOf(
-            hasVolumeMount("volume1", END_MOUNT_PATH_1)));
+    assertThat(getCreatedPodSpecContainer().getVolumeMounts(), hasVolumeMount("volume1", END_MOUNT_PATH_1));
   }
 
   @Test
@@ -377,7 +368,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(false));
     assertThat(logRecords, containsInfo(getCreatedMessageKey()));
-    assertThat(getCreatedPod().getSpec().getContainers().get(0).getVolumeMounts(),
+    assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getContainers().get(0).getVolumeMounts(),
         hasVolumeMount("volume1", END_VOLUME_MOUNT_PATH_1));
   }
 
@@ -734,8 +725,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
   }
 
-  @Override
-  V1Pod createTestPodModel() {
+  private V1Pod createTestPodModel() {
     return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 

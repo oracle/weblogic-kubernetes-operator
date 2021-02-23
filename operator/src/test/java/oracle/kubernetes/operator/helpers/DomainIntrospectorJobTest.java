@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -35,9 +35,9 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -60,6 +60,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -100,11 +101,7 @@ public class DomainIntrospectorJobTest {
     return LegalNames.toJobIntrospectorName(UID);
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -132,10 +129,7 @@ public class DomainIntrospectorJobTest {
     };
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
     for (Memento memento : mementos) {
       memento.revert();
@@ -350,7 +344,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenIntrospectorJobNotNeeded_validatesDomainTopology() throws JsonProcessingException {
+  public void whenIntrospectorJobNotNeeded_doesNotValidatesDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
     IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);
@@ -362,7 +356,7 @@ public class DomainIntrospectorJobTest {
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(logRecords, containsWarning(getNoClusterInDomainMessageKey()));
+    assertThat(logRecords, empty());
   }
 
   @Test

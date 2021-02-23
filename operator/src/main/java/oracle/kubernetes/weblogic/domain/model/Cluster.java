@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -42,7 +42,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
       + "will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are "
       + "not already started. If cluster members are started "
       + "because of their related entries under `managedServers`, then this cluster may have more cluster members "
-      + "running than its `replicas` count. Defaults to 0.")
+      + "running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.")
   @Range(minimum = 0)
   private Integer replicas;
 

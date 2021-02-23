@@ -1,0 +1,35 @@
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: weblogic-command-job
+  namespace: default
+spec:
+  template:
+    metadata:
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: 60
+      containers:
+        - name: domain-job
+          image: container-registry.oracle.com/middleware/weblogic:12.2.1.4-200316
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+          - mountPath: /scratch
+            name: scratch
+          - mountPath: /scripts
+            name: weblogic-command-job-configmap-volume
+          command: ["/bin/bash"]
+          args: ["-c", "COMMAND"]
+      imagePullSecrets:
+        - name: docker-store
+      volumes:
+        - name: scratch
+          hostPath:
+            path: PV_ROOT
+        - name: weblogic-command-job-configmap-volume
+          configMap:
+            name: weblogic-command-job-configmap
+            defaultMode: 0777

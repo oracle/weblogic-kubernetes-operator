@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -16,9 +16,9 @@ import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.ClientFactoryStub;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
 import static oracle.kubernetes.operator.helpers.AuthorizationProxy.Operation.create;
@@ -50,6 +50,7 @@ public class HealthCheckHelperTest {
 
   private static final String NS1 = "ns1";
   private static final String NS2 = "ns2";
+  private static final String OPERATOR_NAMESPACE = "op1";
   private static final List<String> TARGET_NAMESPACES = Arrays.asList(NS1, NS2);
   private static final List<String> CRUD_RESOURCES =
       Arrays.asList(
@@ -98,7 +99,7 @@ public class HealthCheckHelperTest {
   private final CallTestSupport testSupport = new CallTestSupport();
   private final AccessChecks accessChecks = new AccessChecks();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TuningParametersStub.install());
     mementos.add(TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, LOG_KEYS));
@@ -106,7 +107,7 @@ public class HealthCheckHelperTest {
     mementos.add(testSupport.installSynchronousCallDispatcher());
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -116,18 +117,33 @@ public class HealthCheckHelperTest {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
   }
 
   @Test
-  public void whenRulesReviewSupportedAndNoNamespaceAccess_logWarning() {
+  public void whenRulesReviewSupportedAndNoDomainNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
-      HealthCheckHelper.getAccessAuthorizations(ns);
+      V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
+      HealthCheckHelper.verifyAccess(status, ns, true);
     }
+
+    assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
+  }
+
+  // HERE
+
+  @Test
+  public void whenRulesReviewSupportedAndNoOperatorNamespaceAccess_logWarning() {
+    accessChecks.setMayAccessNamespace(false);
+    expectSelfSubjectRulesReview();
+
+    V1SubjectRulesReviewStatus status = HealthCheckHelper.getSelfSubjectRulesReviewStatus(OPERATOR_NAMESPACE);
+    HealthCheckHelper.verifyAccess(status, OPERATOR_NAMESPACE, false);
 
     assertThat(logRecords, containsWarning(VERIFY_ACCESS_DENIED_WITH_NS));
   }

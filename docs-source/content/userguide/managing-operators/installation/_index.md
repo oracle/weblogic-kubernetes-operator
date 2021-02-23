@@ -9,7 +9,7 @@ The operator uses Helm to create the necessary resources and
 then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade,
 and uninstall the operator.
 
-#### Content
+#### Contents
 
  - [Install the operator Helm chart](#install-the-operator-helm-chart)
  - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
@@ -117,7 +117,7 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```
 $ helm upgrade \
   --reuse-values \
-  --set image=oracle/weblogic-kubernetes-operator:3.2.0 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0 \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \

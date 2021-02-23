@@ -1,11 +1,10 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,7 +25,7 @@ public class DomainValidationBaseTest {
   protected static final String VOLUME_PATH_1 = "/usr";
   protected static final String END_VOLUME_MOUNT_PATH_1 = "/projectdir/bin";
 
-  protected KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
+  protected final KubernetesResourceLookupStub resourceLookup = new KubernetesResourceLookupStub();
 
   /**
    *  Types of Kubernetes resources which can be looked up on a domain.
@@ -38,18 +37,14 @@ public class DomainValidationBaseTest {
 
   @SuppressWarnings("SameParameterValue")
   protected static class KubernetesResourceLookupStub implements KubernetesResourceLookup {
-    private Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
+    private final Map<KubernetesResourceType, List<V1ObjectMeta>> definedResources = new ConcurrentHashMap<>();
 
     List<V1ObjectMeta> getResourceList(KubernetesResourceType type) {
       return definedResources.computeIfAbsent(type, (key) -> new ArrayList<>());
     }
 
     void undefineResource(String name, KubernetesResourceType type, String namespace) {
-      for (Iterator<V1ObjectMeta> each = getResourceList(type).iterator(); each.hasNext();) {
-        if (hasSpecification(each.next(), name, namespace)) {
-          each.remove();
-        }
-      }
+      getResourceList(type).removeIf(v1ObjectMeta -> hasSpecification(v1ObjectMeta, name, namespace));
     }
 
     public void defineResource(String name, KubernetesResourceType type, String namespace) {

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions;
@@ -75,8 +75,6 @@ import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
 import static oracle.weblogic.kubernetes.actions.impl.Prometheus.uninstall;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 // this class essentially delegates to the impl classes, and "hides" all of the
 // detail impl classes - tests would only ever call methods in here, never
@@ -169,13 +167,14 @@ public class TestActions {
    * Create Domain Custom Resource.
    *
    * @param domain Domain custom resource model object
+   * @param domainVersion custom resource's version
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain)
-      throws ApiException {
-    return Domain.createDomainCustomResource(domain);
-  }
+  public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
+                                                   String... domainVersion) throws ApiException {
+    return Domain.createDomainCustomResource(domain, domainVersion);
+  } 
 
   /**
    * List Domain Custom Resources.
@@ -255,11 +254,10 @@ public class TestActions {
    *
    * @param domainUid UID of the domain to patch with introspectVersion
    * @param namespace namespace in which the domain resource exists
-   * @return true if patching is successful, otherwise false
-   * @throws ApiException when patching fails
+   * @return introspectVersion new introspectVersion of the domain resource
    */
-  public static boolean patchDomainResourceWithNewIntrospectVersion(
-      String domainUid, String namespace) throws ApiException {
+  public static String patchDomainResourceWithNewIntrospectVersion(
+      String domainUid, String namespace) {
     return Domain.patchDomainResourceWithNewIntrospectVersion(domainUid, namespace);
   }
 
@@ -1208,6 +1206,19 @@ public class TestActions {
   }
 
   /**
+   * Returns the status phase of the pod.
+   *
+   * @param namespace in which to check for the pod status
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to check
+   * @return the status phase of the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+    return Pod.getPodStatusPhase(namespace, labelSelectors, podName);
+  }
+
+  /**
    * Get a pod's log.
    *
    * @param podName name of the pod
@@ -1477,14 +1488,12 @@ public class TestActions {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installWlsLoggingExporter(String filter,
-                                                  String wlsLoggingExporterYamlFileLoc,
-                                                  String wlsLoggingExporterArchiveLoc) {
+                                                  String wlsLoggingExporterYamlFileLoc) {
     return LoggingExporter.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc);
+        wlsLoggingExporterYamlFileLoc);
   }
 
   /**
@@ -1496,30 +1505,43 @@ public class TestActions {
    */
   public static String patchDomainResourceWithNewRestartVersion(
       String domainResourceName, String namespace) {
-    LoggingFacade logger = getLogger();
-    String oldVersion = assertDoesNotThrow(
-        () -> getDomainCustomResource(domainResourceName, namespace).getSpec().getRestartVersion(),
-        String.format("Failed to get the restartVersion of %s in namespace %s", domainResourceName, namespace));
-    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
-    logger.info("Update domain resource {0} in namespace {1} restartVersion from {2} to {3}",
-        domainResourceName, namespace, oldVersion, newVersion);
+    return Domain.patchDomainResourceWithNewRestartVersion(domainResourceName, namespace);
+  }
 
-    StringBuffer patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/restartVersion\",")
-        .append(" \"value\": \"")
-        .append(newVersion)
-        .append("\"")
-        .append(" }]");
+  /**
+   * Patch the domain resource with a new model configMap.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param namespace Kubernetes namespace that the domain is hosted
+   * @param configMapName name of the configMap to be set in spec.configuration.model.configMap
+   */
+  public static void patchDomainResourceWithModelConfigMap(
+      String domainResourceName, String namespace, String configMapName) {
+    Domain.patchDomainResourceWithModelConfigMap(domainResourceName,
+        namespace, configMapName);
+  }
 
-    logger.info("Restart version patch string: {0}", patchStr);
-    V1Patch patch = new V1Patch(new String(patchStr));
-    boolean rvPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainResourceName, namespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(rvPatched, "patchDomainCustomResource(restartVersion) failed");
-
-    return String.valueOf(newVersion);
+  /**
+   * Patch a running domain with spec.configuration.model.onlineUpdate.onNonDynamicChanges.
+   * spec.configuration.model.onlineUpdate.onNonDynamicChanges accepts three values:
+   *   CommitUpdateOnly    - Default value or if not set. All changes are committed, but if there are non-dynamic mbean
+   *                         changes. The domain needs to be restart manually.
+   *   CommitUpdateAndRoll - All changes are committed, but if there are non-dynamic mbean changes,
+   *                         the domain will rolling restart automatically; if not, no restart is necessary
+   *   CancelUpdate        - If there are non-dynamic mbean changes, all changes are canceled before
+   *                         they are committed. The domain will continue to run, but changes to the configmap
+   *                         and resources in the domain resource YAML should be reverted manually,
+   *                         otherwise in the next introspection will still use the same content
+   *                         in the changed configmap
+   *
+   * @param domainUid UID of the domain to patch with spec.configuration.model.onlineUpdate.onNonDynamicChanges
+   * @param namespace namespace in which the domain resource exists
+   * @param onNonDynamicChanges accepted values: CommitUpdateOnly|CommitUpdateAndRoll|CancelUpdate
+   * @return introspectVersion new introspectVersion of the domain resource
+   */
+  public static String patchDomainResourceWithOnNonDynamicChanges(
+      String domainUid, String namespace, String onNonDynamicChanges) {
+    return Domain.patchDomainResourceWithOnNonDynamicChanges(domainUid, namespace, onNonDynamicChanges);
   }
 
   /**

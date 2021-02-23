@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 5
 ---
 
-The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain using an updated Docker image.
+The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain using an updated image.
 
 In the use case, you will:
 
@@ -93,11 +93,11 @@ Here are the steps for this use case:
      Now, you use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
 
      Run the following commands to create the model image and verify that it worked:
-     
+
      {{% notice note %}}
-     If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+     If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
      {{% /notice %}}
-     
+
      ```
      $ cd /tmp/mii-sample/model-images
      $ ./imagetool/bin/imagetool.sh update \
@@ -108,13 +108,13 @@ Here are the steps for this use case:
        --wdtArchive    ./model-in-image__WLS-v2/archive.zip \
        --wdtModelOnly \
        --wdtDomainType WLS \
-       --chown oracle:root 
+       --chown oracle:root
      ```
 
      If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
 
      This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
-     - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+     - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
      - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
        - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
        - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -126,7 +126,7 @@ Here are the steps for this use case:
      [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v2
      ```
 
-     Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v2`.
+     Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v2`.
 
      > **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
@@ -184,37 +184,41 @@ Here are the steps for this use case:
    ```
      $ ./wl-pod-wait.sh -?
 
-       Usage:
+     Usage:
 
-         wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
-            [-p expected_pod_count] \
-            [-t timeout_secs] \
-            [-q]
+       wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
+          [-p expected_pod_count] \
+          [-t timeout_secs] \
+          [-q]
 
-         Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+       Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
-       Parameters:
+     Parameters:
 
-         -d <domain_uid> : Defaults to 'sample-domain1'.
+       -d <domain_uid> : Defaults to 'sample-domain1'.
 
-         -n <namespace>  : Defaults to 'sample-domain1-ns'.
+       -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-         pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
-                           a domain all (a) are ready, (b) have the same
-                           'domainRestartVersion' label value as the
-                           current Domain's 'spec.restartVersion, and
-                           (c) have the same image as the current Domain's
-                           image.
+       -p 0            : Wait until there are no running WebLogic Server pods
+                         for a domain. The default.
 
-         pod_count = 0   : Wait until there are no running WebLogic Server pods
-                           for a domain. The default.
+       -p <pod_count>  : Wait until all of the following are true
+                         for exactly 'pod_count' WebLogic Server pods
+                         in the domain:
+                         - ready
+                         - same 'weblogic.domainRestartVersion' label value as
+                           the domain resource's 'spec.restartVersion'
+                         - same 'weblogic.introspectVersion' label value as
+                           the domain resource's 'spec.introspectVersion'
+                         - same image as the the domain resource's image
 
-         -t <timeout>    : Timeout in seconds. Defaults to '1000'.
+       -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
-         -q              : Quiet mode. Show only a count of wl pods that
-                           have reached the desired criteria.
+       -q              : Quiet mode. Show only a count of wl pods that
+                         have reached the desired criteria.
 
-         -?              : This help.
+       -?              : This help.
+
    ```
      {{% /expand %}}
 
@@ -405,22 +409,35 @@ Here are the steps for this use case:
 
     Welcome to WebLogic Server 'managed-server1'!
 
-     domain UID  = 'sample-domain1'
-     domain name = 'domain1'
+      domain UID  = 'sample-domain1'
+      domain name = 'domain1'
 
     Found 1 local cluster runtime:
       Cluster 'cluster-1'
 
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     Found 1 local data source:
-      Datasource 'mynewdatasource': State='Running'
+      Datasource 'mynewdatasource':  State='Running', testPool='Failed'
+        ---TestPool Failure Reason---
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
+        ---
+        ...
+        ... invalid host/username/password
+        ...
+        -----------------------------
 
     *****************************************************************
     </pre></body></html>
 
     ```
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
 
-This completes the sample scenarios.
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+
+If you plan to run the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 
 To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).

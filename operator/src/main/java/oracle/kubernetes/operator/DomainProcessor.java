@@ -1,12 +1,13 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -43,6 +44,12 @@ public interface DomainProcessor {
   void dispatchServiceWatch(Watch.Response<V1Service> item);
 
   /**
+   * Handles a watch event for pod disruption budget in the managed namespaces.
+   * @param item a Kubernetes watch event
+   */
+  void dispatchPodDisruptionBudgetWatch(Watch.Response<V1beta1PodDisruptionBudget> item);
+
+  /**
    * Handles a watch event for config maps in the managed namespaces.
    * @param item a Kubernetes watch even
    */
@@ -52,7 +59,7 @@ public interface DomainProcessor {
    * Handles a watch event for events in the managed namespaces.
    * @param item a Kubernetes watch even
    */
-  void dispatchEventWatch(Watch.Response<V1Event> item);
+  void dispatchEventWatch(Watch.Response<CoreV1Event> item);
 
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.utils;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.models.V1Pod;
 
-/** A factory for objects which can execute commands in Kubertenes containers. */
+/** A factory for objects which can execute commands in Kubernetes containers. */
 public interface KubernetesExecFactory {
   /**
    * Creates an object to execute a command in a Kubernetes container.

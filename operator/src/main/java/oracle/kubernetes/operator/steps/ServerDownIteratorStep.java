@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -83,12 +83,12 @@ public class ServerDownIteratorStep extends Step {
       return new StepAndPacket(createServiceStep(ssi),
               createPacketForServer(packet, ssi));
     } else {
-      return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.clone());
+      return new StepAndPacket(new ServerDownStep(ssi.getName(), null), packet.copy());
     }
   }
 
   private Packet createPacketForServer(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    Packet p = packet.clone();
+    Packet p = packet.copy();
     p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
     p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
     p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -8,8 +8,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
@@ -23,19 +23,15 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   private static final String SERVER_NAME = "server1";
   private static final String SERVICE_NAME = LegalNames.toServerServiceName(UID, SERVER_NAME);
 
-  private KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  private V1Service service = createMinimalService();
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final V1Service service = createMinimalService();
 
   private V1Service createMinimalService() {
     return new V1Service().metadata(new V1ObjectMeta().name(SERVICE_NAME).namespace(NS));
   }
 
-  /**
-   * Setup deletion test.
-   * @throws NoSuchFieldException if no such field
-   */
-  @Before
-  public void setUpDeletionTest() throws NoSuchFieldException {
+  @BeforeEach
+  public void setUpDeletionTest() {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
 

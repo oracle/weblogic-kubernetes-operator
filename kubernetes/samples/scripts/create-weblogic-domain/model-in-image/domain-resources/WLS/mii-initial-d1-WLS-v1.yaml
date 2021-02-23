@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -19,7 +19,7 @@ spec:
   # the image for 'Model in Image' domains.
   domainHome: /u01/domains/sample-domain1
 
-  # The WebLogic Server Docker image that the Operator uses to start the domain
+  # The WebLogic Server image that the Operator uses to start the domain
   image: "model-in-image:WLS-v1"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -116,6 +116,10 @@ spec:
   # and apply any new model configuration, to also force a subsequent
   # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
+
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
 
   configuration:
 

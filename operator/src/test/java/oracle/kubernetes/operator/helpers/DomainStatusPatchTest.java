@@ -1,10 +1,9 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,7 +26,7 @@ import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.joda.time.DateTime;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -39,9 +38,9 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class DomainStatusPatchTest {
-  private PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
+  private final PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
 
-  @Test      // todo have ADD full status definition as json object - then remove constructor item
+  @Test
   public void whenExistingStatusNull_addStatus() {
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
@@ -455,11 +454,8 @@ public class DomainStatusPatchTest {
                 ));
   }
 
-  // todo status deep clone
-
-
   abstract static class PatchBuilderStub implements JsonPatchBuilder {
-    private List<String> patches = new ArrayList<>();
+    private final List<String> patches = new ArrayList<>();
 
     String[] getPatches() {
       return patches.toArray(new String[0]);
@@ -531,7 +527,7 @@ public class DomainStatusPatchTest {
 
     private Stream<String> toPatchFieldStream(JsonObject jsonObject) {
       return jsonObject.entrySet().stream()
-            .sorted(Comparator.comparing(Map.Entry::getKey))
+            .sorted(Map.Entry.comparingByKey())
             .map(this::toPatchField);
     }
 
@@ -547,7 +543,7 @@ public class DomainStatusPatchTest {
 
   @SuppressWarnings("unused")
   static class OrderedArrayMatcher extends TypeSafeDiagnosingMatcher<String[]> {
-    private String[] expectedItems;
+    private final String[] expectedItems;
 
     private OrderedArrayMatcher(String[] expectedItems) {
       this.expectedItems = expectedItems;

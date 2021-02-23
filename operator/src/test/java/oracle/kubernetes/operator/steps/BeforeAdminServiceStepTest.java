@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -20,9 +20,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.hasEntry;
@@ -38,11 +38,11 @@ public class BeforeAdminServiceStepTest {
   private static final String UID = "uid1";
   private final Domain domain = createDomain();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private Step nextStep = new TerminalStep();
-  private List<Memento> mementos = new ArrayList<>();
-  private DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
-  private FiberTestSupport testSupport = new FiberTestSupport();
-  private BeforeAdminServiceStep step = new BeforeAdminServiceStep(nextStep);
+  private final Step nextStep = new TerminalStep();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
+  private final BeforeAdminServiceStep step = new BeforeAdminServiceStep(nextStep);
 
   private DomainPresenceInfo createDomainPresenceInfo() {
     return new DomainPresenceInfo(domain);
@@ -60,10 +60,7 @@ public class BeforeAdminServiceStepTest {
     return new DomainSpec().withDomainUid(UID).withReplicas(1);
   }
 
-  /**
-   * Setup test environment.
-   */
-  @Before
+  @BeforeEach
   public void setUp()  {
     mementos.add(TestUtils.silenceOperatorLogger());
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
@@ -79,11 +76,7 @@ public class BeforeAdminServiceStepTest {
         .withChannel("default", NODE_PORT_NUM);
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     for (Memento memento : mementos) {
       memento.revert();

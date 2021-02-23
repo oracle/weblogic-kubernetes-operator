@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -19,7 +19,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
-import oracle.kubernetes.operator.IntrospectorConfigMapKeys;
+import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -113,7 +113,7 @@ public class JobHelper {
   }
 
   private static String getIntrospectionImageSpecHash(Packet packet) {
-    return (String) packet.get(IntrospectorConfigMapKeys.DOMAIN_INPUTS_HASH);
+    return (String) packet.get(IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH);
   }
 
   private static int runningServersCount(DomainPresenceInfo info) {
@@ -293,6 +293,24 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,
+          Long.toString(getDomain().getWDTActivateTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT,
+          Long.toString(getDomain().getWDTConnectTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT,
+          Long.toString(getDomain().getWDTDeployTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT,
+          Long.toString(getDomain().getWDTReDeployTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT,
+          Long.toString(getDomain().getWDTUnDeployTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT,
+          Long.toString(getDomain().getWDTStartApplicationTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT,
+          Long.toString(getDomain().getWDTStopApplicationTimeoutMillis()));
+      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT,
+          Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
+
 
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
@@ -302,7 +320,7 @@ public class JobHelper {
       // Populate env var list used by the MII introspector job's 'short circuit' MD5
       // check. To prevent a false trip of the circuit breaker, the list must be the
       // same regardless of whether domainTopology == null.
-      StringBuffer sb = new StringBuffer(vars.size() * 32);
+      StringBuilder sb = new StringBuilder(vars.size() * 32);
       for (V1EnvVar var : vars) {
         sb.append(var.getName()).append(',');
       }
@@ -356,7 +374,7 @@ public class JobHelper {
               packet);
       }
 
-      return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
+      return doNext(packet);
     }
   }
 
@@ -564,8 +582,8 @@ public class JobHelper {
   private static void logIntrospectorFailure(Packet packet, V1Job domainIntrospectorJob) {
     Boolean logged = (Boolean) packet.get(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED);
     String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-    if (logged == null || !logged.booleanValue()) {
-      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.valueOf(true));
+    if (logged == null || !logged) {
+      packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           domainIntrospectorJob.getMetadata().getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),

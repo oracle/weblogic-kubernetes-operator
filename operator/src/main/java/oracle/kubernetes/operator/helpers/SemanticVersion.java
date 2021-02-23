@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -66,7 +66,7 @@ public class SemanticVersion implements Comparable<SemanticVersion> {
   }
 
   /**
-   * Compatibility check, similar to compare, but that reports more details on revision comparision.
+   * Compatibility check, similar to compare, but that reports more details on revision comparison.
    * @param minimumVersion Minimum version
    * @return Compatibility statement
    */

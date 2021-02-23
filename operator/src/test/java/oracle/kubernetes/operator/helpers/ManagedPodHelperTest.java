@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,9 +29,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainCommonConfigurator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -62,6 +60,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
+@SuppressWarnings("ConstantConditions")
 public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static final String SERVER_NAME = "ess_server1";
@@ -121,14 +120,9 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return configureServer(getConfigurator(), SERVER_NAME);
   }
 
-  @Override
-  protected ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
+  @SuppressWarnings("SameParameterValue")
+  private ServerConfigurator configureServer(DomainConfigurator configurator, String serverName) {
     return configurator.configureServer(serverName);
-  }
-
-  @Override
-  V1Pod createTestPodModel() {
-    return new V1Pod().metadata(createPodMetadata()).spec(createPodSpec());
   }
 
   @Override
@@ -276,10 +270,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 
-  private DomainConfigurator configureDomain(Domain domain) {
-    return new DomainCommonConfigurator(domain);
-  }
-
   @Test
   public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
     V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
@@ -362,7 +352,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
-        allOf(hasPvClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123)));
+        hasPvClaimVolume(END_VALUE_4_DNS1123, END_VALUE_3_DNS1123));
   }
 
   @Test

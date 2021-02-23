@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -6,15 +6,11 @@ package oracle.kubernetes.operator.rest;
 import java.util.Collection;
 import java.util.function.Supplier;
 
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.backend.RestBackend;
 import oracle.kubernetes.operator.utils.Certificates;
 
 /** RestConfigImpl provides the WebLogic Operator REST api configuration. */
 public class RestConfigImpl implements RestConfig {
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final String principal;
   private final Supplier<Collection<String>> domainNamespaces;

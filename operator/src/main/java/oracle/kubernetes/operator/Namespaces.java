@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,14 +6,17 @@ package oracle.kubernetes.operator;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -24,6 +27,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
 /**
@@ -33,17 +39,11 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public class Namespaces {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  public static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
+  static final String SELECTION_STRATEGY_KEY = "domainNamespaceSelectionStrategy";
   /**
    * The key in a Packet of the collection of existing namespaces that are designated as domain namespaces.
    */
-  static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
-
-  boolean isFullRecheck;
-
-  public Namespaces(boolean isFullRecheck) {
-    this.isFullRecheck = isFullRecheck;
-  }
+  private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
   /**
    * Returns true if the specified string is the name of a domain namespace.
@@ -223,7 +223,7 @@ public class Namespaces {
 
     private final DomainNamespaces domainNamespaces;
 
-    public NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
+    NamespaceListAfterStep(DomainNamespaces domainNamespaces) {
       this.domainNamespaces = domainNamespaces;
     }
 
@@ -231,8 +231,49 @@ public class Namespaces {
     public NextAction apply(Packet packet) {
       NamespaceValidationContext validationContext = new NamespaceValidationContext(packet);
       getNonNullConfiguredDomainNamespaces().forEach(validationContext::validateConfiguredNamespace);
+      List<StepAndPacket> nsStopEventSteps = getCreateNSStopEventSteps(packet, validationContext);
       stopRemovedNamespaces(validationContext);
-      return doNext(packet);
+      return doNext(Step.chain(createNamespaceWatchStopEventsStep(nsStopEventSteps), getNext()), packet);
+    }
+
+    private List<StepAndPacket> getCreateNSStopEventSteps(Packet packet, NamespaceValidationContext validationContext) {
+      return domainNamespaces.getNamespaces().stream()
+          .filter(validationContext::isNoLongerActiveDomainNamespace)
+          .map(n -> createNSStopEventDetails(packet, n)).collect(Collectors.toList());
+    }
+
+    private StepAndPacket createNSStopEventDetails(Packet packet, String namespace) {
+      LOGGER.info(MessageKeys.END_MANAGING_NAMESPACE, namespace);
+      return new StepAndPacket(
+          Step.chain(
+              createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).resourceName(namespace).namespace(namespace)),
+              createEventStep(new EventData(STOP_MANAGING_NAMESPACE).resourceName(namespace)
+                  .namespace(getOperatorNamespace()))),
+          packet.copy());
+    }
+
+    private Step createNamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
+      return new NamespaceWatchStopEventsStep(nsStopEventDetails);
+    }
+
+    static class NamespaceWatchStopEventsStep extends Step {
+      final List<StepAndPacket> nsStopEventDetails;
+
+      NamespaceWatchStopEventsStep(List<StepAndPacket> nsStopEventDetails) {
+        this.nsStopEventDetails = nsStopEventDetails;
+      }
+
+      @Override
+      public NextAction apply(Packet packet) {
+        if (nsStopEventDetails.isEmpty()) {
+          return doNext(getNext(), packet);
+        } else {
+          return doForkJoin(getNext(), packet, nsStopEventDetails);
+        }
+      }
+
+
+
     }
 
     @Nonnull
@@ -252,7 +293,7 @@ public class Namespaces {
 
   private static class NamespaceValidationContext {
 
-    Collection<String> allDomainNamespaces;
+    final Collection<String> allDomainNamespaces;
 
     NamespaceValidationContext(Packet packet) {
       allDomainNamespaces = Optional.ofNullable(getFoundDomainNamespaces(packet)).orElse(Collections.emptyList());

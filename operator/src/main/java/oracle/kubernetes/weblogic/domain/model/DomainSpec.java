@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -155,17 +155,17 @@ public class DomainSpec extends BaseConfiguration {
   private String livenessProbeCustomScript;
 
   /**
-   * The WebLogic Docker image.
+   * The WebLogic Server image.
    *
    * <p>Defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4
    */
   @Description(
-      "The WebLogic container image; required when `domainHomeSourceType` is Image or FromModel; "
+      "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   /**
-   * The image pull policy for the WebLogic Docker image. Legal values are Always, Never and,
+   * The image pull policy for the WebLogic Server image. Legal values are Always, Never and,
    * IfNotPresent.
    *
    * <p>Defaults to Always if image ends in :latest; IfNotPresent, otherwise.
@@ -173,21 +173,21 @@ public class DomainSpec extends BaseConfiguration {
    * <p>More info: https://kubernetes.io/docs/concepts/containers/images#updating-images
    */
   @Description(
-      "The image pull policy for the WebLogic container image. "
+      "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
   /**
-   * The image pull secrets for the WebLogic Docker image.
+   * The image pull secrets for the WebLogic Server image.
    *
    * <p>More info:
    * https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.10/#localobjectreference-v1-core
    *
    * @since 2.0
    */
-  @Description("A list of image pull Secrets for the WebLogic container image.")
+  @Description("A list of image pull Secrets for the WebLogic Server image.")
   private List<V1LocalObjectReference> imagePullSecrets;
 
   /**
@@ -464,18 +464,6 @@ public class DomainSpec extends BaseConfiguration {
    */
   public DomainSpec withWebLogicCredentialsSecret(V1SecretReference webLogicCredentialsSecret) {
     this.webLogicCredentialsSecret = webLogicCredentialsSecret;
-    return this;
-  }
-
-  /**
-   * Reference to secret containing WebLogic startup credentials user name and password. Secret must
-   * contain keys names 'username' and 'password'. Required.
-   *
-   * @param opssKeyPassPhrase WebLogic startup credentials secret
-   * @return this
-   */
-  public DomainSpec withOpssKeyPassPhrase(V1SecretReference opssKeyPassPhrase) {
-    this.webLogicCredentialsSecret = opssKeyPassPhrase;
     return this;
   }
 
@@ -756,6 +744,19 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
+   * Test if the MII domain wants to use online update.
+   *
+   * @return true if using online update
+   */
+  boolean isUseOnlineUpdate() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getEnabled)
+        .orElse(false);
+  }
+
+  /**
    * Test if the domain is deployed under Istio environment.
    *
    * @return istioEnabled
@@ -933,6 +934,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(getMaxClusterConcurrentShutdown(), rhs.getMaxClusterConcurrentShutdown());
     return builder.isEquals();
   }
+
 
   ManagedServer getManagedServer(String serverName) {
     if (serverName != null) {

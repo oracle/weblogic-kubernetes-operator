@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -21,7 +21,7 @@ import oracle.kubernetes.operator.helpers.ClientPool;
  * A wrapper of the Kubernetes Watch class that includes management of clients.
  */
 public class WatchImpl<T> implements Watchable<T> {
-  @SuppressWarnings("FieldMayBeFinal") // non-final to allow unit testing
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // non-final to allow unit testing
   private static WatchFactory<?> FACTORY = WatchImpl::createWatch;
 
   private ApiClient client;

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
@@ -32,7 +32,7 @@ public class ClusterResource extends BaseResource {
   }
 
   /**
-   * Get a description of this Weblogic cluster.
+   * Get a description of this WebLogic cluster.
    *
    * @return a ClusterModel describing this cluster.
    */

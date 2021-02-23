@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -11,9 +11,9 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
@@ -26,14 +26,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class CertificatesTest {
 
   private final TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
-  private Collection<LogRecord> logRecords = new ArrayList<>();
-  private List<Memento> mementos = new ArrayList<>();
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
-  /**
-   * Setup test environment.
-   * @throws Exception if test support fails to install.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(consoleHandlerMemento
           .collectLogMessages(logRecords, NO_INTERNAL_CERTIFICATE, NO_EXTERNAL_CERTIFICATE)
@@ -41,14 +37,9 @@ public class CertificatesTest {
     mementos.add(InMemoryCertificates.installWithoutData());
   }
 
-  /**
-   * Cleanup test environment.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test

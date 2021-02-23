@@ -1,12 +1,12 @@
 #!/bin/bash
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script provisions a Kubernetes cluster using Kind (https://kind.sigs.k8s.io/) and runs the new
 # integration test suite against that cluster.
 #
 # To install Kind:
-#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.8.0/kind-$(uname)-amd64
+#    curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.9.0/kind-$(uname)-amd64
 #    chmod +x ./kind
 #    mv ./kind /some-dir-in-your-PATH/kind
 #
@@ -37,11 +37,12 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
-  echo "usage: ${script} [-v <version>] [-n <name>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-m <maven_profile_name>] [-h]"
+  echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.15.11, supported values: 1.18, 1.18.2, 1.17, 1.17.5, 1.16, 1.16.9, 1.15, 1.15.11, 1.14, 1.14.10) "
+  echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
+  echo "  -s Skip tests. If this option is specified then the cluster is created, but no tests are run. "
   echo "  -o Output directory (optional) "
   echo "      (default: \${WORKSPACE}/logdir/\${BUILD_TAG}, if \${WORKSPACE} defined, else /scratch/\${USER}/kindtest) "
   echo "  -t Test filter (optional) "
@@ -56,13 +57,21 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
+  echo "  -l WLE download URL"
+  echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
   echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
   echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
   echo "  -h Help"
   exit $1
 }
 
-k8s_version="1.15.11"
+function captureLogs {
+  echo "Capture Kind logs..."
+  mkdir "${RESULT_ROOT}/kubelogs"
+  kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
+}
+
+k8s_version="1.16"
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
@@ -75,9 +84,11 @@ parallel_run="false"
 threads="2"
 wdt_download_url="https://github.com/oracle/weblogic-deploy-tooling/releases/latest"
 wit_download_url="https://github.com/oracle/weblogic-image-tool/releases/latest"
+wle_download_url="https://github.com/oracle/weblogic-logging-exporter/releases/latest"
 maven_profile_name="integration-tests"
+skip_tests=false
 
-while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
+while getopts "v:n:o:t:c:x:p:d:i:l:m:sh" opt; do
   case $opt in
     v) k8s_version="${OPTARG}"
     ;;
@@ -97,13 +108,13 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
     ;;
     i) wit_download_url="${OPTARG}"
     ;;
+    l) wle_download_url="${OPTARG}"
+    ;;
     m) maven_profile_name="${OPTARG}"
     ;;
+    s) skip_tests=true
+    ;;
     h) usage 0
-    ;;
-    d) echo "Ignoring -d=${OPTARG}"
-    ;;
-    i) echo "Ignoring -i=${OPTARG}"
     ;;
     *) usage 1
     ;;
@@ -111,10 +122,24 @@ while getopts ":h:n:o:t:v:c:x:p:d:i:m:" opt; do
 done
 
 function versionprop {
-  grep "${1}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
+  grep "${1}_${2}=" "${scriptDir}/kindversions.properties"|cut -d'=' -f2
 }
 
-kind_image=$(versionprop "${k8s_version}")
+kind_version=$(kind version)
+kind_series="0.10"
+case "${kind_version}" in
+  "kind v0.7."*)
+    kind_series="0.7"
+    ;;
+  "kind v0.8."*)
+    kind_series="0.8"
+    ;;
+  "kind v0.9."*)
+    kind_series="0.9"
+    ;;
+esac
+
+kind_image=$(versionprop "${kind_series}" "${k8s_version}")
 if [ -z "${kind_image}" ]; then
   echo "Unsupported Kubernetes version: ${k8s_version}"
   exit 1
@@ -124,7 +149,7 @@ echo "Using Kubernetes version: ${k8s_version}"
 
 disableDefaultCNI="false"
 if [ "${cni_implementation}" = "calico" ]; then
-  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
+  if [ "${k8s_version}" = "1.15" ] || [ "${k8s_version}" = "1.15.12" ] || [ "${k8s_version}" = "1.15.11" ] || [ "${k8s_version}" = "1.14" ] || [ "${k8s_version}" = "1.14.10" ]; then
     echo "Calico CNI is not supported with Kubernetes versions below 1.16."
     exit 1
   fi
@@ -156,7 +181,6 @@ echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 echo 'Remove old cluster (if any)...'
 kind delete cluster --name ${kind_name} --kubeconfig "${RESULT_ROOT}/kubeconfig"
 
-kind_version=$(kind version)
 kind_network='kind'
 reg_name='kind-registry'
 reg_port='5000'
@@ -232,24 +256,43 @@ if [ "${kind_network}" != "bridge" ]; then
   fi
 fi
 
+# Document the local registry
+# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-registry-hosting
+  namespace: kube-public
+data:
+  localRegistryHosting.v1: |
+    host: "localhost:${reg_port}"
+    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
+EOF
+
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
 export JAVA_HOME="${JAVA_HOME:-`type -p java|xargs readlink -f|xargs dirname|xargs dirname`}"
+
+if [ "$skip_tests" = true ] ; then
+  echo 'Cluster created. Skipping tests.'
+  exit 0
+fi
 
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo "Run tests..."
 if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-image-cert" ]; then
-  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-  time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+  echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+  time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
   if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-    echo "Running mvn -Dit.test=${test_filter} -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+    echo "Running mvn -Dit.test=${test_filter}, !ItIstioCrossClusters -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi

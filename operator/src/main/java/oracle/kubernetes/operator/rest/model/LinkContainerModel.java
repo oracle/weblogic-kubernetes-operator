@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.model;
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class LinkContainerModel extends BaseModel {
 
-  private List<LinkModel> links = new ArrayList<LinkModel>();
+  private final List<LinkModel> links = new ArrayList<>();
 
   /**
    * Get the links.
@@ -21,15 +21,6 @@ public class LinkContainerModel extends BaseModel {
    */
   public List<LinkModel> getLinks() {
     return links;
-  }
-
-  /**
-   * Set the links.
-   *
-   * @param links - a List of LinkModels.
-   */
-  public void setLinks(List<LinkModel> links) {
-    this.links = links;
   }
 
   /**
@@ -56,7 +47,7 @@ public class LinkContainerModel extends BaseModel {
   /**
    * Add a link to an action resource.
    *
-   * @param action - the name of the action (i.e. the terminal path segement in the url)
+   * @param action - the name of the action (i.e. the terminal path segment in the url)
    * @param actionHref - the action link's hypertext reference.
    */
   public void addActionLink(String action, String actionHref) {

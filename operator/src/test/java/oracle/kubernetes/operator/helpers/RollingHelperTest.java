@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -31,9 +31,9 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
@@ -63,19 +63,15 @@ public class RollingHelperTest {
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
-  private Map<String, StepAndPacket> rolling = new HashMap<>();
+  private final Map<String, StepAndPacket> rolling = new HashMap<>();
 
-  protected KubernetesTestSupport testSupport = new KubernetesTestSupport();
-  protected List<Memento> mementos = new ArrayList<>();
-  protected List<LogRecord> logRecords = new ArrayList<>();
+  protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  protected final List<Memento> mementos = new ArrayList<>();
+  protected final List<LogRecord> logRecords = new ArrayList<>();
 
   private WlsDomainConfig domainTopology;
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
         TestUtils.silenceOperatorLogger()
@@ -101,15 +97,9 @@ public class RollingHelperTest {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -149,7 +139,7 @@ public class RollingHelperTest {
   }
 
   private Step.StepAndPacket createRollingStepAndPacket(String serverName) {
-    Packet packet = testSupport.getPacket().clone();
+    Packet packet = testSupport.getPacket().copy();
     packet.put(SERVER_SCAN, domainTopology.getServerConfig(serverName));
     return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
         DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
@@ -161,7 +151,7 @@ public class RollingHelperTest {
   }
 
   private void initializeExistingPods() {
-    SERVER_NAMES.forEach(s -> initializeExistingPod(s));
+    SERVER_NAMES.forEach(this::initializeExistingPod);
   }
 
   private void initializeExistingPod(String serverName) {

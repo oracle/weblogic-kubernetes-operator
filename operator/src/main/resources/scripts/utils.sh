@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -103,7 +103,7 @@ function trace() {
       shift
       shift
     else
-      logLoc="`basename $0`:${BASH_LINENO[0]}"
+      logLoc="$(basename ${BASH_SOURCE[1]}):${BASH_LINENO[0]}"
     fi
   else
     if [ "$1" = "-cloc" ]; then

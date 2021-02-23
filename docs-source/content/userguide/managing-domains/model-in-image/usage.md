@@ -25,29 +25,37 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 ### WebLogic Server image
 
-Model in Image requires creating a Docker image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
+Model in Image requires creating an image that has WebLogic Server and WDT installed, plus optionally, your model and application files.
 
 First, obtain a base image:
 
 - You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
 - Or you can manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
-After you have a base image, Model in Image requires layering the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:
+After you have a base image, Model in Image requires the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:
 
 | Directory                | Contents                           | Extension   |
 | ------------------------ | ---------------------------------- | ----------- |
 | `/u01/wdt/models`         | Optional domain model YAML files   | `.yaml`       |
 | `/u01/wdt/models`         | Optional model variable files      | `.properties` |
 | `/u01/wdt/models`         | Application archives               | `.zip`        |
-| `/u01/wdt/weblogic-deploy`| Unzipped WebLogic deploy install   |             |
+| `/u01/wdt/weblogic-deploy`| Unzipped WDT install binaries     |             |
 
-> **Note**: Model YAML and variable files are optional in a Model in Image image `/u01/wdt/models` directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the Domain YAML file `spec.model.configMap` field. Application archives, if any, must be supplied in the Model in Image image.  Application archives are not supported in a `spec.model.configMap`.
+Notes:
 
-There are two methods for layering Model in Image artifacts on top of a base image:
+  - The `/u01/wdt/models` directory is the Model in Image _model home_; for advanced use cases, you can customize its location using the Domain YAML file `configuration.model.modelHome` field.
+
+  - Model YAML and variable files are optional in a Model in Image image model home directory because Model in Image also supports [supplying them dynamically]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) using a ConfigMap referenced by the Domain YAML file `spec.model.configMap` field.
+
+  - Application archives, if any, must be supplied in the model home. Application archives are not supported in a `spec.model.configMap`.
+
+There are three methods for layering Model in Image artifacts on top of a base image:
 
   - Manual Image Creation: Use Docker commands to layer the WDT artifacts from the above table on top of your base image into a new image.
 
-  - WebLogic Image Tool: Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for embedding WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
+  - WebLogic Image Tool: Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for layering WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
+
+  - Persistent Volume Claim: This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files in a [Persistent Volume Claim]({{< relref "/faq/volumes.md" >}}) and modify `configuration.model.modelHome` to the corresponding directory within the PVC's mount location. This method does not address the requirement to include unzipped WDT install binaries in the `/u01/wdt/weblogic-deploy` directory (use either of the previous two methods).
 
 For more information about model file syntax, see [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
 
@@ -104,14 +112,16 @@ Create additional secrets as needed by macros in your model files. For example, 
 
 The following Domain fields are specific to Model in Image domains.
 
-| Domain Resource Attribute                    |  Notes |
-| -------------------------                    |  ------------------ |
-| `domainHomeSourceType`                       |  Required. Set to `FromModel`. |
-| `domainHome`                                 |  Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic Server pod every time the pod restarts.|
-| `configuration.model.configMap`             | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
+| Domain Resource Attribute                    | Notes |
+| -------------------------                    | ------------------ |
+| `domainHomeSourceType`                       | Required. Set to `FromModel`. |
+| `domainHome`                                 | Must reference an empty or non-existent directory within your image. Do not include the mount path of any persistent volume. Note that Model in Image recreates the domain home for a WebLogic Server pod every time the pod restarts.|
+| `configuration.model.configMap`              | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
 | `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/tool_configuration.md#domain-type-definitions).|
+| `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
+| `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models`.|
 
 **Notes**:
 
@@ -123,7 +133,7 @@ The following Domain fields are specific to Model in Image domains.
 
 ### Always use external state
 
-Regardless of the domain home source type, we recommend that you always keep state outside the Docker image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
+Regardless of the domain home source type, we recommend that you always keep state outside the image. This includes cluster database leasing tables, JMS and transaction stores, EJB timers, and so on. This ensures that data will not be lost when a container is destroyed.
 
 We recommend that state be kept in a database to take advantage of built-in database server high availability features, and the fact that disaster recovery of sites across all but the shortest distances, almost always requires using a single database server to consolidate and replicate data (DataGuard).
 

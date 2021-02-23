@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -17,7 +17,7 @@ public abstract class ContainerResolver {
   private static final ThreadLocalContainerResolver DEFAULT = new ThreadLocalContainerResolver();
 
   private static final AtomicReference<ContainerResolver> theResolver =
-      new AtomicReference(DEFAULT);
+      new AtomicReference<>(DEFAULT);
 
   /**
    * Returns the container resolver which can be used to get client's {@link Container}.
@@ -26,18 +26,6 @@ public abstract class ContainerResolver {
    */
   public static ContainerResolver getInstance() {
     return theResolver.get();
-  }
-
-  /**
-   * Sets the custom container resolver which can be used to get client's {@link Container}.
-   *
-   * @param resolver container resolver
-   */
-  public static void setInstance(ContainerResolver resolver) {
-    if (resolver == null) {
-      resolver = DEFAULT;
-    }
-    theResolver.set(resolver);
   }
 
   /**

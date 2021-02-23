@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -48,20 +48,12 @@ public class LogMatcher
     return new LogMatcher(Level.WARNING, expectedMessage);
   }
 
-  public static LogMatcher containsWarning(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.WARNING, expectedMessage, expectedParameters);
-  }
-
   public static LogMatcher containsSevere(String expectedMessage) {
     return new LogMatcher(Level.SEVERE, expectedMessage);
   }
 
   public static LogMatcher containsFine(String expectedMessage) {
     return new LogMatcher(Level.FINE, expectedMessage);
-  }
-
-  public static LogMatcher containsFine(String expectedMessage, Object... expectedParameters) {
-    return new LogMatcher(Level.FINE, expectedMessage, expectedParameters);
   }
 
   public static LogMatcher containsInOrder(LogMatcher... logMatchers) {

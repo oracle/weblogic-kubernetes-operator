@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -21,14 +21,15 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Matchers;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -60,7 +61,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Override
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     super.setUp();
     addMemento(testSupport.install());
@@ -238,6 +239,13 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
+  public void whenPodCreatedAndReadyLater_runNextStep() {
+    sendPodModifiedWatchAfterResourceCreatedAndWaitForReady(this::markPodReady);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
   public void whenPodNotReadyLater_dontRunNextStep() {
     sendPodModifiedWatchAfterWaitForReady(this::dontChangePod);
 
@@ -285,6 +293,23 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
     try {
       testSupport.runSteps(watcher.waitForReady(createPod(), terminalStep));
+      for (Function<V1Pod,V1Pod> modifier : modifiers) {
+        watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
+      }
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  // Starts the waitForReady step with an uncreated pod and sends a watch indicating that the pod has changed
+  @SafeVarargs
+  private void sendPodModifiedWatchAfterResourceCreatedAndWaitForReady(Function<V1Pod,V1Pod>... modifiers) {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+
+    try {
+      testSupport.addDomainPresenceInfo(new DomainPresenceInfo(NS, "domain1"));
+      testSupport.runSteps(watcher.waitForReady(NAME, terminalStep));
       for (Function<V1Pod,V1Pod> modifier : modifiers) {
         watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
       }

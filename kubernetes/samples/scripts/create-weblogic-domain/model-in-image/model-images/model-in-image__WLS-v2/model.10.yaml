@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 domainInfo:
@@ -32,3 +32,20 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v2'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
+

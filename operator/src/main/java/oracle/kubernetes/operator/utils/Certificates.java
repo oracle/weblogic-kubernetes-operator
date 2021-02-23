@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -24,7 +24,8 @@ public class Certificates {
   static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
   static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static Function<String, Path> GET_PATH = p -> Paths.get(p);
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
+  private static Function<String, Path> GET_PATH = Paths::get;
 
   public static String getOperatorExternalKeyFile() {
     return getKeyOrNull(Certificates.EXTERNAL_CERTIFICATE_KEY);

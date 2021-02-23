@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls.unprocessable;
@@ -10,7 +10,7 @@ import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -32,7 +32,7 @@ public class UnprocessableEntityTest {
          + "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + ","
          + "\"causes\":[{" + CAUSE + "}]},"
          + "\"code\":422}\n";
-  private static RequestParams REQUEST_PARAMS
+  private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
   private static String escape(String s) {

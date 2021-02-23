@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.domainNamespaces" }}
@@ -17,7 +17,7 @@
 {{-   $args := include "utils.cloneDictionary" . | fromYaml -}}
 {{- /*
       Split terms on commas not contained in parentheses. Unfortunately, the regular expression
-      support included with Helm tempalates does not include lookarounds.
+      support included with Helm templates does not include lookarounds.
 */ -}}
 {{-   $working := dict "rejected" (list) "terms" (list $args.domainNamespaceLabelSelector) }}
 {{-   if contains "," $args.domainNamespaceLabelSelector }}

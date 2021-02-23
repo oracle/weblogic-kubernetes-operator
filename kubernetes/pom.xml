@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+<!-- Copyright (c) 2017, 2021, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -90,16 +90,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit-version}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <properties>
-        <junit-version>4.13.1</junit-version>
-    </properties>
 
     <profiles>
         <profile>

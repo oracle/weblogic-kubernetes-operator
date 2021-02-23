@@ -1,4 +1,4 @@
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 import sys
@@ -6,8 +6,10 @@ import os
 import traceback
 
 from java.util import Base64
-from org.apache.commons.io import FileUtils
+from java.nio.file import Files
+from java.nio.file import Path
 from java.io import File
+from java.io import FileOutputStream
 
 script_name = 'application_deployment.py'
 print 'script_name: ' + script_name
@@ -35,9 +37,10 @@ def usage():
 def decode_archive():
   try:
     print 'decoding archive...'
-    encoded_archive_bytes = FileUtils.readFileToByteArray(File(node_archive_path))
+    encoded_archive_bytes = Files.readAllBytes(File(node_archive_path).toPath())
     decoded_archive_bytes = Base64.getMimeDecoder().decode(encoded_archive_bytes)
-    FileUtils.writeByteArrayToFile(File(archive_name), decoded_archive_bytes)
+    fos = FileOutputStream(File(archive_name))
+    fos.write(decoded_archive_bytes)
     print 'successfully decoded archive'
   except:
     print 'Decoding application archive failed'

@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -54,7 +53,7 @@ public class DomainStatus {
           + "You cannot configure a limit for other types of failures, such as a Domain resource reference "
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
-  private Integer introspectJobFailureCount = new Integer(0);
+  private Integer introspectJobFailureCount = 0;
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -179,20 +178,6 @@ public class DomainStatus {
     return null;
   }
 
-  private boolean isNewCondition(DomainCondition condition) {
-    DomainCondition oldCondition = getConditionWithType(condition.getType());
-    if (oldCondition == null) {
-      return true;
-    }
-
-    if (oldCondition.equals(condition)) {
-      return false;
-    }
-
-    conditions.remove(oldCondition);
-    return true;
-  }
-
   /**
    * A human readable message indicating details about why the domain is in this condition.
    *
@@ -301,7 +286,7 @@ public class DomainStatus {
    * @return retryCount
    */
   public Integer incrementIntrospectJobFailureCount() {
-    return this.introspectJobFailureCount = this.introspectJobFailureCount.intValue() + 1;
+    return this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
   }
 
 
@@ -398,11 +383,7 @@ public class DomainStatus {
    */
   public DomainStatus addServer(ServerStatus server) {
     synchronized (servers) {
-      for (ListIterator<ServerStatus> it = servers.listIterator(); it.hasNext(); ) {
-        if (Objects.equals(it.next().getServerName(), server.getServerName())) {
-          it.remove();
-        }
-      }
+      servers.removeIf(serverStatus -> Objects.equals(serverStatus.getServerName(), server.getServerName()));
 
       servers.add(server);
       Collections.sort(servers);
@@ -449,11 +430,7 @@ public class DomainStatus {
    */
   public DomainStatus addCluster(ClusterStatus cluster) {
     synchronized (clusters) {
-      for (ListIterator<ClusterStatus> it = clusters.listIterator(); it.hasNext(); ) {
-        if (Objects.equals(it.next().getClusterName(), cluster.getClusterName())) {
-          it.remove();
-        }
-      }
+      clusters.removeIf(clusterStatus -> Objects.equals(clusterStatus.getClusterName(), cluster.getClusterName()));
 
       clusters.add(cluster);
       Collections.sort(clusters);

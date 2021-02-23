@@ -74,13 +74,16 @@ Here are the steps for this use case:
 
    # referenced by spec.configuration.secrets and by the data source model YAML in the ConfigMap
    $ kubectl -n sample-domain1-ns create secret generic \
-     sample-domain2-datasource-secret \
-      --from-literal=password=Oradoc_db1 \
-      --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+      sample-domain2-datasource-secret \
+      --from-literal='user=sys as sysdba' \
+      --from-literal='password=incorrect_password' \
+      --from-literal='max-capacity=1' \
+      --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    $ kubectl -n sample-domain1-ns label  secret \
-     sample-domain2-datasource-secret \
-     weblogic.domainUID=sample-domain2
+      sample-domain2-datasource-secret \
+      weblogic.domainUID=sample-domain2
    ```
+
 
    Observations:
      - We are leaving the namespace `sample-domain1-ns` unchanged for each secret because you will deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
@@ -90,6 +93,7 @@ Here are the steps for this use case:
      - You use a different set of secrets for the new domain for two reasons:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
+     - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case.
 
    If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
 
@@ -450,21 +454,34 @@ Here are the steps for this use case:
 
     Welcome to WebLogic Server 'managed-server1'!
 
-     domain UID  = 'sample-domain2'
-     domain name = 'domain2'
+      domain UID  = 'sample-domain2'
+      domain name = 'domain2'
 
     Found 1 local cluster runtime:
       Cluster 'cluster-1'
 
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     Found 1 local data source:
-      Datasource 'mynewdatasource': State='Running'
+      Datasource 'mynewdatasource':  State='Running', testPool='Failed'
+        ---TestPool Failure Reason---
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
+        ---
+        ...
+        ... invalid host/username/password
+        ...
+        -----------------------------
 
     *****************************************************************
     </pre></body></html>
 
     ```
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
+
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 You will not be using the `sample-domain2` domain again in this sample; if you wish, you can shut it down now by calling `kubectl -n sample-domain1-ns delete domain sample-domain2`.
 

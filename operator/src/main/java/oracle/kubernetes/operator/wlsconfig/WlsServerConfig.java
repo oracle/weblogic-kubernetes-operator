@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -119,7 +119,7 @@ public class WlsServerConfig {
    */
   static String getClusterNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "cluster" entry from the REST call which is in the form: "cluster":
-    // ["clusters", "DockerCluster"]
+    // ["clusters", "ApplicationCluster"]
     @SuppressWarnings({"unchecked", "rawtypes"})
     List<String> clusterList = (List) serverMap.get("cluster");
     if (clusterList != null) {
@@ -204,17 +204,6 @@ public class WlsServerConfig {
    */
   private static String getSslSearchFields() {
     return "'enabled', 'listenPort'";
-  }
-
-  /**
-   * Set the listen address for this server configuration.
-   *
-   * @param listenAddress the listen address
-   * @return this object
-   */
-  public WlsServerConfig withListenAddress(String listenAddress) {
-    this.listenAddress = listenAddress;
-    return this;
   }
 
   /**
@@ -321,10 +310,6 @@ public class WlsServerConfig {
 
   public String getClusterName() {
     return this.clusterName;
-  }
-
-  public void setClusterName(String clusterName) {
-    this.clusterName = clusterName;
   }
 
   public boolean isAdminPortEnabled() {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -6,15 +6,15 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Arrays;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public abstract class BaseConfigurationTestBase {
-  private BaseConfiguration instance1;
-  private BaseConfiguration instance2;
+  private final BaseConfiguration instance1;
+  private final BaseConfiguration instance2;
 
   BaseConfigurationTestBase(BaseConfiguration instance1, BaseConfiguration instance2) {
     this.instance1 = instance1;
@@ -96,13 +96,13 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenserviceAnnotationsDiffer_hashCodesAreNotEqual() {
+  public void whenServiceAnnotationsDiffer_hashCodesAreNotEqual() {
     instance1.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
   }
 
   @Test
-  public void whenserviceAnnotationsDoNotDiffer_hashCodesAreEqual() {
+  public void whenServiceAnnotationsDoNotDiffer_hashCodesAreEqual() {
     instance1.addServiceAnnotation("key", "value");
     instance2.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));

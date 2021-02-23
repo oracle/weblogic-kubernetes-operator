@@ -1,4 +1,4 @@
-<!-- Copyright (c)  2020, Oracle Corporation and/or its affiliates.
+<!-- Copyright (c) 2020, 2021, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -28,12 +28,7 @@
     <dependencies>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -52,21 +47,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-yaml</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.swagger</groupId>
-            <artifactId>swagger-annotations</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
             <scope>test</scope>
@@ -81,13 +61,6 @@
           <artifactId>htmlunit</artifactId>
           <version>2.40.0</version>
           <scope>test</scope>
-        </dependency>
-        <!-- Parameterized Tests -->
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <version>5.6.0</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -250,23 +223,79 @@
             <id>wls-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItMiiSample.java,**/ItJrfDomainInPV.java,**/ItStickySession.java,**/ItSessionMigration.java</includes-failsafe>
+                <includes-failsafe>
+                   **/ItCoherenceTests,
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItExternalRmiTunneling,
+                   **/ItInitContainers,
+                   **/ItIntrospectVersion,
+                   **/ItIstioCrossDomainTransaction,
+                   **/ItIstioDomainInImage,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItIstioTwoDomainsInImage,
+                   **/ItKubernetesEvents,
+                   **/ItManageNameSpace,
+                   **/ItManagedCoherence,
+                   **/ItMiiDomain,
+                   **/ItMiiDomainModelInPV,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiMultiModel,
+                   **/ItMiiSample,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItOperatorRestart,
+                   **/ItParameterizedDomain,
+                   **/ItPodTemplates,
+                   **/ItPodsRestart,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItServerStartPolicy,
+                   **/ItSessionMigration,
+                   **/ItStickySession,
+                   **/ItSystemResOverrides,
+                   **/ItTwoDomainsLoadBalancer,
+                   **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItMiiSample.java,**/ItJrfDomainInPV.java</includes-failsafe>
+                <includes-failsafe>
+                  **/ItMiiSample,
+                  **/ItFmwDomainInPV,
+                  **/ItFmwMiiDomain,
+                  **/ItFmwSample
+                </includes-failsafe>
             </properties>
         </profile>
         <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
-                <includes-failsafe>**/ItParameterizedDomain.java,**/ItServerStartPolicy.java,**/ItMiiUpdateDomainConfig.java,**/ItIntrospectVersion.java,**/ItJrfDomainInPV.java,
-                    **/ItStickySession.java,**/ItSessionMigration.java,**/ItIstioTwoDomainsInImage,**/ItPodsRestart,**/ItUsabilityOperatorHelmChart,**/ItInitContainers,**/ItOperatorUpgrade,**/ItOperatorRestart,
-                    **/ItPodsShutdownOption,**/ItManageNs</includes-failsafe>
+                <includes-failsafe>
+                  **/ItParameterizedDomain,
+                  **/ItServerStartPolicy,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItIntrospectVersion,
+                  **/ItFmwDomainInPV,
+                  **/ItStickySession,
+                  **/ItSessionMigration,
+                  **/ItIstioTwoDomainsInImage,
+                  **/ItPodsRestart,
+                  **/ItUsabilityOperatorHelmChart,
+                  **/ItInitContainers,
+                  **/ItOperatorUpgrade,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItManageNameSpace
+               </includes-failsafe>
             </properties>
         </profile>
     </profiles>

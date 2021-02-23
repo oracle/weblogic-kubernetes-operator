@@ -1,0 +1,146 @@
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    weblogic.createdByOperator: "true"
+    weblogic.domainName: ${DOMAIN_NAME}
+    weblogic.domainUID: ${DOMAIN_UID}
+    weblogic.serverName: ${SERVER_NAME}
+  name: ${SERVICE_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  containers:
+  - command:
+    - /weblogic-operator/scripts/startServer.sh
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Djava.security.egd=file:/dev/./urandom "
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
+      #value: "-Djava.security.egd=file:/dev/./urandom -Dweblogic.log.RotateLogOnStartup=true -Dweblogic.log.FileMinSize=1 -Dweblogic.log.FileCount=1 -Dweblogic.log.StdoutSeverityLevel=Debug -Dweblogic.log.LogSeverity=Debug -Dweblogic.StdoutDebugEnabled=true -Dweblogic.debug.DebugStoreIOPhysicalVerbose=true -Dweblogic.kernel.debug=true -Dweblogic.debug.DebugConnection=true -Dweblogic.debug.DebugMessaging=true -Dweblogic.debug.DebugJNDI=true -Dweblogic.debug.DebugJNDIFactories=true -Dweblogic.debug.DebugJNDIResolution=true"
+    - name: USER_MEM_ARGS
+      value: "-XX:MaxRAMFraction=1 "
+    - name: NODEMGR_JAVA_OPTIONS
+      value: "-Dnodemgr.java.options"
+    - name: NODEMGR_MEM_ARGS
+      value: "${NODEMGR_MEM_ARGS}"
+    - name: DOMAIN_NAME
+      value: "${DOMAIN_NAME}"
+    - name: DOMAIN_HOME
+      value: "${DOMAIN_HOME}"
+    - name: ADMIN_NAME
+      value: "${ADMIN_NAME}"
+    - name: ADMIN_PORT
+      value: "${ADMIN_PORT}"
+    - name: SERVER_NAME
+      value: "${SERVER_NAME}"
+    - name: DOMAIN_UID
+      value: "${DOMAIN_UID}"
+    - name: NODEMGR_HOME
+      value: "${NODEMGR_HOME}"
+    - name: LOG_HOME
+      value: "${LOG_HOME}"
+    - name: DATA_HOME
+      value: "${DATA_HOME}"
+    - name: EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR
+      value: "${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR}"
+    - name: KEEP_DEFAULT_DATA_HOME
+      value: "${KEEP_DEFAULT_DATA_HOME}"
+    - name: SERVER_OUT_IN_POD_LOG
+      value: "${SERVER_OUT_IN_POD_LOG}"
+    - name: SERVICE_NAME
+      value: "${SERVICE_NAME}"
+    - name: AS_SERVICE_NAME
+      value: "${AS_SERVICE_NAME}"
+    - name: LOCAL_SERVER_DEFAULT_PORT
+      value: "${LOCAL_SERVER_DEFAULT_PORT}"
+    - name: ADMIN_USERNAME
+      value: ""
+    - name: ADMIN_PASSWORD
+      value: ""
+    - name: DOMAIN_SOURCE_TYPE
+      value: "${DOMAIN_SOURCE_TYPE}"
+    - name: WDT_DOMAIN_TYPE
+      value: "${WDT_DOMAIN_TYPE:-WLS}"
+    image: "${WEBLOGIC_IMAGE_NAME}:${WEBLOGIC_IMAGE_TAG}"
+    imagePullPolicy: ${WEBLOGIC_IMAGE_PULL_POLICY}
+    lifecycle:
+      preStop:
+        exec:
+          command:
+          - /weblogic-operator/scripts/stopServer.sh
+    #
+    #Comment out the following liveness probe to make it easier
+    #to debug on a failure.  Test scripts can still detect failure
+    #by noticing the pod never goes into ready state. This
+    #is useful as a 'bad' pod will then not go into CrashLoopBackoff.
+    #
+    #livenessProbe:
+    #  exec:
+    #    command:
+    #    - /weblogic-operator/scripts/livenessProbe.sh
+    #  failureThreshold: 1
+    #  initialDelaySeconds: 10
+    #  periodSeconds: 10
+    #  successThreshold: 1
+    #  timeoutSeconds: 5
+    name: weblogic-server
+    ports:
+    - containerPort: ${LOCAL_SERVER_DEFAULT_PORT}
+      protocol: TCP
+    readinessProbe:
+      failureThreshold: 1
+      httpGet:
+        path: /weblogic
+        port: ${LOCAL_SERVER_DEFAULT_PORT}
+        scheme: HTTP
+      initialDelaySeconds: 2
+      periodSeconds: 1
+      successThreshold: 1
+      timeoutSeconds: 5
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - name: weblogic-domain-storage-volume
+      mountPath: /shared
+  # WL Pods shouldn't need secrets if the introspector is working:
+  #  - mountPath: /weblogic-operator/secrets
+  #    name: weblogic-credentials-volume
+  #    readOnly: true
+    - mountPath: /weblogic-operator/scripts
+      name: weblogic-script-cm-volume
+      readOnly: true
+    - mountPath: /weblogic-operator/introspector
+      name: introspect-domain-cm-volume
+      readOnly: true
+    - name: weblogic-runtime-encryption-volume
+      mountPath: /weblogic-operator/model-runtime-secret
+  dnsPolicy: ClusterFirst
+  hostname: ${SERVICE_NAME}
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 1
+  volumes:
+  - name: weblogic-runtime-encryption-volume
+    secret:
+      defaultMode: 420
+      secretName: ${DOMAIN_UID}-runtime-encryption-secret
+      optional: ${MII_WDT_ENCRYPT_SECRET}
+  # WL Pods shouldn't need secrets if the introspector is working:
+  #- name: weblogic-credentials-volume
+  #  secret:
+  #    defaultMode: 420
+  #    secretName: ${WEBLOGIC_CREDENTIALS_SECRET_NAME}
+  - configMap:
+      defaultMode: 365
+      name: weblogic-script-cm
+    name: weblogic-script-cm-volume
+  - configMap:
+      defaultMode: 365
+      name: ${DOMAIN_UID}-weblogic-domain-introspect-cm
+    name: introspect-domain-cm-volume
+  - name: weblogic-domain-storage-volume
+    persistentVolumeClaim:
+      claimName: ${DOMAIN_UID}-weblogic-domain-pvc

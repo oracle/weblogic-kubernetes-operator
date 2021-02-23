@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -16,7 +16,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import com.google.common.io.CharStreams;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -37,6 +36,7 @@ import oracle.kubernetes.operator.utils.KubernetesExecFactoryImpl;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import org.joda.time.DateTime;
 
@@ -119,7 +119,7 @@ public class ServerStatusReader {
     private StepAndPacket createStatusReaderStep(Packet packet, V1Pod pod) {
       return new StepAndPacket(
           createServerStatusReaderStep(info, pod, PodHelper.getPodServerName(pod), timeoutSeconds),
-          packet.clone());
+          packet.copy());
     }
   }
 
@@ -183,7 +183,7 @@ public class ServerStatusReader {
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
 
                 try (final Reader reader = new InputStreamReader(proc.getInputStream())) {
-                  state = CharStreams.toString(reader);
+                  state = OperatorUtils.toString(reader);
                 }
 
                 if (proc.waitFor(timeoutSeconds, TimeUnit.SECONDS)) {
@@ -214,7 +214,7 @@ public class ServerStatusReader {
             }
 
             try (LoggingContext stack =
-                      LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
+                     LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
               LOGGER.fine("readState: " + state + " for " + pod.getMetadata().getName());
               state = chooseStateOrLastKnownServerStatus(lastKnownStatus, state);
               serverStateMap.put(serverName, state);

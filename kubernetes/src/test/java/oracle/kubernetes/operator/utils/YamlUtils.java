@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -9,7 +9,6 @@ import java.util.TreeMap;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
-import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.yaml.snakeyaml.DumperOptions;
@@ -125,7 +124,7 @@ public class YamlUtils {
         return true;
       }
 
-      int index = StringUtils.indexOfDifference(expectedString, returnedString);
+      int index = indexOfDifference(expectedString, returnedString);
       if (index < 10) {
         description.appendText("\nwas\n").appendText(returnedString);
       } else {
@@ -135,6 +134,25 @@ public class YamlUtils {
             .appendText(toDifference(index, returnedString));
       }
       return false;
+    }
+
+    private int indexOfDifference(final CharSequence cs1, final CharSequence cs2) {
+      if (cs1 == cs2) {
+        return -1;
+      }
+      if (cs1 == null || cs2 == null) {
+        return 0;
+      }
+      int i;
+      for (i = 0; i < cs1.length() && i < cs2.length(); ++i) {
+        if (cs1.charAt(i) != cs2.charAt(i)) {
+          break;
+        }
+      }
+      if (i < cs2.length() || i < cs1.length()) {
+        return i;
+      }
+      return -1;
     }
 
     private String toDifference(int diffIndex, String returnedString) {

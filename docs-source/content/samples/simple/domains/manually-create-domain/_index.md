@@ -7,10 +7,10 @@ description: "Sample for creating the domain custom resource manually."
 
 
 In some circumstances you may wish to manually create your domain custom resource.  If you have created your own
-Docker image containing your domain and the specific patches that it requires, then this approach will probably
+Container image containing your domain and the specific patches that it requires, then this approach will probably
 be the most suitable for your needs.
 
-To create the domain custom resource, just make a copy of the sample [domain.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/manually-create-domain/domain.yaml), and then edit
+To create the domain custom resource, just make a copy of the sample [domain.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/manually-create-domain/domain.yaml) file, and then edit
 it using the instructions provided in the comments in that file.
 When it is ready, you can create the domain in your Kubernetes cluster using the command:
 

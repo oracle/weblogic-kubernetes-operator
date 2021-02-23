@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
@@ -7,6 +7,9 @@ import java.io.File;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
@@ -15,6 +18,10 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_URL_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -57,6 +64,32 @@ public class Installer {
         .location(WIT_DOWNLOAD_URL)
         .verify(true)
         .unzip(true);
+  }
+
+  /**
+   * Create an InstallParams with the default values for WLE.
+   * @return an InstallParams instance
+   */
+  public static InstallParams defaultInstallWleParams() {
+    return new InstallParams()
+        .defaults()
+        .type(WLE)
+        .location(WLE_DOWNLOAD_URL)
+        .verify(true)
+        .unzip(false);
+  }
+
+  /**
+   * Create an InstallParams with the default values for SnakeYAML.
+   * @return an InstallParams instance
+   */
+  public static InstallParams defaultInstallSnakeParams() {
+    return new InstallParams()
+        .defaults()
+        .type(SNAKE)
+        .location(SNAKE_DOWNLOAD_URL)
+        .verify(true)
+        .unzip(false);
   }
 
   /**
@@ -191,7 +224,9 @@ public class Installer {
       if (Command.withParams(params).execute()
           && params.stdout() != null
           && params.stdout().length() != 0) {
-        version = params.stdout();
+        // Because I've updated the name of the logging exporter to remove the version number in the name, but
+        // also preserved the original, there will be two entries located. Take the first.
+        version = params.stdout().lines().findFirst().get().trim();
       } else {
         RuntimeException exception =
             new RuntimeException(String.format("Failed to get the version number of the requested %s release.", type));
@@ -215,23 +250,30 @@ public class Installer {
 
   private boolean needToGetActualLocation(
       String location,
-      String type
-  ) {
-    if (type == WDT && WDT_DOWNLOAD_URL_DEFAULT.equals(location)
-        || type == WIT && WIT_DOWNLOAD_URL_DEFAULT.equals(location)) {
-      return true;
+      String type) {
+    switch (type) {
+      case WDT:
+        return WDT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WIT:
+        return WIT_DOWNLOAD_URL_DEFAULT.equals(location);
+      case WLE:
+        return WLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      default:
+        return false;
     }
-    return false;
   }
 
   private String getInstallerFileName(
-      String type
-  ) {
+      String type) {
     switch (type) {
       case WDT:
         return WDT_DOWNLOAD_FILENAME_DEFAULT;
       case WIT:
         return WIT_DOWNLOAD_FILENAME_DEFAULT;
+      case WLE:
+        return WLE_DOWNLOAD_FILENAME_DEFAULT;
+      case SNAKE:
+        return SNAKE_DOWNLOADED_FILENAME;
       default:
         return "";
     }

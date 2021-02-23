@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
@@ -45,7 +45,7 @@ public abstract class BaseDebugLoggingFilter {
 
     // Make a copy of all of the request headers
     MultivaluedHashMap<String, String> loggableHeaders =
-        new MultivaluedHashMap<String, String>(req.getHeaders());
+        new MultivaluedHashMap<>(req.getHeaders());
 
     // Authorization headers contain credentials.  These credentials should not be
     // debug logged since they contain sensitive data.

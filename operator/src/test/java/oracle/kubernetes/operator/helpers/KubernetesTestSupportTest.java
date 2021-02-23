@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -18,11 +18,10 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
-import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -48,9 +47,9 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
@@ -69,30 +68,23 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KubernetesTestSupportTest {
 
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
-  List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(SystemClockTestSupport.installClock());
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
@@ -224,7 +216,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainAsynchronously_statusIsUnchanged() throws ApiException {
+  public void afterPatchDomainAsynchronously_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
@@ -321,12 +313,12 @@ public class KubernetesTestSupportTest {
     new CallBuilder().createTokenReview(tokenReview);
   }
 
-  @Test(expected = ApiException.class)
-  public void whenHttpErrorAssociatedWithResource_throwException() throws ApiException {
+  @Test
+  public void whenHttpErrorAssociatedWithResource_throwException() {
     testSupport.failOnResource(TOKEN_REVIEW, "tr", HTTP_BAD_REQUEST);
     V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
 
-    new CallBuilder().createTokenReview(tokenReview);
+    assertThrows(ApiException.class, () -> new CallBuilder().createTokenReview(tokenReview));
   }
 
   @Test
@@ -485,15 +477,15 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void listEventWithSelector_returnsMatches() {
-    V1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
-    V1Event s2 = createEvent("ns1", "event2", "walk");
-    V1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
-    V1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
-    V1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
-    V1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
+    CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
+    CoreV1Event s2 = createEvent("ns1", "event2", "walk");
+    CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
+    CoreV1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
+    CoreV1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
+    CoreV1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
     testSupport.defineResources(s1, s2, s3, s4, s5, s6);
 
-    TestResponseStep<V1EventList> responseStep = new TestResponseStep<>();
+    TestResponseStep<CoreV1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
           new CallBuilder()
                 .withFieldSelector("action=walk,involvedObject.kind=bird")
@@ -506,8 +498,8 @@ public class KubernetesTestSupportTest {
     return new V1ObjectReference().kind(kind);
   }
 
-  private V1Event createEvent(String namespace, String name, String act) {
-    return new V1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  private CoreV1Event createEvent(String namespace, String name, String act) {
+    return new CoreV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
   }
 
   @Test
@@ -533,7 +525,7 @@ public class KubernetesTestSupportTest {
   @Test
   public void whenConfigMapNotFound_readStatusIsNotFound() {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
-    Packet packet = testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
+    testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
     assertThat(endStep.callResponse.getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
     assertThat(endStep.callResponse.getE(), notNullValue());
@@ -551,8 +543,6 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void deleteNamespace_deletesAllMatchingNamespacedResources() {
-    V1Namespace n1 = createNamespace("ns1");
-    V1Namespace n2 = createNamespace("ns2");
     Domain dom1 = createDomain("ns1", "domain1");
     Domain dom2 = createDomain("ns2", "domain2");
     V1Service s1 = createService("ns1", "service1");
@@ -583,10 +573,6 @@ public class KubernetesTestSupportTest {
 
   private String getNamespace(KubernetesObject object) {
     return object.getMetadata().getNamespace();
-  }
-
-  private V1Namespace createNamespace(String name) {
-    return new V1Namespace().metadata(new V1ObjectMeta().name(name));
   }
 
   static class TestResponseStep<T> extends DefaultResponseStep<T> {

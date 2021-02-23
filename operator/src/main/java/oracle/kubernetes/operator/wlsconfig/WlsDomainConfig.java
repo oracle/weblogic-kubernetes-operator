@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -19,11 +19,13 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
+
 /** Contains a snapshot of configuration for a WebLogic Domain. */
 public class WlsDomainConfig implements WlsDomain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  // Name of this WLS domain (This is NOT the domain UID in the weblogic domain kubernetes CRD)
+  // Name of this WLS domain (This is NOT the domain UID in the WebLogic domain kubernetes CRD)
   private String name;
 
   private String adminServerName;
@@ -56,7 +58,7 @@ public class WlsDomainConfig implements WlsDomain {
    * @param adminServerName Name of the admin server in this WLS domain
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
-   * @param wlsServerTemplates A Map containing server templates configued in this WLS domain
+   * @param wlsServerTemplates A Map containing server templates configured in this WLS domain
    * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(
@@ -156,36 +158,6 @@ public class WlsDomainConfig implements WlsDomain {
         wlsMachineConfigs);
   }
 
-  public static String getRetrieveServersSearchUrl() {
-    return "/management/weblogic/latest/domainConfig/search";
-  }
-
-  /**
-   * JSON payload for retrieve servers REST request.
-   * @return payload
-   */
-  public static String getRetrieveServersSearchPayload() {
-    return "{ fields: [ "
-        + getSearchFields()
-        + " ], "
-        + "  links: [], "
-        + "  children: { "
-        + "    servers: { "
-        + WlsServerConfig.getSearchPayload()
-        + " }, "
-        + "    serverTemplates: { "
-        + WlsServerConfig.getSearchPayload()
-        + " }, "
-        + "    clusters: { "
-        + WlsClusterConfig.getSearchPayload()
-        + " }, "
-        + "    machines: { "
-        + WlsMachineConfig.getSearchPayload()
-        + " } "
-        + "  } "
-        + "}";
-  }
-
   private static String getSearchFields() {
     return "'name' ";
   }
@@ -282,10 +254,6 @@ public class WlsDomainConfig implements WlsDomain {
     return this.configuredClusters;
   }
 
-  public void setConfiguredClusters(List<WlsClusterConfig> configuredClusters) {
-    this.configuredClusters = configuredClusters;
-  }
-
   /**
    * Returns configuration of servers found in the WLS domain, including admin server, standalone
    * managed servers that do not belong to any cluster, and statically configured managed servers
@@ -305,16 +273,8 @@ public class WlsDomainConfig implements WlsDomain {
     return this.servers;
   }
 
-  public void setServers(List<WlsServerConfig> servers) {
-    this.servers = servers;
-  }
-
   public List<WlsServerConfig> getServerTemplates() {
     return this.serverTemplates;
-  }
-
-  public void setServerTemplates(List<WlsServerConfig> serverTemplates) {
-    this.serverTemplates = serverTemplates;
   }
 
   /**
@@ -392,18 +352,15 @@ public class WlsDomainConfig implements WlsDomain {
 
   /**
    * Whether the WebLogic domain contains a server with the given server name,
-   * not including servers that are part of a dynamic cluster.
+   * including standalone servers, and servers that belong to a configured or dynamic cluster.
    *
    * @param serverName server name to be checked
    * @return True if the WebLogic domain contains a server with the given server name
    */
   public synchronized boolean containsServer(String serverName) {
-    if (serverName != null && servers != null) {
-      for (WlsServerConfig serverConfig : servers) {
-        if (serverConfig.getName().equals(serverName)) {
-          return true;
-        }
-      }
+    if (!isNullOrEmpty(serverName)) {
+      return getServers().stream().anyMatch(s -> serverName.equals(s.getName()))
+          || getConfiguredClusters().stream().anyMatch(c -> c.containsServer(serverName));
     }
     return false;
   }
@@ -423,7 +380,6 @@ public class WlsDomainConfig implements WlsDomain {
     return result;
   }
 
-  @Override
   @Nonnull
   public String[] getClusterNames() {
     return getClusterConfigs().keySet().toArray(new String[0]);

@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Use this to provide your own Apache webtier configuration as needed; simply define the
@@ -6,7 +6,7 @@
 persistentVolumeClaimName: <pv-claim-name>
 
 # imagePullSecrets contains an optional list of Kubernetes secrets, that are needed
-# to access the registry containing the apache webtier Docker image.
+# to access the registry containing the apache webtier image.
 # If no secrets are required, then omit this property.
 # 
 # Example : a secret is needed, and has been stored in 'my-apache-webtier-secret'

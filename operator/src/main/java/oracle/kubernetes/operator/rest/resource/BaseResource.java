@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest.resource;
@@ -88,7 +88,7 @@ public class BaseResource {
     // traverse my parents to find the path segments to this resource.
     // insert each into an array starting at 0 so that the array
     // starts from the root resource when we're finished.
-    List<String> resourceSegments = new ArrayList<String>();
+    List<String> resourceSegments = new ArrayList<>();
     for (BaseResource r = this; r != null; r = r.getParent()) {
       resourceSegments.add(0, r.getPathSegment());
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -47,25 +47,6 @@ public class TestUtils {
   }
 
   /**
-   * Removes the console handlers from the specified logger, in order to silence them during a test.
-   *
-   * @param logger a logger to silence
-   * @return a collection of the removed handlers
-   */
-  public static List<Handler> removeConsoleHandlers(Logger logger) {
-    List<Handler> savedHandlers = new ArrayList<>();
-    for (Handler handler : logger.getHandlers()) {
-      if (handler instanceof ConsoleHandler) {
-        savedHandlers.add(handler);
-      }
-    }
-    for (Handler handler : savedHandlers) {
-      logger.removeHandler(handler);
-    }
-    return savedHandlers;
-  }
-
-  /**
    * Restores the silenced logger handlers.
    *
    * @param logger a logger to restore
@@ -84,8 +65,8 @@ public class TestUtils {
   abstract static class TestLogHandler extends Handler {
     private static final List<String> ALL_MESSAGES = new ArrayList<>();
     private Throwable throwable;
-    private List<Throwable> ignoredExceptions = new ArrayList<>();
-    private List<Class<? extends Throwable>> ignoredClasses = new ArrayList<>();
+    private final List<Throwable> ignoredExceptions = new ArrayList<>();
+    private final List<Class<? extends Throwable>> ignoredClasses = new ArrayList<>();
     private Collection<LogRecord> logRecords = new ArrayList<>();
     private List<String> messagesToTrack = new ArrayList<>();
 
@@ -157,9 +138,9 @@ public class TestUtils {
   }
 
   public static class ConsoleHandlerMemento implements Memento {
-    private Logger logger;
-    private TestLogHandler testHandler;
-    private List<Handler> savedHandlers;
+    private final Logger logger;
+    private final TestLogHandler testHandler;
+    private final List<Handler> savedHandlers;
     private Level savedLogLevel;
     // log level could be null, so need a boolean to indicate if we have saved it
     private boolean loggerLevelSaved;
@@ -260,10 +241,6 @@ public class TestUtils {
       log = logContext.getLogger("com.jayway.jsonpath.internal.path.CompiledPath");
       originalLogLevel = log.getLevel();
       log.setLevel(ch.qos.logback.classic.Level.INFO);
-    }
-
-    static Memento silenceLogger() {
-      return new JsonPathLoggerMemento();
     }
 
     @Override

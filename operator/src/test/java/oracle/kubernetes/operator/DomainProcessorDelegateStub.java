@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -72,6 +72,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
+      return next;
+    }
+
+    @Override
+    public Step waitForReady(String podName, Step next) {
       return next;
     }
 

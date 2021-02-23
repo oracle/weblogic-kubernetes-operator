@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.watcher;
@@ -18,5 +18,5 @@ public interface WatchListener<T> {
    *
    * @param response Watch response consisting of type and object
    */
-  public void receivedResponse(Watch.Response<T> response);
+  void receivedResponse(Watch.Response<T> response);
 }

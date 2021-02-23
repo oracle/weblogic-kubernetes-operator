@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+<!-- Copyright (c) 2017, 2021, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -30,7 +30,7 @@
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
-        <version>2.2.6</version>
+        <version>${git-commit-id-plugin-version}</version>
         <executions>
           <execution>
             <id>get-the-git-infos</id>
@@ -158,10 +158,11 @@
 
       <plugin>
         <groupId>${project.groupId}</groupId>
-        <artifactId>jsonschema-maven-plugin</artifactId>
+        <artifactId>operator-build-maven-plugin</artifactId>
         <version>${project.version}</version>
         <executions>
           <execution>
+            <id>generate-schema</id>
             <phase>process-classes</phase>
             <goals>
               <goal>generate</goal>
@@ -170,6 +171,27 @@
               <rootClass>oracle.kubernetes.weblogic.domain.model.Domain</rootClass>
               <kubernetesVersion>1.13.5</kubernetesVersion>
               <generateMarkdown>true</generateMarkdown>
+            </configuration>
+          </execution>
+          <execution>
+            <id>default-cli</id>
+            <phase>test</phase>
+            <goals>
+              <goal>shunit2</goal>
+            </goals>
+            <configuration>
+              <sourceDirectory>src/main/resources/scripts</sourceDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-scaling-script</id>
+            <phase>test</phase>
+            <goals>
+              <goal>shunit2</goal>
+            </goals>
+            <configuration>
+              <testSourceDirectory>src/test/sh/scaling</testSourceDirectory>
+              <sourceDirectory>scripts/scaling</sourceDirectory>
             </configuration>
           </execution>
         </executions>
@@ -227,15 +249,12 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>operator-swagger</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>json-schema</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.swagger</groupId>
-      <artifactId>swagger-annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.kjetland</groupId>
@@ -250,41 +269,11 @@
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
-      <artifactId>jersey-media-multipart</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-jackson</artifactId>
     </dependency>
     <dependency>
       <groupId>org.glassfish.jersey.media</groupId>
       <artifactId>jersey-media-json-processing</artifactId>
-    </dependency>
-
-    <!-- JSON processing: jackson -->
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.datatype</groupId>
-      <artifactId>jackson-datatype-joda</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.glassfish</groupId>
-      <artifactId>jakarta.json</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
     </dependency>
 
     <!-- Grizzly & jersey server side code -->
@@ -296,35 +285,33 @@
       <groupId>org.glassfish.jersey.inject</groupId>
       <artifactId>jersey-hk2</artifactId>
     </dependency>
+
     <dependency>
       <groupId>com.fasterxml.jackson.dataformat</groupId>
       <artifactId>jackson-dataformat-yaml</artifactId>
     </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-    </dependency>
+
     <dependency>
       <groupId>io.kubernetes</groupId>
       <artifactId>client-java</artifactId>
     </dependency>
+
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+
+    <!-- test dependencies -->
     <dependency>
       <groupId>com.appscode.voyager</groupId>
       <artifactId>client-java</artifactId>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>javax</groupId>
-      <artifactId>javaee-web-api</artifactId>
-    </dependency>
 
-    <!--  not included with jdk 9 -->
-    <dependency>
-      <groupId>javax.xml.bind</groupId>
-      <artifactId>jaxb-api</artifactId>
-    </dependency>
-
-    <!-- test dependencies -->
     <dependency>
       <!-- note: need to include this before junit since junit includes an obsolete version of hamcrest -->
       <groupId>org.hamcrest</groupId>
@@ -332,9 +319,13 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>${junit-version}</version>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -370,7 +361,6 @@
   </dependencies>
 
   <properties>
-    <junit-version>4.13.1</junit-version>
     <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
   </properties>
 

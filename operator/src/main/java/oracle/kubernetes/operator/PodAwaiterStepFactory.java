@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -15,6 +15,15 @@ public interface PodAwaiterStepFactory {
    * @return Asynchronous step
    */
   Step waitForReady(V1Pod pod, Step next);
+
+  /**
+   * Waits until the Pod with given name is Ready.
+   *
+   * @param podName Name of the Pod to watch
+   * @param next Next processing step once Pod is ready
+   * @return Asynchronous step
+   */
+  Step waitForReady(String podName, Step next);
 
   /**
    * Waits until the Pod is deleted.

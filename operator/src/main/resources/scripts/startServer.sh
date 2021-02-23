@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -8,7 +8,11 @@
 # This is the script WebLogic Operator WLS Pods use to start their WL Server.
 #
 
-SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+if [ -z ${SCRIPTPATH+x} ]; then
+  SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+fi
+
+echo "script path is ${SCRIPTPATH}"
 source ${SCRIPTPATH}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils.sh" && exitOrLoop
 
@@ -162,93 +166,6 @@ function copySitCfgWhileBooting() {
   fi
 }
 
-# prepare mii server
-
-function prepareMIIServer() {
-
-  trace "Model-in-Image: Creating domain home."
-
-  # primordial domain contain the basic structures, security and other fmwconfig templated info
-  # domainzip only contains the domain configuration (config.xml jdbc/ jms/)
-  # Both are needed for the complete domain reconstruction
-
-  if [ ! -f /weblogic-operator/introspector/primordial_domainzip.secure ] ; then
-    trace SEVERE "Domain Source Type is FromModel, the primordial model archive is missing, cannot start server"
-    return 1
-  fi
-
-  if [ ! -f /weblogic-operator/introspector/domainzip.secure ] ; then
-    trace SEVERE  "Domain type is FromModel, the domain configuration archive is missing, cannot start server"
-    return 1
-  fi
-
-  trace "Model-in-Image: Restoring primordial domain"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/primordial_domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
-
-  trace "Model-in-Image: Restore domain secret"
-  # decrypt the SerializedSystemIni first
-  if [ -f ${RUNTIME_ENCRYPTION_SECRET_PASSWORD} ] ; then
-    MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-  else
-    trace SEVERE "Domain Source Type is 'FromModel' which requires specifying a runtimeEncryptionSecret " \
-    "in your domain resource and deploying this secret with a 'password' key, but the secret does not have this key."
-    return 1
-  fi
-  encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
-
-  # restore the config zip
-  #
-  trace "Model-in-Image: Restore domain config"
-  cd / || return 1
-  base64 -d /weblogic-operator/introspector/domainzip.secure > /tmp/domain.tar.gz || return 1
-  tar -xzf /tmp/domain.tar.gz || return 1
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
-
-  # restore the archive apps and libraries
-  #
-  trace "Model-in-Image: Restoring apps and libraries"
-
-  mkdir -p ${DOMAIN_HOME}/lib
-  if [ $? -ne 0 ] ; then
-    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
-    return 1
-  fi
-  local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
-
-  for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
-    do
-        # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} ${WLSDEPLOY_DOMAINLIB}
-
-        if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          return 1
-        fi
-
-        # Flatten the jars to the domain lib root
-
-        if [ -d ${WLSDEPLOY_DOMAINLIB} ] && [ "$(ls -A ${WLSDEPLOY_DOMAINLIB})" ] ; then
-          mv ${WLSDEPLOY_DOMAINLIB}/* .
-        fi
-        rm -fr wlsdeploy/
-
-        # expand the archive apps and shared lib to the wlsdeploy/* directories
-        # the config.xml is referencing them from that path
-
-        cd ${DOMAIN_HOME} || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/
-        if [ $? -ne 0 ] ; then
-          trace SEVERE "Domain Source Type is FromModel, error in extracting application archive ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          return 1
-        fi
-        # No need to have domainLibraries in domain home
-        rm -fr ${WLSDEPLOY_DOMAINLIB}
-    done
-  return 0
-}
 
 # trace env vars and dirs before export.*Home calls
 

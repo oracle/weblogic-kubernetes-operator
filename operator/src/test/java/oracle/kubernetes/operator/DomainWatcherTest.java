@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
@@ -25,7 +25,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   private static final String BOOKMARK_RESOURCE_VERSION = "987";
   private static final String UID = "uid";
 
-  private Domain domain = createDomain();
+  private final Domain domain = createDomain();
 
   private static Domain createDomain() {
     return new Domain().withSpec(new DomainSpec().withDomainUid(UID));

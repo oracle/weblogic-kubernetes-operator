@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.authentication;
@@ -24,23 +24,21 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 public class Helpers {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  @SuppressWarnings("unused")
-  private final Authenticator authenticator;
-  private final ApiClient apiClient;
   private final CoreV1Api coreApi;
+
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
   /**
    * Construct helpers.
    * @param authenticator authenticator
    */
   public Helpers(Authenticator authenticator) {
-    this.authenticator = authenticator;
-    apiClient = authenticator.getApiClient();
+    ApiClient apiClient = authenticator.getApiClient();
     coreApi = new CoreV1Api(apiClient);
   }
 
   /**
-   * Find the servivce account by name.
+   * Find the service account by name.
    *
    * @param serviceAccountName The name of the Service Account.
    * @param namespace The Namespace the Service Account is defined in.
@@ -113,9 +111,10 @@ public class Helpers {
             4096, // limit size for list
             "false", // pretty
             "", // resourceVersion
+            RESOURCE_VERSION_MATCH_UNSET,
             0, // timeout (seconds)
             Boolean.FALSE // watch indicator
-            );
+        );
 
     return serviceAccountList;
   }

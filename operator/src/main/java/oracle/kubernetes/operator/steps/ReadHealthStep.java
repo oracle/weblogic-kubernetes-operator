@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -53,6 +52,7 @@ import org.joda.time.DateTime;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public class ReadHealthStep extends Step {
 
@@ -169,9 +169,9 @@ public class ReadHealthStep extends Step {
   }
 
   static final class ReadHealthProcessing {
-    private Packet packet;
-    private V1Service service;
-    private V1Pod pod;
+    private final Packet packet;
+    private final V1Service service;
+    private final V1Pod pod;
 
     ReadHealthProcessing(Packet packet, V1Service service, V1Pod pod) {
       this.packet = packet;
@@ -366,23 +366,17 @@ public class ReadHealthStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      try {
-        new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
-      } catch (IOException e) {
-        logReadFailure(packet);
-      }
+      new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
       return doNext(packet);
     }
 
 
     static class HealthResponseProcessing {
       private final String serverName;
-      private Packet packet;
-      private HttpResponse<String> response;
-      private String state;
-      private ServerHealth health;
+      private final Packet packet;
+      private final HttpResponse<String> response;
 
-      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) throws IOException {
+      public HealthResponseProcessing(Packet packet, HttpResponse<String> response) {
         this.packet = packet;
         this.response = response;
 
@@ -405,8 +399,8 @@ public class ReadHealthStep extends Step {
 
       void recordStateAndHealth() throws IOException {
         Pair<String, ServerHealth> pair = RecordHealthStep.parseServerHealthJson(getResponse().body());
-        state = Strings.emptyToNull(pair.getLeft());
-        health = pair.getRight();
+        String state = emptyToNull(pair.getLeft());
+        ServerHealth health = pair.getRight();
         recordStateAndHealth(state, health);
       }
 

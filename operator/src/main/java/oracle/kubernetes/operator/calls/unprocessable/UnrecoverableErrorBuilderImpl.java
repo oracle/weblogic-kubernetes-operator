@@ -1,9 +1,10 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.calls.unprocessable;
 
 import java.util.Collections;
+import java.util.Optional;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
@@ -63,6 +64,11 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
     return code == 400 || code == 401 || code == 403 || code == 404 || code == 405 || code == 410 || code == 500;
   }
 
+  public static boolean isNotFound(ApiException e) {
+    int code = e.getCode();
+    return code == 404 || code == 410;
+  }
+
   /**
    * Create unrecoverable error builder.
    */
@@ -79,7 +85,11 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   @Override
   public String getReason() {
-    return errorBody.getDetails().getCauses()[0].getReason();
+    return Optional.ofNullable(errorBody.getDetails())
+        .map(ErrorDetails::getCauses)
+        .map(n -> n[0])
+        .map(Cause::getReason)
+        .orElse("");
   }
 
   /**

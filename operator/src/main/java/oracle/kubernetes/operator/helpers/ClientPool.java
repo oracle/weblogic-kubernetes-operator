@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -25,7 +25,9 @@ import oracle.kubernetes.operator.work.ContainerResolver;
 
 public class ClientPool extends Pool<ApiClient> {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static ClientFactory FACTORY = new DefaultClientFactory();
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static ClientPool SINGLETON = new ClientPool();
   private static ThreadFactory threadFactory;
   private final AtomicBoolean isFirst = new AtomicBoolean(true);
@@ -38,15 +40,12 @@ public class ClientPool extends Pool<ApiClient> {
   }
 
   private static Runnable wrapRunnable(Runnable r) {
-    return new Runnable() {
-      @Override
-      public void run() {
-        try {
-          r.run();
-        } catch (Throwable t) {
-          // These will almost always be spurious exceptions
-          LOGGER.finer(MessageKeys.EXCEPTION, t);
-        }
+    return () -> {
+      try {
+        r.run();
+      } catch (Throwable t) {
+        // These will almost always be spurious exceptions
+        LOGGER.finer(MessageKeys.EXCEPTION, t);
       }
     };
   }
@@ -62,9 +61,7 @@ public class ClientPool extends Pool<ApiClient> {
     // client, version 7.0.0, the ApiClient held an instance of the OkHttp 2
     // HTTP client, which was single threaded.
     // Disable pooling and always return the same instance
-    return instance.updateAndGet(prev -> {
-      return prev != null ? prev : getApiClient();
-    });
+    return instance.updateAndGet(prev -> prev != null ? prev : getApiClient());
   }
 
   private ApiClient getApiClient() {
@@ -119,7 +116,7 @@ public class ClientPool extends Pool<ApiClient> {
                   Integer.MAX_VALUE,
                   60,
                   TimeUnit.SECONDS,
-                  new SynchronousQueue<Runnable>(),
+                  new SynchronousQueue<>(),
                   threadFactory) {
                 @Override
                 public void execute(Runnable command) {

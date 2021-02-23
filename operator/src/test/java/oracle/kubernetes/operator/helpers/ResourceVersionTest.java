@@ -1,21 +1,21 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ResourceVersionTest {
 
@@ -127,34 +127,34 @@ public class ResourceVersionTest {
     assertThat(rv.getPrereleaseVersion(), equalTo(42));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenNoDigits_throwIllegalArgument() {
-    new ResourceVersion("nonumber");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("nonumber"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenOnlyNumber_throwIllegalArgument() {
-    new ResourceVersion("3");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("3"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenNumberFirst_throwIllegalArgument() {
-    new ResourceVersion("555v");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("555v"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenIllegalPrerelease_throwIllegalArgument() {
-    new ResourceVersion("v10gamma12");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v10gamma12"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenExtraTokenAlpha_throwIllegalArgument() {
-    new ResourceVersion("v5alpha7t");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v5alpha7t"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void whenExtraTokenBeta_throwIllegalArgument() {
-    new ResourceVersion("v3beta1alpha");
+    assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v3beta1alpha"));
   }
 
   @Test
@@ -173,11 +173,9 @@ public class ResourceVersionTest {
             "foo10",
             "v12alpha1");
     List<ResourceVersion> rvs =
-        values.stream().map(e -> new ResourceVersion(e)).collect(Collectors.toList());
+        values.stream().map(ResourceVersion::new).sorted().collect(Collectors.toList());
 
-    Collections.sort(rvs);
-
-    List<String> actual = rvs.stream().map(e -> e.toString()).collect(Collectors.toList());
+    List<String> actual = rvs.stream().map(ResourceVersion::toString).collect(Collectors.toList());
 
     List<String> expected =
         Arrays.asList(

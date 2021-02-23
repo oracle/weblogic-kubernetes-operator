@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -49,21 +49,6 @@ public final class NextAction {
   /**
    * Indicates that the fiber should be suspended. Once the current {@link Thread} exits the fiber's
    * control loop, the onExit will be invoked. This {@link Consumer} may call {@link
-   * Fiber#resume(Packet)}; however it is still guaranteed that the current Thread will return
-   * control, therefore, further processing will be handled on a {@link Thread} from the {@link
-   * Executor}. For synchronous cases, the Thread invoking this fiber cannot return until fiber
-   * processing is complete; therefore, the guarantee is only that the onExit will be invoked prior
-   * to completing the suspension.
-   *
-   * @param onExit Called once the fiber is suspended
-   */
-  public void suspend(Consumer<AsyncFiber> onExit) {
-    suspend(null, onExit);
-  }
-
-  /**
-   * Indicates that the fiber should be suspended. Once the current {@link Thread} exits the fiber's
-   * control loop, the onExit will be invoked. This {@link Consumer} may call {@link
    * Fiber#resume(Packet)}; however it is still guaranteed that the current fiber will return
    * control, therefore, further processing will be handled on a {@link Thread} from the {@link
    * Executor}. Once {@link Fiber#resume(Packet) resumed}, resume with the {@link
@@ -102,33 +87,14 @@ public final class NextAction {
     return next;
   }
 
-  /**
-   * Sets the next step.
-   *
-   * @param next Next step
-   */
-  public void setNext(Step next) {
-    this.next = next;
-  }
-
-  /**
-   * Returns the last Packet.
-   *
-   * @return Packet
-   */
-  public Packet getPacket() {
-    return packet;
-  }
-
   /** Dumps the contents to assist debugging. */
   @Override
   public String toString() {
-    StringBuilder buf = new StringBuilder();
-    buf.append('[');
-    buf.append("kind=").append(kind).append(',');
-    buf.append("next=").append(next).append(',');
-    buf.append("packet=").append(packet != null ? packet.toString() : null).append(']');
-    return buf.toString();
+    return '['
+        + "kind=" + kind
+        + ",next=" + next
+        + ",packet=" + packet
+        + ']';
   }
 
   public enum Kind {

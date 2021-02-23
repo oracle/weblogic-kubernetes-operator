@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.utils;
@@ -14,6 +14,7 @@ public class InMemoryCertificates {
   public static final String INTERNAL_CERT_DATA = "encoded-cert-data";
 
   private static InMemoryFileSystem fileSystem;
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> getInMemoryPath = p -> fileSystem.getPath(p);
 
   /**

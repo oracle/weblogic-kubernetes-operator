@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -693,8 +693,6 @@ function timestamp() {
   local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
   # convert nano to milli
   local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
   local timezone="`echo $timestamp | awk '{ print $4 }'`"
   echo "${ymdhms}.${milli} ${timezone}"
 }

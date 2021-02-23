@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -6,18 +6,18 @@ package oracle.kubernetes.operator.logging;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 
 public class LoggingFacadeTest {
 
   MockLogger mockLogger;
   LoggingFacade loggingFacade;
 
-  @Before
+  @BeforeEach
   public void setup() {
     mockLogger = new MockLogger();
     loggingFacade = new LoggingFacade(mockLogger);
@@ -97,7 +97,7 @@ public class LoggingFacadeTest {
 
   @Test
   public void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
-    loggingFacade.severe((LoggingFilter) null, "msg", new Throwable());
+    loggingFacade.severe(null, "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }

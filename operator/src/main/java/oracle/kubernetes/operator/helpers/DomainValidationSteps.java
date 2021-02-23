@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -14,8 +15,12 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
+import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -24,13 +29,13 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_DOMAIN;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
 public class DomainValidationSteps {
@@ -44,7 +49,7 @@ public class DomainValidationSteps {
               new DomainValidationStep(next));
   }
 
-  public static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
+  static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
     return new DomainAdditionalValidationStep(podSpec);
   }
 
@@ -56,7 +61,7 @@ public class DomainValidationSteps {
     return new CallBuilder().listSecretsAsync(domainNamespace, new ListSecretsResponseStep());
   }
 
-  public static Step createValidateDomainTopologyStep(Step next) {
+  static Step createValidateDomainTopologyStep(Step next) {
     return new ValidateDomainTopologyStep(next);
   }
 
@@ -64,9 +69,20 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1SecretList> callResponse) {
-      packet.put(SECRETS, callResponse.getResult().getItems());
+      List<V1Secret> list = getSecrets(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(SECRETS, list);
 
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<V1Secret> getSecrets(Packet packet) {
+      return Optional.ofNullable(getSecretsIfContinue(packet)).orElse(new ArrayList<>());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<V1Secret> getSecretsIfContinue(Packet packet) {
+      return packet.get(AsyncRequestStep.CONTINUE) != null ? (List<V1Secret>) packet.get(SECRETS) : null;
     }
   }
 
@@ -78,9 +94,20 @@ public class DomainValidationSteps {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMapList> callResponse) {
-      packet.put(CONFIGMAPS, callResponse.getResult().getItems());
+      List<V1ConfigMap> list = getConfigMaps(packet);
+      list.addAll(callResponse.getResult().getItems());
+      packet.put(CONFIGMAPS, list);
 
       return doContinueListOrNext(callResponse, packet);
+    }
+
+    static List<V1ConfigMap> getConfigMaps(Packet packet) {
+      return Optional.ofNullable(getConfigMapsIfContinue(packet)).orElse(new ArrayList<>());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<V1ConfigMap> getConfigMapsIfContinue(Packet packet) {
+      return packet.get(AsyncRequestStep.CONTINUE) != null ? (List<V1ConfigMap>) packet.get(CONFIGMAPS) : null;
     }
   }
 
@@ -112,7 +139,7 @@ public class DomainValidationSteps {
   }
 
   static class DomainAdditionalValidationStep extends Step {
-    V1PodSpec podSpec;
+    final V1PodSpec podSpec;
 
     DomainAdditionalValidationStep(V1PodSpec podSpec) {
       this.podSpec = podSpec;
@@ -146,43 +173,57 @@ public class DomainValidationSteps {
     }
 
 
-    private void logAndAddWarning(List<String> validationWarnings, String messageKey, Object... params) {
-      LOGGER.warning(messageKey, params);
-      validationWarnings.add(LOGGER.formatMessage(messageKey, params));
+    private void logAndAddValidationWarning(DomainPresenceInfo info, String msgId, Object... messageParams) {
+      LOGGER.warning(msgId, messageParams);
+      info.addValidationWarning(LOGGER.formatMessage(msgId, messageParams));
     }
 
     private void validate(DomainPresenceInfo info, WlsDomainConfig wlsDomainConfig) {
-      List<String> validationWarnings = new ArrayList<>();
+      DomainSpec domainSpec = info.getDomain().getSpec();
 
-      Domain domain = info.getDomain();
-
-      // log warnings for clusters that are specified in domain resource but not configured
-      // in the WebLogic domain
-      for (Cluster cluster : domain.getSpec().getClusters()) {
-        if (!wlsDomainConfig.containsCluster(cluster.getClusterName())) {
-          logAndAddWarning(validationWarnings, MessageKeys.NO_CLUSTER_IN_DOMAIN, cluster.getClusterName());
-        }
-      }
-      // log warnings for managed servers that are specified in domain resource but not configured
-      // in the WebLogic domain
-      for (ManagedServer server : domain.getSpec().getManagedServers()) {
-        if (!wlsDomainConfig.containsServer(server.getServerName())) {
-          logAndAddWarning(validationWarnings, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, server.getServerName());
-        }
-      }
       info.clearValidationWarnings();
-      for (String warning: validationWarnings) {
-        info.addValidationWarning(warning);
+
+      // log warnings for each cluster that is specified in domain resource but not configured
+      // in the WebLogic domain
+      domainSpec.getClusters().forEach(
+          c -> warnIfClusterDoesNotExist(wlsDomainConfig, c.getClusterName(), info));
+
+      // log warnings for each managed server that is specified in domain resource but not configured
+      // in the WebLogic domain
+      domainSpec.getManagedServers().forEach(
+          s -> warnIfServerDoesNotExist(wlsDomainConfig, s.getServerName(), info));
+    }
+
+    private void warnIfClusterDoesNotExist(WlsDomainConfig domainConfig,
+        String clusterName, DomainPresenceInfo info) {
+      if (!domainConfig.containsCluster(clusterName)) {
+        logAndAddValidationWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, clusterName);
+      }
+    }
+
+    private void warnIfServerDoesNotExist(WlsDomainConfig domainConfig,
+        String serverName, DomainPresenceInfo info) {
+      if (!domainConfig.containsServer(serverName)) {
+        logAndAddValidationWarning(info, MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN, serverName);
       }
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      boolean isExplicitRecheck = MakeRightDomainOperation.isExplicitRecheck(packet);
       WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
       validate(info, wlsDomainConfig);
 
-      return doNext(packet);
+      return doNext(getNextStep(info.getValidationWarningsAsString(), isExplicitRecheck, getNext()), packet);
+    }
+
+    private Step getNextStep(String message, boolean skipCreateEvent, Step next) {
+      return skipCreateEvent
+          ? next
+          : Optional.ofNullable((message))
+              .map(m -> createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, m), next))
+              .orElse(next);
     }
   }
 

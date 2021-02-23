@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.google.gson.GsonBuilder;
-import com.meterware.pseudoserver.HttpUserAgentTest;
+import com.meterware.pseudoserver.PseudoServer;
 import com.meterware.pseudoserver.PseudoServlet;
 import com.meterware.pseudoserver.WebResource;
 import com.meterware.simplestub.Memento;
@@ -18,7 +18,6 @@ import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.calls.RequestParams;
@@ -27,17 +26,19 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 @SuppressWarnings("SameParameterValue")
-public class CallBuilderTest extends HttpUserAgentTest {
+public class CallBuilderTest {
   private static final String NAMESPACE = "testspace";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
@@ -45,29 +46,29 @@ public class CallBuilderTest extends HttpUserAgentTest {
           "/apis/weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION + "/namespaces/%s/domains",
           NAMESPACE);
 
-  private static ApiClient apiClient = new ApiClient();
-  private List<Memento> mementos = new ArrayList<>();
-  private CallBuilder callBuilder = new CallBuilder();
+  private static final ApiClient apiClient = new ApiClient();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final CallBuilder callBuilder = new CallBuilder();
   private Object requestBody;
+  private final PseudoServer server = new PseudoServer();
 
   private static String toJson(Object object) {
     return new GsonBuilder().create().toJson(object);
   }
 
-  @Before
-  public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger());
+  @BeforeEach
+  public void setUp() throws NoSuchFieldException, IOException {
+    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  private String getHostPath() throws IOException {
+    return "http://localhost:" + server.getConnectedPort();
+  }
+
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -79,7 +80,35 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void listDomains_returnsListasJson() throws ApiException {
+  public void getVersionCode_firstAttemptFailsAndThenReturnsAVersionInfo() throws Exception {
+    VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
+    defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
+
+    assertThat(callBuilder.executeSynchronousCallWithRetry(
+        callBuilder::readVersionCode, 1), equalTo(versionInfo));
+  }
+
+  static class FailOnceGetServlet extends JsonGetServlet {
+
+    final int errorCode;
+    int numGetResponseCalled = 0;
+
+    FailOnceGetServlet(Object returnValue, int errorCode) {
+      super(returnValue);
+      this.errorCode = errorCode;
+    }
+
+    @Override
+    public WebResource getGetResponse() throws IOException {
+      if (numGetResponseCalled++ > 0) {
+        return super.getGetResponse();
+      }
+      return new WebResource("", errorCode);
+    }
+  }
+
+  @Test
+  public void listDomains_returnsListAsJson() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
@@ -97,24 +126,20 @@ public class CallBuilderTest extends HttpUserAgentTest {
     assertThat(requestBody, equalTo(domain));
   }
 
-  @Test(expected = ApiException.class)
-  public void replaceDomain_errorResonseCode_throws() throws ApiException {
+  @Test
+  public void replaceDomain_errorResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
-  @Test(expected = ApiException.class)
-  public void replaceDomain_conflictResponseCode_throws() throws ApiException {
+  @Test
+  public void replaceDomain_conflictResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 
-    callBuilder.replaceDomain(UID, NAMESPACE, domain);
-  }
-
-  private V1PersistentVolumeClaimSpec createSpec() {
-    return new V1PersistentVolumeClaimSpec().volumeName("TEST_VOL");
+    assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
   private Object fromJson(String json, Class<?> aaClass) {
@@ -132,13 +157,12 @@ public class CallBuilderTest extends HttpUserAgentTest {
     return servlet;
   }
 
-  private void defineHttpPostResponse(String resourceName, Object response) {
-    defineResource(resourceName, new JsonPostServlet(response));
+  private void defineHttpGetResponse(String resourceName, PseudoServlet pseudoServlet) {
+    defineResource(resourceName, pseudoServlet);
   }
 
-  private void defineHttpPostResponse(
-      String resourceName, Object response, Consumer<String> bodyValidation) {
-    defineResource(resourceName, new JsonPostServlet(response, bodyValidation));
+  private void defineResource(String resourceName, PseudoServlet servlet) {
+    server.setResource(resourceName, servlet);
   }
 
   private void defineHttpPutResponse(
@@ -150,10 +174,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
   private void defineHttpPutResponse(
       String resourceName, String name, Object response, PseudoServlet pseudoServlet) {
     defineResource(resourceName + "/" + name, pseudoServlet);
-  }
-
-  private void defineHttpDeleteResponse(String resourceName, String name, Object response) {
-    defineResource(resourceName + "/" + name, new JsonDeleteServlet(response));
   }
 
   static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
@@ -180,7 +200,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
 
     private Pool<ApiClient> createSingleUsePool() {
-      return new Pool<ApiClient>() {
+      return new Pool<>() {
         @Override
         protected ApiClient create() {
           ApiClient client = apiClient;
@@ -209,8 +229,8 @@ public class CallBuilderTest extends HttpUserAgentTest {
 
   abstract static class JsonServlet extends PseudoServlet {
 
-    private WebResource response;
-    private List<ParameterExpectation> parameterExpectations = new ArrayList<>();
+    private final WebResource response;
+    private final List<ParameterExpectation> parameterExpectations = new ArrayList<>();
 
     JsonServlet(Object returnValue) {
       response = new WebResource(toJson(returnValue), "application/json");
@@ -274,7 +294,7 @@ public class CallBuilderTest extends HttpUserAgentTest {
   }
 
   abstract static class JsonBodyServlet extends JsonServlet {
-    private Consumer<String> bodyValidation;
+    private final Consumer<String> bodyValidation;
 
     private JsonBodyServlet(Object returnValue, Consumer<String> bodyValidation) {
       super(returnValue);
@@ -290,22 +310,6 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
   }
 
-  static class JsonPostServlet extends JsonBodyServlet {
-
-    private JsonPostServlet(Object returnValue) {
-      this(returnValue, null);
-    }
-
-    private JsonPostServlet(Object returnValue, Consumer<String> bodyValidation) {
-      super(returnValue, bodyValidation);
-    }
-
-    @Override
-    public WebResource getPostResponse() throws IOException {
-      return getResponse();
-    }
-  }
-
   static class JsonPutServlet extends JsonBodyServlet {
 
     private JsonPutServlet(Object returnValue, Consumer<String> bodyValidation) {
@@ -318,42 +322,4 @@ public class CallBuilderTest extends HttpUserAgentTest {
     }
   }
 
-  static class JsonDeleteServlet extends JsonServlet {
-
-    private JsonDeleteServlet(Object returnValue) {
-      super(returnValue);
-    }
-
-    @Override
-    public WebResource getDeleteResponse() throws IOException {
-      return getResponse();
-    }
-  }
-
-  static class Event {
-    static long lastTime;
-    long time;
-    long interval;
-    String description;
-
-    public Event(long time, String description) {
-      this.time = time;
-      this.description = description;
-      interval = lastTime == 0 ? 0 : time - lastTime;
-      lastTime = time;
-    }
-
-    @Override
-    public String toString() {
-      return "Event{"
-          + "time="
-          + time
-          + ", interval="
-          + interval
-          + ", description='"
-          + description
-          + '\''
-          + '}';
-    }
-  }
 }

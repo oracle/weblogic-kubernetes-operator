@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -16,7 +16,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 
 public abstract class InMemoryDatabase<T, L> {
 
-  private Map<DatabaseKey, T> contents = new HashMap<>();
+  private final Map<DatabaseKey, T> contents = new HashMap<>();
 
   /**
    * Create DB.
@@ -39,7 +39,6 @@ public abstract class InMemoryDatabase<T, L> {
     }
   }
 
-  @SuppressWarnings("unchecked")
   L list(Map<String, String> searchKeys) {
     List<T> foundItems = new ArrayList<>();
     for (DatabaseKey key : contents.keySet()) {
@@ -59,7 +58,6 @@ public abstract class InMemoryDatabase<T, L> {
     return t;
   }
 
-  @SuppressWarnings("unchecked")
   abstract L createList(List<T> items);
 
   void replace(T item, Map<String, String> keys) {
@@ -73,7 +71,7 @@ public abstract class InMemoryDatabase<T, L> {
   }
 
   private static class DatabaseKey {
-    private Map<String, String> keys;
+    private final Map<String, String> keys;
 
     DatabaseKey(@Nonnull Map<String, String> keys) {
       this.keys = new HashMap<>(keys);

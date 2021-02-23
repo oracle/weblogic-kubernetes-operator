@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.operator.work.AsyncFiber;
@@ -24,9 +23,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
@@ -42,23 +41,20 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /**
  * Tests async processing of http requests during step processing.
  */
-public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
+public class HttpAsyncRequestStepTest {
 
-  private HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
-  private Packet packet = new Packet();
-  private List<Memento> mementos = new ArrayList<>();
-  private TestFiber fiber = createStub(TestFiber.class);
-  private HttpResponse<String> response = createStub(HttpResponseStub.class, 200);
+  private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
+  private final Packet packet = new Packet();
+  private final List<Memento> mementos = new ArrayList<>();
+  private final TestFiber fiber = createStub(TestFiber.class);
+  private final HttpResponse<String> response = createStub(HttpResponseStub.class, 200);
   private HttpAsyncRequestStep requestStep;
-  private CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
-  private HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
-  private Collection<LogRecord> logRecords = new ArrayList<>();
+  private final CompletableFuture<HttpResponse<String>> responseFuture = new CompletableFuture<>();
+  private final HttpAsyncRequestStep.FutureFactory futureFactory = r -> responseFuture;
+  private final Collection<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleMemento;
 
-  /**
-   * Checkstyle insists on a javadoc comment here. In a unit test *headdesk*.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(consoleMemento = TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, HTTP_METHOD_FAILED, HTTP_REQUEST_TIMED_OUT)
@@ -69,7 +65,7 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
     requestStep = createStep();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -192,10 +188,6 @@ public class HttpAsyncRequestStepTest extends HttpUserAgentTest {
 
     boolean wasResumed() {
       return terminationCause == null && packet != null;
-    }
-
-    boolean wasTerminated() {
-      return terminationCause != null;
     }
 
     @Override

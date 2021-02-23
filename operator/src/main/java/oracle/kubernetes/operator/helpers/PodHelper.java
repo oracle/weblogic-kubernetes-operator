@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -39,6 +39,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 
 public class PodHelper {
@@ -112,6 +113,22 @@ public class PodHelper {
 
   private static String getClusterName(@Nonnull Map<String,String> labels) {
     return labels.get(CLUSTERNAME_LABEL);
+  }
+
+  static boolean isNotAdminServer(@Nullable V1Pod pod, String adminServerName) {
+    return Optional.ofNullable(getServerName(pod)).map(s -> !s.equals(adminServerName)).orElse(true);
+  }
+
+  private static String getServerName(@Nullable V1Pod pod) {
+    return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .map(PodHelper::getServerName)
+            .orElse(null);
+  }
+
+  private static String getServerName(@Nonnull Map<String,String> labels) {
+    return labels.get(SERVERNAME_LABEL);
   }
 
   /**
@@ -421,7 +438,7 @@ public class PodHelper {
     }
 
     private Step.StepAndPacket createRollRequest(Step deferredStep) {
-      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.clone());
+      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.copy());
     }
 
     @SuppressWarnings("unchecked")

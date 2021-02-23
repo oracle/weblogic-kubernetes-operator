@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -6,8 +6,8 @@ package oracle.kubernetes.operator.helm;
 import java.util.Map;
 
 import org.hamcrest.Matcher;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -39,10 +39,10 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
 
   private static final String[] PULL_POLICIES = {"Always", "IfNotPresent", "Never"};
 
-  private HelmOperatorYamlFactory factory = new HelmOperatorYamlFactory();
+  private final HelmOperatorYamlFactory factory = new HelmOperatorYamlFactory();
   private Map<String, Object> overrides;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     overrides = ((HelmOperatorValues) factory.newOperatorValues()).createMap();
   }

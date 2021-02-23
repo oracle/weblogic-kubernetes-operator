@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -6,7 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -26,11 +26,11 @@ public class WlsDynamicServerConfigTest {
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", false, template);
 
-    assertEquals(new Integer(1000), wlsServerConfig.getListenPort());
-    assertEquals(new Integer(2000), wlsServerConfig.getSslListenPort());
+    assertEquals(Integer.valueOf(1000), wlsServerConfig.getListenPort());
+    assertEquals(Integer.valueOf(2000), wlsServerConfig.getSslListenPort());
     NetworkAccessPoint networkAccessPoint1 = wlsServerConfig.getNetworkAccessPoints().get(0);
-    assertEquals(new Integer(10000), networkAccessPoint1.getListenPort());
-    assertEquals(new Integer(30001), networkAccessPoint1.getPublicPort());
+    assertEquals(Integer.valueOf(10000), networkAccessPoint1.getListenPort());
+    assertEquals(Integer.valueOf(30001), networkAccessPoint1.getPublicPort());
   }
 
   @Test
@@ -62,11 +62,11 @@ public class WlsDynamicServerConfigTest {
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
 
-    assertEquals(new Integer(1002), wlsServerConfig.getListenPort());
-    assertEquals(new Integer(2002), wlsServerConfig.getSslListenPort());
+    assertEquals(Integer.valueOf(1002), wlsServerConfig.getListenPort());
+    assertEquals(Integer.valueOf(2002), wlsServerConfig.getSslListenPort());
     NetworkAccessPoint networkAccessPoint1 = wlsServerConfig.getNetworkAccessPoints().get(0);
-    assertEquals(new Integer(10002), networkAccessPoint1.getListenPort());
-    assertEquals(new Integer(30001), networkAccessPoint1.getPublicPort());
+    assertEquals(Integer.valueOf(10002), networkAccessPoint1.getListenPort());
+    assertEquals(Integer.valueOf(30001), networkAccessPoint1.getPublicPort());
   }
 
   @Test
@@ -80,10 +80,10 @@ public class WlsDynamicServerConfigTest {
     WlsServerConfig wlsServerConfig =
         WlsDynamicServerConfig.create("server1", 2, "cluster1", "domain1", true, template);
 
-    assertEquals(new Integer(7102), wlsServerConfig.getListenPort());
-    assertEquals(new Integer(8102), wlsServerConfig.getSslListenPort());
+    assertEquals(Integer.valueOf(7102), wlsServerConfig.getListenPort());
+    assertEquals(Integer.valueOf(8102), wlsServerConfig.getSslListenPort());
     NetworkAccessPoint networkAccessPoint1 = wlsServerConfig.getNetworkAccessPoints().get(0);
-    assertEquals(new Integer(9102), networkAccessPoint1.getListenPort());
+    assertEquals(Integer.valueOf(9102), networkAccessPoint1.getListenPort());
     assertNull(networkAccessPoint1.getPublicPort());
   }
 

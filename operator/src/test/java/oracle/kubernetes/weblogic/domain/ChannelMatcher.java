@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -10,8 +10,8 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 public class ChannelMatcher extends TypeSafeDiagnosingMatcher<Channel> {
-  private String expectedName;
-  private Integer expectedNodePort;
+  private final String expectedName;
+  private final Integer expectedNodePort;
 
   private ChannelMatcher(String expectedName, Integer expectedNodePort) {
     this.expectedName = expectedName;

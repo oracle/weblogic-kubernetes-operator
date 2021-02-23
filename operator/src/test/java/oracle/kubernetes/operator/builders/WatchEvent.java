@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.builders;
@@ -7,7 +7,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Status;
 import io.kubernetes.client.util.Watch;
@@ -19,11 +18,12 @@ import io.kubernetes.client.util.Watch;
  */
 public class WatchEvent<T> {
   @SerializedName("type")
-  private String type;
+  private final String type;
 
-  private @SerializedName("object") T object;
+  @SerializedName("object")
+  private final T object;
 
-  private V1Status status;
+  private final V1Status status;
 
   private WatchEvent(String type, T object) {
     this.type = type;
@@ -45,7 +45,7 @@ public class WatchEvent<T> {
     return new WatchEvent<>("MODIFIED", object);
   }
 
-  public static <S> WatchEvent<S> createDeleteEvent(S object) {
+  public static <S> WatchEvent<S> createDeletedEvent(S object) {
     return new WatchEvent<>("DELETED", object);
   }
 
@@ -68,10 +68,6 @@ public class WatchEvent<T> {
 
   private static String createMessageWithResourceVersion(BigInteger resourceVersion) {
     return String.format("Something wrong: continue from (%d)", resourceVersion);
-  }
-
-  public String toJson() {
-    return new GsonBuilder().create().toJson(toWatchResponse());
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -474,7 +474,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator will fail with expected error message");
     try {
       String expectedError = "Error: rendered manifests contain a resource that already exists."
-          + " Unable to continue with install: existing resource conflict: namespace";
+          + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false,expectedError,"failed", 0,
           op2HelmParams, domain2Namespace);
@@ -518,7 +518,7 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = op2Namespace + "-sa2";
     try {
       String expectedError = "Error: rendered manifests contain a resource that already exists."
-          + " Unable to continue with install: existing resource conflict: namespace";
+          + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");

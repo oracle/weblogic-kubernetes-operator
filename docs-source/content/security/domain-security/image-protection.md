@@ -1,23 +1,23 @@
 ---
-title: "Docker image protection"
+title: "Container image protection"
 date: 2019-03-08T19:00:49-05:00
 weight: 1
-description: "WebLogic domain in Docker image protection"
+description: "WebLogic domain in image protection"
 ---
 
-#### WebLogic domain in Docker image protection
+#### WebLogic domain in image protection
 
 {{% notice warning %}}
-Oracle strongly recommends storing the Docker images that contain a
-WebLogic domain home as private in the Docker registry.
-In addition to any local registry, public Docker registries include
-[Docker Hub](https://hub.docker.com/) and the
+Oracle strongly recommends storing the container images that contain a
+WebLogic domain home as private in the container registry.
+In addition to any local registry, public container registries include
+[GItHub Container Registry](https://ghcr.io/) and the
 [Oracle Cloud Infrastructure Registry](https://cloud.oracle.com/containers/registry) (OCIR).
 {{% /notice %}}
 
-The WebLogic domain home that is part of a Docker image contains sensitive
+The WebLogic domain home that is part of an image contains sensitive
 information about the domain including keys and credentials that are used to
-access external resources (for example, the data source password). In addition, the Docker image
+access external resources (for example, the data source password). In addition, the image
 may be used to create a running server that further exposes the WebLogic domain
 outside of the Kubernetes cluster.
 
@@ -29,7 +29,7 @@ There are two main options to pull images from a private registry:
 
 ##### 1. Use `imagePullSecrets` with the `Domain` resource.
 
-In order to access a Docker image that is protected by a private registry, the
+In order to access an image that is protected by a private registry, the
 `imagePullSecrets` should be specified in the Kubernetes `Domain` resource definition:
 ``` yaml
 apiVersion: "weblogic.oracle/v2"
@@ -66,7 +66,7 @@ the registry, see the Kubernetes documentation about
 
 ##### 2. Set up the Kubernetes `ServiceAccount` with `imagePullSecrets`.
 
-An additional option for accessing a Docker image protected by a private registry
+An additional option for accessing an image protected by a private registry
 is to set up the Kubernetes `ServiceAccount` in the namespace running the
 WebLogic domain with a set of image pull secrets thus avoiding the need to
 set `imagePullSecrets` for each `Domain` resource being created (because each resource

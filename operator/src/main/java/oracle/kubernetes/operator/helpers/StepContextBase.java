@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,6 +30,7 @@ public abstract class StepContextBase implements StepContextConstants {
     return doDeepSubstitution(substitutionVariables, obj, false);
   }
 
+  @SuppressWarnings("unchecked")
   private <T> T doDeepSubstitution(final Map<String, String> substitutionVariables, T obj, boolean requiresDns1123) {
     if (obj instanceof String) {
       return (T) translate(substitutionVariables, (String) obj, requiresDns1123);
@@ -90,6 +91,7 @@ public abstract class StepContextBase implements StepContextConstants {
         || cls.getPackageName().startsWith(DOMAIN_MODEL_PACKAGE);
   }
 
+  @SuppressWarnings("unchecked")
   private List<Pair<Method, Method>> typeBeans(Class cls) {
     List<Pair<Method, Method>> results = new ArrayList<>();
     Method[] methods = cls.getMethods();

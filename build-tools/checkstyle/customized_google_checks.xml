@@ -41,7 +41,7 @@
     </module>
 
     <module name="RegexpHeader">
-        <property name="header" value="^// Copyright \(c\) (\d\d\d\d, )+Oracle Corporation and\/or its affiliates\.$\n^// Licensed under the Universal Permissive License v 1\.0 as shown at https://oss\.oracle\.com/licenses/upl\.$"/>
+        <property name="header" value="^// Copyright \(c\) (\d\d\d\d, )+Oracle and\/or its affiliates\.$\n^// Licensed under the Universal Permissive License v 1\.0 as shown at https://oss\.oracle\.com/licenses/upl\.$"/>
         <property name="fileExtensions" value="java"/>
     </module>
 
@@ -302,7 +302,7 @@
         <module name="MissingJavadocMethod">
             <property name="scope" value="public"/>
             <property name="minLineCount" value="2"/>
-            <property name="allowedAnnotations" value="Override, Test, Before, After"/>
+            <property name="allowedAnnotations" value="Override, Test, ParameterizedTest, BeforeEach, AfterEach, Before, After"/>
             <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
         </module>
         <module name="MethodName">

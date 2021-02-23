@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -70,7 +70,7 @@ public class KubernetesVersion extends SemanticVersion {
 
   @Override
   public boolean equals(Object o) {
-    return this == o || o instanceof KubernetesVersion && equals((KubernetesVersion) o);
+    return this == o || o instanceof KubernetesVersion && equals(o);
   }
 
   @Override

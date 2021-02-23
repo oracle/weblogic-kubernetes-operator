@@ -1,9 +1,8 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +15,6 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.builders.CallParams;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
@@ -43,10 +41,10 @@ import oracle.kubernetes.operator.calls.SynchronousCallFactory;
  */
 public class CallTestSupport {
 
-  private static RequestParams REQUEST_PARAMS
+  private static final RequestParams REQUEST_PARAMS
       = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
 
-  private Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
+  private final Map<CallTestSupport.CannedResponse, Boolean> cannedResponses = new HashMap<>();
 
   private static String toString(RequestParams requestParams, AdditionalParams additionalParams) {
     return new ErrorFormatter(requestParams.call)
@@ -64,7 +62,7 @@ public class CallTestSupport {
    */
   public Memento installSynchronousCallDispatcher() {
     return new Memento() {
-      private SynchronousCallDispatcher originalCallDispatcher;
+      private final SynchronousCallDispatcher originalCallDispatcher;
 
       {
         {
@@ -96,40 +94,6 @@ public class CallTestSupport {
     CannedResponse cannedResponse = new CannedResponse(forMethod);
     this.cannedResponses.put(cannedResponse, false);
     return cannedResponse;
-  }
-
-  /**
-   * Primes CallBuilder to expect a possible request for the specified method.
-   *
-   * @param forMethod the name of the method
-   * @return a canned response which may be qualified by parameters and defines how CallBuilder
-   *     should react.
-   */
-  CannedResponse createOptionalCannedResponse(String forMethod) {
-    CannedResponse cannedResponse = new CannedResponse(forMethod).optional();
-    this.cannedResponses.put(cannedResponse, false);
-    return cannedResponse;
-  }
-
-  /** Throws an exception if any of the canned responses were not used. */
-  void verifyAllDefinedResponsesInvoked() {
-    List<CannedResponse> unusedResponses = new ArrayList<>();
-    for (CannedResponse cannedResponse : this.cannedResponses.keySet()) {
-      if (isUnused(cannedResponse)) {
-        unusedResponses.add(cannedResponse);
-      }
-    }
-
-    if (unusedResponses.isEmpty()) {
-      return;
-    }
-
-    StringBuilder sb = new StringBuilder("The following expected calls were not made:\n");
-    for (CannedResponse cannedResponse : unusedResponses) {
-      sb.append("  ").append(cannedResponse).append('\n');
-    }
-
-    throw new AssertionError(sb.toString());
   }
 
   private boolean isUnused(CannedResponse cannedResponse) {
@@ -167,8 +131,8 @@ public class CallTestSupport {
     private static final String MISFORMED_RESPONSE =
         "%s not defined with returning(), computingResult() or failingWithStatus()";
     private static final BodyMatcher WILD_CARD = actualBody -> true;
-    private String methodName;
-    private Map<String, Object> requestParamExpectations = new HashMap<>();
+    private final String methodName;
+    private final Map<String, Object> requestParamExpectations = new HashMap<>();
     private Object result;
     private int status;
     private boolean optional;
@@ -186,14 +150,6 @@ public class CallTestSupport {
         throw new ApiException(status, "");
       }
       return result;
-    }
-
-    CallResponse getCallResponse() {
-      if (result == null) {
-        return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(), status);
-      } else {
-        return CallResponse.createSuccess(REQUEST_PARAMS, result, HttpURLConnection.HTTP_OK);
-      }
     }
 
     boolean matches(@Nonnull RequestParams requestParams, AdditionalParams params) {
@@ -218,28 +174,6 @@ public class CallTestSupport {
           || function != null;
     }
 
-    /**
-     * Qualifies the canned response to be used only if the namespace matches the value specified.
-     *
-     * @param namespace the expected namespace
-     * @return the updated response
-     */
-    public CannedResponse withNamespace(String namespace) {
-      requestParamExpectations.put(NAMESPACE, namespace);
-      return this;
-    }
-
-    /**
-     * Qualifies the canned response to be used only if the name matches the value specified.
-     *
-     * @param name the expected name
-     * @return the updated response
-     */
-    public CannedResponse withName(String name) {
-      requestParamExpectations.put(NAME, name);
-      return this;
-    }
-
     private CannedResponse optional() {
       optional = true;
       return this;
@@ -256,41 +190,12 @@ public class CallTestSupport {
     }
 
     /**
-     * Qualifies the canned response to be used only if the body matches the value specified.
-     *
-     * @param body the expected body
-     * @return the updated response
-     */
-    public CannedResponse withBody(Object body) {
-      requestParamExpectations.put(BODY, body);
-      return this;
-    }
-
-    /**
-     * Specifies a function to compute the result from the request parameters.
-     *
-     * @param function the specified function
-     */
-    void computingResult(Function<RequestParams, Object> function) {
-      this.function = function;
-    }
-
-    /**
      * Specifies the result to be returned by the canned response.
      *
      * @param result the response to return
      */
     public <T> void returning(T result) {
       this.result = result;
-    }
-
-    /**
-     * Indicates that the canned response should fail and specifies the HTML status to report.
-     *
-     * @param status the failure status
-     */
-    void failingWithStatus(int status) {
-      this.status = status;
     }
 
     @Override
@@ -311,8 +216,8 @@ public class CallTestSupport {
   }
 
   private static class ErrorFormatter {
-    private String call;
-    private List<String> descriptors = new ArrayList<>();
+    private final String call;
+    private final List<String> descriptors = new ArrayList<>();
 
     ErrorFormatter(String call) {
       this.call = call;
@@ -352,9 +257,9 @@ public class CallTestSupport {
     }
   }
 
-  private class AdditionalParams {
-    private String fieldSelector;
-    private String labelSelector;
+  private static class AdditionalParams {
+    private final String fieldSelector;
+    private final String labelSelector;
 
     AdditionalParams(String fieldSelector, String labelSelector) {
       this.fieldSelector = fieldSelector;

@@ -91,7 +91,7 @@ If you omit the header, you'll get a `400 (bad request)` response. If you omit t
 
 {{% notice note %}}
 To resolve a `403 (Forbidden)` response, when calling the operator's REST scaling API, you may need to add the `patch` request verb to the cluster role associated with the WebLogic `domains` resource.
-The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource 
+The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource
 {{% /notice %}}
 
 ```
@@ -274,7 +274,7 @@ In addition to using the WebLogic Diagnostic Framework for automatic scaling of 
 you can use a third-party monitoring application like Prometheus.  Please read the following blog for
 details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/using-prometheus-to-automatically-scale-weblogic-clusters-on-kubernetes-v5).
 
-#### Helpful Tips
+#### Helpful tips
 ##### Debugging scalingAction.sh
 The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) script was designed to be executed within a container of the
 Administration Server Pod because the associated diagnostic module is targeted to the Administration Server.
@@ -283,7 +283,7 @@ The easiest way to verify and debug the `scalingAction.sh` script is to open a s
 
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
 
-* The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside a Docker image).
+* The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside an image).
 * The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```
@@ -311,7 +311,7 @@ This example assumes the operator and Domain YAML file are configured with the f
   * operator's namespace: `weblogic-operator`
   * operator's hostname is the same as the host shell script is executed on.
 * Domain fields:  
-  * WebLogic cluster name: `DockerCluster`
+  * WebLogic cluster name: `ApplicationCluster`
   * Domain UID: `domain1`
 
 ```

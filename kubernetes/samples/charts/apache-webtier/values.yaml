@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
  
 # Apache webtier docker image
@@ -8,7 +8,7 @@ image: "oracle/apache:12.2.1.3"
 imagePullPolicy: "IfNotPresent"
 
 # imagePullSecrets contains an optional list of Kubernetes secrets, that are needed
-# to access the registry containing the apache webtier Docker image.
+# to access the registry containing the apache webtier image.
 # If no secrets are required, then omit this property.
 # 
 # Example : a secret is needed, and has been stored in 'my-apache-webtier-secret'
@@ -19,8 +19,8 @@ imagePullPolicy: "IfNotPresent"
 # imagePullSecrets:
 # - name:
 
-# Docker volume path for Apache webtier. By default, it is empty, which causes the volume
-# mount be disabled and, thereforem the built-in Apache plugin config be used.
+# Volume path for Apache webtier. By default, it is empty, which causes the volume
+# mount be disabled and, therefore, the built-in Apache plugin config be used.
 # Use this to provide your own Apache webtier configuration as needed; simply define this 
 # path and put your own custom_mod_wl_apache.conf file under this path.
 persistentVolumeClaimName:
@@ -53,7 +53,7 @@ customCert:
 customKey:
 
 # Unique ID identifying a domain.
-# This ID must not contain an underscope ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
+# This ID must not contain an underscore ("_"), and must be lowercase and unique across all domains in a Kubernetes cluster.
 domainUID: "domain1"
 
 # Cluster name
@@ -74,5 +74,6 @@ managedServerPort: 8001
 # where 'myhost' is the IP of the machine that runs the Apache web tier, and 
 #       'myport' is the port that the Apache web tier is publicly exposed to.
 location: "/weblogic"
+
 # Use non privileged port 8080 to listen. If set to false, default privileged port 80 will be used.
 useNonPriviledgedPorts: false

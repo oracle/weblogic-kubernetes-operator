@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -13,7 +13,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -31,9 +31,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -57,7 +57,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
   private final DomainNamespaces domainNamespaces = new DomainNamespaces();
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().withLogLevel(Level.OFF));
     mementos.add(testSupport.install());
@@ -68,7 +68,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     mementos.add(TuningParametersStub.install());
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     shutDownThreads();
     mementos.forEach(Memento::revert);
@@ -193,8 +193,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(createEventResource(uid, serverName, message));
   }
 
-  private V1Event createEventResource(String uid, String serverName, String message) {
-    return new V1Event()
+  private CoreV1Event createEventResource(String uid, String serverName, String message) {
+    return new CoreV1Event()
         .metadata(createNamespacedMetadata(uid, NS))
         .involvedObject(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
         .message(message);
@@ -299,12 +299,6 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
       @Override
       public MakeRightDomainOperation forDeletion() {
         deleting = true;
-        return this;
-      }
-
-      @Override
-      public MakeRightDomainOperation withDeleting(boolean deleting) {
-        this.deleting = deleting;
         return this;
       }
 

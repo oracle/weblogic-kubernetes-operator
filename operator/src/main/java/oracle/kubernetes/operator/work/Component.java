@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -20,8 +20,8 @@ public interface Component {
    * @param objects Objects to encapsulate; precede object with Class to specify key type
    * @return Component
    */
-  public static Component createFor(Object... objects) {
-    Map<Class<?>, Object> comps = new HashMap<Class<?>, Object>();
+  static Component createFor(Object... objects) {
+    Map<Class<?>, Object> comps = new HashMap<>();
     Class<?> key = null;
     for (Object o : objects) {
       if (o != null) {

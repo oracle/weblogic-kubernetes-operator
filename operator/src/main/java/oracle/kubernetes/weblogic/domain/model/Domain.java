@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 
-import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
@@ -44,6 +43,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -142,10 +142,7 @@ public class Domain implements KubernetesObject {
     AdminServer adminServer = domainSpec.getAdminServer();
     AdminService adminService = adminServer != null ? adminServer.getAdminService() : null;
     List<Channel> channels = adminService != null ? adminService.getChannels() : null;
-    if (channels != null && !channels.isEmpty()) {
-      return true;
-    }
-    return false;
+    return channels != null && !channels.isEmpty();
   }
 
   /**
@@ -490,20 +487,118 @@ public class Domain implements KubernetesObject {
   }
 
   public boolean isNewIntrospectionRequiredForNewServers() {
-    return getDomainHomeSourceType() == DomainSourceType.FromModel;
+    return isDomainSourceTypeFromModel();
   }
 
-  public Model getModel() {
-    return spec.getModel();
+  public boolean isDomainSourceTypeFromModel() {
+    return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
   public boolean isHttpAccessLogInLogHome() {
     return spec.getHttpAccessLogInLogHome();
   }
 
+  /**
+   * Returns if the domain is using online update.
+   * return true if using online update
+   */
+
+  public boolean isUseOnlineUpdate() {
+    return spec.isUseOnlineUpdate();
+  }
+
+  /**
+   * Returns WDT activate changes timeout.
+   * @return WDT activate timeout
+   */
+  public Long getWDTActivateTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getActivateTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT connect timeout.
+   * @return WDT connect timeout
+   */
+  public Long getWDTConnectTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getConnectTimeoutMillis)
+        .orElse(120000L);
+  }
+
+  /**
+   * Returns WDT deploy application timeout.
+   * @return WDT deploy timeout
+   */
+  public Long getWDTDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getDeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT undeploy application timeout.
+   * @return WDT undeploy timeout
+   */
+  public Long getWDTUnDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getUndeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT redeploy application timeout.
+   * @return WDT redeploy timeout
+   */
+  public Long getWDTReDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getRedeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT start application timeout.
+   * @return WDT start application timeout
+   */
+  public Long getWDTStartApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStartApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT stop application timeout.
+   * @return WDT stop application timeout
+   */
+  public Long getWDTStopApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStopApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT set server groups timeout when setting JRF domain server group targeting.
+   * @return WDT set server groups timeout
+   */
+  public Long getWDTSetServerGroupsTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getSetServerGroupsTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  private Optional<WDTTimeouts> getWDTOnlineUpdateTimeouts() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getWdtTimeouts);
+  }
+
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
+
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
@@ -515,7 +610,7 @@ public class Domain implements KubernetesObject {
    * @return domain home
    */
   public String getDomainHome() {
-    return Strings.emptyToNull(spec.getDomainHome());
+    return emptyToNull(spec.getDomainHome());
   }
 
   /**
@@ -524,7 +619,7 @@ public class Domain implements KubernetesObject {
    * @return Full path of the liveness probe custom script
    */
   public String getLivenessProbeCustomScript() {
-    return Strings.emptyToNull(spec.getLivenessProbeCustomScript());
+    return emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
   public boolean isShuttingDown() {
@@ -841,9 +936,7 @@ public class Domain implements KubernetesObject {
       if (index != -1) {
         String str = token.substring(0, index);
         // IntrospectorJobEnvVars.isReserved() checks env vars in ServerEnvVars too
-        if (varNames.contains(str) || IntrospectorJobEnvVars.isReserved(str)) {
-          return false;
-        }
+        return !varNames.contains(str) && !IntrospectorJobEnvVars.isReserved(str);
       }
       return true;
     }

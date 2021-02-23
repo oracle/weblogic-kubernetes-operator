@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.http;
@@ -26,8 +26,9 @@ public class HttpAsyncTestSupport {
   private static final HttpResponse<String> NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private HttpAsyncRequestStep.FutureFactory futureFactory = this::getFuture;
-  private Map<URI, List<RequestHandler>> cannedResponses = new HashMap<>();
+  private final Map<URI, List<RequestHandler>> cannedResponses = new HashMap<>();
 
   /**
    * Defines the response for an async http request.
@@ -58,9 +59,9 @@ public class HttpAsyncTestSupport {
   }
 
   static class RequestHandler {
-    private HttpRequest request;
-    private CompletableFuture<HttpResponse<String>> future;
-    private HttpResponse<String> response;
+    private final HttpRequest request;
+    private final CompletableFuture<HttpResponse<String>> future;
+    private final HttpResponse<String> response;
 
     RequestHandler(HttpRequest request, HttpResponse<String> response) {
       this.request = request;

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helm;
@@ -10,7 +10,6 @@ import java.util.Map;
 
 import oracle.kubernetes.operator.utils.OperatorValues;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static oracle.kubernetes.operator.helm.MapUtils.addMapEntry;
@@ -18,6 +17,7 @@ import static oracle.kubernetes.operator.helm.MapUtils.addStringMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 class HelmOperatorValues extends OperatorValues {
   HelmOperatorValues() {

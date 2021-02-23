@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Map;
 
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -29,11 +30,12 @@ public class ClusterServicesStep extends Step {
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
     if (config != null) {
       for (Map.Entry<String, WlsClusterConfig> entry : config.getClusterConfigs().entrySet()) {
-        Packet p = packet.clone();
+        Packet p = packet.copy();
         WlsClusterConfig clusterConfig = entry.getValue();
         p.put(ProcessingConstants.CLUSTER_NAME, clusterConfig.getClusterName());
 
-        startDetails.add(new StepAndPacket(ServiceHelper.createForClusterStep(null), p));
+        startDetails.add(new StepAndPacket(PodDisruptionBudgetHelper
+                .createPodDisruptionBudgetForClusterStep(ServiceHelper.createForClusterStep(null)), p));
       }
     }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -42,7 +42,7 @@ public class StuckPodProcessing {
 
   void checkStuckPods(String namespace) {
     Step step = new CallBuilder()
-          .withLabelSelectors(LabelConstants.getCreatedbyOperatorSelector())
+          .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
           .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
     mainDelegate.runSteps(step);
   }
@@ -108,7 +108,7 @@ public class StuckPodProcessing {
         Collection<StepAndPacket> startDetails = new ArrayList<>();
 
         for (V1Pod pod : stuckPodList) {
-          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.clone()));
+          startDetails.add(new StepAndPacket(createForcedDeletePodStep(pod), packet.copy()));
         }
         return doForkJoin(readExistingNamespaces(), packet, startDetails);
       }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -17,8 +18,11 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -30,7 +34,9 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -51,18 +57,18 @@ class DomainRecheck {
     this(domainProcessor, domainNamespaces, false);
   }
 
-  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
+  private DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
     this.domainProcessor = domainProcessor;
     this.domainNamespaces = domainNamespaces;
     this.fullRecheck = fullRecheck;
   }
 
   NamespaceRulesReviewStep createOperatorNamespaceReview() {
-    return new NamespaceRulesReviewStep(getOperatorNamespace());
+    return new NamespaceRulesReviewStep(getOperatorNamespace(), false);
   }
 
-  NamespaceRulesReviewStep createNamespaceReview(String namespace) {
-    return new NamespaceRulesReviewStep(namespace);
+  private NamespaceRulesReviewStep createNamespaceReview(String namespace) {
+    return new NamespaceRulesReviewStep(namespace, true);
   }
 
   Step createReadNamespacesStep() {
@@ -75,9 +81,11 @@ class DomainRecheck {
    */
   class NamespaceRulesReviewStep extends Step {
     private final String ns;
+    private final boolean isDomainNamespace;
 
-    private NamespaceRulesReviewStep(@Nonnull String ns) {
+    private NamespaceRulesReviewStep(@Nonnull String ns, boolean isDomainNamespace) {
       this.ns = ns;
+      this.isDomainNamespace = isDomainNamespace;
     }
 
     @Override
@@ -90,18 +98,23 @@ class DomainRecheck {
           LoggingContext.LOGGING_CONTEXT_KEY,
           Component.createFor(new LoggingContext().namespace(ns)));
 
-      nss.getRulesReviewStatus().updateAndGet(prev -> {
+      V1SubjectRulesReviewStatus status = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
           return prev;
         }
 
         try {
-          return HealthCheckHelper.getAccessAuthorizations(ns);
+          return HealthCheckHelper.getSelfSubjectRulesReviewStatus(ns);
         } catch (Throwable e) {
           LOGGER.warning(MessageKeys.EXCEPTION, e);
         }
         return null;
       });
+
+      AtomicBoolean guard = isDomainNamespace ? nss.verifiedAsDomainNamespace() : nss.verifiedAsOperatorNamespace();
+      if (!guard.getAndSet(true)) {
+        HealthCheckHelper.verifyAccess(status, ns, isDomainNamespace);
+      }
 
       return doNext(packet);
     }
@@ -132,6 +145,7 @@ class DomainRecheck {
   }
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
+    Step current = getNext();
 
     private NamespaceListResponseStep() {
       super(new Namespaces.NamespaceListAfterStep(domainNamespaces));
@@ -148,7 +162,7 @@ class DomainRecheck {
 
     // Returns true if the failure wasn't due to authorization, and we have a list of namespaces to manage.
     private boolean useBackupStrategy(CallResponse<V1NamespaceList> callResponse) {
-      return Namespaces.getConfiguredDomainNamespaces() != null && isNotAuthorizedOrForbidden(callResponse);
+      return haveExplicitlyConfiguredNamespacesToManage() && isNotAuthorizedOrForbidden(callResponse);
     }
 
     @Override
@@ -160,16 +174,20 @@ class DomainRecheck {
     }
 
     private Step createNextSteps(Set<String> namespacesToStartNow) {
-      List<Step> nextSteps = new ArrayList<>();
       if (!namespacesToStartNow.isEmpty()) {
+        List<Step> nextSteps = new ArrayList<>();
         nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
-        if (Namespaces.getConfiguredDomainNamespaces() == null) {
-          nextSteps.add(
-                RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview));
+        if (!haveExplicitlyConfiguredNamespacesToManage()) {
+          nextSteps.add(createNamespaceReviewStep(namespacesToStartNow));
         }
+        nextSteps.add(current);
+        current = Step.chain(nextSteps.toArray(new Step[0]));
       }
-      nextSteps.add(getNext());
-      return Step.chain(nextSteps.toArray(new Step[0]));
+      return current;
+    }
+
+    private boolean haveExplicitlyConfiguredNamespacesToManage() {
+      return Namespaces.getConfiguredDomainNamespaces() != null;
     }
 
     private Set<String> getNamespacesToStart(List<String> namespaceNames) {
@@ -189,7 +207,11 @@ class DomainRecheck {
     return RunInParallel.perNamespace(domainNamespaces, this::startNamespaceSteps);
   }
 
-  Step startNamespaceSteps(String ns) {
+  private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+    return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
+  }
+
+  private Step startNamespaceSteps(String ns) {
     return Step.chain(
           createNamespaceReview(ns),
           new StartNamespaceBeforeStep(ns),
@@ -206,12 +228,24 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
-      NamespaceStatus nss = domainNamespaces.getNamespaceStatus(ns);
-      if (fullRecheck || !nss.isNamespaceStarting().getAndSet(true)) {
+      if (fullRecheck) {
         return doNext(packet);
+      } else if (domainNamespaces.shouldStartNamespace(ns)) {
+        LOGGER.info(BEGIN_MANAGING_NAMESPACE, ns);
+        return doNext(addNSWatchingStartingEventsStep(), packet);
       } else {
         return doEnd(packet);
       }
+    }
+
+    private Step addNSWatchingStartingEventsStep() {
+      return Step.chain(
+          EventHelper.createEventStep(
+              new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+          EventHelper.createEventStep(
+              new EventData(EventHelper.EventItem.START_MANAGING_NAMESPACE)
+                  .namespace(getOperatorNamespace()).resourceName(ns)),
+          getNext());
     }
   }
 
@@ -222,7 +256,7 @@ class DomainRecheck {
    */
   static class RunInParallel extends Step {
 
-    protected final Function<String, Step> stepFactory;
+    final Function<String, Step> stepFactory;
     private final Collection<String> domainNamespaces;
 
     RunInParallel(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
@@ -230,7 +264,7 @@ class DomainRecheck {
       this.stepFactory = stepFactory;
     }
 
-    public static Step perNamespace(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
+    static Step perNamespace(Collection<String> domainNamespaces, Function<String, Step> stepFactory) {
       return new RunInParallel(domainNamespaces, stepFactory);
     }
 
@@ -248,7 +282,7 @@ class DomainRecheck {
 
         for (String ns : domainNamespaces) {
           try (LoggingContext ignored = LoggingContext.setThreadContext().namespace(ns)) {
-            startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.clone()));
+            startDetails.add(new StepAndPacket(stepFactory.apply(ns), packet.copy()));
           }
         }
         return doForkJoin(getNext(), packet, startDetails);

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.work;
@@ -8,40 +8,33 @@ import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class StepChainTest {
-  private FiberTestSupport testSupport = new FiberTestSupport();
+  private final FiberTestSupport testSupport = new FiberTestSupport();
 
-  private List<Memento> mementos = new ArrayList<>();
+  private final List<Memento> mementos = new ArrayList<>();
 
-  /**
-   * Setup test.
-   */
-  @Before
+  @BeforeEach
   public void setUp() {
     mementos.add(TestUtils.silenceOperatorLogger());
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
+
     testSupport.throwOnCompletionFailure();
   }
 
   @Test
-  public void afterChainingGroupsOfSteps_fiberRunsThemInOrder() throws Exception {
+  public void afterChainingGroupsOfSteps_fiberRunsThemInOrder() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
@@ -54,7 +47,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullFirstSteps() throws Exception {
+  public void ignoreNullFirstSteps() {
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
 
@@ -66,7 +59,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullMiddleSteps() throws Exception {
+  public void ignoreNullMiddleSteps() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group3 = new NamedStep("six");
 
@@ -77,13 +70,13 @@ public class StepChainTest {
     assertThat(NamedStep.getNames(packet), contains("one", "two", "six"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
-  public void whenNoNonNullSteps_throwException() throws Exception {
-    Step.chain();
+  @Test
+  public void whenNoNonNullSteps_throwException() {
+    assertThrows(IllegalArgumentException.class, Step::chain);
   }
 
   @Test
-  public void doNotChainGroupThatContainsDuplicateStep() throws Exception {
+  public void doNotChainGroupThatContainsDuplicateStep() {
     Step duplicateStep = new NamedStep("duplicate", new NamedStep("two"));
     Step group1 = new NamedStep("one", duplicateStep);
     Step group2 = new NamedStep("three", duplicateStep);
@@ -94,7 +87,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void addGroupThatContainsStepsWithSameName() throws Exception {
+  public void addGroupThatContainsStepsWithSameName() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("two", new NamedStep("three"));
 
@@ -119,7 +112,7 @@ public class StepChainTest {
 
   private static class NamedStep extends Step {
     private static final String NAMES = "names";
-    private String name;
+    private final String name;
 
     NamedStep(String name) {
       this(name, null);

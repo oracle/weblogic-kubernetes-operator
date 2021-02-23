@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -10,9 +10,9 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import oracle.kubernetes.operator.helpers.AuthorizationProxy.Scope;
 import oracle.kubernetes.utils.TestUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -27,7 +27,7 @@ public class AuthenticationProxyTest {
    * Setup test.
    * @throws Exception on failure
    */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
@@ -35,7 +35,7 @@ public class AuthenticationProxyTest {
         StaticStubSupport.install(AuthenticationProxy.class, "authorizationProxy", authorizationProxyStub));
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
@@ -54,7 +54,7 @@ public class AuthenticationProxyTest {
     assertThat(authorizationProxyStub.scope, equalTo(Scope.namespace));
   }
 
-  private class AuthorizationProxyStub extends AuthorizationProxy {
+  private static class AuthorizationProxyStub extends AuthorizationProxy {
     Scope scope;
 
     public boolean check(

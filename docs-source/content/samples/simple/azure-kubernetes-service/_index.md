@@ -24,7 +24,7 @@ AKS is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 #### Prerequisites
 
-This sample assumes the following prerequisite environment setup.
+This sample assumes the following prerequisite environment setup:
 
 * Operating System: GNU/Linux, macOS or [WSL for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
 * [Git](https://git-scm.com/downloads), use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
@@ -66,7 +66,7 @@ Found an existing application instance of "5pn2s201-nq4q-43n1-z942-p9r9571qr3rp"
 Insufficient privileges to complete the operation.
 ```
 
-The problem may be a pre-existing service principal with the same name.  Either delete the other Service Principal or pick a different name.
+The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.
 
 Successful output will look like the following:
 
@@ -269,7 +269,7 @@ For example, given the service principal created above, the following values mus
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | `appId` |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | `password` |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | `tenant` |
-| `dockerEmail` | `yourDockerEmail` | Your Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image from the Oracle Container Registry. |
+| `dockerEmail` | `yourDockerEmail` | Your Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image from the Oracle Container Registry. |
 | `dockerPassword` | `yourDockerPassword`| Your Oracle Single Sign-On (SSO) account password in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`. |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. Make sure the value matches the value of `${NAME_PREFIX}` to keep names in step-by-step commands the same with those in configuration files. |
@@ -441,7 +441,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
    The secret domain1-weblogic-credentials has been successfully created in the default namespace.
     ```
 
-2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+2. We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the container registry credentials as a Kubernetes secret. Please run:
 
    ```bash
    # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
@@ -511,7 +511,7 @@ Now that we have created the AKS cluster, installed the operator, and verified t
      Azure storage account: 0730storage1597391432
      Azure file share: 0730-weblogic-1597391432
      Kubenetes secret for Azure storage: 0730azure-secret
-     Kubenetes secret for Docker Account: 0730regcred
+     Kubenetes secret for Container Registry Account: 0730regcred
      Kubenetes secret for Weblogic domain: domain1-weblogic-credentials
      Persistent Volume: 0730-azurefile-1597391432
      Persistent Volume Claim: 0730-azurefile-1597391432
@@ -807,8 +807,8 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal, refer to the application ID in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal, refer to the client secret in the [Create Service Principal](#create-service-principal-for-aks) section. |
-| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image.  In clear text. |
+| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server image. |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server image.  In clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 
@@ -846,11 +846,11 @@ Now that you have WLS running in AKS, you can test the cluster by deploying the 
 
 Next you will need to start the application:
 
-1. Go to Deployments
-1. Select Control
-1. Select testwebapp
-1. Select Start
-1. Select Servicing all requests
+1. Go to Deployments.
+1. Select Control.
+1. Select `testwebapp`.
+1. Select Start.
+1. Select Servicing all requests.
 1. Select Yes.
 
 After the successful deployment, go to the application through the domain1-cluster-1-lb external IP.
@@ -867,16 +867,17 @@ The test application will list the server host and server IP on the page.
 
 #### Access WebLogic Server logs
 
-The logs are stored in the Azure file share. Follow these steps to access the log:
+The logs are stored in the Azure file share. Follow these steps to access the logs:
 
 1. Go to the [Azure Portal](https://ms.portal.azure.com).
 1. Go to your resource group.
 1. Open the storage account.
 1. In the "File service" section of the left panel, select File shares.
-1. Select the file share name (e.g. weblogic in this example).
+1. Select the file share name (for example, `weblogic` in this example).
 1. Select logs.
 1. Select domain1.
-1. WebLogic Server logs are listed in the folder.
+
+   WebLogic Server logs are listed in the folder.
 
    ![WebLogic Server Logs](screenshot-logs.png)
 
@@ -996,9 +997,9 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
 
    Some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed are found in the section on [debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
 
-#### Clean Up Resources
+#### Clean up resources
 
-The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all related resources, simply delete the resource groups.  The output will list the resource groups, such as.
+The output from the `create-domain-on-aks.sh` script includes a statement about the Azure resources created by the script.  To delete the cluster and free all the related resources, simply delete the resource groups.  The output will list the resource groups, such as:
 
 ```bash
 The following Azure Resouces have been created:

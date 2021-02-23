@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -30,7 +30,7 @@ class FileGroupReader {
 
   private final String pathToGroup;
 
-  @SuppressWarnings("FieldMayBeFinal") // keep non-final for unit test
+  @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"}) // keep non-final for unit test
   private static Function<URI, Path> uriToPath = Paths::get;
   
   /**
@@ -46,7 +46,7 @@ class FileGroupReader {
    * Given a file path, loads the contents of the files into a map.
    *
    * @param rootDir the path to the top-level directory
-   * @return a map of file paths to string contents.
+   * @return a map of file names to string contents.
    * @throws IOException if an error occurs during the read
    */
   static Map<String, String> loadContents(Path rootDir) throws IOException {

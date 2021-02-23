@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions.impl;
@@ -40,12 +40,15 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listDeployments;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Kubernetes {
 
   private static final String OPERATOR_NAME = "weblogic-operator-";
+
+  private static final String RESOURCE_VERSION_MATCH_UNSET = null;
 
   private static ApiClient apiClient = null;
   private static CoreV1Api coreV1Api = null;
@@ -182,10 +185,10 @@ public class Kubernetes {
     String labelSelector = null;
     if (labels != null && !labels.isEmpty()) {
       labelSelector = labels.entrySet()
-              .stream()
-              .map(e -> e.getKey() + "="
+          .stream()
+          .map(e -> e.getKey() + "="
               + e.getValue())
-              .collect(Collectors.joining(","));
+          .collect(Collectors.joining(","));
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
     if (pod != null) {
@@ -286,6 +289,34 @@ public class Kubernetes {
     }
     logger.info("Pod {0}: domainRestartVersion {1} does not match expected value {2}",
         podName, restartVersion, expectedRestartVersion);
+    return false;
+  }
+
+  /**
+   * Checks if a pod in a given namespace has been updated with an expected
+   * weblogic.introspectVersion label.
+   *
+   * @param namespace in which to check for the pod
+   * @param podName name of the pod to check for
+   * @param expectedIntrospectVersion introspectVersion that is expected
+   * @return true if pod has been updated as expected
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean podIntrospectVersionUpdated(
+      String namespace,
+      String podName,
+      String expectedIntrospectVersion
+  ) throws ApiException {
+    LoggingFacade logger = getLogger();
+    String introspectVersion = getPodIntrospectVersion(namespace, "", podName);
+
+    if (introspectVersion != null && introspectVersion.equals(expectedIntrospectVersion)) {
+      logger.info("Pod {0}: introspectVersion has been updated to expected value {1}",
+          podName, expectedIntrospectVersion);
+      return true;
+    }
+    logger.info("Pod {0}: introspectVersion {1} does not match expected value {2}",
+        podName, introspectVersion, expectedIntrospectVersion);
     return false;
   }
 
@@ -450,6 +481,7 @@ public class Kubernetes {
             labelSelector, // selector to restrict the list of returned objects by their labels.
             null, // maximum number of responses to return for a list call.
             null, // shows changes that occur after that particular version of a resource.
+            RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
@@ -510,6 +542,7 @@ public class Kubernetes {
         null, // maximum number of responses to return for a list call.
         Boolean.FALSE.toString(), // pretty print output.
         null, // shows changes that occur after that particular version of a resource.
+        RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
     );
@@ -540,8 +573,8 @@ public class Kubernetes {
    * @throws ApiException when there is error in querying the cluster
    */
   public static V1Deployment getDeployment(
-          String deploymentName, Map<String, String> label, String namespace)
-          throws ApiException {
+      String deploymentName, Map<String, String> label, String namespace)
+      throws ApiException {
     String labelSelector = null;
     LoggingFacade logger = getLogger();
     if (label != null) {
@@ -554,7 +587,7 @@ public class Kubernetes {
 
     for (V1Deployment deployment : v1DeploymentList.getItems()) {
       if (deployment.getMetadata().getName().equals(deploymentName.trim())
-              && deployment.getMetadata().getNamespace().equals(namespace.trim())) {
+          && deployment.getMetadata().getNamespace().equals(namespace.trim())) {
         logger.info("Deployment Name : " + deployment.getMetadata().getName());
         logger.info("Deployment Namespace : " + deployment.getMetadata().getNamespace());
         logger.info("Deployment status : " + deployment.getStatus().toString());
@@ -562,7 +595,7 @@ public class Kubernetes {
         if (labels != null) {
           for (Map.Entry<String, String> entry : labels.entrySet()) {
             logger.log(Level.INFO, "Label Key: {0} Label Value: {1}",
-                    new Object[]{entry.getKey(), entry.getValue()});
+                new Object[]{entry.getKey(), entry.getValue()});
           }
         }
         return deployment;
@@ -587,9 +620,9 @@ public class Kubernetes {
     if (deployment != null) {
       // get the deploymentCondition with the 'Available' type field
       V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
-              .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
-              .findAny()
-              .orElse(null);
+          .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
+          .findAny()
+          .orElse(null);
 
       if (v1DeploymentRunningCondition != null) {
         status = v1DeploymentRunningCondition.getStatus().equalsIgnoreCase("true");
@@ -611,17 +644,18 @@ public class Kubernetes {
   public static V1PodList listPods(String namespace, String labelSelectors) throws ApiException {
     V1PodList v1PodList
         = coreV1Api.listNamespacedPod(
-            namespace, // namespace in which to look for the pods.
-            Boolean.FALSE.toString(), // pretty print output.
-            Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
-            null, // continue to query when there is more results to return.
-            null, // selector to restrict the list of returned objects by their fields
-            labelSelectors, // selector to restrict the list of returned objects by their labels.
-            null, // maximum number of responses to return for a list call.
-            null, // shows changes that occur after that particular version of a resource.
-            null, // Timeout for the list/watch call.
-            Boolean.FALSE // Watch for changes to the described resources.
-        );
+        namespace, // namespace in which to look for the pods.
+        Boolean.FALSE.toString(), // pretty print output.
+        Boolean.FALSE, // allowWatchBookmarks requests watch events with type "BOOKMARK".
+        null, // continue to query when there is more results to return.
+        null, // selector to restrict the list of returned objects by their fields
+        labelSelectors, // selector to restrict the list of returned objects by their labels.
+        null, // maximum number of responses to return for a list call.
+        null, // shows changes that occur after that particular version of a resource.
+        RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+        null, // Timeout for the list/watch call.
+        Boolean.FALSE // Watch for changes to the described resources.
+    );
     return v1PodList;
   }
 
@@ -643,9 +677,10 @@ public class Kubernetes {
         null, // maximum number of responses to return for a list call.
         Boolean.FALSE.toString(), // pretty print output.
         null, // shows changes that occur after that particular version of a resource.
+        RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
         null, // Timeout for the list/watch call.
         Boolean.FALSE // Watch for changes to the described resources.
-        );
+    );
     List<V1Service> items = v1ServiceList.getItems();
     logger.info(Arrays.toString(items.toArray()));
     for (V1Service service : items) {
@@ -691,6 +726,7 @@ public class Kubernetes {
           labelSelectors, // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           "", // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Integer | Timeout for the list/watch call.
           Boolean.FALSE // Boolean | Watch for changes to the described resources
       );
@@ -740,8 +776,8 @@ public class Kubernetes {
       if (job.getStatus().getConditions() != null) {
         V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
             v1JobCondition
-              -> "Complete".equalsIgnoreCase(v1JobCondition.getType())
-                  || "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+                -> "Complete".equalsIgnoreCase(v1JobCondition.getType())
+                || "Failed".equalsIgnoreCase(v1JobCondition.getType()))
             .findAny()
             .orElse(null);
         if (jobCondition != null) {
@@ -811,6 +847,7 @@ public class Kubernetes {
           labels, // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           "", // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );
@@ -839,6 +876,7 @@ public class Kubernetes {
           "", // selector to restrict the list of returned objects by their labels
           null, // maximum number of responses to return for a list call
           "", // shows changes that occur after that particular version of a resource
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
           5, // Timeout for the list/watch call
           false // Watch for changes to the described resources
       );

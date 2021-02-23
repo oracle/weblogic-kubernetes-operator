@@ -1,11 +1,11 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static org.hamcrest.Matchers.both;
@@ -24,9 +24,9 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   private static final String VALUE1 = "value1";
   private static final String NAME2 = "name2";
   private static final String VALUE2 = "value2";
-  private AdminServer server1;
-  private AdminServer server2;
-  private Domain domain = new Domain();
+  private final AdminServer server1;
+  private final AdminServer server2;
+  private final Domain domain = new Domain();
 
   /**
    * Administration server tests.

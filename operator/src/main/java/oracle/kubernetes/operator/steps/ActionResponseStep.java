@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -25,8 +25,8 @@ public abstract class ActionResponseStep<T> extends DefaultResponseStep<T> {
   @Override
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
     return callResponse.getResult() == null
-            ? doNext(packet)
-            : doNext(createSuccessStep(callResponse.getResult(),
+        ? doNext(packet)
+        : doNext(createSuccessStep(callResponse.getResult(),
             new ContinueOrNextStep(callResponse, getNext())), packet);
   }
 

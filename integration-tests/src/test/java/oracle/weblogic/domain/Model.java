@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -21,6 +21,8 @@ public class Model {
   @ApiModelProperty("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
 
+  @ApiModelProperty("Online update option for Model In Image dynamic update.")
+  private OnlineUpdate onlineUpdate;
 
   @ApiModelProperty(
       "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
@@ -90,6 +92,23 @@ public class Model {
     return this;
   }
 
+  public OnlineUpdate getOnlineUpdate() {
+    return onlineUpdate;
+  }
+
+  public OnlineUpdate onlineUpdate() {
+    return onlineUpdate;
+  }
+
+  public Model onlineUpdate(OnlineUpdate onlineUpdate) {
+    this.onlineUpdate = onlineUpdate;
+    return this;
+  }
+
+  public void setOnlineUpdate(OnlineUpdate onlineUpdate) {
+    this.onlineUpdate = onlineUpdate;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -97,7 +116,8 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
-            .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
+            .append("runtimeEncryptionSecret", runtimeEncryptionSecret)
+            .append("onlineUpdate", onlineUpdate);
 
     return builder.toString();
   }
@@ -125,7 +145,8 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMap, rhs.configMap)
             .append(modelHome,rhs.modelHome)
-            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
+            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
+            .append(onlineUpdate, rhs.onlineUpdate);
 
     return builder.isEquals();
   }

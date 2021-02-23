@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -28,9 +28,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.Description;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
@@ -61,14 +61,9 @@ public class DomainUpPlanTest {
     return DomainPresenceStep.createDomainPresenceStep(domain, adminStep, managedServersStep);
   }
 
-  /**
-   * Setup test environment.
-   * @throws NoSuchFieldException if test support fails to install.
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger()
-        .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(ClientFactoryStub.install());
     mementos.add(testSupport.install());
     mementos.add(InMemoryCertificates.install());
@@ -78,15 +73,9 @@ public class DomainUpPlanTest {
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
   }
 
-  /**
-   * Cleanup test environment.
-   * @throws Exception if test support fails.
-   */
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -177,6 +166,11 @@ public class DomainUpPlanTest {
   static class NullPodWaiter implements PodAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Pod pod, Step next) {
+      return null;
+    }
+
+    @Override
+    public Step waitForReady(String podName, Step next) {
       return null;
     }
 

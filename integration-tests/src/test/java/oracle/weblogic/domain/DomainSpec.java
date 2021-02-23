@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -54,6 +54,12 @@ public class DomainSpec {
           + "Defaults to true if domainHomeSourceType is PersistentVolume; false, otherwise.")
   private Boolean logHomeEnabled;
 
+  @ApiModelProperty("Whether to allow the number of running cluster member Managed Server instances to drop "
+      + "below the minimum dynamic cluster size configured in the WebLogic domain configuration, "
+      + "if this is not specified for a specific cluster under the `clusters` field. Defaults to true."
+  )
+  private Boolean allowReplicasBelowMinDynClusterSize;
+
   @ApiModelProperty(
       "An optional, in-pod location for data storage of default and custom file stores. "
           + "If dataHome is not specified or its value is either not set or empty (e.g. dataHome: \"\") "
@@ -65,17 +71,17 @@ public class DomainSpec {
   private Boolean includeServerOutInPodLog;
 
   @ApiModelProperty(
-      "The WebLogic Docker image; required when domainHomeSourceType is Image or FromModel; "
+      "The WebLogic Server image; required when domainHomeSourceType is Image or FromModel; "
           + "otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.")
   private String image;
 
   @ApiModelProperty(
-      "The image pull policy for the WebLogic Docker image. "
+      "The image pull policy for the WebLogic Server image. "
           + "Legal values are Always, Never and IfNotPresent. "
           + "Defaults to Always if image ends in :latest, IfNotPresent otherwise.")
   private String imagePullPolicy;
 
-  @ApiModelProperty("A list of image pull secrets for the WebLogic Docker image.")
+  @ApiModelProperty("A list of image pull secrets for the WebLogic Server image.")
   private List<V1LocalObjectReference> imagePullSecrets = new ArrayList<>();
 
   @ApiModelProperty(
@@ -87,14 +93,14 @@ public class DomainSpec {
   @Deprecated
   @ApiModelProperty(
       "Deprecated. Use domainHomeSourceType instead. Ignored if domainHomeSourceType is specified."
-          + " True indicates that the domain home file system is contained in the Docker image"
+          + " True indicates that the domain home file system is contained in the image"
           + " specified by the image field. False indicates that the domain home file system is located"
           + " on a persistent volume.")
   private Boolean domainHomeInImage;
 
   @ApiModelProperty(
       "Domain home file system source type: Legal values: Image, PersistentVolume, FromModel."
-          + " Image indicates that the domain home file system is contained in the Docker image"
+          + " Image indicates that the domain home file system is contained in the image"
           + " specified by the image field. PersistentVolume indicates that the domain home file system is located"
           + " on a persistent volume.  FromModel indicates that the domain home file system will be created"
           + " and managed by the operator based on a WDT domain model."
@@ -251,6 +257,23 @@ public class DomainSpec {
 
   public void setLogHomeEnabled(Boolean logHomeEnabled) {
     this.logHomeEnabled = logHomeEnabled;
+  }
+
+  public DomainSpec allowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
+    return this;
+  }
+
+  public Boolean allowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
+  }
+
+  public Boolean getAllowReplicasBelowMinDynClusterSize() {
+    return allowReplicasBelowMinDynClusterSize;
+  }
+
+  public void setAllowReplicasBelowMinDynClusterSize(Boolean allowReplicasBelowMinDynClusterSize) {
+    this.allowReplicasBelowMinDynClusterSize = allowReplicasBelowMinDynClusterSize;
   }
 
   public DomainSpec dataHome(String dataHome) {
@@ -655,6 +678,7 @@ public class DomainSpec {
             .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
+            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
             .append("dataHome", dataHome)
             .append("includeServerOutInPodLog", includeServerOutInPodLog)
             .append("image", image)
@@ -689,6 +713,7 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(allowReplicasBelowMinDynClusterSize)
             .append(dataHome)
             .append(includeServerOutInPodLog)
             .append(image)
@@ -731,6 +756,7 @@ public class DomainSpec {
             .append(webLogicCredentialsSecret, rhs.webLogicCredentialsSecret)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(allowReplicasBelowMinDynClusterSize, rhs.allowReplicasBelowMinDynClusterSize)
             .append(dataHome, rhs.dataHome)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(image, rhs.image)

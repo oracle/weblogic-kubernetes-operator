@@ -1,9 +1,9 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -12,22 +12,25 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ServerStatusTest {
 
-  static ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("server1");
-  static ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("server2");
-  static ServerStatus cluster1Server10 = new ServerStatus().withClusterName("cluster-1").withServerName("server10");
+  static final ServerStatus cluster1Server1
+      = new ServerStatus().withClusterName("cluster-1").withServerName("server1");
+  static final ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("server2");
+  static final ServerStatus cluster1Server10
+      = new ServerStatus().withClusterName("cluster-1").withServerName("server10");
 
-  static ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("server1");
-  static ServerStatus cluster10Server1 = new ServerStatus().withClusterName("cluster-10").withServerName("server1");
+  static final ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("server1");
+  static final ServerStatus cluster10Server1
+      = new ServerStatus().withClusterName("cluster-10").withServerName("server1");
 
-  static ServerStatus standAloneServer1 = new ServerStatus().withServerName("server1");
-  static ServerStatus standAloneServer2 = new ServerStatus().withServerName("server2");
-  static ServerStatus standAloneServer10 = new ServerStatus().withServerName("server10");
+  static final ServerStatus standAloneServer1 = new ServerStatus().withServerName("server1");
+  static final ServerStatus standAloneServer2 = new ServerStatus().withServerName("server2");
+  static final ServerStatus standAloneServer10 = new ServerStatus().withServerName("server10");
 
-  static ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
-  static ServerStatus cluster1ServerA = new ServerStatus().withClusterName("cluster-1").withServerName("a");
-  static ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
+  static final ServerStatus adminServer = new ServerStatus().withServerName("admin-server").withIsAdminServer(true);
+  static final ServerStatus cluster1ServerA = new ServerStatus().withClusterName("cluster-1").withServerName("a");
+  static final ServerStatus standAloneServerA = new ServerStatus().withServerName("a");
 
-  static ServerStatus nullClusterNullServer = new ServerStatus();
+  static final ServerStatus nullClusterNullServer = new ServerStatus();
 
   @Test
   public void verify_Equal_compareTo() {

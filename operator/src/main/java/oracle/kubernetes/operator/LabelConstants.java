@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -21,12 +21,13 @@ public interface LabelConstants {
   String MODEL_IN_IMAGE_MODEL_SECRETS_HASH = "weblogic.modelInImageModelSecretsHash";
   String MODEL_IN_IMAGE_DOMAINZIP_HASH = "weblogic.modelInImageDomainZipHash";
   String INTROSPECTION_STATE_LABEL = "weblogic.introspectVersion";
+  String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);
   }
 
-  static String getCreatedbyOperatorSelector() {
+  static String getCreatedByOperatorSelector() {
     return String.format("%s=%s", CREATEDBYOPERATOR_LABEL, "true");
   }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -227,21 +227,63 @@ public class DeployUtil {
 
   }
 
-
   /**
-   * Deploy application to a cluster using REST API with curl utility.
+   * Deploy an application to a cluster using REST API with curl utility.
    * @param host name of the admin server host
    * @param port node port of admin server
    * @param userName admin server user name
    * @param password admin server password
    * @param cluster name of the cluster to deploy application
    * @param archivePath local path of the application archive
-   * @param hostHeader name of the cluster to deploy application
+   * @param hostHeader Host header for the curl command 
+   * @param appName name of the application
+   * @return ExecResult 
+   */
+  public static ExecResult deployToClusterUsingRest(String host, String port,
+            String userName, String password, String cluster, 
+            Path archivePath, String hostHeader, String appName) {
+    String target = "{identity: [clusters,'" + cluster + "']}";
+    return deployUsingRest(host, port, userName, password, target, archivePath, hostHeader, appName);
+  }
+
+  /**
+   * Deploy an application to a server using REST API with curl utility.
+   * @param host name of the admin server host
+   * @param port node port of admin server
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param server name of the server to deploy application
+   * @param archivePath local path of the application archive
+   * @param hostHeader Host header for the curl command 
+   * @param appName name of the application
+   * @return ExecResult 
+   */
+  public static ExecResult deployToServerUsingRest(String host, String port,
+            String userName, String password, String server, 
+            Path archivePath, String hostHeader, String appName) {
+    String target = "{identity: [servers,'" + server + "']}";
+    return deployUsingRest(host, port, userName, password, target, archivePath, hostHeader, appName);
+  }
+
+  /**
+   * Deploy an application to a set of target using REST API with curl utility.
+   * Note the targets parameter should be a string with following format
+   *  {identity: [clusters,'cluster-1']}   for cluster target 
+   *  {identity: [servers, 'admin-server']} for server target 
+   *  OR a combination for multiple targets, for example 
+   *  {identity: [clusters,'mycluster']}, {identity: [servers,'admin-server']}
+   * @param host name of the admin server host
+   * @param port node port of admin server
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param targets  the target string to deploy application
+   * @param archivePath local path of the application archive
+   * @param hostHeader Host header for the curl command 
    * @param appName name of the application
    * @return ExecResult 
    */
   public static ExecResult deployUsingRest(String host, String port,
-            String userName, String password, String cluster, 
+            String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
@@ -263,8 +305,9 @@ public class DeployUtil {
         .append("-H Prefer:respond-async ")
         .append("-F \"model={ name: '")
         .append(appName)
-        .append("', targets: [ { identity: [ clusters, '")
-        .append(cluster + "' ] } ] }\" ")
+        .append("', targets: [ ")
+        .append(targets)
+        .append(" ] }\" ")
         .append(" -F \"sourcePath=@")
         .append(archivePath.toString() + "\" ")
         .append("-X POST http://" + host + ":" + port)
@@ -280,5 +323,4 @@ public class DeployUtil {
     }
     return result;
   }
-
 }

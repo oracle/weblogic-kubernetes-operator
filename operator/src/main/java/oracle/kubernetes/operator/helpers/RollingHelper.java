@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -36,7 +36,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
  */
 public class RollingHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static long DELAY_IN_SECONDS = 1;
+  private static final long DELAY_IN_SECONDS = 1;
 
   private RollingHelper() {
   }
@@ -134,6 +134,7 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
+        LOGGER.fine("Restarting server " + packet.get(ProcessingConstants.SERVER_NAME));
         for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(
@@ -214,7 +215,7 @@ public class RollingHelper {
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
         Optional.ofNullable(servers.poll())
-            .ifPresent(serverToRestart -> restarts.add(serverToRestart));
+            .ifPresent(restarts::add);
       }
 
       if (!restarts.isEmpty()) {

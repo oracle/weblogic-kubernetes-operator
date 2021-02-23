@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -74,7 +74,7 @@ public class MacroSubstitutor {
     StringBuilder retStr = new StringBuilder();
 
     while (idx != -1) {
-      retStr.append(inputValue.substring(start, idx));
+      retStr.append(inputValue, start, idx);
 
       int macroIdx = idx;
       int end = inputValue.indexOf(END_MACRO, macroIdx);
@@ -109,19 +109,20 @@ public class MacroSubstitutor {
     if (macro == null || macro.isEmpty()) {
       return "";
     }
-    if (macro.equals("domainName")) {
-      return domainName;
-    } else if (macro.equals("serverName")) {
-      return serverName;
-    } else if (macro.equals("clusterName")) {
-      return clusterName;
-    } else if (macro.equals("machineName")) {
-      return machineName;
-    } else if (macro.equals("id")) {
-      return "" + id;
+    switch (macro) {
+      case "domainName":
+        return domainName;
+      case "serverName":
+        return serverName;
+      case "clusterName":
+        return clusterName;
+      case "machineName":
+        return machineName;
+      case "id":
+        return "" + id;
+      default:
+        // Look for macro in ConfigurationProperty or as system property
+        return System.getProperty(macro);
     }
-
-    // Look for macro in ConfigurationProperty or as system property
-    return System.getProperty(macro);
   }
 }

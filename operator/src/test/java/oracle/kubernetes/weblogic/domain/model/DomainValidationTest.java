@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -17,9 +17,9 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
-import static org.hamcrest.Matchers.equalToObject;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -64,11 +64,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withCluster(clusterConfig);
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     mementos.add(testSupport.install());
     mementos.add(TuningParametersStub.install());
@@ -79,14 +75,9 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
   }
 
-  /**
-   * Tear down test.
-   */
-  @After
+  @AfterEach
   public void tearDown() {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -945,7 +936,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     List<String> reported = myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket());
     assertThat(reported, hasSize(9));
     for (int i = 0; i < reported.size(); i++) {
-      assertThat(reported.get(i), equalToObject(errors.get(i)));
+      assertThat(reported.get(i), equalTo(errors.get(i)));
     }
   }
 
@@ -976,7 +967,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     // the first 9 servers are fine so we only get 90 errors
     assertThat(reported, hasSize(90));
     for (int i = 0; i < reported.size(); i++) {
-      assertThat(reported.get(i), equalToObject(errors.get(i + 9)));
+      assertThat(reported.get(i), equalTo(errors.get(i + 9)));
     }
   }
 
