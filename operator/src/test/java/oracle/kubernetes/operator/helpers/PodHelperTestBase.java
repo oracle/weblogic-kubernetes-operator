@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -71,7 +72,9 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.jupiter.api.AfterEach;
@@ -89,6 +92,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -1075,22 +1081,58 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   public void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
-    initializeExistingPod();
-    testSupport.addToPacket(ProcessingConstants.MII_DYNAMIC_UPDATE, ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS);
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
-    verifyPodNotReplaced();
+    verifyPodPatched();
+  }
+
+  private void initializeMiiUpdateTest(String miiDynamicUpdateResult) {
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalZip");
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newZipHash");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, miiDynamicUpdateResult);
   }
 
   @Test
   public void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
-    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalZip");
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
-    initializeExistingPod();
-    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newZipHash");
-    testSupport.addToPacket(ProcessingConstants.MII_DYNAMIC_UPDATE, ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS);
+    verifyPodPatched();
 
-    verifyPodMiiThingie();  // TODO should act as though pod patched
     assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
+  }
+
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_updateSha256Hash() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    final String sha256Hash = getPodAnnotation(SHA256_ANNOTATION);
+    verifyPodMiiThingie();  // TODO should act as though pod patched
+
+    assertThat(getPodAnnotation(SHA256_ANNOTATION), not(equalTo(sha256Hash)));
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+    configureDomain().withMIIOnlineUpdate();
+
+    verifyPodMiiThingie();
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_updateStatus() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodMiiThingie();
+    assertThat(Optional.of(getDomain()).map(Domain::getStatus).map(DomainStatus::getConditions).orElse(Collections.emptyList())
+        .stream()
+        .filter(c -> c.getType().equals(DomainConditionType.ConfigChangesPendingRestart))
+    .findFirst().orElse(null), notNullValue());
   }
 
   private void verifyPodMiiThingie() {
@@ -1102,6 +1144,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   private String getPodLabel(String labelName) {
     return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  }
+
+  private String getPodAnnotation(String annotationName) {
+    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getAnnotations().get(annotationName);
   }
 
   private String paddedZipHash(String hash) {

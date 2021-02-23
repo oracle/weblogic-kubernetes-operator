@@ -58,8 +58,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainCondition;
-import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -72,6 +70,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MII_DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -499,7 +500,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
 
     boolean useCurrent =
-        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
+            && canUseNewDomainZip(currentPod);
 
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.fine(
@@ -509,6 +511,21 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     return useCurrent;
+  }
+
+  private boolean canUseNewDomainZip(V1Pod currentPod) {
+    String dynamicUpdateResult = packet.getValue(ProcessingConstants.MII_DYNAMIC_UPDATE);
+
+    if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
+      return true;
+    } else if (dynamicUpdateResult == null) {
+      return false;
+    } else return dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)
+        || getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly;
+  }
+
+  private boolean isDomainZipUnchanged(V1Pod currentPod) {
+    return formatHashLabel(miiDomainZipHash).equals(currentPod.getMetadata().getLabels().get(MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
@@ -554,6 +571,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
+    Optional.ofNullable(miiDomainZipHash)
+        .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
 
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
@@ -639,8 +658,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    Optional.ofNullable(miiDomainZipHash)
-          .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
@@ -934,50 +951,17 @@ public abstract class PodStepContext extends BasePodStepContext {
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
       // reset introspect failure job count - if any
-
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .ifPresent(DomainStatus::resetIntrospectJobFailureCount);
 
-      String dynamicUpdateResult = Optional.ofNullable((String)packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE))
-          .orElse(null);
-
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-      } else if (!canUseCurrentPod(currentPod)) {
-        if (shouldNotRestartAfterOnlineUpdate(dynamicUpdateResult)) {
-          Map<String, String> labels = Optional.of(currentPod)
-              .map(V1Pod::getMetadata)
-              .map(V1ObjectMeta::getLabels)
-              .orElse(new HashMap<>());
-          String serverName = "";
-          if (labels.containsKey(LabelConstants.SERVERNAME_LABEL)) {
-            serverName = labels.get(LabelConstants.SERVERNAME_LABEL);
-          }
-          LOGGER.fine(MII_DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid(), serverName);
-          logPodExists();
-          //Create dummy meta data for patching
-          V1Pod updatedPod = AnnotationHelper.withSha256Hash(createPodRecipe());
-          V1ObjectMeta updatedMetaData = new V1ObjectMeta();
-
-          updatedMetaData.putAnnotationsItem("weblogic.sha256",
-               updatedPod.getMetadata().getAnnotations().get("weblogic.sha256"));
-          if (miiDomainZipHash != null) {
-            updatedMetaData.putLabelsItem(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH,
-                formatHashLabel(miiDomainZipHash));
-          }
-          updatedPod.setMetadata(updatedMetaData);
-          boolean addRestartRequiredLabel = false;
-          // if the introspector job tells it needs restart, update the condition with the needed attributes
-          if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
-            setOnlineUpdateNeedRestartCondition(packet);
-            addRestartRequiredLabel = true;
-          } else {
-            setOnlineUpdateSuccessCondition();
-          }
-          return doNext(patchRunningPod(currentPod, updatedPod, getNext(), addRestartRequiredLabel), packet);
-        }
+ /*     } else if (isDynamicChange(currentPod, packet)) {
+        logPodPatched();
+        return doNext(packet);
+ */     } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
@@ -990,62 +974,32 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(packet);
       }
     }
+/*
+
+    private boolean isDynamicChange(V1Pod currentPod, Packet packet) {
+      String dynamicUpdateResult= packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE);
+      if (dynamicUpdateResult == null) {
+        return false;
+      };
+
+      LOGGER.fine(MII_DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid(), getServerName());
+      return dynamicUpdateResult == MII_DYNAMIC_UPDATE_SUCCESS
+          || info.getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly;
+    }
 
     private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
       boolean result = false;
-      if (ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
+      if (MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
         result = true;
       } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
         result = MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
             Optional.ofNullable(info)
              .map(DomainPresenceInfo::getDomain)
-             .map(Domain::getSpec)
-             .map(DomainSpec::getConfiguration)
-             .map(Configuration::getModel)
-             .map(Model::getOnlineUpdate)
-             .map(OnlineUpdate::getOnNonDynamicChanges)
-             .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly));
+             .map(Domain::getMiiNonDynamicChangesMethod));
       }
       return result;
     }
-
-    private void setOnlineUpdateNeedRestartCondition(Packet packet) {
-      String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-          ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
-          .orElse("");
-      String message = String.format("%s\n%s",
-          LOGGER.formatMessage(MessageKeys.MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED), dynamicUpdateRollBackFile);
-      updateDomainConditions(message, DomainConditionType.ConfigChangesPendingRestart);
-    }
-
-    private void setOnlineUpdateSuccessCondition() {
-    //      updateDomainConditions("Online update successful. No restart necessary",
-    //          DomainConditionType.OnlineUpdateComplete);
-    }
-
-    private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
-      DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
-      String introspectVersion = Optional.ofNullable(info)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
-            .map(DomainSpec::getIntrospectVersion)
-            .orElse("");
-
-      onlineUpdateCondition
-          .withMessage(message)
-          .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
-          .withStatus("True");
-
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.removeConditionIf(c -> c.getType() == DomainConditionType.ConfigChangesPendingRestart));
-
-      Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .ifPresent(o -> o.addCondition(onlineUpdateCondition));
-    }
+*/
 
   }
 
