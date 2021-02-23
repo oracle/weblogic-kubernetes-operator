@@ -296,12 +296,22 @@
       <artifactId>client-java</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+
     <!-- test dependencies -->
     <dependency>
       <groupId>com.appscode.voyager</groupId>
       <artifactId>client-java</artifactId>
       <scope>test</scope>
     </dependency>
+
     <dependency>
       <!-- note: need to include this before junit since junit includes an obsolete version of hamcrest -->
       <groupId>org.hamcrest</groupId>
