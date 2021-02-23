@@ -25,7 +25,6 @@ import org.awaitility.core.ConditionFactory;
 import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -886,54 +885,6 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is created, runs and deleted
     verifyIntrospectorRuns(domainUid, domainNamespace);
-  }
-
-  /**
-   * Recreate configmap containing non-dynamic change, changing DS attribute.
-   * Patch the domain resource with the configmap.
-   * Patch the domain with onNonDynamicChanges value as CancelUpdate.
-   * Update the introspect version of the domain resource.
-   * Wait for introspector to complete
-   * Verify the domain status is updated and domain is not restarted.
-   */
-  // with latest dynamicupdate branch, the CancelUpdate behavior got changed. Disable this test now.
-  @Disabled("CancelUpdate is removed from dynamic update")
-  @Test
-  @Order(13)
-  @DisplayName("Test onNonDynamicChanges value CancelUpdate")
-  public void testOnNonDynamicChangesCancelUpdate() {
-
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-    final LinkedHashMap<String, DateTime> pods = addDataSourceAndVerify(false);
-
-    // make non-dynamic change, update datasource JDBCDriver params
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml"),
-        withStandardRetryPolicy);
-
-    // Patch a running domain with onNonDynamicChanges=CancelUpdate.
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CancelUpdate");
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
-
-    // Verify domain is not restarted when non-dynamic change is made and CancelUpdate is used
-    verifyPodsNotRolled(domainNamespace, pods);
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
-
-    // check that the domain status condition type is "OnlineUpdateCanceled" and message contains the expected msg
-    String expectedMsgForCancelUpdate = "Online update completed successfully, but the changes require restart and "
-        + "the domain resource specified 'spec.configuration.model.onlineUpdate.onNonDynamicChanges=CancelUpdate' "
-        + "option to cancel all changes if restart require.";
-    logger.info("Verifying the domain status condition message contains the expected msg");
-    verifyDomainStatusCondition("OnlineUpdateCanceled", expectedMsgForCancelUpdate);
-
   }
 
   /**
