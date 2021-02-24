@@ -27,13 +27,11 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 
 ##### Clone WebLogic Server Kubernetes Operator repository
 
-Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1.
+Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```bash
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 cd weblogic-kubernetes-operator
-#TODO: we have to fix the branch after the source code are merged
-#git checkout v3.1.1
 ```
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
@@ -44,14 +42,6 @@ cd weblogic-kubernetes-operator
 #### Install WebLogic Server Kubernetes Operator
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
-
-You must have the `cluster-admin` role to install the operator. The operator does not need the `cluster-admin` role at runtime. Grant the Helm service account the `cluster-admin role` using this configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image/helm-sa-cluster-admin-role.yaml`.
-
-```bash
-# cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image
-$ kubectl apply -f helm-sa-cluster-admin-role.yaml
-clusterrolebinding.rbac.authorization.k8s.io/helm-user-cluster-admin-role created
-```
 
 Create a namespace and service account for the operator.
 
@@ -94,6 +84,10 @@ STATUS: deployed
 REVISION: 1
 TEST SUITE: None
 ```
+
+{{% notice tip %}} If you wish to use a more recent version of the operator, replace the `3.1.1` in the preceding command with the other version number. To see the list of version numbers, visit the [GitHub releases page](https://github.com/oracle/weblogic-kubernetes-operator/releases).
+{{% /notice %}}
+
 
 Verify the operator with the following commands; the status will be `Running`.
 

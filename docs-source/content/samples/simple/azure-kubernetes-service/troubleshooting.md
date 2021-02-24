@@ -191,7 +191,7 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
 
 #### WebLogic Image Tool failure
 
-You will get an error running `./imagetool/bin/imagetool.sh` if the Docker buildkit is enabled. 
+If your version of WIT is older than 1.9.8, you will get an error running `./imagetool/bin/imagetool.sh` if the Docker buildkit is enabled. 
 
 Here is the warning message shown:
 
@@ -199,7 +199,7 @@ Here is the warning message shown:
 failed to solve with frontend dockerfile.v0: failed to create LLB definition: failed to parse stage name "WDT_BUILD": invalid reference format: repository name must be lowercase
 ```
 
-To resolve the error, disable the Docker buildkit with the following commands and run the `imagetool` command again. 
+To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the `imagetool` command again. 
 
 ```bash
 $ export DOCKER_BUILDKIT=0
