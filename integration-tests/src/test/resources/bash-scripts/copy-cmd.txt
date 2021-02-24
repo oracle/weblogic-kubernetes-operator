@@ -1,0 +1,2 @@
+[final-build-commands]
+COPY files/customLivenessProbe.sh /u01
