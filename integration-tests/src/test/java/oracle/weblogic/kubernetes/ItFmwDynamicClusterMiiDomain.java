@@ -30,6 +30,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
@@ -59,11 +61,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test to creat a JRF dynamic domain in model in image.
+ * Test to creat a FMW dynamic domain in model in image.
  */
-@DisplayName("Test to creat a JRF dynamic domain in model in image")
+@DisplayName("Test to Creat a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
-public class ItFmwDynamicDomainInImage {
+public class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -135,13 +137,13 @@ public class ItFmwDynamicDomainInImage {
   }
 
   /**
-   * Create a basic JRF dynamic cluster model in image domain.
+   * Create FMW Dynamic Domain with Dynamic Cluster using model in image.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
   @Test
-  @DisplayName("Create JRF Dynamic Domain model in image")
-  public void testJrfDynamicDomainModelInImage() {
+  @DisplayName("Create FMW Dynamic Domain with Dynamic Cluster using model in image")
+  public void testFmwDynamicClusterDomainInModelInImage() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady();
@@ -157,8 +159,8 @@ public class ItFmwDynamicDomainInImage {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
         domainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
