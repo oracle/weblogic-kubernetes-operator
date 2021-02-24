@@ -12,18 +12,18 @@
     <title>Set up Kubernetes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1614086712" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614086712" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1614202517" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614202517" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614086712"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614202517"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614086712"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614086712"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614202517"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614202517"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614086712"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614202517"></script>
 
     
   </div>
@@ -1929,6 +1929,73 @@
           
       </a>
       
+      
+        <ul>
+          
+          
+          
+          
+        
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/" title="Domain home on a PV" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/">
+        Domain home on a PV
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/model-in-image/" title="Model in Image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/model-in-image/">
+        Model in Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/">
+        Troubleshooting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
               
     </li>
   
@@ -2904,7 +2971,7 @@ if (!doNotTrack) {
 
 
 <h4 id="cheat-sheet-for-setting-up-kubernetes">Cheat sheet for setting up Kubernetes</h4>
-<p>If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:</p>
+<p>If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/">Microsoft Azure</a>, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:</p>
 <p>&ldquo;Production&rdquo; options:</p>
 <ul>
 <li>Set up your own Kubernetes environment on bare compute resources on a cloud.</li>
@@ -2913,7 +2980,7 @@ if (!doNotTrack) {
 </ul>
 <p>&ldquo;Development/test&rdquo; options:</p>
 <ul>
-<li>Install <a href="https://docs.docker.com/docker-for-mac/#kubernetes">Docker for Mac</a> and enable its embedded Kubernetes cluster (or register for the <a href="https://beta.docker.com/form">Docker for Windows</a> beta and wait until Kubernetes is available there).</li>
+<li>Install <a href="https://docs.docker.com/docker-for-mac/#kubernetes">Docker for Mac</a> or <a href="https://docs.docker.com/docker-for-windows/kubernetes/">Docker for Windows</a> and enable its embedded Kubernetes cluster.</li>
 <li>We <em>do not</em> recommend or support other development/test options like Minikube, Minishift, kind, and so on.</li>
 </ul>
 <p>We have provided our hints and tips for several of these options in the sections below.</p>
@@ -4593,6 +4660,54 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
                     
 
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5266,19 +5381,19 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614086712"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614202517"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1614086712"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614086712"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1614202517"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614202517"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614086712" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614086712"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614202517" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614202517"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

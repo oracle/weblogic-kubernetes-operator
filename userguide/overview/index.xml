@@ -24,7 +24,7 @@ After creating Kubernetes clusters, you can optionally:
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/userguide/overview/k8s-setup/</guid>
-      <description>Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon. Cloud providers allow you to provision a managed Kubernetes environment from their management consoles. You could also set up Kubernetes manually using compute resources on a cloud.</description>
+      <description>Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon. Cloud providers allow you to provision a managed Kubernetes environment from their management consoles. You could also set up Kubernetes manually using compute resources on a cloud.</description>
     </item>
     
     <item>
