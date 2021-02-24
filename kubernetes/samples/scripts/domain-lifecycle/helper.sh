@@ -148,10 +148,7 @@ function createPatchJsonToUnsetPolicyAndUpdateReplica {
   local replicaPatch=$3
   local __result=$4
 
-  unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
-  replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
-  mapCmd=". |= map(if .serverName == \"${serverName}\" then . = ${replacePolicyCmd} else . end)"
-  serverStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
   patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
   eval $__result="'${patchJson}'"
 }
@@ -206,12 +203,32 @@ function createPatchJsonToUnsetPolicy {
   local serverName=$2
   local __result=$3
 
-  unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
-  replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
-  mapCmd=". |= map(if .serverName == \"${serverName}\" then . = ${replacePolicyCmd} else . end)"
-  serverStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
   patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
   eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch string with server start policy unset
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be unset
+# $3 - Return value containing patch string with server start policy unset
+#
+function unsetServerStartPolicy {
+  local domainJson=$1
+  local serverName=$2
+  local __result=$3
+
+  unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
+  replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
+  replacePolicyCmdLen=$(echo "${replacePolicyCmd}" | jq -e keys_unsorted | jq length)
+  if [ ${replacePolicyCmdLen} == 1 ]; then
+    mapCmd=". |= map(if .serverName == \"${serverName}\" then del(.) else . end)"
+  else
+    mapCmd=". |= map(if .serverName == \"${serverName}\" then . = ${replacePolicyCmd} else . end)"
+  fi
+  serverStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  eval $__result="'${serverStartPolicyPatch}'"
 }
 
 #
