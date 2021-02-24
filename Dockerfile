@@ -7,7 +7,7 @@
 #      $ ./buildDockerImage.sh [-t <image-name>]
 #
 # -------------------------
-FROM oraclelinux:8-slim
+FROM ghcr.io/oracle/oraclelinux:8-slim
 
 LABEL "org.opencontainers.image.authors"="Ryan Eberhard <ryan.eberhard@oracle.com>" \
       "org.opencontainers.image.url"="https://github.com/oracle/weblogic-kubernetes-operator" \
