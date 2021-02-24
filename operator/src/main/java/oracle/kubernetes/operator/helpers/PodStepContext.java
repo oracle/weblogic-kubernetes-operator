@@ -56,12 +56,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import oracle.kubernetes.weblogic.domain.model.Model;
-import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -69,11 +65,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
-import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
-import static oracle.kubernetes.operator.logging.MessageKeys.MII_DOMAIN_DYNAMICALLY_UPDATED;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -394,10 +387,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
-  private Step patchRunningPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
-    return createProgressingStep(patchPod(currentPod, updatedPod, next, addRestartRequiredLabel));
-  }
-
   protected Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     KubernetesUtils.addPatches(
@@ -409,46 +398,10 @@ public abstract class PodStepContext extends BasePodStepContext {
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
   }
 
-  // Method for online update
-  protected Step patchPod(V1Pod currentPod, V1Pod updatedPod, Step next, boolean addRestartRequiredLabel) {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    Map<String, String> updatedLabels = Optional.ofNullable(updatedPod)
-        .map(V1Pod::getMetadata)
-        .map(V1ObjectMeta::getLabels)
-        .orElse(null);
-
-    Map<String, String> updatedAnnotations = Optional.ofNullable(updatedPod)
-        .map(V1Pod::getMetadata)
-        .map(V1ObjectMeta::getAnnotations)
-        .orElse(null);
-    if (updatedLabels != null) {
-      String introspectVersion = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getSpec)
-          .map(DomainSpec::getIntrospectVersion)
-          .orElse(null);
-      if (introspectVersion != null) {
-        updatedLabels.put(INTROSPECTION_STATE_LABEL, introspectVersion);
-        if (addRestartRequiredLabel) {
-          updatedLabels.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
-        }
-      }
-
-      KubernetesUtils.addPatches(
-          patchBuilder, "/metadata/labels/", getLabels(currentPod), updatedLabels);
-    }
-    if (updatedAnnotations != null) {
-      KubernetesUtils.addPatches(
-          patchBuilder, "/metadata/annotations/", getAnnotations(currentPod),
-          updatedAnnotations);
-    }
-    return new CallBuilder()
-        .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-            new V1Patch(patchBuilder.build().toString()), patchResponse(next));
-  }
-
   private Map<String, String> getNonHashedPodLabels() {
     Map<String,String> result = new HashMap<>(getPodLabels());
+    Optional.ofNullable(miiDomainZipHash)
+          .ifPresent(h -> result.put(MODEL_IN_IMAGE_DOMAINZIP_HASH, formatHashLabel(h)));
 
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
@@ -958,10 +911,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
- /*     } else if (isDynamicChange(currentPod, packet)) {
-        logPodPatched();
-        return doNext(packet);
- */     } else if (!canUseCurrentPod(currentPod)) {
+       } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),
@@ -974,33 +924,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         return doNext(packet);
       }
     }
-/*
-
-    private boolean isDynamicChange(V1Pod currentPod, Packet packet) {
-      String dynamicUpdateResult= packet.get(ProcessingConstants.MII_DYNAMIC_UPDATE);
-      if (dynamicUpdateResult == null) {
-        return false;
-      };
-
-      LOGGER.fine(MII_DOMAIN_DYNAMICALLY_UPDATED, info.getDomain().getDomainUid(), getServerName());
-      return dynamicUpdateResult == MII_DYNAMIC_UPDATE_SUCCESS
-          || info.getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly;
-    }
-
-    private boolean shouldNotRestartAfterOnlineUpdate(String dynamicUpdateResult) {
-      boolean result = false;
-      if (MII_DYNAMIC_UPDATE_SUCCESS.equals(dynamicUpdateResult)) {
-        result = true;
-      } else if (ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(dynamicUpdateResult)) {
-        result = MIINonDynamicChangesMethod.CommitUpdateOnly.equals(
-            Optional.ofNullable(info)
-             .map(DomainPresenceInfo::getDomain)
-             .map(Domain::getMiiNonDynamicChangesMethod));
-      }
-      return result;
-    }
-*/
-
   }
 
   private abstract class BaseResponseStep extends ResponseStep<V1Pod> {

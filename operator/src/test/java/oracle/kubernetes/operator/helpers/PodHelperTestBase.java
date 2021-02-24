@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -72,9 +71,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.jupiter.api.AfterEach;
@@ -1088,10 +1085,17 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   private void initializeMiiUpdateTest(String miiDynamicUpdateResult) {
     testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalZip");
+    disableAutoIntrospectOnNewMiiPods();
     initializeExistingPod();
 
     testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newZipHash");
     testSupport.addToPacket(MII_DYNAMIC_UPDATE, miiDynamicUpdateResult);
+  }
+
+  // Mii requires an introspection when bringing up a new pod. To disable that in these tests,
+  // we will pretend that the domain is not MII.
+  private void disableAutoIntrospectOnNewMiiPods() {
+    domain.getSpec().setDomainHomeSourceType(DomainSourceType.Image);
   }
 
   @Test
@@ -1103,51 +1107,26 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
   }
 
-
-  @Test
-  public void whenMiiDynamicUpdateDynamicChangesOnly_updateSha256Hash() {
-    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
-
-    final String sha256Hash = getPodAnnotation(SHA256_ANNOTATION);
-    verifyPodMiiThingie();  // TODO should act as though pod patched
-
-    assertThat(getPodAnnotation(SHA256_ANNOTATION), not(equalTo(sha256Hash)));
-  }
-
   @Test
   public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
+    configureDomain().withMIIOnlineUpdate();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
     testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
-    configureDomain().withMIIOnlineUpdate();
 
-    verifyPodMiiThingie();
-  }
-
-  @Test
-  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_updateStatus() {
-    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
-
-    verifyPodMiiThingie();
-    assertThat(Optional.of(getDomain()).map(Domain::getStatus).map(DomainStatus::getConditions).orElse(Collections.emptyList())
-        .stream()
-        .filter(c -> c.getType().equals(DomainConditionType.ConfigChangesPendingRestart))
-    .findFirst().orElse(null), notNullValue());
-  }
-
-  private void verifyPodMiiThingie() {
-    testSupport.runSteps(getStepFactory(), terminalStep);
-
-    assertThat(logRecords, containsFine(getExistsMessageKey()));
-    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
+    verifyPodPatched();
   }
 
   private String getPodLabel(String labelName) {
     return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
   }
 
-  private String getPodAnnotation(String annotationName) {
-    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getAnnotations().get(annotationName);
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_replacePod() {
+    configureDomain().withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodReplaced();
   }
 
   private String paddedZipHash(String hash) {
