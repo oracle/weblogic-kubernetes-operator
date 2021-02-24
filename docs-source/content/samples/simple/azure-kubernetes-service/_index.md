@@ -28,7 +28,7 @@ To learn more, please see the [What is Azure Kubernetes Service?](https://docs.m
 
 #### Domain home source types
 
-This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/" >}}).
+This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
 - [Model in Image]({{< relref "/samples/simple/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits.
 
