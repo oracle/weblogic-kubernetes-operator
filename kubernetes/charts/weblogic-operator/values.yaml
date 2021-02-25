@@ -117,9 +117,18 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
-# javaLoggingLevel specifies the Java logging level for the operator.
+# javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
+# log output and the contents of log files in the container's /logs/ directory.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
 javaLoggingLevel: "INFO"
+
+# javaLoggingFileSizeLimit specifies the maximum size in bytes of the Java logging files in the operator container's
+# /logs/ directory.
+javaLoggingFileSizeLimit: 20000000
+
+# javaLoggingFileCount specifies the number of Java logging files to preserve in the operator container's /logs/
+# directory as the files are rotated.
+javaLoggingFileCount: 10
 
 # nodeSelector specifies a matching rule that the Kubernetes scheduler will use when selecting the node
 # where the operator will run. If the nodeSelector value is specified, then this content will be added to
