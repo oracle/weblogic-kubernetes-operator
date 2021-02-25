@@ -6,9 +6,9 @@ description: "Troubleshooting."
 ---
 
 
-- [Access Administration Console](#fail-to-access-administration-console): possible causes for Administration Console inaccessibility.
+- [Access Administration Console](#fail-to-access-administration-console): Possible causes for Administration Console inaccessibility
 - [Domain debugging](#domain-debugging)
-- [Pod Error](#get-pod-error-details): how to get details of the pod error.
+- [Pod Error](#get-pod-error-details): How to get details of the pod error
 - [WebLogic Image Tool failure](#weblogic-image-tool-failure)
 - [WebLogic Kubernetes Operator installation failure](#weblogic-kubernetes-operator-installation-failure)   
    - [System pods are pending](#the-aks-cluster-system-pods-are-pending)
@@ -19,7 +19,7 @@ description: "Troubleshooting."
 
 #### Get pod error details
 
-You may get the following message while creating the WebLogic domain: "the job status is not Completed!"
+You may get the following message while creating the WebLogic domain: `"the job status is not Completed!"`
 
 ```text
 status on iteration 20 of 20
@@ -54,13 +54,13 @@ Here are some common reasons for this failure, along with some tips to help you 
 
 * **Create WebLogic domain job fails**
 
-Check the deploy log and find the failure details with `kubectl describe pod podname`.
-Please go to 1. Getting pod error details.
+  Check the deploy log and find the failure details with `kubectl describe pod podname`.
+  Please go [Getting pod error details](#get-pod-error-details).
 
 * **Process of starting the servers is still running**
 
-Check with `kubectl get svc` and if domainUID-admin-server, domainUID-managed-server1 and domainUID-managed-server2 are not listed,
-we need to wait some more for the Administration Server to start.
+   Check with `kubectl get svc` and if `domainUID-admin-server`, `domainUID-managed-server1`, and `domainUID-managed-server2` are not listed,
+   we need to wait some more for the Administration Server to start.
 
 The following output is an example of when the Administration Server has started.
 
@@ -84,7 +84,7 @@ If services are up but the WLS Administration Console is still not available, us
 $ kubectl describe domain domain1
 ```
 
-Make sure the status of `cluster-1` is `ServersReady` and `Available`. The status of `admin-server`, `managed-server1` and `managed-server2` should be `RUNNING`. Otherwise, the cluster is likely still in the process of becoming fully ready.
+Make sure the status of `cluster-1` is `ServersReady` and `Available`. The status of `admin-server`, `managed-server1`, and `managed-server2` should be `RUNNING`. Otherwise, the cluster is likely still in the process of becoming fully ready.
 
 {{%expand "Click here to view the example status." %}}
 ```yaml
@@ -131,7 +131,7 @@ Status:
 
 #### Domain debugging
 
-Some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed are found in the section on [debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
+For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
 
 #### WSL2 bad timestamp
 
@@ -191,7 +191,7 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
 
 #### WebLogic Image Tool failure
 
-If your version of WIT is older than 1.9.8, you will get an error running `./imagetool/bin/imagetool.sh` if the Docker buildkit is enabled. 
+If your version of WIT is older than 1.9.8, you will get an error running `./imagetool/bin/imagetool.sh` if the Docker buildkit is enabled.
 
 Here is the warning message shown:
 
@@ -199,7 +199,7 @@ Here is the warning message shown:
 failed to solve with frontend dockerfile.v0: failed to create LLB definition: failed to parse stage name "WDT_BUILD": invalid reference format: repository name must be lowercase
 ```
 
-To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the `imagetool` command again. 
+To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the `imagetool` command again.
 
 ```bash
 $ export DOCKER_BUILDKIT=0
@@ -208,12 +208,12 @@ $ export COMPOSE_DOCKER_CLI_BUILD=0
 
 #### WebLogic Kubernetes Operator installation failure
 
-Currently, we meet two cases that block the operator installation: 
+Currently, we meet two cases that block the operator installation:
 
-* The system pods in the AKS cluster are pending. 
+* The system pods in the AKS cluster are pending.
 * The operator image is unavailable.
 
-Follow the steps and dig into the error. 
+Follow these steps to dig into the error.
 
 ##### The AKS cluster system pods are pending
 
@@ -241,7 +241,7 @@ Events:
   Warning  FailedScheduling  71s (x25 over 36m)  default-scheduler  no nodes available to schedule pods
 ```
 
-If you run into this error, remove the AKS cluster and create a new one. 
+If you run into this error, remove the AKS cluster and create a new one.
 
 Run the `kubectl get pod -A` to make sure all the system pods are running.
 
@@ -288,16 +288,16 @@ ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
 
 #### Cannot attach ACR due to not being Owner of subscription
 
-If you're unable to create an ACR and you're using a Service Principal, you can use manual Role Assignments to grant access to the ACR as described in [Azure Container Registry authentication with service principals](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal).
-    
-First, find the `objectId` of the Service Principal used when the AKS cluster was created. You will need the output from `az ad sp create-for-rbac`, which you were directed to save to a file.  Within the output, you need the value of the `name` property. It will start with `http`.  Get the `objectId` with this command.
+If you're unable to create an ACR and you're using a service principal, you can use manual Role Assignments to grant access to the ACR as described in [Azure Container Registry authentication with service principals](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal).
+
+First, find the `objectId` of the service principal used when the AKS cluster was created. You will need the output from `az ad sp create-for-rbac`, which you were directed to save to a file.  Within the output, you need the value of the `name` property. It will start with `http`.  Get the `objectId` with this command.
 
 ```bash
 $ az ad sp show --id http://<your-name-from-the-saved-output> | grep objectId
 "objectId": "nror4p30-qnoq-4129-o89r-p60n71805npp",
 ```
 
-Next, assign the `acrpull` role to that Service Principal with this command.
+Next, assign the `acrpull` role to that service principal with this command.
 
 ```bash
 $ az role assignment create --assignee-object-id <your-objectId-from-above> --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
