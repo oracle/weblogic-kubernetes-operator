@@ -1104,8 +1104,8 @@ class ItServerStartPolicy {
    */
   @Order(17)
   @Test
-  @DisplayName("Restart the dynamic cluster managed server using sample scripts")
-  public void testManagedRestartWithConstantReplicaCount() {
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
+  public void testRestartingMSWithExplicitServerStartStateWhileKeepingReplicaConstant() {
     String serverName = managedServerNamePrefix + 1;
     String serverPodName = managedServerPrefix + 1;
     String keepReplicasConstant = "-k";
@@ -1129,8 +1129,8 @@ class ItServerStartPolicy {
    */
   @Order(18)
   @Test
-  @DisplayName("Restart the dynamic cluster managed server using sample scripts")
-  public void testManagedRestartWithDynamicReplicaCount() {
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
+  public void testRestartingMSWithExplicitServerStartStateWhileVaryingReplicaConstant() {
     String serverName = managedServerNamePrefix + 1;
     String serverPodName = managedServerPrefix + 1;
     String keepReplicasConstant = "-k";
