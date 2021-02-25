@@ -54,9 +54,9 @@ spec:
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
-          value: {{ .javaLoggingFileSizeLimit | default 1000000 | quote }}
+          value: {{ .javaLoggingFileSizeLimit | default 2000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
-          value: {{ .javaLoggingFileCount | default 7 | quote }}
+          value: {{ .javaLoggingFileCount | default 10 | quote }}
         - name: ISTIO_ENABLED
           value: {{ .istioEnabled | quote }}
         {{- if .remoteDebugNodePortEnabled }}
