@@ -124,7 +124,7 @@ javaLoggingLevel: "INFO"
 
 # javaLoggingFileSizeLimit specifies the maximum size in bytes of the Java logging files in the operator container's
 # /logs/ directory.
-javaLoggingFileSizeLimit: 2000000
+javaLoggingFileSizeLimit: 20000000
 
 # javaLoggingFileCount specifies the number of Java logging files to preserve in the operator container's /logs/
 # directory as the files are rotated.
