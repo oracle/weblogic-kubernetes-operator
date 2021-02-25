@@ -279,6 +279,17 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   }
 
   /**
+   * Waits until the Pod with given name is Ready.
+   *
+   * @param podName Name of the Pod to watch
+   * @param next Next processing step once Pod is ready
+   * @return Asynchronous step
+   */
+  public Step waitForReady(String podName, Step next) {
+    return new WaitForPodReadyStep(podName, next);
+  }
+
+  /**
    * Waits until the Pod is deleted.
    *
    * @param pod Pod to watch
@@ -293,6 +304,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     private WaitForPodStatusStep(V1Pod pod, Step next) {
       super(pod, next);
+    }
+
+    private WaitForPodStatusStep(String podName, Step next) {
+      super(podName, null, next);
     }
 
     @Override
@@ -310,6 +325,10 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
     private WaitForPodReadyStep(V1Pod pod, Step next) {
       super(pod, next);
+    }
+
+    private WaitForPodReadyStep(String podName, Step next) {
+      super(podName, next);
     }
 
     // A pod is ready if it is not being deleted and has the ready status.

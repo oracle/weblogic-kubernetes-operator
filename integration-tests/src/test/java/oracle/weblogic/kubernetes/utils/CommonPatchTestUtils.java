@@ -209,8 +209,8 @@ public class CommonPatchTestUtils {
    * @return true if successful, false otherwise
    */
   public static boolean patchServerStartPolicy(
-         String domainUid, String domainNamespace, 
-         String patchPath, String policy) {
+      String domainUid, String domainNamespace,
+      String patchPath, String policy) {
     LoggingFacade logger = getLogger();
     logger.info("Updating the for domain {0} in namespace {1} using patch string: {2}",
         domainUid, domainNamespace, patchPath.toString());
@@ -226,5 +226,27 @@ public class CommonPatchTestUtils {
         .append(" }]");
     V1Patch patch = new V1Patch(new String(patchStr));
     return patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+  }
+
+  /**
+   * Patch replicas at spec level.
+   *
+   * @param domainUid unique domain identifier
+   * @param domainNamespace the Kubernetes namespace where the domain is
+   * @param replicaCount the replica count to patch with
+   * @return true if successful, false otherwise
+   */
+  public static boolean patchDomainResourceWithNewReplicaCountAtSpecLevel(
+      String domainUid, String domainNamespace, int replicaCount) {
+    LoggingFacade logger = getLogger();
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append(" \"op\": \"replace\",")
+        .append(" \"path\": \"/spec/replicas\",")
+        .append(" \"value\": ")
+        .append(replicaCount)
+        .append(" }]");
+    logger.info("Replicas patch string: {0}", patchStr);
+
+    return patchDomainResource(domainUid, domainNamespace, patchStr);
   }
 }

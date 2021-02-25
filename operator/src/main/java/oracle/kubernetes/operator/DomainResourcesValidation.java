@@ -10,11 +10,16 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.Packet;
@@ -49,6 +54,16 @@ class DomainResourcesValidation {
       }
 
       @Override
+      Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+        return l -> addOperatorEventList(l);
+      }
+
+      @Override
+      Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+        return l -> addPodDisruptionBudgetList(l);
+      }
+
+      @Override
       Consumer<DomainList> getDomainListProcessing() {
         return l -> addDomainList(l);
       }
@@ -64,6 +79,14 @@ class DomainResourcesValidation {
 
   private void addPodList(V1PodList list) {
     list.getItems().forEach(this::addPod);
+  }
+
+  private void addEvent(CoreV1Event event) {
+    DomainProcessorImpl.updateEventK8SObjects(event);
+  }
+
+  private void addOperatorEventList(CoreV1EventList list) {
+    list.getItems().forEach(this::addEvent);
   }
 
   private void addPod(V1Pod pod) {
@@ -86,6 +109,17 @@ class DomainResourcesValidation {
     String domainUid = ServiceHelper.getServiceDomainUid(service);
     if (domainUid != null) {
       ServiceHelper.addToPresence(getDomainPresenceInfo(domainUid), service);
+    }
+  }
+
+  private void addPodDisruptionBudgetList(V1beta1PodDisruptionBudgetList list) {
+    list.getItems().forEach(this::addPodDisruptionBudget);
+  }
+
+  private void addPodDisruptionBudget(V1beta1PodDisruptionBudget pdb) {
+    String domainUid = PodDisruptionBudgetHelper.getDomainUid(pdb);
+    if (domainUid != null) {
+      PodDisruptionBudgetHelper.addToPresence(getDomainPresenceInfo(domainUid), pdb);
     }
   }
 

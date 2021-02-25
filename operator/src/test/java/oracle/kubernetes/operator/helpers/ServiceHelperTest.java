@@ -17,9 +17,11 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -70,6 +72,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -108,6 +111,8 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP_PORT_1 = 7100;
   private static final int NAP_PORT_2 = 37100;
   private static final int NAP_PORT_3 = 37200;
+  public static final String STRANDED = "Stranded";
+  public static final String NODE_PORT = "NodePort";
   private final TerminalStep terminalStep = new TerminalStep();
   public TestFacade testFacade;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -403,11 +408,20 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   private void verifyServiceReplaced(Runnable configurationMutator) {
     recordInitialService();
+    if (testFacade instanceof ExternalServiceHelperTest.ExternalServiceTestFacade) {
+      recordStrandedService();
+    }
     configurationMutator.run();
 
     runServiceHelper();
 
     assertThat(logRecords, containsInfo(testFacade.getServiceReplacedLogMessage()));
+    assertThat(getStrandedService(), empty());
+  }
+
+  private List<Object> getStrandedService() {
+    ArrayList<V1Service> svcList = (ArrayList)testSupport.getResources(SERVICE);
+    return svcList.stream().filter(s -> s.getMetadata().getName().equals(STRANDED)).collect(Collectors.toList());
   }
 
   private void configureNewLabel() {
@@ -438,6 +452,16 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     V1Service originalService = testFacade.createServiceModel(testSupport.getPacket());
     testSupport.defineResources(originalService);
     testFacade.recordService(domainPresenceInfo, originalService);
+  }
+
+  private void recordStrandedService() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.DOMAINUID_LABEL, UID);
+    labels.put(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    V1Service strandedService = new V1Service().metadata(new V1ObjectMeta().name(STRANDED).namespace(NS)
+            .labels(labels)).spec(new V1ServiceSpec().type(NODE_PORT));
+    testSupport.defineResources(strandedService);
+    testFacade.recordService(domainPresenceInfo, strandedService);
   }
 
   @Test

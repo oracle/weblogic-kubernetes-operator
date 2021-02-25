@@ -7,9 +7,10 @@ import java.util.Optional;
 import java.util.Random;
 import javax.validation.constraints.NotNull;
 
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -46,11 +47,15 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodUID;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
@@ -59,11 +64,20 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param eventData event item
+   * @param eventItem event item
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData) {
+  public static Step createEventStep(EventItem eventItem) {
+    return createEventStep(new EventData(eventItem));
+  }
+
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
+   * @param eventData event data
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(EventData eventData) {
     return new CreateEventStep(eventData);
   }
 
@@ -74,8 +88,7 @@ public class EventHelper {
    * @param next next step
    * @return Step for creating an event
    */
-  public static Step createEventStep(
-      EventData eventData, Step next) {
+  public static Step createEventStep(EventData eventData, Step next) {
     return new CreateEventStep(eventData, next);
   }
 
@@ -105,12 +118,12 @@ public class EventHelper {
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
-    private Step createEventAPICall(V1Event event) {
-      V1Event existingEvent = getExistingEvent(event);
+    private Step createEventAPICall(CoreV1Event event) {
+      CoreV1Event existingEvent = getExistingEvent(event);
       return existingEvent != null ? createReplaceEventCall(event, existingEvent) : createCreateEventCall(event);
     }
 
-    private Step createCreateEventCall(V1Event event) {
+    private Step createCreateEventCall(CoreV1Event event) {
       LOGGER.fine(MessageKeys.CREATING_EVENT, eventData.eventItem);
       event.firstTimestamp(event.getLastTimestamp());
       return new CallBuilder()
@@ -120,7 +133,7 @@ public class EventHelper {
               new CreateEventResponseStep(getNext()));
     }
 
-    private Step createReplaceEventCall(V1Event event, @NotNull V1Event existingEvent) {
+    private Step createReplaceEventCall(CoreV1Event event, @NotNull CoreV1Event existingEvent) {
       LOGGER.fine(MessageKeys.REPLACING_EVENT, eventData.eventItem);
       existingEvent.count(Optional.ofNullable(existingEvent.getCount()).map(c -> c + 1).orElse(1));
       existingEvent.lastTimestamp(event.getLastTimestamp());
@@ -129,10 +142,10 @@ public class EventHelper {
               existingEvent.getMetadata().getName(),
               existingEvent.getMetadata().getNamespace(),
               existingEvent,
-              new ReplaceEventResponseStep(getNext()));
+              new ReplaceEventResponseStep(this, existingEvent, getNext()));
     }
 
-    private V1Event getExistingEvent(V1Event event) {
+    private CoreV1Event getExistingEvent(CoreV1Event event) {
       return Optional.ofNullable(getEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
@@ -146,82 +159,121 @@ public class EventHelper {
       return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
-    private class CreateEventResponseStep extends ResponseStep<V1Event> {
+    private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
       CreateEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
       }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
+          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
+              eventData.eventItem.getReason(), eventData.getNamespace());
+          return doNext(packet);
+        }
+        return super.onFailure(packet, callResponse);
+      }
+
+      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
+        return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+      }
     }
 
-    private class ReplaceEventResponseStep extends ResponseStep<V1Event> {
+    private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
+      Step replaceEventStep;
+      CoreV1Event existingEvent;
 
-      ReplaceEventResponseStep(Step next) {
+      ReplaceEventResponseStep(Step replaceEventStep, CoreV1Event existingEvent, Step next) {
+        super(next);
+        this.existingEvent = existingEvent;
+        this.replaceEventStep = replaceEventStep;
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
+        return doNext(packet);
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        restoreExistingEvent();
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
+          return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
+        } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+          return onFailureNoRetry(packet, callResponse);
+        } else {
+          return onFailure(createRetry(existingEvent), packet, callResponse);
+        }
+      }
+
+      private void restoreExistingEvent() {
+        if (existingEvent == null || existingEvent.getCount() == null) {
+          return;
+        }
+        existingEvent.count(existingEvent.getCount() - 1);
+      }
+
+      Step createRetry(CoreV1Event event) {
+        return Step.chain(createEventRefreshStep(event), replaceEventStep);
+      }
+
+      private Step createEventRefreshStep(CoreV1Event event) {
+        return new CallBuilder().readEventAsync(
+            event.getMetadata().getName(),
+            event.getMetadata().getNamespace(),
+            new ReadEventResponseStep(getNext()));
+      }
+    }
+
+    private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
+      ReadEventResponseStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse<V1Event> callResponse) {
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
+      public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        DomainProcessorImpl.updateEventK8SObjects(callResponse.getResult());
         return doNext(packet);
-      }
-
-      @Override
-      public NextAction onFailure(Packet packet, CallResponse<V1Event> callResponse) {
-        return UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-            ? doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet)
-            : super.onFailure(packet, callResponse);
       }
     }
   }
 
-  private static V1Event createEventModel(
+  private static CoreV1Event createEventModel(
       Packet packet,
       EventData eventData) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     EventItem eventItem = eventData.eventItem;
-
-    String namespace = getNamespaceFromInfo(eventData, info);
-    eventData.namespace(namespace);
-    eventData.resourceName(eventItem.calculateResourceName(info, namespace));
     eventData.domainPresenceInfo(info);
 
-    return new V1Event()
+    return new CoreV1Event()
         .metadata(createMetadata(eventData))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(getOperatorPodName())
         .lastTimestamp(eventItem.getCurrentTimestamp())
         .type(eventItem.getType())
         .reason(eventItem.getReason())
-        .message(eventItem.getMessage(eventData.getResourceName(), eventData))
+        .message(eventItem.getMessage(eventData))
         .involvedObject(eventItem.createInvolvedObject(eventData))
         .count(1);
-  }
-
-  private static String getNamespaceFromInfo(EventData eventData, DomainPresenceInfo info) {
-    return Optional.ofNullable(info)
-        .map(DomainPresenceInfo::getNamespace).orElse(eventData.namespace);
   }
 
   private static V1ObjectMeta createMetadata(
       EventData eventData) {
     final V1ObjectMeta metadata =
-        new V1ObjectMeta().name(generateEventName(eventData)).namespace(eventData.getNamespace());
+        new V1ObjectMeta().name(eventData.eventItem.generateEventName(eventData)).namespace(eventData.getNamespace());
 
     eventData.eventItem.addLabels(metadata, eventData);
 
     return metadata;
-  }
-
-  private static String generateEventName(EventData eventData) {
-    return String.format("%s.%s.%h%h",
-        eventData.getResourceName(), eventData.eventItem.getReason(), System.currentTimeMillis(), generateRandomLong());
   }
 
   private static long generateRandomLong() {
@@ -304,9 +356,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_FAILED_PATTERN,
-            resourceName, Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
 
     },
@@ -338,9 +389,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, resourceName,
-            Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
 
     },
@@ -361,9 +411,8 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(DOMAIN_VALIDATION_ERROR_PATTERN,
-            resourceName, Optional.ofNullable(eventData.message).orElse(""));
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
       }
     },
     NAMESPACE_WATCHING_STARTED {
@@ -374,34 +423,23 @@ public class EventHelper {
 
       @Override
       public String getPattern() {
-        return EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
-      }
-
-      @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(NAMESPACE_WATCHING_STARTED_PATTERN, resourceName);
+        return NAMESPACE_WATCHING_STARTED_PATTERN;
       }
 
       @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return createNSEventInvolvedObject(eventData);
       }
-
-      @Override
-      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
-        return namespace;
-      }
     },
     NAMESPACE_WATCHING_STOPPED {
       @Override
       public String getReason() {
-        return EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+        return NAMESPACE_WATCHING_STOPPED_EVENT;
       }
 
       @Override
@@ -410,26 +448,93 @@ public class EventHelper {
       }
 
       @Override
-      public String getMessage(String resourceName, EventData eventData) {
-        return String.format(EventConstants.NAMESPACE_WATCHING_STOPPED_PATTERN, resourceName);
-      }
-
-      @Override
       public void addLabels(V1ObjectMeta metadata, EventData eventData) {
-        metadata
-            .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+        addCreatedByOperatorLabel(metadata);
       }
 
       @Override
       public V1ObjectReference createInvolvedObject(EventData eventData) {
         return createNSEventInvolvedObject(eventData);
       }
+    },
+    START_MANAGING_NAMESPACE {
+      @Override
+      public String getReason() {
+        return EventConstants.START_MANAGING_NAMESPACE_EVENT;
+      }
 
       @Override
-      public String calculateResourceName(DomainPresenceInfo info, String namespace) {
-        return namespace;
+      public String getPattern() {
+        return EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByOperatorLabel(metadata);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createOperatorEventInvolvedObject();
+      }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
+    },
+    STOP_MANAGING_NAMESPACE {
+      @Override
+      public String getReason() {
+        return EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.STOP_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByOperatorLabel(metadata);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createOperatorEventInvolvedObject();
+      }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
       }
     };
+
+    private static String getMessageFromEventData(EventData eventData) {
+      return String.format(eventData.eventItem.getPattern(),
+          eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
+    }
+
+    private static void addCreatedByOperatorLabel(V1ObjectMeta metadata) {
+      metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
+    }
+
+    protected String generateEventName(EventData eventData) {
+      return String.format("%s.%s.%h%h",
+              eventData.getResourceName(),
+              eventData.eventItem.getReason(),
+              System.currentTimeMillis(),
+              generateRandomLong());
+    }
+
+    protected static V1ObjectReference createOperatorEventInvolvedObject() {
+      return new V1ObjectReference()
+          .name(getOperatorPodName())
+          .namespace(getOperatorNamespace())
+          .uid(getOperatorPodUID())
+          .kind(KubernetesConstants.POD);
+    }
+
 
     private static V1ObjectReference createNSEventInvolvedObject(EventData eventData) {
       return new V1ObjectReference()
@@ -438,8 +543,17 @@ public class EventHelper {
           .kind(KubernetesConstants.NAMESPACE);
     }
 
-    public String getMessage(String resourceName, EventData eventData) {
-      return String.format(getPattern(), resourceName);
+    String generateOperatorNSEventName(EventData eventData) {
+      return String.format("%s.%s.%s.%h%h",
+              getOperatorPodName(),
+              eventData.eventItem.getReason(),
+              eventData.getResourceName(),
+              System.currentTimeMillis(),
+              generateRandomLong());
+    }
+
+    public String getMessage(EventData eventData) {
+      return String.format(getPattern(), eventData.getResourceName());
     }
 
     DateTime getCurrentTimestamp() {
@@ -448,21 +562,17 @@ public class EventHelper {
 
     void addLabels(V1ObjectMeta metadata, EventData eventData) {
       metadata
-          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, eventData.getResourceName())
+          .putLabelsItem(LabelConstants.DOMAINUID_LABEL, eventData.getResourceNameFromInfo())
           .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
 
     V1ObjectReference createInvolvedObject(EventData eventData) {
       return new V1ObjectReference()
-          .name(eventData.getResourceName())
+          .name(eventData.getResourceNameFromInfo())
           .namespace(eventData.getNamespace())
           .kind(KubernetesConstants.DOMAIN)
           .apiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
           .uid(eventData.getUID());
-    }
-
-    String calculateResourceName(DomainPresenceInfo info, String namespace) {
-      return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
     }
 
     String getType() {
@@ -515,11 +625,12 @@ public class EventHelper {
     }
 
     public String getNamespace() {
-      return namespace;
+      return Optional.ofNullable(namespace).orElse(Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getNamespace).orElse(""));
     }
 
-    String getResourceName() {
-      return resourceName;
+    public String getResourceName() {
+      return Optional.ofNullable(resourceName).orElse(this.getResourceNameFromInfo());
     }
 
     @Override
@@ -541,6 +652,10 @@ public class EventHelper {
           .map(Domain::getMetadata)
           .map(V1ObjectMeta::getUid)
           .orElse("");
+    }
+
+    private String getResourceNameFromInfo() {
+      return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
     }
   }
 }

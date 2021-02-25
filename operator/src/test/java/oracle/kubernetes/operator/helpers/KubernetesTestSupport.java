@@ -42,11 +42,11 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
@@ -69,6 +69,8 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import okhttp3.internal.http2.ErrorCode;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.builders.CallParams;
@@ -109,6 +111,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PV = "PersistentVolume";
   public static final String PVC = "PersistentVolumeClaim";
   public static final String POD = "Pod";
+  public static final String PODDISRUPTIONBUDGET = "PodDisruptionBudget";
   public static final String PODLOG = "PodLog";
   public static final String SECRET = "Secret";
   public static final String SERVICE = "Service";
@@ -151,10 +154,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
-    supportNamespaced(EVENT, V1Event.class, this::createEventList);
+    supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
+    supportNamespaced(PODDISRUPTIONBUDGET, V1beta1PodDisruptionBudget.class, this::createPodDisruptionBudgetList);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
@@ -170,8 +174,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
-  private V1EventList createEventList(List<V1Event> items) {
-    return new V1EventList().metadata(createListMeta()).items(items);
+  private CoreV1EventList createEventList(List<CoreV1Event> items) {
+    return new CoreV1EventList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
@@ -200,6 +204,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private V1ServiceList createServiceList(List<V1Service> items) {
     return new V1ServiceList().metadata(createListMeta()).items(items);
+  }
+
+  private V1beta1PodDisruptionBudgetList createPodDisruptionBudgetList(List<V1beta1PodDisruptionBudget> items) {
+    return new V1beta1PodDisruptionBudgetList().metadata(createListMeta()).items(items);
   }
 
   private V1ListMeta createListMeta() {
@@ -526,8 +534,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
           && (this.operation == null || this.operation == operation)
-          && Objects.equals(name, operation.getName(requestParams))
-          && Objects.equals(namespace, requestParams.namespace);
+          && (name == null || Objects.equals(name, operation.getName(requestParams)))
+          && (namespace == null || Objects.equals(namespace, requestParams.namespace));
     }
 
     HttpErrorException getException() {
@@ -1122,7 +1130,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object execute() {
       if (failure != null && failure.matches(resourceType, requestParams, operation)) {
-        throw failure.getException();
+        try {
+          throw failure.getException();
+        } finally {
+          failure = null;
+        }
       }
 
       return operation.execute(this, selectRepository(resourceType));

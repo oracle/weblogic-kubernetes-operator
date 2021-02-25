@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import javax.annotation.Nonnull;
 
-import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
@@ -271,7 +270,7 @@ public class SchemaGenerator {
       Method getter = field.getDeclaringClass().getMethod(getterName);
       ApiModelProperty apiModelProperty = getter.getAnnotation(ApiModelProperty.class);
       String desc = apiModelProperty != null ? apiModelProperty.value() : null;
-      if (Strings.isNullOrEmpty(desc)) {
+      if (isNullOrEmpty(desc)) {
         return getDescription(field.getType());
       }
       return desc;
@@ -564,5 +563,9 @@ public class SchemaGenerator {
       result.put("items", items);
       generateTypeIn(items, type.getComponentType());
     }
+  }
+
+  private static boolean isNullOrEmpty(String str) {
+    return str == null || str.isEmpty();
   }
 }

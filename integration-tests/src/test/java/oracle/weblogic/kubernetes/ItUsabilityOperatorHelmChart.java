@@ -474,7 +474,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator will fail with expected error message");
     try {
       String expectedError = "Error: rendered manifests contain a resource that already exists."
-          + " Unable to continue with install: existing resource conflict: namespace";
+          + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false,expectedError,"failed", 0,
           op2HelmParams, domain2Namespace);
@@ -518,7 +518,7 @@ class ItUsabilityOperatorHelmChart {
     String opServiceAccount = op2Namespace + "-sa2";
     try {
       String expectedError = "Error: rendered manifests contain a resource that already exists."
-          + " Unable to continue with install: existing resource conflict: namespace";
+          + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");

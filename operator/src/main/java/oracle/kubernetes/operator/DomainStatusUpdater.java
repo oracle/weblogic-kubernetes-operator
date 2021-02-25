@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +64,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 
@@ -125,7 +127,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTING event.
    *
    * @param reason Progressing reason
    * @param isPreserveAvailable true, if existing Available=True condition should be preserved
@@ -133,12 +135,12 @@ public class DomainStatusUpdater {
    * @return Step
    */
   public static Step createProgressingStartedEventStep(String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+    return Step.chain(EventHelper.createEventStep(DOMAIN_PROCESSING_STARTING),
         createProgressingStep(reason, isPreserveAvailable, next));
   }
 
   /**
-   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTED event.
+   * Asynchronous step to set Domain condition to Progressing and create DOMAIN_PROCESSING_STARTING event.
    *
    * @param info Domain presence info
    * @param reason Progressing reason
@@ -148,7 +150,7 @@ public class DomainStatusUpdater {
    */
   public static Step createProgressingStartedEventStep(
       DomainPresenceInfo info, String reason, boolean isPreserveAvailable, Step next) {
-    return Step.chain(EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+    return Step.chain(EventHelper.createEventStep(DOMAIN_PROCESSING_STARTING),
         createProgressingStep(info, reason, isPreserveAvailable, next));
   }
 
@@ -357,14 +359,14 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Domain> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return super.onFailure(packet, callResponse);
       } else {
-        return onFailure(createRetry(context, getNext()), packet, callResponse);
+        return onFailure(createRetry(context), packet, callResponse);
       }
     }
 
-    public Step createRetry(DomainStatusUpdaterContext context, Step next) {
+    public Step createRetry(DomainStatusUpdaterContext context) {
       return Step.chain(createDomainRefreshStep(context), updaterStep);
     }
 
@@ -399,26 +401,31 @@ public class DomainStatusUpdater {
           .map(DomainStatus::getMessage)
           .orElse(null);
 
-      List<DomainCondition> domainConditions = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getConditions)
-          .orElse(null);
 
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
         if (existingError != null) {
-          if (domainConditions != null && domainConditions.size() > 0) {
-            String reason = domainConditions.get(0).getReason();
-            // Only increase the instrospect job failure count if the job failed or timeout
-            // e.g. domain validation error is not counted as introspection error
-            if ("BackoffLimitExceeded".equals(reason)) {
-              newStatus.incrementIntrospectJobFailureCount();
-            }
+          if (hasBackOffLimitCondition()) {
+            newStatus.incrementIntrospectJobFailureCount();
           }
         }
       }
       return newStatus;
+    }
+
+    private boolean hasBackOffLimitCondition() {
+      List<DomainCondition> domainConditions = Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(DomainStatus::getConditions)
+          .orElse(Collections.emptyList());
+
+      for (DomainCondition cond : domainConditions) {
+        if ("BackoffLimitExceeded".equals(cond.getReason())) {
+          return true;
+        }
+      }
+      return false;
     }
 
     String getDomainUid() {
@@ -507,11 +514,33 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason("PodFailed"));
         } else if (allIntendedServersRunning()) {
           status.addCondition(new DomainCondition(Available).withStatus(TRUE).withReason(SERVERS_READY_REASON));
+          if (!stillHasPodPendingRestart(status)
+              && status.hasConditionWith(c -> c.hasType(ConfigChangesPendingRestart))) {
+            status.removeConditionIf(c -> c.hasType(ConfigChangesPendingRestart));
+          }
         } else if (!status.hasConditionWith(c -> c.hasType(Progressing))) {
           status.addCondition(new DomainCondition(Progressing).withStatus(TRUE)
                 .withReason(MANAGED_SERVERS_STARTING_PROGRESS_REASON));
         }
 
+      }
+
+      private boolean stillHasPodPendingRestart(DomainStatus status) {
+        return status.getServers().stream()
+            .map(this::getServerPod)
+            .map(this::getLabels)
+            .anyMatch(m -> m.containsKey(LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL));
+      }
+
+      private V1Pod getServerPod(ServerStatus serverStatus) {
+        return getInfo().getServerPod(serverStatus.getServerName());
+      }
+
+      private Map<String, String> getLabels(V1Pod pod) {
+        return Optional.ofNullable(pod)
+            .map(V1Pod::getMetadata)
+            .map(V1ObjectMeta::getLabels)
+            .orElse(Collections.emptyMap());
       }
 
       private boolean allIntendedServersRunning() {

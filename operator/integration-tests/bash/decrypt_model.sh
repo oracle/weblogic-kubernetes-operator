@@ -24,7 +24,7 @@ function encrypt_decrypt_model() {
   local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Dpython.verbose=debug"
   local CP="${ORACLE_SERVER_DIR}/server/lib/weblogic.jar:/u01/wdt/weblogic-deploy/lib/weblogic-deploy-core.jar:/tmpmount/code.jar"
   ${JAVA_HOME}/bin/java -cp ${CP} \
-	  ${JAVA_PROPS} org.python.util.jython /tmp/encryption_util.py  $1 $(cat $2) $3 $4 > ${WDT_OUTPUT} 2>&1
+	  ${JAVA_PROPS} org.python.util.jython /tmp/model-encryption-util.py  $1 $(cat $2) $3 $4 > ${WDT_OUTPUT} 2>&1
   rc=$?
   if [ $rc -ne 0 ]; then
     trace SEVERE "encrypt_decrypt_model failure "

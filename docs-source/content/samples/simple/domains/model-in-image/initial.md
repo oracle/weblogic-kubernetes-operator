@@ -81,30 +81,63 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     out.println();
     out.println("Welcome to WebLogic Server '" + srName + "'!");
     out.println();
-    out.println(" domain UID  = '" + domainUID +"'");
-    out.println(" domain name = '" + domainName +"'");
+    out.println("  domain UID  = '" + domainUID +"'");
+    out.println("  domain name = '" + domainName +"'");
     out.println();
 
     MBeanServer mbs = (MBeanServer)ic.lookup("java:comp/env/jmx/runtime");
 
     // display the current server's cluster name
+
     Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s":"") + ":");
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
        String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
        out.println("  Cluster '" + cName + "'");
     }
     out.println();
 
+    // display the Work Manager configuration created by the sample
+
+    Set<ObjectInstance> minTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*"), null);
+    for (ObjectInstance minTCRuntime : minTCRuntimes) {
+       String cName = (String)mbs.getAttribute(minTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(minTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found min threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
+
+    Set<ObjectInstance> maxTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MaxThreadsConstraintRuntime,Name=SampleMaxThreads,*"), null);
+    for (ObjectInstance maxTCRuntime : maxTCRuntimes) {
+       String cName = (String)mbs.getAttribute(maxTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(maxTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found max threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
 
     // display local data sources
+    // - note that data source tests are expected to fail until the sample Update 4 use case updates the data source's secret
+
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
-    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s:":":"));
+    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s":"") + ":");
     for (ObjectName dataSource : dataSources) {
        String dsName  = (String)mbs.getAttribute(dataSource, "Name");
        String dsState = (String)mbs.getAttribute(dataSource, "State");
-       out.println("  Datasource '" + dsName + "': State='" + dsState +"'");
+       String dsTest  = (String)mbs.invoke(dataSource, "testPool", new Object[] {}, new String[] {});
+       out.println(
+           "  Datasource '" + dsName + "': "
+           + " State='" + dsState + "',"
+           + " testPool='" + (String)(dsTest==null ? "Passed" : "Failed") + "'"
+       );
+       if (dsTest != null) {
+         out.println(
+               "    ---TestPool Failure Reason---\n"
+             + "    NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.\n"
+             + "    ---\n"
+             + "    " + dsTest.replaceAll("\n","\n   ").replaceAll("\n *\n","\n") + "\n"
+             + "    -----------------------------");
+       }
     }
     out.println();
 
@@ -181,6 +214,22 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 
 
@@ -223,6 +272,22 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 {{% /expand %}}
 
@@ -233,6 +298,7 @@ The model files:
   - Cluster `cluster-1`
   - Administration Server `admin-server`
   - A `cluster-1` targeted `ear` application that's located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
+  - A Work Manager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
 
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
@@ -264,7 +330,7 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 Run the following commands to create the model image and verify that it worked:
 
 {{% notice note %}}
-If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
 {{% /notice %}}
   ```
   $ cd /tmp/mii-sample/model-images
@@ -682,7 +748,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```
-  $ ./wl-pod-wait.sh -?
+    $ ./wl-pod-wait.sh -?
 
     Usage:
 
@@ -699,15 +765,18 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
       -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-      pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
-                        a domain all (a) are ready, (b) have the same
-                        'domainRestartVersion' label value as the
-                        current Domain's 'spec.restartVersion, and
-                        (c) have the same image as the current Domain's
-                        image.
-
-      pod_count = 0   : Wait until there are no running WebLogic Server pods
+      -p 0            : Wait until there are no running WebLogic Server pods
                         for a domain. The default.
+
+      -p <pod_count>  : Wait until all of the following are true
+                        for exactly 'pod_count' WebLogic Server pods
+                        in the domain:
+                        - ready
+                        - same 'weblogic.domainRestartVersion' label value as
+                          the domain resource's 'spec.restartVersion'
+                        - same 'weblogic.introspectVersion' label value as
+                          the domain resource's 'spec.introspectVersion'
+                        - same image as the the domain resource's image
 
       -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
@@ -715,6 +784,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
                         have reached the desired criteria.
 
       -?              : This help.
+
   ```
   {{% /expand %}}
 
@@ -827,11 +897,15 @@ You will see output like the following:
 
    Welcome to WebLogic Server 'managed-server2'!
 
-    domain UID  = 'sample-domain1'
-    domain name = 'domain1'
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
 
    Found 1 local cluster runtime:
      Cluster 'cluster-1'
+
+   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
    Found 0 local data sources:
 

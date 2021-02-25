@@ -8,7 +8,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
@@ -16,20 +16,20 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_EVENT_LABEL_FILTER;
+import static oracle.kubernetes.operator.ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER;
 
 /**
  * This class handles Domain Event watching. It receives event notifications and sends them into the operator
  * for processing.
  */
-public class DomainEventWatcher extends Watcher<V1Event> {
+public class OperatorEventWatcher extends Watcher<CoreV1Event> {
   private final String ns;
 
-  private DomainEventWatcher(
+  private OperatorEventWatcher(
         String ns,
         String initialResourceVersion,
         WatchTuning tuning,
-        WatchListener<V1Event> listener,
+        WatchListener<CoreV1Event> listener,
         AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
     this.ns = ns;
@@ -45,22 +45,22 @@ public class DomainEventWatcher extends Watcher<V1Event> {
    * @param isStopping an atomic boolean to watch to determine when to stop the watcher
    * @return the domain watcher
    */
-  public static DomainEventWatcher create(
+  public static OperatorEventWatcher create(
       ThreadFactory factory,
       String ns,
       String initialResourceVersion,
       WatchTuning tuning,
-      WatchListener<V1Event> listener,
+      WatchListener<CoreV1Event> listener,
       AtomicBoolean isStopping) {
-    DomainEventWatcher watcher =
-        new DomainEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
+    OperatorEventWatcher watcher =
+        new OperatorEventWatcher(ns, initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
 
   @Override
-  public Watchable<V1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
-    return watchBuilder.withLabelSelector(DOMAIN_EVENT_LABEL_FILTER).createEventWatch(ns);
+  public Watchable<CoreV1Event> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
+    return watchBuilder.withLabelSelector(OPERATOR_EVENT_LABEL_FILTER).createEventWatch(ns);
   }
 
   @Override
@@ -69,9 +69,9 @@ public class DomainEventWatcher extends Watcher<V1Event> {
   }
 
   @Override
-  public String getDomainUid(Watch.Response<V1Event> item) {
+  public String getDomainUid(Watch.Response<CoreV1Event> item) {
     return Optional.ofNullable(item.object)
-        .map(V1Event::getMetadata)
+        .map(CoreV1Event::getMetadata)
         .map(V1ObjectMeta::getLabels)
         .map(l -> l.get(LabelConstants.DOMAINUID_LABEL))
         .orElse(null);

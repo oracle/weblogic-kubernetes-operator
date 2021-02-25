@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.IntOrString;
@@ -283,6 +284,28 @@ public class CommonTestUtils {
    * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
    *
    * @param opNamespace the operator namespace in which the operator will be installed
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
+   * @param domainNamespace the list of the domain namespaces which will be managed by the operator
+   * @return the operator Helm installation parameters
+   */
+  public static HelmParams installAndVerifyOperator(String opNamespace,
+                                                    int domainPresenceFailureRetryMaxCount,
+                                                    int domainPresenceFailureRetrySeconds,
+                                                    String... domainNamespace) {
+    HelmParams opHelmParams =
+        new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
+            .namespace(opNamespace)
+            .chartDir(OPERATOR_CHART_DIR);
+    return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false, 0, opHelmParams, false, null, null,
+        false, domainPresenceFailureRetryMaxCount, domainPresenceFailureRetrySeconds, domainNamespace);
+
+  }
+
+  /**
+   * Install WebLogic operator and wait up to five minutes until the operator pod is ready.
+   *
+   * @param opNamespace the operator namespace in which the operator will be installed
    * @param opHelmParams the Helm parameters to install operator
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
@@ -384,7 +407,7 @@ public class CommonTestUtils {
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        null, null, false, domainNamespace);
+        null, null, false, -1, -1, domainNamespace);
   }
 
   /**
@@ -411,7 +434,7 @@ public class CommonTestUtils {
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opServiceAccount,
         withRestAPI, externalRestHttpsPort, opHelmParams, elkIntegrationEnabled,
-        domainNamespaceSelectionStrategy, null, false, domainNamespace);
+        domainNamespaceSelectionStrategy, null, false, -1, -1, domainNamespace);
   }
 
   /**
@@ -427,6 +450,8 @@ public class CommonTestUtils {
    *                                  how to select the set of namespaces that it will manage
    * @param domainNamespaceSelector the label or expression value to manage namespaces
    * @param enableClusterRoleBinding operator cluster role binding
+   * @param domainPresenceFailureRetryMaxCount the number of introspector job retries for a Domain
+   * @param domainPresenceFailureRetrySeconds the interval in seconds between these retries
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
@@ -439,6 +464,8 @@ public class CommonTestUtils {
                                                     String domainNamespaceSelectionStrategy,
                                                     String domainNamespaceSelector,
                                                     boolean enableClusterRoleBinding,
+                                                    int domainPresenceFailureRetryMaxCount,
+                                                    int domainPresenceFailureRetrySeconds,
                                                     String... domainNamespace) {
     LoggingFacade logger = getLogger();
 
@@ -522,6 +549,14 @@ public class CommonTestUtils {
       }
     }
 
+    // domainPresenceFailureRetryMaxCount and domainPresenceFailureRetrySeconds
+    if (domainPresenceFailureRetryMaxCount >= 0) {
+      opParams.domainPresenceFailureRetryMaxCount(domainPresenceFailureRetryMaxCount);
+    }
+    if (domainPresenceFailureRetrySeconds > 0) {
+      opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
+    }
+
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
@@ -587,7 +622,8 @@ public class CommonTestUtils {
         .chartDir(OPERATOR_CHART_DIR);
     return installAndVerifyOperator(opNamespace, opReleaseName + "-sa",
         true, 0, opHelmParams, false,
-        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding, domainNamespace);
+        domainNamespaceSelectionStrategy, domainNamespaceSelector, enableClusterRoleBinding,
+        -1, -1, domainNamespace);
   }
 
   /**
@@ -1087,15 +1123,13 @@ public class CommonTestUtils {
    *
    * @param filter the value of weblogicLoggingExporterFilters to be added to WebLogic Logging Exporter YAML file
    * @param wlsLoggingExporterYamlFileLoc the directory where WebLogic Logging Exporter YAML file stores
-   * @param wlsLoggingExporterArchiveLoc the directory where WebLogic Logging Exporter jar files store
    * @return true if WebLogic Logging Exporter is successfully installed, false otherwise.
    */
   public static boolean installAndVerifyWlsLoggingExporter(String filter,
-                                                           String wlsLoggingExporterYamlFileLoc,
-                                                           String wlsLoggingExporterArchiveLoc) {
+                                                           String wlsLoggingExporterYamlFileLoc) {
     // Install WebLogic Logging Exporter
     assertThat(TestActions.installWlsLoggingExporter(filter,
-        wlsLoggingExporterYamlFileLoc, wlsLoggingExporterArchiveLoc))
+        wlsLoggingExporterYamlFileLoc))
         .as("WebLogic Logging Exporter installation succeeds")
         .withFailMessage("WebLogic Logging Exporter installation failed")
         .isTrue();
@@ -1818,7 +1852,7 @@ public class CommonTestUtils {
    * @param domainName Name of domain to which cluster belongs
    * @param namespace cluster's namespace
    * @param replicaCount replica count value to match
-   * @return true if matches false if not
+   * @return true, if the cluster replica count is matched
    */
   public static boolean checkClusterReplicaCountMatches(String clusterName, String domainName,
                                                         String namespace, Integer replicaCount) throws ApiException {
@@ -2413,7 +2447,35 @@ public class CommonTestUtils {
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
   }
 
+  /**
+   * Create a secret with username and password and Elasticsearch host and port in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param username username in the secret
+   * @param password passowrd in the secret
+   * @param elasticsearchhost Elasticsearch host in the secret
+   * @param elasticsearchport Elasticsearch port in the secret
+   */
+  public static void createSecretWithUsernamePasswordElk(String secretName,
+                                                         String namespace,
+                                                         String username,
+                                                         String password,
+                                                         String elasticsearchhost,
+                                                         String elasticsearchport) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("elasticsearchhost", elasticsearchhost);
+    secretMap.put("elasticsearchport", elasticsearchport);
 
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
 
   /** Scale the WebLogic cluster to specified number of servers.
    *  Verify the sample app can be accessed through NGINX if curlCmd is not null.
@@ -2956,7 +3018,7 @@ public class CommonTestUtils {
    * @param configMapName the name of the Kubernetes ConfigMap to be created
    * @param domainUid the domain to which the cluster belongs
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param modelFiles list of the names of the WDT mode files in the ConfigMap
+   * @param modelFiles list of the file names along with path for the WDT model files in the ConfigMap
    */
   public static void createConfigMapAndVerify(
       String configMapName,
@@ -2996,17 +3058,16 @@ public class CommonTestUtils {
   /**
    * Read the content of a model file as a String and add it to a map.
    */
-  private static void addModelFile(Map<String, String> data, String modelFileName) {
+  private static void addModelFile(Map<String, String> data, String modelFile) {
     LoggingFacade logger = getLogger();
-    logger.info("Add model file {0}", modelFileName);
-    String dsModelFile = String.format("%s/%s", MODEL_DIR, modelFileName);
+    logger.info("Add model file {0}", modelFile);
 
-    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
-        String.format("Failed to read model file %s", dsModelFile));
+    String cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(modelFile)),
+        String.format("Failed to read model file %s", modelFile));
     assertNotNull(cmData,
-        String.format("Failed to read model file %s", dsModelFile));
+        String.format("Failed to read model file %s", modelFile));
 
-    data.put(modelFileName, cmData);
+    data.put(modelFile.substring(modelFile.lastIndexOf("/") + 1), cmData);
   }
 
   /**
@@ -3635,6 +3696,85 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/")
+        .append(resourcesName)
+        .append("/")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesPath)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
+   * Check the system resource runtime using REST API.
+   * @param nodePort admin node port
+   * @param resourcesUrl url of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected value
+   */
+  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainRuntime")
+        .append("/")
+        .append(resourcesUrl)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0} expectedValue {1}", new String(curlString), expectedValue);
+    return new Command()
+        .withParams(new CommandParams()
+            .command(curlString.toString()))
+        .executeAndVerify(expectedValue);
+  }
+
+  /**
    * Deploy application and access the application once to make sure the app is accessible.
    * @param domainNamespace namespace where domain exists
    * @param domainUid the domain to which the cluster belongs
@@ -3745,4 +3885,75 @@ public class CommonTestUtils {
       }
     }
   }
+
+
+  /**
+   * Compile java class inside the pod.
+   * @param podName name of the pod
+   * @param namespace name of namespace
+   * @param destLocation location of java class
+   */
+  public static void runJavacInsidePod(String podName, String namespace, String destLocation) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    javacCmd.append(namespace);
+    javacCmd.append(" -it ");
+    javacCmd.append(podName);
+    javacCmd.append(" -- /bin/bash -c \"");
+    javacCmd.append("javac -cp ");
+    javacCmd.append(jarLocation);
+    javacCmd.append(" ");
+    javacCmd.append(destLocation);
+    javacCmd.append(" \"");
+    logger.info("javac command {0}", javacCmd.toString());
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(javacCmd), true));
+    logger.info("javac returned {0}", result.toString());
+    logger.info("javac returned EXIT value {0}", result.exitValue());
+    assertTrue(result.exitValue() == 0, "Client compilation fails");
+  }
+
+  /**
+   * Run java client inside the pod using weblogic.jar.
+   *
+   * @param podName    name of the pod
+   * @param namespace  name of the namespace
+   * @param javaClientLocation location(path) of java class
+   * @param javaClientClass java class name
+   * @param args       arguments to the java command
+   * @return true if the client ran successfully
+   */
+  public static Callable<Boolean> runClientInsidePod(String podName, String namespace, String javaClientLocation,
+                                                     String javaClientClass, String... args) {
+    final LoggingFacade logger = getLogger();
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(namespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(podName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":");
+    javapCmd.append(javaClientLocation);
+    javapCmd.append(" ");
+    javapCmd.append(javaClientClass);
+    javapCmd.append(" ");
+    for (String arg:args) {
+      javapCmd.append(arg).append(" ");
+    }
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    return (() -> {
+      ExecResult result = assertDoesNotThrow(() -> exec(javapCmd.toString(), true));
+      logger.info("java returned {0}", result.toString());
+      logger.info("java returned EXIT value {0}", result.exitValue());
+      return ((result.exitValue() == 0));
+    });
+  }
+
 }

@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Strings;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -53,6 +52,7 @@ import org.joda.time.DateTime;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public class ReadHealthStep extends Step {
 
@@ -399,7 +399,7 @@ public class ReadHealthStep extends Step {
 
       void recordStateAndHealth() throws IOException {
         Pair<String, ServerHealth> pair = RecordHealthStep.parseServerHealthJson(getResponse().body());
-        String state = Strings.emptyToNull(pair.getLeft());
+        String state = emptyToNull(pair.getLeft());
         ServerHealth health = pair.getRight();
         recordStateAndHealth(state, health);
       }

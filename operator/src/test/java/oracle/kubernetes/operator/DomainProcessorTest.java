@@ -23,17 +23,20 @@ import javax.annotation.Nullable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Event;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
@@ -58,6 +61,8 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -74,6 +79,7 @@ import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -111,6 +117,7 @@ public class DomainProcessorTest {
   private static final int NUM_JOB_PODS = 1;
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
+  public static final String DOMAIN_NAME = "base_domain";
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -149,7 +156,7 @@ public class DomainProcessorTest {
     for (String serverName : MANAGED_SERVER_NAMES) {
       clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
     }
-    return new WlsDomainConfig("base_domain")
+    return new WlsDomainConfig(DOMAIN_NAME)
         .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001)
         .withCluster(clusterConfig);
   }
@@ -218,6 +225,7 @@ public class DomainProcessorTest {
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+    assertThat(info.getPodDisruptionBudget(CLUSTER), notNullValue());
   }
 
   @Test
@@ -248,8 +256,8 @@ public class DomainProcessorTest {
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
-  private List<V1Event> getEventsAfterTimestamp(long timestamp) {
-    return testSupport.<V1Event>getResources(KubernetesTestSupport.EVENT).stream()
+  private List<CoreV1Event> getEventsAfterTimestamp(long timestamp) {
+    return testSupport.<CoreV1Event>getResources(KubernetesTestSupport.EVENT).stream()
             .filter(e -> e.getLastTimestamp().isAfter(timestamp)).collect(Collectors.toList());
   }
 
@@ -278,7 +286,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainShutDown_removeAllPodsAndServices() {
+  public void whenDomainShutDown_removeAllPodsServicesAndPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
@@ -287,6 +295,7 @@ public class DomainProcessorTest {
 
     assertThat(getRunningServices(), empty());
     assertThat(getRunningPods(), empty());
+    assertThat(getRunningPDBs(), empty());
   }
 
   @Test
@@ -300,6 +309,59 @@ public class DomainProcessorTest {
 
     assertThat(getRunningServices(), contains(createNonOperatorService()));
     assertThat(getRunningPods(), empty());
+    assertThat(getRunningPDBs(), empty());
+  }
+
+  @Test
+  public void whenDomainScaledUp_podDisruptionBudgetMinAvailableUpdated()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+  }
+
+  @Test
+  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
+
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
+    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
+            .withExplicitRecheck().execute();
+    assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
+  }
+
+  private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
+    return runningPDBs.stream().findFirst().map(V1beta1PodDisruptionBudget::getSpec)
+            .map(s -> s.getMinAvailable().getIntValue()).orElse(0) == count;
+  }
+
+  @Test
+  public void whenDomainShutDown_ignoreNonOperatorPodDisruptionBudgets() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    testSupport.defineResources(createNonOperatorPodDisruptionBudget());
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.createMakeRightOperation(info).interrupt().forDeletion().withExplicitRecheck().execute();
+
+    assertThat(getRunningServices(), empty());
+    assertThat(getRunningPods(), empty());
+    assertThat(getRunningPDBs(), contains(createNonOperatorPodDisruptionBudget()));
   }
 
   @Test
@@ -321,6 +383,7 @@ public class DomainProcessorTest {
     assertServerPodNotPresent(info, MS_PREFIX + 2);
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+    assertThat(info.getPodDisruptionBudget(CLUSTER), notNullValue());
   }
 
   @Test
@@ -370,6 +433,7 @@ public class DomainProcessorTest {
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
+    assertThat(info.getPodDisruptionBudget(CLUSTER), notNullValue());
   }
 
   @Test
@@ -438,7 +502,7 @@ public class DomainProcessorTest {
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
-  private static boolean doesNotContainEvent(List<V1Event> events, String reason) {
+  private static boolean doesNotContainEvent(List<CoreV1Event> events, String reason) {
     return Optional.ofNullable(events).get()
             .stream()
             .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) == null;
@@ -463,7 +527,7 @@ public class DomainProcessorTest {
             containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
   }
 
-  private static boolean containsEvent(List<V1Event> events, String reason) {
+  private static boolean containsEvent(List<CoreV1Event> events, String reason) {
     return Optional.ofNullable(events).get()
             .stream()
             .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) != null;
@@ -605,6 +669,24 @@ public class DomainProcessorTest {
                 .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
                 .putLabelsItem(SERVERNAME_LABEL, ADMIN_NAME))
         .spec(new V1ServiceSpec().type(ServiceHelper.CLUSTER_IP_TYPE));
+  }
+
+  private V1beta1PodDisruptionBudget createNonOperatorPodDisruptionBudget() {
+    return new V1beta1PodDisruptionBudget()
+            .metadata(
+                    new V1ObjectMeta()
+                            .name("do-not-delete-pdb")
+                            .namespace(NS)
+                            .putLabelsItem("serviceType", "SERVER")
+                            .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
+                            .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
+                            .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
+                            .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER))
+            .spec(new V1beta1PodDisruptionBudgetSpec()
+                    .selector(new V1LabelSelector()
+                            .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
+                            .putMatchLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
+                            .putMatchLabelsItem(CLUSTERNAME_LABEL, CLUSTER)));
   }
 
   @Test
@@ -895,6 +977,11 @@ public class DomainProcessorTest {
     configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret");
   }
 
+  void configureForModelInImageOnlineUpdate(Domain domain) {
+    configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
+      .withMIIOnlineUpate();
+  }
+
   private DomainConfigurator configureDomain(Domain domain) {
     return DomainConfiguratorFactory.forDomain(domain);
   }
@@ -934,6 +1021,78 @@ public class DomainProcessorTest {
 
     assertThat(introspectionRunBeforeUpdates,
           allOf(hasEntry(getManagedPodName(1), true), hasEntry(getManagedPodName(2), true)));
+  }
+
+  @Test
+  public void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
+    getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
+        ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+  }
+
+  private void getMIIOnlineUpdateIntrospectResult(DomainConditionType domainConditionType, String updateResult)
+      throws Exception {
+
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+
+    String introspectorResult = ">>>  /u01/introspect/domain1/userConfigNodeManager.secure\n"
+        + "#WebLogic User Configuration File; 2\n"
+        + "#Thu Oct 04 21:07:06 GMT 2018\n"
+        + "weblogic.management.username={AES}fq11xKVoE927O07IUKhQ00d4A8QY598Dvd+KSnHNTEA\\=\n"
+        + "weblogic.management.password={AES}LIxVY+aqI8KBkmlBTwkvAnQYQs4PS0FX3Ili4uLBggo\\=\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.864 UTC][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/userKeyNodeManager.secure\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xboteDytDO3XnwNhumdSpaUGKmcbusdmbOUY+4J2kteu6xJPWTzmNRAtg==\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/domainzip_hash\n"
+        + "BPtNabkCIIc2IJp/TzZ9TzbUHG7O3xbo\n"
+        + "\n"
+        + ">>> EOF\n"
+        + "\n"
+        + "@[2018-10-04T21:07:06.867 UTC][introspectDomain.py:105] Printing file "
+        + "/u01/introspect/domain1/topology.yaml\n"
+        + "\n"
+        + ">>>  /u01/introspect/domain1/topology.yaml\n"
+        + "%s\n"
+        + ">>> EOF\n"
+        + ">>>  updatedomainResult=%s\n";
+
+    establishPreviousIntrospection(this::configureForModelInImageOnlineUpdate);
+    domainConfigurator.withIntrospectVersion("after-onlineUpdate");
+    testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
+    testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS,
+        String.format(introspectorResult, defineTopology(), updateResult));
+    makeRightOperation.execute();
+    boolean found = false;
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    if (updatedDomain.getStatus() != null) {
+      for (DomainCondition domainCondition : updatedDomain.getStatus().getConditions()) {
+        if (domainCondition.getType() == domainConditionType) {
+          found = true;
+          break;
+        }
+      }
+    }
+    assertThat(found, is(true));
+
+    presenceInfoMap.get("namespace").get("test-domain").getServerPods()
+        .forEach(p -> {
+          Map<String, String> labels = Optional.ofNullable(p)
+                .map(V1Pod::getMetadata)
+                .map(V1ObjectMeta::getLabels)
+                .orElse(new HashMap<>());
+          String message = String.format("Server pod (%s) should have label weblogic.configChangesPendingRestart"
+                + " set to true", p.getMetadata().getName());
+          assertThat(message, labels.get("weblogic.configChangesPendingRestart"), is("true"));
+          }
+    );
   }
 
   @Nonnull
@@ -1041,6 +1200,10 @@ public class DomainProcessorTest {
 
   private List<V1Pod> getRunningPods() {
     return testSupport.getResources(KubernetesTestSupport.POD);
+  }
+
+  private List<V1beta1PodDisruptionBudget> getRunningPDBs() {
+    return testSupport.getResources(KubernetesTestSupport.PODDISRUPTIONBUDGET);
   }
 
   private void defineServerResources(String serverName) {
