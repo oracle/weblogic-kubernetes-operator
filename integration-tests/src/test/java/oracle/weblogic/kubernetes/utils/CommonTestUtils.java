@@ -506,11 +506,6 @@ public class CommonTestUtils {
     // use default image in chart when repoUrl is set, otherwise use latest/current branch operator image
     if (opHelmParams.getRepoUrl() == null) {
       opParams.image(operatorImage);
-      logger.info("BR: repoUrl is null");
-      logger.info("BR: operator image = {0}", operatorImage);
-    } else {
-      logger.info("BR: repoUrl = {0}", opHelmParams.getRepoUrl());
-      logger.info("BR: operator image = {0}", operatorImage);
     }
 
     // enable ELK Stack
@@ -1558,7 +1553,7 @@ public class CommonTestUtils {
    * @param namespace namespace of the domain
    * @return hostname to access the ingress
    */
-  public static String createIngressForOKD(String podName, String namespace) {
+  public static String createASIngressForOKD(String podName, String namespace) {
     String asExtSvcName = getExternalServicePodName(podName);
     getLogger().info("admin server external svc = {0}", asExtSvcName);
 
@@ -3144,13 +3139,8 @@ public class CommonTestUtils {
     LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
-    if (!(host.equals(null))) {
-      logger.info("BR: host = {0}", host);
-    }
-    if (host.equals(null)) {
-      host = K8S_NODEPORT_HOST;
-    }
-    String finalHost = host;
+    String finalHost = host.equals(null) ? K8S_NODEPORT_HOST : host;
+    logger.info("finalHost = {0}", finalHost);
     withQuickRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking that credentials {0}/{1} are {2}"

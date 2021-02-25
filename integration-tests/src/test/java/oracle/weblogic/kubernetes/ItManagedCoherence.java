@@ -369,10 +369,9 @@ class ItManagedCoherence {
   private boolean coherenceCacheTest(String hostName, int ingressServiceNodePort) {
     logger.info("Starting to test the cache");
 
-    logger.info("BR: hostName = {0} ", hostName);
     String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + ingressServiceNodePort;
 
-    logger.info("BR: hostAndPort = {0} ", hostAndPort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};

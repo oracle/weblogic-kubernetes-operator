@@ -41,6 +41,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -83,6 +84,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test sticky sessions management with Voyager and Traefik")
 @IntegrationTest
 @Tag("okdenv")
+@EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
 class ItStickySession {
 
   // constants for creating domain image using model in image
