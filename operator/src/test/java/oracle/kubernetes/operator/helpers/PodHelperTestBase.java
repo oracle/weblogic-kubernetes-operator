@@ -88,6 +88,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -1107,18 +1108,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
   }
 
+  private String getPodLabel(String labelName) {
+    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  }
+
   @Test
   public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
     configureDomain().withMIIOnlineUpdate();
-    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
-
-    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
 
     verifyPodPatched();
   }
 
-  private String getPodLabel(String labelName) {
-    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_addRestartRequiredLabel() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    assertThat(getPatchedPod().getMetadata().getLabels(), hasEntry(MII_UPDATED_RESTART_REQUIRED_LABEL, "true"));
   }
 
   @Test

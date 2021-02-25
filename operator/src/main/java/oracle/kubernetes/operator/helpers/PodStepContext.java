@@ -65,6 +65,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 
@@ -87,6 +88,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String miiModelSecretsHash;
   private final String miiDomainZipHash;
   private final String domainRestartVersion;
+  private boolean addRestartRequiredLabel;
 
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -406,6 +408,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
 
+    if (addRestartRequiredLabel) {
+      result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
+    }
+
     return result;
   }
 
@@ -473,8 +479,14 @@ public abstract class PodStepContext extends BasePodStepContext {
       return true;
     } else if (dynamicUpdateResult == null) {
       return false;
-    } else return dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)
-        || getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly;
+    } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
+      return true;
+    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly) {
+      addRestartRequiredLabel = true;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private boolean isDomainZipUnchanged(V1Pod currentPod) {
