@@ -12,18 +12,18 @@
     <title>Azure Kubernetes Service :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1614256812" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614256812" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1614281416" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614281416" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614256812"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614281416"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614256812"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614256812"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614281416"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614281416"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614256812"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614281416"></script>
 
     
   </div>
@@ -2974,15 +2974,15 @@
 <li><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/">Troubleshooting</a></li>
 </ul>
 <h3 id="introduction">Introduction</h3>
-<p>This sample demonstrates how to use the <a href="/weblogic-kubernetes-operator/">Oracle WebLogic Server Kubernetes Operator</a> (hereafter &ldquo;the operator&rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">domain home source type</a> you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image you use the operator to perform WLS administrative operations.</p>
+<p>This sample demonstrates how to use the <a href="/weblogic-kubernetes-operator/">Oracle WebLogic Server Kubernetes Operator</a> (hereafter &ldquo;the operator&rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">domain home source type</a> you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.</p>
 <h4 id="azure-kubernetes-service-cluster">Azure Kubernetes Service cluster</h4>
 <p>Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You only manage and maintain the agent nodes. As a managed Kubernetes service, AKS is free - you only pay for the agent nodes within your clusters, not for the masters.</p>
-<p>To learn more, please see the <a href="https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a>.</p>
+<p>To learn more, see the <a href="https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes">What is Azure Kubernetes Service?</a>.</p>
 <h4 id="domain-home-source-types">Domain home source types</h4>
-<p>This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
+<p>This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/">Choose a domain home source type</a>.</p>
 <ul>
 <li>
-<p><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/model-in-image/">Model in Image</a>: running the WebLogic cluster on AKS with domain home in image offers the following benefits.</p>
+<p><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/model-in-image/">Model in Image</a>: running the WebLogic cluster on AKS with domain home in image offers the following benefits:</p>
 <ul>
 <li>Reuse image to create different domains with different <code>domainUID</code> and different configurations.</li>
 <li>Mutate the domain home configuration with additional model files supplied in a <code>ConfigMap</code>.  Many such changes do not need to restart the entire domain for the change to take effect.</li>
@@ -2990,10 +2990,10 @@
 </ul>
 </li>
 <li>
-<p><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/">Domain in PV</a>: running the WebLogic cluster on AKS with domain home in PV offers the following benefits.</p>
+<p><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/">Domain in PV</a>: running the WebLogic cluster on AKS with domain home in PV offers the following benefits:</p>
 <ul>
 <li>Use standard Oracle-provided images with patches installed.</li>
-<li>No docker environment required. You are able to run your business quickly without building knowledge of docker.</li>
+<li>No Docker environment required. You are able to run your business quickly without building knowledge of Docker.</li>
 <li>Mutate the live domain configuration with Administration Console from a browser or WLST.</li>
 </ul>
 </li>
@@ -5045,19 +5045,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614256812"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614281416"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1614256812"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614256812"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614281416"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614256812" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614256812"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614281416" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614281416"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

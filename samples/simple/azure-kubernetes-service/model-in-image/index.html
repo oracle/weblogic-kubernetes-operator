@@ -12,18 +12,18 @@
     <title>Model in Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614256811" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614281415" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614281415"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614256811"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614256811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614281415"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614281415"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614256811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614281415"></script>
 
     
   </div>
@@ -2995,13 +2995,13 @@ if (!doNotTrack) {
 <p>This sample assumes the following prerequisite environment.</p>
 <ul>
 <li>Operating System: GNU/Linux, macOS or <a href="https://docs.microsoft.com/windows/wsl/install-win10">WSL2 for Windows 10</a>.</li>
-<li><a href="https://git-scm.com/downloads">Git</a>, use <code>git --version</code> to test if <code>git</code> works.  This document was tested with version 2.17.1.</li>
-<li><a href="https://docs.microsoft.com/cli/azure">Azure CLI</a>, use <code>az --version</code> to test if <code>az</code> works.  This document was tested with version 2.9.1.</li>
+<li><a href="https://git-scm.com/downloads">Git</a>; use <code>git --version</code> to test if <code>git</code> works.  This document was tested with version 2.17.1.</li>
+<li><a href="https://docs.microsoft.com/cli/azure">Azure CLI</a>; use <code>az --version</code> to test if <code>az</code> works.  This document was tested with version 2.9.1.</li>
 <li><a href="https://www.docker.com/products/docker-desktop">Docker for Desktop</a>.  This document was tested with <code>Docker version 20.10.2, build 2291f61</code></li>
-<li><a href="https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/">kubectl</a>, use <code>kubectl version</code> to test if <code>kubectl</code> works.  This document was tested with version v1.16.3.</li>
-<li><a href="https://helm.sh/docs/intro/install/">Helm</a>, version 3.1 and later, use <code>helm version</code> to check the <code>helm</code> version.  This document was tested with version v3.2.4.</li>
-<li>A Java JDK, Version 8 or 11. Azure recommends <a href="https://www.azul.com/downloads/azure-only/zulu/">Azul Zulu for Azure</a>. Ensure your <code>JAVA_HOME</code> environment variable is set correctly in the shells in which you run the commands.</li>
-<li>Ensure you have the zip/unzip utility installed, use <code>zip/unzip -v</code> to test if <code>zip/unzip</code> works.</li>
+<li><a href="https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/">kubectl</a>; use <code>kubectl version</code> to test if <code>kubectl</code> works.  This document was tested with version v1.16.3.</li>
+<li><a href="https://helm.sh/docs/intro/install/">Helm</a>, version 3.1 and later; use <code>helm version</code> to check the <code>helm</code> version.  This document was tested with version v3.2.4.</li>
+<li>A Java JDK, Version 8 or 11. Azure recommends <a href="https://www.azul.com/downloads/azure-only/zulu/">Azul Zulu for Azure</a>. Ensure that your <code>JAVA_HOME</code> environment variable is set correctly in the shells in which you run the commands.</li>
+<li>Ensure that you have the zip/unzip utility installed; use <code>zip/unzip -v</code> to test if <code>zip/unzip</code> works.</li>
 </ul>
 
 
@@ -3025,7 +3025,7 @@ $ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 </code></pre></div><p>If you see an error similar to the following:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Found an existing application instance of <span style="color:#e6db74">&#34;5pn2s201-nq4q-43n1-z942-p9r9571qr3rp&#34;</span>. We will patch it
 Insufficient privileges to complete the operation.
-</code></pre></div><p>The problem may be a pre-existing service principal with the same name.  Either delete the other Service Principal or pick a different name.</p>
+</code></pre></div><p>The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.</p>
 <p>Successful output will look like the following:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
   <span style="color:#f92672">&#34;appId&#34;</span>: <span style="color:#e6db74">&#34;r3qnq743-61s9-4758-8163-4qpo87s72s54&#34;</span>,
@@ -3053,11 +3053,11 @@ $ az role assignment create --assignee $SP_APP_ID --role Contributor
 <ul>
 <li>In a web browser, navigate to <a href="https://container-registry.oracle.com">https://container-registry.oracle.com</a> and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the <strong>Sign In</strong> link to create them.</li>
 <li>The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.</li>
-<li>Ensure Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
+<li>Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
 </code></pre></div></li>
 </ul>
-<p>If you have problems accessing the Oracle Container Registry, you can build your own docker images from the <a href="https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles">Oracle GitHub repository</a>.</p>
+<p>If you have problems accessing the Oracle Container Registry, you can build your own Docker images from the <a href="https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles">Oracle GitHub repository</a>.</p>
 
 
 <h5 id="clone-weblogic-server-kubernetes-operator-repository">Clone WebLogic Server Kubernetes Operator repository</h5>
@@ -3066,7 +3066,7 @@ $ az role assignment create --assignee $SP_APP_ID --role Contributor
 cd weblogic-kubernetes-operator
 </code></pre></div>
 <h4 id="create-the-aks-cluster">Create the AKS cluster</h4>
-<p>This sample requires that you disable the AKS addon <code>http_application_routing</code> by default.  If you want to enable  <code>http_application_routing</code>, please follow <a href="https://docs.microsoft.com/azure/aks/http-application-routing">HTTP application routing</a>.</p>
+<p>This sample requires that you disable the AKS addon <code>http_application_routing</code> by default.  If you want to enable  <code>http_application_routing</code>, then follow <a href="https://docs.microsoft.com/azure/aks/http-application-routing">HTTP application routing</a>.</p>
 <p>Run the following commands to create the AKS cluster instance.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash"><span style="color:#75715e"># Change these parameters as needed for your own environment</span>
 <span style="color:#75715e"># Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters</span>
@@ -3095,16 +3095,14 @@ $ az aks create <span style="color:#ae81ff">\
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 </code></pre></div><p>Successful output will look similar to:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">Merged <span style="color:#e6db74">&#34;wlsaks1596087429&#34;</span> as current context in /home/username/.kube/config
-</code></pre></div><p>After your Kubernetes cluster is up and running, run the following commands to make sure kubectl can access the Kubernetes cluster:</p>
+</code></pre></div><p>After your Kubernetes cluster is up and running, run the following commands to make sure <code>kubectl</code> can access the Kubernetes cluster:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get nodes -o wide
 NAME                                  STATUS   ROLES   AGE     VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
 aks-pool1haiche-33688868-vmss000000   Ready    agent   4m25s   v1.17.13   10.240.0.4    &lt;none&gt;        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
 aks-pool1haiche-33688868-vmss000001   Ready    agent   4m12s   v1.17.13   10.240.0.5    &lt;none&gt;        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
 </code></pre></div>
 
-<blockquote>
 <p><strong>Note</strong>: If you run into VM size failure, see <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/#virtual-machine-size-is-not-supported">Troubleshooting - Virtual Machine size is not supported</a>.</p>
-</blockquote>
 <h4 id="install-weblogic-server-kubernetes-operator">Install WebLogic Server Kubernetes Operator</h4>
 <p>The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.</p>
 <p>Create a namespace and service account for the operator.</p>
@@ -3285,7 +3283,7 @@ appDeployments:
 <li>The property file <code>CLUSTER_SIZE</code> property is referenced in the model YAML file <code>DynamicClusterSize</code> and <code>MaxDynamicClusterSize</code> fields using a PROP macro.</li>
 <li>The model file domain name is injected using a custom environment variable named <code>CUSTOM_DOMAIN_NAME</code> using an ENV macro.
 <ul>
-<li>You set this environment variable later in this sample using an env field in its Domain.</li>
+<li>You set this environment variable later in this sample using an <code>env</code> field in its Domain.</li>
 <li><em>This conveniently provides a simple way to deploy multiple differently named domains using the same model image</em>.</li>
 </ul>
 </li>
@@ -3338,16 +3336,16 @@ $ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker images | grep WLS-v1
 model-in-image          WLS-v1   012d3bfa3536   <span style="color:#ae81ff">5</span> days ago      1.13GB
 </code></pre></div>
-<div class="notices note" ><p>You may run into a <code>Dockerfile</code> parsing error if your docker buildkit is enabled, see <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/#weblogic-image-tool-failure">Troubleshooting - WebLogic Image Tool failure</a>.</p>
+<div class="notices note" ><p>You may run into a <code>Dockerfile</code> parsing error if your Docker buildkit is enabled, see <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/#weblogic-image-tool-failure">Troubleshooting - WebLogic Image Tool failure</a>.</p>
 </div>
 
 <h5 id="pushing-the-image-to-azure-container-registry">Pushing the image to Azure Container Registry</h5>
-<p>AKS can pull Docker images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the Docker image built in the preceding section to it.  For complete details see <a href="https://docs.microsoft.com/en-us/azure/container-registry/">Azure Container Registry documentation</a>.</p>
+<p>AKS can pull Docker images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the Docker image built in the preceding section to it.  For complete details, see <a href="https://docs.microsoft.com/en-us/azure/container-registry/">Azure Container Registry documentation</a>.</p>
 <p>Let&rsquo;s create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az acr create --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_PERS_RESOURCE_GROUP --sku Basic --admin-enabled true
 </code></pre></div><p>Closely examine the JSON output from this command. Save the value of the <code>loginServer</code> property aside. It will look something like the following.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#e6db74">&#34;loginServer&#34;</span><span style="color:#960050;background-color:#1e0010">:</span> <span style="color:#e6db74">&#34;contosoresourcegroup1610068510.azurecr.io&#34;</span><span style="color:#960050;background-color:#1e0010">,</span>
-</code></pre></div><p>Use this value to sign in to the ACR instance. Note that because you are signing in with the <code>az</code> cli, you do not need a password because your identity is already conveyed via having done <code>az login</code> previously.</p>
+</code></pre></div><p>Use this value to sign in to the ACR instance. Note that because you are signing in with the <code>az</code> cli, you do not need a password because your identity is already conveyed by having done <code>az login</code> previously.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ export AKS_PERS_ACR<span style="color:#f92672">=</span>&lt;you-ACR-loginServer&gt;
 $ az acr login --name $AKS_PERS_ACR
 </code></pre></div><p>Ensure Docker is running on your local machine.  Run the following commands to tag and push the image to your ACR.</p>
@@ -3355,12 +3353,12 @@ $ az acr login --name $AKS_PERS_ACR
 $ docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks
 The push refers to repository <span style="color:#f92672">[</span>contosorgresourcegroup1610068510.azurecr.io/contosorgresourcegroup1610068510.azurecr.io<span style="color:#f92672">]</span>
 model-in-image-aks: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: <span style="color:#ae81ff">2415</span>
-</code></pre></div><p>Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS see <a href="https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters">Configure ACR integration for existing AKS clusters</a>.</p>
+</code></pre></div><p>Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see <a href="https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters">Configure ACR integration for existing AKS clusters</a>.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $AKS_PERS_RESOURCE_GROUP
 </code></pre></div><p>If you see an error that seems related to you not being an <strong>Owner on this subscription</strong>, please refer to the troubleshooting section <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/#cannot-attach-acr-due-to-not-being-owner-of-subscription">Cannot attach ACR due to not being Owner of subscription</a>.</p>
-<p>Successful output will be a JSON object with the entry &ldquo;type&rdquo;: &ldquo;Microsoft.ContainerService/ManagedClusters&rdquo;.</p>
+<p>Successful output will be a JSON object with the entry <code>&quot;type&quot;: &quot;Microsoft.ContainerService/ManagedClusters&quot;</code>.</p>
 <h4 id="create-weblogic-domain">Create WebLogic domain</h4>
-<p>In this section, you will deploy the new image to namespace <code>sample-domain1-ns</code>, including the following steps:</p>
+<p>In this section, you will deploy the new image to the namespace <code>sample-domain1-ns</code>, including the following steps:</p>
 <ul>
 <li>Create a namespace for the WebLogic domain.</li>
 <li>Upgrade the operator to manage the WebLogic domain namespace.</li>
@@ -3403,7 +3401,7 @@ $ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 <p>The WebLogic credentials secret:</p>
 <ul>
 <li>It is required and must contain <code>username</code> and <code>password</code> fields.</li>
-<li>It must be referenced by the <code>spec.webLogicCredentialsSecret</code> field in your Domain resource YAML file.  For complete details about the <code>Domain</code> resource, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md#domain-spec">Domain resource reference</a></li>
+<li>It must be referenced by the <code>spec.webLogicCredentialsSecret</code> field in your Domain resource YAML file.  For complete details about the <code>Domain</code> resource, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md#domain-spec">Domain resource reference</a>.</li>
 <li>It also must be referenced by macros in the <code>domainInfo.AdminUserName</code> and <code>domainInfo.AdminPassWord</code> fields in your <code>model.10.yaml</code> file.</li>
 </ul>
 </li>
@@ -3437,7 +3435,7 @@ $ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 <p>Use <code>kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh</code> to create the secret.  Please invoke the script with the <code>-h</code> option to see the available switches and usage.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd weblogic-kubernetes-operator
 $ cd kubernetes/samples/scripts/create-kuberetes-secrets
-$ ./create-docker-credentials-secret.sh -h 
+$ ./create-docker-credentials-secret.sh -h
 </code></pre></div><p>Get the password for the ACR and store it in the Kubernetes secret.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ az acr credential show --name $AKS_PERS_ACR
 The login server endpoint suffix <span style="color:#e6db74">&#39;.azurecr.io&#39;</span> is automatically omitted.
@@ -3479,12 +3477,12 @@ $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 <tr>
 <td><code>spec.image</code></td>
 <td><code>$AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks</code></td>
-<td>Must be the same as the value to which you pushed the image to by running the command <code>docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks</code></td>
+<td>Must be the same as the value to which you pushed the image to by running the command <code>docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks</code>.</td>
 </tr>
 <tr>
 <td><code>spec.imagePullSecrets.name</code></td>
 <td><code>regsecret</code></td>
-<td>Make sure its value is the same value with <code>${SECRET_NAME_DOCKER}</code></td>
+<td>Make sure its value is the same value with <code>${SECRET_NAME_DOCKER}</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -3604,7 +3602,7 @@ service/sample-domain1-admin-server-external-lb created
 
 $ kubectl  apply -f cluster-lb.yaml
 service/sample-domain1-cluster-1-external-lb created
-</code></pre></div><p>Get the external IP addresses of the administration server and cluster load balancers (please wait for the external IP addresses to be assigned):</p>
+</code></pre></div><p>Get the external IP addresses of the Administration Server and cluster load balancers (please wait for the external IP addresses to be assigned):</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get svc -n sample-domain1-ns --watch
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP      PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>          AGE
 sample-domain1-admin-server               ClusterIP      None           &lt;none&gt;           7001/TCP         8m33s
@@ -3805,7 +3803,7 @@ $ az ad sp delete --id $SP_APP_ID
 </code></pre></div>
 
 <h4 id="troubleshooting">Troubleshooting</h4>
-<p><a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/">Troubleshooting</a></p>
+<p>For troubleshooting advice, see <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/">Troubleshooting</a>.</p>
 <h4 id="useful-links">Useful links</h4>
 <ul>
 <li><a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation</li>
@@ -5854,19 +5852,19 @@ $ az ad sp delete --id $SP_APP_ID
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614281416"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614281416"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614256811" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614256811"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614281416" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614281416"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

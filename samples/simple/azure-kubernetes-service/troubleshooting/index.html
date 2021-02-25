@@ -12,18 +12,18 @@
     <title>Troubleshooting :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1614256811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614256811" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1614281415" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1614281415" rel="stylesheet">
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1614281415"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -53,14 +53,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614256811"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614256811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1614281415"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1614281415"></script>
 <script type="text/javascript">
     
         var baseurl = "\/weblogic-kubernetes-operator\/";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614256811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1614281415"></script>
 
     
   </div>
@@ -2977,9 +2977,9 @@ if (!doNotTrack) {
 
 
 <ul>
-<li><a href="#fail-to-access-administration-console">Access Administration Console</a>: possible causes for Administration Console inaccessibility.</li>
+<li><a href="#fail-to-access-administration-console">Access Administration Console</a>: Possible causes for Administration Console inaccessibility</li>
 <li><a href="#domain-debugging">Domain debugging</a></li>
-<li><a href="#get-pod-error-details">Pod Error</a>: how to get details of the pod error.</li>
+<li><a href="#get-pod-error-details">Pod Error</a>: How to get details of the pod error</li>
 <li><a href="#weblogic-image-tool-failure">WebLogic Image Tool failure</a></li>
 <li><a href="#weblogic-kubernetes-operator-installation-failure">WebLogic Kubernetes Operator installation failure</a>
 <ul>
@@ -2992,7 +2992,7 @@ if (!doNotTrack) {
 <li><a href="#virtual-machine-size-is-not-supported">Virtual Machine size is not supported</a></li>
 </ul>
 <h4 id="get-pod-error-details">Get pod error details</h4>
-<p>You may get the following message while creating the WebLogic domain: &ldquo;the job status is not Completed!&rdquo;</p>
+<p>You may get the following message while creating the WebLogic domain: <code>&quot;the job status is not Completed!&quot;</code></p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">status on iteration 20 of 20
 pod domain1-create-weblogic-sample-domain-job-nj7wl status is Init:0/1
 The create domain job is not showing status completed after waiting 300 seconds.
@@ -3012,15 +3012,17 @@ Warning  FailedMount  114s <span style="color:#f92672">(</span>x9 over 4m2s<span
 </code></pre></div><h4 id="fail-to-access-administration-console">Fail to access Administration Console</h4>
 <p>Here are some common reasons for this failure, along with some tips to help you investigate.</p>
 <ul>
-<li><strong>Create WebLogic domain job fails</strong></li>
-</ul>
+<li>
+<p><strong>Create WebLogic domain job fails</strong></p>
 <p>Check the deploy log and find the failure details with <code>kubectl describe pod podname</code>.
-Please go to 1. Getting pod error details.</p>
-<ul>
-<li><strong>Process of starting the servers is still running</strong></li>
-</ul>
-<p>Check with <code>kubectl get svc</code> and if domainUID-admin-server, domainUID-managed-server1 and domainUID-managed-server2 are not listed,
+Please go <a href="#get-pod-error-details">Getting pod error details</a>.</p>
+</li>
+<li>
+<p><strong>Process of starting the servers is still running</strong></p>
+<p>Check with <code>kubectl get svc</code> and if <code>domainUID-admin-server</code>, <code>domainUID-managed-server1</code>, and <code>domainUID-managed-server2</code> are not listed,
 we need to wait some more for the Administration Server to start.</p>
+</li>
+</ul>
 <p>The following output is an example of when the Administration Server has started.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl get svc
 NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT<span style="color:#f92672">(</span>S<span style="color:#f92672">)</span>              AGE
@@ -3035,7 +3037,7 @@ internal-weblogic-operator-svc     ClusterIP      10.0.1.23     &lt;none&gt;    
 kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;          443/TCP              16m
 </code></pre></div><p>If services are up but the WLS Administration Console is still not available, use <code>kubectl describe domain</code> to check domain status.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ kubectl describe domain domain1
-</code></pre></div><p>Make sure the status of <code>cluster-1</code> is <code>ServersReady</code> and <code>Available</code>. The status of <code>admin-server</code>, <code>managed-server1</code> and <code>managed-server2</code> should be <code>RUNNING</code>. Otherwise, the cluster is likely still in the process of becoming fully ready.</p>
+</code></pre></div><p>Make sure the status of <code>cluster-1</code> is <code>ServersReady</code> and <code>Available</code>. The status of <code>admin-server</code>, <code>managed-server1</code>, and <code>managed-server2</code> should be <code>RUNNING</code>. Otherwise, the cluster is likely still in the process of becoming fully ready.</p>
 
 <div class="expand">
     <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
@@ -3090,7 +3092,7 @@ kubernetes                         ClusterIP      10.0.0.1      &lt;none&gt;    
     </div>
 </div>
 <h4 id="domain-debugging">Domain debugging</h4>
-<p>Some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed are found in the section on <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">debugging</a>.</p>
+<p>For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">Debugging</a>.</p>
 <h4 id="wsl2-bad-timestamp">WSL2 bad timestamp</h4>
 <p>If you are running with WSL2, you may run into the <a href="https://github.com/microsoft/WSL/issues/4245">bad timestamp issue</a>, which blocks Azure CLI. You may see the following error:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pod
@@ -3138,7 +3140,7 @@ $ export COMPOSE_DOCKER_CLI_BUILD<span style="color:#f92672">=</span><span style
 <li>The system pods in the AKS cluster are pending.</li>
 <li>The operator image is unavailable.</li>
 </ul>
-<p>Follow the steps and dig into the error.</p>
+<p>Follow these steps to dig into the error.</p>
 <h5 id="the-aks-cluster-system-pods-are-pending">The AKS cluster system pods are pending</h5>
 <p>If system pods in the AKS cluster are pending, it will block the operator installation.</p>
 <p>This is an error example with warning message <strong>no nodes available to schedule pods</strong>.</p>
@@ -3195,11 +3197,11 @@ Digest: sha256:6b060ec1989fcb26e1acb0d0b906d81fce6b8ec2e0a30fa2b9d9099290eb6416
 Status: Downloaded newer image <span style="color:#66d9ef">for</span> ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
 ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
 </code></pre></div><h4 id="cannot-attach-acr-due-to-not-being-owner-of-subscription">Cannot attach ACR due to not being Owner of subscription</h4>
-<p>If you&rsquo;re unable to create an ACR and you&rsquo;re using a Service Principal, you can use manual Role Assignments to grant access to the ACR as described in <a href="https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal">Azure Container Registry authentication with service principals</a>.</p>
-<p>First, find the <code>objectId</code> of the Service Principal used when the AKS cluster was created. You will need the output from <code>az ad sp create-for-rbac</code>, which you were directed to save to a file.  Within the output, you need the value of the <code>name</code> property. It will start with <code>http</code>.  Get the <code>objectId</code> with this command.</p>
+<p>If you&rsquo;re unable to create an ACR and you&rsquo;re using a service principal, you can use manual Role Assignments to grant access to the ACR as described in <a href="https://docs.microsoft.com/en-us/azure/container-registry/container-registry-auth-service-principal">Azure Container Registry authentication with service principals</a>.</p>
+<p>First, find the <code>objectId</code> of the service principal used when the AKS cluster was created. You will need the output from <code>az ad sp create-for-rbac</code>, which you were directed to save to a file.  Within the output, you need the value of the <code>name</code> property. It will start with <code>http</code>.  Get the <code>objectId</code> with this command.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az ad sp show --id http://&lt;your-name-from-the-saved-output&gt; | grep objectId
 <span style="color:#e6db74">&#34;objectId&#34;</span>: <span style="color:#e6db74">&#34;nror4p30-qnoq-4129-o89r-p60n71805npp&#34;</span>,
-</code></pre></div><p>Next, assign the <code>acrpull</code> role to that Service Principal with this command.</p>
+</code></pre></div><p>Next, assign the <code>acrpull</code> role to that service principal with this command.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">$ az role assignment create --assignee-object-id &lt;your-objectId-from-above&gt; --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
 <span style="color:#f92672">{</span>
   <span style="color:#e6db74">&#34;canDelegate&#34;</span>: null,
@@ -5267,19 +5269,19 @@ ResourceNotFoundError: The Resource <span style="color:#e6db74">&#39;Microsoft.C
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1614281416"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1614256811"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614256811"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1614281416"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1614281416"></script>
 
-    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614256811" rel="stylesheet" />
-    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614256811"></script>
+    <link href="/weblogic-kubernetes-operator/mermaid/mermaid.css?1614281416" rel="stylesheet" />
+    <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1614281416"></script>
     <script>
         mermaid.initialize({ startOnLoad: true });
     </script>

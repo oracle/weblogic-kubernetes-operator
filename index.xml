@@ -266,7 +266,7 @@ Contents  Prerequisites Create an AKS cluster Install WebLogic Server Kubernetes
       <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
       
       <guid>/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/</guid>
-      <description>Access Administration Console: possible causes for Administration Console inaccessibility. Domain debugging Pod Error: how to get details of the pod error. WebLogic Image Tool failure WebLogic Kubernetes Operator installation failure  System pods are pending WebLogic Kubernetes Operator ErrImagePull   WSL2 bad timestamp Cannot attach ACR due to not being Owner of subscription Virtual Machine size is not supported  Get pod error details You may get the following message while creating the WebLogic domain: &amp;ldquo;the job status is not Completed!</description>
+      <description>Access Administration Console: Possible causes for Administration Console inaccessibility Domain debugging Pod Error: How to get details of the pod error WebLogic Image Tool failure WebLogic Kubernetes Operator installation failure  System pods are pending WebLogic Kubernetes Operator ErrImagePull   WSL2 bad timestamp Cannot attach ACR due to not being Owner of subscription Virtual Machine size is not supported  Get pod error details You may get the following message while creating the WebLogic domain: &amp;quot;the job status is not Completed!</description>
     </item>
     
     <item>

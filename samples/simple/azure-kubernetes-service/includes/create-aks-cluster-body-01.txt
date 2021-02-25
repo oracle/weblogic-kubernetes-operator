@@ -32,7 +32,7 @@ Found an existing application instance of "5pn2s201-nq4q-43n1-z942-p9r9571qr3rp"
 Insufficient privileges to complete the operation.
 ```
 
-The problem may be a pre-existing service principal with the same name.  Either delete the other Service Principal or pick a different name.
+The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.
 
 Successful output will look like the following:
 
@@ -74,9 +74,9 @@ You will need an Oracle account. The following steps will direct you to accept t
 
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
   - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.
-  - Ensure Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
+  - Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
      ```bash
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
-   If you have problems accessing the Oracle Container Registry, you can build your own docker images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).
+   If you have problems accessing the Oracle Container Registry, you can build your own Docker images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).
