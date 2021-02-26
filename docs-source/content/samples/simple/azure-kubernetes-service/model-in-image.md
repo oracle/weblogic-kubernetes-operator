@@ -19,7 +19,7 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
  - [Clean up resource](#clean-up-resources)
  - [Troubleshooting](#troubleshooting)
  - [Useful links](#useful-links)
- 
+
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
 
 
@@ -36,7 +36,7 @@ cd weblogic-kubernetes-operator
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
-> **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
+**Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
 #### Install WebLogic Server Kubernetes Operator
@@ -260,7 +260,7 @@ The model file:
 - Leverages macros to inject external values:
     - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
     - The model file domain name is injected using a custom environment variable named `CUSTOM_DOMAIN_NAME` using an ENV macro.
-        - You set this environment variable later in this sample using an env field in its Domain.
+        - You set this environment variable later in this sample using an `env` field in its Domain.
         - _This conveniently provides a simple way to deploy multiple differently named domains using the same model image_.
     - The model file administrator user name and password are set using a `weblogic-credentials` secret macro reference to the WebLogic credential secret.
         - This secret is in turn referenced using the `webLogicCredentialsSecret` field in the Domain.
@@ -320,12 +320,12 @@ model-in-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 ```
 
 {{% notice note %}}
-You may run into a `Dockerfile` parsing error if your docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
+You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
 ##### Pushing the image to Azure Container Registry
 
-AKS can pull Docker images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the Docker image built in the preceding section to it.  For complete details see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
+AKS can pull Docker images from any container registry, but the easiest integration is to use Azure Container Registry (ACR).  In this section, we will create a new Azure Container Registry, connect it to our pre-existing AKS cluster and push the Docker image built in the preceding section to it.  For complete details, see [Azure Container Registry documentation](https://docs.microsoft.com/en-us/azure/container-registry/).
 
 Let's create an instance of ACR in the same resource group we used for AKS. We will use the environment variables used during the steps above.  For simplicity, we use the resource group name as the name of the ACR instance.
 
@@ -339,7 +339,7 @@ Closely examine the JSON output from this command. Save the value of the `loginS
 "loginServer": "contosoresourcegroup1610068510.azurecr.io",
 ```
 
-Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` cli, you do not need a password because your identity is already conveyed via having done `az login` previously.
+Use this value to sign in to the ACR instance. Note that because you are signing in with the `az` cli, you do not need a password because your identity is already conveyed by having done `az login` previously.
 
 ```shell
 $ export AKS_PERS_ACR=<you-ACR-loginServer>
@@ -355,7 +355,7 @@ The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/conto
 model-in-image-aks: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
 ```
 
-Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS see [Configure ACR integration for existing AKS clusters](https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters).
+Finally, connect AKS to the ACR.  For more details on connecting ACR to an existing AKS, see [Configure ACR integration for existing AKS clusters](https://docs.microsoft.com/en-us/azure/aks/cluster-container-registry-integration#configure-acr-integration-for-existing-aks-clusters).
 
 ```shell
 $ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $AKS_PERS_RESOURCE_GROUP
@@ -363,12 +363,12 @@ $ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GRO
 
 If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
-Successful output will be a JSON object with the entry "type": "Microsoft.ContainerService/ManagedClusters".
+Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.
 
 
 #### Create WebLogic domain
 
-In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
+In this section, you will deploy the new image to the namespace `sample-domain1-ns`, including the following steps:
 
 - Create a namespace for the WebLogic domain.
 - Upgrade the operator to manage the WebLogic domain namespace.
@@ -417,7 +417,7 @@ $ kubectl -n sample-domain1-ns label  secret \
 
   - The WebLogic credentials secret:
     - It is required and must contain `username` and `password` fields.
-    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md#domain-spec)
+    - It must be referenced by the `spec.webLogicCredentialsSecret` field in your Domain resource YAML file.  For complete details about the `Domain` resource, see the [Domain resource reference](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md#domain-spec).
     - It also must be referenced by macros in the `domainInfo.AdminUserName` and `domainInfo.AdminPassWord` fields in your `model.10.yaml` file.
 
   - The Model WDT runtime encrytion secret:
@@ -444,7 +444,7 @@ Use `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentia
 ```shell
 $ cd weblogic-kubernetes-operator
 $ cd kubernetes/samples/scripts/create-kuberetes-secrets
-$ ./create-docker-credentials-secret.sh -h 
+$ ./create-docker-credentials-secret.sh -h
 ```
 
 Get the password for the ACR and store it in the Kubernetes secret.
@@ -493,8 +493,8 @@ Modify the Domain YAML with your values.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-|`spec.image`|`$AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`|Must be the same as the value to which you pushed the image to by running the command `docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`|
-|`spec.imagePullSecrets.name`|`regsecret`|Make sure its value is the same value with `${SECRET_NAME_DOCKER}`|
+|`spec.image`|`$AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`|Must be the same as the value to which you pushed the image to by running the command `docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks`.|
+|`spec.imagePullSecrets.name`|`regsecret`|Make sure its value is the same value with `${SECRET_NAME_DOCKER}`.|
 
 Run the following command to create the domain custom resource:
 
@@ -614,7 +614,7 @@ $ kubectl  apply -f cluster-lb.yaml
 service/sample-domain1-cluster-1-external-lb created
 ```
 
-Get the external IP addresses of the administration server and cluster load balancers (please wait for the external IP addresses to be assigned):
+Get the external IP addresses of the Administration Server and cluster load balancers (please wait for the external IP addresses to be assigned):
 
 ```bash
 $ kubectl get svc -n sample-domain1-ns --watch
@@ -822,7 +822,7 @@ Run the following commands to clean up resources.
 
 #### Troubleshooting
 
-  [Troubleshooting]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting.md" >}})
+For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting.md" >}}).
 
 #### Useful links
 
