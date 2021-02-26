@@ -343,6 +343,10 @@ public class Domain implements KubernetesObject {
     return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
   }
 
+  /**
+   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
+   * @return {@link MIINonDynamicChangesMethod}
+   */
   public MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
     return Optional.of(getSpec())
         .map(DomainSpec::getConfiguration)

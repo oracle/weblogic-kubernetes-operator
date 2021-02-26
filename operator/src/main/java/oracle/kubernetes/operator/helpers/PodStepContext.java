@@ -490,7 +490,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean isDomainZipUnchanged(V1Pod currentPod) {
-    return formatHashLabel(miiDomainZipHash).equals(currentPod.getMetadata().getLabels().get(MODEL_IN_IMAGE_DOMAINZIP_HASH));
+    return formatHashLabel(miiDomainZipHash)
+        .equals(currentPod.getMetadata().getLabels().get(MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
@@ -923,7 +924,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
-       } else if (!canUseCurrentPod(currentPod)) {
+      } else if (!canUseCurrentPod(currentPod)) {
         LOGGER.info(
             MessageKeys.CYCLING_POD,
             Objects.requireNonNull(currentPod.getMetadata()).getName(),

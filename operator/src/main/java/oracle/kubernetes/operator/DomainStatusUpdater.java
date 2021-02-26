@@ -541,7 +541,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean miiNondynamicRestartRequired() {
-        return packet.getValue(MII_DYNAMIC_UPDATE) == MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+        return MII_DYNAMIC_UPDATE_RESTART_REQUIRED.equals(packet.get(MII_DYNAMIC_UPDATE));
       }
 
       private boolean isCommitUpdateOnly() {
@@ -708,9 +708,11 @@ public class DomainStatusUpdater {
       private ClusterStatus createClusterStatus(String clusterName) {
         return new ClusterStatus()
             .withClusterName(clusterName)
-            .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName)).map(Long::intValue).orElse(null))
+            .withReplicas(Optional.ofNullable(getClusterCounts().get(clusterName))
+                .map(Long::intValue).orElse(null))
             .withReadyReplicas(
-                Optional.ofNullable(getClusterCounts(true).get(clusterName)).map(Long::intValue).orElse(null))
+                Optional.ofNullable(getClusterCounts(true)
+                    .get(clusterName)).map(Long::intValue).orElse(null))
             .withMaximumReplicas(getClusterMaximumSize(clusterName))
             .withMinimumReplicas(getClusterMinimumSize(clusterName))
             .withReplicasGoal(getClusterSizeGoal(clusterName));
