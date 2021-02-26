@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -12,7 +12,7 @@ function usage() {
 
   cat << EOF
 
-  This script scales a WebLogic cluster in a domain by patching
+  This script scales a WebLogic cluster in a domain by patching the
   'spec.clusters[<cluster-name>].replicas' attribute of the domain
   resource. This change will cause the operator to perform a scaling
   operation for the WebLogic cluster based on the value of replica count.
