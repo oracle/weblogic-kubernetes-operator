@@ -393,7 +393,7 @@ public class WlsDomainConfig implements WlsDomain {
 
   /**
    * Whether the WebLogic domain contains a server with the given server name,
-   * not including standalone servers, and servers that belong to a
+   * including standalone servers, and servers that belong to a
    * configured or dynamic cluster.
    *
    * @param serverName server name to be checked

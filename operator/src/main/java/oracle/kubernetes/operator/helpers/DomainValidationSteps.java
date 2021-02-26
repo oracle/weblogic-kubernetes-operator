@@ -160,6 +160,7 @@ public class DomainValidationSteps {
           c -> warnIfClusterDoesNotExist(wlsDomainConfig, c.getClusterName(), info));
 
       // log warnings for each managed server that is specified in domain resource but not configured
+      // in the WebLogic domain
       domainSpec.getManagedServers().forEach(
           s -> warnIfServerDoesNotExist(wlsDomainConfig, s.getServerName(), info));
     }
