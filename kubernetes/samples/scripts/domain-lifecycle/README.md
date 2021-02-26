@@ -78,7 +78,7 @@ domain.weblogic.oracle/domain1 patched
 
 ### Scripts to scale a WebLogic cluster
 
-The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute. See the script `usage` information by using the `-h` option.
+The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute after it's value is updated. See the script `usage` information by using the `-h` option.
 ```
 $ scaleCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1 -r 3
 [2021-02-26T19:04:14.335 UTC][INFO] Patching replicas for cluster 'cluster-1' to '3'.

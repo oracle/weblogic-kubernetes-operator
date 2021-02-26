@@ -271,7 +271,7 @@ function createPatchJsonToUpdateClusterPolicy {
 #
 # Function to create patch json to update cluster replicas
 # $1 - Domain resource in json format
-# $2 - Name of cluster whose policy will be patched
+# $2 - Name of cluster whose replicas will be patched
 # $3 - replica count
 # $4 - Return value containing patch json string
 #
