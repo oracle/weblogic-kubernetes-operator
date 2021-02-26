@@ -1,6 +1,6 @@
 #### Create the AKS cluster
 
-This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, please follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, then follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
 
 Run the following commands to create the AKS cluster instance.
 
@@ -43,7 +43,7 @@ Successful output will look similar to:
 Merged "wlsaks1596087429" as current context in /home/username/.kube/config
 ```
 
-After your Kubernetes cluster is up and running, run the following commands to make sure kubectl can access the Kubernetes cluster:
+After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster:
 
 ```shell
 $ kubectl get nodes -o wide
@@ -51,4 +51,3 @@ NAME                                  STATUS   ROLES   AGE     VERSION    INTERN
 aks-pool1haiche-33688868-vmss000000   Ready    agent   4m25s   v1.17.13   10.240.0.4    <none>        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
 aks-pool1haiche-33688868-vmss000001   Ready    agent   4m12s   v1.17.13   10.240.0.5    <none>        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
 ```
-

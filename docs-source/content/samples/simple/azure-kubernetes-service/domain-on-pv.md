@@ -17,7 +17,7 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
  - [Deploy sample application](#deploy-sample-application)
  - [Access WebLogic Server logs](#access-weblogic-server-logs)
  - [Clean up resources](#clean-up-resources)
- - [Troubleshooting](#troubleshooting) 
+ - [Troubleshooting](#troubleshooting)
  - [Useful links](#useful-links)
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
@@ -37,7 +37,7 @@ $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
-> **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
+ **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
@@ -121,18 +121,18 @@ sh.helm.release.v1.weblogic-operator.v1   helm.sh/release.v1                    
 weblogic-operator-secrets                 Opaque                                1      5m41s
 ```
 
-> **Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
+**Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
 
 ##### Create WebLogic Domain
 We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
 We need to set up the domain configuration for the WebLogic domain.
 
-1. Check if resources are ready
+1. Check if resources are ready.
 
    If you used the automation script to create the AKS cluster, skip this step and go to step 2.
 
-   If you create Azure resources step by step according to the steps above, validate all the resources created above using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
+   If you created Azure resources, step-by-step, according to the previous steps, then validate that all the resources above were created by using the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/validate.sh`.
 
    Use the following commands to check if the resources are ready:
 
@@ -165,7 +165,7 @@ We need to set up the domain configuration for the WebLogic domain.
      Persistent Volume Claim: wls-azurefile-1612795811
    ```
 
-2. Now let's ask the operator to create a WebLogic Server domain within the AKS cluster. 
+2. Now let's ask the operator to create a WebLogic Server domain within the AKS cluster.
 
    For complete details on domain creation, see [Domain home on a PV - Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-on-pv#use-the-script-to-create-a-domain" >}}).  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the `create-domain.sh` script as shown next.
 
@@ -191,11 +191,11 @@ We need to set up the domain configuration for the WebLogic domain.
    Failed to pull image "container-registry.oracle.com/middleware/weblogic:12.2.1.4": rpc error: code = Unknown desc = Error response from daemon: Get https://container-registry-phx.oracle.com/v2/middleware/weblogic/manifests/12.2.1.4: unauthorized: authentication required
    ```
 
-   Ensure the arguments you passed to the script `create-docker-credentials-secret.sh` are correct with respect to your Oracle SSO credentials.
+   Ensure that the arguments you passed to the script `create-docker-credentials-secret.sh` are correct with respect to your Oracle SSO credentials.
 
    The following example output shows the WebLogic domain was created successfully.
 
-   {{%expand "Click here to view the example output." %}} 
+   {{%expand "Click here to view the example output." %}}
    ```bash
    $ ./create-domain.sh -i ~/azure/weblogic-on-aks/my-create-domain-inputs.yaml -o ~/azure -e -v
    Input parameters being used
@@ -270,7 +270,7 @@ We need to set up the domain configuration for the WebLogic domain.
    ```
    {{% /expand %}}
 
-   > **Note**: If your output does not show a successful completion, you must
+   **Note**: If your output does not show a successful completion, you must
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
@@ -297,7 +297,7 @@ We need to set up the domain configuration for the WebLogic domain.
      type: LoadBalancer
    ```
 
-   Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/cluster-lb.yaml` to create a load balancer service for the managed servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+   Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/cluster-lb.yaml` to create a load balancer service for the Managed Servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
 
    ```yaml
    apiVersion: v1
@@ -356,7 +356,7 @@ We need to set up the domain configuration for the WebLogic domain.
    weblogic-operator-56654bcdb7-qww7f                1/1     Running     0          25m
    ```
 
-   {{% notice tip %}} If Kubernetes advertises the WebLogic pod as `Running` you can be assured the WebLogic Server actually is running because the operator ensures the Kubernetes health checks are actually polling the WebLogic health check mechanism.
+   {{% notice tip %}} If Kubernetes advertises the WebLogic pod as `Running` you can be assured the WebLogic Server actually is running because the operator ensures that the Kubernetes health checks are actually polling the WebLogic health check mechanism.
    {{% /notice %}}
 
    Get the addresses of the Administration Server and Managed Servers (please wait for the external IP addresses to be assigned):
@@ -439,7 +439,7 @@ To deploy a sample application on WLS, you may skip to the section [Deploy sampl
 
 If you want to automate the above steps of creating AKS cluster and WLS domain, you can use the script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh`.
 
-The sample script will create a WLS domain home on the AKS cluster, including
+The sample script will create a WLS domain home on the AKS cluster, including:
   - Creating a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic to persist its configuration and data separately from the Kubernetes pods that run WLS workloads.
   - Creating WLS domain home.
   - Generating the domain resource YAML files, which can be used to restart the Kubernetes artifacts of the corresponding domain.
@@ -452,7 +452,7 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image.  In clear text. |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 
