@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Strings;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -392,18 +393,16 @@ public class WlsDomainConfig implements WlsDomain {
 
   /**
    * Whether the WebLogic domain contains a server with the given server name,
-   * not including servers that are part of a dynamic cluster.
+   * including standalone servers, and servers that belong to a
+   * configured or dynamic cluster.
    *
    * @param serverName server name to be checked
    * @return True if the WebLogic domain contains a server with the given server name
    */
   public synchronized boolean containsServer(String serverName) {
-    if (serverName != null && servers != null) {
-      for (WlsServerConfig serverConfig : servers) {
-        if (serverConfig.getName().equals(serverName)) {
-          return true;
-        }
-      }
+    if (!Strings.isNullOrEmpty(serverName)) {
+      return getServers().stream().anyMatch(s -> serverName.equals(s.getName()))
+          || getConfiguredClusters().stream().anyMatch(c -> c.containsServer(serverName));
     }
     return false;
   }
