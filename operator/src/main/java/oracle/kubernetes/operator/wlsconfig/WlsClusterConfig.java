@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -375,6 +376,17 @@ public class WlsClusterConfig {
    */
   public String getUpdateDynamicClusterSizePayload(final int clusterSize) {
     return "{ dynamicClusterSize: " + clusterSize + " }";
+  }
+
+  /**
+   * Whether this cluster contains a server with the given server name,
+   * including servers that are both configured and dynamic servers.
+   *
+   * @param serverName server name to be checked
+   * @return True if the cluster contains a server with the given server name
+   */
+  boolean containsServer(@Nonnull String serverName) {
+    return getServerConfigs().stream().anyMatch(c -> serverName.equals(c.getName()));
   }
 
   @Override

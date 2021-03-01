@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -129,6 +131,28 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
+  public void whenJobConditionTypeFailedWithTrueStatus_reportFailed() {
+    markJobConditionFailed(cachedJob);
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(true));
+  }
+
+  @Test
+  public void whenJobConditionTypeFailedWithNoStatus_reportNotFailed() {
+    cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed").status("")));
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(false));
+  }
+
+  @Test
+  public void whenJobHasStatusWithNoConditionsAndNotFailed_reportNotFailed() {
+    cachedJob.status(new V1JobStatus().conditions(Collections.emptyList()));
+
+    assertThat(JobWatcher.isFailed(cachedJob), is(false));
+  }
+
+
+  @Test
   public void whenJobRunningAndReadyConditionIsTrue_reportComplete() {
     markJobCompleted(cachedJob);
 
@@ -151,6 +175,10 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return setFailedWithReason(job, null);
   }
 
+  private V1Job markJobConditionFailed(V1Job job) {
+    return setFailedConditionWithReason(job, null);
+  }
+
   private V1Job markJobTimedOut(V1Job job) {
     return markJobTimedOut(job, "DeadlineExceeded");
   }
@@ -161,6 +189,11 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   private V1Job setFailedWithReason(V1Job job, String reason) {
     return job.status(new V1JobStatus().failed(1).addConditionsItem(createCondition("Failed").reason(reason)));
+  }
+
+  private V1Job setFailedConditionWithReason(V1Job job, String reason) {
+    return job.status(new V1JobStatus().conditions(
+            new ArrayList<>(Arrays.asList(new V1JobCondition().type("Failed").status("True").reason(reason)))));
   }
 
   @Test
@@ -244,6 +277,13 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   @Test
   public void whenWaitForReadyAppliedToFailedJob_performNextStep() {
     startWaitForReady(this::markJobFailed);
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  @Test
+  public void whenWaitForReadyAppliedToJobWithFailedCondition_performNextStep() {
+    startWaitForReady(this::markJobConditionFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
