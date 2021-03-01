@@ -1692,7 +1692,7 @@ def getRealSSLListenPort(server, sslport):
     if configxml_ssl_port is None:
       return 7002
 
-  if sslport is 0:
+  if sslport == 0:
     trace("SEVERE", "Invalid SSL listen port value " + sslport + " for " + str(server.getName()))
     sys.exit(1)
   return sslport
@@ -1709,7 +1709,7 @@ def getRealListenPort(server):
     if port is None:
       return 7001
 
-  if server.getListenPort() is 0:
+  if server.getListenPort() == 0:
     trace("SEVERE", "Invalid listen port value " + port + " for " + str(server.getName()))
     sys.exit(1)
 
