@@ -466,8 +466,8 @@ class TopologyGenerator(Generator):
           sslListenPort = getRealSSLListenPort(server, ssl.getListenPort())
           sslListenPortEnabled = ssl.isEnabled()
         elif isSecureModeEnabledForDomain(self.env.getDomain()):
-          trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
-            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+          trace("SEVERE", "SecureMode is enabled in the domain but the SSL is not enabled in " + str(server.getName())
+            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
           sys.exit(1)
           # sslListenPort = 7002
           # sslListenPortEnabled = True
@@ -675,8 +675,8 @@ class TopologyGenerator(Generator):
       self.writeln("sslListenPort: " + str(sslport))
       self.undent()
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
-            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      trace("SEVERE", "SecureMode is enabled in the domain but the SSL is not enabled in " + str(server.getName())
+            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
       sys.exit(1)
       # self.indent()
       # self.writeln("sslListenPort: 7002")
@@ -816,8 +816,8 @@ class TopologyGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
-            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      trace("SEVERE", "SecureMode is enabled in the domain but the SSL is not enabled in " + str(server.getName())
+            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
       sys.exit(1)
       #ssl_listen_port = "7002"
 
@@ -1221,8 +1221,8 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
-            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      trace("SEVERE", "SecureMode is enabled in the domain but the SSL is not enabled in " + str(server.getName())
+            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
       sys.exit(1)
       #ssl_listen_port = "7002"
 
@@ -1279,8 +1279,8 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
-            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      trace("SEVERE", "SecureMode is enabled in the domain but the SSL is not enabled in " + str(server.getName())
+            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
       sys.exit(1)
       #ssl_listen_port = "7002"
 
