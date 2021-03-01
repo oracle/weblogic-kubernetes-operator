@@ -1,4 +1,4 @@
-<!-- Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+<!-- Copyright (c) 2017, 2021, Oracle and/or its affiliates.
      Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>3.1.3</version>
+  <version>3.1.4</version>
 
   <modules>
     <module>operator</module>
@@ -271,7 +271,7 @@
               <author>false</author>
               <notimestamp>true</notimestamp>
               <bottom>
-                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
+                <![CDATA[<p>Copyright (c) 2018, {currentYear}, <a href="http://www.oracle.com">Oracle</a> and/or its affiliates. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="https://oss.oracle.com/licenses/upl">https://oss.oracle.com/licenses/upl</a>.<p>]]></bottom>
               <doctitle>Oracle WebLogic Server Kubernetes Operator API</doctitle>
             </configuration>
           </execution>
@@ -634,6 +634,21 @@
         <artifactId>awaitility</artifactId>
         <version>${awaitility-version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-ext-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcpkix-jdk15on</artifactId>
+        <version>${bouncycastle.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -672,8 +687,8 @@
     <maven-dependency-plugin-version>3.1.2</maven-dependency-plugin-version>
     <exec-maven-plugin-version>3.0.0</exec-maven-plugin-version>
     <spotbugs-maven-plugin-version>4.1.4</spotbugs-maven-plugin-version>
-    <spotbugs-version>4.1.4</spotbugs-version>
-    <checkstyle-version>8.36.2</checkstyle-version>
+    <spotbugs-version>4.2.0</spotbugs-version>
+    <checkstyle-version>8.38</checkstyle-version>
     <pmd-java-version>6.21.0</pmd-java-version>
     <directory-maven-version>0.1</directory-maven-version>
     <maven-jxr-plugin-version>3.0.0</maven-jxr-plugin-version>
@@ -697,7 +712,7 @@
     <assertj.core.version>3.17.2</assertj.core.version>
     <commons.io.version>2.6</commons.io.version>
     <awaitility-version>4.0.3</awaitility-version>
-    <client-java-version>10.0.0</client-java-version>
+    <client-java-version>10.0.1</client-java-version>
     <junit.jupiter.version>5.7.0</junit.jupiter.version>
     <junit.vintage.version>5.7.0</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
@@ -710,7 +725,10 @@
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
-    <jacoco.version>0.8.5</jacoco.version>
+    <jacoco.version>0.8.6</jacoco.version>
+    <git-commit-id-plugin-version>4.0.0</git-commit-id-plugin-version>
+    <bouncycastle.version>1.68</bouncycastle.version>
+    <guava.version>30.1-jre</guava.version>
     <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>
