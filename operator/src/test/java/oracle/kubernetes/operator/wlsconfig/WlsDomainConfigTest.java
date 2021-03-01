@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
+// Copyright (c) 2017, 2021, Oracle Corporation and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.wlsconfig;
@@ -13,10 +13,6 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.utils.TestUtils;
-import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.hamcrest.Description;
 import org.junit.After;
 import org.junit.Before;
@@ -346,11 +342,10 @@ public class WlsDomainConfigTest {
           + "        \"networkAccessPoints\": {\"items\": []}\n"
           + "    }\n"
           + "]}}";
-  private Domain domain = new Domain().withSpec(new DomainSpec());
-  private DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(null);
   private List<LogRecord> logRecords = new ArrayList<>();
   private List<Memento> mementos = new ArrayList<>();
+  private WlsDomainConfig wlsDomainConfig = new WlsDomainConfig("test-domain");
+  private WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
 
   /**
    * Setup test.
@@ -602,7 +597,6 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenNoClustersDefined_returnEmptyArray() {
-    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
     support.addWlsServer("server1");
     support.addWlsServer("server2");
 
@@ -611,7 +605,6 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenOneClusterDefined_returnItsName() {
-    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsServer("server2");
 
@@ -620,7 +613,6 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenTwoClustersDefined_returnBothNames() {
-    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsCluster("cluster2", "ms4", "ms5");
 
@@ -631,7 +623,6 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenTwoClustersDefined_returnReplicaLimits() {
-    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsCluster("cluster2", "ms4", "ms5");
 
@@ -641,8 +632,6 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenUnknownClusterName_returnZeroReplicaLimit() {
-    WlsDomainConfigSupport support = new WlsDomainConfigSupport("test-domain");
-
     assertThat(support.createDomainConfig().getReplicaLimit("cluster3"), equalTo(0));
   }
 
@@ -668,64 +657,109 @@ public class WlsDomainConfigTest {
 
   @Test
   public void whenTopologyGenerated_containsDomainValidFlag() {
-    WlsDomainConfig domainConfig = new WlsDomainConfig();
-
-    assertThat(domainConfig.toTopology(), hasJsonPath("domainValid", equalTo("true")));
+    assertThat(wlsDomainConfig.toTopology(), hasJsonPath("domainValid", equalTo("true")));
   }
 
   @Test
   public void whenTopologyGenerated_containsDomainName() {
-    WlsDomainConfig domainConfig = new WlsDomainConfig("test-domain");
-
-    assertThat(domainConfig.toTopology(), hasJsonPath("domain.name", equalTo("test-domain")));
+    assertThat(wlsDomainConfig.toTopology(), hasJsonPath("domain.name", equalTo("test-domain")));
   }
 
   @Test
   public void whenTopologyGenerated_containsAdminServerName() {
-    WlsDomainConfig domainConfig =
-        new WlsDomainConfig("test-domain").withAdminServer("admin-server", "admin-host", 7001);
+    wlsDomainConfig.withAdminServer("admin-server", "admin-host", 7001);
 
     assertThat(
-        domainConfig.toTopology(), hasJsonPath("domain.adminServerName", equalTo("admin-server")));
+        wlsDomainConfig.toTopology(), hasJsonPath("domain.adminServerName", equalTo("admin-server")));
   }
 
   @Test
   public void whenTopologyGenerated_containsAdminServerSpec() {
-    WlsDomainConfig domainConfig =
-        new WlsDomainConfig("test-domain").withAdminServer("admin-server", "admin-host", 7001);
+    wlsDomainConfig.withAdminServer("admin-server", "admin-host", 7001);
 
     assertThat(
-        domainConfig.toTopology(),
+        wlsDomainConfig.toTopology(),
         hasJsonPath("domain.servers", withServerConfig("admin-server", "admin-host", 7001)));
   }
 
   @Test
   public void whenYamlGenerated_containsClusterConfig() {
-    WlsDomainConfig domainConfig =
-        new WlsDomainConfig("test-domain").withCluster(new WlsClusterConfig("cluster1"));
+    wlsDomainConfig.withCluster(new WlsClusterConfig("cluster1"));
 
     assertThat(
-        domainConfig.toTopology(),
+        wlsDomainConfig.toTopology(),
         hasJsonPath("domain.configuredClusters[*].name", contains("cluster1")));
   }
 
   @Test
   public void whenYamlGenerated_containsClusteredServerConfigs() {
-    WlsDomainConfig domainConfig =
-        new WlsDomainConfig("test-domain")
-            .withCluster(
+    wlsDomainConfig.withCluster(
                 new WlsClusterConfig("cluster1")
                     .addServerConfig(new WlsServerConfig("ms1", "host1", 8001))
                     .addServerConfig(new WlsServerConfig("ms2", "host2", 8001)));
 
     assertThat(
-        domainConfig.toTopology(),
+        wlsDomainConfig.toTopology(),
         hasJsonPath(
             "domain.configuredClusters[0].servers", withServerConfig("ms1", "host1", 8001)));
     assertThat(
-        domainConfig.toTopology(),
+        wlsDomainConfig.toTopology(),
         hasJsonPath(
             "domain.configuredClusters[0].servers", withServerConfig("ms2", "host2", 8001)));
+  }
+
+  @Test
+  public void containsServer_returnsTrue_forExistingStandaloneServer() {
+    wlsDomainConfig.addWlsServer("ms1","host1", 8001);
+
+    assertThat(wlsDomainConfig.containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsTrue_forExistingConfiguredClusteredServer() {
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsTrue_forExistingDynamicClusterServer() {
+    support.addDynamicWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
+  }
+
+  @Test
+  public void containsServer_returnsFalse_forNonExistingServer() {
+    support.addWlsCluster("cluster-1", "ms1");
+    support.addDynamicWlsCluster("dynamic-cluster", "dyn1");
+    support.addWlsServer("standalone");
+
+    assertThat(support.createDomainConfig().containsServer("notthere"), equalTo(false));
+  }
+
+  @Test
+  public void containsServer_returnsFalse_forNullServerName() {
+    assertThat(wlsDomainConfig.containsServer(null), equalTo(false));
+  }
+
+  @Test
+  public void containsCluster_returnsFalse_forNonExistingCluster() {
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsCluster("notthere"), equalTo(false));
+  }
+
+  @Test
+  public void containsCluster_returnsTrue_forExistingCluster() {
+    support.addWlsCluster("cluster-1", "ms1");
+
+    assertThat(support.createDomainConfig().containsCluster("cluster-1"), equalTo(true));
+  }
+
+  @Test
+  public void containsCluster_returnsFalse_forNullServerName() {
+    assertThat(wlsDomainConfig.containsCluster(null), equalTo(false));
   }
 
   @SuppressWarnings("unused")
