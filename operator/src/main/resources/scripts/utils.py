@@ -84,10 +84,26 @@ def get_server_template_listening_ports_from_configxml(config_xml):
     if template.parentNode.nodeName != 'domain':
       continue
     template_name = template.getElementsByTagName('name')[0].firstChild.nodeValue
+    # Get listen port
     listen_ports = template.getElementsByTagName('listen-port')
-    if len(listen_ports) > 0:
-      port = listen_ports[0].firstChild.nodeValue
+
+    for listen_port in listen_ports:
+      if listen_port.parentNode.nodeName == 'server-template':
+        port = listen_port.firstChild.nodeValue
+        break
     server_template_ports[template_name] = port
+
+    # naps = template.getElementsByTagName('network-access-point')
+    # for nap in naps:
+    #   nap_listen_ports = nap.getElementsByTagName('listen-port')
+    #   if len(listen_ports) > 0:
+    #     nap_listen_port = nap_listen_ports[0].firstChild.nodeValue
+    #   nap_name = nap.getElementsByTagName('name')[0].firstChild.nodeValue
+    #   nap_protcols = nap.getElementsByTagName('protocol')
+    #   # there is protocol defined:
+    #   if len(nap_protcols) > 0:
+
+    # Get ssl port
     ssls = template.getElementsByTagName('ssl')
     if len(ssls) > 0:
       ssl = ssls.item(0)
