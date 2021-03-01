@@ -740,8 +740,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -781,7 +780,6 @@ class ItMiiDynamicUpdate {
     // clean failed introspector
     // replace WDT config map with config that's added in previous tests,
     // otherwise it will try to delete them, we are not testing deletion here
-
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
@@ -791,8 +789,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -837,8 +834,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -888,8 +884,7 @@ class ItMiiDynamicUpdate {
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
