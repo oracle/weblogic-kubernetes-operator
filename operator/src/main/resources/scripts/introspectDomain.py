@@ -1709,7 +1709,8 @@ def getRealListenPort(server):
     if port is None:
       return 7001
 
-  if server.getListenPort() == 0:
+  port = server.getListenPort()
+  if port == 0:
     trace("SEVERE", "Invalid listen port value " + port + " for " + str(server.getName()))
     sys.exit(1)
 
