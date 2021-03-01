@@ -76,7 +76,7 @@ domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched domain 'domain1' in namespace 'weblogic-domain-1' with 'NEVER' start policy!
 ```
 
-### Scripts to scale a WebLogic cluster
+### Script to scale a WebLogic cluster
 
 The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute after it's value is updated. See the script `usage` information by using the `-h` option.
 ```
@@ -84,4 +84,34 @@ $ scaleCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1 -r 3
 [2021-02-26T19:04:14.335 UTC][INFO] Patching replicas for cluster 'cluster-1' to '3'.
 domain.weblogic.oracle/domain1 patched
 [2021-02-26T19:04:14.466 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+```
+
+### Script to view the status of any WebLogic cluster(s)
+
+The `clusterStatus.sh` script can be used to view the domain resource cluster status of any WebLogic cluster. This script will print the status of any WebLogic cluster in a particular domain in a namespaces or all clusters in all domains across all different namespaces. See the script `usage` information by using the `-h` option.
+
+Use the following command to print status of all clusters in all domains across all namespaces.
+```
+$ clusterStatus.sh
+
+WKO Cluster Status -n "" -d "" -c "":
+
+namespace          domain            cluster    min  max  goal  current  ready
+---------          ------            -------    ---  ---  ----  -------  -----
+ns-kvmt            mii-domain1       cluster-1  1    5    5     5        5
+weblogic-domain-1  domain1           cluster-1  0    4    2     2        2
+weblogic-domain-1  domain1           cluster-2  0    4    0     NA       NA
+```
+
+Use the following command to print status of all clusters in 'domain1' in 'weblogic-domain-1' namespace.
+```
+$ clusterStatus.sh -d domain1 -n weblogic-domain-1
+
+WKO Cluster Status -n "weblogic-domain-1" -d "domain1" -c "":
+
+namespace          domain   cluster    min  max  goal  current  ready
+---------          ------   -------    ---  ---  ----  -------  -----
+weblogic-domain-1  domain1  cluster-1  0    4    2     2        2
+weblogic-domain-1  domain1  cluster-2  0    4    0     NA       NA
+
 ```
