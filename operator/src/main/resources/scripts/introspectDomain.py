@@ -466,8 +466,11 @@ class TopologyGenerator(Generator):
           sslListenPort = getRealSSLListenPort(server, ssl.getListenPort())
           sslListenPortEnabled = ssl.isEnabled()
         elif isSecureModeEnabledForDomain(self.env.getDomain()):
-          sslListenPort = 7002
-          sslListenPortEnabled = True
+          trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
+            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+          sys.exit(1)
+          # sslListenPort = 7002
+          # sslListenPortEnabled = True
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
@@ -672,9 +675,12 @@ class TopologyGenerator(Generator):
       self.writeln("sslListenPort: " + str(sslport))
       self.undent()
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      self.indent()
-      self.writeln("sslListenPort: 7002")
-      self.undent()
+      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
+            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      sys.exit(1)
+      # self.indent()
+      # self.writeln("sslListenPort: 7002")
+      # self.undent()
 
   def addServerTemplates(self):
     serverTemplates = self.env.getDomain().getServerTemplates()
@@ -810,7 +816,10 @@ class TopologyGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
+            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      sys.exit(1)
+      #ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
@@ -1212,7 +1221,10 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
+            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      sys.exit(1)
+      #ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -1267,7 +1279,10 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+      trace("SEVERE", "SecureMode is enabled in the domain but there SSL is not enabled in " + str(server.getName())
+            + ". All Server and ServerTemplates must have SSL enabled and listen-port defined")
+      sys.exit(1)
+      #ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
@@ -1683,6 +1698,9 @@ def getRealSSLListenPort(server, sslport):
     if configxml_ssl_port is None:
       return 7002
 
+  if sslport is 0:
+    trace("SEVERE", "Invalid SSL listen port value " + sslport + " for " + str(server.getName()))
+    sys.exit(1)
   return sslport
 
 def getRealListenPort(server):
@@ -1696,6 +1714,10 @@ def getRealListenPort(server):
     port = server_listening_ports[server.getName()]
     if port is None:
       return 7001
+
+  if port is 0:
+    trace("SEVERE", "Invalid listen port value " + port + " for " + str(server.getName()))
+    sys.exit(1)
 
   return server.getListenPort()
 
