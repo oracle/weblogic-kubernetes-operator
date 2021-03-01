@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>3.1.3</version>
+    <version>3.1.4</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -30,7 +30,7 @@
       <plugin>
         <groupId>pl.project13.maven</groupId>
         <artifactId>git-commit-id-plugin</artifactId>
-        <version>2.2.6</version>
+        <version>${git-commit-id-plugin-version}</version>
         <executions>
           <execution>
             <id>get-the-git-infos</id>
@@ -316,6 +316,19 @@
     <dependency>
       <groupId>javax</groupId>
       <artifactId>javaee-web-api</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-ext-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
     </dependency>
 
     <!--  not included with jdk 9 -->

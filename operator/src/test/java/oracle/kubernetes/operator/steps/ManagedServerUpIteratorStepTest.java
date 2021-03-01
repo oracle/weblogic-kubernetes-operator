@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.steps;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
@@ -23,14 +25,21 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
+import oracle.kubernetes.operator.PodWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ThreadFactoryTestBase;
+import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -48,6 +57,7 @@ import org.junit.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -55,7 +65,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ManagedServerUpIteratorStepTest {
+public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements WatchListener<V1Pod>,
+        StubWatchFactory.AllWatchesClosedListener {
 
   protected static final String DOMAIN_NAME = "domain1";
   private static final String NS = "namespace";
@@ -81,6 +92,10 @@ public class ManagedServerUpIteratorStepTest {
   private static final String[] MANAGED_SERVER_NAMES =
           IntStream.rangeClosed(1, MAX_SERVERS)
                   .mapToObj(ManagedServerUpIteratorStepTest::getManagedServerName).toArray(String[]::new);
+  private final AtomicBoolean stopping = new AtomicBoolean(false);
+  private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
+  private final PodWatcher watcher = createWatcher(NS, stopping, INITIAL_RESOURCE_VERSION);
+  final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0, 5);
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -158,32 +173,39 @@ public class ManagedServerUpIteratorStepTest {
 
   @Before
   public void setUp() throws NoSuchFieldException {
-    mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
+    mementos.add(TestUtils.silenceOperatorLogger()
+            .ignoringLoggedExceptions(ApiException.class, InterruptedException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(StubWatchFactory.install());
+    StubWatchFactory.setListener(this);
 
     testSupport.defineResources(domain);
     testSupport
             .addToPacket(ProcessingConstants.DOMAIN_TOPOLOGY, domainConfig)
             .addDomainPresenceInfo(domainPresenceInfo);
-    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> schedulePodUpdates((V1Pod) p));
+    testSupport.doOnCreate(POD, p -> schedulePodUpdates((V1Pod) p));
+    testSupport.addComponent(
+            ProcessingConstants.PODWATCHER_COMPONENT_NAME,
+            PodAwaiterStepFactory.class,
+            watcher);
   }
 
   // Invoked when a pod is created to simulate the Kubernetes behavior in which a pod is scheduled on a node
   // very quickly, and then takes much longer actually to become ready.
   void schedulePodUpdates(V1Pod pod) {
-    testSupport.schedule(() -> setPodScheduled(getServerName(pod)), SCHEDULING_DELAY_MSEC, TimeUnit.MILLISECONDS);
-    testSupport.schedule(() -> setPodReady(getServerName(pod)), POD_READY_DELAY_SEC, TimeUnit.SECONDS);
+    testSupport.schedule(() -> setPodScheduled(pod), SCHEDULING_DELAY_MSEC, TimeUnit.MILLISECONDS);
+    testSupport.schedule(() -> setPodReady(pod), POD_READY_DELAY_SEC, TimeUnit.SECONDS);
   }
 
-  // Marks the pod with the specified server name as having been scheduled on a Kubernetes node.
-  private void setPodScheduled(String serverName) {
-    Objects.requireNonNull(domainPresenceInfo.getServerPod(serverName).getSpec()).setNodeName("aNode");
+  // Marks the specified pod as having been scheduled on a Kubernetes node.
+  private void setPodScheduled(V1Pod pod) {
+    Objects.requireNonNull(pod.getSpec()).setNodeName("aNode");
   }
 
-  // Marks the pod with the specified server name as having become ready.
-  private void setPodReady(String serverName) {
-    domainPresenceInfo.getServerPod(serverName).status(createPodReadyStatus());
+  // Marks the specified pod as having become ready.
+  private void setPodReady(V1Pod pod) {
+    pod.status(createPodReadyStatus());
   }
 
   private V1PodStatus createPodReadyStatus() {
@@ -194,9 +216,14 @@ public class ManagedServerUpIteratorStepTest {
 
   @After
   public void tearDown() throws Exception {
+    shutDownThreads();
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
+  }
+
+  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
+    return PodWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
   }
 
   @Test
@@ -357,5 +384,14 @@ public class ManagedServerUpIteratorStepTest {
             )
     );
 
+  }
+
+  @Override
+  public void receivedResponse(Watch.Response<V1Pod> response) {
+  }
+
+  @Override
+  public void allWatchesClosed() {
+    stopping.set(true);
   }
 }
