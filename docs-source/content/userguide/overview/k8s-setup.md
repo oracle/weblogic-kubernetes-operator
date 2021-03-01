@@ -6,7 +6,7 @@ weight: 2
 ---
 #### Cheat sheet for setting up Kubernetes
 
-If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:
+If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, [Microsoft Azure](/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/), Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:
 
 "Production" options:
 
@@ -16,7 +16,7 @@ If you need some help setting up a Kubernetes environment to experiment with the
 
 "Development/test" options:
 
-* Install [Docker for Mac](https://docs.docker.com/docker-for-mac/#kubernetes) and enable its embedded Kubernetes cluster (or register for the [Docker for Windows](https://beta.docker.com/form) beta and wait until Kubernetes is available there).
+* Install [Docker for Mac](https://docs.docker.com/docker-for-mac/#kubernetes) or [Docker for Windows](https://docs.docker.com/docker-for-windows/kubernetes/) and enable its embedded Kubernetes cluster.
 * We *do not* recommend or support other development/test options like Minikube, Minishift, kind, and so on.
 
 We have provided our hints and tips for several of these options in the sections below.

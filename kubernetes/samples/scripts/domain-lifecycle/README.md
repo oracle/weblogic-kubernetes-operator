@@ -74,3 +74,14 @@ $ stopDomain.sh -d domain1 -n weblogic-domain-1
 [INFO] Patching domain 'domain1' in namespace 'weblogic-domain-1' from serverStartPolicy='IF_NEEDED' to 'NEVER'.
 domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched domain 'domain1' in namespace 'weblogic-domain-1' with 'NEVER' start policy!
+```
+
+### Scripts to scale a WebLogic cluster
+
+The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute after it's value is updated. See the script `usage` information by using the `-h` option.
+```
+$ scaleCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1 -r 3
+[2021-02-26T19:04:14.335 UTC][INFO] Patching replicas for cluster 'cluster-1' to '3'.
+domain.weblogic.oracle/domain1 patched
+[2021-02-26T19:04:14.466 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+```
