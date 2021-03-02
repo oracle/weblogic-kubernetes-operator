@@ -100,7 +100,7 @@ namespace          domain            cluster    min  max  goal  current  ready
 ---------          ------            -------    ---  ---  ----  -------  -----
 ns-kvmt            mii-domain1       cluster-1  1    5    5     5        5
 weblogic-domain-1  domain1           cluster-1  0    4    2     2        2
-weblogic-domain-1  domain1           cluster-2  0    4    0     NA       NA
+weblogic-domain-1  domain1           cluster-2  0    4    0     0        0
 ```
 
 Use the following command to view the status of all WebLogic clusters in 'domain1' in 'weblogic-domain-1' namespace.
@@ -112,6 +112,6 @@ WebLogic Cluster Status -n "weblogic-domain-1" -d "domain1" -c "":
 namespace          domain   cluster    min  max  goal  current  ready
 ---------          ------   -------    ---  ---  ----  -------  -----
 weblogic-domain-1  domain1  cluster-1  0    4    2     2        2
-weblogic-domain-1  domain1  cluster-2  0    4    0     NA       NA
+weblogic-domain-1  domain1  cluster-2  0    4    0     0        0
 
 ```

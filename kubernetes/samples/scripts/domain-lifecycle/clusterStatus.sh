@@ -86,21 +86,20 @@ function clusterStatus() {
       fi
       __jp+='{"'$__ns_cur' "}'
       __jp+='{"'$__uid_cur' "}'
-      __jp+='{.clusterName}{" NA"}'
-      __jp+='{.minimumReplicas}{" NA"}'
-      __jp+='{.maximumReplicas}{" NA"}'
-      __jp+='{.replicasGoal}{" NA"}'
-      __jp+='{.replicas}{" NA"}'
+      __jp+='{.clusterName}{" ~!"}'
+      __jp+='{.minimumReplicas}{" ~!"}'
+      __jp+='{.maximumReplicas}{" ~!"}'
+      __jp+='{.replicasGoal}{" ~!"}'
+      __jp+='{.replicas}{" ~!"}'
       __jp+='{.readyReplicas}{" "}'
       __jp+='{"\n"}'
       __jp+='{end}'
 
       $__kubernetes_cli -n "$__ns_cur" get domain "$__uid_cur" -o=jsonpath="$__jp"
-    done | sed 's/ NA\([0-9][0-9]*\)/ \1/g' \
-         | sed 's/ NA / 0 /g' \
-         | sed 's/ NA $/ 0 /g' \
-         | sort --version-sort
 
+    done | sed 's/~!\([0-9][0-9]*\)/\1/g'\
+         | sed 's/~!/0/g' \
+         | sort --version-sort
 
   ) | column --table
 
