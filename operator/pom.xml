@@ -107,7 +107,7 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <excludeGroupIds>io.prometheus</excludeGroupIds>
+              <excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
