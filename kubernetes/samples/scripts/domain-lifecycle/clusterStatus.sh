@@ -9,7 +9,7 @@ cat<<EOF
 Usage:
   $(basename $0) [-n DomainNS] [-d DomainUID] [-c clusterName] [-m kubernetesCli] [-h]
 
-  This script dumps a table of WebLogic Cluster status
+  This script displays a table of WebLogic Cluster status
   replica information for each given WebLogic cluster.
 
   Omit '-n' or set it to "" to indicate all namespaces.
@@ -37,7 +37,7 @@ EOF
 exit $1
 }
 
-# function to dump the domain cluster status in a table
+# function to display the domain cluster status in a table
 # $1=ns $2=uid, pass "" to mean "any"
 function clusterStatus() {
   local __ns="${1:-}"
