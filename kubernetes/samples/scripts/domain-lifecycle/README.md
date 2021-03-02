@@ -86,11 +86,11 @@ domain.weblogic.oracle/domain1 patched
 [2021-02-26T19:04:14.466 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
 ```
 
-### Script to view the status of any WebLogic cluster(s)
+### Script to view the status of any WebLogic cluster
 
-The `clusterStatus.sh` script can be used to view the domain resource cluster status of any WebLogic cluster. This script will print the status of any WebLogic cluster in a particular domain in a namespaces or all clusters in all domains across all different namespaces. See the script `usage` information by using the `-h` option.
+The `clusterStatus.sh` script can be used to view the status of any WebLogic cluster in the WebLogic domain managed by WKO. The status contains information about the minimum, maximum, goal, current, and ready replica count for a WebLogic cluster. This script dumps a table containing the status for WebLogic cluster(s) in one or more domains across one or more namespaces. See the script `usage` information by using the `-h` option.
 
-Use the following command to print status of all clusters in all domains across all namespaces.
+Use the following command to view the status of all WebLogic clusters in all domains across all namespaces.
 ```
 $ clusterStatus.sh
 
@@ -103,7 +103,7 @@ weblogic-domain-1  domain1           cluster-1  0    4    2     2        2
 weblogic-domain-1  domain1           cluster-2  0    4    0     NA       NA
 ```
 
-Use the following command to print status of all clusters in 'domain1' in 'weblogic-domain-1' namespace.
+Use the following command to view the status of all WebLogic clusters in 'domain1' in 'weblogic-domain-1' namespace.
 ```
 $ clusterStatus.sh -d domain1 -n weblogic-domain-1
 
