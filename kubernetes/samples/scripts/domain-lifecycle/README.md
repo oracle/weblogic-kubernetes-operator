@@ -1,4 +1,4 @@
-### Domain lifecycle sample scripts
+### Domain life cycle sample scripts
 
 The operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 
@@ -78,7 +78,7 @@ domain.weblogic.oracle/domain1 patched
 
 ### Script to scale a WebLogic cluster
 
-The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute after it's value is updated. See the script `usage` information by using the `-h` option.
+The `scaleCluster.sh` script scales a WebLogic cluster by patching the `spec.clusters[<cluster-name>].replicas` attribute of the domain resource to the specified value. The operator will perform the scaling operation for the WebLogic cluster based on the specified value of the `replicas` attribute after its value is updated. See the script `usage` information by using the `-h` option.
 ```
 $ scaleCluster.sh -d domain1 -n weblogic-domain-1 -c cluster-1 -r 3
 [2021-02-26T19:04:14.335 UTC][INFO] Patching replicas for cluster 'cluster-1' to '3'.
@@ -86,9 +86,9 @@ domain.weblogic.oracle/domain1 patched
 [2021-02-26T19:04:14.466 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
 ```
 
-### Script to view the status of any WebLogic cluster
+### Script to view the status of a WebLogic cluster
 
-The `clusterStatus.sh` script can be used to view the status of any WebLogic cluster in the WebLogic domain managed by the operator. The WebLogic Cluster Status contains information about the minimum, maximum, goal, current, and ready replica count for a WebLogic cluster. This script dumps a table containing the status for WebLogic cluster(s) in one or more domains across one or more namespaces. See the script `usage` information by using the `-h` option.
+The `clusterStatus.sh` script can be used to view the status of a WebLogic cluster in the WebLogic domain managed by the operator. The WebLogic Cluster Status contains information about the minimum, maximum, goal, current, and ready replica count for a WebLogic cluster. This script displays a table containing the status for WebLogic clusters in one or more domains across one or more namespaces. See the script `usage` information by using the `-h` option.
 
 Use the following command to view the status of all WebLogic clusters in all domains across all namespaces.
 ```

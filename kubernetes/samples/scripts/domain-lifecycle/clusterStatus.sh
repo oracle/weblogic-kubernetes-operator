@@ -20,13 +20,11 @@ Usage:
   Use '-h' to get this help.
 
 Examples:
-  - Dump cluster 'c1' with uid 'myuid' in ns 'myns': $(basename $0) -n myns -d myuid -c c1
-
-  - Dump all clusters with uid 'myuid' in ns 'myns': $(basename $0) -n myns -d myuid
-   
-  - Dump all clusters and all uid in ns 'myns':    $(basename $0) -n myns
-
-  - Dump all uid across all ns:                    $(basename $0)
+  - Dump all uid across all ns                       : $(basename $0)
+  - Dump all clusters with uid 'myuid' across all ns : $(basename $0) -d myuid
+  - Dump all clusters and all uid in ns 'myns'       : $(basename $0) -n myns
+  - Dump all clusters with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid
+  - Dump cluster 'c1' with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid -c c1
 
 Sample output:
   WebLogic Cluster Status -n "" -d "" -c "":
@@ -54,8 +52,8 @@ function clusterStatus() {
   local __cluster_name="${3:-}"
   local __kubernetes_cli="${4:-kubectl}"
 
-  if ! [ -x "$(command -v ${__kubernetesCli})" ]; then
-    echo "@@Error: Kubernetes CLI '${__kubernetesCli}' is not installed."
+  if ! [ -x "$(command -v ${__kubernetes_cli})" ]; then
+    echo "@@Error: Kubernetes CLI '${__kubernetes_cli}' is not installed."
     exit 1
   fi
   echo
@@ -108,8 +106,7 @@ function clusterStatus() {
 domainNS=
 domainUID=
 clusterName=
-__kubernetesCli=${KUBERNETES_CLI:-kubectl}
-validateErrors=false
+kubernetesCli=${KUBERNETES_CLI:-kubectl}
 
 set +u
 while [ ! -z ${1+x} ]; do
@@ -117,7 +114,7 @@ while [ ! -z ${1+x} ]; do
     -n) domainNS="$2"; shift ;;
     -d) domainUID="$2"; shift ;;
     -c) clusterName="$2"; shift ;;
-    -m) __kubernetesCli="$2"; shift ;;
+    -m) kubernetesCli="$2"; shift ;;
     -h) usage 0;;
     *)  echo "@@Error: unrecognized parameter '$1', pass '-h' for help."; exit 1 ;;
   esac
@@ -125,4 +122,4 @@ while [ ! -z ${1+x} ]; do
 done
 set -u
 
-clusterStatus "$domainNS" "$domainUID" "$clusterName" "$__kubernetesCli"
+clusterStatus "$domainNS" "$domainUID" "$clusterName" "$kubernetesCli"
