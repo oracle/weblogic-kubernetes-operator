@@ -782,17 +782,17 @@ class TopologyGenerator(Generator):
       name=self.name(nap)
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
-    if nap.getListenPort() == 0:
-      trace("SEVERE", "Invalid listen port value in the WebLogic Domain " + str(nap.getListenPort()) + " for " + server.getName()
-            + 'Network Channel ' + nap.getName())
-      sys.exit(1)
+    nap_listen_port = nap.getListenPort()
+    # if it is not set, then default to 7001
+    if nap_listen_port == 0:
+      nap_listen_port = 7001
 
-    self.writeln("    listenPort: " + str(nap.getListenPort()))
-    if nap.getPublicPort() == 0:
-      trace("SEVERE", "Invalid public listen port value in the WebLogic Domain" + str(nap.getListenPort()) + " for " + server.getName()
-        + 'Network Channel ' + nap.getName())
-      sys.exit(1)
-    self.writeln("    publicPort: " + str(nap.getPublicPort()))
+    self.writeln("    listenPort: " + str(nap_listen_port))
+    # if it is not set, then defaul to listen port
+    if nap.getPublicPort() != 0:
+      self.writeln("    publicPort: " + str(nap.getPublicPort()))
+    else:
+      self.writeln("    publicPort: " + str(nap_listen_port))
 
   def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
     '''
@@ -1703,8 +1703,8 @@ def getRealSSLListenPort(server, sslport):
       return 7002
 
   if sslport == 0:
-    trace("SEVERE", "Invalid SSL listen port value " + sslport + " for " + str(server.getName()))
-    sys.exit(1)
+    sslport = 7002
+
   return sslport
 
 def getRealListenPort(server):
@@ -1714,8 +1714,6 @@ def getRealListenPort(server):
   # wlst mbean returns 7100 and we cannot use this in the topology.xml
   # when setting up the container port since the actual listening port is
   # 7001
-  print 'DEBUG: ' + server.getName() + " port " + str(server.getListenPort())
-  print server_listening_ports
   if server_listening_ports.has_key(server.getName()):
     port = server_listening_ports[server.getName()]
     if port is None:
@@ -1725,8 +1723,7 @@ def getRealListenPort(server):
 
   port = server.getListenPort()
   if port == 0:
-    trace("SEVERE", "Invalid listen port value in the WebLogic Domain " + port + " for " + str(server.getName()))
-    sys.exit(1)
+    return 7001
 
   return server.getListenPort()
 
