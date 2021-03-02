@@ -1590,13 +1590,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
   }
 
-  // TODO: add tests for dynamic updates
-  // 1. Only dynamic changes - patch the pods with new zip hash value, introspect version, sha256 hash.
-  //       mbeans changes that do not require restart.
-  // 2. non dynamic changes (default)
-  // 3. non dynamic changes (auto roll)
-
-
   interface PodMutator {
     void mutate(V1Pod pod);
   }
