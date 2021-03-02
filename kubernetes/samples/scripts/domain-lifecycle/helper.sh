@@ -774,9 +774,6 @@ function validatePythonAvailable {
 
 # try to execute kubernetes cli to see whether cli is available
 function validateKubernetesCliAvailable {
-  if [ ${#} -gt 0 ]; then
-    kubernetesCli=$1
-  fi
   if ! [ -x "$(command -v ${kubernetesCli})" ]; then
     validationError "${kubernetesCli} is not installed"
   fi
