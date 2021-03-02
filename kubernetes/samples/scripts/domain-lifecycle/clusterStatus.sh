@@ -84,14 +84,14 @@ function clusterStatus() {
       else
         __jp+='{range .status.clusters[?(@.clusterName=='\"$__cluster_name\"')]}'
       fi
-      __jp+='{"'$__ns_cur' "}'
-      __jp+='{"'$__uid_cur' "}'
-      __jp+='{.clusterName}{" ~!"}'
-      __jp+='{.minimumReplicas}{" ~!"}'
-      __jp+='{.maximumReplicas}{" ~!"}'
-      __jp+='{.replicasGoal}{" ~!"}'
-      __jp+='{.replicas}{" ~!"}'
-      __jp+='{.readyReplicas}{" "}'
+      __jp+='{"'$__ns_cur'"}'
+      __jp+='{" "}{"'$__uid_cur'"}'
+      __jp+='{" "}{.clusterName}'
+      __jp+='{" ~!"}{.minimumReplicas}'
+      __jp+='{" ~!"}{.maximumReplicas}'
+      __jp+='{" ~!"}{.replicasGoal}'
+      __jp+='{" ~!"}{.replicas}'
+      __jp+='{" ~!"}{.readyReplicas}'
       __jp+='{"\n"}'
       __jp+='{end}'
 
