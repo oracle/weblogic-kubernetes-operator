@@ -20,11 +20,11 @@ Usage:
   Use '-h' to get this help.
 
 Examples:
-  - Dump all uid across all ns                       : $(basename $0)
-  - Dump all clusters with uid 'myuid' across all ns : $(basename $0) -d myuid
-  - Dump all clusters and all uid in ns 'myns'       : $(basename $0) -n myns
-  - Dump all clusters with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid
-  - Dump cluster 'c1' with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid -c c1
+  - Display all uid across all ns                       : $(basename $0)
+  - Display all clusters with uid 'myuid' across all ns : $(basename $0) -d myuid
+  - Display all clusters and all uid in ns 'myns'       : $(basename $0) -n myns
+  - Display all clusters with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid
+  - Display cluster 'c1' with uid 'myuid' in ns 'myns'  : $(basename $0) -n myns -d myuid -c c1
 
 Sample output:
   WebLogic Cluster Status -n "" -d "" -c "":
@@ -96,7 +96,11 @@ function clusterStatus() {
       __jp+='{end}'
 
       $__kubernetes_cli -n "$__ns_cur" get domain "$__uid_cur" -o=jsonpath="$__jp"
-    done | sed 's/ NA\([0-9][0-9]*\)/ \1/g' | sort --version-sort
+    done | sed 's/ NA\([0-9][0-9]*\)/ \1/g' \
+         | sed 's/ NA / 0 /g' \
+         | sed 's/ NA $/ 0 /g' \
+         | sort --version-sort
+
 
   ) | column --table
 
