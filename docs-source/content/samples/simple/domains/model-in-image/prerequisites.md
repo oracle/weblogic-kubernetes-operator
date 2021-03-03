@@ -166,7 +166,7 @@ weight: 1
      --path /tmp/mii-sample/model-images/weblogic-deploy.zip
    ```
 
-   Note that the image tool `cache deleteEntry` command above does nothing
+   Note that the WebLogic Image Tool `cache deleteEntry` command does nothing
    if the `wdt_latest` key doesn't have a corresponding cache entry. It is included
    because the WIT cache lookup information is stored in the `$HOME/cache/.metadata`
    file by default, and if the cache already
