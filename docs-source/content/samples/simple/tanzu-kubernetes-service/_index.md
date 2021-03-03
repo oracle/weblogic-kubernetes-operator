@@ -50,14 +50,6 @@ k8s-cluster-101-md-0-577b7dc766-p2gkz   Ready      <none>   2d20h   v1.18.6+vmwa
 
 You will need an Oracle Container Registry account. The following steps will direct you to accept the Oracle Standard Terms and Restrictions to pull the WebLogic Server images.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
 
-Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com/).
-
-  - First time users, [follow these directions](/weblogic-kubernetes-operator/userguide/managing-domains/domain-in-image/base-images/#obtaining-standard-images-from-the-oracle-container-registry).   
-  - Find and then pull the WebLogic 12.2.1.4 install image:
-     ```bash
-     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
-     ```
-
 #### Install WebLogic Server Kubernetes Operator
 
 The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.

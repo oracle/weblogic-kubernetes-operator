@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,6 @@ import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -54,7 +53,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -64,6 +62,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -105,17 +104,17 @@ class ItServerStartPolicy {
   public static final String START_CLUSTER_SCRIPT = "startCluster.sh";
   public static final String STOP_DOMAIN_SCRIPT = "stopDomain.sh";
   public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
+  public static final String managedServerNamePrefix = "managed-server";
+  public static final String CLUSTER_1 = "cluster-1";
+  public static final String CLUSTER_2 = "cluster-2";
 
-  private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
-  private static int replicaCount = 1;
-  private static String domainUid = "mii-start-policy";
-  private StringBuffer checkCluster = null;
+  private static final int replicaCount = 1;
+  private static final String domainUid = "mii-start-policy";
 
   private final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-managed-server";
+  private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
@@ -131,14 +130,14 @@ class ItServerStartPolicy {
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
+    ConditionFactory withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(10, SECONDS)
+            .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
@@ -168,12 +167,12 @@ class ItServerStartPolicy {
     String configMapName = "wls-ext-configmap";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.wls.ext.config.yaml"));
+            Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, configMapName);
+    createDomainResource(domainNamespace, adminSecretName,
+            encryptionSecretName,
+            configMapName);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -294,13 +293,13 @@ class ItServerStartPolicy {
     Callable<Boolean> isDynRestarted = 
          assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, 
          domainNamespace, dynTs));
-    assertFalse(assertDoesNotThrow(() -> isDynRestarted.call().booleanValue()),
+    assertFalse(assertDoesNotThrow(isDynRestarted::call),
          "Dynamic managed server pod must not be restated");
 
     Callable<Boolean> isCfgRestarted = 
          assertDoesNotThrow(() -> isPodRestarted(configServerPodName, 
          domainNamespace, cfgTs));
-    assertFalse(assertDoesNotThrow(() -> isCfgRestarted.call().booleanValue()),
+    assertFalse(assertDoesNotThrow(isCfgRestarted::call),
          "Configured managed server pod must not be restated");
 
     // verify that the sample script can not start admin server
@@ -350,12 +349,12 @@ class ItServerStartPolicy {
     checkPodReadyAndServiceExists(configServerPodName, 
               domainUid, domainNamespace);
     // startCluster.sh does not take any action on a running cluster
-    String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-2");
+    String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
     assertTrue(result.contains("No changes needed"), "startCluster.sh shouldn't make changes");
 
     // Verify dynamic server are shutdown after stopCluster script execution
     logger.info("Stop configured cluster using the script");
-    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-2");
+    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
 
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("Config cluster shutdown success");
@@ -366,15 +365,15 @@ class ItServerStartPolicy {
     Callable<Boolean> isDynRestarted = 
          assertDoesNotThrow(() -> isPodRestarted(dynamicServerPodName, 
          domainNamespace, dynTs));
-    assertFalse(assertDoesNotThrow(() -> isDynRestarted.call().booleanValue()),
+    assertFalse(assertDoesNotThrow(isDynRestarted::call),
          "Dynamic managed server pod must not be restated");
 
     // stopCluster.sh does not take any action on a stopped cluster
-    result = executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-2");
+    result = executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
     assertTrue(result.contains("No changes needed"), "stopCluster.sh shouldn't make changes");
     // Verify dynamic server are started after startCluster script execution
     logger.info("Start configured cluster using the script");
-    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-2");
+    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2);
     checkPodReadyAndServiceExists(configServerPodName, 
               domainUid, domainNamespace);
     logger.info("Configured cluster restart success");
@@ -400,30 +399,30 @@ class ItServerStartPolicy {
     DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
     checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
     // startCluster.sh does not take any action on a running cluster
-    String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-1");
+    String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
     assertTrue(result.contains("No changes needed"), "startCluster.sh shouldn't make changes");
 
     // Verify dynamic server are shut down after stopCluster script execution
     logger.info("Stop dynamic cluster using the script");
-    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-1");
+    executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
 
     checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("Dynamic cluster shutdown success");
 
     // stopCluster.sh does not take any action on a stopped cluster
-    result = executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-1");
+    result = executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
     assertTrue(result.contains("No changes needed"), "stopCluster.sh shouldn't make changes");
 
     // check managed server from other cluster are not affected
     Callable<Boolean> isCfgRestarted = 
          assertDoesNotThrow(() -> isPodRestarted(configServerPodName, 
          domainNamespace, cfgTs));
-    assertFalse(assertDoesNotThrow(() -> isCfgRestarted.call().booleanValue()),
+    assertFalse(assertDoesNotThrow(isCfgRestarted::call),
          "Configured managed server pod must not be restated");
 
     // Verify clustered server are started after startCluster script execution
     logger.info("Start dynamic cluster using the script");
-    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, "cluster-1");
+    executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
     checkPodReadyAndServiceExists(dynamicServerPodName, 
               domainUid, domainNamespace);
     logger.info("Dynamic cluster restart success");
@@ -873,7 +872,6 @@ class ItServerStartPolicy {
 
     // verify that the script can not stop a non-existing cluster
     String wrongClusterName = "cluster-3";
-    regex = ".*" + wrongClusterName + ".*\\s*not part of domain";
     result =  assertDoesNotThrow(() ->
         executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, wrongClusterName, "", false),
         String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
@@ -1098,9 +1096,65 @@ class ItServerStartPolicy {
     }
   }
 
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
-    Map<String, String> secretMap = new HashMap();
+  /**
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh while keeping the replica count constant.
+   * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
+   * is set at the managed server level but serverStartPolicy is not set at the managed server level.
+   */
+  @Order(17)
+  @Test
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
+  public void testRestartingMSWithExplicitServerStartStateWhileKeepingReplicaConstant() {
+    String serverName = managedServerNamePrefix + 1;
+    String serverPodName = managedServerPrefix + 1;
+    String keepReplicasConstant = "-k";
+
+    // shut down the dynamic cluster managed server using the script stopServer.sh and keep replicas constant
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicasConstant);
+    checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    logger.info("managed server " + serverName + " stopped successfully.");
+
+    // start the dynamic cluster managed server using the script startServer.sh and keep replicas constant
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName, keepReplicasConstant);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+    logger.info("managed server " + serverName + " restarted successfully.");
+  }
+
+  /**
+   * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
+   * stopServer.sh and startServer.sh along with changing the replica count.
+   * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
+   * is set at the managed server level but serverStartPolicy is not set at the managed server level.
+   */
+  @Order(18)
+  @Test
+  @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
+  public void testRestartingMSWithExplicitServerStartStateWhileVaryingReplicaCount() {
+    String serverName = managedServerNamePrefix + 1;
+    String serverPodName = managedServerPrefix + 1;
+    String keepReplicasConstant = "-k";
+
+    // shut down managed server3 using the script stopServer.sh and keep replicas constant
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE,
+            managedServerNamePrefix + 3, keepReplicasConstant);
+    checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
+
+    // shut down the dynamic cluster managed server using the script stopServer.sh and let replicas decrease
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodDeleted(serverPodName, domainUid, domainNamespace);
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1, domainUid, domainNamespace, 1)));
+    logger.info("managed server " + serverName + " stopped successfully.");
+
+    // start the dynamic cluster managed server using the script startServer.sh and let replicas increase
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1, domainUid, domainNamespace, 2)));
+    logger.info("managed server " + serverName + " restarted successfully.");
+  }
+
+  private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
+    Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
     boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
@@ -1112,24 +1166,24 @@ class ItServerStartPolicy {
   }
 
   private static void createDomainResource(
-      String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
-      int replicaCount, String configmapName) {
+          String domNamespace, String adminSecretName,
+          String encryptionSecretName,
+          String configmapName) {
     List<String> securityList = new ArrayList<>();
     // create the domain CR
     Domain domain = new Domain()
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
-                    .name(domainUid)
+                    .name(ItServerStartPolicy.domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
                     .allowReplicasBelowMinDynClusterSize(false)
-                    .domainUid(domainUid)
+                    .domainUid(ItServerStartPolicy.domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
+                            .name(TestConstants.OCIR_SECRET_NAME))
                     .webLogicCredentialsSecret(new V1SecretReference()
                             .name(adminSecretName)
                             .namespace(domNamespace))
@@ -1149,13 +1203,13 @@ class ItServerStartPolicy {
                                             .channelName("default")
                                             .nodePort(0))))
                     .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
+                            .clusterName(CLUSTER_1)
+                            .replicas(ItServerStartPolicy.replicaCount)
                             .serverStartPolicy("IF_NEEDED")
                             .serverStartState("RUNNING"))
                     .addClustersItem(new Cluster()
-                            .clusterName("cluster-2")
-                            .replicas(replicaCount)
+                            .clusterName(CLUSTER_2)
+                            .replicas(ItServerStartPolicy.replicaCount)
                             .serverStartPolicy("IF_NEEDED")
                             .serverStartState("RUNNING"))
                     .addManagedServersItem(new ManagedServer()
@@ -1176,7 +1230,6 @@ class ItServerStartPolicy {
                             .serverStartState("RUNNING"))
                     .addManagedServersItem(new ManagedServer()
                             .serverName("managed-server1")
-                            .serverStartPolicy("IF_NEEDED")
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .secrets(securityList)
@@ -1187,12 +1240,12 @@ class ItServerStartPolicy {
                         .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
+            ItServerStartPolicy.domainUid, domNamespace);
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
+                    ItServerStartPolicy.domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
+                    + "for %s in namespace %s", ItServerStartPolicy.domainUid, domNamespace));
   }
 
   /*
@@ -1201,18 +1254,19 @@ class ItServerStartPolicy {
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkManagedServerConfiguration(String managedServer) {
-    ExecResult result = null;
+    ExecResult result;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster.append("http://").append(K8S_NODEPORT_HOST).append(":").append(adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
+    logger.info("checkManagedServerConfiguration: curl command {0}",
+            new String(checkCluster));
     try {
       result = exec(new String(checkCluster), true);
     } catch (Exception ex) {
@@ -1220,11 +1274,7 @@ class ItServerStartPolicy {
       return false;
     }
     logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    if (result.stdout().equals("200")) {
-      return true;
-    } else {
-      return false;
-    }
+    return result.stdout().equals("200");
   }
 
   // copy samples directory to a temporary location

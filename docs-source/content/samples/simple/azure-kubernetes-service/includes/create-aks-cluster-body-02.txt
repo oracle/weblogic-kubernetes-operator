@@ -1,0 +1,53 @@
+#### Create the AKS cluster
+
+This sample requires that you disable the AKS addon `http_application_routing` by default.  If you want to enable  `http_application_routing`, then follow [HTTP application routing](https://docs.microsoft.com/azure/aks/http-application-routing).
+
+Run the following commands to create the AKS cluster instance.
+
+```bash
+# Change these parameters as needed for your own environment
+# Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
+$ export NAME_PREFIX=wls
+# Used to generate resource names.
+$ export TIMESTAMP=`date +%s`
+$ export AKS_CLUSTER_NAME="${NAME_PREFIX}aks${TIMESTAMP}"
+$ export AKS_PERS_RESOURCE_GROUP="${NAME_PREFIX}resourcegroup${TIMESTAMP}"
+$ export AKS_PERS_LOCATION=eastus
+$ export SP_APP_ID=<appId from the az ad sp create-for-rbac command>
+$ export SP_CLIENT_SECRET=<password from the az ad sp create-for-rbac command>
+
+$ az group create --name $AKS_PERS_RESOURCE_GROUP --location $AKS_PERS_LOCATION
+$ az aks create \
+   --resource-group $AKS_PERS_RESOURCE_GROUP \
+   --name $AKS_CLUSTER_NAME \
+   --node-count 2 \
+   --generate-ssh-keys \
+   --nodepool-name nodepool1 \
+   --node-vm-size Standard_DS2_v2 \
+   --location $AKS_PERS_LOCATION \
+   --service-principal $SP_APP_ID \
+   --client-secret $SP_CLIENT_SECRET
+```
+
+Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.
+
+After the deployment finishes, run the following command to connect to the AKS cluster. This command updates your local `~/.kube/config` so that subsequent `kubectl` commands interact with the named AKS cluster.
+
+```bash
+$ az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
+```
+
+Successful output will look similar to:
+
+```bash
+Merged "wlsaks1596087429" as current context in /home/username/.kube/config
+```
+
+After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster:
+
+```shell
+$ kubectl get nodes -o wide
+NAME                                  STATUS   ROLES   AGE     VERSION    INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+aks-pool1haiche-33688868-vmss000000   Ready    agent   4m25s   v1.17.13   10.240.0.4    <none>        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
+aks-pool1haiche-33688868-vmss000001   Ready    agent   4m12s   v1.17.13   10.240.0.5    <none>        Ubuntu 16.04.7 LTS   4.15.0-1098-azure   docker://19.3.12
+```

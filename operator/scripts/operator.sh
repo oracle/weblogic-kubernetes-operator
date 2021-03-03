@@ -54,6 +54,9 @@ if [[ ! -z "$JAVA_LOGGING_LEVEL" ]]; then
   fi
 fi
 
+sed -i -e "s|JAVA_LOGGING_MAXSIZE|${JAVA_LOGGING_MAXSIZE:-20000000}|g" $LOGGING_CONFIG
+sed -i -e "s|JAVA_LOGGING_COUNT|${JAVA_LOGGING_COUNT:-10}|g" $LOGGING_CONFIG
+
 if [ "${MOCK_WLS}" == 'true' ]; then
   MOCKING_WLS="-DmockWLS=true"
 fi
@@ -64,7 +67,7 @@ cp /operator/logstash.conf /logs/logstash.conf
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
-# Container memory optimizaton flags
+# Container memory optimization flags
 HEAP="-XshowSettings:vm"
 
 # Start operator
