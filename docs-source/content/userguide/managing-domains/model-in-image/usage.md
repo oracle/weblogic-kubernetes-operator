@@ -169,9 +169,9 @@ Here are the required Domain YAML file and model YAML file settings for Model in
   ```
   domainInfo:
       RCUDbInfo:
-          rcu_prefix:          '@@SECRET:sample-domain1-rcu-access/rcu_prefix@@'
-          rcu_schema_password: '@@SECRET:sample-domain1-rcu-access/rcu_schema_password@@'
-          rcu_db_conn_string:  '@@SECRET:sample-domain1-rcu-access/rcu_db_conn_string@@'
+          rcu_prefix:          '@@SECRET:sample-domain1-rcu-access:rcu_prefix@@'
+          rcu_schema_password: '@@SECRET:sample-domain1-rcu-access:rcu_schema_password@@'
+          rcu_db_conn_string:  '@@SECRET:sample-domain1-rcu-access:rcu_db_conn_string@@'
 
   ```
 
