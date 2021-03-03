@@ -342,8 +342,8 @@ public abstract class JobStepContext extends BasePodStepContext {
             .secret(getRuntimeEncryptionSecretVolume()));
   }
 
-  protected V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container container = super.createContainer(tuningParameters)
+  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
+    V1Container container = super.createPrimaryContainer(tuningParameters)
         .addVolumeMountsItem(readOnlyVolumeMount(SECRETS_VOLUME, SECRETS_MOUNT_PATH))
         .addVolumeMountsItem(readOnlyVolumeMount(SCRIPTS_VOLUME, SCRIPTS_MOUNTS_PATH))
         .addVolumeMountsItem(

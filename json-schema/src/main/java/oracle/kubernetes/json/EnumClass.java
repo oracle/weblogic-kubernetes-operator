@@ -19,7 +19,7 @@ public @interface EnumClass {
    *
    * @return enum class
    */
-  Class<? extends java.lang.Enum> value();
+  Class<? extends java.lang.Enum<?>> value();
 
   /**
    * Enum qualifier.

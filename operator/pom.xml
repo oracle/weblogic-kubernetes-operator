@@ -349,6 +349,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+        <groupId>com.networknt</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>1.0.49</version>
+    </dependency>
+    <dependency>
       <groupId>org.httpunit</groupId>
       <artifactId>httpunit</artifactId>
       <scope>test</scope>
