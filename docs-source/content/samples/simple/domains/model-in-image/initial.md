@@ -157,7 +157,7 @@ The application displays important details about the WebLogic Server instance th
 
 #### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
@@ -174,7 +174,7 @@ $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdepl
 
 #### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
+In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
 ```
 CLUSTER_SIZE=5
