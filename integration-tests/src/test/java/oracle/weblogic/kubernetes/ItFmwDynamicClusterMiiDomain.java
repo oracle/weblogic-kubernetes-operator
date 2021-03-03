@@ -63,7 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Test to creat a FMW dynamic domain in model in image.
  */
-@DisplayName("Test to Creat a FMW Dynamic Domain with Dynamic Cluster using model in image")
+@DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
 public class ItFmwDynamicClusterMiiDomain {
 
