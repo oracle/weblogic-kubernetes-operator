@@ -91,6 +91,10 @@ Documentation for APIs:
 
 * See the [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
+### Oracle support
+
+To access Oracle support for running WebLogic Server domains on Kubernetes platforms, see [WebLogic Server Certifications on Kubernetes in My Oracle Support Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2349228.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
+
 ### Need more help? Have a suggestion? Come and say, "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
