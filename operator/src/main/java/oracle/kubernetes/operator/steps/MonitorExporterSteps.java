@@ -43,7 +43,7 @@ public class MonitorExporterSteps {
   private static final int READY_RECHECK_INTERVAL = 2;
 
   /**
-   * Creates a step to initiate processing for all servers in the domain for which a configuration is define,
+   * Creates a step to initiate processing for all servers in the domain for which a configuration is defined,
    * checking the configuration of each exporter sidecar and updating it if necessary.
    *
    * Expects packet to contain DomainPresenceInfo and:

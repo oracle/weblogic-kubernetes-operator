@@ -33,7 +33,7 @@ public class CrdSchemaGeneratorTest {
 
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN_V2_SAMPLE_YAML, DOMAIN_V2_SAMPLE_YAML_2, DOMAIN_V2_SAMPLE_YAML_3,
-        DOMAIN_V2_SAMPLE_YAML_4, DOMAIN_V2_SAMPLE_YAML_5})
+                          DOMAIN_V2_SAMPLE_YAML_4, DOMAIN_V2_SAMPLE_YAML_5})
   void validateSchemaAgainstSamples(String fileName) throws IOException {
     final JsonNode jsonToValidate = convertToJson(fileName);
     final JsonSchema schema = createJsonSchema(Domain.class);

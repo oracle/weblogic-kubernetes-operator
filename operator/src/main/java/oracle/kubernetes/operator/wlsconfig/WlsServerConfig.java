@@ -228,11 +228,6 @@ public class WlsServerConfig {
     this.listenPort = listenPort;
   }
 
-  public PortDetails getListPortDetails() {
-    return listenPort == null ? null : new PortDetails(listenPort, false);
-  }
-
-
   /**
    * Return the configured listen address of this WLS server.
    *
@@ -315,10 +310,6 @@ public class WlsServerConfig {
   public WlsServerConfig setAdminPort(int adminPort) {
     this.adminPort = adminPort;
     return this;
-  }
-
-  public PortDetails getAdminPortDetails() {
-    return adminPort == null ? null : new PortDetails(adminPort, true);
   }
 
   public String getClusterName() {
