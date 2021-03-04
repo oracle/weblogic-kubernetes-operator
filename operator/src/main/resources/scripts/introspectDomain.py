@@ -1176,11 +1176,9 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
                  (action, http_enabled))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    # This needs to be enabled, since we are splitting from server default channel
+    self.writeln('<d:outbound-enabled %s>true</d:outbound-enabled>' % action)
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
