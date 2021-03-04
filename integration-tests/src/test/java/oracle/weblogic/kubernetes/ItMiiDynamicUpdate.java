@@ -293,10 +293,6 @@ class ItMiiDynamicUpdate {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -742,8 +738,9 @@ class ItMiiDynamicUpdate {
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    // Verifying introspector pod is deleted
+    logger.info("Verifying introspector pod is deleted");
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -790,8 +787,9 @@ class ItMiiDynamicUpdate {
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    // Verifying introspector pod is deleted
+    logger.info("Verifying introspector pod is deleted");
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -834,8 +832,9 @@ class ItMiiDynamicUpdate {
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    // Verifying introspector pod is deleted
+    logger.info("Verifying introspector pod is deleted");
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**
@@ -883,8 +882,9 @@ class ItMiiDynamicUpdate {
     // Patch a running domain with introspectVersion.
     patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
 
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    // Verifying introspector pod is deleted
+    logger.info("Verifying introspector pod is deleted");
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
   }
 
   /**

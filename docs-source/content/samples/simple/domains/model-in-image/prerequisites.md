@@ -137,7 +137,7 @@ weight: 1
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.9` and `1.9.7` respectively, call:
 
@@ -158,14 +158,26 @@ weight: 1
 
    $ unzip imagetool.zip
 
+   $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
+
    $ ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
      --path /tmp/mii-sample/model-images/weblogic-deploy.zip
    ```
 
-   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
+   Note that the WebLogic Image Tool `cache deleteEntry` command does nothing
+   if the `wdt_latest` key doesn't have a corresponding cache entry. It is included
+   because the WIT cache lookup information is stored in the `$HOME/cache/.metadata`
+   file by default, and if the cache already
+   has a version of WDT in its `--type wdt --version latest` location, then the
+   `cache addInstaller` command would fail.
+   For more information about the WIT cache, see the
+   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
+   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory,
+   plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
+   You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
 ### Additional prerequisites for JRF domains
 

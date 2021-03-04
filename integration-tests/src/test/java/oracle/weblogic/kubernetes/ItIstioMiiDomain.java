@@ -5,7 +5,10 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,15 +23,18 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
+import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -43,15 +49,23 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
@@ -74,7 +88,13 @@ class ItIstioMiiDomain {
   private static String domainNamespace = null;
 
   private String domainUid = "istio-mii";
+  private String configMapName = "dynamicupdate-istio-configmap";
   private final String clusterName = "cluster-1"; // do not modify
+  private final String adminServerPodName = domainUid + "-admin-server";
+  private final String managedServerPrefix = domainUid + "-managed-server";
+  private final String workManagerName = "newWM";
+  private final int replicaCount = 2;
+  
 
   // create standard, reusable retry/backoff policy
   private static ConditionFactory withStandardRetryPolicy = null;
@@ -122,11 +142,9 @@ class ItIstioMiiDomain {
    * Access web application thru istio http ingress port using curl.
    */
   @Test
+  @Order(1)
   @DisplayName("Create WebLogic Domain with mii model with istio")
   public void testIstioModelInImage() {
-    final String adminServerPodName = domainUid + "-admin-server";
-    final String managedServerPrefix = domainUid + "-managed-server";
-    final int replicaCount = 2;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -152,6 +170,8 @@ class ItIstioMiiDomain {
                             "weblogicenc"),
                     String.format("createSecret failed for %s", encryptionSecretName));
 
+    // create WDT config map without any files
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
     // create the domain object
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
@@ -159,7 +179,8 @@ class ItIstioMiiDomain {
                                       OCIR_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
-                              MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
+                              MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+                              configMapName);
 
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
@@ -244,9 +265,60 @@ class ItIstioMiiDomain {
     assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
+  /**
+   * Create a configmap containing model yaml to add a new work manager, 
+   * a min threads constraint, and a max threads constraint
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * before and after rolling restart.
+   * Verify new work manager is configured.
+   */
+  @Test
+  @Order(2)
+  @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
+  public void testMiiIstioDynamicUpdate() {
+    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
+
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    verifyIntrospectorRuns(domainUid, domainNamespace);
+
+    int istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+
+    String wmRuntimeUrl  = "http://" + K8S_NODEPORT_HOST + ":"  
+           + istioIngressPort + "/management/weblogic/latest/domainRuntime"
+           + "/serverRuntimes/managed-server1/applicationRuntimes"
+           + "/testwebapp/workManagerRuntimes/newWM/"
+           + "maxThreadsConstraintRuntime ";
+
+    boolean checkWm =
+          checkAppUsingHostHeader(wmRuntimeUrl, domainNamespace + ".org");
+    assertTrue(checkWm, "Failed to access WorkManagerRuntime");
+    logger.info("Found new work manager rintime");
+
+    verifyPodsNotRolled(domainNamespace, pods);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+  }
+
   private Domain createDomainResource(String domainUid, String domNamespace, 
            String adminSecretName, String repoSecretName, 
-           String encryptionSecretName, int replicaCount, String miiImage) {
+           String encryptionSecretName, int replicaCount, 
+           String miiImage, String configmapName) {
 
     // create the domain CR
     Domain domain = new Domain()
@@ -285,6 +357,8 @@ class ItIstioMiiDomain {
                          .readinessPort(8888))
                      .model(new Model()
                          .domainType("WLS")
+                         .configMap(configmapName)
+                         .onlineUpdate(new OnlineUpdate().enabled(true))
                          .runtimeEncryptionSecret(encryptionSecretName))
             .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
