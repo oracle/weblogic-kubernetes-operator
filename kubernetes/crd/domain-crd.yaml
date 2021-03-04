@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1a16844cf6ead8b19d22b9afdb0c9a6029c4d7cb3d3359d49a60d2d7c4bc5195
+    weblogic.sha256: 2506914ab8c0aa9dac4f78964f5ef4e75e92a71ff56706953509df8e2e93b370
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -36,7 +36,7 @@ spec:
                   image:
                     type: string
                     description: The WebLogic Monitoring Exporter sidecar image name.
-                      Defaults to oracle/weblogic-monitoring-exporter:2.0
+                      Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0
                   imagePullPolicy:
                     type: string
                     description: The image pull policy for the WebLogic Monitoring

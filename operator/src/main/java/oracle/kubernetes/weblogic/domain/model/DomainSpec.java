@@ -871,35 +871,35 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
   }
 
-  // todo - should these be put into alphabetical order? It is getting increasingly difficult to find items
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .appendSuper(super.toString())
-            .append("domainUID", domainUid)
+            .append("adminServer", adminServer)
+            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+            .append("clusters", clusters)
+            .append("configOverrides", configOverrides)
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("configuration", configuration)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
-            .append("introspectVersion", introspectVersion)
-            .append("configuration", configuration)
-            .append("serverStartPolicy", serverStartPolicy)
-            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("domainUID", domainUid)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
             .append("imagePullSecrets", imagePullSecrets)
-            .append("adminServer", adminServer)
-            .append("managedServers", managedServers)
-            .append("clusters", clusters)
-            .append("replicas", replicas)
+            .append("includeServerOutInPodLog", includeServerOutInPodLog)
+            .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
-            .append("monitoringExporter", monitoringExporter)
-            .append("includeServerOutInPodLog", includeServerOutInPodLog)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("managedServers", managedServers)
+            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
             .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
-            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown);
+            .append("monitoringExporter", monitoringExporter)
+            .append("replicas", replicas)
+            .append("serverStartPolicy", serverStartPolicy)
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret);
 
     return builder.toString();
   }
@@ -909,30 +909,30 @@ public class DomainSpec extends BaseConfiguration {
     HashCodeBuilder builder =
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
-            .append(domainUid)
+            .append(adminServer)
+            .append(allowReplicasBelowMinDynClusterSize)
+            .append(clusters)
+            .append(configOverrides)
+            .append(configOverrideSecrets)
+            .append(configuration)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(domainHomeSourceType)
-            .append(introspectVersion)
-            .append(configuration)
-            .append(serverStartPolicy)
-            .append(webLogicCredentialsSecret)
+            .append(domainUid)
             .append(image)
             .append(imagePullPolicy)
             .append(imagePullSecrets)
-            .append(adminServer)
-            .append(managedServers)
-            .append(clusters)
-            .append(replicas)
+            .append(includeServerOutInPodLog)
+            .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
-            .append(monitoringExporter)
-            .append(includeServerOutInPodLog)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
-            .append(allowReplicasBelowMinDynClusterSize)
+            .append(managedServers)
+            .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
-            .append(maxClusterConcurrentShutdown);
+            .append(monitoringExporter)
+            .append(replicas)
+            .append(serverStartPolicy)
+            .append(webLogicCredentialsSecret);
 
     return builder.toHashCode();
   }

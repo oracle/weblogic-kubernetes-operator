@@ -351,7 +351,7 @@
     <dependency>
         <groupId>com.networknt</groupId>
         <artifactId>json-schema-validator</artifactId>
-        <version>1.0.49</version>
+        <version>${networknt-jsonschmema-validator-version}</version>
     </dependency>
     <dependency>
       <groupId>org.httpunit</groupId>
