@@ -738,7 +738,8 @@ public class ServiceHelper {
         ports.putIfAbsent(portName, createServicePort(portName, port));
       }
       if (isSipProtocol(protocol)) {
-        addPort(createSipUdpServicePort(portName, port));
+        V1ServicePort udpPort = createSipUdpServicePort(portName, port);
+        ports.putIfAbsent(udpPort.getName(), udpPort);
       }
     }
 
