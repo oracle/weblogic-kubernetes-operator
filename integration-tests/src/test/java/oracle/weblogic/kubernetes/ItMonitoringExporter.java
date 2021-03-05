@@ -485,7 +485,7 @@ class ItMonitoringExporter {
   }
 
   /**
-   * Test covers basic functionality for MonitoringExporter SideCar .
+   * Test covers basic functionality for MonitoringExporter SideCar for domain with two clusters.
    * Create Prometheus, Grafana.
    * Create Model in Image with monitoring exporter.
    * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
