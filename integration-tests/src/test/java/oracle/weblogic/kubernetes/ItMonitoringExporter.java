@@ -432,19 +432,11 @@ class ItMonitoringExporter {
         "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
         "\"domain\":\"wls-sessmigr-domain-1\"");
 
-
     logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
         domain7Uid, domain7Namespace,
         "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
         "sessmigr");
-    logger.info("replace monitoring exporter configuration with empty configuration .");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_empty.yaml",
-        domain7Uid, domain7Namespace,
-        "",
-        "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "");
-
   }
 
   private void changeMonitoringExporterSideCarConfig(String configYamlFile, String domainUid,
