@@ -17,9 +17,6 @@ import org.yaml.snakeyaml.Yaml;
 
 public class MonitoringExporterSpecification {
 
-  public static final String EXPORTER_PORT_NAME = "exporter";
-  public static final String DEFAULT_EXPORTER_IMAGE = "oracle/weblogic-monitoring-exporter:2.0";
-  //@PreserveUnknown
   @ApiModelProperty("The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will "
       + "deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter")
   private Map<String,Object> configuration;
@@ -28,14 +25,12 @@ public class MonitoringExporterSpecification {
    * The Monitoring Exporter sidecar image.
    */
   @ApiModelProperty(
-      "The WebLogic Monitoring Exporter sidecar image name. Defaults to "
-          + "oracle/weblogic-monitoring-exporter:2.0")
+      "The WebLogic Monitoring Exporter sidecar image name.")
   private String image;
 
   @ApiModelProperty(
       "The image pull policy for the WebLogic Monitoring Exporter sidecar image. "
-          + "Legal values are Always, Never, and IfNotPresent. "
-          + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
+          + "Legal values are Always, Never, and IfNotPresent. ")
   private String imagePullPolicy;
 
 

@@ -68,6 +68,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.MonitoringExporterConfiguration;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
@@ -424,11 +425,14 @@ class ItMonitoringExporter {
     logger.info("Testing replace configuration");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain7Uid, domain7Namespace,
         "heapFreeCurrent", "heap_free_current", "managed-server1");
+
     logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
         domain7Uid, domain7Namespace,
         "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "\"domain\":\"wls-" + domain7Uid + "\"");
+        "\"domain\":\"wls-sessmigr-domain-1" + domain7Uid + "\"");
+
+
     logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
         domain7Uid, domain7Namespace,
@@ -454,12 +458,15 @@ class ItMonitoringExporter {
       e.printStackTrace();
     }
 
+    MonitoringExporterSpecification monexpSpec = new MonitoringExporterSpecification().configuration(contents);
+    MonitoringExporterConfiguration monexpCong = monexpSpec.configuration();
+
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/monitoringExporter/configuration\",")
         .append("\"value\": ")
-        .append(convertToJson(contents))
+        .append(monexpCong.asJsonString())
         .append("}]");
     logger.info("PatchStr for change Monitoring Exporter Configuration : {0}", patchStr.toString());
 
@@ -1773,7 +1780,8 @@ class ItMonitoringExporter {
           .imagePullPolicy(imagePullPolicy)
           .configuration(contents));
 
-      logger.info(domain.getSpec().getMonitoringExporter().toString());
+      logger.info("Created domain CR with Monitoring exporter configuration : "
+          + domain.getSpec().getMonitoringExporter().toString());
     }
     createDomainAndVerify(domain, namespace);
   }
