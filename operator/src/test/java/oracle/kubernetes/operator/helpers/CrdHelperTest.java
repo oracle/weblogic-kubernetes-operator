@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +45,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -136,6 +138,7 @@ public class CrdHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
+    mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
 
     defaultCrd = defineDefaultCrd();
     defaultBetaCrd = defineDefaultBetaCrd();
@@ -364,4 +367,10 @@ public class CrdHelperTest {
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
+  @Test
+  void whenCrdWritten_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.writeCrdFiles("/crd.yaml", "/beta-crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
 }
