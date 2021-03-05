@@ -326,12 +326,15 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(String portName, Integer port) {
+    void addServicePortIfNeeded(String portName, String protocol, Integer port) {
       if (port == null) {
         return;
       }
 
       addPort(createServicePort(portName, port));
+      if (isSipProtocol(protocol)) {
+        addPort(createSipUdpServicePort(portName, port));
+      }
     }
 
     @Override
@@ -358,30 +361,6 @@ public class ServiceHelper {
     protected void removeServiceFromRecord() {
       info.setServerService(serverName, null);
     }
-  }
-
-  private static boolean testNodePort(List<V1ServicePort> ports, Integer port) {
-    if (ports == null) {
-      return true;
-    }
-    for (V1ServicePort servicePort : ports) {
-      if (port.equals(servicePort.getPort())) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  private static boolean testNodePort(Map<String, V1ServicePort> ports, Integer port) {
-    if (ports == null) {
-      return true;
-    }
-    for (V1ServicePort servicePort : ports.values()) {
-      if (port.equals(servicePort.getPort())) {
-        return false;
-      }
-    }
-    return true;
   }
 
   private abstract static class ServiceStepContext extends StepContextBase {
@@ -444,22 +423,35 @@ public class ServiceHelper {
         ports = new ArrayList<>();
       }
 
-      if (testNodePort(ports, port.getPort())) {
-        ports.add(port);
-      }
+      ports.add(port);
     }
 
     void addNapServicePort(NetworkAccessPoint nap) {
-      addServicePortIfNeeded(nap.getName(), nap.getListenPort());
+      addServicePortIfNeeded(nap.getName(), nap.getProtocol(), nap.getListenPort());
     }
 
-    abstract void addServicePortIfNeeded(String portName, Integer port);
+    void addServicePortIfNeeded(String portName, Integer port) {
+      addServicePortIfNeeded(portName, null, port);
+    }
+
+    abstract void addServicePortIfNeeded(String portName, String protocol, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
       return new V1ServicePort()
           .name(LegalNames.toDns1123LegalName(portName))
           .port(port)
           .protocol("TCP");
+    }
+
+    V1ServicePort createSipUdpServicePort(String portName, Integer port) {
+      return new V1ServicePort()
+          .name("udp-" + LegalNames.toDns1123LegalName(portName))
+          .port(port)
+          .protocol("UDP");
+    }
+
+    protected boolean isSipProtocol(String protocol) {
+      return "sip".equals(protocol) || "sips".equals(protocol);
     }
 
     protected V1ObjectMeta createMetadata() {
@@ -740,9 +732,13 @@ public class ServiceHelper {
           .orElse(Collections.emptyList());
     }
 
-    void addServicePortIfNeeded(String portName, Integer port) {
-      if (port != null && testNodePort(ports, port)) {
+    @Override
+    void addServicePortIfNeeded(String portName, String protocol, Integer port) {
+      if (port != null) {
         ports.putIfAbsent(portName, createServicePort(portName, port));
+      }
+      if (isSipProtocol(protocol)) {
+        addPort(createSipUdpServicePort(portName, port));
       }
     }
 
@@ -905,7 +901,8 @@ public class ServiceHelper {
       return ports;
     }
 
-    void addServicePortIfNeeded(String channelName, Integer internalPort) {
+    @Override
+    void addServicePortIfNeeded(String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
       if (channel == null && getDomain().isIstioEnabled()) {
@@ -924,11 +921,9 @@ public class ServiceHelper {
         return;
       }
 
-      if (testNodePort(ports, internalPort)) {
-        addPort(
-            createServicePort(channelName, internalPort)
-                .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
-      }
+      addPort(
+          createServicePort(channelName, internalPort)
+            .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
 
     private Channel getChannel(String channelName) {

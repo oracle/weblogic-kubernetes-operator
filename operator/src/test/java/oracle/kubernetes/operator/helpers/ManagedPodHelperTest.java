@@ -53,6 +53,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
@@ -1131,5 +1132,31 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static V1Pod createManagedServerPodModel(Packet packet) {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
+  }
+
+  @Test
+  public void whenPodCreated_containerHasTwoPortsForSip() {
+    V1Container v1Container = getCreatedPodSpecContainer();
+
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().endsWith(SIP_CLEAR)).count(), equalTo(2L));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals(SIP_CLEAR)).findFirst().orElseThrow().getProtocol(), equalTo("TCP"));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals("udp-" + SIP_CLEAR))
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
+  }
+
+  @Test
+  public void whenPodCreated_containerHasTwoPortsForSips() {
+    V1Container v1Container = getCreatedPodSpecContainer();
+
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().endsWith(SIP_SECURE)).count(), equalTo(2L));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals(SIP_SECURE)).findFirst().orElseThrow().getProtocol(), equalTo("TCP"));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals("udp-" + SIP_SECURE))
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
   }
 }

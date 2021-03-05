@@ -229,6 +229,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
+  private boolean isSipProtocol(NetworkAccessPoint nap) {
+    return "sip".equals(nap.getProtocol()) || "sips".equals(nap.getProtocol());
+  }
+
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
 
@@ -236,12 +240,22 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (scan.getNetworkAccessPoints() != null) {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
           String napName = nap.getName();
+
           V1ContainerPort port =
               new V1ContainerPort()
                   .name(LegalNames.toDns1123LegalName(napName))
                   .containerPort(nap.getListenPort())
                   .protocol("TCP");
           ports.add(port);
+
+          if (isSipProtocol(nap)) {
+            V1ContainerPort udpPort =
+                new V1ContainerPort()
+                    .name("udp-" + LegalNames.toDns1123LegalName(napName))
+                    .containerPort(nap.getListenPort())
+                    .protocol("UDP");
+            ports.add(udpPort);
+          }
         }
       }
       // Istio type is already passed from the introspector output, no need to create it again
