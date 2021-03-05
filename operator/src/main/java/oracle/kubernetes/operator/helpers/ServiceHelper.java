@@ -405,13 +405,11 @@ public class ServiceHelper {
 
     void addServicePorts(WlsServerConfig serverConfig) {
       getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
-      boolean istioEnabled = this.getDomain().isIstioEnabled();
-      if (!istioEnabled) {
+      if (!isIstioEnabled()) {
         addServicePortIfNeeded("default", serverConfig.getListenPort());
         addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
         addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
       }
-
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -444,6 +442,11 @@ public class ServiceHelper {
     }
 
     V1ServicePort createSipUdpServicePort(String portName, Integer port) {
+      if (isIstioEnabled()) {
+        // The introspector will have already prefixed the portName with either "tcp-" or "tls-". Remove the prefix.
+        portName = portName.substring(4);
+      }
+
       return new V1ServicePort()
           .name("udp-" + LegalNames.toDns1123LegalName(portName))
           .port(port)
@@ -485,6 +488,10 @@ public class ServiceHelper {
 
     String getNamespace() {
       return info.getNamespace();
+    }
+
+    boolean isIstioEnabled() {
+      return getDomain().isIstioEnabled();
     }
 
     protected abstract String createServiceName();
@@ -906,7 +913,7 @@ public class ServiceHelper {
     void addServicePortIfNeeded(String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
-      if (channel == null && getDomain().isIstioEnabled()) {
+      if (channel == null && isIstioEnabled()) {
         if (channelName != null) {
           String[] tokens = channelName.split("-");
           if (tokens.length > 0) {
