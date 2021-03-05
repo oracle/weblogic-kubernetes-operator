@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.helpers;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -70,39 +73,62 @@ public class CrdHelper {
    * Used by build to generate crd-validation.yaml
    * @param args Arguments that must be one value giving file name to create
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws URISyntaxException {
     if (args == null || args.length != 2) {
       throw new IllegalArgumentException();
     }
 
+    writeCrdFiles(args[0], args[1]);
+  }
+
+  static void writeCrdFiles(String crdFileName, String betaCrdFileName) throws URISyntaxException {
     CrdContext context = new CrdContext(null, null, null);
 
-    String outputFileName = args[0];
-    Path outputFilePath = Paths.get(outputFileName);
+    final URI outputFile = asFileURI(crdFileName);
+    final URI betaOutputFile = asFileURI(betaCrdFileName);
 
-    try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
-      writer.write(
-          "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
-              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
-      writer.write("\n");
-      Yaml.dump(context.model, writer);
-    } catch (IOException io) {
-      throw new RuntimeException(io);
-    }
+    writeAsYaml(outputFile, context.model);
+    writeAsYaml(betaOutputFile, context.betaModel);
+  }
 
-    String betaOutputFileName = args[1];
-    Path betaOutputFilePath = Paths.get(betaOutputFileName);
-
-    try (Writer writer = Files.newBufferedWriter(betaOutputFilePath)) {
-      writer.write(
-          "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
-              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
-      writer.write("\n");
-      Yaml.dump(context.betaModel, writer);
-    } catch (IOException io) {
-      throw new RuntimeException(io);
+  private static URI asFileURI(String fileName) throws URISyntaxException {
+    if (fileName.startsWith("file:/")) {
+      return new URI(fileName);
+    } else if (fileName.startsWith("/")) {
+      return asFileURI("file:" + fileName);
+    } else {
+      return asFileURI("file:/" + fileName);
     }
   }
+
+  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
+  private static Function<URI, Path> uriToPath = Paths::get;
+
+  static void writeAsYaml(URI outputFileName, Object model) {
+    try (Writer writer = Files.newBufferedWriter(uriToPath.apply(outputFileName))) {
+      writer.write(
+            "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
+                  + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      dumpYaml(writer, model);
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    } catch (IllegalArgumentException e) {
+      throw new RuntimeException("Bad argument: " + outputFileName, e);
+    }
+  }
+
+  // Writes a YAML representation of the specified model to the writer. First converts to JSON in order
+  // to respect the @SerializedName annotation.
+  @SuppressWarnings("unchecked")
+  private static void dumpYaml(Writer writer, Object model) {
+    final Gson gson = new Gson();
+    Map<String,Object> map = gson.fromJson(gson.toJson(model), Map.class);
+    Yaml.dump(map, writer);
+  }
+  // a = gson.toJson(model)
+  // Map = gson.fromJson(Map.class)
+  // yaml dump ?  // ordering and format likely to change massively
 
   public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
     return new CrdStep(version, productVersion);
