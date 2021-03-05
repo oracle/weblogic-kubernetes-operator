@@ -421,10 +421,35 @@ class ItMonitoringExporter {
     String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
     logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
     assertTrue(monexpConfig.contains("openSessionsHighCount"));
+    logger.info("Testing replace configuration");
+    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain7Uid, domain7Namespace,
+        "heapFreeCurrent", "heap_free_current", "managed-server1");
+    logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
+    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
+        domain7Uid, domain7Namespace,
+        "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
+        "\"domain\":\"wls-" + domain7Uid + "\"");
+    logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
+    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
+        domain7Uid, domain7Namespace,
+        "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
+        "sessmigr");
+    logger.info("replace monitoring exporter configuration with empty configuration .");
+    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_empty.yaml",
+        domain7Uid, domain7Namespace,
+        "",
+        "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
+        "");
 
+  }
+
+  private void changeMonitoringExporterSideCarConfig(String configYamlFile, String domainUid,
+                                                     String domainNamespace,
+                                                     String configSearchKey,
+                                                     String promSearchString, String expectedVal) throws Exception {
     String contents = null;
     try {
-      contents = new String(Files.readAllBytes(Paths.get(RESOURCE_DIR + "/exporter/rest_jvm.yaml")));
+      contents = new String(Files.readAllBytes(Paths.get(configYamlFile)));
     } catch (IOException e) {
       e.printStackTrace();
     }
@@ -436,40 +461,28 @@ class ItMonitoringExporter {
         .append("\"value\": ")
         .append(convertToJson(contents))
         .append("}]");
-    logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr.toString());
+    logger.info("PatchStr for change Monitoring Exporter Configuration : {0}", patchStr.toString());
 
-    boolean cmPatched = patchDomainResource(domain7Uid, domain7Namespace, patchStr);
-    assertTrue(cmPatched, "patchDomainCustomResource(IncludeServerOutInPodLog) failed");
+    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
+    assertTrue(cmPatched, "patchDomainCustomResource(changeMonExporter) failed");
 
-    domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domain7Uid, domain7Namespace),
+    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domain7Uid, domain7Namespace));
+            domainUid, domainNamespace));
     assertNotNull(domain, "Got null domain resource after patching");
-
+    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
+    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
+    assertTrue(monexpConfig.contains(configSearchKey));
 
     logger.info(domain.getSpec().getMonitoringExporter().toString());
     Thread.sleep(20 * 1000);
-    String managedServerPodName = domain7Uid + "-managed-server";
+    String managedServerPodName = domainUid + "-managed-server";
     // check that the managed server pod exists
     logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-        managedServerPodName, domain7Namespace);
-    checkPodReadyAndServiceExists(managedServerPodName + "1", domain7Uid, domain7Namespace);
-    checkPodReadyAndServiceExists(managedServerPodName + "2", domain7Uid, domain7Namespace);
-    sessionAppPrometheusSearchKey =
-        "heap_free_current";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "managed-server1");
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "managed-server2");
-
-    /*
-    changeConfigInPod(domain7Uid + "-managed-server1",
-        domain7Namespace,"rest_jvm.yaml");
-    changeConfigInPod(domain7Uid +  "-managed-server1",
-        domain7Namespace,"rest_jvm.yaml");
-    changeConfigInPod(domain7Uid + "-managed-server2", domain7Namespace,"rest_jvm.yaml");
-    changeConfigInPod(domain7Uid + "-managed-server1", domain7Namespace,"rest_jvm.yaml");
-
-    */
-
+        managedServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
+    checkMetricsViaPrometheus(promSearchString, expectedVal);
   }
 
   /**
@@ -2416,7 +2429,8 @@ class ItMonitoringExporter {
     }
     return true;
   }
-  public static String convertToJson(String yaml) {
+
+  private static String convertToJson(String yaml) {
     final Object loadedYaml = new Yaml().load(yaml);
     return new Gson().toJson(loadedYaml, LinkedHashMap.class);
   }
