@@ -65,9 +65,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Test to creat a JRF dynamic domain in persistent volume using WLST.
+ * Test to creat a FMW dynamic domain in persistent volume using WLST.
  */
-@DisplayName("Test to creat a JRF dynamic domain in persistent volume using WLST")
+@DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
 public class ItFmwDynamicDomainInPV {
 
@@ -90,7 +90,7 @@ public class ItFmwDynamicDomainInPV {
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
-  private static final String domainUid = "jrf-dynamicdomain-inpv";
+  private static final String domainUid = "fmw-dynamicdomain-inpv";
   private static final String clusterName = "cluster-dynamicdomain-inpv";
   private static final String adminServerName = "admin-server";
   private static final String managedServerNameBase = "managed-server";
@@ -143,12 +143,12 @@ public class ItFmwDynamicDomainInPV {
   }
 
   /**
-   * Create a basic JRF dynamic cluster model in image domain.
+   * Create a basic FMW dynamic cluster model in image domain.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
   @Test
-  @DisplayName("Create JRF Dynamic Domain in PV")
+  @DisplayName("Create FMW Dynamic Domain in PV")
   public void testJrfDynamicDomainInPV() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
@@ -179,7 +179,7 @@ public class ItFmwDynamicDomainInPV {
     File domainPropertiesFile = createWlstPropertyFile(t3ChannelPort);
 
     // WLST script for creating domain
-    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "jrf-create-dynamic-domain.py");
+    Path wlstScript = Paths.get(RESOURCE_DIR, "python-scripts", "fmw-create-dynamic-domain.py");
 
     // create configmap and domain on persistent volume using the WLST script and property file
     createDomainOnPvUsingWlst(wlstScript, domainPropertiesFile.toPath(), pvName, pvcName);
