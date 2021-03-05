@@ -430,7 +430,7 @@ class ItMonitoringExporter {
     changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
         domain7Uid, domain7Namespace,
         "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "\"domain\":\"wls-sessmigr-domain-1" + domain7Uid + "\"");
+        "\"domain\":\"wls-sessmigr-domain-1\"");
 
 
     logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
