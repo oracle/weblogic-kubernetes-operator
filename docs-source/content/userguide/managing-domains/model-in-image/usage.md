@@ -119,7 +119,11 @@ The following Domain fields are specific to Model in Image domains.
 
  - There are also additional fields that are specific to JRF domain types. For more information, see [Requirements for JRF domain types](#requirements-for-jrf-domain-types).
 
- - Sample Domain YAML file: For an example of a fully specified sample Domain YAML file, see the the operator source's `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/k8s-domain.yaml.template` file for the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. Note that the `@@` entries in this template are not processed by the operator; they need to replaced with actual values before the resource can be applied.
+ - For fully specified Model in Image Domain YAML file examples,
+   see the operator source directory
+   `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`
+   for the [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
+   The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 ### Always use external state
 
