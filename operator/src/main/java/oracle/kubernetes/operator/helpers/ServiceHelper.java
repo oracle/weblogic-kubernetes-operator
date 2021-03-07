@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -320,20 +319,20 @@ public class ServiceHelper {
         return null;
       }
 
-      ports = null;
-      addServicePorts(scan);
+      List<V1ServicePort> ports = new ArrayList<>();
+      addServicePorts(ports, scan);
       return ports;
     }
 
     @Override
-    void addServicePortIfNeeded(String portName, String protocol, Integer port) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
       if (port == null) {
         return;
       }
 
-      addPort(createServicePort(portName, port));
+      addServicePortIfNeeded(ports, createServicePort(portName, port));
       if (isSipProtocol(protocol)) {
-        addPort(createSipUdpServicePort(portName, port));
+        addServicePortIfNeeded(ports, createSipUdpServicePort(portName, port));
       }
     }
 
@@ -365,7 +364,6 @@ public class ServiceHelper {
 
   private abstract static class ServiceStepContext extends StepContextBase {
     private final Step conflictStep;
-    protected List<V1ServicePort> ports;
     final WlsDomainConfig domainTopology;
     private final OperatorServiceType serviceType;
 
@@ -403,12 +401,14 @@ public class ServiceHelper {
           .ports(createServicePorts());
     }
 
-    void addServicePorts(WlsServerConfig serverConfig) {
-      getNetworkAccessPoints(serverConfig).forEach(this::addNapServicePort);
+    void addServicePorts(List<V1ServicePort> ports, WlsServerConfig serverConfig) {
+      for (NetworkAccessPoint networkAccessPoint : getNetworkAccessPoints(serverConfig)) {
+        addNapServicePort(ports, networkAccessPoint);
+      }
       if (!isIstioEnabled()) {
-        addServicePortIfNeeded("default", serverConfig.getListenPort());
-        addServicePortIfNeeded("default-secure", serverConfig.getSslListenPort());
-        addServicePortIfNeeded("default-admin", serverConfig.getAdminPort());
+        addServicePortIfNeeded(ports, "default", serverConfig.getListenPort());
+        addServicePortIfNeeded(ports, "default-secure", serverConfig.getSslListenPort());
+        addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
       }
     }
 
@@ -416,23 +416,21 @@ public class ServiceHelper {
       return Optional.ofNullable(config.getNetworkAccessPoints()).orElse(Collections.emptyList());
     }
 
-    void addPort(V1ServicePort port) {
-      if (ports == null) {
-        ports = new ArrayList<>();
+    void addNapServicePort(List<V1ServicePort> ports, NetworkAccessPoint nap) {
+      addServicePortIfNeeded(ports, nap.getName(), nap.getProtocol(), nap.getListenPort());
+    }
+
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, Integer port) {
+      addServicePortIfNeeded(ports, portName, null, port);
+    }
+
+    abstract void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port);
+
+    protected void addServicePortIfNeeded(List<V1ServicePort> ports, V1ServicePort port) {
+      if (!ports.stream().anyMatch(p -> p.getName().equals(port.getName()))) {
+        ports.add(port);
       }
-
-      ports.add(port);
     }
-
-    void addNapServicePort(NetworkAccessPoint nap) {
-      addServicePortIfNeeded(nap.getName(), nap.getProtocol(), nap.getListenPort());
-    }
-
-    void addServicePortIfNeeded(String portName, Integer port) {
-      addServicePortIfNeeded(portName, null, port);
-    }
-
-    abstract void addServicePortIfNeeded(String portName, String protocol, Integer port);
 
     V1ServicePort createServicePort(String portName, Integer port) {
       return new V1ServicePort()
@@ -712,7 +710,6 @@ public class ServiceHelper {
   private static class ClusterStepContext extends ServiceStepContext {
     private final String clusterName;
     private final WlsDomainConfig config;
-    final Map<String, V1ServicePort> ports = new HashMap<>();
 
     ClusterStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet, OperatorServiceType.CLUSTER);
@@ -726,11 +723,12 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
+      List<V1ServicePort> ports = new ArrayList<>();
       for (WlsServerConfig server : getServerConfigs(config.getClusterConfig(clusterName))) {
-        addServicePorts(server);
+        addServicePorts(ports, server);
       }
 
-      return ports.isEmpty() ? null : new ArrayList<>(ports.values());
+      return ports;
     }
 
     private List<WlsServerConfig> getServerConfigs(WlsClusterConfig clusterConfig) {
@@ -740,13 +738,13 @@ public class ServiceHelper {
     }
 
     @Override
-    void addServicePortIfNeeded(String portName, String protocol, Integer port) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port) {
       if (port != null) {
-        ports.putIfAbsent(portName, createServicePort(portName, port));
+        addServicePortIfNeeded(ports, createServicePort(portName, port));
       }
       if (isSipProtocol(protocol)) {
         V1ServicePort udpPort = createSipUdpServicePort(portName, port);
-        ports.putIfAbsent(udpPort.getName(), udpPort);
+        addServicePortIfNeeded(ports, udpPort);
       }
     }
 
@@ -900,17 +898,18 @@ public class ServiceHelper {
     }
 
     protected List<V1ServicePort> createServicePorts() {
+      List<V1ServicePort> ports = new ArrayList<>();
       WlsServerConfig scan = domainTopology.getServerConfig(domainTopology.getAdminServerName());
       if (scan == null) {
         return null;
       }
 
-      addServicePorts(scan);
+      addServicePorts(ports, scan);
       return ports;
     }
 
     @Override
-    void addServicePortIfNeeded(String channelName, String protocol, Integer internalPort) {
+    void addServicePortIfNeeded(List<V1ServicePort> ports, String channelName, String protocol, Integer internalPort) {
       Channel channel = getChannel(channelName);
 
       if (channel == null && isIstioEnabled()) {
@@ -929,7 +928,7 @@ public class ServiceHelper {
         return;
       }
 
-      addPort(
+      addServicePortIfNeeded(ports,
           createServicePort(channelName, internalPort)
             .nodePort(Optional.ofNullable(channel.getNodePort()).orElse(internalPort)));
     }
