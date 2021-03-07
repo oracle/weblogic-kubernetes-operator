@@ -8,9 +8,14 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -39,7 +44,36 @@ public class HttpAsyncRequestStep extends Step {
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-  private static final HttpClient httpClient = HttpClient.newBuilder().build();
+  private static final HttpClient httpClient;
+
+  private static final TrustManager[] trustAllCerts = new TrustManager[]{
+      new X509TrustManager() {
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+          return null;
+        }
+
+        public void checkClientTrusted(
+            java.security.cert.X509Certificate[] certs, String authType) {
+        }
+
+        public void checkServerTrusted(
+            java.security.cert.X509Certificate[] certs, String authType) {
+        }
+      }
+  };
+
+  static {
+    try {
+      SSLContext sslContext = SSLContext.getInstance("TLS");
+      sslContext.init(null, trustAllCerts, null);
+
+      httpClient = HttpClient.newBuilder()
+          .sslContext(sslContext)
+          .build();
+    } catch (NoSuchAlgorithmException | KeyManagementException e) {
+      throw new IllegalStateException(e);
+    }
+  }
 
   private HttpAsyncRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     super(responseStep);
