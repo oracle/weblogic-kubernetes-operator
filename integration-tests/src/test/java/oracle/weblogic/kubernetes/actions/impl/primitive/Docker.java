@@ -93,7 +93,18 @@ public class Docker {
    * @return true if delete image is successful
    */
   public static boolean createImage(String dockerFileDir, String image) {
-    String cmdToExecute = String.format("docker build %s -t %s", dockerFileDir, image);
+    return createImage(dockerFileDir, image, "");
+  }
+
+  /**
+   * Create docker image.
+   * @param image image name:image tag
+   * @param dockerFileDir path to Dockerfile directory
+   * @param extraArgs extra args to pass
+   * @return true if delete image is successful
+   */
+  public static boolean createImage(String dockerFileDir, String image, String extraArgs) {
+    String cmdToExecute = String.format("docker build %s -t %s  %s", dockerFileDir, image, extraArgs);
     return new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))
