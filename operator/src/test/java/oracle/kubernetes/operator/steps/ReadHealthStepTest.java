@@ -14,9 +14,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
@@ -37,16 +37,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
-import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.helpers.SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD;
-import static oracle.kubernetes.operator.helpers.SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED;
@@ -116,7 +112,7 @@ public class ReadHealthStepTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.addToPacket(REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
-    defineSecretData();
+    DomainProcessorTestSetup.defineSecretData(testSupport);
   }
 
   private int getRemainingServersToRead(Packet packet) {
@@ -134,14 +130,6 @@ public class ReadHealthStepTest {
     } else {
       info.setServerService(serverName, service);
     }
-  }
-
-  private void defineSecretData() {
-    testSupport.defineResources(
-                new V1Secret()
-                      .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
-                      .data(Map.of(ADMIN_SERVER_CREDENTIALS_USERNAME, "user".getBytes(),
-                                   ADMIN_SERVER_CREDENTIALS_PASSWORD, "password".getBytes())));
   }
 
   @AfterEach
@@ -214,10 +202,17 @@ public class ReadHealthStepTest {
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("RUNNING"));
   }
 
+  private Map<String, ServerHealth> getServerHealthMap(Packet packet) {
+    return packet.getValue(SERVER_HEALTH_MAP);
+  }
+
+  private Map<String, String> getServerStateMap(Packet packet) {
+    return packet.getValue(SERVER_STATE_MAP);
+  }
+
   @Test
   public void whenAdminPodIPNull_verifyServerHealth() {
     selectServer(ADMIN_NAME, true);
-
     defineResponse(200, OK_RESPONSE, "admin-server.Test:7001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
@@ -225,12 +220,26 @@ public class ReadHealthStepTest {
     assertThat(getServerStateMap(packet).get(ADMIN_NAME), is("RUNNING"));
   }
 
-  private Map<String, ServerHealth> getServerHealthMap(Packet packet) {
-    return packet.getValue(SERVER_HEALTH_MAP);
+  @Test
+  public void whenAdminPodIPNull_requestSendWithCredentials() {
+    selectServer(ADMIN_NAME, true);
+    defineResponse(200, OK_RESPONSE, "admin-server.Test:7001");
+
+    testSupport.runSteps(readHealthStep);
+
+    assertThat(hasAuthenticationCredentials(httpSupport.getLastRequest()), is(true));
   }
 
-  private Map<String, String> getServerStateMap(Packet packet) {
-    return packet.getValue(SERVER_STATE_MAP);
+  private boolean hasAuthenticationCredentials(HttpRequest request) {
+    return Objects.equals(getAuthorizationHeader(request), expectedAuthorizationHeader());
+  }
+
+  private String getAuthorizationHeader(HttpRequest request) {
+    return request.headers().firstValue("Authorization").orElse(null);
+  }
+
+  private String expectedAuthorizationHeader() {
+    return "Basic " + Base64.encode("user:password");
   }
 
   @Test

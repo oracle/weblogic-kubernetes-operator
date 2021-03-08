@@ -737,7 +737,7 @@ class ServerPod extends KubernetesResource {
         .append("additionalVolumes", volumes)
         .append("additionalVolumeMounts", volumeMounts)
         .append("nodeSelector", nodeSelector)
-        .append("resourceRequirements", resources)
+        .append("resources", resources)
         .append("podSecurityContext", podSecurityContext)
         .append("containerSecurityContext", containerSecurityContext)
         .append("initContainers", initContainers)
