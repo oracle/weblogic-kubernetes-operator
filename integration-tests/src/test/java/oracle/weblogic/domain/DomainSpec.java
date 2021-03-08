@@ -157,6 +157,10 @@ public class DomainSpec {
           + " the required servers.")
   private String restartVersion;
 
+  @ApiModelProperty(
+      "Configuration for monitoring exporter.")
+  private MonitoringExporterSpecification monitoringExporter;
+
   public DomainSpec domainUid(String domainUid) {
     this.domainUid = domainUid;
     return this;
@@ -668,6 +672,15 @@ public class DomainSpec {
     this.restartVersion = restartVersion;
   }
 
+  public MonitoringExporterSpecification getMonitoringExporter() {
+    return monitoringExporter;
+  }
+
+  public void monitoringExporter(MonitoringExporterSpecification monitoringExporter) {
+    this.monitoringExporter = monitoringExporter;
+  }
+
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -698,7 +711,8 @@ public class DomainSpec {
             .append("serverStartState", serverStartState)
             .append("serverPod", serverPod)
             .append("serverService", serverService)
-            .append("restartVersion", restartVersion);
+            .append("restartVersion", restartVersion)
+            .append("monitoringExporter", monitoringExporter);
 
     return builder.toString();
   }
@@ -733,7 +747,8 @@ public class DomainSpec {
             .append(serverPod)
             .append(serverService)
             .append(serverStartState)
-            .append(restartVersion);
+            .append(restartVersion)
+            .append(monitoringExporter);
 
     return builder.toHashCode();
   }
@@ -776,7 +791,8 @@ public class DomainSpec {
             .append(serverPod, rhs.serverPod)
             .append(serverService, rhs.serverService)
             .append(serverStartState, rhs.serverStartState)
-            .append(restartVersion, rhs.restartVersion);
+            .append(restartVersion, rhs.restartVersion)
+            .append(monitoringExporter, rhs.monitoringExporter);
     return builder.isEquals();
   }
 }
