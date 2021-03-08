@@ -1732,8 +1732,6 @@ def getRealListenPort(server):
     port = server_template_listening_ports[server.getName()]
     if port is None:
       return 7001
-  else:
-    return 7001
 
   port = server.getListenPort()
   if port == 0:
