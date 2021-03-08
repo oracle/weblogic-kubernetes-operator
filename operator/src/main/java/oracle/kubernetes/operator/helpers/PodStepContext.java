@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.json.Json;
 import javax.json.JsonPatchBuilder;
 
@@ -229,70 +230,45 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
-  private List<V1ContainerPort> getContainerPorts() {
-    if (scan != null) {
+  List<V1ContainerPort> getContainerPorts() {
+    List<V1ContainerPort> ports = new ArrayList<>();
+    getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
-      List<V1ContainerPort> ports = new ArrayList<>();
-      if (scan.getNetworkAccessPoints() != null) {
-        for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-          String napName = nap.getName();
-          V1ContainerPort port =
-              new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(napName))
-                  .containerPort(nap.getListenPort())
-                  .protocol("TCP");
-          ports.add(port);
-        }
-      }
-      // Istio type is already passed from the introspector output, no need to create it again
-      if (!this.getDomain().isIstioEnabled()) {
-        if (scan.getListenPort() != null) {
-          String napName = "default";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getListenPort())
-                  .protocol("TCP"));
-        }
-        if (scan.getSslListenPort() != null) {
-          String napName = "default-secure";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getSslListenPort())
-                  .protocol("TCP"));
-        }
-        if (scan.getAdminPort() != null) {
-          String napName = "default-admin";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getAdminPort())
-                  .protocol("TCP"));
-        }
-      }
-      return ports;
+    if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
+      addContainerPort(ports, "default", getListenPort());
+      addContainerPort(ports, "default-secure", getSslListenPort());
+      addContainerPort(ports, "default-admin", getAdminPort());
     }
-    return null;
+
+    return ports;
   }
 
-  /**
-   * Returns the configured listen port of the WLS instance.
-   *
-   * @return the non-SSL port of the WLS instance or null if not enabled
-   */
-  Integer getDefaultPort() {
-    return scan.getListenPort();
+  List<NetworkAccessPoint> getNetworkAccessPoints(WlsServerConfig config) {
+    return Optional.ofNullable(config).map(WlsServerConfig::getNetworkAccessPoints).orElse(Collections.emptyList());
   }
 
-  /**
-   * Returns the configured SSL port of the WLS instance.
-   *
-   * @return the SSL port of the WLS instance or null if not enabled
-   */
-  Integer getSSLPort() {
-    return scan.getSslListenPort();
+  private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
+    addContainerPort(ports, LegalNames.toDns1123LegalName(nap.getName()), nap.getListenPort());
   }
+
+  private void addContainerPort(List<V1ContainerPort> ports, String name, @Nullable Integer listenPort) {
+    if (listenPort != null) {
+      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol("TCP"));
+    }
+  }
+
+  Integer getListenPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getListenPort).orElse(null);
+  }
+
+  Integer getSslListenPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getSslListenPort).orElse(null);
+  }
+
+  Integer getAdminPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getAdminPort).orElse(null);
+  }
+
 
   abstract String getServerName();
 
@@ -643,11 +619,6 @@ public abstract class PodStepContext extends BasePodStepContext {
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
-
-    // Add prometheus annotations. This will overwrite any custom annotations with same name.
-    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
-    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
-    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
     return metadata;
   }
 
@@ -697,8 +668,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
-  protected V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container v1Container = super.createContainer(tuningParameters)
+  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
+    V1Container v1Container = super.createPrimaryContainer(tuningParameters)
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
@@ -1023,6 +994,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     //          DomainConditionType.OnlineUpdateComplete);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void updateDomainConditions(String message, DomainConditionType domainSourceType) {
       DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType);
       String introspectVersion = Optional.ofNullable(info)

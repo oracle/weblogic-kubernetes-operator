@@ -10,9 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
@@ -24,16 +26,23 @@ import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
+import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
@@ -52,12 +61,16 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
@@ -80,6 +93,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   private static final String RAW_VALUE_4 = "$(SERVER_NAME)-volume";
   private static final String END_VALUE_4_DNS1123 = "ess-server1-volume";
   private static final String CLUSTER_NAME = "test-cluster";
+  private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
+  public static final String EXPORTER_IMAGE = "monexp:latest";
 
   public ManagedPodHelperTest() {
     super(SERVER_NAME, LISTEN_PORT);
@@ -865,6 +880,41 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenPodCreatedWithoutExportConfiguration_hasPrometheusAnnotations() {
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", Integer.toString(getServerTopology().getListenPort())),
+            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  @Test
+  public void whenPodCreatedWithoutPlainPortAndWithoutExportConfiguration_hasNoPrometheusAnnotations() {
+    getServerTopology().setListenPort(null);
+    getServerTopology().setSslListenPort(7002);
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            not(hasKey("prometheus.io/port")),
+            not(hasKey("prometheus.io/path")),
+            not(hasKey("prometheus.io/scrape"))));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminNap_prometheusAnnotationsSpecifyPlainTextPort() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("test", "admin", 8001, 8001));
+    getServerTopology().setListenPort(7001);
+    getServerTopology().setSslListenPort(7002);
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", "7001"),
+            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  @Test
   public void whenPodHasDuplicateLabels_createManagedPodWithCombination() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
@@ -1094,6 +1144,155 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     assertThat(getCreatePodAffinity(), is(expectedValue));
   }
 
+  @Test
+  void whenDomainHasMonitoringExporterConfiguration_createContainerWithExporterSidecar() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(), is(notNullValue()));
+  }
+
+  private void defineExporterConfiguration() {
+    configureDomain()
+          .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
+          .withMonitoringExporterImage(EXPORTER_IMAGE);
+  }
+
+  @Test
+  public void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
+    defineExporterConfiguration();
+
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", Integer.toString(DEFAULT_EXPORTER_SIDECAR_PORT)),
+            hasEntry("prometheus.io/path", "/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  private V1Container getExporterContainer() {
+    return getCreatedPodSpecContainers().stream().filter(this::isMonitoringExporterContainer).findFirst().orElse(null);
+  }
+
+  private boolean isMonitoringExporterContainer(V1Container container) {
+    return container.getName().contains(EXPORTER_CONTAINER_NAME);
+  }
+
+  @Test
+  void monitoringExporterContainer_hasExporterName() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getName(), equalTo(EXPORTER_CONTAINER_NAME));
+  }
+
+  @Test
+  void monitoringExporterContainerCommand_isNotDefined() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getCommand(), nullValue());
+  }
+
+  @Test
+  void monitoringExporterContainer_hasDefaultImageName() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getImage(), equalTo(EXPORTER_IMAGE));
+  }
+
+  @Test
+  void monitoringExporterContainer_hasInferredPullPolicy() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+  }
+
+  @Test
+  void whenExporterContainerCreated_hasMetricsPortsItem() {
+    defineExporterConfiguration();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
+  private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
+    return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
+          .filter(p -> name.equals(p.getName())).findFirst().orElse(null);
+  }
+
+  @Test
+  void whenExporterContainerCreated_hasDebugPortsItem() {
+    defineExporterConfiguration();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("debugger");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(30055));
+  }
+
+  @Test
+  void whenExporterContainerCreated_specifyOperatorDomain() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
+  }
+
+  @Test
+  void whenPlaintextPortAvailable_monitoringExporterSpecifiesIt() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(), hasJavaOption("-DWLS_PORT=" + LISTEN_PORT));
+  }
+
+  @Test
+  void whenOnlySslPortAvailable_monitoringExporterSpecifiesIt() {
+    getServerTopology().setListenPort(null);
+    getServerTopology().setSslListenPort(7002);
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(),
+          both(hasJavaOption("-DWLS_PORT=7002")).and(hasJavaOption("-DWLS_SECURE=true")));
+  }
+
+  @Test
+  void whenOnlyAdminAndSslPortsAvailable_monitoringExporterSpecifiesAdminPort() {
+    getServerTopology().setListenPort(null);
+    getServerTopology().setSslListenPort(7002);
+    getServerTopology().setAdminPort(8001);
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(),
+               both(hasJavaOption("-DWLS_PORT=8001")).and(hasJavaOption("-DWLS_SECURE=true")));
+  }
+
+  @Test
+  void whenDefaultMonitorPortUsedByServer_relocateIt() {
+    getServerTopology().setListenPort(8080);
+    getServerTopology().setSslListenPort(8081);
+    getServerTopology().setAdminPort(8082);
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(), hasJavaOption("-DEXPORTER_PORT=8083"));
+  }
+
+
+  @Test
+  public void whenDefaultMonitorPortUsedByServer_hasPrometheusAnnotations() {
+    getServerTopology().setListenPort(8080);
+    getServerTopology().setSslListenPort(8081);
+    getServerTopology().setAdminPort(8082);
+    defineExporterConfiguration();
+
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", "8083"),
+            hasEntry("prometheus.io/path", "/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+
+    assertThat(getExporterContainer().getPorts().get(0).getContainerPort(), equalTo(8083));
+  }
+
   @Override
   void setServerPort(int port) {
     getServerTopology().setListenPort(port);
@@ -1131,5 +1330,54 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static V1Pod createManagedServerPodModel(Packet packet) {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
+  }
+
+  @SuppressWarnings("unused")
+  static class JavaOptMatcher extends TypeSafeDiagnosingMatcher<V1Container> {
+    private final String expectedOption;
+
+    private JavaOptMatcher(String expectedOption) {
+      this.expectedOption = expectedOption;
+    }
+
+    static JavaOptMatcher hasJavaOption(String expectedOption) {
+      return new JavaOptMatcher(expectedOption);
+    }
+
+    @Override
+    protected boolean matchesSafely(V1Container container, Description mismatchDescription) {
+      if (getJavaOptions(container).contains(expectedOption)) {
+        return true;
+      } else {
+        mismatchDescription.appendText("JAVA_OPTS is ").appendValue(getJavaOptEnv(container));
+        return false;
+      }
+    }
+
+    private List<String> getJavaOptions(V1Container container) {
+      return Optional.of(getJavaOptEnv(container))
+            .map(s -> s.split(" "))
+            .map(Arrays::asList)
+            .orElse(Collections.emptyList());
+    }
+
+    @Nonnull
+    private String getJavaOptEnv(V1Container container) {
+      return getEnvironmentVariables(container).stream()
+            .filter(env -> "JAVA_OPTS".equals(env.getName()))
+            .map(V1EnvVar::getValue)
+            .findFirst()
+            .orElse("");
+    }
+
+    @Nonnull
+    private List<V1EnvVar> getEnvironmentVariables(V1Container container) {
+      return Optional.of(container).map(V1Container::getEnv).orElse(Collections.emptyList());
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description.appendText("JAVA_OPTS containing ").appendValue(expectedOption);
+    }
   }
 }
