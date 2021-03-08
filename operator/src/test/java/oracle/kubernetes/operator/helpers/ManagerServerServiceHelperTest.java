@@ -21,6 +21,14 @@ public class ManagerServerServiceHelperTest extends ServiceHelperTest {
   }
 
   static class ManagedServerTestFacade extends ServiceHelperTest.ServerTestFacade {
+    ManagedServerTestFacade() {
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNap3()), getNapPort3());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNapSipClear()), getNapPortSipClear());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNapSipSecure()), getNapPortSipSecure());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName("udp-" + getNapSipClear()), getNapPortSipClear());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName("udp-" + getNapSipSecure()), getNapPortSipSecure());
+    }
+
     @Override
     public String getServiceCreateLogMessage() {
       return MANAGED_SERVICE_CREATED;

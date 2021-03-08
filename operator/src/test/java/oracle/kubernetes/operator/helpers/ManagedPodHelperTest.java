@@ -1332,6 +1332,32 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
     return new PodHelper.ManagedPodStepContext(null, packet).getPodModel();
   }
 
+  @Test
+  public void whenPodCreated_containerHasTwoPortsForSip() {
+    V1Container v1Container = getCreatedPodSpecContainer();
+
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().endsWith(SIP_CLEAR)).count(), equalTo(2L));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals(SIP_CLEAR)).findFirst().orElseThrow().getProtocol(), equalTo("TCP"));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals("udp-" + SIP_CLEAR))
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
+  }
+
+  @Test
+  public void whenPodCreated_containerHasTwoPortsForSips() {
+    V1Container v1Container = getCreatedPodSpecContainer();
+
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().endsWith(SIP_SECURE)).count(), equalTo(2L));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals(SIP_SECURE)).findFirst().orElseThrow().getProtocol(), equalTo("TCP"));
+    assertThat(v1Container.getPorts().stream()
+        .filter(p -> p.getName().equals("udp-" + SIP_SECURE))
+        .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
+  }
+
   @SuppressWarnings("unused")
   static class JavaOptMatcher extends TypeSafeDiagnosingMatcher<V1Container> {
     private final String expectedOption;
