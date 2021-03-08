@@ -752,7 +752,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
       } else {
-        if (matchesSelectedProtocol(matchingPort) && matchSelectedPort(matchingPort)) {
+        if (matchesSelectedProtocol(matchingPort) && matchesSelectedPort(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
@@ -764,7 +764,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return Objects.equals(expectedProtocol, matchingPort.getProtocol());
     }
 
-    private boolean matchSelectedPort(V1ServicePort matchingPort) {
+    private boolean matchesSelectedPort(V1ServicePort matchingPort) {
       return Objects.equals(expectedValue, matchingPort.getPort());
     }
 
