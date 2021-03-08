@@ -136,6 +136,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
+  static final Integer SSL_PORT = 7002;
   protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
   protected static final String KUBERNETES_UID = "12345";
@@ -318,7 +319,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     configureDomain().withDefaultImage(image);
   }
 
-  private DomainConfigurator configureDomain() {
+  final DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
@@ -739,22 +740,38 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_hasPrometheusAnnotations() {
-    assertThat(
-        getCreatedPod().getMetadata().getAnnotations(),
-        allOf(
-            hasEntry("prometheus.io/port", Integer.toString(listenPort)),
-            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
-            hasEntry("prometheus.io/scrape", "true")));
+  public void whenPodCreated_containerUsesListenPort() {
+    final V1ContainerPort plainPort = getContainerPort("default");
+
+    assertThat(plainPort, notNullValue());
+    assertThat(plainPort.getProtocol(), equalTo("TCP"));
+    assertThat(plainPort.getContainerPort(), equalTo(listenPort));
+  }
+
+  private V1ContainerPort getContainerPort(String portName) {
+    return getCreatedPodSpecContainer().getPorts().stream().filter(
+          p -> p.getName().equalsIgnoreCase(portName)).findFirst().orElse(null);
   }
 
   @Test
-  public void whenPodCreated_containerUsesListenPort() {
-    V1Container v1Container = getCreatedPodSpecContainer();
+  public void whenPodCreatedWithSslPort_containerUsesIt() {
+    domainTopology.getServerConfig(serverName).setSslListenPort(SSL_PORT);
+    final V1ContainerPort sslPort = getContainerPort("default-secure");
 
-    assertThat(v1Container.getPorts(), hasSize(1));
-    assertThat(v1Container.getPorts().get(0).getProtocol(), equalTo("TCP"));
-    assertThat(v1Container.getPorts().get(0).getContainerPort(), equalTo(listenPort));
+    assertThat(sslPort, notNullValue());
+    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getContainerPort(), equalTo(SSL_PORT));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminPortEnabled__containerUsesIt() {
+    final Integer adminPort = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
+    final V1ContainerPort sslPort = getContainerPort("default-admin");
+
+    assertThat(sslPort, notNullValue());
+    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getContainerPort(), equalTo(adminPort));
   }
 
   abstract String getCreatedMessageKey();
@@ -1138,7 +1155,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/u01/oracle/user_projects/domains")
             .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    AnnotationHelper.annotateForPrometheus(meta, listenPort);
+    AnnotationHelper.annotateForPrometheus(meta, "/wls-exporter", listenPort);
     return meta;
   }
 

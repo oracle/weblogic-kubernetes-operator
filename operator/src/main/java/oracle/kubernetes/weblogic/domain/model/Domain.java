@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -265,6 +266,18 @@ public class Domain implements KubernetesObject {
 
   private EffectiveConfigurationFactory getEffectiveConfigurationFactory() {
     return spec.getEffectiveConfigurationFactory(apiVersion);
+  }
+
+  public MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
+    return spec.getMonitoringExporterConfiguration();
+  }
+
+  public String getMonitoringExporterImage() {
+    return spec.getMonitoringExporterImage();
+  }
+
+  public String getMonitoringExporterImagePullPolicy() {
+    return spec.getMonitoringExporterImagePullPolicy();
   }
 
   /**
@@ -916,19 +929,25 @@ public class Domain implements KubernetesObject {
     }
 
     private boolean skipValidation(String mountPath) {
-      List<V1EnvVar> envVars = spec.getEnv();
-      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
       StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
       if (!nameList.hasMoreElements()) {
         return false;
       }
       while (nameList.hasMoreElements()) {
         String token = nameList.nextToken();
-        if (noMatchingEnvVarName(varNames, token)) {
+        if (noMatchingEnvVarName(getEnvNames(), token)) {
           return false;
         }
       }
       return true;
+    }
+
+    @Nonnull
+    private Set<String> getEnvNames() {
+      return Optional.ofNullable(spec.getEnv()).stream()
+            .flatMap(Collection::stream)
+            .map(V1EnvVar::getName)
+            .collect(toSet());
     }
 
     private boolean noMatchingEnvVarName(Set<String> varNames, String token) {
