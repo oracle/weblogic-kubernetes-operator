@@ -209,7 +209,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return configureDomain().configureAdminServer();
   }
 
-  private DomainConfigurator configureDomain() {
+  DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
@@ -222,13 +222,17 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         .uid(KUBERNETES_UID)
         .controller(true);
 
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
     assertThat(model.getMetadata().getOwnerReferences(), contains(expectedReference));
+  }
+
+  V1Service createService() {
+    return testFacade.createServiceModel(testSupport.getPacket());
   }
 
   @Test
   public void whenCreated_modelHasServiceType() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType().toString()));
   }
@@ -239,14 +243,14 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Test
   public void whenCreated_modelKubernetesTypeIsCorrect() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     assertThat(OperatorServiceType.getType(model), equalTo(testFacade.getType()));
   }
 
   @Test
   public void whenCreated_modelHasExpectedSelectors() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     assertThat(
         model.getSpec().getSelector(),
@@ -258,7 +262,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Test
   public void whenCreated_modelIncludesExpectedNapPorts() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
       assertThat(model, containsPort(entry.getKey(), entry.getValue()));
@@ -267,7 +271,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Test
   public void whenCreated_modelIncludesStandardListenPorts() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     assertThat(model, containsPort("default", testFacade.getExpectedListenPort()));
     assertThat(model, containsPort("default-secure", testFacade.getExpectedSslListenPort()));
@@ -276,7 +280,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Test
   public void whenCreated_modelIncludesExpectedNodePorts() {
-    V1Service model = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service model = createService();
 
     assertThat(
         getExternalPorts(model), containsInAnyOrder(toMatchers(testFacade.getExpectedNodePorts())));
@@ -368,7 +372,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
   @Test
   public void whenMatchingServiceRecordedInDomainPresence_logServiceExists() {
-    V1Service originalService = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service originalService = createService();
     testFacade.recordService(domainPresenceInfo, originalService);
 
     runServiceHelper();
@@ -449,7 +453,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   private void recordInitialService() {
-    V1Service originalService = testFacade.createServiceModel(testSupport.getPacket());
+    V1Service originalService = createService();
     testSupport.defineResources(originalService);
     testFacade.recordService(domainPresenceInfo, originalService);
   }

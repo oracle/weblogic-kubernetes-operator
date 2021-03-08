@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.channels.SeekableByteChannel;
@@ -13,6 +14,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.LinkOption;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.spi.FileSystemProvider;
@@ -37,6 +39,10 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
   public void defineFile(String filePath, String contents) {
     instance.defineFileContents(filePath, contents);
+  }
+
+  public String getContents(String filePath) {
+    return provider.fileContents.get(filePath);
   }
 
   @Nonnull
@@ -150,9 +156,13 @@ public abstract class InMemoryFileSystem extends FileSystem {
     public SeekableByteChannel newByteChannel(
         Path path, Set<? extends OpenOption> options, FileAttribute<?>... attrs)
         throws FileNotFoundException {
-      return Optional.ofNullable(fileContents.get(getFilePath(path)))
-          .map(s -> createStrictStub(SeekableByteChannelStub.class, s))
-          .orElseThrow(() -> new FileNotFoundException(path.toString()));
+      if (!options.contains(StandardOpenOption.WRITE)) {
+        return Optional.ofNullable(fileContents.get(getFilePath(path)))
+              .map(s -> createStrictStub(ReadOnlyByteChannelStub.class, s))
+              .orElseThrow(() -> new FileNotFoundException(path.toString()));
+      } else {
+        return createStrictStub(WriteableByteChannelStub.class, getFilePath(path));
+      }
     }
 
     private BasicFileAttributes createAttributes(String filePath) {
@@ -218,11 +228,11 @@ public abstract class InMemoryFileSystem extends FileSystem {
     }
   }
 
-  abstract static class SeekableByteChannelStub implements SeekableByteChannel {
+  abstract static class ReadOnlyByteChannelStub implements SeekableByteChannel {
     private final byte[] contents;
     private int index = 0;
 
-    SeekableByteChannelStub(String contents) {
+    ReadOnlyByteChannelStub(String contents) {
       this.contents = Optional.ofNullable(contents).map(String::getBytes).orElse(null);
     }
 
@@ -244,6 +254,30 @@ public abstract class InMemoryFileSystem extends FileSystem {
 
     @Override
     public void close() {
+    }
+  }
+
+  abstract static class WriteableByteChannelStub implements SeekableByteChannel {
+    private final String filePath;
+    private byte[] contents = new byte[0];
+
+    WriteableByteChannelStub(String filePath) {
+      this.filePath = filePath;
+    }
+
+    @Override
+    public int write(ByteBuffer src) throws IOException {
+      byte[] newContents = new byte[contents.length + src.limit()];
+      System.arraycopy(contents, 0, newContents, 0, contents.length);
+      System.arraycopy(src.array(), src.position(), newContents, contents.length, src.limit() - src.position());
+      contents = newContents;
+      src.position(src.limit());
+      return contents.length;
+    }
+
+    @Override
+    public void close() {
+      instance.defineFileContents(filePath, new String(contents));
     }
   }
 }

@@ -21,7 +21,7 @@ public class MainImpl implements Main {
 
   @Override
   public void setIncludeAdditionalProperties(boolean includeAdditionalProperties) {
-    generator.setIncludeAdditionalProperties(includeAdditionalProperties);
+    generator.setForbidAdditionalProperties(includeAdditionalProperties);
   }
 
   @Override

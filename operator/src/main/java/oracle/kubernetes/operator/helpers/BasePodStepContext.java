@@ -38,7 +38,7 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   abstract List<V1Container> getContainers();
 
-  protected V1Container createContainer(TuningParameters tuningParameters) {
+  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
     return new V1Container()
         .name(getContainerName())
         .image(getServerSpec().getImage())
@@ -52,7 +52,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
     return new V1PodSpec()
         .containers(getContainers())
-        .addContainersItem(createContainer(tuningParameters))
+        .addContainersItem(createPrimaryContainer(tuningParameters))
         .affinity(getServerSpec().getAffinity())
         .nodeSelector(getServerSpec().getNodeSelectors())
         .serviceAccountName(getServerSpec().getServiceAccountName())
