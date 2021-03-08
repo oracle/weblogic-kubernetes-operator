@@ -235,9 +235,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
 
     if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
-      addContainerPort(ports, "default", getListenPort());
-      addContainerPort(ports, "default-secure", getSslListenPort());
-      addContainerPort(ports, "default-admin", getAdminPort());
+      addContainerPort(ports, "default", getListenPort(), "TCP");
+      addContainerPort(ports, "default-secure", getSslListenPort(), "TCP");
+      addContainerPort(ports, "default-admin", getAdminPort(), "TCP");
     }
 
     return ports;
@@ -247,13 +247,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     return Optional.ofNullable(config).map(WlsServerConfig::getNetworkAccessPoints).orElse(Collections.emptyList());
   }
 
-  private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
-    addContainerPort(ports, LegalNames.toDns1123LegalName(nap.getName()), nap.getListenPort());
+  private boolean isSipProtocol(NetworkAccessPoint nap) {
+    return "sip".equals(nap.getProtocol()) || "sips".equals(nap.getProtocol());
   }
 
-  private void addContainerPort(List<V1ContainerPort> ports, String name, @Nullable Integer listenPort) {
+  private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
+    String name = LegalNames.toDns1123LegalName(nap.getName());
+    addContainerPort(ports, name, nap.getListenPort(), "TCP");
+
+    if (isSipProtocol(nap)) {
+      addContainerPort(ports, "udp-" + name, nap.getListenPort(), "UDP");
+    }
+  }
+
+  private void addContainerPort(List<V1ContainerPort> ports, String name,
+                                @Nullable Integer listenPort, String protocol) {
     if (listenPort != null) {
-      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol("TCP"));
+      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
     }
   }
 

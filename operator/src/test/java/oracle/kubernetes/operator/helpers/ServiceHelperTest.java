@@ -111,6 +111,10 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int NAP_PORT_1 = 7100;
   private static final int NAP_PORT_2 = 37100;
   private static final int NAP_PORT_3 = 37200;
+  protected static final String SIP_CLEAR = "sip-clear";
+  protected static final String SIP_SECURE = "sip-secure";
+  private static final int SIP_CLEAR_NAP_PORT = 8003;
+  private static final int SIP_SECURE_NAP_PORT = 8004;
   public static final String STRANDED = "Stranded";
   public static final String NODE_PORT = "NodePort";
   private final TerminalStep terminalStep = new TerminalStep();
@@ -157,6 +161,22 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     return NAP_PORT_3;
   }
 
+  static String getNapSipClear() {
+    return SIP_CLEAR;
+  }
+
+  static String getNapSipSecure() {
+    return SIP_SECURE;
+  }
+
+  static int getNapPortSipClear() {
+    return SIP_CLEAR_NAP_PORT;
+  }
+
+  static int getNapPortSipSecure() {
+    return SIP_SECURE_NAP_PORT;
+  }
+
   @BeforeEach
   public void setUp() throws Exception {
     configureAdminServer()
@@ -179,10 +199,13 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         .addWlsServer(ADMIN_SERVER, ADMIN_PORT)
         .addNetworkAccessPoint(NAP_1, NAP_PORT_1)
         .addNetworkAccessPoint(NAP_2, NAP_PORT_2);
+
     configSupport
         .addWlsServer(TEST_SERVER, TEST_PORT)
         .setAdminPort(ADMIN_PORT)
-        .addNetworkAccessPoint(NAP_3, NAP_PORT_3);
+        .addNetworkAccessPoint(NAP_3, NAP_PORT_3)
+        .addNetworkAccessPoint(SIP_CLEAR, "sip", SIP_CLEAR_NAP_PORT)
+        .addNetworkAccessPoint(SIP_SECURE, "sips", SIP_SECURE_NAP_PORT);
     configSupport.addWlsCluster(TEST_CLUSTER, TEST_SERVER);
     configSupport.setAdminServerName(ADMIN_SERVER);
 
@@ -265,8 +288,12 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
     V1Service model = createService();
 
     for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
-      assertThat(model, containsPort(entry.getKey(), entry.getValue()));
+      assertThat(model, containsPort(entry.getKey(), getExpectedProtocol(entry.getKey()), entry.getValue()));
     }
+  }
+
+  private String getExpectedProtocol(String portName) {
+    return portName.startsWith("udp-") ? "UDP" : "TCP";
   }
 
   @Test
@@ -697,15 +724,26 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   static class PortMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Service> {
     private final String expectedName;
+    private final String expectedProtocol;
     private final Integer expectedValue;
 
     private PortMatcher(@Nonnull String expectedName, Integer expectedValue) {
+      this(expectedName, "TCP", expectedValue);
+    }
+
+    private PortMatcher(@Nonnull String expectedName, String expectedProtocol, Integer expectedValue) {
       this.expectedName = expectedName;
+      this.expectedProtocol = expectedProtocol;
       this.expectedValue = expectedValue;
     }
 
     static PortMatcher containsPort(@Nonnull String expectedName, Integer expectedValue) {
       return new PortMatcher(expectedName, expectedValue);
+    }
+
+    static PortMatcher containsPort(@Nonnull String expectedName,
+                                    @Nonnull String expectedProtocol, Integer expectedValue) {
+      return new PortMatcher(expectedName, expectedProtocol, expectedValue);
     }
 
     @Override
@@ -718,7 +756,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
         }
         mismatchDescription.appendText("contains no port with name ").appendValue(expectedName);
       } else {
-        if (matchSelectedPort(matchingPort)) {
+        if (matchesSelectedProtocol(matchingPort) && matchesSelectedPort(matchingPort)) {
           return true;
         }
         mismatchDescription.appendText("contains port ").appendValue(matchingPort);
@@ -726,9 +764,12 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
       return false;
     }
 
-    private boolean matchSelectedPort(V1ServicePort matchingPort) {
-      return "TCP".equals(matchingPort.getProtocol())
-          && Objects.equals(expectedValue, matchingPort.getPort());
+    private boolean matchesSelectedProtocol(V1ServicePort matchingPort) {
+      return Objects.equals(expectedProtocol, matchingPort.getProtocol());
+    }
+
+    private boolean matchesSelectedPort(V1ServicePort matchingPort) {
+      return Objects.equals(expectedValue, matchingPort.getPort());
     }
 
     private V1ServicePort getPortWithName(V1Service item) {

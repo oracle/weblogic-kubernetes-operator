@@ -137,6 +137,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
   static final Integer SSL_PORT = 7002;
+  protected static final String SIP_CLEAR = "sip-clear";
+  protected static final String SIP_SECURE = "sip-secure";
   protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
   protected static final String KUBERNETES_UID = "12345";
@@ -248,7 +250,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
     if (!ADMIN_SERVER.equals(serverName)) {
-      configSupport.addWlsServer(serverName, listenPort);
+      configSupport.addWlsServer(serverName, listenPort)
+          .addNetworkAccessPoint(SIP_CLEAR, "sip", 8003)
+          .addNetworkAccessPoint(SIP_SECURE, "sips", 8004);
     }
     configSupport.setAdminServerName(ADMIN_SERVER);
 
