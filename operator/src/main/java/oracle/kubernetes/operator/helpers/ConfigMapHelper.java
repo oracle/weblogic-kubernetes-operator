@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -22,6 +23,7 @@ import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
 import javax.validation.constraints.NotNull;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
@@ -45,6 +47,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.joda.time.DateTime;
+import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
@@ -512,6 +515,8 @@ public class ConfigMapHelper {
     private void parseIntrospectorResult() {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       data = ConfigMapHelper.parseIntrospectorResult(result, info.getDomainUid());
+      Optional.ofNullable(data.get(IntrospectorConfigMapConstants.TOPOLOGY_YAML))
+              .map(t -> data.put(IntrospectorConfigMapConstants.TOPOLOGY_JSON, convertToJson(t)));
 
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
@@ -534,6 +539,10 @@ public class ConfigMapHelper {
         // remove this, there is no need to store it in the configmap
         data.remove(UPDATEDOMAINRESULT);
       }
+    }
+
+    public static String convertToJson(String yaml) {
+      return new Gson().toJson(new Yaml().load(yaml), LinkedHashMap.class);
     }
 
     boolean isTopologyNotValid() {

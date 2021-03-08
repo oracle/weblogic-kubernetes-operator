@@ -2,7 +2,7 @@
 
 The operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
+**Note**: Prior to running these scripts, you must have previously created and deployed the domain. These scripts make use of [jq](https://stedolan.github.io/jq/) for processing JSON. You must have `jq 1.5 or higher` installed in order to run these scripts. See the installation options on the [jq downlod](https://stedolan.github.io/jq/download/) page.
 
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain. For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
 
