@@ -1,7 +1,7 @@
 // Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.kubernetes.weblogic.domain;
+package oracle.kubernetes.weblogic.domain.model;
 
 import java.io.IOException;
 import java.net.URL;
@@ -14,9 +14,10 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
+import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
@@ -37,13 +38,17 @@ public abstract class DomainTestBase {
   protected static final String CLUSTER_NAME = "cluster1";
   protected static final String SERVER1 = "ms1";
   protected static final String SERVER2 = "ms2";
+  protected static final String DOMAIN_V2_SAMPLE_YAML = "domain-sample.yaml";
+  protected static final String DOMAIN_V2_SAMPLE_YAML_2 = "domain-sample-2.yaml";
+  protected static final String DOMAIN_V2_SAMPLE_YAML_3 = "domain-sample-3.yaml";
+  protected static final String DOMAIN_V2_SAMPLE_YAML_4 = "domain-sample-4.yaml";
+  protected static final String DOMAIN_V2_SAMPLE_YAML_5 = "domain-sample-5.yaml";
   private static final String NAME1 = "name1";
   private static final String NAME2 = "name2";
   private static final String VALUE1 = "value1";
   private static final String VALUE2 = "value2";
   private static final String NS = "test-namespace";
   protected static final String DOMAIN_UID = "uid1";
-  private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
   private static final String IMAGE = "myimage";
   private static final String PULL_SECRET_NAME = "pull-secret";
   private static final String SECRET_NAME = "secret";

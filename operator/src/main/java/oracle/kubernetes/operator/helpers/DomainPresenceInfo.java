@@ -183,7 +183,7 @@ public class DomainPresenceInfo {
     return getSko(serverName).getService().getAndSet(null);
   }
 
-  static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
+  public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 

@@ -65,8 +65,25 @@ public class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   @Description("An annotated field")
   private Double annotatedDouble;
+
   @SuppressWarnings("unused")
   private SimpleObject simpleObject;
+  
+  @SuppressWarnings("unused")
+  private Map<String,String> stringMap;
+
+  @SuppressWarnings("unused")
+  private Map<String,Object> objectMap;
+
+  @SuppressWarnings("unused")
+  @PreserveUnknown
+  private Map<String,Object> arbitraryObjectMap;
+
+  @SuppressWarnings({"unused", "rawtypes"})
+  private Map genericMap;
+
+  @SuppressWarnings("unused")
+  private Map<String,SpecializedObject> specializedMap;
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -222,7 +239,7 @@ public class SchemaGeneratorTest {
 
   @Test
   public void whenAdditionalPropertiesDisabled_doNotGenerateTheProperty() {
-    generator.setIncludeAdditionalProperties(false);
+    generator.setForbidAdditionalProperties(false);
 
     Object schema = generator.generate(SimpleObject.class);
 
@@ -285,6 +302,41 @@ public class SchemaGeneratorTest {
         schema, hasJsonPath("$.properties.derived.properties.aaString.type", equalTo("string")));
     assertThat(
         schema, hasJsonPath("$.properties.derived.properties.anInt.type", equalTo("number")));
+  }
+
+  @Test
+  void whenFieldIsMapAndNoObjectReferences_additionalPropertiesTypeDefaultsToString() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("genericMap"));
+
+    assertThat(schema, hasJsonPath("$.genericMap.additionalProperties.type", equalTo("string")));
+  }
+
+  @Test
+  void whenFieldIsStringMapAndNoObjectReferences_additionalPropertiesTypeMatchesField() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("stringMap"));
+
+    assertThat(schema, hasJsonPath("$.stringMap.additionalProperties.type", equalTo("string")));
+  }
+
+  @Test
+  void whenFieldIsObjectMapAndNoObjectReferences_additionalPropertiesIsFalse() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("objectMap"));
+
+    assertThat(schema, hasJsonPath("$.objectMap.type", equalTo("object")));
+    assertThat(schema, hasJsonPath("$.objectMap.additionalProperties", equalTo("false")));
+  }
+
+  @Test
+  void whenFieldIsObjectMapAnnotatedWithPreserveFields_addK8sPreserveElement() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("arbitraryObjectMap"));
+
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.x-kubernetes-preserve-unknown-fields", equalTo("true")));
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.type", equalTo("object")));
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.additionalProperties", equalTo("false")));
   }
 
   @Test
@@ -371,9 +423,17 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
-    assertThrows(IOException.class,
-          () -> generator.useKubernetesVersion("1.12.0"));
+  public void whenNonCachedK8sVersionSpecified_throwException() {
+    assertThrows(IOException.class, () -> generator.useKubernetesVersion("1.12.0"));
+  }
+
+  @Test
+  void useExternalSchemaItem() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    generator.defineAdditionalProperties(SpecializedObject.class, "string");
+    Object schema = generateForField(getClass().getDeclaredField("specializedMap"));
+
+    assertThat(schema, hasJsonPath("$.specializedMap.additionalProperties.type", equalTo("string")));
   }
 
   @SuppressWarnings("unused")

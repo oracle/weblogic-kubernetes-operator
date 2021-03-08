@@ -36,7 +36,6 @@ public interface ProcessingConstants {
   String MII_DYNAMIC_UPDATE_SUCCESS = "0";
   String MII_DYNAMIC_UPDATE_RESTART_REQUIRED = "103";
 
-  String ENCODED_CREDENTIALS = "encodedCredentials";
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobFailureLogged";
   String WAIT_FOR_POD_READY = "waitForPodReady";

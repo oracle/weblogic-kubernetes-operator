@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Map;
+
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
@@ -10,6 +12,9 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.joda.time.DateTime;
+
+import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
+import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
 
 /**
  * Setup for tests that will involve running the main domain processor functionality. Such tests
@@ -69,4 +74,15 @@ public class DomainProcessorTestSetup {
         .withSpec(ds);
   }
 
+  /**
+   * Creates the secret data for any test that must do authentication.
+   * @param testSupport a Kubernetes Test Support instance
+   */
+  public static void defineSecretData(KubernetesTestSupport testSupport) {
+    testSupport.defineResources(
+                new V1Secret()
+                      .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
+                      .data(Map.of(USERNAME_KEY, "user".getBytes(),
+                            PASSWORD_KEY, "password".getBytes())));
+  }
 }

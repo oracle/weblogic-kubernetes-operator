@@ -3,18 +3,24 @@
 
 package oracle.kubernetes.json;
 
+import java.util.Map;
 import javax.annotation.Nonnull;
 
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 class SimpleObject {
-  private static int staticInt = 2;
+  private static final int staticInt = 2;
+
   @Description("A flag")
   @Nonnull
-  private Boolean aaBoolean = true;
+  private final Boolean aaBoolean = true;
+
   @Description("A string")
   private String aaString;
+
   @SerializedName("depth")
   private float aaFloat;
+
+  private Map<String,Integer> keys;
 }
