@@ -715,6 +715,7 @@ function getTopology {
   local domainNamespace=$2
   local __result=$3 
   local __jsonTopology=""
+  local __topology=""
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
@@ -730,6 +731,23 @@ function getTopology {
     exit 1
   else
     __jsonTopology=$(echo "${configMap}" | jq -r '.data["topology.json"]')
+  fi
+  if [ ${__jsonTopology} == null ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      if ! [ -x "$(command -v yq)" ]; then
+        validationError "yq is not installed"
+        exit 1
+      fi
+      __jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
+    else
+      if ! [ -x "$(command -v python)" ]; then
+        validationError "python is not installed"
+        exit 1
+      fi
+      __topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
+      __jsonTopology=$(python -c \
+      'import sys, yaml, json; print json.dumps(yaml.safe_load('"${__topology}"'), indent=4)')
+    fi
   fi
   eval $__result="'${__jsonTopology}'"
 }
