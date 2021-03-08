@@ -295,7 +295,11 @@ public class WlsServerConfig {
   }
 
   public WlsServerConfig addNetworkAccessPoint(String name, int listenPort) {
-    addNetworkAccessPoint(new NetworkAccessPoint(name, "TCP", listenPort, null));
+    return addNetworkAccessPoint(name, "TCP", listenPort);
+  }
+
+  public WlsServerConfig addNetworkAccessPoint(String name, String protocol, int listenPort) {
+    addNetworkAccessPoint(new NetworkAccessPoint(name, protocol, listenPort, null));
     return this;
   }
 
