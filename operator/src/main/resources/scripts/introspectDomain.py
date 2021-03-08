@@ -104,7 +104,7 @@ class OfflineWlstEnv(object):
 
     # before doing anything, get each env var and verify it exists 
     global server_template_sslports
-    global server_listening_ports
+    global server_template_listening_ports
 
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
@@ -181,8 +181,8 @@ class OfflineWlstEnv(object):
       if os.path.isfile(the_file_path):
         os.unlink(the_file_path)
 
-    server_template_sslports, server_listening_ports = get_server_template_listening_ports_from_configxml(self.getDomainHome() + os.sep
-                                                            + 'config' + os.sep + 'config.xml')
+    server_template_sslports, server_template_listening_ports = get_server_template_listening_ports_from_configxml(self.getDomainHome() + os.sep
+                                                                                                                   + 'config' + os.sep + 'config.xml')
 
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
@@ -782,17 +782,31 @@ class TopologyGenerator(Generator):
       name=self.name(nap)
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
-    nap_listen_port = nap.getListenPort()
-    # if it is not set, then default to 7001
-    if nap_listen_port == 0:
-      nap_listen_port = 7001
+    if nap.getListenPort() == 0:
+      trace("SEVERE", "Invalid listen port value '"
+            + str(nap.getListenPort())
+            + "' in the WebLogic Domain for "
+            + server.getName()
+            + ' Network Channel '
+            + nap.getName()
+            + '. Please provide a valid value for the listen port, this is likely because of not specifying the port '
+              'value during domain '
+              'creation')
+      sys.exit(1)
 
-    self.writeln("    listenPort: " + str(nap_listen_port))
-    # if it is not set, then defaul to listen port
-    if nap.getPublicPort() != 0:
-      self.writeln("    publicPort: " + str(nap.getPublicPort()))
-    else:
-      self.writeln("    publicPort: " + str(nap_listen_port))
+    self.writeln("    listenPort: " + str(nap.getListenPort()))
+    if nap.getPublicPort() == 0:
+      trace("SEVERE", "Invalid public listen port value '"
+            + str(nap.getListenPort())
+            + "' in the WebLogic Domain for "
+            + server.getName()
+            + 'Network Channel '
+            + nap.getName()
+            + '. Please provide a valid value for the public port, this is likely because of not specifying the port '
+              'value during domain '
+              'creation')
+      sys.exit(1)
+    self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
   def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
     '''
@@ -1714,8 +1728,8 @@ def getRealListenPort(server):
   # wlst mbean returns 7100 and we cannot use this in the topology.xml
   # when setting up the container port since the actual listening port is
   # 7001
-  if server_listening_ports.has_key(server.getName()):
-    port = server_listening_ports[server.getName()]
+  if server_template_listening_ports.has_key(server.getName()):
+    port = server_template_listening_ports[server.getName()]
     if port is None:
       return 7001
   else:
