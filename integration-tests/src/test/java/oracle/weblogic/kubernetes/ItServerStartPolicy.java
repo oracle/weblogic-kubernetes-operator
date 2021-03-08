@@ -924,7 +924,7 @@ class ItServerStartPolicy {
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
 
     // verify that the script can not start a server in dynamic cluster that exceeds the max cluster size
-    regex = ".*outside the range of allowed servers";
+    regex = ".*is outside the allowed range of";
     result =  assertDoesNotThrow(() ->
         executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));
