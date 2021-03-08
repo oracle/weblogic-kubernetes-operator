@@ -1711,6 +1711,7 @@ def getRealSSLListenPort(server, sslport):
   # wlst mbean returns 8100 and we cannot use this in the topology.xml
   # when setting up the container port since the actual listening port is
   # 7002
+  # If it is not a server template, then just return from the mbean.
   if server_template_sslports.has_key(server.getName()):
     configxml_ssl_port = server_template_sslports[server.getName()]
     if configxml_ssl_port is None:
@@ -1728,6 +1729,7 @@ def getRealListenPort(server):
   # wlst mbean returns 7100 and we cannot use this in the topology.xml
   # when setting up the container port since the actual listening port is
   # 7001
+  # If it is not a server template, then just return from the mbean.
   if server_template_listening_ports.has_key(server.getName()):
     port = server_template_listening_ports[server.getName()]
     if port is None:
