@@ -735,13 +735,17 @@ function getTopology {
   if [ ${__jsonTopology} == null ]; then
     if [[ "$OSTYPE" == "darwin"* ]]; then
       if ! [ -x "$(command -v yq)" ]; then
-        validationError "yq is not installed"
+        validationError "MacOS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'yq' is not installed locally. To fix this, install 'yq', \
+          call the script from Linux instead of MacOS, or upgrade the Operator version."
         exit 1
       fi
       __jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
     else
       if ! [ -x "$(command -v python)" ]; then
-        validationError "python is not installed"
+        validationError "Linux OS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'python' is not installed locally. To fix this, install 'python' \
+          or upgrade the Operator version."
         exit 1
       fi
       __topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
