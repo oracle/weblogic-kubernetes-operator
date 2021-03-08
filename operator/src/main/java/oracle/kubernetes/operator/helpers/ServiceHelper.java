@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -427,9 +428,27 @@ public class ServiceHelper {
     abstract void addServicePortIfNeeded(List<V1ServicePort> ports, String portName, String protocol, Integer port);
 
     protected void addServicePortIfNeeded(List<V1ServicePort> ports, V1ServicePort port) {
-      if (!ports.stream().anyMatch(p -> p.getName().equals(port.getName()))) {
+      if (isNoDuplicatedName(ports, port) && isNoDuplicatedProtocolAndPort(ports, port)) {
         ports.add(port);
       }
+    }
+
+    private boolean isNoDuplicatedName(List<V1ServicePort> ports, V1ServicePort port) {
+      return ports.stream().noneMatch(p -> Objects.equals(p.getName(), port.getName()));
+    }
+
+    private boolean isNoDuplicatedProtocolAndPort(List<V1ServicePort> ports, V1ServicePort port) {
+      return ports.stream().noneMatch(p -> isProtocolMatch(p, port) && p.getPort().equals(port.getPort()));
+    }
+
+    private boolean isProtocolMatch(V1ServicePort one, V1ServicePort two) {
+      if (one.getProtocol() == null) {
+        return two.getProtocol() == null || "TCP".equals(two.getProtocol());
+      }
+      if (two.getProtocol() == null) {
+        return "TCP".equals(one.getProtocol());
+      }
+      return one.getProtocol().equals(two.getProtocol());
     }
 
     V1ServicePort createServicePort(String portName, Integer port) {
