@@ -3,8 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -16,78 +15,46 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.helpers.SecretType.WebLogicCredentials;
+import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_NOT_FOUND;
+
 /** A Helper Class for retrieving Kubernetes Secrets used by the WebLogic Operator. */
 public class SecretHelper {
-  public static final String SECRET_DATA_KEY = "secretData";
   // Admin Server Credentials Type Secret
   // has 2 fields (username and password)
-  public static final String ADMIN_SERVER_CREDENTIALS_USERNAME = "username";
-  public static final String ADMIN_SERVER_CREDENTIALS_PASSWORD = "password";
+  public static final String USERNAME_KEY = "username";
+  public static final String PASSWORD_KEY = "password";
+  private static final String AUTHORIZATION_HEADER_FACTORY = "AuthorizationHeaderFactory";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
-   * Constructor.
-   *
+   * Factory for a Step that adds a factory to create authorization headers, using the secret associated
+   * with the current domain.
+   * Expects packet to contain a domain presence info.
+   * Records an instance of AuthorizationHeaderFactory in the packet.
    */
-  public SecretHelper() {
-
+  public static Step createAuthorizationHeaderFactoryStep() {
+    return new AuthorizationHeaderFactoryStep();
   }
 
   /**
-   * Factory for {@link Step} that asynchronously acquires secret data.
-   *
-   * @param secretType Secret type
-   * @param secretName Secret name
-   * @param namespace Namespace
-   * @param next Next processing step
-   * @return Step for acquiring secret data
+   * Returns the authorization header factory stored in the specified packet, or null if it is absent.
+   * @param packet the packet to read.
    */
-  public static Step getSecretData(
-      SecretType secretType, String secretName, String namespace, Step next) {
-    return new SecretDataStep(secretType, secretName, namespace, next);
+  public static AuthorizationHeaderFactory getAuthorizationHeaderFactory(Packet packet) {
+    return (AuthorizationHeaderFactory) packet.get(AUTHORIZATION_HEADER_FACTORY);
   }
 
-  private static Map<String, byte[]> harvestAdminSecretData(
-      V1Secret secret, LoggingFilter loggingFilter) {
-    Map<String, byte[]> secretData = new HashMap<>();
-    byte[] usernameBytes = secret.getData().get(ADMIN_SERVER_CREDENTIALS_USERNAME);
-    byte[] passwordBytes = secret.getData().get(ADMIN_SERVER_CREDENTIALS_PASSWORD);
 
-    if (usernameBytes != null) {
-      secretData.put(ADMIN_SERVER_CREDENTIALS_USERNAME, usernameBytes);
-    } else {
-      LOGGER.warning(
-          loggingFilter, MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_USERNAME);
-    }
+  private static class AuthorizationHeaderFactoryStep extends Step {
 
-    if (passwordBytes != null) {
-      secretData.put(ADMIN_SERVER_CREDENTIALS_PASSWORD, passwordBytes);
-    } else {
-      LOGGER.warning(
-          loggingFilter, MessageKeys.SECRET_DATA_NOT_FOUND, ADMIN_SERVER_CREDENTIALS_PASSWORD);
-    }
-    return secretData;
-  }
-
-  private static class SecretDataStep extends Step {
-    private final SecretType secretType;
-    private final String secretName;
-    private final String namespace;
-
-    SecretDataStep(SecretType secretType, String secretName, String namespace, Step next) {
-      super(next);
-      this.secretType = secretType;
-      this.secretName = secretName;
-      this.namespace = namespace;
-    }
+    private String secretName;
+    private String namespace;
 
     @Override
     public NextAction apply(Packet packet) {
-      if (secretType != SecretType.WebLogicCredentials) {
-        throw new IllegalArgumentException("Invalid secret type");
-      } else if (secretName == null) {
-        throw new IllegalArgumentException("Invalid secret name");
-      }
+      secretName = packet.getSpi(DomainPresenceInfo.class).getDomain().getWebLogicCredentialsSecretName();
+      namespace = packet.getSpi(DomainPresenceInfo.class).getNamespace();
 
       LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
       Step read =
@@ -108,7 +75,7 @@ public class SecretHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
         if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
-          LOGGER.warning(loggingFilter, MessageKeys.SECRET_NOT_FOUND, secretName, namespace, secretType);
+          LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WebLogicCredentials);
           return doNext(packet);
         }
         return super.onFailure(packet, callResponse);
@@ -116,10 +83,35 @@ public class SecretHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
-        packet.put(
-            SECRET_DATA_KEY, harvestAdminSecretData(callResponse.getResult(), loggingFilter));
+        packet.put(AUTHORIZATION_HEADER_FACTORY,
+              new SecretContext(callResponse.getResult(), loggingFilter).createAuthorizationHeaderFactory());
         return doNext(packet);
       }
+
+    }
+
+    static class SecretContext {
+      private final V1Secret secret;
+      private final LoggingFilter loggingFilter;
+
+      SecretContext(V1Secret secret, LoggingFilter loggingFilter) {
+        this.secret = secret;
+        this.loggingFilter = loggingFilter;
+      }
+
+      AuthorizationHeaderFactory createAuthorizationHeaderFactory() {
+        return new AuthorizationHeaderFactory(getSecretItem(USERNAME_KEY), getSecretItem(PASSWORD_KEY));
+      }
+
+      private byte[] getSecretItem(String key) {
+        byte[] value = Optional.of(secret).map(V1Secret::getData).map(data -> data.get(key)).orElse(null);
+        if (value == null) {
+          LOGGER.warning(loggingFilter, MessageKeys.SECRET_DATA_NOT_FOUND, key);
+          throw new RuntimeException("Unable to retrieve secret data");
+        }
+        return value;
+      }
+
     }
   }
 }

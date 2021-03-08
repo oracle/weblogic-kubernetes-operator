@@ -107,6 +107,7 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -347,6 +348,11 @@
       <groupId>org.glassfish.jersey.test-framework.providers</groupId>
       <artifactId>jersey-test-framework-provider-inmemory</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>com.networknt</groupId>
+        <artifactId>json-schema-validator</artifactId>
+        <version>${networknt-jsonschmema-validator-version}</version>
     </dependency>
     <dependency>
       <groupId>org.httpunit</groupId>

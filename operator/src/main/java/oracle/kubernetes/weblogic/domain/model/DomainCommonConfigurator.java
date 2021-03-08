@@ -153,6 +153,18 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withMonitoringExporterConfiguration(String configuration) {
+    getDomainSpec().createMonitoringExporterConfiguration(configuration);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMonitoringExporterImage(String imageName) {
+    getDomainSpec().setMonitoringExporterImage(imageName);
+    return this;
+  }
+
   private AdminServer getOrCreateAdminServer() {
     return getDomainSpec().getOrCreateAdminServer();
   }
