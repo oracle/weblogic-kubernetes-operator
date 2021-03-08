@@ -233,6 +233,17 @@ public abstract class PodStepContext extends BasePodStepContext {
     return "sip".equals(nap.getProtocol()) || "sips".equals(nap.getProtocol());
   }
 
+  private V1ContainerPort createContainerPort(String name, Integer port, String protocol) {
+    return new V1ContainerPort()
+        .name(LegalNames.toDns1123LegalName(name))
+        .containerPort(port)
+        .protocol(protocol);
+  }
+
+  private V1ContainerPort prefixName(String prefix, V1ContainerPort port) {
+    return port.name(prefix + port.getName());
+  }
+
   private List<V1ContainerPort> getContainerPorts() {
     if (scan != null) {
 
@@ -241,48 +252,23 @@ public abstract class PodStepContext extends BasePodStepContext {
         for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
           String napName = nap.getName();
 
-          V1ContainerPort port =
-              new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(napName))
-                  .containerPort(nap.getListenPort())
-                  .protocol("TCP");
-          ports.add(port);
+          ports.add(createContainerPort(napName, nap.getListenPort(), "TCP"));
 
           if (isSipProtocol(nap)) {
-            V1ContainerPort udpPort =
-                new V1ContainerPort()
-                    .name("udp-" + LegalNames.toDns1123LegalName(napName))
-                    .containerPort(nap.getListenPort())
-                    .protocol("UDP");
-            ports.add(udpPort);
+            ports.add(prefixName("udp-", createContainerPort(napName, nap.getListenPort(), "UDP")));
           }
         }
       }
       // Istio type is already passed from the introspector output, no need to create it again
       if (!this.getDomain().isIstioEnabled()) {
         if (scan.getListenPort() != null) {
-          String napName = "default";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getListenPort())
-                  .protocol("TCP"));
+          ports.add(createContainerPort("default", scan.getListenPort(), "TCP"));
         }
         if (scan.getSslListenPort() != null) {
-          String napName = "default-secure";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getSslListenPort())
-                  .protocol("TCP"));
+          ports.add(createContainerPort("default-secure", scan.getSslListenPort(), "TCP"));
         }
         if (scan.getAdminPort() != null) {
-          String napName = "default-admin";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getAdminPort())
-                  .protocol("TCP"));
+          ports.add(createContainerPort("default-admin", scan.getAdminPort(), "TCP"));
         }
       }
       return ports;
