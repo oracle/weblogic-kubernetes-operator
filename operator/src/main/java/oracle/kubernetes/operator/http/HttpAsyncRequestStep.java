@@ -53,7 +53,7 @@ public class HttpAsyncRequestStep extends Step {
    * @param responseStep the step to handle the response
    * @return a new step to run as part of a fiber, linked to the response step
    */
-  public static HttpAsyncRequestStep createGetRequest(String url, HttpResponseStep responseStep) {
+  static HttpAsyncRequestStep createGetRequest(String url, HttpResponseStep responseStep) {
     HttpRequest request = HttpRequest.newBuilder(URI.create(url)).GET().build();
     return create(request, responseStep);
   }
@@ -108,7 +108,11 @@ public class HttpAsyncRequestStep extends Step {
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
       if (throwable != null) {
-        LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, request.method(), request.uri(), throwable);
+        if (throwable instanceof HttpTimeoutException) {
+          LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
+        } else if (response == null) {
+          recordThrowableResponse(throwable);
+        }
       }
       
       Optional.ofNullable(response).ifPresent(this::recordResponse);
@@ -121,8 +125,12 @@ public class HttpAsyncRequestStep extends Step {
       }
       HttpResponseStep.addToPacket(packet, response);
     }
-  }
 
+    private void recordThrowableResponse(Throwable throwable) {
+      LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      HttpResponseStep.addToPacket(packet, throwable);
+    }
+  }
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {
     return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
@@ -132,7 +140,7 @@ public class HttpAsyncRequestStep extends Step {
     private final String method;
     private final URI uri;
 
-    public HttpTimeoutException(String method, URI uri) {
+    HttpTimeoutException(String method, URI uri) {
       this.method = method;
       this.uri = uri;
     }
