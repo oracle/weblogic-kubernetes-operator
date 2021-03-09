@@ -467,13 +467,13 @@ class TopologyGenerator(Generator):
           sslListenPort = getRealSSLListenPort(server, ssl.getListenPort())
           sslListenPortEnabled = ssl.isEnabled()
         elif isSecureModeEnabledForDomain(self.env.getDomain()):
-          trace("SEVERE", "SecureMode is enabled in the WebLogic Domain but the SSL is not enabled in " + str(server.getName())
-            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
-          sys.exit(1)
+          sslListenPort = 7002
+          sslListenPortEnabled = True
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
         if firstServer is None:
+          firstServer = server
           firstServer = server
           firstListenPort = listenPort
           firstListenPortEnabled = listenPortEnabled
@@ -674,9 +674,9 @@ class TopologyGenerator(Generator):
       self.writeln("sslListenPort: " + str(sslport))
       self.undent()
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the WebLogic Domain but the SSL is not enabled in " + str(server.getName())
-            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
-      sys.exit(1)
+      self.indent()
+      self.writeln("sslListenPort: 7002")
+      self.undent()
 
   def addServerTemplates(self):
     serverTemplates = self.env.getDomain().getServerTemplates()
@@ -800,7 +800,7 @@ class TopologyGenerator(Generator):
             + str(nap.getListenPort())
             + "' in the WebLogic Domain for "
             + server.getName()
-            + 'Network Channel '
+            + ' Network Channel '
             + nap.getName()
             + '. Please provide a valid value for the public port, this is likely because of not specifying the port '
               'value during domain '
@@ -835,9 +835,7 @@ class TopologyGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the WebLogic Domain but the SSL is not enabled in " + str(server.getName())
-            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
-      sys.exit(1)
+      ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
@@ -1239,10 +1237,7 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the WebLogic Domain but the SSL is not enabled in " + str(server.getName())
-            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
-      sys.exit(1)
-      #ssl_listen_port = "7002"
+      ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -1297,10 +1292,7 @@ class SitConfigGenerator(Generator):
     if ssl is not None and ssl.isEnabled():
       ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
     elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      trace("SEVERE", "SecureMode is enabled in the WebLogic Domain but the SSL is not enabled in " + str(server.getName())
-            + ". All Servers and ServerTemplates must have SSL enabled and listen-port defined")
-      sys.exit(1)
-      #ssl_listen_port = "7002"
+      ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
