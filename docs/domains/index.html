@@ -973,10 +973,16 @@ window.onload = function() {
         },
         "annotations": {
           "description": "Annotations to associate with the Administration Server\u0027s Service(s).",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "Labels to associate with the Administration Server\u0027s Service(s).",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }
@@ -1182,6 +1188,10 @@ window.onload = function() {
       "description": "The specification of the operation of the WebLogic domain. Required.",
       "type": "object",
       "properties": {
+        "monitoringExporter": {
+          "description": "Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.",
+          "$ref": "#/definitions/MonitoringExporterSpecification"
+        },
         "configuration": {
           "description": "Models and overrides affecting the WebLogic domain configuration.",
           "$ref": "#/definitions/Configuration"
@@ -1409,10 +1419,16 @@ window.onload = function() {
       "properties": {
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }
@@ -1459,9 +1475,6 @@ window.onload = function() {
       ]
     },
     "Map": {
-      "additionalProperties": {
-        "type": "string"
-      },
       "type": "object"
     },
     "Model": {
@@ -1491,6 +1504,29 @@ window.onload = function() {
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
+        }
+      }
+    },
+    "MonitoringExporterSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "configuration": {
+          "x-kubernetes-preserve-unknown-fields": "true",
+          "description": "The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter",
+          "$ref": "#/definitions/Map"
         }
       }
     },
@@ -1607,6 +1643,9 @@ window.onload = function() {
         },
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "env": {
@@ -1622,6 +1661,9 @@ window.onload = function() {
         },
         "nodeSelector": {
           "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "volumeMounts": {
@@ -1633,6 +1675,9 @@ window.onload = function() {
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "runtimeClassName": {
@@ -1691,10 +1736,16 @@ window.onload = function() {
         },
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }

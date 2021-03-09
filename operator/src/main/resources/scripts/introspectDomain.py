@@ -772,8 +772,8 @@ class TopologyGenerator(Generator):
     if istio_enabled == 'true':
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
-      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
-      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure']
+      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
+      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
       if nap_protocol in http_protocol:
         name = 'http-' + nap.getName().replace(' ', '_')
       elif nap_protocol in https_protocol:

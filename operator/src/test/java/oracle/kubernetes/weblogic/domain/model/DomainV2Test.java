@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
-import oracle.kubernetes.weblogic.domain.DomainTestBase;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,11 +47,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainV2Test extends DomainTestBase {
 
   private static final int DEFAULT_REPLICA_LIMIT = 0;
-  private static final String DOMAIN_V2_SAMPLE_YAML = "model/domain-sample.yaml";
-  private static final String DOMAIN_V2_SAMPLE_YAML_2 = "model/domain-sample-2.yaml";
-  private static final String DOMAIN_V2_SAMPLE_YAML_3 = "model/domain-sample-3.yaml";
-  private static final String DOMAIN_V2_SAMPLE_YAML_4 = "model/domain-sample-4.yaml";
-  private static final String DOMAIN_V2_SAMPLE_YAML_5 = "model/domain-sample-5.yaml";
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;

@@ -37,6 +37,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `managedServers` | array of [Managed Server](#managed-server) | Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template. |
 | `maxClusterConcurrentShutdown` | number | The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1. |
 | `maxClusterConcurrentStartup` | number | The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0. |
+| `monitoringExporter` | [Monitoring Exporter Specification](#monitoring-exporter-specification) | Configuration for the use of the WebLogic Monitoring Exporter as part of this domain. |
 | `replicas` | number | The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
@@ -110,6 +111,14 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `serverService` | [Server Service](#server-service) | Customization affecting the generation of Kubernetes Services for WebLogic Server instances. |
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING. |
+
+### Monitoring Exporter Specification
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `configuration` | Map | The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter |
+| `image` | string | The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0 |
+| `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 
 ### Server Pod
 

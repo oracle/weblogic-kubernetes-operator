@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -267,6 +269,18 @@ public class Domain implements KubernetesObject {
     return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 
+  public MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
+    return spec.getMonitoringExporterConfiguration();
+  }
+
+  public String getMonitoringExporterImage() {
+    return spec.getMonitoringExporterImage();
+  }
+
+  public String getMonitoringExporterImagePullPolicy() {
+    return spec.getMonitoringExporterImagePullPolicy();
+  }
+
   /**
    * Returns the specification applicable to a particular server/cluster combination.
    *
@@ -340,6 +354,19 @@ public class Domain implements KubernetesObject {
 
   public int getMaxConcurrentShutdown(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
+  /**
+   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
+   * @return {@link MIINonDynamicChangesMethod}
+   */
+  public MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
+    return Optional.of(getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getOnNonDynamicChanges)
+        .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly);
   }
 
   /**
@@ -916,19 +943,25 @@ public class Domain implements KubernetesObject {
     }
 
     private boolean skipValidation(String mountPath) {
-      List<V1EnvVar> envVars = spec.getEnv();
-      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
       StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
       if (!nameList.hasMoreElements()) {
         return false;
       }
       while (nameList.hasMoreElements()) {
         String token = nameList.nextToken();
-        if (noMatchingEnvVarName(varNames, token)) {
+        if (noMatchingEnvVarName(getEnvNames(), token)) {
           return false;
         }
       }
       return true;
+    }
+
+    @Nonnull
+    private Set<String> getEnvNames() {
+      return Optional.ofNullable(spec.getEnv()).stream()
+            .flatMap(Collection::stream)
+            .map(V1EnvVar::getName)
+            .collect(toSet());
     }
 
     private boolean noMatchingEnvVarName(Set<String> varNames, String token) {

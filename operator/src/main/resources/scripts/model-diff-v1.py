@@ -296,6 +296,10 @@ class ModelDiffer:
                         or rcu_db_info.has_key('rcu_prefix'):
                     changed_items.append(SECURITY_INFO_UPDATED)
 
+        if model.has_key('topology'):
+            if model['topology'].has_key('Security') or model['topology'].has_key('SecurityConfiguration'):
+                changed_items.append(SECURITY_INFO_UPDATED)
+
         return 0
 
     def _is_safe_addition(self, items):

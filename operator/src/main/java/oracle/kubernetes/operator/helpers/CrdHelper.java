@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.helpers;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
@@ -39,7 +42,6 @@ import io.kubernetes.client.openapi.models.V1beta1CustomResourceValidation;
 import io.kubernetes.client.openapi.models.V1beta1JSONSchemaProps;
 import io.kubernetes.client.util.Yaml;
 import okhttp3.internal.http2.StreamResetException;
-import oracle.kubernetes.json.SchemaGenerator;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -52,6 +54,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+
+import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
 /** Helper class to ensure Domain CRD is created. */
 public class CrdHelper {
@@ -69,39 +73,62 @@ public class CrdHelper {
    * Used by build to generate crd-validation.yaml
    * @param args Arguments that must be one value giving file name to create
    */
-  public static void main(String[] args) {
+  public static void main(String[] args) throws URISyntaxException {
     if (args == null || args.length != 2) {
       throw new IllegalArgumentException();
     }
 
+    writeCrdFiles(args[0], args[1]);
+  }
+
+  static void writeCrdFiles(String crdFileName, String betaCrdFileName) throws URISyntaxException {
     CrdContext context = new CrdContext(null, null, null);
 
-    String outputFileName = args[0];
-    Path outputFilePath = Paths.get(outputFileName);
+    final URI outputFile = asFileURI(crdFileName);
+    final URI betaOutputFile = asFileURI(betaCrdFileName);
 
-    try (Writer writer = Files.newBufferedWriter(outputFilePath)) {
-      writer.write(
-          "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
-              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
-      writer.write("\n");
-      Yaml.dump(context.model, writer);
-    } catch (IOException io) {
-      throw new RuntimeException(io);
-    }
+    writeAsYaml(outputFile, context.model);
+    writeAsYaml(betaOutputFile, context.betaModel);
+  }
 
-    String betaOutputFileName = args[1];
-    Path betaOutputFilePath = Paths.get(betaOutputFileName);
-
-    try (Writer writer = Files.newBufferedWriter(betaOutputFilePath)) {
-      writer.write(
-          "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
-              + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
-      writer.write("\n");
-      Yaml.dump(context.betaModel, writer);
-    } catch (IOException io) {
-      throw new RuntimeException(io);
+  private static URI asFileURI(String fileName) throws URISyntaxException {
+    if (fileName.startsWith("file:/")) {
+      return new URI(fileName);
+    } else if (fileName.startsWith("/")) {
+      return asFileURI("file:" + fileName);
+    } else {
+      return asFileURI("file:/" + fileName);
     }
   }
+
+  @SuppressWarnings("FieldMayBeFinal") // allow unit tests to set this
+  private static Function<URI, Path> uriToPath = Paths::get;
+
+  static void writeAsYaml(URI outputFileName, Object model) {
+    try (Writer writer = Files.newBufferedWriter(uriToPath.apply(outputFileName))) {
+      writer.write(
+            "# Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
+                  + "# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.\n");
+      writer.write("\n");
+      dumpYaml(writer, model);
+    } catch (IOException io) {
+      throw new RuntimeException(io);
+    } catch (IllegalArgumentException e) {
+      throw new RuntimeException("Bad argument: " + outputFileName, e);
+    }
+  }
+
+  // Writes a YAML representation of the specified model to the writer. First converts to JSON in order
+  // to respect the @SerializedName annotation.
+  @SuppressWarnings("unchecked")
+  private static void dumpYaml(Writer writer, Object model) {
+    final Gson gson = new Gson();
+    Map<String,Object> map = gson.fromJson(gson.toJson(model), Map.class);
+    Yaml.dump(map, writer);
+  }
+  // a = gson.toJson(model)
+  // Map = gson.fromJson(Map.class)
+  // yaml dump ?  // ordering and format likely to change massively
 
   public static Step createDomainCrdStep(KubernetesVersion version, SemanticVersion productVersion) {
     return new CrdStep(version, productVersion);
@@ -147,11 +174,6 @@ public class CrdHelper {
       context = new CrdContext(version, productVersion, this);
     }
 
-    CrdStep(KubernetesVersion version, SemanticVersion productVersion, Step next) {
-      super(next);
-      context = new CrdContext(version, productVersion, this);
-    }
-
     @Override
     public NextAction apply(Packet packet) {
       if (context.version.isCrdV1Supported()) {
@@ -162,6 +184,7 @@ public class CrdHelper {
     }
   }
 
+  @SuppressWarnings("ConstantConditions")
   static class CrdContext {
     private final Step conflictStep;
     private final V1CustomResourceDefinition model;
@@ -173,27 +196,27 @@ public class CrdHelper {
       this.version = version;
       this.productVersion = productVersion;
       this.conflictStep = conflictStep;
-      this.model = createModel(version, productVersion);
-      this.betaModel = createBetaModel(version, productVersion);
+      this.model = createModel(productVersion);
+      this.betaModel = createBetaModel(productVersion);
     }
 
-    static V1CustomResourceDefinition createModel(KubernetesVersion version, SemanticVersion productVersion) {
+    static V1CustomResourceDefinition createModel(SemanticVersion productVersion) {
       V1CustomResourceDefinition model = new V1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
-          .spec(createSpec(version));
+          .spec(createSpec());
       return AnnotationHelper.withSha256Hash(model,
           Objects.requireNonNull(
               model.getSpec().getVersions().stream().findFirst().orElseThrow().getSchema()).getOpenAPIV3Schema());
     }
 
-    static V1beta1CustomResourceDefinition createBetaModel(KubernetesVersion version, SemanticVersion productVersion) {
+    static V1beta1CustomResourceDefinition createBetaModel(SemanticVersion productVersion) {
       V1beta1CustomResourceDefinition model = new V1beta1CustomResourceDefinition()
           .apiVersion("apiextensions.k8s.io/v1beta1")
           .kind("CustomResourceDefinition")
           .metadata(createMetadata(productVersion))
-          .spec(createBetaSpec(version));
+          .spec(createBetaSpec());
       return AnnotationHelper.withSha256Hash(model,
           Objects.requireNonNull(model.getSpec().getValidation()).getOpenAPIV3Schema());
     }
@@ -208,28 +231,24 @@ public class CrdHelper {
       return metadata;
     }
 
-    static V1CustomResourceDefinitionSpec createSpec(KubernetesVersion version) {
-      V1CustomResourceDefinitionSpec spec =
-          new V1CustomResourceDefinitionSpec()
-              .group(KubernetesConstants.DOMAIN_GROUP)
-              .preserveUnknownFields(false)
-              .versions(getCrdVersions())
-              .scope("Namespaced")
-              .names(getCrdNames());
-      return spec;
+    static V1CustomResourceDefinitionSpec createSpec() {
+      return new V1CustomResourceDefinitionSpec()
+          .group(KubernetesConstants.DOMAIN_GROUP)
+          .preserveUnknownFields(false)
+          .versions(getCrdVersions())
+          .scope("Namespaced")
+          .names(getCrdNames());
     }
 
-    static V1beta1CustomResourceDefinitionSpec createBetaSpec(KubernetesVersion version) {
-      V1beta1CustomResourceDefinitionSpec spec =
-          new V1beta1CustomResourceDefinitionSpec()
-              .group(KubernetesConstants.DOMAIN_GROUP)
-              .preserveUnknownFields(false)
-              .versions(getBetaCrdVersions())
-              .validation(createBetaSchemaValidation())
-              .subresources(createBetaSubresources())
-              .scope("Namespaced")
-              .names(getBetaCrdNames());
-      return spec;
+    static V1beta1CustomResourceDefinitionSpec createBetaSpec() {
+      return new V1beta1CustomResourceDefinitionSpec()
+          .group(KubernetesConstants.DOMAIN_GROUP)
+          .preserveUnknownFields(false)
+          .versions(getBetaCrdVersions())
+          .validation(createBetaSchemaValidation())
+          .subresources(createBetaSubresources())
+          .scope("Namespaced")
+          .names(getBetaCrdNames());
     }
 
     static String getVersionFromCrdSchemaFileName(String name) {
@@ -330,10 +349,10 @@ public class CrdHelper {
     static V1JSONSchemaProps createOpenApiV3Schema() {
       Gson gson = new Gson();
       JsonElement jsonElementSpec =
-          gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainSpec.class));
       V1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1JSONSchemaProps.class);
       JsonElement jsonElementStatus =
-          gson.toJsonTree(createSchemaGenerator().generate(DomainStatus.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainStatus.class));
       V1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1JSONSchemaProps.class);
       return new V1JSONSchemaProps()
@@ -345,25 +364,16 @@ public class CrdHelper {
     static V1beta1JSONSchemaProps createBetaOpenApiV3Schema() {
       Gson gson = new Gson();
       JsonElement jsonElementSpec =
-          gson.toJsonTree(createSchemaGenerator().generate(DomainSpec.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainSpec.class));
       V1beta1JSONSchemaProps spec = gson.fromJson(jsonElementSpec, V1beta1JSONSchemaProps.class);
       JsonElement jsonElementStatus =
-          gson.toJsonTree(createSchemaGenerator().generate(DomainStatus.class));
+          gson.toJsonTree(createCrdSchemaGenerator().generate(DomainStatus.class));
       V1beta1JSONSchemaProps status =
           gson.fromJson(jsonElementStatus, V1beta1JSONSchemaProps.class);
       return new V1beta1JSONSchemaProps()
           .type("object")
           .putPropertiesItem("spec", spec)
           .putPropertiesItem("status", status);
-    }
-
-    static SchemaGenerator createSchemaGenerator() {
-      SchemaGenerator generator = new SchemaGenerator();
-      generator.setIncludeAdditionalProperties(false);
-      generator.setSupportObjectReferences(false);
-      generator.setIncludeSchemaReference(false);
-      generator.addPackageToSuppressDescriptions("io.kubernetes.client.openapi.models");
-      return generator;
     }
 
     Step verifyCrd(Step next) {
