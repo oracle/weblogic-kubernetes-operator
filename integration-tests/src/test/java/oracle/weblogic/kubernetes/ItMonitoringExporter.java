@@ -1336,7 +1336,7 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-       .orElse("master");
+        .orElse("master");
 
 
 
