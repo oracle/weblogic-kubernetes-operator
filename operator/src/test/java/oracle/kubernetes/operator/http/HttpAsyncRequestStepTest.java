@@ -128,16 +128,14 @@ public class HttpAsyncRequestStepTest {
 
   @Test
   public void whenThrowableResponseReceived_logMessage() {
-    Memento m = TestUtils.silenceOperatorLogger()
+    consoleMemento
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
-        .withLogLevel(Level.WARNING)
-        .ignoringLoggedExceptions(HttpAsyncRequestStep.HttpTimeoutException.class);
+        .withLogLevel(Level.WARNING);
     final NextAction nextAction = requestStep.apply(packet);
 
     completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
 
     assertThat(logRecords, containsWarning(HTTP_REQUEST_GOT_THROWABLE));
-    m.revert();
   }
 
   @Test

@@ -8,7 +8,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -107,15 +106,14 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
-      if (throwable != null) {
-        if (throwable instanceof HttpTimeoutException) {
-          LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
-        } else if (response == null) {
-          recordThrowableResponse(throwable);
-        }
+      if (throwable instanceof HttpTimeoutException) {
+        LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
+      } else if (response != null) {
+        recordResponse(response);
+      } else if (throwable != null) {
+        recordThrowableResponse(throwable);
       }
-      
-      Optional.ofNullable(response).ifPresent(this::recordResponse);
+
       fiber.resume(packet);
     }
 

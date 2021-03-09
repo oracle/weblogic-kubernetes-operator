@@ -23,9 +23,13 @@ public abstract class HttpResponseStep extends Step {
   public NextAction apply(Packet packet) {
     return Optional.ofNullable(getResponse(packet))
         .map(r -> doApply(packet, r))
-        .orElse(Optional.ofNullable(getThrowableResponse(packet))
-            .map(t -> onFailure(packet, null))
-            .orElse(doNext(packet)));
+        .orElse(handlePossibleThrowableOrContinue(packet));
+  }
+
+  private NextAction handlePossibleThrowableOrContinue(Packet packet) {
+    return Optional.ofNullable(getThrowableResponse(packet))
+        .map(t -> onFailure(packet, null))
+        .orElse(doNext(packet));
   }
 
   private Throwable getThrowableResponse(Packet packet) {
