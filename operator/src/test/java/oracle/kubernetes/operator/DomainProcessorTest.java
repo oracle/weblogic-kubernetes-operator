@@ -979,7 +979,7 @@ public class DomainProcessorTest {
 
   void configureForModelInImageOnlineUpdate(Domain domain) {
     configureDomain(domain).withDomainHomeSourceType(FromModel).withRuntimeEncryptionSecret("wdt-cm-secret")
-      .withMIIOnlineUpate();
+      .withMIIOnlineUpdate();
   }
 
   private DomainConfigurator configureDomain(Domain domain) {
