@@ -4,18 +4,22 @@
 package oracle.kubernetes.operator.http;
 
 import java.net.HttpURLConnection;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -47,17 +51,41 @@ public class HttpAsyncRequestStep extends Step {
   private static final HttpClient httpClient;
 
   private static final TrustManager[] trustAllCerts = new TrustManager[]{
-      new X509TrustManager() {
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-
+      new X509ExtendedTrustManager() {
+        @Override
         public void checkClientTrusted(
             java.security.cert.X509Certificate[] certs, String authType) {
         }
 
+        @Override
+        public void checkClientTrusted(
+            X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        }
+
+        @Override
+        public void checkClientTrusted(
+            X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(
+            X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
+        }
+
+        @Override
+        public void checkServerTrusted(
+            X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
+
+        }
+
+        @Override
         public void checkServerTrusted(
             java.security.cert.X509Certificate[] certs, String authType) {
+        }
+
+        @Override
+        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+          return null;
         }
       }
   };
