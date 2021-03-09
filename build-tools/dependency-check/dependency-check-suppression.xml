@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+        Suppress this CVE because it is specific to the Kubernetes API server and OWASP is incorrectly
+        identifying the Kubernetes Java Client.
+        ]]></notes>
+        <cve>CVE-2020-8554</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        Suppress this CVE because it is specific to different XML processing library and OWASP is incorrectly
+        identifying the Jakarta JSON support for REST.
+        ]]></notes>
+        <cve>CVE-2018-1000840</cve>
+    </suppress>
+</suppressions>

@@ -24,7 +24,7 @@
     <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git
     </developerConnection>
     <url>https://github.com/oracle/weblogic-kubernetes-operator</url>
-    <tag>v2.5.0</tag>
+    <tag>v3.2.0</tag>
   </scm>
 
   <description>Oracle WebLogic Server Kubernetes Operator</description>
@@ -228,6 +228,11 @@
           <artifactId>maven-failsafe-plugin</artifactId>
           <version>${maven-failsafe-plugin-version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>${dependency-check-version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -313,6 +318,26 @@
           </dependency>
         </dependencies>
       </plugin>
+
+      <plugin>
+        <groupId>org.owasp</groupId>
+        <artifactId>dependency-check-maven</artifactId>
+        <version>${dependency-check-version}</version>
+        <configuration>
+          <skip>${skip.dependency-check}</skip>
+          <skipTestScope>true</skipTestScope>
+          <failBuildOnAnyVulnerability>false</failBuildOnAnyVulnerability>
+          <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+          <formats>
+            <format>HTML</format>
+            <format>CSV</format>
+          </formats>
+          <suppressionFiles>
+            <suppressionFile>build-tools/dependency-check/dependency-check-suppression.xml</suppressionFile>
+          </suppressionFiles>
+        </configuration>
+      </plugin>
+
     </plugins>
   </build>
 
@@ -527,6 +552,11 @@
         <version>${jackson-version}</version>
       </dependency>
       <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson-databind-version}</version>
+      </dependency>
+      <dependency>
         <groupId>javax.jms</groupId>
         <artifactId>javax.jms-api</artifactId>
         <version>${jms-api-version}</version>
@@ -649,11 +679,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jersey-version>2.31</jersey-version>
     <jackson-version>2.11.1</jackson-version>
-    <jackson-databind-version>2.11.1</jackson-databind-version>
+    <jackson-databind-version>2.11.4</jackson-databind-version>
+    <dependency-check-version>6.1.2</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
     <src-generated-swagger>${root-generated-swagger}/main/java</src-generated-swagger>
     <domain-swagger-file>${project.basedir}/swagger/domain.json</domain-swagger-file>
     <skip.unit.tests>false</skip.unit.tests>
+    <skip.dependency-check>false</skip.dependency-check>
     <jacoco.version>0.8.6</jacoco.version>
     <git-commit-id-plugin-version>4.0.0</git-commit-id-plugin-version>
     <bouncycastle.version>1.68</bouncycastle.version>
