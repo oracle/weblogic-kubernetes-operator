@@ -326,7 +326,7 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public DomainConfigurator withMIIOnlineUpate() {
+  public DomainConfigurator withMIIOnlineUpdate() {
     OnlineUpdate onlineUpdate = new OnlineUpdate();
     onlineUpdate.setEnabled(true);
     getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()

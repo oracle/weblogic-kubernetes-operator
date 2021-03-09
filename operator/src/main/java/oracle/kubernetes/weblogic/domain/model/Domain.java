@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -353,6 +354,19 @@ public class Domain implements KubernetesObject {
 
   public int getMaxConcurrentShutdown(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
+  /**
+   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
+   * @return {@link MIINonDynamicChangesMethod}
+   */
+  public MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
+    return Optional.of(getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getOnNonDynamicChanges)
+        .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly);
   }
 
   /**
