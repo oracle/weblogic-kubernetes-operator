@@ -17,3 +17,13 @@ the domain directory, which occurs during the "introspection" phase, and when th
 Check that the user name and password credentials stored in the Kubernetes Secret referenced by `weblogicCredentialsSecret` contain the expected values for an account with administrative privilege for the WebLogic domain.
 Then [stop all WebLogic Server instances](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers)
 in the domain before restarting so that the operator will repeat its introspection and generate the corrected `boot.properties` files.
+
+If the "Boot identity not valid" error is still not resolved, Managed Server may be failing to communicate with the Administration Server for other reasons. Check carefully for any errors or exceptions logged before the "Boot identity not valid" error in the Managed Server log file and look for indications of communication failure reasons.
+
+If you enable SSL for the Administration Server and use the demo identity certificates, Managed Server may fail to establish an SSL connection with the Administration Server due to a hostname verification exception such as the "SSLKeyException: Hostname verification failed" error. For non-production environments, you can turn off the hostname verification by setting the "-Dweblogic.security.SSL.ignoreHostnameVerification=true" property in the Java options for starting the WebLogic Server.
+
+**NOTE**: Turning off hostname verification leaves WebLogic Server vulnerable to man-in-the-middle attacks. Oracle recommends leaving hostname verification on in production environments. See [Configuring SSL](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/secmg/ssl.html#GUID-5274E688-51EC-4A63-A35E-FC718B35C897) for details on configuring SSL in the Oracle WebLogic Server environment.
+
+For other SSL-related errors, make sure the Keystores and passwords are specified correctly in the Java options for starting the WebLogic Server.
+
+If the DNS hostname of the Administration Server can't be resolved during Managed Server startup with errors such as "java.net.UnknownHostException: domain1-admin-server", check the DNS server logs for any errors and take corrective actions to resolve those errors.
