@@ -88,7 +88,11 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -1041,7 +1045,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodPatched();
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
   }
 
   @Test
@@ -1089,6 +1096,69 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodPatched();
+  }
+
+  private void initializeMiiUpdateTest(String miiDynamicUpdateResult) {
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalZip");
+    disableAutoIntrospectOnNewMiiPods();
+    initializeExistingPod();
+
+    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newZipHash");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, miiDynamicUpdateResult);
+  }
+
+  // Mii requires an introspection when bringing up a new pod. To disable that in these tests,
+  // we will pretend that the domain is not MII.
+  private void disableAutoIntrospectOnNewMiiPods() {
+    domain.getSpec().setDomainHomeSourceType(DomainSourceType.Image);
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodPatched();
+
+    assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
+  }
+
+  private String getPodLabel(String labelName) {
+    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodPatched();
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_addRestartRequiredLabel() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    assertThat(getPatchedPod().getMetadata().getLabels(), hasEntry(MII_UPDATED_RESTART_REQUIRED_LABEL, "true"));
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_replacePod() {
+    configureDomain().withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodReplaced();
+  }
+
+  private String paddedZipHash(String hash) {
+    return "md5." + hash + ".md5";
   }
 
   @Test
