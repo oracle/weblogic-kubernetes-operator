@@ -488,7 +488,7 @@ public abstract class DomainConfigurator {
    *
    * @return this object
    */
-  public abstract DomainConfigurator withMIIOnlineUpate();
+  public abstract DomainConfigurator withMIIOnlineUpdate();
 
   /**
    * Set onNonDynamicChanges to CommitUpdateAndRoll for  MII Online Update.

@@ -29,6 +29,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
@@ -41,6 +42,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
@@ -48,12 +51,14 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -1055,5 +1060,36 @@ public class DomainStatusUpdaterTest {
 
   private Domain getRecordedDomain() {
     return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, NAME);
+  }
+
+  @Test
+  void whenNonDynamicMiiChangeAndCommitOnlySelected_addRestartRequiredCondition() {
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+    configureDomain().withMIIOnlineUpdate();
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getDomainStatusCondition(ConfigChangesPendingRestart), notNullValue());
+  }
+
+  private DomainCondition getDomainStatusCondition(DomainConditionType conditionType) {
+    return getDomainStatusConditions().stream().filter(c -> c.getType().equals(conditionType)).findFirst().orElse(null);
+  }
+
+  private List<DomainCondition> getDomainStatusConditions() {
+    return Optional.of(getRecordedDomain())
+        .map(Domain::getStatus)
+        .map(DomainStatus::getConditions)
+        .orElse(Collections.emptyList());
+  }
+
+  @Test
+  void whenNonDynamicMiiChangeAndUpdateAndRollSelected_dontAddRestartRequiredCondition() {
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+    configureDomain().withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getDomainStatusCondition(ConfigChangesPendingRestart), nullValue());
   }
 }
