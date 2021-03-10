@@ -518,8 +518,8 @@ class ItMonitoringExporter {
    * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
    * Check basic functionality of monitoring exporter.
    */
-  //ssl is not supported yet
-  //@Test
+
+  @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar with ssl enabled.")
   public void testSideCarBasicFunctionalityWithSSL() throws Exception {
 
@@ -1335,9 +1335,8 @@ class ItMonitoringExporter {
     Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
-    //String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-    //   .orElse("master");
-    String monitoringExporterBranch = "refactor_for_helidon";
+    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
+        .orElse("master");
 
 
 
