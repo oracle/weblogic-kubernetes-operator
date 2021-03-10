@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -44,6 +45,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
+  private static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
+  private final AtomicInteger volumeIndex = new AtomicInteger(1);
+  private final AtomicInteger mountIndex = new AtomicInteger(1);
+  public static final String VOLUME_NAME_SUFFIX = "-volume";
   private V1Job jobModel;
 
   JobStepContext(Packet packet) {
@@ -313,14 +318,14 @@ public abstract class JobStepContext extends BasePodStepContext {
   private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {
     podSpec.addVolumesItem(
           new V1Volume()
-                .name(secretName + "-volume")
+                .name(getVolumeName(secretName))
                 .secret(getOverrideSecretVolumeSource(secretName)));
   }
 
   private void addConfigOverrideVolume(V1PodSpec podSpec, String configOverrides) {
     podSpec.addVolumesItem(
           new V1Volume()
-                .name(configOverrides + "-volume")
+                .name(configOverrides + VOLUME_NAME_SUFFIX)
                 .configMap(getOverridesVolumeSource(configOverrides)));
   }
 
@@ -331,7 +336,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
     podSpec.addVolumesItem(
         new V1Volume()
-            .name(configMapName + "-volume")
+            .name(configMapName + VOLUME_NAME_SUFFIX)
             .configMap(getWdtConfigMapVolumeSource(configMapName)));
   }
 
@@ -365,20 +370,20 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-            readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getConfigOverrides() + VOLUME_NAME_SUFFIX, OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
             readOnlyVolumeMount(
-                  secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+                  getVolumeMountName(secretName), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
     if (isSourceWdt()) {
       if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
-            readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+            readOnlyVolumeMount(getWdtConfigMap() + VOLUME_NAME_SUFFIX, WDTCONFIGMAP_MOUNT_PATH));
       }
       container.addVolumeMountsItem(
           readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
@@ -387,6 +392,16 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     return container;
+  }
+
+  private String getVolumeName(String secretName) {
+    return (secretName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
+            ? "long-secret-name-" + volumeIndex.getAndIncrement() : secretName) + VOLUME_NAME_SUFFIX;
+  }
+
+  private String getVolumeMountName(String secretName) {
+    return (secretName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
+            ? "long-secret-name-" + mountIndex.getAndIncrement() : secretName) + VOLUME_NAME_SUFFIX;
   }
 
   protected String getContainerName() {
