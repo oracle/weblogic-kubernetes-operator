@@ -100,6 +100,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
   public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = "long-secret-name-1-volume";
   public static final String VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME = "long-secret-name-2-volume";
+  public static final int DEFAULT_MODE = 420;
   private Method getDomainSpec;
   private final Domain domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -525,7 +526,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, 420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, DEFAULT_MODE));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
             "/weblogic-operator/config-overrides-secrets/" + LONG_SECRET_NAME, true));
   }
@@ -540,8 +541,9 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, 420));
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME, SECOND_LONG_SECRET_NAME, 420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, DEFAULT_MODE));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
+            SECOND_LONG_SECRET_NAME, DEFAULT_MODE));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
             "/weblogic-operator/config-overrides-secrets/" + LONG_SECRET_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
@@ -558,8 +560,8 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, 420));
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, 420));
+    assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, DEFAULT_MODE));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_SECRET_NAME, DEFAULT_MODE));
     assertThat(getJobVolumeMounts(), hasVolumeMount(SECRET_NAME + "-volume",
             "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
     assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
