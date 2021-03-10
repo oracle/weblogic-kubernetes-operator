@@ -804,17 +804,17 @@ class TopologyGenerator(Generator):
       sys.exit(1)
 
     self.writeln("    listenPort: " + str(nap.getListenPort()))
-    if nap.getPublicPort() == 0:
-      trace("SEVERE", "Invalid public listen port value '"
-            + str(nap.getListenPort())
-            + "' in the WebLogic Domain for "
-            + server.getName()
-            + ' Network Channel '
-            + nap.getName()
-            + '. Please provide a valid value for the public port, this is likely because of not specifying the port '
-              'value during domain '
-              'creation')
-      sys.exit(1)
+    # if nap.getPublicPort() == 0:
+    #   trace("SEVERE", "Invalid public listen port value '"
+    #         + str(nap.getListenPort())
+    #         + "' in the WebLogic Domain for "
+    #         + server.getName()
+    #         + ' Network Channel '
+    #         + nap.getName()
+    #         + '. Please provide a valid value for the public port, this is likely because of not specifying the port '
+    #           'value during domain '
+    #           'creation')
+    #   sys.exit(1)
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
 
