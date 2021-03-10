@@ -49,11 +49,11 @@ public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
-  public static final int SCHEDULING_DETECTION_DELAY = 100;
+  static final int SCHEDULING_DETECTION_DELAY = 100;
 
   private final Collection<ServerStartupInfo> startupInfos;
 
-  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
+  ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
     super(next);
     this.startupInfos = startupInfos;
   }
@@ -133,7 +133,7 @@ public class ManagedServerUpIteratorStep extends Step {
             createPacketForServer(packet, ssi));
   }
 
-  String getPodName(DomainPresenceInfo info, String serverName) {
+  private String getPodName(DomainPresenceInfo info, String serverName) {
     return LegalNames.toPodName(info.getDomainUid(), serverName);
   }
 
@@ -234,7 +234,7 @@ public class ManagedServerUpIteratorStep extends Step {
       this.maxConcurrency = maxConcurrency;
     }
 
-    public int getMaxConcurrency() {
+    int getMaxConcurrency() {
       return this.maxConcurrency;
     }
 
