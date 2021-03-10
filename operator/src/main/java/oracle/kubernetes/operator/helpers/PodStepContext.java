@@ -126,7 +126,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Map<String, String> getPodAnnotations();
 
-  String getNamespace() {
+  private String getNamespace() {
     return info.getNamespace();
   }
 
@@ -156,7 +156,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return info.getDomain();
   }
 
-  String getDomainName() {
+  private String getDomainName() {
     return domainTopology.getName();
   }
 
@@ -172,7 +172,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology.getAdminServerName();
   }
 
-  Integer getAsPort() {
+  private Integer getAsPort() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
@@ -375,7 +375,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
-  protected Step patchPod(V1Pod currentPod, Step next) {
+  private Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());

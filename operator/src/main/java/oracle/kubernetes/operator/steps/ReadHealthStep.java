@@ -53,8 +53,8 @@ import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public class ReadHealthStep extends Step {
 
-  public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
-  public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
+  static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
+  static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -305,7 +305,10 @@ public class ReadHealthStep extends Step {
       }
 
       private boolean isServerOverloaded() {
-        return isServerOverloaded(getResponse().statusCode());
+        return Optional.ofNullable(getResponse())
+            .map(HttpResponse::statusCode)
+            .map(this::isServerOverloaded)
+            .orElse(false);
       }
 
       private boolean isServerOverloaded(int statusCode) {
