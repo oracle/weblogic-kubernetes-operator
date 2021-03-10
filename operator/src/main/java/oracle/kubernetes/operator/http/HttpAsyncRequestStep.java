@@ -4,22 +4,13 @@
 package oracle.kubernetes.operator.http;
 
 import java.net.HttpURLConnection;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -28,6 +19,8 @@ import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 
 /**
  * An asynchronous step to handle http requests.
@@ -48,60 +41,9 @@ public class HttpAsyncRequestStep extends Step {
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-  private static final HttpClient httpClient;
-
-  private static final TrustManager[] trustAllCerts = new TrustManager[]{
-      new X509ExtendedTrustManager() {
-        @Override
-        public void checkClientTrusted(
-            java.security.cert.X509Certificate[] certs, String authType) {
-        }
-
-        @Override
-        public void checkClientTrusted(
-            X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-        }
-
-        @Override
-        public void checkClientTrusted(
-            X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
-        }
-
-        @Override
-        public void checkServerTrusted(
-            X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
-        }
-
-        @Override
-        public void checkServerTrusted(
-            X509Certificate[] chain, String authType, SSLEngine engine) throws CertificateException {
-
-        }
-
-        @Override
-        public void checkServerTrusted(
-            java.security.cert.X509Certificate[] certs, String authType) {
-        }
-
-        @Override
-        public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-          return null;
-        }
-      }
-  };
-
-  static {
-    try {
-      SSLContext sslContext = SSLContext.getInstance("TLS");
-      sslContext.init(null, trustAllCerts, null);
-
-      httpClient = HttpClient.newBuilder()
-          .sslContext(sslContext)
-          .build();
-    } catch (NoSuchAlgorithmException | KeyManagementException e) {
-      throw new IllegalStateException(e);
-    }
-  }
+  private static final HttpClient httpClient = HttpClient.newBuilder()
+      .sslContext(getTrustingSSLContext())
+      .build();
 
   private HttpAsyncRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     super(responseStep);
