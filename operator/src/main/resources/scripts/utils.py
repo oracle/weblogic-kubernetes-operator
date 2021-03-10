@@ -66,10 +66,9 @@ def trace(arg1,arg2='SENTINEL'):
 
 def get_server_template_listening_ports_from_configxml(config_xml):
   '''
-  get_server_tempalates_sslport
-  :param config_xml:                  config.xml
-  :param server_template:    server_template element
-  :return: dictionary of server template name and ssl port
+  get_server_tempalate's listening port and ssl port from the config.xml
+  :param config_xml:         full path to config.xml
+  :return: dictionary of servertemplate ssl port and servertemplate listen port
   '''
   DOMTree = parse(config_xml)
   collection = DOMTree.documentElement
@@ -77,6 +76,8 @@ def get_server_template_listening_ports_from_configxml(config_xml):
   templates = collection.getElementsByTagName("server-template")
   server_template_ssls = dict()
   server_template_ports = dict()
+
+  # if port is not specified in config.xml, set to None
 
   for template in templates:
     sslport = None
@@ -92,16 +93,6 @@ def get_server_template_listening_ports_from_configxml(config_xml):
         port = listen_port.firstChild.nodeValue
         break
     server_template_ports[template_name] = port
-
-    # naps = template.getElementsByTagName('network-access-point')
-    # for nap in naps:
-    #   nap_listen_ports = nap.getElementsByTagName('listen-port')
-    #   if len(listen_ports) > 0:
-    #     nap_listen_port = nap_listen_ports[0].firstChild.nodeValue
-    #   nap_name = nap.getElementsByTagName('name')[0].firstChild.nodeValue
-    #   nap_protcols = nap.getElementsByTagName('protocol')
-    #   # there is protocol defined:
-    #   if len(nap_protcols) > 0:
 
     # Get ssl port
     ssls = template.getElementsByTagName('ssl')

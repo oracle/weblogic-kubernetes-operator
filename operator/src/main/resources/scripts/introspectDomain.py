@@ -463,17 +463,20 @@ class TopologyGenerator(Generator):
         ssl = getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
-        if ssl is not None:
-          sslListenPort = getRealSSLListenPort(server, ssl.getListenPort())
-          sslListenPortEnabled = ssl.isEnabled()
-        elif isSecureModeEnabledForDomain(self.env.getDomain()):
-          sslListenPort = 7002
+        ssl_listen_port = self.getSSLPortIfEnabled(server)
+        if ssl_listen_port is not None:
+          sslListenPort = ssl_listen_port
           sslListenPortEnabled = True
+        # if ssl is not None:
+        #   sslListenPort = getRealSSLListenPort(server, ssl.getListenPort())
+        #   sslListenPortEnabled = ssl.isEnabled()
+        # elif isSecureModeEnabledForDomain(self.env.getDomain()):
+        #   sslListenPort = 7002
+        #   sslListenPortEnabled = True
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
         if firstServer is None:
-          firstServer = server
           firstServer = server
           firstListenPort = listenPort
           firstListenPortEnabled = listenPortEnabled
@@ -667,16 +670,22 @@ class TopologyGenerator(Generator):
     Write the SSL topology information to the output
     :param server: Server or ServerTemplate
     '''
-    ssl = getSSLOrNone(server)
-    if ssl is not None and ssl.isEnabled():
-      sslport = getRealSSLListenPort(server, ssl.getListenPort())
+    # ssl = getSSLOrNone(server)
+    ssl_listen_port = self.getSSLPortIfEnabled(server)
+    if ssl_listen_port is not None:
       self.indent()
-      self.writeln("sslListenPort: " + str(sslport))
+      self.writeln("sslListenPort: " + str(ssl_listen_port))
       self.undent()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      self.indent()
-      self.writeln("sslListenPort: 7002")
-      self.undent()
+
+    # if ssl is not None and ssl.isEnabled():
+    #   sslport = getRealSSLListenPort(server, ssl.getListenPort())
+    #   self.indent()
+    #   self.writeln("sslListenPort: " + str(sslport))
+    #   self.undent()
+    # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+    #   self.indent()
+    #   self.writeln("sslListenPort: 7002")
+    #   self.undent()
 
   def addServerTemplates(self):
     serverTemplates = self.env.getDomain().getServerTemplates()
@@ -808,6 +817,15 @@ class TopologyGenerator(Generator):
       sys.exit(1)
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
+  def getSSLPortIfEnabled(self, server):
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    if ssl is not None and ssl.isEnabled():
+      ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
+    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+      ssl_listen_port = "7002"
+    return ssl_listen_port
+
   def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
     '''
     Write the container ports information for operator to create the container ports in the topology.xml file
@@ -830,12 +848,15 @@ class TopologyGenerator(Generator):
     self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", getRealListenPort(server), 0)
     self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", getRealListenPort(server), 0)
 
-    ssl = getSSLOrNone(server)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    # ssl = getSSLOrNone(server)
+    # ssl_listen_port = None
+    # if ssl is not None and ssl.isEnabled():
+    #   ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
+    # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+    #   ssl_listen_port = "7002"
+    #
+
+    ssl_listen_port = self.getSSLPortIfEnabled(server)
 
     if ssl_listen_port is not None:
       self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
@@ -1232,12 +1253,14 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='iiop')
 
-    ssl = getSSLOrNone(server)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    # ssl = getSSLOrNone(server)
+    # ssl_listen_port = None
+    # if ssl is not None and ssl.isEnabled():
+    #   ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
+    # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+    #   ssl_listen_port = "7002"
+
+    ssl_listen_port = self.getSSLPortIfEnabled(server)
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -1287,12 +1310,13 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='iiop')
 
-    ssl = getSSLOrNone(template)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    # ssl = getSSLOrNone(template)
+    # ssl_listen_port = None
+    # if ssl is not None and ssl.isEnabled():
+    #   ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
+    # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+    #   ssl_listen_port = "7002"
+    ssl_listen_port = self.getSSLPortIfEnabled(template)
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
@@ -1697,13 +1721,20 @@ def getSSLOrNone(server):
   return ret
 
 def getRealSSLListenPort(server, sslport):
-  # default ssl port for ssl template if not specified
-  # this is the actual weblogic will start with, although it is supposed
-  # to be 8100 but if the config.xml element is empty, then the
-  # wlst mbean returns 8100 and we cannot use this in the topology.xml
-  # when setting up the container port since the actual listening port is
-  # 7002
-  # If it is not a server template, then just return from the mbean.
+  """
+  Return the real ssl listening port that will be used in runtime.
+   This is the actual port that WebLogic will bind to.  This occurs when user
+   specify 7002 in the model or wlst offline when creating the domain which results empty
+   entry in the config.xml. The introspector using wlst offline to read the domain and the
+   mbean returns 8100. we cannot use this in the topology when setting up the container port
+   since the actual listening port is 7002.
+
+   If it is not a server template, then just return from the mbean.
+
+  :param server:  server or server template
+  :param sslport: sslport from wlst offline mbean
+  :return: listening port
+  """
   if server_template_sslports.has_key(server.getName()):
     configxml_ssl_port = server_template_sslports[server.getName()]
     if configxml_ssl_port is None:
@@ -1715,13 +1746,19 @@ def getRealSSLListenPort(server, sslport):
   return sslport
 
 def getRealListenPort(server):
-  # default listening port for template if not specified
-  # this is the actual weblogic will start with, although it is supposed
-  # to be 7100 but if the config.xml element is empty, then the
-  # wlst mbean returns 7100 and we cannot use this in the topology.xml
-  # when setting up the container port since the actual listening port is
-  # 7001
-  # If it is not a server template, then just return from the mbean.
+  """
+  Return the real listening port that will be used in runtime.
+   This is the actual port that WebLogic will bind to.  This occurs when user
+   specify 7001 in the model or wlst offline when creating the domain which results empty
+   entry in the config.xml. The introspector using wlst offline to read the domain and the
+   mbean returns 7100. we cannot use this in the topology when setting up the container port
+   since the actual listening port is 7001.
+
+   If it is not a server template, then just return from the mbean.
+
+  :param server:  server or server template
+  :return: listening port
+  """
   if server_template_listening_ports.has_key(server.getName()):
     port = server_template_listening_ports[server.getName()]
     if port is None:
