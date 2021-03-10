@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import oracle.kubernetes.operator.DomainPresence;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -371,6 +372,12 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_PROCESSING_RETRYING_PATTERN;
       }
+
+      @Override
+      public String getMessage(EventData eventData) {
+        return String.format(getPattern(),
+            eventData.getResourceNameFromInfo(), eventData.getRetryCount(), getMaxRetryCount());
+      }
     },
     DOMAIN_PROCESSING_ABORTED {
       @Override
@@ -510,6 +517,10 @@ public class EventHelper {
       }
     };
 
+    private static int getMaxRetryCount() {
+      return DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
     private static String getMessageFromEventData(EventData eventData) {
       return String.format(eventData.eventItem.getPattern(),
           eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
@@ -534,7 +545,6 @@ public class EventHelper {
           .uid(getOperatorPodUID())
           .kind(KubernetesConstants.POD);
     }
-
 
     private static V1ObjectReference createNSEventInvolvedObject(EventData eventData) {
       return new V1ObjectReference()
@@ -590,6 +600,7 @@ public class EventHelper {
     private String namespace;
     private String resourceName;
     private DomainPresenceInfo info;
+    private int retryCount;
 
     public EventData(EventItem eventItem) {
       this(eventItem, "");
@@ -656,6 +667,15 @@ public class EventHelper {
 
     private String getResourceNameFromInfo() {
       return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse("");
+    }
+
+    public EventData retryCount(int retryCount) {
+      this.retryCount = retryCount;
+      return this;
+    }
+
+    private int getRetryCount() {
+      return retryCount;
     }
   }
 }

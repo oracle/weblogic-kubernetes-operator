@@ -29,9 +29,9 @@ public interface EventConstants {
   String DOMAIN_PROCESSING_FAILED_PATTERN
       = "Failed to complete processing domain resource %s due to: %s, the processing will be retried if needed";
   String DOMAIN_PROCESSING_RETRYING_PATTERN
-      = "Retrying the processing of domain resource %s after one or more failed attempts";
+      = "Retrying processing of domain resource %s, retry %s of a maximum %s";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
-      = "Aborting the processing of domain resource %s permanently due to: %s";
+      = "Aborting processing of domain resource %s permanently due to: %s";
   String DOMAIN_VALIDATION_ERROR_PATTERN
       = "Validation error in domain resource %s: %s";
   String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";

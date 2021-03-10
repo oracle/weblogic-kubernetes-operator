@@ -38,6 +38,7 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.operator.DomainPresence.getDomainPresenceFailureRetryMaxCount;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
@@ -413,7 +414,19 @@ public class EventHelperTest {
     assertThat("Found DOMAIN_PROCESSING_RETRYING event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT,
-            String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID)), is(true));
+            String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID, 0, getDomainPresenceFailureRetryMaxCount())),
+        is(true));
+  }
+
+  @Test
+  public void whenMakeRightCalled_withRetryingAfterOneRetry_domainProcessingRetryingEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(new EventData(DOMAIN_PROCESSING_RETRYING).retryCount(1)).execute();
+
+    assertThat("Found DOMAIN_PROCESSING_RETRYING event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT,
+            String.format(DOMAIN_PROCESSING_RETRYING_PATTERN, UID, 1, getDomainPresenceFailureRetryMaxCount())),
+        is(true));
   }
 
   @Test

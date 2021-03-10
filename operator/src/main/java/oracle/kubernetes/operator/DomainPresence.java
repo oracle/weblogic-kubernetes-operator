@@ -15,7 +15,12 @@ public class DomainPresence {
         .orElse(DEFAULT_TIMEOUT_SECONDS);
   }
 
-  static int getDomainPresenceFailureRetryMaxCount() {
+  /**
+   * Get the configured max retry count for domain presence failures.
+   *
+   * @return the max retry count
+   */
+  public static int getDomainPresenceFailureRetryMaxCount() {
     return Optional.ofNullable(TuningParameters.getInstance())
         .map(parameters -> parameters.getMainTuning().domainPresenceFailureRetryMaxCount)
         .orElse(DEFAULT_RETRY_MAX_COUNT);

@@ -740,12 +740,22 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     /**
      * Set the event data that is associated with this operation.
-     * @param eventItem event data
+     * @param eventItem event item
      * @param message event message
      * @return the updated factory
      */
     public MakeRightDomainOperation withEventData(EventItem eventItem, String message) {
       this.eventData = new EventData(eventItem, message);
+      return this;
+    }
+
+    /**
+     * Set the event data that is associated with this operation.
+     * @param eventData event data
+     * @return the updated factory
+     */
+    public MakeRightDomainOperation withEventData(EventData eventData) {
+      this.eventData = eventData;
       return this;
     }
 
@@ -846,7 +856,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private void ensureRetryingEventPresent() {
       if (eventData == null) {
-        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
+        eventData = new EventData(DOMAIN_PROCESSING_RETRYING).retryCount(getCurrentIntrospectFailureRetryCount());
       }
     }
 
@@ -1061,7 +1071,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                             createMakeRightOperation(existing)
                                 .withDeleting(isDeleting)
                                 .withExplicitRecheck()
-                                .withEventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null)
+                                .withEventData(new EventData(DOMAIN_PROCESSING_RETRYING).retryCount(retryCount - 1))
                                 .execute();
                           } else {
                             LOGGER.severe(
