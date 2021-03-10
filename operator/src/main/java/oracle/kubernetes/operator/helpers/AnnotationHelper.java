@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -36,7 +37,7 @@ public class AnnotationHelper {
     meta.putAnnotationsItem("prometheus.io/scrape", "true");
   }
 
-  public static V1Pod withSha256Hash(V1Pod pod) {
+  static V1Pod withSha256Hash(V1Pod pod) {
     return DEBUG ? addHashAndDebug(pod) : addHash(pod);
   }
 
@@ -44,14 +45,14 @@ public class AnnotationHelper {
     return withSha256Hash(kubernetesObject, kubernetesObject);
   }
 
-  public static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject, Object objectToHash) {
+  static <K extends KubernetesObject> K withSha256Hash(K kubernetesObject, Object objectToHash) {
     return addHash(kubernetesObject, objectToHash);
   }
 
   private static V1Pod addHashAndDebug(V1Pod pod) {
     String dump = Yaml.dump(pod);
     addHash(pod);
-    pod.getMetadata().putAnnotationsItem(HASHED_STRING, dump);
+    Objects.requireNonNull(pod.getMetadata()).putAnnotationsItem(HASHED_STRING, dump);
     return pod;
   }
 

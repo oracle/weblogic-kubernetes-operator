@@ -139,6 +139,7 @@ public class MessageKeys {
   public static final String BEGIN_MANAGING_NAMESPACE = "WLSKO-0186";
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
   public static final String MII_DOMAIN_DYNAMICALLY_UPDATED = "WLSKO-0188";
+  public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
