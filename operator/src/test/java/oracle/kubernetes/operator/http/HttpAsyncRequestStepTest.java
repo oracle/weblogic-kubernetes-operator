@@ -29,8 +29,10 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_METHOD_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_GOT_THROWABLE;
 import static oracle.kubernetes.operator.logging.MessageKeys.HTTP_REQUEST_TIMED_OUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -109,6 +111,12 @@ public class HttpAsyncRequestStepTest {
     FiberTestSupport.doOnExit(nextAction, fiber);
   }
 
+  private void completeWithThrowableBeforeTimeout(NextAction nextAction, Throwable throwable) {
+    responseFuture.completeExceptionally(throwable);
+    FiberTestSupport.doOnExit(nextAction, fiber);
+  }
+
+
   @Test
   public void whenErrorResponseReceived_logMessage() {
     final NextAction nextAction = requestStep.apply(packet);
@@ -118,6 +126,17 @@ public class HttpAsyncRequestStepTest {
     assertThat(logRecords, containsFine(HTTP_METHOD_FAILED));
   }
 
+  @Test
+  public void whenThrowableResponseReceived_logMessage() {
+    consoleMemento
+        .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
+        .withLogLevel(Level.WARNING);
+    final NextAction nextAction = requestStep.apply(packet);
+
+    completeWithThrowableBeforeTimeout(nextAction, new Throwable("Test"));
+
+    assertThat(logRecords, containsWarning(HTTP_REQUEST_GOT_THROWABLE));
+  }
 
   @Test
   public void whenResponseReceived_populatePacket() {

@@ -21,7 +21,19 @@ public abstract class HttpResponseStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    return Optional.ofNullable(getResponse(packet)).map(r -> doApply(packet, r)).orElse(doNext(packet));
+    return Optional.ofNullable(getResponse(packet))
+        .map(r -> doApply(packet, r))
+        .orElse(handlePossibleThrowableOrContinue(packet));
+  }
+
+  private NextAction handlePossibleThrowableOrContinue(Packet packet) {
+    return Optional.ofNullable(getThrowableResponse(packet))
+        .map(t -> onFailure(packet, null))
+        .orElse(doNext(packet));
+  }
+
+  private Throwable getThrowableResponse(Packet packet) {
+    return packet.getSpi(Throwable.class);
   }
 
   private NextAction doApply(Packet packet, HttpResponse<String> response) {
@@ -44,6 +56,15 @@ public abstract class HttpResponseStep extends Step {
    */
   static void addToPacket(Packet packet, HttpResponse<String> response) {
     packet.getComponents().put(RESPONSE, Component.createFor(HttpResponse.class, response));
+  }
+
+  /**
+   * Adds the specified throwable to a packet so that this step can access it via {@link Packet#getSpi(Class)} call.
+   * @param packet the packet to which the response should be added
+   * @param throwable the throwable from the server
+   */
+  static void addToPacket(Packet packet, Throwable throwable) {
+    packet.getComponents().put(RESPONSE, Component.createFor(Throwable.class, throwable));
   }
 
   /**
