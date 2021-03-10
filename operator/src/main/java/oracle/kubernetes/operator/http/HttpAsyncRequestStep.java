@@ -19,6 +19,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
+
 /**
  * An asynchronous step to handle http requests.
  */
@@ -38,7 +40,9 @@ public class HttpAsyncRequestStep extends Step {
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-  private static final HttpClient httpClient = HttpClient.newBuilder().build();
+  private static final HttpClient httpClient = HttpClient.newBuilder()
+      .sslContext(getTrustingSSLContext())
+      .build();
 
   private HttpAsyncRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     super(responseStep);
