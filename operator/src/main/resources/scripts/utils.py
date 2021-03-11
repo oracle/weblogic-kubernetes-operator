@@ -64,44 +64,4 @@ def trace(arg1,arg2='SENTINEL'):
   else:
     traceInner(arg1,arg2)
 
-def get_server_template_listening_ports_from_configxml(config_xml):
-  '''
-  get_server_tempalate's listening port and ssl port from the config.xml
-  :param config_xml:         full path to config.xml
-  :return: dictionary of servertemplate ssl port and servertemplate listen port
-  '''
-  DOMTree = parse(config_xml)
-  collection = DOMTree.documentElement
-
-  templates = collection.getElementsByTagName("server-template")
-  server_template_ssls = dict()
-  server_template_ports = dict()
-
-  # if port is not specified in config.xml, set to None
-
-  for template in templates:
-    sslport = None
-    port = None
-    if template.parentNode.nodeName != 'domain':
-      continue
-    template_name = template.getElementsByTagName('name')[0].firstChild.nodeValue
-    # Get listen port
-    listen_ports = template.getElementsByTagName('listen-port')
-
-    for listen_port in listen_ports:
-      if listen_port.parentNode.nodeName == 'server-template':
-        port = listen_port.firstChild.nodeValue
-        break
-    server_template_ports[template_name] = port
-
-    # Get ssl port
-    ssls = template.getElementsByTagName('ssl')
-    if len(ssls) > 0:
-      ssl = ssls.item(0)
-      listen_port = ssl.getElementsByTagName('listen-port')
-      if len(listen_port) > 0:
-        sslport = listen_port[0].firstChild.nodeValue
-    server_template_ssls[template_name] = sslport
-
-  return server_template_ssls, server_template_ports
 
