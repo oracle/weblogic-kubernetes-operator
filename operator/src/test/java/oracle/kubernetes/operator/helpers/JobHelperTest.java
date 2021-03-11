@@ -101,13 +101,16 @@ public class JobHelperTest extends DomainValidationBaseTest {
    * time the job ran.
    */
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
-  public static final String VOLUME_SUFFIX1 = "-volume-" + getMD5Hash(LONG_RESOURCE_NAME);
-  public static final String VOLUME_SUFFIX2 = "-volume-" + getMD5Hash(SECOND_LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getMD5Hash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getMD5Hash(SECOND_LONG_RESOURCE_NAME);
+  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getMD5Hash(LONG_RESOURCE_NAME);
   public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
-  public static final String VOLUME_NAME_FOR_LONG_RESOURCE_NAME =
-          LONG_RESOURCE_NAME.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_SUFFIX1.length()) + VOLUME_SUFFIX1;
-  public static final String VOLUME_NAME_FOR_SECOND_LONG_RESOURCE_NAME = SECOND_LONG_RESOURCE_NAME
-          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_SUFFIX2.length()) + VOLUME_SUFFIX2;
+  public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
+  public static final String VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME = SECOND_LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX2.length()) + SECRET_VOLUME_SUFFIX2;
+  public static final String VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME = LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
   public static final int MODE_420 = 420;
   public static final int MODE_365 = 365;
   private Method getDomainSpec;
@@ -536,12 +539,12 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_RESOURCE_NAME, LONG_RESOURCE_NAME, MODE_420));
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
             SECOND_LONG_RESOURCE_NAME, MODE_420));
-    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
             "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
-    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
             "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
   }
 
@@ -554,8 +557,8 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_RESOURCE_NAME, LONG_RESOURCE_NAME, MODE_365));
-    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
             "/weblogic-operator/config-overrides", true));
   }
 
@@ -569,8 +572,8 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     runCreateJob();
 
-    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_RESOURCE_NAME, LONG_RESOURCE_NAME, MODE_365));
-    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
             "/weblogic-operator/wdt-config-map", true));
   }
 
@@ -585,10 +588,10 @@ public class JobHelperTest extends DomainValidationBaseTest {
     runCreateJob();
 
     assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, MODE_420));
-    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_RESOURCE_NAME, LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
     assertThat(getJobVolumeMounts(), hasVolumeMount(SECRET_NAME + "-volume",
             "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
-    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_RESOURCE_NAME,
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
             "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
   }
 
