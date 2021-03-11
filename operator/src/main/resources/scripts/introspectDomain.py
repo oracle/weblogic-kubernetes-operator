@@ -463,7 +463,7 @@ class TopologyGenerator(Generator):
         ssl = getSSLOrNone(server)
         sslListenPort = None
         sslListenPortEnabled = None
-        ssl_listen_port = getSSLPortIfEnabled(server)
+        ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain())
         if ssl_listen_port is not None:
           sslListenPort = ssl_listen_port
           sslListenPortEnabled = True
@@ -671,7 +671,7 @@ class TopologyGenerator(Generator):
     :param server: Server or ServerTemplate
     '''
     # ssl = getSSLOrNone(server)
-    ssl_listen_port = getSSLPortIfEnabled(server)
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain())
     if ssl_listen_port is not None:
       self.indent()
       self.writeln("sslListenPort: " + str(ssl_listen_port))
@@ -848,7 +848,7 @@ class TopologyGenerator(Generator):
     #   ssl_listen_port = "7002"
     #
 
-    ssl_listen_port = getSSLPortIfEnabled(server)
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain())
 
     if ssl_listen_port is not None:
       self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
@@ -1252,7 +1252,7 @@ class SitConfigGenerator(Generator):
     # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
     #   ssl_listen_port = "7002"
 
-    ssl_listen_port = getSSLPortIfEnabled(server)
+    ssl_listen_port = getSSLPortIfEnabled(server, self.eng.getDomain())
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -1308,7 +1308,7 @@ class SitConfigGenerator(Generator):
     #   ssl_listen_port = getRealSSLListenPort(template, ssl.getListenPort())
     # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
     #   ssl_listen_port = "7002"
-    ssl_listen_port = getSSLPortIfEnabled(template)
+    ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
@@ -1838,12 +1838,12 @@ def isSSLListenPortEnabled(ssl, domain):
       enabled = True
   return enabled
 
-def getSSLPortIfEnabled(server):
+def getSSLPortIfEnabled(server, domain):
   ssl = getSSLOrNone(server)
   ssl_listen_port = None
   if ssl is not None and ssl.isEnabled():
     ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
-  elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
+  elif ssl is None and isSecureModeEnabledForDomain(domain):
     ssl_listen_port = "7002"
   return ssl_listen_port
 
