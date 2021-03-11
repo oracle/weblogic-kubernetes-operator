@@ -580,7 +580,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   @Test
   public void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
-    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
 
     configureDomain()
             .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
