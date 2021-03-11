@@ -1252,7 +1252,7 @@ class SitConfigGenerator(Generator):
     # elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
     #   ssl_listen_port = "7002"
 
-    ssl_listen_port = getSSLPortIfEnabled(server, self.eng.getDomain())
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain())
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
