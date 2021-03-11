@@ -395,13 +395,16 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getVolumeName(String secretName) {
-    return (secretName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
-            ? "long-secret-name-" + volumeIndex.getAndIncrement() : secretName) + VOLUME_NAME_SUFFIX;
+    return getName(secretName, volumeIndex) + VOLUME_NAME_SUFFIX;
   }
 
   private String getVolumeMountName(String secretName) {
-    return (secretName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
-            ? "long-secret-name-" + mountIndex.getAndIncrement() : secretName) + VOLUME_NAME_SUFFIX;
+    return getName(secretName, mountIndex) + VOLUME_NAME_SUFFIX;
+  }
+
+  private String getName(String secretName, AtomicInteger index) {
+    return secretName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
+            ? "long-secret-name-" + index.getAndIncrement() : secretName;
   }
 
   protected String getContainerName() {
