@@ -82,6 +82,11 @@ public class Matchers {
             .secretName(secretName).defaultMode(defaultMode)));
   }
 
+  static Matcher<Iterable<? super V1Volume>> hasConfigMapVolume(String name, String cmName, Integer defaultMode) {
+    return hasItem(new V1Volume().name(name).configMap(new V1ConfigMapVolumeSource().name(cmName)
+            .defaultMode(defaultMode)));
+  }
+
   static Matcher<Iterable<? super V1Volume>> hasPvClaimVolume(String name, String claimName) {
     return hasItem(new V1Volume().name(name).persistentVolumeClaim(
         new V1PersistentVolumeClaimVolumeSource().claimName(claimName)));
