@@ -27,8 +27,6 @@ import sys
 import inspect
 import os
 from datetime import datetime
-import xml.dom.minidom
-from xml.dom.minidom import parse
 
 # NOTE: This may be parsed by the operator. Do not change the date or log format without 
 #       also updating the parser.
