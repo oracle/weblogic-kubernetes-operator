@@ -22,7 +22,7 @@ Prior to running the `create-pv-pvc.sh` script, make a copy of the `create-pv-pv
 
 Run the create script, pointing it at your inputs file and an output directory:
 
-```
+```shell
 $ ./create-pv-pvc.sh \
   -i create-pv-pvc-inputs.yaml \
   -o /path/to/output-directory
@@ -30,17 +30,16 @@ $ ./create-pv-pvc.sh \
 
 The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the given `/path/to/output-directory` directory. By default, the script generates two YAML files, namely `weblogic-sample-pv.yaml` and `weblogic-sample-pvc.yaml`, in the `/path/to/output-directory/pv-pvcs`. These two YAML files can be used to create the Kubernetes resources using the `kubectl create -f` command.
 
-```
+```shell
 $ kubectl create -f weblogic-sample-pv.yaml
 $ kubectl create -f weblogic-sample-pvc.yaml
-
 ```
 
 As a convenience, the script can optionally create the PV and PVC resources using the `-e` option.
 
 The usage of the create script is as follows:
 
-```
+```shell
 $ sh create-pv-pvc.sh -h
 usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
   -i Parameter inputs file, must be specified.
@@ -80,7 +79,7 @@ The create script will verify that the PV and PVC were created, and will report 
 
 The content of the generated `weblogic-sample-pvc.yaml`:
 
-```
+```yaml
 # Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -99,7 +98,7 @@ metadata:
 ```
 
 The content of the generated `weblogic-sample-pv.yaml`:
-```
+```yaml
 # Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -128,7 +127,7 @@ spec:
 
 The content of the generated `domain1-weblogic-sample-pvc.yaml` when `domainUID` is set to `domain1`:
 
-```
+```yaml
 # Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -149,7 +148,7 @@ spec:
 ```
 
 The content of the generated `domain1-weblogic-sample-pv.yaml` when `domainUID` is set to `domain1`:
-```
+```yaml
 # Copyright 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 
@@ -178,7 +177,7 @@ spec:
 You can use this command to verify the PersistentVolume was created. Note that the `Status` field
 should have the value `Bound`, indicating the that PersistentVolume has been claimed:
 
-```
+```shell
 $ kubectl describe pv weblogic-sample-pv
 Name:            weblogic-sample-pv
 Annotations:     pv.kubernetes.io/bound-by-controller=yes
@@ -199,7 +198,7 @@ Events:            <none>
 
 You can use this command to verify the PersistentVolumeClaim was created:
 
-```
+```shell
 $ kubectl describe pvc weblogic-sample-pvc
 Name:          weblogic-sample-pvc
 Namespace:     default

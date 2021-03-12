@@ -9,7 +9,7 @@ weight: 4
 
 First, set up Helm:
 
-```bash
+```shell
 $ helm repo add traefik https://containous.github.io/traefik-helm-chart/
 $ helm repo update
 ```
@@ -18,14 +18,14 @@ $ helm repo update
 
 Create a namespace for the ingress controller.
 
-```bash
+```shell
 $ kubectl create namespace traefik
 ```
 
 Use the [values.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/values.yaml) file in the sample but set `kubernetes.namespaces` specifically.
 
 
-```bash
+```shell
 $ helm install traefik-operator traefik/traefik \
     --namespace traefik \
     --values kubernetes/samples/charts/traefik/values.yaml \
@@ -36,19 +36,19 @@ $ helm install traefik-operator traefik/traefik \
 
 1.  Create a namespace for the operator:
 
-    ```bash
+    ```shell
     $ kubectl create namespace sample-weblogic-operator-ns
     ```
 
 2.	Create a service account for the operator in the operator's namespace:
 
-    ```bash
+    ```shell
     $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
     ```
 
 3.  Use `helm` to install and start the operator from the directory you just cloned:	 
 
-    ```bash
+    ```shell
     $ helm install sample-weblogic-operator kubernetes/charts/weblogic-operator \
       --namespace sample-weblogic-operator-ns \
       --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0 \
@@ -66,12 +66,12 @@ $ helm install traefik-operator traefik/traefik \
 4. Verify that the operator's pod is running, by listing the pods in the operator's namespace. You should see one
 for the operator.
 
-    ```bash
+    ```shell
     $ kubectl get pods -n sample-weblogic-operator-ns
     ```
 
 5.  Verify that the operator is up and running by viewing the operator pod's log:
 
-    ```bash
+    ```shell
     $ kubectl logs -n sample-weblogic-operator-ns -c weblogic-operator deployments/weblogic-operator
     ```

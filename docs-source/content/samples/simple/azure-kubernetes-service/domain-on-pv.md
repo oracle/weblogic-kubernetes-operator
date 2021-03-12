@@ -28,7 +28,7 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 
 Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
-```bash
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
@@ -48,7 +48,7 @@ The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLog
 
 Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the operator by running the corresponding command.
 
-```bash
+```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
 $ helm repo update
 $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.1.1"
@@ -56,7 +56,7 @@ $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "
 
 The output will show something similar to the following:
 
-```bash
+```shell
 $ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.1.1"
 NAME: weblogic-operator
 LAST DEPLOYED: Wed Jul  1 23:47:44 2020
@@ -68,7 +68,7 @@ TEST SUITE: None
 
 Verify the operator with the following command; the `STATUS` must be `Running`.  The `READY` must be `1/1`.
 
-```bash
+```shell
 $ kubectl get pods -w
 NAME                                              READY   STATUS      RESTARTS   AGE
 weblogic-operator-56654bcdb7-qww7f                1/1     Running     0          25m
@@ -88,8 +88,8 @@ Now that we have created the AKS cluster, installed the operator, and verified t
 
 We will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret. Please run:
 
-```bash
-#cd kubernetes/samples/scripts/create-weblogic-domain-credentials
+```shell
+# cd kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ ./create-weblogic-credentials.sh -u weblogic -p welcome1 -d domain1
 secret/domain1-weblogic-credentials created
 secret/domain1-weblogic-credentials labeled
@@ -98,11 +98,11 @@ The secret domain1-weblogic-credentials has been successfully created in the def
 
 We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
-```bash
+```shell
 # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
 $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 
-#cd kubernetes/samples/scripts/create-kuberetes-secrets
+# cd kubernetes/samples/scripts/create-kuberetes-secrets
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
 secret/regcred created
 The secret regcred has been successfully created in the default namespace.
@@ -110,7 +110,7 @@ The secret regcred has been successfully created in the default namespace.
 
 Verify secrets with the following command:
 
-```bash
+```shell
 $ kubectl get secret
 NAME                                      TYPE                                  DATA   AGE
 wlsazure-secret                           Opaque                                2      17m
@@ -136,8 +136,8 @@ We need to set up the domain configuration for the WebLogic domain.
 
    Use the following commands to check if the resources are ready:
 
-   ```bash
-   #cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
+   ```shell
+   # cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
    $ ./validate.sh -g ${AKS_PERS_RESOURCE_GROUP} \
     --aks-name ${AKS_CLUSTER_NAME} \
     --file-share ${AKS_PERS_SHARE_NAME} \
@@ -169,8 +169,8 @@ We need to set up the domain configuration for the WebLogic domain.
 
    For complete details on domain creation, see [Domain home on a PV - Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-on-pv#use-the-script-to-create-a-domain" >}}).  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the `create-domain.sh` script as shown next.
 
-   ```bash
-   #cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
+   ```shell
+   # cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
    $ ./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v
    ```
 
@@ -187,7 +187,7 @@ We need to set up the domain configuration for the WebLogic domain.
 
    If you see error messages that include the status `ImagePullBackOff` along with output similar to the following, it is likely your credentials for the Oracle Container Registry have not been successfully conveyed to the AKS cluster.
 
-   ```bash
+   ```shell
    Failed to pull image "container-registry.oracle.com/middleware/weblogic:12.2.1.4": rpc error: code = Unknown desc = Error response from daemon: Get https://container-registry-phx.oracle.com/v2/middleware/weblogic/manifests/12.2.1.4: unauthorized: authentication required
    ```
 
@@ -196,7 +196,7 @@ We need to set up the domain configuration for the WebLogic domain.
    The following example output shows the WebLogic domain was created successfully.
 
    {{%expand "Click here to view the example output." %}}
-   ```bash
+   ```shell
    $ ./create-domain.sh -i ~/azure/weblogic-on-aks/my-create-domain-inputs.yaml -o ~/azure -e -v
    Input parameters being used
    export version="create-weblogic-sample-domain-inputs-v1"
@@ -320,7 +320,7 @@ We need to set up the domain configuration for the WebLogic domain.
 
    Create the load balancer services using the following commands:
 
-   ```bash
+   ```shell
    $ kubectl apply -f ~/azure/weblogic-on-aks/admin-lb.yaml
    service/domain1-admin-server-external-lb created
 
@@ -332,7 +332,7 @@ We need to set up the domain configuration for the WebLogic domain.
 
    Use the following command to check server pod status:
 
-   ```bash
+   ```shell
    $ kubectl get pods --watch
    ```
 
@@ -340,13 +340,13 @@ We need to set up the domain configuration for the WebLogic domain.
 
    You can tail the logs of the Administration Server with this command:
 
-   ```bash
+   ```shell
    kubectl logs -f domain1-admin-server
    ```
 
    The final example of pod output is as following:
 
-   ```bash
+   ```shell
    $ kubectl get pods --watch
    NAME                                              READY   STATUS      RESTARTS   AGE
    domain1-admin-server                              1/1     Running     0          11m
@@ -361,13 +361,13 @@ We need to set up the domain configuration for the WebLogic domain.
 
    Get the addresses of the Administration Server and Managed Servers (please wait for the external IP addresses to be assigned):
 
-   ```bash
+   ```shell
    $ kubectl get svc --watch
    ```
 
    The final example of service output is as following:
 
-   ```bash
+   ```shell
    $ kubectl get svc --watch
    NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP      PORT(S)              AGE
    domain1-admin-server               ClusterIP      None          <none>           30012/TCP,7001/TCP   2d20h
@@ -385,7 +385,7 @@ We need to set up the domain configuration for the WebLogic domain.
 
    If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
-   ```bash
+   ```shell
    $ kubectl describe domain domain1
    ```
 
@@ -458,7 +458,7 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 
 If you don't want to change the other parameters, you can use the default values.  Please make sure no extra whitespaces are added!
 
-```bash
+```shell
 # Use ~/azure as output directory, please change it according to your requirement.
 
 # cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
@@ -502,7 +502,7 @@ Next you will need to start the application:
 
 After the successful deployment, go to the application through the `domain1-cluster-1-lb` external IP.
 
-```bash
+```shell
 $ kubectl  get svc domain1-cluster-1-external-lb
 NAME                            TYPE           CLUSTER-IP     EXTERNAL-IP     PORT(S)          AGE
 domain1-cluster-1-external-lb   LoadBalancer   10.0.108.249   52.224.248.40   8001:32695/TCP   30m

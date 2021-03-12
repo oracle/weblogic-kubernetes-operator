@@ -25,7 +25,7 @@ Here are the steps:
    In this step, we will update the model ConfigMap from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case with the desired changes to the minimum and maximum threads constraints.
 
    Here's an example model configuration that updates the configured count values for the `SampleMinThreads` minimum threads constraint and `SampleMaxThreads` maximum threads constraint:
-   ```
+   ```yaml
    resources:
      SelfTuning:
        MinThreadsConstraint:
@@ -39,7 +39,7 @@ Here are the steps:
 
    Run the following commands:
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/workmanager \
@@ -57,7 +57,7 @@ Here are the steps:
 
 1. Update the data source secret that you created in the Update 1 use case with the correct password as well as with an increased maximum pool capacity:
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
    $ kubectl -n sample-domain1-ns create secret generic \
       sample-domain1-datasource-secret \
@@ -88,7 +88,7 @@ Here are the steps:
      - Call `kubectl -n sample-domain1-ns edit domain sample-domain1`.
      - Add or edit the value of the `spec.configuration.model.onlineUpdate` stanza so it contains `enabled: true` and save.
      - The updated domain should look something like this:
-       ```
+       ```yaml
        ...
        spec:
          ...
@@ -101,7 +101,7 @@ Here are the steps:
        ```
 
     - Option 2: Dynamically change your domain using `kubectl patch`. For example:
-      ```
+      ```shell
       $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/configuration/model/onlineUpdate", "value": {"enabled" : 'true'} }]'
       ```
 
@@ -125,14 +125,14 @@ Here are the steps:
 
    - Option 2: Dynamically change your domain using `kubectl patch`.
      - Get the current `introspectVersion`:
-       ```
+       ```shell
        $ kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.introspectVersion}'
        ```
      - Choose a new introspect version that's different from the current introspect version.
        - The field is a string; typically, you use a number in this field and increment it.
 
      - Use `kubectl patch` to set the new value. For example, assuming the new introspect version is `2`:
-       ```
+       ```shell
        $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/introspectVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
@@ -155,7 +155,7 @@ Here are the steps:
      This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, reach their target `introspectVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-   ```
+   ```shell
      $ ./wl-pod-wait.sh -?
 
      Usage:
@@ -197,7 +197,7 @@ Here are the steps:
      {{% /expand %}}
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows the introspector running and that shows each domain pod reach its new `introspectVersion`." %}}
-   ```
+   ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
    @@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-11-21T05:55:26][seconds=0] Info:   ready='true'
@@ -259,21 +259,21 @@ Here are the steps:
 
    Send a web application request to the ingress controller:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
    Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
    You will see something like the following:
 
-    ```
+    ```html
     <html><body><pre>
     *****************************************************************
 

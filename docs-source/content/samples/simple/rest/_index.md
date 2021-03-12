@@ -20,7 +20,7 @@ The certificate and key generated with this script should ***not*** be used in a
 {{% /notice %}}
 
 The syntax of the script is:
-```
+```shell
 $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh \
   -a <SANs> -n <operator-namespace> [-s <secret-name>]
 ```
@@ -44,7 +44,7 @@ more information, see [Updating operator external certificates]({{<relref "/secu
 The following script will create the `tls secret` named `weblogic-operator-identity` in the namespace `weblogic-operator-ns`, using a self-signed
 certificate and private key:
 
-```
+```shell
 $ echo "externalRestEnabled: true" > my_values.yaml
 $ generate-external-rest-identity.sh \
   -a "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" \

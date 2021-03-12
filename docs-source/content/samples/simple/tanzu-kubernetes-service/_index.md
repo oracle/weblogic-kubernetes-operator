@@ -37,7 +37,7 @@ This sample assumes the following prerequisite environment setup:
 Create the Kubernetes cluster using the TKG CLI. See the [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to set up your Kubernetes cluster.
 After your Kubernetes cluster is up and running, run the following commands to make sure `kubectl` can access the Kubernetes cluster:
 
-```bash
+```shell
 $ kubectl get nodes -o wide
 NAME                                    STATUS     ROLES    AGE     VERSION            INTERNAL-IP       EXTERNAL-IP       OS-IMAGE                 KERNEL-VERSION   CONTAINER-RUNTIME
 k8s-cluster-101-control-plane-8nj7t     NotReady   master   2d20h   v1.18.6+vmware.1   192.168.100.147   192.168.100.147   VMware Photon OS/Linux   4.19.132-1.ph3   containerd://1.3.4
@@ -60,7 +60,7 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 
 Clone the repository.
 
-```bash
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 $ cd weblogic-kubernetes-operator
 $ git checkout v3.1.0
@@ -68,7 +68,7 @@ $ git checkout v3.1.0
 
 Grant the Helm service account the cluster-admin role.
 
-```bash
+```shell
 $ cat <<EOF | kubectl apply -f -
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -87,7 +87,7 @@ EOF
 
 Create a namespace and service account for the operator.
 
-```bash
+```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 namespace/sample-weblogic-operator-ns created
 
@@ -98,7 +98,7 @@ serviceaccount/sample-weblogic-operator-sa created
 
 Install the operator.
 
-```bash
+```shell
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set serviceAccount=sample-weblogic-operator-sa \
@@ -117,7 +117,7 @@ TEST SUITE: None
 
 Verify the operator with the following commands; the status will be running.
 
-```bash
+```shell
 $ helm list -A
 NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
 sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
@@ -143,7 +143,7 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 2. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`.
 
-```bash
+```shell
 $ mkdir /tmp/mii-sample
 $ cp -r /root/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
 ```
@@ -155,7 +155,7 @@ Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WI
 
 For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.7` and `1.9.5` respectively, call:
 
-```bash
+```shell
 $ cd /tmp/mii-sample/model-images
 
 $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/weblogic-deploy.zip \
@@ -167,7 +167,7 @@ $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/downloa
 
 
 To set up the WebLogic Image Tool, run the following commands:
-```bash
+```shell
 $ cd /tmp/mii-sample/model-images
 
 $ unzip imagetool.zip
@@ -212,7 +212,7 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```bash
+```shell
 # Delete existing archive.zip in case we have an old leftover version
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
@@ -234,7 +234,7 @@ CLUSTER_SIZE=5
 
 Here is the WLS `model.10.yaml`:
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -303,7 +303,7 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 
 Run the following commands to create the model image and verify that it worked:
 
-```bash
+```shell
 $ cd /tmp/mii-sample/model-images
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
@@ -355,7 +355,7 @@ In this section, you will deploy the new image to namespace `sample-domain1-ns`,
 
 Create a namespace that can host one or more domains:
 
-```bash
+```shell
 $ kubectl create namespace sample-domain1-ns
 
 ## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
@@ -368,7 +368,7 @@ First, create the secrets needed by the WLS type model domain. In this case, you
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-```bash
+```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
@@ -414,7 +414,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
 
   {{%expand "Click here to view the WLS Domain YAML file." %}}
-  ```
+  ```yaml
     #
     # This is an example of how to define a Domain resource.
     #
@@ -538,14 +538,14 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
 Run the following command to create the domain custom resource:
 
-```bash
+```shell
 $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 ```
 > **Note**: If you are choosing not to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Verify the WebLogic Server pods are all running:
 
-```
+```shell
 $ kubectl get all -n sample-domain1-ns
 NAME                                 READY   STATUS    RESTARTS   AGE
 pod/sample-domain1-admin-server      1/1     Running   0          41m
@@ -569,7 +569,7 @@ Tanzu supports the MetalLB load balancer and NGINX ingress for routing.
 
 Install the MetalLB load balancer by running following commands:
 
-```bash
+```shell
 ## create namespace metallb-system
 $ kubectl create ns metallb-system
 
@@ -617,7 +617,7 @@ replicaset.apps/controller-684f5d9b49   1         1         1       2m14s
 
 Install NGINX.
 
-```bash
+```shell
 $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 $ helm repo update
 $ helm install ingress-nginx ingress-nginx/ingress-nginx
@@ -626,7 +626,7 @@ $ helm install ingress-nginx ingress-nginx/ingress-nginx
 
 Create ingress for accessing the application deployed in the cluster and to access the Administration console.
 
-```bash
+```shell
 $ cat ingress.yaml
 
 apiVersion: networking.k8s.io/v1beta1
@@ -656,7 +656,7 @@ $ kubectl apply -f ingress.yaml
 
 Verify ingress is running.
 
-```bash
+```shell
 $ kubectl get ingresses -n sample-domain1-ns
 NAME                               CLASS    HOSTS   ADDRESS          PORTS   AGE
 sample-nginx-ingress-pathrouting   <none>   *       192.168.100.50   80      7m18s
@@ -666,8 +666,8 @@ Access the Administration Console using the load balancer IP address, `http://19
 
 Access the sample application.
 
-```bash
-## Access the sample application using the load balancer IP (192.168.100.50)
+```shell
+# Access the sample application using the load balancer IP (192.168.100.50)
 $ curl http://192.168.100.50/myapp_war/index.jsp
 
 

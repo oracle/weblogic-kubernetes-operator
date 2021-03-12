@@ -10,7 +10,7 @@ for the operator's external REST api when experimenting with the operator.  They
 not be used in a production environment.
 
 The syntax of the script is:
-```
+```shell
 $ kubernetes/samples/scripts/rest/generate-external-rest-identity.sh <SANs> -n <namespace> [-s <secret-name> ]
 ```
 
@@ -30,9 +30,9 @@ The script creates the secret in the weblogic-operator namespace with the self-s
 certificate and private key
 
 Example usage:
-```
-$  generate-external-rest-identity.sh IP:127.0.0.1 -n weblogic-operator > my_values.yaml
-$  echo "externalRestEnabled: true" >> my_values.yaml
-   ...
-$  helm install my_operator kubernetes/charts/weblogic-operator --namespace my_operator-ns --values my_values.yaml --wait
+```shell
+$ generate-external-rest-identity.sh IP:127.0.0.1 -n weblogic-operator > my_values.yaml
+$ echo "externalRestEnabled: true" >> my_values.yaml
+  ...
+$ helm install my_operator kubernetes/charts/weblogic-operator --namespace my_operator-ns --values my_values.yaml --wait
 ```

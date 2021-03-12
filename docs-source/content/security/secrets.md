@@ -31,7 +31,7 @@ the unique identifier of the domain, for example, `domain1-weblogic-credentials`
 If the WebLogic domain will be started in `domain1-ns` and the `<domainUID>` is `domain1`,
 an example of creating a Kubernetes `generic secret` is as follows:
 
-```bash
+```shell
 $ kubectl -n domain1-ns create secret generic domain1-weblogic-credentials \
   --from-file=username --from-file=password
 
@@ -53,7 +53,7 @@ The operator's introspector job will expect the secret key names to be:
 - `password`
 
 For example, here is the result when describing the Kubernetes `Secret`:
-```bash
+```shell
 $ kubectl -n domain1-ns describe secret domain1-weblogic-credentials
 Name:         domain1-weblogic-credentials
 Namespace:    domain1-ns
@@ -88,7 +88,7 @@ where the operator is deployed.
 
 Here is an example of using the `helm install` command to set the image name and image pull secret:
 
-```bash
+```shell
 $ helm install my-weblogic-operator kubernetes/charts/weblogic-operator \
   --set "image=my.io/my-operator-image:1.0" \
   --set "imagePullSecrets[0].name=my-operator-image-pull-secret" \
@@ -133,6 +133,6 @@ namespace where the operator is installed.
 
 For example, to see all the operator's ConfigMaps and secrets when installed into
 the Kubernetes Namespace `weblogic-operator-ns`, use:
-```bash
+```shell
 $ kubectl -n weblogic-operator-ns get cm,secret
 ```

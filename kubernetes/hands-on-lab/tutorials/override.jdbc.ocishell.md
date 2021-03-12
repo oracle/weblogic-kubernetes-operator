@@ -21,12 +21,12 @@ The operator requires a different file name format for override templates. For J
 
 The custom WebLogic image - you created using Oracle Pipelines - has a JDBC data source called *testDatasource*. So, you have to create a template named *jdbc-testDatasource.xml*.
 Before you create the necessary files, first make a directory which will contain only the situational JDBC configuration template and a `version.txt` file.
-```bash
-mkdir -p ~/override
+```shell
+$ mkdir -p ~/override
 ```
 Create the template file:
-```bash
-cat > ~/override/jdbc-testDatasource.xml <<'EOF'
+```shell
+$ cat > ~/override/jdbc-testDatasource.xml <<'EOF'
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source"
                   xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
@@ -47,20 +47,20 @@ EOF
 Note! This template contains a macro to override the JDBC user name and URL parameters. The values referred to from the Kubernetes secret.
 
 Now, create the *version.txt* file which reflects the version of the operator.
-```bash
-cat > ~/override/version.txt <<EOF
+```shell
+$ cat > ~/override/version.txt <<EOF
 2.0
 EOF
 ```
 Now, create a Kubernetes configuration map (*jdbccm*) from the directory of the template and version file.
-```bash
-kubectl -n sample-domain1-ns create cm jdbccm --from-file ~/override
-kubectl -n sample-domain1-ns label cm jdbccm weblogic.domainUID=sample-domain1
+```shell
+$ kubectl -n sample-domain1-ns create cm jdbccm --from-file ~/override
+$ kubectl -n sample-domain1-ns label cm jdbccm weblogic.domainUID=sample-domain1
 ```
 Please note the name of the configuration map which is *jdbccm*.
 
 You can check the configuration map that you created:
-```bash
+```shell
 $ kubectl describe cm jdbccm -n sample-domain1-ns
 Name:         jdbccm
 Namespace:    sample-domain1-ns
@@ -97,9 +97,9 @@ Events:  <none>
 The last thing that you need to create is the secret which contains the values of the JDBC user name and URL parameters.
 
 To create the secret, execute the following `kubectl` command:
-```bash
-kubectl -n sample-domain1-ns create secret generic dbsecret --from-literal=username=scott2 --from-literal=url=jdbc:oracle:thin:@test.db.example.com:1521/ORCLCDB
-kubectl -n sample-domain1-ns label secret dbsecret weblogic.domainUID=sample-domain1
+```shell
+$ kubectl -n sample-domain1-ns create secret generic dbsecret --from-literal=username=scott2 --from-literal=url=jdbc:oracle:thin:@test.db.example.com:1521/ORCLCDB
+$ kubectl -n sample-domain1-ns label secret dbsecret weblogic.domainUID=sample-domain1
 ```
 Please note the values (*username=scott2*, *url=jdbc:oracle:thin:@test.db.example.com:1521/ORCLCDB*) and the name of the secret which is *dbsecret*.
 
@@ -131,11 +131,11 @@ To stop all the running WebLogic Server pods in your domain, apply a changed res
 1. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` to `NEVER`.
 
 2. Apply changes:
-```bash
-kubectl apply -f ~/domain.yaml
+```shell
+$ kubectl apply -f ~/domain.yaml
 ```
 Check the pod's status:
-```bash
+```shell
 $ kubectl get po -n sample-domain1-ns
 NAME                             READY     STATUS        RESTARTS   AGE
 sample-domain1-admin-server      1/1       Terminating   0          1h
@@ -148,11 +148,11 @@ Wait until all the pods are terminated and no resources found.
 3. Open the *domain.yaml* file again and set your domain resource `serverStartPolicy` back to `IF_NEEDED`.
 
 4. Apply changes:
-```bash
-kubectl apply -f ~/domain.yaml
+```shell
+$ kubectl apply -f ~/domain.yaml
 ```
 Check the pod's status periodically and wait until all the pods are up and ready:
-```bash
+```shell
 $ kubectl get po -n sample-domain1-ns
 NAME                             READY     STATUS    RESTARTS   AGE
 sample-domain1-admin-server      1/1       Running   0          2m

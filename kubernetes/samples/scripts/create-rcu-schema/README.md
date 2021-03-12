@@ -21,7 +21,7 @@ This script generates the RCU schema based `schemaPrefix` and `dburl`.
 
 The script assumes that either the image, `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, is available in the Docker image repository or an `ImagePullSecret` is created for `container-registry.oracle.com`. To create a secret for accessing `container-registry.oracle.com`, see the script `create-image-pull-secret.sh`.
 
-```
+```shell
 $ ./create-rcu-schema.sh -h
 usage: ./create-rcu-schema.sh -s <schemaPrefix> -t <schemaType> -d <dburl> -i <image> -u <imagePullPolicy> -p <docker-store> -n <namespace> -q <sysPassword> -r <schemaPassword>  -o <rcuOutputDir>  [-h]
   -s RCU Schema Prefix (required)
@@ -126,7 +126,7 @@ Repository Creation Utility - Create : Operation Completed
 
 Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
 
-```
+```shell
 $ ./drop-rcu-schema.sh -h
 usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]
   -s RCU Schema Prefix (required)

@@ -10,7 +10,7 @@ This chart is for deploying an Ingress resource in front of a WebLogic domain cl
 ## Installing the chart
 
 To install the chart with the release name, `my-ingress`, with the given `values.yaml`:
-```
+```shell
 # Change directory to the cloned git weblogic-kubernetes-operator repo.
 $ cd kubernetes/samples/charts
 
@@ -20,7 +20,7 @@ $ helm install ingress-per-domain --name my-ingress --namespace my-domain-namesp
 The Ingress resource will be created in the same namespace as the WebLogic domain cluster.
 
 Sample `values.yaml` file for the Traefik Ingress:
-```
+```yaml
 type: TRAEFIK
 
 # WLS domain as backend to the load balancer
@@ -36,7 +36,7 @@ traefik:
 ```
 
 Sample `values.yaml` file for the Voyager Ingress:
-```
+```yaml
 type: VOYAGER
 
 # WLS domain as backend to the load balancer
@@ -54,7 +54,7 @@ voyager:
 ```
 
 Sample `values.yaml` file for the NGINX Ingress:
-```
+```yaml
 type: NGINX
 
 # WLS domain as backend to the load balancer
@@ -71,7 +71,7 @@ nginx:
 
 ## Uninstalling the chart
 To uninstall and delete the `my-ingress` deployment:
-```
+```shell
 $ helm uninstall my-ingress
 ```
 ## Configuration

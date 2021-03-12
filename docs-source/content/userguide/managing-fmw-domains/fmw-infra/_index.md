@@ -73,13 +73,13 @@ Your acceptance of these terms is stored in a database that links the software i
 
 First, you will need to log in to the Oracle Container Registry:
 
-```
+```shell
 $ docker login container-registry.oracle.com
 ```
 
 Then, you can pull the image with this command:
 
-```
+```shell
 $ docker pull container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 ```
 If desired, you can:
@@ -105,9 +105,9 @@ Infrastructure installer binary.
 After cloning the repository and downloading the installer from Oracle Technology Network
 or e-delivery, you create your image by running the provided script:
 
-```bash
-cd docker-images/OracleFMWInfrastructure/dockerfiles
-./buildDockerImage.sh -v 12.2.1.4 -s
+```shell
+$ cd docker-images/OracleFMWInfrastructure/dockerfiles
+$ ./buildDockerImage.sh -v 12.2.1.4 -s
 ```
 
 The image produced will be named `oracle/fmw-infrastructure:12.2.1.4`.
@@ -119,9 +119,9 @@ to use this image with the operator.  We provide a [sample](https://github.com/o
 After downloading the patch from My Oracle Support, you create the patched image
 by running the provided script:
 
-```bash
-cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
-./build.sh
+```shell
+$ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
+$ ./build.sh
 ```
 
 This will produce an image named `oracle/fmw-infrastructure:12213-update-k8s`.
@@ -309,9 +309,8 @@ If you want to run RCU from a pod inside the Kubernetes cluster, you can use the
 image that you built earlier as a "service" pod to run RCU.  To do this, start up a
 pod using that image as follows:
 
-```bash
-kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4 -- sleep infinity
-
+```shell
+$ kubectl run rcu --generator=run-pod/v1 --image container-registry.oracle.com/middleware/fmw_infrastructure:12.2.1.4 -- sleep infinity
 ```
 
 This will create a Kubernetes Deployment called `rcu` containing a pod running a container
@@ -321,14 +320,14 @@ commands we need to run.
 
 To get inside this container and run commands, use this command:
 
-```bash
-kubectl exec -ti rcu /bin/bash
+```shell
+$ kubectl exec -ti rcu /bin/bash
 ```
 
 When you are finished with this pod, you can remove it with this command:
 
-```bash
-kubectl delete pod rcu
+```shell
+$ kubectl delete pod rcu
 ```
 
 {{% notice note %}}
@@ -343,8 +342,8 @@ to create your FMW schemas.  You will need to provide the right prefix and conne
 You will be prompted to enter the password for the `sys` user, and then the password to use
 for the regular schema users:
 
-```bash
-/u01/oracle/oracle_common/bin/rcu \
+```shell
+$ /u01/oracle/oracle_common/bin/rcu \
   -silent \
   -createRepository \
   -databaseType ORACLE \
@@ -372,8 +371,8 @@ prefix (value of the `schemaPrefix` argument) the same as your `domainUID` to he
 
 If you want to drop the schema, you can use a command like this:
 
-```bash
-/u01/oracle/oracle_common/bin/rcu \
+```shell
+$ /u01/oracle/oracle_common/bin/rcu \
   -silent \
   -dropRepository \
   -databaseType ORACLE \
