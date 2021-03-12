@@ -470,7 +470,7 @@ class TopologyGenerator(Generator):
           sslListenPort = ssl_listen_port
           sslListenPortEnabled = True
 
-        # WLST does return ssl listen port as None is SSL is disabled
+        # WLST does return ssl listen port as None if SSL is disabled
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
@@ -1668,9 +1668,9 @@ def getRealSSLListenPort(server, sslport):
 
   The difference occurs when a user specifies 7002 in the model
   or wlst offline for a server template when creating the domain,
-  which results in an empty entry in the config.xml. When subsequently
+  which results in an empty entry or 7002 in the config.xml. When subsequently
   using wlst offline to read the domain, the mbean mistakenly
-  returns 8100 but the actual listening port is 7001.
+  returns 8100 but the actual listening port is 7002.
 
   If it is not a server template, then just return from the mbean.
 
@@ -1695,7 +1695,7 @@ def getRealListenPort(template):
 
   The difference occurs when a user specifies 7001 in the model
   or wlst offline for a server template when creating the domain,
-  which results in an empty entry in the config.xml. When subsequently
+  which results in an empty entry or 7001 entry in the config.xml. When subsequently
   using wlst offline to read the domain, the mbean mistakenly
   returns 7100 but the actual listening port is 7001.
 
@@ -1797,9 +1797,11 @@ def getSSLPortIfEnabled(server, domain, is_server_template=True):
   return the SSL listen port if enabled -
     If SSL is enabled:
       If is_server_template is False then just return the SSL listen port from server mbean.
-      If is_server_template is True then return the actual SSL listen port that it listens on.  If the server
+      If is_server_template is True then return the actual SSL listen port that it listens on.
 
-    If SSL is not enabled but domain has SecureMode enabled return 7002.
+    If SSL is not configured but domain has SecureMode enabled return 7002.
+    If SSL is configured but explicitly disabled, return None.
+
   :param server: server or server template
   :param domain: domain mbean
   :return: SSL listen port
