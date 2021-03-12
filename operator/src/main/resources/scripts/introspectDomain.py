@@ -1681,7 +1681,7 @@ def getRealSSLListenPort(server, sslport):
   """
   if server_template_sslports.has_key(server.getName()):
     configxml_ssl_port = server_template_sslports[server.getName()]
-    if configxml_ssl_port is None or configxml_ssl_port == 7002:
+    if configxml_ssl_port is None or configxml_ssl_port == "7002":
       return 7002
 
   if sslport == 0:
@@ -1707,7 +1707,7 @@ def getRealListenPort(template):
   """
   if server_template_listening_ports.has_key(template.getName()):
     port = server_template_listening_ports[template.getName()]
-    if port is None or port == 7001:
+    if port is None or port == "7001":
       return 7001
 
   port = template.getListenPort()
