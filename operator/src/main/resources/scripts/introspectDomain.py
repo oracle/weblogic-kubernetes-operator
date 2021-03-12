@@ -463,12 +463,13 @@ class TopologyGenerator(Generator):
       if cluster is self.env.getClusterOrNone(server):
         listenPort = getRealListenPort(server)
         listenPortEnabled = isListenPortEnabledForServer(server, self.env.getDomain())
-        sslListenPort = None
-        sslListenPortEnabled = None
+        sslListenPortEnabled = False
         ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
         if ssl_listen_port is not None:
           sslListenPort = ssl_listen_port
           sslListenPortEnabled = True
+        else:
+          sslListenPort = getSSLPortIfDisabledButSet(server, self.env.getDomain(), is_server_template=False)
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
@@ -485,7 +486,7 @@ class TopologyGenerator(Generator):
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
           if listenPortEnabled != firstListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
-          if sslListenPort != firstSslListenPort:
+          if sslListenPort is not None and sslListenPort != firstSslListenPort:
              self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
           if sslListenPortEnabled != firstSslListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
@@ -1785,6 +1786,40 @@ def isSSLListenPortEnabled(ssl, domain):
     if isSecureModeEnabledForDomain(domain):
       enabled = True
   return enabled
+
+def getSSLPortIfDisabledButSet(server, domain, is_server_template=True):
+  """
+  return the SSL listen port if enabled -
+    If SSL is enabled:
+      If is_server_template is False then just return the SSL listen port from server mbean.
+      If is_server_template is True then return the actual SSL listen port that it listens on.  If the server
+
+    If SSL is not enabled but domain has SecureMode enabled return 7002.
+  :param server: server or server template
+  :param domain: domain mbean
+  :return: SSL listen port
+  """
+  ssl = None
+  ssl_listen_port = None
+  try:
+    # this can throw if SSL mbean not there
+    ssl = server.getSSL()
+    # this can throw if SSL mbean is there but enabled is false
+    ssl.getListenPort()
+    # this can throw if SSL mbean is there but enabled is false ??
+    ssl.isEnabled()
+  except:
+    pass
+
+  # Can only be called if enabled
+  if ssl is not None and ssl.isEnabled():
+    if not is_server_template:
+      ssl_listen_port = ssl.getListenPort()
+    else:
+      ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
+  elif ssl is None and isSecureModeEnabledForDomain(domain):
+    ssl_listen_port = "7002"
+  return ssl_listen_port
 
 def getSSLPortIfEnabled(server, domain, is_server_template=True):
   """
