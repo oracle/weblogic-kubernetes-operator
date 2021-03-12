@@ -22,11 +22,11 @@ The operator provides several ways to initiate scaling of WebLogic clusters, inc
 
 #### On-demand, updating the Domain directly
 The easiest way to scale a WebLogic cluster in Kubernetes is to simply edit the `replicas` field of a Domain. This can be done by using `kubectl`. More specifically, you can modify the Domain directly by using the `kubectl edit` command.  For example:
-```
+```shell
 $ kubectl edit domain domain1 -n [namespace]
 ```
 Here we are editing a Domain named `domain1`. The `kubectl edit` command will open the Domain definition in an editor and allow you to modify the `replicas` value directly. Once committed, the operator will be notified of the change and will immediately attempt to scale the corresponding cluster by reconciling the number of running pods/Managed Server instances with the `replicas` value specification.
-```
+```yaml
 spec:
   ...
   clusters:
@@ -36,7 +36,7 @@ spec:
 ```
 
 Alternatively, you can specify a default `replicas` value for all the clusters.  If you do this, then you don't need to list the cluster in the Domain (unless you want to customize another property of the cluster).
-```
+```yaml
 spec:
   ...
   replicas: 1
@@ -68,7 +68,7 @@ In this URL format:
 
 The `/scale` REST endpoint accepts an HTTP POST request and the request body supports the JSON `"application/json"` media type.  The request body will be a simple name-value item named `managedServerCount`; for example:
 
-```
+```json
 {
     "managedServerCount": 3
 }
@@ -83,8 +83,8 @@ When you POST to the `/scale` REST endpoint, you must send the following headers
 
 For example, when using `curl`:
 
-```
-curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
+```shell
+$ curl -v -k -H X-Requested-By:MyClient -H Content-Type:application/json -H Accept:application/json -H "Authorization:Bearer ..." -d '{ "managedServerCount": 3 }' https://.../scaling
 ```
 
 If you omit the header, you'll get a `400 (bad request)` response. If you omit the Bearer Authentication header, then you'll get a `401 (Unauthorized)` response.  If the service account or user associated with the `Bearer` token does not have permission to `patch` the WebLogic domain resource, then you'll get a `403 (Forbidden)` response.
@@ -94,7 +94,7 @@ To resolve a `403 (Forbidden)` response, when calling the operator's REST scalin
 The example ClusterRole definition below grants `get`, `list`, `patch` and `update` access to the WebLogic `domains` resource
 {{% /notice %}}
 
-```
+```yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -218,7 +218,7 @@ The following is an example YAML file for creating the appropriate Kubernetes Cl
 In the example ClusterRoleBinding definition below, the WebLogic domain is deployed to a namespace `weblogic-domain`.  Replace the namespace value with the name of the namespace in which the WebLogic domain is deployed in your Kubernetes environment.
 {{% /notice %}}
 
-```
+```yaml
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
@@ -266,7 +266,6 @@ roleRef:
   name: cluster-admin
   apiGroup: "rbac.authorization.k8s.io"
 ---
-
 ```
 
 #### Using a Prometheus alert action to call the operator's REST scale API
@@ -286,8 +285,8 @@ The following example illustrates how to open a bash shell on a running Administ
 * The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside an image).
 * The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
-```
-> kubectl exec -it domain1-admin-server /bin/bash
+```shell
+$ kubectl exec -it domain1-admin-server /bin/bash
 # bash> cd /u01/oracle/user-projects/domains/domain1/bin/scripts
 # bash> ./scalingAction.sh
 ```
@@ -314,7 +313,7 @@ This example assumes the operator and Domain YAML file are configured with the f
   * WebLogic cluster name: `ApplicationCluster`
   * Domain UID: `domain1`
 
-```
+```shell
 #!/bin/sh
 
 # Setup properties  
@@ -356,5 +355,4 @@ curl --noproxy '*' -v --cacert operator.cert.pem \
 -X POST  https://${ophost}:${opport}/operator/v1/domains/${domainuid}/clusters/${cluster}/scale \
 -o operator.rest.response.body \
 --stderr operator.rest.stderr
-
 ```

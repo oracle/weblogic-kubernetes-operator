@@ -7,13 +7,13 @@ See the official installation document at:
 As a *demonstration*, the following are steps to install the NGINX operator using Helm 3 on a Linux OS.
 
 ### 1. Add the ingress-nginx chart repository
-```
+```shell
 $ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 $ helm repo update
 ```
 Verify that the chart repository has been added.
 
-```
+```shell
 $ helm search repo ingress-nginx
 NAME               CHART VERSION APP VERSION	DESCRIPTION
 ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kubernetes using NGINX a...
@@ -24,13 +24,13 @@ ingress-nginx/ingress-nginx	2.12.0       	0.34.1     	Ingress controller for Kub
 
 > **NOTE**: The NGINX version used for the install should match the version found with `helm search`.
 
-```
+```shell
 $ kubectl create namespace nginx
 $ helm install nginx-operator ingress-nginx/ingress-nginx --namespace nginx
 ```
 
 Wait until the NGINX ingress controller is running.
-```
+```shell
 $ kubectl get all --namespace nginx 
 NAME                                                           READY   STATUS    RESTARTS   AGE
 pod/nginx-operator-ingress-nginx-controller-84fbd64787-v4p4c   1/1     Running   0          11m
@@ -43,7 +43,6 @@ NAME                                                                 DESIRED   C
 replicaset.apps/nginx-operator-ingress-nginx-controller-84fbd64787   1         1         1       11m
 $ POD_NAME=$(kubectl get pods -n nginx -l app.kubernetes.io/name=ingress-nginx -o jsonpath='{.items[0].metadata.name}')
 $ kubectl exec -it $POD_NAME -n nginx -- /nginx-ingress-controller --version
-
 ```
 > **NOTE**: All the generated Kubernetes resources of the NGINX operator have names controlled by the NGINX Helm chart. In our case, we use `releaseName` of `nginx-operator`.
 
@@ -64,14 +63,13 @@ The following sections describe how to route an application web request to the W
 
 #### Host-based routing 
 This sample demonstrates how to access an application on two WebLogic domains using host-based routing. Install a host-based routing NGINX ingress.
-```
+```shell
 $ kubectl create -f samples/host-routing.yaml
 ingress.networking.k8s.io/domain1-ingress-host created
 ingress.networking.k8s.io/domain2-ingress-host created
-
 ```
 Now you can send requests to different WebLogic domains with the unique NGINX entry point of different host names as defined in the route section of the `host-routing.yaml` file.
-```
+```shell
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
 $ curl -H 'host: domain1.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
@@ -80,14 +78,14 @@ $ curl -H 'host: domain2.org' http://${HOSTNAME}:${LB_PORT}/testwebapp/
 
 #### Path-based routing 
 This sample demonstrates how to access an application on two WebLogic domains using path-based routing. Install a path-based routing ingress controller.
-```
+```shell
 $ kubectl create -f samples/path-routing.yaml
 ingress.extensions/domain1-ingress-path created
 ingress.extensions/domain2-ingress-path created
 ```
 Now you can send requests to different WebLogic domains with the unique NGINX entry point of different paths, as defined in the route section of the `path-routing.yaml` file.
 
-```
+```shell
 # Get the ingress controller web port
 $ export LB_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
 $ curl http://${HOSTNAME}:${LB_PORT}/domain1/testwebapp/
@@ -98,7 +96,7 @@ $ curl http://${HOSTNAME}:${LB_PORT}/domain2/testwebapp/
 This sample demonstrates how to access an application on two WebLogic domains using an HTTPS endpoint. Install a TLS-enabled ingress controller.
 
 First, you need to create two secrets with TLS certificates, one with the common name `domain1.org`, the other with the common name `domain2.org`. We use `openssl` to generate self-signed certificates for demonstration purposes. Note that the TLS secret needs to be in the same namespace as the WebLogic domain.
-```
+```shell
 # create a TLS secret for domain1
 $ openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls1.key -out /tmp/tls1.crt -subj "/CN=domain1.org"
 $ kubectl -n weblogic-domain1 create secret tls domain1-tls-cert --key /tmp/tls1.key --cert /tmp/tls1.crt
@@ -113,7 +111,7 @@ ingress.networking.k8s.io/domain2-ingress-tls created
 ```
 Now you can access the application on the WebLogic domain with the host name in the HTTP header. The ingress controller secure port can be obtained dynamically from the `nginx-operator` service in the `nginx` namespace.
 
-```
+```shell
 # Get the ingress controller secure web port
 $ export TLS_PORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 $ curl -k -H 'host: domain1.org' https://${HOSTNAME}:${TLS_PORT}/testwebapp/
@@ -126,13 +124,13 @@ This sample demonstrates how to terminate SSL traffic at the ingress controller 
 ### 1. Enable "WebLogic Plugin Enabled" on the WebLogic domain level
 
 If you are using WDT to configure the WebLogic domain, you need to add the following resource section at the domain level to the model YAML file.
-```
+```yaml
 resources:
      WebAppContainer:
          WeblogicPluginEnabled: true
 ```
 If you are using a WLST script to configure the domain, then the following modifications are needed to the respective python script.
-```
+```javascript
 # Configure the Administration Server
 cd('/Servers/AdminServer')
 set('WeblogicPluginEnabled',true)
@@ -145,7 +143,7 @@ Save the below configuration as `nginx-tls-console.yaml` and replace the string 
 
 **NOTE**:If you also have HTTP requests coming into an ingress, make sure that you remove any incoming `WL-Proxy-SSL` header. This protects you from a malicious user sending in a request to appear to WebLogic as secure when it isn't. Add the following annotations in the NGINX ingress configuration to block `WL-Proxy` headers coming from the client. In the following example, the ingress resource will eliminate the client headers `WL-Proxy-Client-IP` and `WL-Proxy-SSL`.
 
-```
+```yaml
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -173,12 +171,12 @@ spec:
 ```
 ### 3. Deploy the ingress resource
 Deploy the ingress resource using `kubectl`.
-```
+```shell
  kubectl create -f nginx-tls-console.yaml
 ```
 ### 4. Access the WebLogic Server Administration Console using the HTTPS port
 Get the SSL port from the Kubernetes service. 
-```
+```shell
 # Get the ingress controller secure web port
 SSLPORT=$(kubectl -n nginx get service nginx-operator-ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="https")].nodePort}')
 ```
@@ -187,7 +185,7 @@ In a web browser address bar type `https://${HOSTNAME}:${SSLPORT}/console` to ac
 ## Uninstall the NGINX operator
 After removing all the NGINX ingress resources, uninstall the NGINX operator.
 
-```
+```shell
 $ helm uninstall nginx-operator --namespace nginx
 ```
 
@@ -195,10 +193,10 @@ $ helm uninstall nginx-operator --namespace nginx
 Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `kubernetes/samples/charts/util` folder, to install and uninstall NGINX.
 
 To install NGINX:
-```
+```shell
 $ ./setupLoadBalancer.sh create nginx [nginx-version]
 ```
 To uninstall NGINX:
-```
+```shell
 $ ./setupLoadBalancer.sh delete nginx
 ```

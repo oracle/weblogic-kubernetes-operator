@@ -14,7 +14,7 @@ have an `oracle` user with UID 1000 with the default group set to `root`.
 Here is an excerpt from a standard WebLogic [Dockerfile](https://github.com/oracle/docker-images/blob/master/OracleWebLogic/dockerfiles/12.2.1.4/Dockerfile.generic#L89)
 that demonstrates how the file system group ownership is configured in the standard WebLogic Server images:
 
-```bash
+```dockerfile
 # Setup filesystem and oracle user
 # Adjust file permissions, go to /u01 as user 'oracle' to proceed with WLS installation
 # ------------------------------------------------------------
@@ -99,7 +99,7 @@ volumes:
 Assuming you called that file `uid1000.yaml`, you can create the security context constraint
 using the following command:
 
-```bash
+```shell
 $ oc create -f uid1000.yaml
 ```
 

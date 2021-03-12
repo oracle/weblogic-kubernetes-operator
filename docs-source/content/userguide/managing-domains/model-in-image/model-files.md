@@ -28,7 +28,7 @@ This document describes basic Model in Image model file syntax, naming, and macr
 
 Here's an example of a model YAML file that defines a WebLogic Server Administration Server and dynamic cluster.
 
-```
+```yaml
 domainInfo:
   AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
   AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -76,7 +76,7 @@ For a description of model file macro references to secrets and environment vari
 
 - A model __must__ contain a `domainInfo` stanza that references your WebLogic administrative credentials. You can use the `@@SECRET` macro with the reserved secret name `__weblogic-credentials__` to reference your Domain YAML file's WebLogic credentials secret for this purpose. For example:
 
-    ```
+    ```yaml
     domainInfo:
       AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
       AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -121,7 +121,9 @@ z.yaml
 
 Then the combined model files list is passed to the WebLogic Deploy Tool as:
 
-```y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml```
+```
+y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml
+```
 
 Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.
 
@@ -143,7 +145,7 @@ Any secrets that are referenced by an `@@SECRET` macro must be deployed to the s
 
 Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentialsSecret` and two custom secrets `my-custom-secret1` and `my-custom-secret2`.
 
-  ```
+  ```yaml
   ...
   spec:
     webLogicCredentialsSecret:

@@ -22,7 +22,7 @@ PersistentVolumes can point to different storage locations, for example NFS serv
 
 The PersistentVolume for the domain must be created using the appropriate tools before running the script to create the domain.  In the simplest case, namely the `HOST_PATH` provider, this means creating a directory on the Kubernetes master and ensuring that it has the correct permissions:
 
-```bash
+```shell
 $ mkdir -m 777 -p /path/to/domain1PersistentVolume
 ```
 
@@ -38,7 +38,7 @@ PersistentVolume that provides the group identifier (GID) which will be added to
 For example, if the GID of the directory is `6789`, then the directory can be updated to remove permissions
 other than for the user and group along with the PersistentVolume being annotated with the specified GID:
 
-```bash
+```shell
 $ chmod 770 /path/to/domain1PersistentVolume
 $ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid=6789
 ```
@@ -50,7 +50,7 @@ files created from a pod onto the PersistentVolume will have UID `1000` and GID 
 
 An example of updating the group ownership on the PersistentVolume would be as follows:
 
-```bash
+```shell
 $ cd /path/to/domain1PersistentVolume
 $ sudo chgrp 6789 applications domains logs stores
 $ sudo chgrp -R 6789 domains/
@@ -67,7 +67,7 @@ For sample YAML templates, refer to the [PersistentVolumes example]({{< relref "
 
 After you have written your YAML files, use them to create the PersistentVolume by creating Kubernetes resources using the `kubectl create -f` command:
 
-```
+```shell
 $ kubectl create -f pv.yaml
 $ kubectl create -f pvc.yaml
 
@@ -77,7 +77,7 @@ $ kubectl create -f pvc.yaml
 
 To confirm that the PersistentVolume was created, use these commands:
 
-```
+```shell
 $ kubectl describe pv [persistent volume name]
 $ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
 ```

@@ -8,7 +8,7 @@ that the domain will run in.
 
 To use the sample, run the command:
 
-```
+```shell
 $ ./create-rcu-credentials.sh \
   -u username \
   -p password \
@@ -36,7 +36,7 @@ This creates a `generic` secret containing the user name and password as literal
 You can check the secret with the `kubectl describe secret` command.  An example is shown below,
 including the output:
 
-```
+```shell
 $ kubectl -n domain-namespace-1 describe secret domain1-rcu-credentials -o yaml
 Name:         domain1-rcu-credentials
 Namespace:    default

@@ -41,7 +41,7 @@ Istio for you.
 You can deploy the operator into a namespace which has Istio automatic sidecar
 injection enabled.  Before installing the operator, create the namespace in which you want to run the domain and label it.
 
-```
+```shell
 $ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
@@ -52,7 +52,7 @@ and the envoy container `istio-proxy`.
 
 You can validate this using the following commands:
 
-```
+```shell
 $ kubectl --namespace weblogic-operator get pods
 $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yaml
 ```
@@ -65,7 +65,7 @@ You can configure your domains to run with Istio automatic sidecar injection ena
 Before creating your domain, create the namespace in which you want to run the operator
 and label it for automatic injection.
 
-```
+```shell
 $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
@@ -74,7 +74,7 @@ To enable Istio support for a domain, you need to add the
 `configuration` section to your domain custom resource YAML file, as shown in the
 following example:  
 
-```
+```yaml
 apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
@@ -140,20 +140,19 @@ ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 After the Domain YAML file is modified, apply it by:
 
-```
-kubect apply -f domain.yaml
+```shell
+$ kubectl apply -f domain.yaml
 ```
 
 After all the servers are up, you will see output like this:
 
-```
-kubectl -n sample-domain1-ns get pods
+```shell
+$ kubectl -n sample-domain1-ns get pods
 
 NAME                             READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server      2/2     Running   0          154m
 sample-domain1-managed-server1   2/2     Running   0          153m
 sample-domain1-managed-server2   2/2     Running   0          153m
-
 ```
 
 If you use `istioctl proxy-status`, you will see the mesh status:
@@ -166,7 +165,6 @@ sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SY
 sample-domain1-managed-server1.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-managed-server2.sample-domain1-ns                   SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
-
 ```
 
 #### Exposing applications in Istio-enabled domains
@@ -180,7 +178,7 @@ the cluster.
 To configure external access to your domain, you need to create an Istio `Gateway` and
 `VirtualService`, as shown in the example below:
 
-```
+```yaml
 ---
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway

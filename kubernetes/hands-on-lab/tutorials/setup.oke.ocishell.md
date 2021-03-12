@@ -132,12 +132,12 @@ Select the **Copy** link to copy the `oci ce...` command to Cloud Shell, then cl
 
 ![alt text](../images/oke/023.ocishell.config.dialog.png)
 For example, the command looks like the following:
-```bash
+```shell
 $ oci ce cluster create-kubeconfig --cluster-id ocid1.cluster.oc1.THIS_IS_EXAMPLE_DONT_COPY_PASTE_FROM_HERE --file $HOME/.kube/config --region us-phoenix-1 --token-version 2.0.0
 New config written to the Kubeconfig file /home/peter_nagy/.kube/config
 ```
 Now check that `kubectl` is working, for example, using the `get node` command:
-```bash
+```shell
 $ kubectl get node
 NAME        STATUS   ROLES   AGE    VERSION
 10.0.10.2   Ready    node    117m   v1.15.7
@@ -157,11 +157,11 @@ In the Console, select your OCI user name and select User Settings. On the user 
 ![alt text](../images/oke/010.user.ocid.png)
 
 Then execute the role binding command using your(!) user OCID:
-```bash
-kubectl create clusterrolebinding my-cluster-admin-binding --clusterrole=cluster-admin --user=<YOUR_USER_OCID>
+```shell
+$ kubectl create clusterrolebinding my-cluster-admin-binding --clusterrole=cluster-admin --user=<YOUR_USER_OCID>
 ```
 For example:
-```bash
+```shell
 $ kubectl create clusterrolebinding my-cluster-admin-binding --clusterrole=cluster-admin --user=ocid1.user.oc1..AGAIN_THIS_IS_EXAMPLE
 clusterrolebinding.rbac.authorization.k8s.io/my-cluster-admin-binding created
 ```

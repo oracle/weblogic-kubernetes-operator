@@ -21,6 +21,6 @@ The operator source code is published on GitHub at https://github.com/oracle/web
 
 To clone the repository from GitHub, issue this command:
 
-```
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
 ```

@@ -18,7 +18,7 @@ desired scope.
 For example, here is
 a read-only `PersistentVolumeClaim` specification. Note that its name is `myclaim`.
 
-```
+```yaml
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -36,7 +36,7 @@ spec:
 To provide access to this claim to all Managed Servers in the `cluster-1` cluster, specify the following
 in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
-```
+```yaml
   clusters:
   - clusterName: cluster-1
     serverPod:
