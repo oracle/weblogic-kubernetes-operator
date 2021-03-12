@@ -19,7 +19,7 @@ in the same directory within the `cluster-1` cluster with the following
 in your [Domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
 
 
-```
+```yaml
   clusters:
   - clusterName: cluster-1
     serverPod:

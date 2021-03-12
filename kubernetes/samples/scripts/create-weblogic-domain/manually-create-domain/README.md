@@ -8,19 +8,19 @@ To create the domain custom resource, just make a copy of the sample [domain.yam
 it as per the instructions provided in the comments in that file.
 When it is ready, you can create the domain in your Kubernetes cluster using the command:
 
-```
+```shell
 $ kubectl apply -f domain.yaml
 ```
 
 You can verify the domain custom resource was created using this command:
 
-```
+```shell
 $ kubectl -n YOUR_NAMESPACE get domains
 ```
 
 You can view details of the domain using this command:
 
-```
+```shell
 $ kubectl -n YOUR_NAMESPACE describe domain YOUR_DOMAIN
 ```
 

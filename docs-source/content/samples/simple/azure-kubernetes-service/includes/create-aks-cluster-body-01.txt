@@ -6,7 +6,7 @@ We will use a service principal to create an AKS cluster. Follow the commands be
 
 Please run `az login` first. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
 
-```bash
+```shell
 # Login
 $ az login
 
@@ -17,7 +17,7 @@ $ az account set -s $SUBSCRIPTION_ID
 
 Create the new service principal with the following commands:
 
-```bash
+```shell
 # Create Service Principal
 $ export SP_NAME=myAKSClusterServicePrincipal
 $ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
@@ -27,7 +27,7 @@ $ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
 
 If you see an error similar to the following:
 
-```bash
+```shell
 Found an existing application instance of "5pn2s201-nq4q-43n1-z942-p9r9571qr3rp". We will patch it
 Insufficient privileges to complete the operation.
 ```
@@ -48,7 +48,7 @@ Successful output will look like the following:
 
 Grant your service principal with a contributor role to create AKS resources.
 
-```bash
+```shell
 # Use the <appId> from the output of the last command
 $ export SP_APP_ID=r3qnq743-61s9-4758-8163-4qpo87s72s54
 $ az role assignment create --assignee $SP_APP_ID --role Contributor
@@ -75,7 +75,7 @@ You will need an Oracle account. The following steps will direct you to accept t
   - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
   - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.
   - Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
-     ```bash
+     ```shell
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 

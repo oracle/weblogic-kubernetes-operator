@@ -49,7 +49,7 @@ Here are the steps for this use case:
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-     ```
+     ```shell
      # Delete existing archive.zip in case we have an old leftover version
      $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
 
@@ -66,7 +66,7 @@ Here are the steps for this use case:
 
      The `model.10.yaml` file in this directory has an updated path `wlsdeploy/applications/myapp-v2` that references the updated web application in your archive, but is otherwise identical to the model staged for the original image. The final related YAML file stanza looks like this:
 
-     ```
+     ```yaml
      appDeployments:
          Application:
              myapp:
@@ -98,7 +98,7 @@ Here are the steps for this use case:
      If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
      {{% /notice %}}
 
-     ```
+     ```shell
      $ cd /tmp/mii-sample/model-images
      $ ./imagetool/bin/imagetool.sh update \
        --tag model-in-image:WLS-v2 \
@@ -148,7 +148,7 @@ Here are the steps for this use case:
 
         The final result will look something like this:
 
-        ```
+        ```yaml
         ...
         spec:
           ...
@@ -159,7 +159,7 @@ Here are the steps for this use case:
 
           > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-          ```
+          ```shell
           $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
           ```
 
@@ -167,7 +167,7 @@ Here are the steps for this use case:
 
         > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
         ```
 
@@ -181,7 +181,7 @@ Here are the steps for this use case:
    - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-   ```
+   ```shell
      $ ./wl-pod-wait.sh -?
 
      Usage:
@@ -223,7 +223,7 @@ Here are the steps for this use case:
      {{% /expand %}}
 
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
-   ```
+   ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
 
    @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
@@ -387,21 +387,21 @@ Here are the steps for this use case:
 
    Send a web application request to the ingress controller:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
    Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
    You will see something like the following:
 
-    ```
+    ```html
     <html><body><pre>
     *****************************************************************
 
@@ -431,7 +431,6 @@ Here are the steps for this use case:
 
     *****************************************************************
     </pre></body></html>
-
     ```
 
 A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).

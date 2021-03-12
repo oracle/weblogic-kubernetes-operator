@@ -31,7 +31,7 @@ Here are the steps:
    Here's an example data source model configuration that meets these criteria:
 
 
-   ```
+   ```yaml
    resources:
      JDBCSystemResource:
        mynewdatasource:
@@ -68,7 +68,7 @@ Here are the steps:
 
    The data source references a new secret that needs to be created. Run the following commands to create the secret:
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
       sample-domain1-datasource-secret \
       --from-literal='user=sys as sysdba' \
@@ -92,7 +92,7 @@ Here are the steps:
    Run the following commands:
 
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
@@ -117,7 +117,7 @@ Here are the steps:
 
       - Add the secret to its `spec.configuration.secrets` stanza:
 
-          ```
+          ```yaml
           spec:
             ...
             configuration:
@@ -129,7 +129,7 @@ Here are the steps:
 
       - Change its `spec.configuration.model.configMap` to look like the following:
 
-          ```
+          ```yaml
           spec:
             ...
             configuration:
@@ -143,7 +143,7 @@ Here are the steps:
 
         > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
         ```
 
@@ -151,7 +151,7 @@ Here are the steps:
 
         > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
@@ -194,7 +194,7 @@ Here are the steps:
    - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-   ```
+   ```shell
      $ ./wl-pod-wait.sh -?
 
      Usage:
@@ -433,21 +433,21 @@ Here are the steps:
 
    Send a web application request to the ingress controller:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
    Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
    You will see something like the following:
 
-    ```
+    ```html
     <html><body><pre>
     *****************************************************************
 

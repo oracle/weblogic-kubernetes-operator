@@ -4,7 +4,7 @@ This sample requires that you disable the AKS addon `http_application_routing` b
 
 Run the following commands to create the AKS cluster instance.
 
-```bash
+```shell
 # Change these parameters as needed for your own environment
 # Specify a prefix to name resources, only allow lowercase letters and numbers, between 1 and 7 characters
 $ export NAME_PREFIX=wls
@@ -33,13 +33,13 @@ Successful output will be a JSON object with the entry `"type": "Microsoft.Conta
 
 After the deployment finishes, run the following command to connect to the AKS cluster. This command updates your local `~/.kube/config` so that subsequent `kubectl` commands interact with the named AKS cluster.
 
-```bash
+```shell
 $ az aks get-credentials --resource-group $AKS_PERS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME
 ```
 
 Successful output will look similar to:
 
-```bash
+```shell
 Merged "wlsaks1596087429" as current context in /home/username/.kube/config
 ```
 

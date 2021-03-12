@@ -64,8 +64,8 @@ to use that secret when pulling the image.
 
 To create a secret, you can use the following command:
 
-```
-kubectl create secret docker-registry secret1 \
+```shell
+$ kubectl create secret docker-registry secret1 \
         --docker-server=some.registry.com \
         --docker-username=bob \
         --docker-password=bigSecret \
@@ -91,7 +91,7 @@ add the secret name to the `imagePullSecret` in the domain custom resource YAML 
 Here is an example of part of a domain custom resource file with the `imagePullSecret` above
 specified:
 
-```
+```yaml
 apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
@@ -115,8 +115,8 @@ resource.  This is useful if you are running multiple domains in the same namesp
 To add the secret shown above to the `default` service account in the `weblogic` namespace, you
 would use a command like this:
 
-```
-kubectl patch serviceaccount default \
+```shell
+$ kubectl patch serviceaccount default \
         -n weblogic \
         -p '{"imagePullSecrets": [{"name": "secret1"}]}'
 ```
@@ -134,20 +134,20 @@ a remote repository, then the Docker steps are:
 
 - Use [docker login](https://docs.docker.com/engine/reference/commandline/login/)
   to log in to the target repository's registry. For example:
-  ```
-  docker login some.registry.com -u username -p password
-  ```
+```shell
+$ docker login some.registry.com -u username -p password
+```
 - Use [docker tag](https://docs.docker.com/engine/reference/commandline/tag/)
   to mark the image with the target registry, owner, repository name, and tag.
   For example:
-  ```
-  docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
-  ```
+```shell
+$ docker tag domain1:1.0 some.registry.com/owner/domain1:1.0
+```
 - Use [docker push](https://docs.docker.com/engine/reference/commandline/push/)
   to push the image to the repository. For example:
-  ```
-  docker push some.registry.com/owner/domain1:1.0
-  ```
+```shell
+$ docker push some.registry.com/owner/domain1:1.0
+```
 
 #### Manually copying the image to your worker nodes
 
@@ -157,15 +157,15 @@ cluster instead.
 
 On the machine where you created the image, export it into a TAR file using this command:
 
-```
-docker save domain1:1.0 > domain1.tar
+```shell
+$ docker save domain1:1.0 > domain1.tar
 ```
 
 Then copy that TAR file to each worker node in your Kubernetes cluster and run this command
 on each node:
 
-```
-docker load < domain1.tar
+```shell
+$ docker load < domain1.tar
 ```
 
 #### Restart pods to clear the error

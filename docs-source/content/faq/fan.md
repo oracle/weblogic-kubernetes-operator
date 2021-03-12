@@ -33,7 +33,7 @@ To correct the problem, you must disable FAN, in one of two places:
 To do this, edit the Domain Custom Resource to set the system property `oracle.jdbc.fanEnabled`
 to `false` as shown in the following example:
 
-```
+```yaml
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
@@ -48,7 +48,7 @@ to `false` as shown in the following example:
 The following WLST script adds the
  `oracle.jdbc.fanEnabled` property, set to `false`, to an existing data source.
 
-```
+```javascript
        fmwDb = 'jdbc:oracle:thin:@' + db
        print 'fmwDatabase  ' + fmwDb
        cd('/JDBCSystemResource/LocalSvcTblDataSource/JdbcResource/LocalSvcTblDataSource')

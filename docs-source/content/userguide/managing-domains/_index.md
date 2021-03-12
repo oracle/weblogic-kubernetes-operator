@@ -165,7 +165,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:
 
-  ```bash
+  ```javascript
   # domain log
   cd('/')
   create(dname,'Log')
@@ -184,7 +184,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here is sample WLST offline code for commonly tuned Log MBean attributes:
 
-  ```bash
+  ```javascript
   # minimum log file size before rotation in kilobytes
   set('FileMinSize', 1000)
 

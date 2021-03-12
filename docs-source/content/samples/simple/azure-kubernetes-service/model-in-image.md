@@ -29,9 +29,9 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 
 Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
-```bash
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
-cd weblogic-kubernetes-operator
+$ cd weblogic-kubernetes-operator
 ```
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
@@ -45,7 +45,7 @@ The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLog
 
 Create a namespace and service account for the operator.
 
-```bash
+```shell
 $ kubectl create namespace sample-weblogic-operator-ns
 namespace/sample-weblogic-operator-ns created
 
@@ -56,7 +56,7 @@ serviceaccount/sample-weblogic-operator-sa created
 
 Validate the service account was created with this command.
 
-```bash
+```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
 
 NAME                          SECRETS   AGE
@@ -66,7 +66,7 @@ sample-weblogic-operator-sa   1         9m5s
 
 Install the operator. Ensure your current directory is `weblogic-kubernetes-operator`. It may take you several minutes to install the operator.
 
-```bash
+```shell
 # cd weblogic-kubernetes-operator
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
@@ -91,7 +91,7 @@ TEST SUITE: None
 
 Verify the operator with the following commands; the status will be `Running`.
 
-```bash
+```shell
 $ helm list -A
 NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
 sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
@@ -124,7 +124,7 @@ If you have a Docker image built with domain models following [Model in Image]({
 1. The `JAVA_HOME` environment variable must be set and must reference a valid JDK 8 or 11 installation.
 1. Copy the sample to a new directory; for example, use the directory `/tmp/mii-sample`.
 
-   ```bash
+   ```shell
    $ mkdir /tmp/mii-sample
    $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image
    $ cp -r * /tmp/mii-sample
@@ -136,7 +136,7 @@ If you have a Docker image built with domain models following [Model in Image]({
 
    For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.7` and `1.9.5` respectively, call:
 
-   ```bash
+   ```shell
    $ cd /tmp/mii-sample/model-images
 
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/weblogic-deploy.zip \
@@ -148,7 +148,7 @@ If you have a Docker image built with domain models following [Model in Image]({
 
 
    To set up the WebLogic Image Tool, run the following commands:
-   ```bash
+   ```shell
    $ cd /tmp/mii-sample/model-images
 
    $ unzip imagetool.zip
@@ -193,7 +193,7 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```bash
+```shell
 # Delete existing archive.zip in case we have an old leftover version
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
@@ -216,7 +216,7 @@ CLUSTER_SIZE=5
 
 Here is the WLS `model.10.yaml`:
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -283,7 +283,7 @@ Now, you use the Image Tool to create a Docker image named `model-in-image:WLS-v
 
 Run the following commands to create the model image and verify that it worked:
 
-```bash
+```shell
 $ cd /tmp/mii-sample/model-images
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
@@ -384,7 +384,7 @@ In this section, you will deploy the new image to the namespace `sample-domain1-
 
 Create a namespace that can host one or more domains:
 
-```bash
+```shell
 $ kubectl create namespace sample-domain1-ns
 
 ## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
@@ -397,7 +397,7 @@ First, create the secrets needed by the WLS type model domain. For more on secre
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-```bash
+```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
@@ -484,7 +484,7 @@ Now, you create a Domain YAML file. Think of the Domain YAML file as the way to 
 
 We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`, copy it to a file called `/tmp/mii-sample/mii-initial.yaml`.
 
-```bash
+```shell
 $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
@@ -498,7 +498,7 @@ Modify the Domain YAML with your values.
 
 Run the following command to create the domain custom resource:
 
-```bash
+```shell
 $ kubectl apply -f /tmp/mii-sample/mii-initial.yaml
 ```
 
@@ -510,7 +510,7 @@ domain.weblogic.oracle/sample-domain1 created
 
 Verify the WebLogic Server pods are all running:
 
-```bash
+```shell
 $ kubectl get pods -n sample-domain1-ns --watch
 NAME                                READY   STATUS              RESTARTS   AGE
 sample-domain1-introspector-xwpbn   0/1     ContainerCreating   0          0s
@@ -605,7 +605,7 @@ spec:
 
 Create the load balancer services using the following command:
 
-```bash
+```shell
 $ cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image
 $ kubectl apply -f admin-lb.yaml
 service/sample-domain1-admin-server-external-lb created
@@ -616,7 +616,7 @@ service/sample-domain1-cluster-1-external-lb created
 
 Get the external IP addresses of the Administration Server and cluster load balancers (please wait for the external IP addresses to be assigned):
 
-```bash
+```shell
 $ kubectl get svc -n sample-domain1-ns --watch
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
 sample-domain1-admin-server               ClusterIP      None           <none>           7001/TCP         8m33s
@@ -631,7 +631,7 @@ In the example, the URL to access the Administration Server is: `http://52.191.2
 
 If the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
-```bash
+```shell
 $ kubectl describe domain domain1
 ```
 
@@ -767,7 +767,7 @@ Access the Administration Console using the admin load balancer IP address, `htt
 
 Access the sample application using the cluster load balancer IP address.
 
-```bash
+```shell
 ## Access the sample application using the cluster load balancer IP (52.191.235.71)
 $ curl http://52.191.235.71:8001/myapp_war/index.jsp
 

@@ -51,7 +51,7 @@ You can include the optional `oci-load-balancer-shape` annotation (as
 shown) if you want to specify the shape of the load balancer.  Otherwise
 the default shape (100Mbps) will be used.
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:
@@ -75,7 +75,7 @@ spec:
 When you apply this YAML file to your cluster, you will see the new service is created
 but initially the external IP is shown as `<pending>`.  
 
-```
+```shell
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>        8888/TCP,7001/TCP,30101/TCP   9d
@@ -89,7 +89,7 @@ bobs-bookstore-oci-lb-service          LoadBalancer   10.96.121.216   <pending> 
 After a short time (typically less than a minute), the OCI load balancer will be provisioned and the
 external IP address will be displayed:
 
-```
+```shell
 $ kubectl -n bob get svc
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>            8888/TCP,7001/TCP,30101/TCP   9d
