@@ -19,7 +19,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
 * Create a Kubernetes Secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName`; see [Configuration parameters](#configuration-parameters) below. For example:
 
-```
+```shell
 $ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
 $ create-weblogic-credentials.sh
    -u <username>
@@ -39,14 +39,14 @@ The `create-domain.sh` script generates a new container image on each run with a
 
 The sample for creating domains is in this directory:
 
-```bash
+```shell
 $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 ```
 
 Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values,
 and run the create script, pointing it at your inputs file and an output directory:
 
-```
+```shell
 $ ./create-domain.sh \
   -u <username> \
   -p <password> \
@@ -71,7 +71,7 @@ The script will perform the following steps:
   {{% /notice %}}
 * Create a tag that refers to the generated image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
-```
+```shell
 $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
 ```
 
@@ -81,7 +81,7 @@ For a multi-node Kubernetes cluster, make sure that the generated image is avail
 
 The usage of the create script is as follows:
 
-```
+```shell
 $ sh create-domain.sh -h
 usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -i Parameter inputs file, must be specified.
@@ -118,7 +118,7 @@ For more information, see [WebLogic domain in image protection]({{<relref "/secu
 * Push the `image` to the target registry.
 * Run the following command to create the domain:
 
-```
+```shell
 $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
 ```
 
@@ -177,7 +177,7 @@ Note that the example results below use the `default` Kubernetes Namespace. If y
 
 The content of the generated `domain.yaml`:
 
-```
+```yaml
 # Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -259,7 +259,7 @@ spec:
 
 To confirm that the domain was created, use this command:
 
-```
+```shell
 $ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
@@ -267,7 +267,7 @@ Replace `DOMAINUID` with the `domainUID` and `NAMESPACE` with the actual namespa
 
 Here is an example of the output of this command:
 
-```
+```shell
 $ kubectl describe domain domain1
 Name:         domain1
 Namespace:    default
@@ -396,13 +396,13 @@ In the `Status` section of the output, the available servers and clusters are li
 
 Use the following command to see the pods running the servers:
 
-```
+```shell
 $ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
 
-```
+```shell
 $ kubectl get pods
 NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          30m
@@ -414,12 +414,12 @@ domain1-managed-server2                      1/1       Running   0          29m
 
 Use the following command to see the services for the domain:
 
-```
+```shell
 $ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
-```
+```shell
 $ kubectl get services
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   None             <none>        7001/TCP          32m
@@ -432,7 +432,6 @@ domain1-managed-server2                     ClusterIP   None             <none> 
 
 The generated YAML file in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:
 
-```
+```shell
 $ kubectl delete -f domain.yaml
-
 ```

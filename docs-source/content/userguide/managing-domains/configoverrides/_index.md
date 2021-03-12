@@ -157,7 +157,7 @@ A `MODULENAME` must correspond to the MBean name of a system resource defined in
 An override template must define the exact schemas required by the configuration overrides feature.  The schemas vary based on the file type you wish to override.
 
 _`config.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
@@ -167,7 +167,7 @@ _`config.xml`_
 ```
 
 _`jdbc-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
                        xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
@@ -177,7 +177,7 @@ _`jdbc-MODULENAME.xml`_
 ```
 
 _`jms-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jms:weblogic-jms xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
                   xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
@@ -187,7 +187,7 @@ _`jms-MODULENAME.xml`_
 ```
 
 _`diagnostics-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <wldf:wldf-resource xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
                     xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
@@ -249,7 +249,7 @@ The following `config.xml` override file demonstrates:
  *  Sets the `public-address` and `public-port` fields with values obtained from a Secret named `test-host` with keys `hostname` and `port`. It assumes the original config.xml already sets these fields, and so uses `replace` instead of `add`.
  *  Sets two debug settings. It assumes the original config.xml does not have a `server-debug` stanza, so it uses `add` throughout the entire stanza.
 
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
@@ -280,7 +280,7 @@ Best practices for data source modules and their overrides:
 * Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes Deployment could cause your production applications to use your QA database.
 * Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, or you haven't specified your overrides yet.
 
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
                        xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
@@ -317,9 +317,9 @@ Best practices for data source modules and their overrides:
   * If the ConfigMap is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example, assuming `./mydir` contains your `version.txt` and situation configuration template files:
 
-    ```
-    kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
-    kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
+    ```shell
+    $ kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+    $ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
 * Create any Kubernetes Secrets referenced by a template "secret macro".
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
@@ -327,9 +327,9 @@ Best practices for data source modules and their overrides:
   * If a Secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
 
-    ```
-    kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
-    kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
+    ```shell
+    $ kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
+    $ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
     ```
 * Configure the name of the ConfigMap in the Domain YAML file `configuration.overridesConfigMap` field.
 * Configure the names of each Secret in Domain YAML file.
@@ -343,7 +343,7 @@ Best practices for data source modules and their overrides:
 * See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
 
 Example Domain YAML:
-```
+```yaml
 apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
@@ -445,8 +445,8 @@ __Debugging steps:__
   * The `server config` value should reflect the overridden value.
   * For example, assuming your `DOMAIN_UID` is `domain1`, and your domain contains a WebLogic Server named `admin-server`, then:
 
-  ```
-  kubectl exec -it domain1-admin-server /bin/bash
+  ```shell
+  $ kubectl exec -it domain1-admin-server /bin/bash
   $ wlst.sh
   > connect(MYADMINUSERNAME, MYADMINPASSWORD, 't3://domain1-admin-server:7001')
   > domainConfig()

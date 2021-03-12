@@ -82,8 +82,8 @@ Here's an explanation of some elements defined in the `ConfigMap`:
 * The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`
 
 The following is an example of how to create the `ConfigMap`:
-```bash
-cat <<EOF | kubectl apply -f -
+```shell
+$ cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
 metadata:

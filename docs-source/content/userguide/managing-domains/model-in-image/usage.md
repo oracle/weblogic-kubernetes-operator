@@ -67,7 +67,7 @@ WDT model ConfigMap files will be merged with the WDT files defined in your imag
 
 For example, place additional `.yaml` and `.properties` files in a directory called `/home/acmeuser/wdtoverride` and run the following commands:
 
-  ```
+  ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create configmap MY-DOMAINUID-my-wdt-config-map \
     --from-file /home/acmeuser/wdtoverride
@@ -87,7 +87,7 @@ Model in Image requires a runtime encryption secret with a secure `password` key
 
 Example:
 
-  ```
+  ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create secret generic MY-DOMAINUID-runtime-encrypt-secret \
     --from-literal=password=welcome1
@@ -98,7 +98,7 @@ Example:
 
 Corresponding Domain YAML file snippet:
 
-  ```
+  ```yaml
   configuration:
     model:
       runtimeEncryptionSecret: MY-DOMAINUID-runtime-encrypt-secret
@@ -170,7 +170,7 @@ Here are the required Domain YAML file and model YAML file settings for Model in
 
 - Define an `RCUDbInfo` stanza in your model. Access to an database requires defining a `RCUDbInfo` stanza in your model's `domainInfo` stanza with the necessary information for accessing the domain's schema within the database. Usually this information should be supplied using a secret that you deploy and reference in your Domain YAML file's `configuration.secrets` field. Here's an example `RCUDbInfo` stanza:
 
-  ```
+  ```yaml
   domainInfo:
       RCUDbInfo:
           rcu_prefix:          '@@SECRET:sample-domain1-rcu-access:rcu_prefix@@'
@@ -188,8 +188,8 @@ When you deploy a JRF domain for the first time, the domain will add itself to i
 For a domain that has been started by Model in Image, the operator will copy the wallet file from the domain home of a new JRF domain and store it in the domain's introspector domain ConfigMap in file `ewallet.p12`. Here is how to export this wallet file from the introspector domain ConfigMap:
 
 - Option 1
-  ```
-  kubectl -n MY_DOMAIN_NAMESPACE \
+  ```shell
+  $ kubectl -n MY_DOMAIN_NAMESPACE \
     get configmap MY_DOMAIN_UID-weblogic-domain-introspect-cm \
     -o jsonpath='{.data.ewallet\.p12}' \
     > ewallet.p12
@@ -204,19 +204,20 @@ Always back up your wallet file to a safe location that can be retrieved later. 
 
 To reuse the wallet:
   - Create a secret with a key named `walletPassword` that contains the same OPSS password that you specified in the original domain. For example, assuming the password is `welcome1`:
-    ```
-    kubectl -n MY_DOMAIN_NAMESPACE \
+    ```shell
+    $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret \
       --from-literal=walletPassword=welcome1
-    kubectl -n MY_DOMAIN_NAMESPACE \
+    $ kubectl -n MY_DOMAIN_NAMESPACE \
       label secret MY_DOMAIN_UID-my-opss-wallet-password-secret \
       weblogic.domainUID=sample-domain1
-  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported above. For example, assuming the file is `ewallet.p12`:
     ```
-    kubectl -n MY_DOMAIN_NAMESPACE \
+  - Create a secret with a key named `walletFile` that contains the OPSS wallet file that you exported above. For example, assuming the file is `ewallet.p12`:
+    ```shell
+    $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-file-secret \
       --from-file=walletFile=ewallet.p12
-    kubectl -n sample-domain1-ns \
+    $ kubectl -n sample-domain1-ns \
       label secret MY_DOMAIN_UID-my-opss-wallet-file-secret \
       weblogic.domainUID=sample-domain1
     ```

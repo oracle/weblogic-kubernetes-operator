@@ -117,8 +117,8 @@ You can modify these fields using the `kubectl` command-line tool's `edit` and `
 
 For example, to edit the Domain YAML file directly using the `kubectl` command-line tool:
 
-```
-kubectl edit domain <domain name> -n <domain namespace>
+```shell
+$ kubectl edit domain <domain name> -n <domain namespace>
 ```
 
 The `edit` command opens a text editor which lets you edit the Domain in place.
@@ -185,7 +185,7 @@ d. Update the `image` field of the Domain YAML file, specifying the new image na
 
    For example:
 
-     ```
+     ```yaml
      domain:
        spec:
          image: ghcr.io/oracle/weblogic-updated:3.2.0

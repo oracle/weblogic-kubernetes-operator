@@ -40,7 +40,7 @@ The following prerequisites must be met prior to running the create domain scrip
 Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at
 your inputs file and an output directory:
 
-```
+```shell
 $ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /<path to output-directory>
@@ -58,7 +58,7 @@ The script will perform the following steps:
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
-    ```
+    ```shell
     $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
     ```
 
@@ -70,7 +70,7 @@ which in turn results in the creation of the corresponding WebLogic Server pods 
 
 The usage of the create script is as follows:
 
-```
+```shell
 $ sh create-domain.sh -h
 usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
@@ -78,7 +78,6 @@ usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -h Help
-
 ```
 
 If you copy the sample scripts to a different location, make sure that you copy everything in
@@ -161,7 +160,7 @@ namespace, you need to replace `NAMESPACE` in the example `kubectl` commands wit
 
 The content of the generated `domain.yaml`:
 
-```
+```yaml
 # Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
@@ -243,7 +242,7 @@ spec:
 
 To confirm that the domain was created, use this command:
 
-```
+```shell
 $ kubectl describe domain DOMAINUID -n NAMESPACE
 ```
 
@@ -255,7 +254,8 @@ Here is an example of the output of this command:
 Name:         fmw-domain
 Namespace:    default
 Labels:       weblogic.domainUID=fmw-domain
-Annotations:  kubectl.kubernetes.io/last-applied-configuration:
+Annotations:  
+  kubectl.kubernetes.io/last-applied-configuration:
                 {"apiVersion":"weblogic.oracle/v4","kind":"Domain","metadata":{"annotations":{},"labels":{"weblogic.domainUID":"fmw-domain","weblogic.reso...
 API Version:  weblogic.oracle/v4
 Kind:         Domain
@@ -420,13 +420,13 @@ before starting the Managed Servers.
 
 Use the following command to see the pods running the servers:
 
-```
+```shell
 $ kubectl get pods -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
 
-```
+```shell
 $ kubectl get pods
 NAME                                     READY   STATUS    RESTARTS   AGE
 fmw-domain-admin-server                  1/1     Running   0          15h
@@ -434,19 +434,18 @@ fmw-domain-managed-server1               1/1     Running   0          15h
 fmw-domain-managed-server2               1/1     Running   0          15h
 fmw-domain-managed-server3               1/1     Running   0          15h
 fmw-domain-managed-server4               1/1     Running   0          15h
-
 ```
 
 #### Verify the services
 
 Use the following command to see the services for the domain:
 
-```
+```shell
 $ kubectl get services -n NAMESPACE
 ```
 
 Here is an example of the output of this command:
-```
+```shell
 $ kubectl get services
 NAME                                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 fmw-domain-admin-server             ClusterIP   None             <none>        7001/TCP          15h
@@ -456,7 +455,6 @@ fmw-domain-managed-server1          ClusterIP   None             <none>        8
 fmw-domain-managed-server2          ClusterIP   None             <none>        8001/TCP          15h
 fmw-domain-managed-server3          ClusterIP   None             <none>        8001/TCP          15h
 fmw-domain-managed-server4          ClusterIP   None             <none>        8001/TCP          15h
-
 ```
 
 #### Delete the generated domain home
@@ -465,7 +463,6 @@ Sometimes in production, but most likely in testing environments, you might want
 home that is generated using the `create-domain.sh` script. Do this by running the generated
 `delete domain job` script in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory.
 
-```
+```shell
 $ kubectl create -f delete-domain-job.yaml
-
 ```

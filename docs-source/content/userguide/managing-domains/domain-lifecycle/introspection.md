@@ -33,7 +33,7 @@ Sometimes, such as for the [use cases](#introspection-use-cases) described below
 
 Set `introspectVersion` to a new value.
 
-```
+```yaml
   kind: Domain
   metadata:
     name: domain1
@@ -84,7 +84,7 @@ Prior to operator 3.0.0, this was not possible because there was no mechanism to
 
 For instance, if you had a domain configuration with a single cluster named "cluster-1" then your Domain YAML file may have content like this:
 
-```
+```yaml
 spec:
   ...
   clusters:
@@ -95,7 +95,7 @@ spec:
 
 If you modified your WebLogic domain configuration (using the console or WLST) to add a new dynamic cluster named "cluster-2", then you could immediately start cluster members of this new cluster by updating your Domain YAML file like this:
 
-```
+```yaml
 spec:
   ...
   clusters:

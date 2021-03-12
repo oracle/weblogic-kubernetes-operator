@@ -92,7 +92,7 @@ documented as [unsupported](#unsupported-updates) below:
    along with its parent bean hierarchy that references an existing MBean and the attribute.
    For example, to add or alter the maximum capacity of a data source named `mynewdatasource`:
 
-   ```
+   ```yaml
    resources:
      JDBCSystemResource:
        mynewdatasource:
@@ -122,7 +122,7 @@ documented as [unsupported](#unsupported-updates) below:
    loads after the model file that defines the data source, where the
    small model file looks like this:
 
-   ```
+   ```yaml
    resources:
      JDBCSystemResource:
        !mynewdatasource:
@@ -401,7 +401,7 @@ When recovering from a failure, please keep the following points in mind:
 
 Sample domain resource YAML file for an online update:
 
-```
+```yaml
 ...
 kind: Domain
 metadata:
@@ -479,7 +479,7 @@ _MBean type section deletion_
 
 For an example of an MBean deletion, consider a WDT ConfigMap that starts with:
 
-```
+```yaml
 resources:
   SelfTuning:
     WorkManager:
@@ -494,7 +494,7 @@ resources:
 If you want to online update to a new model without `work-managers`,
 then change the ConfigMap to the following:
 
-```
+```yaml
 resources:
   SelfTuning:
     WorkManager:
@@ -504,7 +504,7 @@ resources:
 
 or supply an additional ConfigMap:
 
-```
+```yaml
 resources:
   SelfTuning:
     WorkManager:
@@ -515,7 +515,7 @@ resources:
 The online update will fail if you try replace the ConfigMap
 with the `SelfTuning` section omitted:
 
-```
+```yaml
 resources:
   JDBCSystemResource:
     ...
@@ -530,7 +530,7 @@ For an example of an unsupported online update delete of MBeans
 with cross references, consider the case of a Work Manager
 configured with constraints where you want to delete the entire Work Manager:
 
-```
+```yaml
 resources:
   SelfTuning:
     WorkManager:
@@ -548,7 +548,7 @@ resources:
 
 If you try to specify the updated model in the ConfigMap as:
 
-```
+```yaml
 resources:
     SelfTuning:
         WorkManager:
@@ -559,7 +559,7 @@ resources:
 
 Then, the operator will try use this delta to online update the domain:
 
-```
+```yaml
 resources:
     SelfTuning:
         MaxThreadsConstraint:
@@ -577,7 +577,7 @@ To work around problems with online updates to objects with cross dependencies, 
 use a series of online updates to make the change in stages. For example, continuing the previous Work Manager
 example, first perform an online update to omit the Work Manager but not the constraints:
 
-```
+```yaml
 resources:
   SelfTuning:
     WorkManager:
@@ -591,7 +591,7 @@ resources:
 
 After that update completes, then perform another online update:
 
-```
+```yaml
 resources:
     SelfTuning:
         WorkManager:
@@ -638,7 +638,7 @@ _Here is how to interpret each domain resource's `domain.status.conditions` type
       processing a domain resource change or during a roll.
     * For example, after a successful online update,
       you will see something like this in the domain resource `domain.status` section:
-      ```
+      ```yaml
       status:
         clusters:
         - clusterName: cluster-1
@@ -811,8 +811,7 @@ compares two domain models and generates the YAML file for updating the first do
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
-  ```
-
+  ```shell
   # (1) Run discover for your existing domain home.
 
   $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
@@ -874,7 +873,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
    that takes a namespace as the first parameter (default `sample-domain1-ns`)
    and a domainUID as the second parameter (default `sample-domain1`):
 
-   ```
+   ```shell
    #!/bin/bash
    NAMESPACE=${1:-sample-domain1-ns}
    DOMAINUID=${2:-sample-domain1}
@@ -893,7 +892,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
 
    Here's a similar sample script for `introspectVersion`:
 
-   ```
+   ```shell
    #!/bin/bash
    NAMESPACE=${1:-sample-domain1-ns}
    DOMAINUID=${2:-sample-domain1}

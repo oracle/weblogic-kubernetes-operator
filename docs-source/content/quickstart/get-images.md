@@ -9,13 +9,13 @@ weight: 3
 
 1. Pull the operator image:
 
-    ```bash
+    ```shell
     $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0
     ```
 
 1. Pull the Traefik ingress controller image:
 
-    ```bash
+    ```shell
     $ docker pull traefik:2.2.1
     ```
 
@@ -25,7 +25,7 @@ weight: 3
 
     b. Find and then pull the WebLogic 12.2.1.4 install image:
 
-     ```bash
+     ```shell
      $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
      ```
 
