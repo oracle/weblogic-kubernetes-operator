@@ -27,7 +27,9 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -57,9 +59,11 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVarRegEx;
+import static oracle.kubernetes.operator.helpers.Matchers.hasSecretVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasVolumeMount;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createAffinity;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createConfigMapKeyRefEnvVar;
@@ -69,6 +73,7 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
+import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
@@ -85,6 +90,10 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobHelperTest extends DomainValidationBaseTest {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
+  protected static final String LONG_RESOURCE_NAME
+            = "very-long-resource-name-very-long-resource-name-abcdefghi";
+  protected static final String SECOND_LONG_RESOURCE_NAME
+            = "very-long-resource-name-very-long-resource-name-abcdefghijklmnopqrstuvwxyz";
 
   /** 
    * OEVN is the name of an env var that contains a comma-separated list of oper supplied env var names.
@@ -92,6 +101,18 @@ public class JobHelperTest extends DomainValidationBaseTest {
    * time the job ran.
    */
   private static final String OEVN = "OPERATOR_ENVVAR_NAMES";
+  public static final String SECRET_VOLUME_SUFFIX1 = "-volume-st-" + getMD5Hash(LONG_RESOURCE_NAME);
+  public static final String SECRET_VOLUME_SUFFIX2 = "-volume-st-" + getMD5Hash(SECOND_LONG_RESOURCE_NAME);
+  public static final String CM_VOLUME_SUFFIX1 = "-volume-cm-" + getMD5Hash(LONG_RESOURCE_NAME);
+  public static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
+  public static final String VOLUME_NAME_FOR_LONG_SECRET_NAME = LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + SECRET_VOLUME_SUFFIX1;
+  public static final String VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME = SECOND_LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX2.length()) + SECRET_VOLUME_SUFFIX2;
+  public static final String VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME = LONG_RESOURCE_NAME
+          .substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - SECRET_VOLUME_SUFFIX1.length()) + CM_VOLUME_SUFFIX1;
+  public static final int MODE_420 = 420;
+  public static final int MODE_365 = 365;
   private Method getDomainSpec;
   private final Domain domain = createTestDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -462,6 +483,14 @@ public class JobHelperTest extends DomainValidationBaseTest {
           .getVolumeMounts();
   }
 
+  private List<V1Volume> getJobVolumes() {
+    return Optional.ofNullable(job.getSpec())
+            .map(V1JobSpec::getTemplate)
+            .map(V1PodTemplateSpec::getSpec)
+            .map(V1PodSpec::getVolumes)
+            .orElseThrow();
+  }
+
   @Test
   public void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
@@ -498,6 +527,72 @@ public class JobHelperTest extends DomainValidationBaseTest {
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), org.hamcrest.Matchers.is(true));
     assertThat(job, is(nullValue()));
+  }
+
+  @Test
+  public void whenDomainHasMultipleConfigOverrideSecretsWithLongNames_volumesCreatedWithShorterNames() {
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+
+    configureDomain()
+            .withConfigOverrideSecrets(LONG_RESOURCE_NAME, SECOND_LONG_RESOURCE_NAME);
+
+    runCreateJob();
+
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
+            SECOND_LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
+            "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_SECOND_LONG_SECRET_NAME,
+            "/weblogic-operator/config-overrides-secrets/" + SECOND_LONG_RESOURCE_NAME, true));
+  }
+
+  @Test
+  public void whenDomainHasConfigMapOverrideWithLongConfigMapName_volumeCreatedWithShorterName() {
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+
+    configureDomain()
+            .withConfigOverrides(LONG_RESOURCE_NAME);
+
+    runCreateJob();
+
+    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
+            "/weblogic-operator/config-overrides", true));
+  }
+
+  @Test
+  public void whenDomainHasModelConfigMapOverrideWithLongModelCMName_volumeCreatedWithShorterName() {
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
+
+    configureDomain()
+            .withDomainHomeSourceType(DomainSourceType.FromModel)
+            .withModelConfigMap(LONG_RESOURCE_NAME);
+
+    runCreateJob();
+
+    assertThat(getJobVolumes(), hasConfigMapVolume(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME, LONG_RESOURCE_NAME, MODE_365));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_CONFIG_MAP_NAME,
+            "/weblogic-operator/wdt-config-map", true));
+  }
+
+  @Test
+  public void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
+
+    configureDomain()
+            .withConfigOverrideSecrets(SECRET_NAME, LONG_RESOURCE_NAME);
+
+    runCreateJob();
+
+    assertThat(getJobVolumes(), hasSecretVolume(SECRET_NAME + "-volume", SECRET_NAME, MODE_420));
+    assertThat(getJobVolumes(), hasSecretVolume(VOLUME_NAME_FOR_LONG_SECRET_NAME, LONG_RESOURCE_NAME, MODE_420));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(SECRET_NAME + "-volume",
+            "/weblogic-operator/config-overrides-secrets/" + SECRET_NAME, true));
+    assertThat(getJobVolumeMounts(), hasVolumeMount(VOLUME_NAME_FOR_LONG_SECRET_NAME,
+            "/weblogic-operator/config-overrides-secrets/" + LONG_RESOURCE_NAME, true));
   }
 
   @Test
