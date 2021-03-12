@@ -465,6 +465,7 @@ class TopologyGenerator(Generator):
         listenPortEnabled = isListenPortEnabledForServer(server, self.env.getDomain())
         # default is False
         sslListenPortEnabled = False
+        sslListenPort = None
         ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
         if ssl_listen_port is not None:
           sslListenPort = ssl_listen_port
