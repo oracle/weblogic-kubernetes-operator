@@ -84,6 +84,8 @@ import os
 import re
 import sys
 import traceback
+import xml.dom.minidom
+from xml.dom.minidom import parse
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
