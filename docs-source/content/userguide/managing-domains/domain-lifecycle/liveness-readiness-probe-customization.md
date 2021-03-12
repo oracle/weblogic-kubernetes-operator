@@ -20,7 +20,7 @@ The liveness probe is configured to check that a server is alive by querying the
 You can customize the liveness probe interval and timeout using the `livenessProbe` attribute under the `serverPod` element of the domain resource. 
 
 Following is an example configuration to change the liveness probe interval and timeout value.
-```
+```yaml
   serverPod:
     livenessProbe:
       periodSeconds: 30
@@ -39,13 +39,13 @@ After the liveness probe script (livenessProbe.sh) performs its normal checks, y
 **Note**: Oracle recommends against having any long running calls (for example, any network calls or executing wlst.sh) in the liveness probe custom script.
 
 Use the following configuration to specify a liveness probe custom script using the `livenessProbeCustomScript` domain resource field.
-```
+```yaml
 spec:
   livenessProbeCustomScript: /u01/customLivenessProbe.sh
 ```
 
 Use the following configuration to specify the liveness probe custom script using the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable.
-```
+```yaml
     serverPod:
       env:
       - name: LIVENESS_PROBE_CUSTOM_SCRIPT
@@ -85,7 +85,7 @@ By default, the readiness probe is configured to use the WebLogic Server ReadyAp
 By default, the readiness probe is configured to check readiness every 5 seconds and to timeout after 5 seconds. You can customize the readiness probe interval and timeout using the `readinessProbe` attribute under the `serverPod` element of the domain resource.
 
 Following is an example configuration to change readiness probe interval and timeout value.
-```
+```yaml
   serverPod:
     readinessProbe:
       periodSeconds: 10

@@ -31,17 +31,17 @@ Similarly, you may override the default `serviceAccount` configuration value to 
 
 For example, using Helm 3.x:
 
-```
+```shell
 $ kubectl create namespace weblogic-operator-namespace
 ```
 
-```
+```shell
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-namespace \
   --values custom-values.yaml --wait
 ```
 Or:
-```
+```shell
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-namespace \
   --set "javaLoggingLevel=FINE" --wait
@@ -60,13 +60,13 @@ For more information on specifying the registry credentials when the operator im
 
 Add this repository to the Helm installation:
 
-```
+```shell
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
 ```
 
 Verify that the repository was added correctly:
 
-```
+```shell
 $ helm repo list
 NAME           URL
 weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
@@ -74,13 +74,13 @@ weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/chart
 
 Update with the latest information about charts from the chart repositories:
 
-```
+```shell
 $ helm repo update
 ```
 
 Install the operator from the repository:
 
-```
+```shell
 $ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 
@@ -100,7 +100,7 @@ This rolling restart will preserve WebLogic cluster availability guarantees (for
 
 To delete the 2.6.0 operator:
 
-```
+```shell
 $ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
@@ -114,7 +114,7 @@ To upgrade the operator, use the `helm upgrade` command. Make sure that the
 operator release to which you are upgrading. When upgrading the operator,
 the `helm upgrade` command requires that you supply a new Helm chart and image. For example:
 
-```
+```shell
 $ helm upgrade \
   --reuse-values \
   --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0 \
@@ -128,7 +128,7 @@ $ helm upgrade \
 
 The `helm uninstall` command is used to remove an operator release and its associated resources from the Kubernetes cluster. The release name used with the `helm uninstall` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)). For example:
 
-```
+```shell
 $ helm uninstall weblogic-operator -n weblogic-operator-namespace
 ```
 
@@ -137,7 +137,7 @@ If the operator's namespace did not exist before the Helm chart was installed, t
 {{% /notice %}}
 
 After removing the operator deployment, you should also remove the Domain custom resource definition (CRD):
-```
+```shell
 $ kubectl delete customresourcedefinition domains.weblogic.oracle
 ```
 Note that the Domain custom resource definition is shared. Do not delete the CRD if there are other operators in the same cluster.

@@ -59,7 +59,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 {{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 
-```
+```java
 <%-- Copyright (c) 2019, 2021, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
 <%@ page import="javax.naming.InitialContext" %>
@@ -161,7 +161,7 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```
+```shell
 # Delete existing archive.zip in case we have an old leftover version
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
@@ -182,7 +182,7 @@ CLUSTER_SIZE=5
 
 Here is the WLS `model.10.yaml`:
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -235,7 +235,7 @@ resources:
 
 {{%expand "Click here to view the JRF `model.10.yaml`, and note the `RCUDbInfo` stanza and its references to a `DOMAIN_UID-rcu-access` secret." %}}
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -332,7 +332,7 @@ Run the following commands to create the model image and verify that it worked:
 {{% notice note %}}
 If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
 {{% /notice %}}
-  ```
+  ```shell
   $ cd /tmp/mii-sample/model-images
   $ ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
@@ -384,7 +384,7 @@ First, create the secrets needed by both `WLS` and `JRF` type model domains. In 
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
@@ -427,7 +427,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
-  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-rcu-access \
      --from-literal=rcu_prefix=FMW1 \
@@ -455,7 +455,7 @@ Now, you create a Domain YAML file. A Domain is the key resource that tells the 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
   {{%expand "Click here to view the WLS Domain YAML file." %}}
-  ```
+  ```yaml
     #
     # This is an example of how to define a Domain resource.
     #
@@ -575,7 +575,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   {{% /expand %}}
 
   {{%expand "Click here to view the JRF Domain YAML file." %}}
-  ```
+  ```yaml
   # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
   # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
   #
@@ -712,7 +712,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
   Run the following command to create the domain custom resource:
 
-  ```
+  ```shell
   $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
   ```
 
@@ -721,7 +721,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:
 
   {{%expand "Click here to expand." %}}
-  ```
+  ```shell
   $ kubectl get pods -n sample-domain1-ns --watch
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
@@ -747,7 +747,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-  ```
+  ```shell
     $ ./wl-pod-wait.sh -?
 
     Usage:
@@ -876,20 +876,20 @@ Now that all the initial use case resources have been deployed, you can invoke t
 
 Send a web application request to the load balancer:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 Or, if Traefik is unavailable and your Administration Server pod is running, you can use `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
 You will see output like the following:
 
-   ```
+   ```html
    <html><body><pre>
    *****************************************************************
 

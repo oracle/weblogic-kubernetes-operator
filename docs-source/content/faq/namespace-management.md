@@ -32,7 +32,7 @@ Now, the operator supports a list of namespaces, a label selector, or a regular 
 For operators that specify namespaces by a list, you can find the list of the namespaces using the `helm get values` command.
 For example, the following command shows all the values of the operator release `weblogic-operator`; the `domainNamespaces` list contains `default` and `ns1`:
 
-```
+```shell
 $ helm get values weblogic-operator
 domainNamespaces:
 - default
@@ -56,20 +56,20 @@ suspendOnDebugStartup: false
 
 For operators that select namespaces with a selector, simply list namespaces using that selector:
 
-```
+```shell
 $ kubectl get ns --selector="weblogic-operator=enabled"
 ```
 
 For operators that select namespaces with a regular expression matching the name, you can use a combination of `kubectl`
 and any command-line tool that can process the regular expression, such as `grep`:
 
-```
+```shell
 $ kubectl get ns -o go-template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' | grep "^weblogic"
 ```
 
 If you don't know the release name of the operator, you can use `helm list` to list all the releases for a specified namespace or all namespaces:
 
-```
+```shell
 $ helm list --namespace <namespace>
 $ helm list --all-namespaces
 ```
@@ -84,7 +84,7 @@ Kubernetes resources so that the operator is ready to manage WebLogic Server ins
 
 When the operator is managing the `default` namespace, the following example Helm command adds the namespace `ns1` to the `domainNamespaces` list, where `weblogic-operator` is the release name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator's Helm charts:
 
-```
+```shell
 $ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator \
@@ -95,13 +95,13 @@ $ helm upgrade \
 
 You can verify that the operator has initialized a namespace by confirming the existence of the required `configmap` resource.
 
-```
+```shell
 $ kubetctl get cm -n <namespace>
 ```
 
 For example, the following example shows that the domain `configmap` resource exists in the namespace `ns1`.
 
-```
+```shell
 bash-4.2$ kubectl get cm -n ns1
 
 NAME                 DATA      AGE
@@ -116,7 +116,7 @@ If you did not choose to enable the value, `enableClusterRoleBinding`, then the 
 permissions to manage the namespace. You can do this by performing a `helm upgrade` with the values used when installing the 
 Helm release:
 
-```
+```shell
 $ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator \
@@ -132,7 +132,7 @@ While the operator is running and managing the `default` and `ns1` namespaces, t
 command removes the namespace `ns1` from the `domainNamespaces` list, where `weblogic-operator` is the release
 name of the operator, and `kubernetes/charts/weblogic-operator` is the location of the operator Helm charts:
 
-```
+```shell
 $ helm upgrade \
   --reuse-values \
   --set "domainNamespaces={default}" \
@@ -178,17 +178,17 @@ namespace `weblogic-operator-namespace` with the release name, `weblogic-operato
 
 * Kill the operator pod, and let Kubernetes restart it.
 
-```
+```shell
 $ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n weblogic-operator-namespace
 ```
 
 * Scale the operator deployment to `0` and then back to `1` by changing the value of the `replicas`.
 
-```
+```shell
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=0
 ```
 
-```
+```shell
 $ kubectl scale deployment.apps/weblogic-operator -n weblogic-operator-namespace --replicas=1
 ```
 

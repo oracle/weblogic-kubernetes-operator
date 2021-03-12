@@ -7,7 +7,7 @@ weight: 7
 To remove the resources you have created in these samples:
 
 1. Delete the resources associated with the domain.
-   ```
+   ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
    ```
@@ -20,29 +20,29 @@ To remove the resources you have created in these samples:
 
 2. If you set up the Traefik ingress controller:
 
-   ```
+   ```shell
    $ helm uninstall traefik-operator -n traefik
    $ kubectl delete namespace traefik
    ```
 
 3. If you set up a database for `JRF` or the Update 4 use case:
-   ```
+   ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service/stop-db-service.sh
    ```
 
 4. Delete the operator and its namespace:
-   ```
+   ```shell
    $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
    $ kubectl delete namespace sample-weblogic-operator-ns
    ```
 
 6. Delete the domain's namespace:
-   ```
+   ```shell
    $ kubectl delete namespace sample-domain1-ns
    ```
 
 7. Delete the images you may have created in this sample:
-   ```
+   ```shell
    $ docker image rm model-in-image:WLS-v1
    $ docker image rm model-in-image:WLS-v2
    $ docker image rm model-in-image:JRF-v1

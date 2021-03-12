@@ -10,7 +10,7 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
 
 1. Create the domain namespace or namespaces.  One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
 
-    ```
+    ```shell
     $ kubectl create namespace domain-namespace-1
     ```
 
@@ -21,7 +21,7 @@ Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
    [the provided sample]({{< relref "/samples/simple/credentials/_index.md" >}}).  To create
    the secret manually, use this command:
 
-    ```
+    ```shell
     $ kubectl -n domain-namespace-1 \
             create secret generic domain1-weblogic-credentials \
             --from-literal=username=username \

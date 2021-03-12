@@ -10,7 +10,7 @@ The operator is built using [Apache Maven](http://maven.apache.org).  The build 
 
 To build the operator, issue the following command in the project directory:
 
-```
+```shell
 $ mvn clean install
 ```
 
@@ -22,7 +22,7 @@ Contributions must conform to [coding and formatting standards]({{< relref "/dev
 
 To build the Javadoc for the operator, issue the following command:
 
-```
+```shell
 $ mvn javadoc:aggregate
 ```
 
@@ -32,7 +32,7 @@ The Javadoc is also available in the GitHub repository [here](https://oracle.git
 
 These commands should be executed in the project root directory:
 
-```
+```shell
 $ ./buildDockerImage.sh -t weblogic-kubernetes-operator:some-tag
 ```
 
@@ -52,7 +52,7 @@ You may need to create a directory called `/operator` on your machine.  Please b
 
 If you're not running Kubernetes on your development machine, you'll need to make the container image available to a registry visible to your Kubernetes cluster.  Either `docker push` the image to a private registry or upload your image to a machine running Docker and Kubernetes as follows:
 
-```
+```shell
 # on your build machine
 $ docker save weblogic-kubernetes-operator:some-tag > operator.tar
 $ scp operator.tar YOUR_USER@YOUR_SERVER:/some/path/operator.tar

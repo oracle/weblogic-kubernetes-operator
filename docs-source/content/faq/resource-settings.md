@@ -31,7 +31,7 @@ This FAQ discusses tuning these parameters so WebLogic Server instances run effi
 
 You can set Kubernetes memory and CPU requests and limits in a [Domain YAML file]({{< relref "/userguide/managing-domains/domain-resource" >}}) using its `spec.serverPod.resources` stanza, and you can override the setting for individual WebLogic Server instances or clusters using the `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`. For example:
 
-```
+```yaml
   spec:
     serverPod:
       resources:
@@ -102,7 +102,7 @@ With the latest Java versions, Java 8 update 191 and later, or Java 11, if you d
 
 If you specify Pod memory limits, Oracle recommends configuring WebLogic Server heap sizes as a percentage. The JVM will interpret the percentage as a fraction of the limit. This is done using the JVM `-XX:MinRAMPercentage` and `-XX:MaxRAMPercentage` options in the `USER_MEM_ARGS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}).  For example:
 
-```
+```yaml
   spec:
     resources:
       env:
@@ -131,7 +131,7 @@ If a CPU request and limit are _not_ configured for a WebLogic Server Pod:
 
 It's also important to keep in mind that if you set a value of CPU core count that's larger than the core count of your biggest Node, then the Pod will never be scheduled. Let's say you have a Pod that needs 4 cores but you have a Kubernetes cluster that's comprised of 2 core VMs. In this case, your Pod will never be scheduled and will have `Pending` status. For example:
 
-```
+```shell
 $ kubectl get pod sample-domain1-managed-server1 -n sample-domain1-ns
 NAME                              READY   STATUS    RESTARTS   AGE
 sample-domain1-managed-server1    0/1     Pending   0          65s

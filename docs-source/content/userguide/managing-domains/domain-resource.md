@@ -45,25 +45,25 @@ See the WebLogic Server samples, [Domain home on a PV]({{< relref "/samples/simp
 
 After you have written your YAML files, you use them to create your domain artifacts using the `kubectl apply -f` command.
 
-```none
+```shell
 $ kubectl apply -f domain-resource.yaml
 ```
 
 To confirm that the Domain was created, use this command:
 
-```none
+```shell
 $ kubectl get domains -n [namespace]
 ```
 
 To view all of the attributes of a running domain, including the domain's status, use this command:
 
-```none
+```shell
 $ kubectl describe domain [domain name] -n [namespace]
 ```
 
 Or this command:
 
-```none
+```shell
 $ kubectl get domain [domain name] -n [namespace] -o yaml
 ```
 
@@ -75,19 +75,19 @@ The operator installs the CRD for the Domain type when the operator first starts
 
 For Kubernetes 1.16 and later:
 
-```none
+```shell
 $ kubectl create -f kubernetes/crd/domain-crd.yaml
 ```
 
 For Kubernetes 1.15 and earlier:
 
-```none
+```shell
 $ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
 ```
 
 After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:
 
-```none
+```shell
 $ kubectl get crd domains.weblogic.oracle
 ```
 
@@ -110,7 +110,7 @@ Here are some references you can use for the fields in these sections:
 
 If you are using Kubernetes 1.16 or later, you can access the description of any field of the Domain using `kubectl explain`. For instance, the following command displays the description of the `domainUID` field:
 
-```none
+```shell
 $ kubectl explain domain.spec.domainUID
 KIND:     Domain
 VERSION:  weblogic.oracle/v8
