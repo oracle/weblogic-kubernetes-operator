@@ -370,20 +370,20 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-            readOnlyVolumeMount(getVolumeMountName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
             readOnlyVolumeMount(
-                  getVolumeMountName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+                  getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
     if (isSourceWdt()) {
       if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
-            readOnlyVolumeMount(getVolumeMountName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
+            readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
       container.addVolumeMountsItem(
           readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
@@ -395,10 +395,6 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private String getVolumeName(String resourceName, String type) {
-    return getName(resourceName, type);
-  }
-
-  private String getVolumeMountName(String resourceName, String type) {
     return getName(resourceName, type);
   }
 
