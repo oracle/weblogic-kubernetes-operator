@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -44,6 +45,10 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
+  private static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
+  public static final String VOLUME_NAME_SUFFIX = "-volume";
+  public static final String CONFIGMAP_TYPE = "cm";
+  public static final String SECRET_TYPE = "st";
   private V1Job jobModel;
 
   JobStepContext(Packet packet) {
@@ -313,14 +318,14 @@ public abstract class JobStepContext extends BasePodStepContext {
   private void addConfigOverrideSecretVolume(V1PodSpec podSpec, String secretName) {
     podSpec.addVolumesItem(
           new V1Volume()
-                .name(secretName + "-volume")
+                .name(getVolumeName(secretName, SECRET_TYPE))
                 .secret(getOverrideSecretVolumeSource(secretName)));
   }
 
   private void addConfigOverrideVolume(V1PodSpec podSpec, String configOverrides) {
     podSpec.addVolumesItem(
           new V1Volume()
-                .name(configOverrides + "-volume")
+                .name(getVolumeName(configOverrides, CONFIGMAP_TYPE))
                 .configMap(getOverridesVolumeSource(configOverrides)));
   }
 
@@ -331,7 +336,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   private void addWdtConfigMapVolume(V1PodSpec podSpec, String configMapName) {
     podSpec.addVolumesItem(
         new V1Volume()
-            .name(configMapName + "-volume")
+            .name(getVolumeName(configMapName, CONFIGMAP_TYPE))
             .configMap(getWdtConfigMapVolumeSource(configMapName)));
   }
 
@@ -365,20 +370,20 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     if (getConfigOverrides() != null && getConfigOverrides().length() > 0) {
       container.addVolumeMountsItem(
-            readOnlyVolumeMount(getConfigOverrides() + "-volume", OVERRIDES_CM_MOUNT_PATH));
+            readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
       container.addVolumeMountsItem(
             readOnlyVolumeMount(
-                  secretName + "-volume", OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
+                  getVolumeName(secretName, SECRET_TYPE), OVERRIDE_SECRETS_MOUNT_PATH + '/' + secretName));
     }
 
     if (isSourceWdt()) {
       if (getWdtConfigMap() != null) {
         container.addVolumeMountsItem(
-            readOnlyVolumeMount(getWdtConfigMap() + "-volume", WDTCONFIGMAP_MOUNT_PATH));
+            readOnlyVolumeMount(getVolumeName(getWdtConfigMap(), CONFIGMAP_TYPE), WDTCONFIGMAP_MOUNT_PATH));
       }
       container.addVolumeMountsItem(
           readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
@@ -387,6 +392,22 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     return container;
+  }
+
+  private String getVolumeName(String resourceName, String type) {
+    return getName(resourceName, type);
+  }
+
+  private String getName(String resourceName, String type) {
+    return resourceName.length() > (MAX_ALLOWED_VOLUME_NAME_LENGTH - VOLUME_NAME_SUFFIX.length())
+            ? getShortName(resourceName, type)
+            : resourceName + VOLUME_NAME_SUFFIX;
+  }
+
+  private String getShortName(String resourceName, String type) {
+    String volumeSuffix = VOLUME_NAME_SUFFIX + "-" + type + "-"
+            + Optional.ofNullable(ChecksumUtils.getMD5Hash(resourceName)).orElse("");
+    return resourceName.substring(0, MAX_ALLOWED_VOLUME_NAME_LENGTH - volumeSuffix.length()) + volumeSuffix;
   }
 
   protected String getContainerName() {
