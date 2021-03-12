@@ -34,12 +34,13 @@ You can set Kubernetes memory and CPU requests and limits in a [Domain YAML file
 ```
   spec:
     serverPod:
-      requests:
-        cpu: "250m"
-        memory: "768Mi"
-      limits:
-        cpu: "2"
-        memory: "2Gi"
+      resources:
+        requests:
+          cpu: "250m"
+          memory: "768Mi"
+        limits:
+          cpu: "2"
+          memory: "2Gi"
 ```
 
 Limits and requests for CPU resources are measured in CPU units. One CPU, in Kubernetes, is equivalent to 1 vCPU/Core for cloud providers and 1 hyperthread on bare-metal Intel processors. An `m` suffix in a CPU attribute indicates 'milli-CPU', so `250m` is 25% of a CPU.
