@@ -851,7 +851,7 @@ class ItMiiUpdateDomainConfig {
     boolean p4Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
-    assertTrue(p2Success,
+    assertTrue(p4Success,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);
