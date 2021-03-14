@@ -42,7 +42,7 @@ Copy provided `oci.props.template` file to `oci.props` and add all required valu
 * `terraform.installdir` - Location to install Terraform binaries.
 
 To run the script, use the command:
-```
+```shell
 $ kubernetes/samples/scripts/terraform/oke.create.sh oci.props
 ```
 The script collects the values from `oci.props` file and performs the following steps:

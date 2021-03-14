@@ -32,13 +32,13 @@ Error from server (BadRequest): container "create-weblogic-sample-domain-job" in
 
 You can get further error details by running `kubectl describe pod`, as shown here:
 
-```bash
+```shell
 $ kubectl describe pod <your-pod-name>
 ```
 
 This is an output example:
 
-```bash
+```shell
 $ kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
 Events:
 Type     Reason       Age                  From                                        Message
@@ -64,7 +64,7 @@ Here are some common reasons for this failure, along with some tips to help you 
 
 The following output is an example of when the Administration Server has started.
 
-```bash
+```shell
 $ kubectl get svc
 NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)              AGE
 domain1-admin-server               ClusterIP      None          <none>          30012/TCP,7001/TCP   7m3s
@@ -80,7 +80,7 @@ kubernetes                         ClusterIP      10.0.0.1      <none>          
 
 If services are up but the WLS Administration Console is still not available, use `kubectl describe domain` to check domain status.
 
-```bash
+```shell
 $ kubectl describe domain domain1
 ```
 
@@ -144,7 +144,7 @@ Unable to connect to the server: x509: certificate has expired or is not yet val
 
 You can run the following command to update WSL2 system time:
 
-```
+```shell
 # Fix the outdated systime time
 $ sudo hwclock -s
 
@@ -157,7 +157,7 @@ Fri Nov 27 13:07:14 CST 2020
 
 You may run into a timeout while installing the operator and get the following error:
 
-```
+```shell
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
@@ -170,14 +170,14 @@ Error: timed out waiting for the condition
 
 Make sure you are working with the master branch. Remove the operator and install again.
 
-```bash
+```shell
 $ helm uninstall weblogic-operator -n sample-weblogic-operator-ns
 release "weblogic-operator" uninstalled
 ```
 
 Check out master and install the operator.
 
-```bash
+```shell
 $ cd weblogic-kubernetes-operator
 $ git checkout master
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
@@ -201,7 +201,7 @@ failed to solve with frontend dockerfile.v0: failed to create LLB definition: fa
 
 To resolve the error, either upgrade to a newer version of WIT or disable the Docker buildkit with the following commands and run the `imagetool` command again.
 
-```bash
+```shell
 $ export DOCKER_BUILDKIT=0
 $ export COMPOSE_DOCKER_CLI_BUILD=0
 ```
@@ -221,7 +221,7 @@ If system pods in the AKS cluster are pending, it will block the operator instal
 
 This is an error example with warning message **no nodes available to schedule pods**.
 
-```bash
+```shell
 $ kubectl get pod -A
 NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
 default                       weblogic-operator-c5c78b8b5-ssvqk           0/1     Pending   0          13m
@@ -245,7 +245,7 @@ If you run into this error, remove the AKS cluster and create a new one.
 
 Run the `kubectl get pod -A` to make sure all the system pods are running.
 
-```bash
+```shell
 $ kubectl get pod -A
 NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
 kube-system                   coredns-79766dfd68-ch5b9                    1/1     Running   0          3h44m
@@ -268,7 +268,7 @@ kube-system                   tunnelfront-794845c84b-v9f98                1/1   
 
 If you got an error of **ErrImagePull** from pod status, use `docker pull` to check the operator image. If an error occurs, you can switch to a version that is greater than `3.1.1`.
 
-```bash
+```shell
 $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:<version>
 
 # Example: pull 3.1.1.
@@ -292,14 +292,14 @@ If you're unable to create an ACR and you're using a service principal, you can 
 
 First, find the `objectId` of the service principal used when the AKS cluster was created. You will need the output from `az ad sp create-for-rbac`, which you were directed to save to a file.  Within the output, you need the value of the `name` property. It will start with `http`.  Get the `objectId` with this command.
 
-```bash
+```shell
 $ az ad sp show --id http://<your-name-from-the-saved-output> | grep objectId
 "objectId": "nror4p30-qnoq-4129-o89r-p60n71805npp",
 ```
 
 Next, assign the `acrpull` role to that service principal with this command.
 
-```bash
+```shell
 $ az role assignment create --assignee-object-id <your-objectId-from-above> --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
 {
   "canDelegate": null,
@@ -315,7 +315,7 @@ After you do this, re-try the command that gave the error.
 
 If you run into the following error when creating the AKS cluster, please use an available VM size in the region.
 
-```bash
+```shell
 $ az aks create \
    --resource-group $AKS_PERS_RESOURCE_GROUP \
    --name $AKS_CLUSTER_NAME \

@@ -13,7 +13,7 @@ weight: 6
 
 1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
-    ```bash
+    ```shell
     $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
       -u <username> -p <password> -n sample-domain1-ns -d sample-domain1
     ```
@@ -34,7 +34,7 @@ weight: 6
 
     For example, assuming you named your copy `my-inputs.yaml`:
 
-    ```bash
+    ```shell
     $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
     $ ./create-domain.sh -i my-inputs.yaml -o /<your output directory> -u <username> -p <password> -e
     ```
@@ -46,25 +46,25 @@ weight: 6
 
     a. Use `kubectl` to show that the Domain was created:
 
-    ```bash
+    ```shell
     $ kubectl describe domain sample-domain1 -n sample-domain1-ns
     ```
 
     b. After a short time, you will see the Administration Server and Managed Servers running.
 
-    ```bash
+    ```shell
     $ kubectl get pods -n sample-domain1-ns
     ```
 
     c. You should also see all the Kubernetes Services for the domain.
 
-    ```bash
+    ```shell
     $ kubectl get services -n sample-domain1-ns
     ```
 
 1.	Create an ingress for the domain, in the domain namespace, by using the [sample](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
 
-    ```bash
+    ```shell
     $ helm install sample-domain1-ingress kubernetes/samples/charts/ingress-per-domain \
       --namespace sample-domain1-ns \
       --set wlsDomain.domainUID=sample-domain1 \
@@ -76,7 +76,7 @@ weight: 6
     you can send a request to the URL for the "WebLogic ReadyApp framework", as
     shown in the example below, which will return an HTTP 200 status code.   
 
-    ```
+    ```shell
     $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
       About to connect() to localhost port 30305 (#0)
         Trying 10.196.1.64...

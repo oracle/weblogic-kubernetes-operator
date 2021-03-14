@@ -14,7 +14,7 @@ The operator team recommends a different solution that is based on [inter-pod af
 
 To use these features, edit the Domain Custom Resource to add content to the `serverPod` element, in this case at the scope of a cluster, as shown in the following example:
 
-```
+```yaml
 clusters:
 - clusterName: cluster-1
   serverStartState: "RUNNING"
@@ -37,7 +37,7 @@ Because the `serverPod` element here is scoped to a cluster, the content of the 
 
 It is possible to express many other scheduling preferences or constraints. The following example similarly expresses an anti-affinity, but changes the test to have all WebLogic Server instances in the domain prefer to run on Nodes where there is not already a Pod for a running instance:
 
-```
+```yaml
 serverPod:
   affinity:
     podAntiAffinity:

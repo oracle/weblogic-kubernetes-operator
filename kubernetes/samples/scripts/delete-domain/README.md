@@ -6,7 +6,7 @@ domain resources.
 
 ## Using the script to delete domain resources
 
-```
+```shell
 $ ./delete-weblogic-domain-resources.sh \
   -d  domain-uid[,domain-uid...] \
   [-s max-seconds] \
@@ -22,6 +22,6 @@ that will be spent attempting to delete resources. The default number of seconds
 The optional option `-t` shows what the script will delete without executing the deletion.
 
 To see the help associated with the script:
-```
+```shell
 $ ./delete-weblogic-domain-resources.sh -h
 ```

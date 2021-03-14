@@ -22,7 +22,7 @@ Create affinity by assigning particular servers to specific nodes.
 To assign pods to nodes, you need to label the desired node with a custom tag. Then, define the `nodeSelector` property in the domain resource definition and set the value of the label you applied on the node. Finally, apply the domain configuration changes.
 
 First, get the node names using `kubectl get node`:
-```bash
+```shell
 $ kubectl get node
 NAME             STATUS    ROLES     AGE       VERSION
 130.61.110.174   Ready     node      11d       v1.11.5
@@ -33,7 +33,7 @@ NAME             STATUS    ROLES     AGE       VERSION
 In the case of OKE, the node name can be the public IP address of the node or the subnet's CIDR block's first IP address. But obviously, a unique string which identifies the node.
 
 Now check the current pod allocation using the detailed pod information: `kubectl get pod -n sample-domain1-ns -o wide`:
-```bash
+```shell
 $ kubectl get pod -n sample-domain1-ns -o wide
 NAME                             READY     STATUS    RESTARTS   AGE       IP            NODE             NOMINATED NODE
 sample-domain1-admin-server      1/1       Running   0          2m        10.244.2.33   130.61.84.41     <none>
@@ -49,7 +49,7 @@ As you can see from the result, Kubernetes evenly deployed the 3 Managed Servers
 Knowing the node names, select one which you want to be empty. In this example, this node will be: `130.61.110.174`
 
 Label the other nodes. The label can be any string, but let's use `wlservers1` and `wlservers2`. Execute the `kubectl label nodes <nodename> <labelname>=true` command but replace your node name and label properly:
-```bash
+```shell
 $ kubectl label nodes 130.61.52.240 wlservers1=true
 node/130.61.52.240 labeled
 $ kubectl label nodes 130.61.84.41 wlservers2=true
@@ -88,12 +88,12 @@ spec:
   [...]
 ```
 Keep the proper indentation. Save the changes and apply the new domain resource definition.
-```bash
+```shell
 $ kubectl apply -f ~/domain.yaml
 domain.weblogic.oracle/sample-domain1 configured
 ```
 The operator according to the changes will start to relocate servers. Poll the pod information and wait until the expected result:
-```bash
+```shell
 $ kubectl get po -n sample-domain1-ns -o wide
 NAME                             READY     STATUS        RESTARTS   AGE       IP            NODE            NOMINATED NODE
 sample-domain1-admin-server      1/1       Running       0          3m        10.244.2.36   130.61.84.41    <none>
@@ -105,14 +105,14 @@ sample-domain1-managed-server3   1/1       Running       0          2m        10
 ##### Delete the label and `nodeSelector` entries in `domain.yaml` #####
 
 To delete the node assignment, delete the node's label using the `kubectl label node <nodename> <labelname>-` command but replace the node name properly:
-```bash
+```shell
 $ kubectl label nodes 130.61.52.240 wlservers1-
 node/130.61.52.240 labeled
 $ kubectl label nodes 130.61.84.41 wlservers2-
 node/130.61.84.41 labeled
 ```
 Delete or comment out the entries you added for the node assignment in your `domain.yaml` and apply:
-```
+```shell
 $ kubectl apply -f ~/domain.yaml
 domain.weblogic.oracle/sample-domain1 configured
 ```

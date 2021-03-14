@@ -23,8 +23,8 @@ Callers should pass in the `Accept:/application/json` header.
 
 To protect against Cross Site Request Forgery (CSRF) attacks, the operator REST API requires that you send in a `X-Requested-By` header when you invoke a REST endpoint that makes a change (for example, when you POST to the `/scale` endpoint).  The value is an arbitrary name such as `MyClient`. For example, when using `curl`:
 
-```
-curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
+```shell
+$ curl ... -H X-Requested-By:MyClient ... -X POST .../scaling
 ```
 
 If you do not pass in the `X-Requested-By` header, then you'll get a 400 (bad request) response without any details explaining why the request is bad.
@@ -49,7 +49,7 @@ Access.  Find the certificate in Keychain Access and double-click on it to open 
 For Oracle Linux, run the script below, once to copy the certificate into `/tmp/operator.cert.pem`, then run these
 commands to add the certificate to the trust store:
 
-```
+```shell
 $ sudo cp /tmp/operator.cert.pem /etc/pki/ca-trust/source/anchors/
 $ sudo update-ca-trust enable; sudo update-ca-trust extract
 $ openssl x509 -noout -hash -in /tmp/operator.cert.pem
@@ -64,7 +64,7 @@ For other operating systems, consult your operating system's documentation (or G
 Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
 operator's REST services.  Please read the important caveats above before using this script:
 
-```
+```shell
 #!/bin/bash
 KUBERNETES_SERVER=$1
 URL_TAIL=$2
@@ -101,7 +101,7 @@ You can use the `-k` option to bypass the check to verify that the operator's ce
 
 To use this script, pass in the Kubernetes server address and then the URL you want to call.   The script assumes `jq` is installed and uses it to format the response.  This can be removed if desired.  The script also prints out quite a bit of useful debugging information, in addition to the response.  Here is an example of the output of this script:
 
-```
+```shell
 $ ./rest.sh kubernetes001 operator/latest/domains/domain1/clusters
 Ready to call operator REST APIs
 Note: Unnecessary use of -X or --request, GET is already inferred.

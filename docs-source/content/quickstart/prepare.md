@@ -8,14 +8,14 @@ weight: 5
 
 1.  Create and label a namespace that can host one or more domains:
 
-    ```bash
+    ```shell
     $ kubectl create namespace sample-domain1-ns
     $ kubectl label ns sample-domain1-ns weblogic-operator=enabled
     ```
 
 1.  Configure Traefik to manage ingresses created in this namespace:
 
-    ```bash
+    ```shell
     $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \

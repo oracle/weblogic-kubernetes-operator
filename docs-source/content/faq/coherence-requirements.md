@@ -51,7 +51,7 @@ must be installed.  Most Kubernetes distributions will do this for you.
 If you have issues with clusters not forming, then you should check that
 `conntrack` is installed using this command (or equivalent):
 
-```
+```shell
 $ rpm -qa | grep conntrack
 libnetfilter_conntrack-1.0.6-1.el7_3.x86_64
 conntrack-tools-1.4.4-4.el7.x86_64
@@ -67,8 +67,8 @@ types of traffic that Coherence requires to form clusters.  If you are
 not able to form clusters, then you can check for this issue using the
 following command:
 
-```
-# iptables -t nat -v  -L POST_public_allow -n
+```shell
+$ iptables -t nat -v  -L POST_public_allow -n
 Chain POST_public_allow (1 references)
 pkts bytes target     prot opt in     out     source               destination
 164K   11M MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
@@ -79,8 +79,8 @@ If you see output similar to the example above, for example, if you see any entr
 in this chain, then you need to remove them.  You can remove the entries
 using this command:
 
-```
-# iptables -t nat -v -D POST_public_allow 1
+```shell
+$ iptables -t nat -v -D POST_public_allow 1
 ```
 
 Note that you will need to run that command for each line. So in the example
@@ -102,42 +102,42 @@ Here is an example; you may need to adjust this to suit your own
 environment:
 
 * Create a `systemd` service:
+  
+```shell
+$ echo 'Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...'
+$ mkdir -p /etc/systemd/system/
+$ cat > /etc/systemd/system/fix-iptables.service << EOF
+[Unit]
+Description=Fix iptables
+After=firewalld.service
+After=docker.service
 
-    ```bash
-    echo 'Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...'
-    mkdir -p /etc/systemd/system/
-    cat > /etc/systemd/system/fix-iptables.service << EOF
-    [Unit]
-    Description=Fix iptables
-    After=firewalld.service
-    After=docker.service
+[Service]
+ExecStart=/sbin/fix-iptables.sh
 
-    [Service]
-    ExecStart=/sbin/fix-iptables.sh
-
-    [Install]
-    WantedBy=multi-user.target
-    EOF
-    ```
+[Install]
+WantedBy=multi-user.target
+EOF
+```
 
 * Create the script to update `iptables`:
 
-    ```bash
-    cat > /sbin/fix-iptables.sh << EOF
-    #!/bin/bash
-    echo 'Fixing iptables rules for Coherence issue...'
-    TIMES=$((`iptables -t nat -v -L POST_public_allow -n --line-number | wc -l` - 2))
-    COUNTER=1
-    while [ $COUNTER -le $TIMES ]; do
-      iptables -t nat -v -D POST_public_allow 1
-      ((COUNTER++))
-    done
-    EOF
-    ```
+```shell
+$ cat > /sbin/fix-iptables.sh << EOF
+#!/bin/bash
+echo 'Fixing iptables rules for Coherence issue...'
+TIMES=$((`iptables -t nat -v -L POST_public_allow -n --line-number | wc -l` - 2))
+COUNTER=1
+while [ $COUNTER -le $TIMES ]; do
+  iptables -t nat -v -D POST_public_allow 1
+  ((COUNTER++))
+done
+EOF
+```
 
 * Start the service (or just reboot):
 
-    ```bash
-    echo 'Start the systemd service to fix iptables nat chain...'
-    systemctl enable --now fix-iptables
-    ```
+```shell
+$ echo 'Start the systemd service to fix iptables nat chain...'
+$ systemctl enable --now fix-iptables
+```

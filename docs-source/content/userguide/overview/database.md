@@ -23,8 +23,8 @@ available storage providers and how to create a persistent volume and attach it 
 
 First, create a namespace for the database:
 
-```
-kubectl create namespace database-namespace
+```shell
+$ kubectl create namespace database-namespace
 ```
 
 Next, create a file called `database.yml` with the following content.  Make sure you update the
@@ -109,20 +109,19 @@ and accept the license for the [Oracle database image](https://container-registr
 
 Create a container registry secret so that Kubernetes can pull the database image:
 
-```
+```shell
 kubectl create secret docker-registry regsecret \
         --docker-server=container-registry.oracle.com \
         --docker-username=your.email@some.com \
         --docker-password=your-password \
         --docker-email=your.email@some.com \
         -n database-namespace
-
 ```
 
 Now, use the following command to install the database:
 
-```
-kubectl apply -f database.yml
+```shell
+$ kubectl apply -f database.yml
 ```
 
 This will start up the database and expose it in the cluster at the following address:

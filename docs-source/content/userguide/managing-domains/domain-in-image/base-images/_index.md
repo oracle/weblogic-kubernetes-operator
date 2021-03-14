@@ -40,7 +40,7 @@ This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 2913
 
 In order for Kubernetes to obtain the WebLogic Server image from the Oracle Container Registry (OCR), which requires authentication, a Kubernetes Secret containing the registry credentials must be created. To create a secret with the OCR credentials, issue the following command:
 
-```
+```shell
 $ kubectl create secret docker-registry SECRET_NAME \
   -n NAMESPACE \
   --docker-server=container-registry.oracle.com \
@@ -68,13 +68,13 @@ The Oracle Container Registry provides a WebLogic Server 12.2.1.3.0 image, which
 
 First, you will need to log in to the Oracle Container Registry:
 
-```
+```shell
 $ docker login container-registry.oracle.com
 ```
 
 Then, you can pull the image with this command:
 
-```
+```shell
 $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
 ```
 If desired, you can:
@@ -99,7 +99,7 @@ To build the WebLogic Server image and apply the patches:
 
 1. Add the Server JRE and the WebLogic Server installer to the [`cache` command](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
-    ```
+    ```shell
     $ imagetool cache addInstaller \
     --type=jdk \
     --version=8u241 \
@@ -114,8 +114,7 @@ To build the WebLogic Server image and apply the patches:
 to build the image and apply the patches.
 
     For the Create Tool to download the patches, you must supply your My Oracle Support credentials.
-    ```
-
+    ```shell
     $ imagetool create \
     --tag=weblogic:12.2.1.3 \
     --type=wls \
@@ -128,8 +127,7 @@ to build the image and apply the patches.
 
 3. After the tool creates the image, verify that the image is in your local repository:
 
-    ```
-
+    ```shell
     $ docker images
     ```
 
