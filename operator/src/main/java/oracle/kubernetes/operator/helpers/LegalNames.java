@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import oracle.kubernetes.operator.TuningParameters;
 
@@ -52,6 +53,9 @@ public class LegalNames {
 
   // The maximum length of a legal DNS label name
   public static final int LEGAL_DNS_LABEL_NAME_MAX_LENGTH = 63;
+
+  private static final String DNS_NAME_REGEXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?";
+  private static final Pattern DNS_NAME_PATTERN = Pattern.compile(DNS_NAME_REGEXP);
 
   static String[] dns1123Fields;
 
@@ -131,6 +135,18 @@ public class LegalNames {
    */
   public static String toDns1123LegalName(String value) {
     return value.toLowerCase().replace('_', '-');
+  }
+
+  public static boolean isDns1123LegalName(String value) {
+    return hasValidLength(value) && followsPattern(value);
+  }
+
+  private static boolean hasValidLength(String value) {
+    return value.length() > 0 && value.length() <= LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
+  }
+
+  private static boolean followsPattern(String value) {
+    return DNS_NAME_PATTERN.matcher(value).matches();
   }
 
   /**
