@@ -111,15 +111,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * down by removing the pod. The usecase verifies the JMS service on shutdown 
  * pod/server is migrated to one of the active server and the JMS messages
  * can be recovered after service migration.
- * The dynamic cluster is configuured a ORACLE leasing datasource.
+ * The dynamic cluster is configured with an ORACLE leasing datasource.
  * The cluster targeted persistent store is configured with 'Dynamic' 
  * distribution policy and 'Always' migration policy.
  * The associated file store directory is on a shared volume so that it can 
  * be accessed from each managed server pod/server.
+ * The associated JDBC store is on remote DB instance so that it can be 
+ * accessed from each managed server pod/server.
  * An uniform distributed queue is configured with a cluster targeted JMS 
  * system resource with one member on each managed server.
  * (a) Test client sends 100 messages to member queue@managed-server2
- * (b) Sacle down the cluster with replica count 1
+ * (b) Scale down the cluster with replica count 1
  * (c) Make sure all 100 messages got recovered once the 
  *     JMS Service@managed-server2 is migrated to managed-server1 
  */
