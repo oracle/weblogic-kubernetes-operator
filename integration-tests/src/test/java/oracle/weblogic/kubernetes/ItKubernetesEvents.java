@@ -380,6 +380,7 @@ public class ItKubernetesEvents {
    */
   @Order(7)
   @Test
+  @DisplayName("Test domain completed event when domain is scaled.")
   public void testScaleDomainAndVerifyCompletedEvent() {
     try {
       scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
