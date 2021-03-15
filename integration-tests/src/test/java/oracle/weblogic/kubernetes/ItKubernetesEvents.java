@@ -169,7 +169,6 @@ public class ItKubernetesEvents {
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace1);
-
   }
 
   /**
@@ -183,7 +182,6 @@ public class ItKubernetesEvents {
   @DisplayName("Test domain events for various successful domain life cycle changes")
   public void testDomainK8SEventsSuccess() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-
     logger.info("Creating domain");
     createDomain();
 
@@ -382,7 +380,7 @@ public class ItKubernetesEvents {
    */
   @Order(7)
   @Test
-  public void testK8sEventsScaleDomainAndVerifyDomainProcessingCompleted() {
+  public void testScaleDomainAndVerifyCompletedEvent() {
     try {
       scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
       scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
@@ -393,12 +391,9 @@ public class ItKubernetesEvents {
 
   private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
-    String patchStr
-            = "["
-            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}"
-            + "]";
-    logger.info("Updating replicas in cluster {0} using patch string: {1}", cluster1Name, patchStr);
-    V1Patch patch = new V1Patch(patchStr);
+    logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
+    V1Patch patch = new V1Patch("["
+            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
             "Failed to patch domain");
     if (verify) {
