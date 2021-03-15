@@ -3,16 +3,26 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -24,6 +34,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -35,6 +46,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
@@ -45,9 +57,11 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
@@ -63,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServic
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -78,6 +93,7 @@ public class ItFmwMiiDomain {
   private static String dbNamespace = null;
   private static String opNamespace = null;
   private static String jrfDomainNamespace = null;
+  private static String jrfDomain1Namespace = null;
   private static String jrfMiiImage = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
@@ -88,19 +104,22 @@ public class ItFmwMiiDomain {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
-
+  private static final String model1File = "model-bigcm-jrf.yaml";
+  private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/fwmdomaintemp";
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
   private String domainUid = "jrfdomain-mii";
-  private String adminServerPodName = domainUid + "-admin-server";
-  private String managedServerPrefix = domainUid + "-managed-server";
+  private String domain1Uid = "jrfdomain1-mii";
+  //private String adminServerPodName = domainUid + "-admin-server";
+  //private String managedServerPrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
   private String adminSecretName = domainUid + "-weblogic-credentials";
   private String encryptionSecretName = domainUid + "-encryptionsecret";
   private String rcuaccessSecretName = domainUid + "-rcu-access";
   private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
   private String opsswalletfileSecretName = domainUid + "opss-wallet-file-secret";
+  static int dbNodePort;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -118,7 +137,7 @@ public class ItFmwMiiDomain {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
 
     logger = getLogger();
     logger.info("Assign a unique namespace for DB and RCU");
@@ -134,6 +153,10 @@ public class ItFmwMiiDomain {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
+    logger.info("Assign a unique namespace for JRF domain1");
+    assertNotNull(namespaces.get(3), "Namespace is null");
+    jrfDomain1Namespace = namespaces.get(3);
+
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -142,8 +165,10 @@ public class ItFmwMiiDomain {
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
+    dbNodePort = getDBNodePort(dbNamespace, "oracledb");
+    logger.info("DB Node Port = {0}", dbNodePort);
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, jrfDomainNamespace);
+    installAndVerifyOperator(opNamespace, jrfDomainNamespace,jrfDomain1Namespace);
 
     logger.info("For ItFmwMiiDomain using DB image: {0}, FMW image {1}",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -201,6 +226,7 @@ public class ItFmwMiiDomain {
 
     logger.info("Create an image with jrf model file");
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+
     jrfMiiImage = createMiiImageAndVerify(
         "jrf-mii-image",
         modelList,
@@ -225,7 +251,7 @@ public class ItFmwMiiDomain {
         jrfMiiImage);
 
     createDomainAndVerify(domain, jrfDomainNamespace);
-    verifyDomainReady();
+    verifyDomainReady(jrfDomainNamespace, domainUid);
   }
 
   /**
@@ -244,7 +270,138 @@ public class ItFmwMiiDomain {
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
     startupDomain();
-    verifyDomainReady();
+    verifyDomainReady(jrfDomainNamespace, domainUid);
+  }
+
+
+  /**
+   * Create a basic JRF model in image domain.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
+   * Verify EM console is accessible.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Create FMW Domain model in image")
+  public void testFmwBigCMModelInImage() {
+    String adminSecretName = domain1Uid + "-weblogic-credentials";
+    String encryptionSecretName = domain1Uid + "-encryptionsecret";
+    String rcuaccessSecretName = domain1Uid + "-rcu-access";
+    String opsswalletpassSecretName = domain1Uid + "-opss-wallet-password-secret";
+    String opsswalletfileSecretName = domain1Uid + "opss-wallet-file-secret";
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(jrfDomain1Namespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        jrfDomain1Namespace,
+        "weblogic",
+        "welcome1"),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        jrfDomain1Namespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create RCU access secret
+    logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
+        rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORD, dbUrl);
+    assertDoesNotThrow(() -> createRcuAccessSecret(
+        rcuaccessSecretName,
+        jrfDomain1Namespace,
+        RCUSCHEMAPREFIX,
+        RCUSCHEMAPASSWORD,
+        dbUrl),
+        String.format("createSecret failed for %s", rcuaccessSecretName));
+
+    logger.info("Create OPSS wallet password secret");
+    assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
+        opsswalletpassSecretName,
+        jrfDomain1Namespace,
+        "welcome1"),
+        String.format("createSecret failed for %s", opsswalletpassSecretName));
+
+    logger.info("Create an image with jrf model file");
+    logger.info("copy the promvalue.yaml to staging location");
+
+    String text = "SOMEVERYVERYVERYBIGDATAFORPROPERTY";
+    int numberOfLines = 100000;
+    StringBuffer propVal = new StringBuffer();
+    for (int i = 0; i < numberOfLines; i++) {
+      propVal.append(text);
+    }
+    // create a temporary model file with 1M data stored
+    File modelFile = assertDoesNotThrow(() ->
+        File.createTempFile("modelBigCM", ".yaml"),
+        "Failed to create domain properties file");
+
+    final Path srcModelFile = Paths.get(MODEL_DIR, model1File);
+    final Path targetModelFile = Paths.get(modelFile.toString());
+    assertDoesNotThrow(() ->  Files.copy(srcModelFile, targetModelFile, StandardCopyOption.REPLACE_EXISTING),
+        "Failed to copy file " + srcModelFile + " to file " + targetModelFile);
+
+    assertDoesNotThrow(() -> replaceStringInFile(targetModelFile.toString(),
+          "BIGDATAREPLACE",
+          propVal.toString()), "Can't replace the string BIGDATAREPLACE in " + targetModelFile);
+    assertDoesNotThrow(() -> replaceStringInFile(targetModelFile.toString(),
+          "@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@",
+          String.format("%s:%s", K8S_NODEPORT_HOST, Integer.toString(dbNodePort))),
+        "Can't replace the string @@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@ in " + targetModelFile);
+
+    final List<String> modelList = Collections.singletonList(targetModelFile.toString());
+    String jrfMii1Image = createMiiImageAndVerify(
+        "jrf-mii-image",
+        modelList,
+        Collections.singletonList(MII_BASIC_APP_NAME),
+        FMWINFRA_IMAGE_NAME,
+        FMWINFRA_IMAGE_TAG,
+        "JRF",
+        false);
+
+    // push the image to a registry to make it accessible in multi-node cluster
+    dockerLoginAndPushImageToRegistry(jrfMii1Image);
+
+    // create the domain object
+    Domain domain = createDomainResource(domain1Uid,
+        jrfDomain1Namespace,
+        adminSecretName,
+        OCIR_SECRET_NAME,
+        encryptionSecretName,
+        rcuaccessSecretName,
+        opsswalletpassSecretName,
+        replicaCount,
+        jrfMii1Image);
+
+    createDomainAndVerify(domain, jrfDomain1Namespace);
+    verifyDomainReady(jrfDomain1Namespace, domain1Uid);
+    // check if multiple configmaps are created
+    try {
+      if (!Kubernetes.listConfigMaps(jrfDomain1Namespace).getItems().isEmpty()) {
+        logger.info("Getting Config Maps List");
+        int cmTotalSize = 0;
+        List<V1ConfigMap> items = Kubernetes.listConfigMaps(jrfDomain1Namespace).getItems();
+        List<V1ConfigMap> itemsCM = new ArrayList<>();
+        for (var item : items) {
+          if (item.getMetadata().getName().contains("introspect")) {
+            logger.info("Found ConfigMap " + item.getMetadata().getName());
+            logger.info("Found ConfigMap size " + item.toString().getBytes("UTF-8").length + " bytes");
+            cmTotalSize = cmTotalSize + item.toString().getBytes("UTF-8").length;
+            itemsCM.add(item);
+          }
+        }
+        assertTrue((cmTotalSize > 1000000) && (itemsCM.size() > 1),
+            "Produced introspector domain cm is bigger than 1M and was not splitted");
+      }
+    } catch (Exception ex) {
+      throw new RuntimeException("Failed to process config maps" + ex.getMessage());
+    }
   }
 
   /**
@@ -288,7 +445,8 @@ public class ItFmwMiiDomain {
   private void shutdownDomain() {
     patchServerStartPolicy("/spec/serverStartPolicy", "NEVER", jrfDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
-
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
     // make sure all the server pods are removed after patch
     checkPodDeleted(adminServerPodName, domainUid, jrfDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
@@ -398,17 +556,20 @@ public class ItFmwMiiDomain {
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
-  private void verifyDomainReady() {
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, jrfDomainNamespace);
+  private void verifyDomainReady(String domainNamespace, String domainUid) {
+    String adminServerPodName = domainUid + "-admin-server";
+    String managedServerPrefix = domainUid + "-managed-server";
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i + "-c1", jrfDomainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i + "-c1", domainUid, jrfDomainNamespace);
+          managedServerPrefix + i + "-c1", domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i + "-c1", domainUid, domainNamespace);
     }
 
     //check access to the em console: http://hostname:port/em
     int nodePort = getServiceNodePort(
-           jrfDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
@@ -420,4 +581,28 @@ public class ItFmwMiiDomain {
     logger.info("EM console is accessible thru default service");
   }
 
+  private static void addToPropertyFile(String propFileName, String domainNamespace) throws IOException {
+    FileInputStream in = new FileInputStream(PROPS_TEMP_DIR + "/" + propFileName);
+    Properties props = new Properties();
+    props.load(in);
+    in.close();
+
+    FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
+    props.setProperty("NAMESPACE", dbNamespace);
+    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    props.setProperty("DBPORT", Integer.toString(dbNodePort));
+    props.store(out, null);
+    out.close();
+  }
+
+  private static Integer getDBNodePort(String namespace, String dbName) {
+    logger.info(dump(Kubernetes.listServices(namespace)));
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
+      }
+    }
+    return -1;
+  }
 }

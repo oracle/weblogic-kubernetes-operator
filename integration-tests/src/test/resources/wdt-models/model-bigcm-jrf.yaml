@@ -1,0 +1,209 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+  ServerStartMode: 'prod'
+  RCUDbInfo:
+    rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+    rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+    rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+
+topology:
+  AdminServerName: "admin-server"
+  Name: "domain1"
+  Cluster:
+    "cluster-1":
+  Server:
+    'admin-server':
+      ListenPort: 7001
+    'managed-server1-c1':
+      Cluster: "cluster-1"
+      ListenPort: 8001
+    'managed-server2-c1':
+      Cluster: "cluster-1"
+      ListenPort: 8001
+    'managed-server3-c1':
+      Cluster: "cluster-1"
+      ListenPort: 8001
+    'managed-server4-c1':
+      Cluster: "cluster-1"
+      ListenPort: 8001
+
+appDeployments:
+  Application:
+    myear:
+      SourcePath: "wlsdeploy/applications/sample-app.ear"
+      ModuleType: ear
+      Target: "cluster-1"
+
+resources:
+  JDBCSystemResource:
+    TestCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+    TestOneCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestOneCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+    TestTwoCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestTwoCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+    TestThreeCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestThreeCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+    TestFourCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestFourCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+    TestFiveCdtDataSource:
+      Target: 'cluster-1'
+      Notes: BIGDATAREPLACE
+      JdbcResource:
+        JDBCConnectionPoolParams:
+          InitialCapacity: 0
+          MinCapacity: 0
+          MaxCapacity: 15
+          TestTableName: SQL SELECT 1
+        JDBCDataSourceParams:
+          GlobalTransactionsProtocol: TwoPhaseCommit
+          #GlobalTransactionsProtocol: LoggingLastResource
+          RowPrefetchSize: 200
+          JNDIName: jdbc/TestFiveCdtDataSource
+        JDBCDriverParams:
+          URL: 'jdbc:oracle:thin:@//@@PROP:K8S_NODEPORT_HOST@@:@@PROP:DBPORT@@/devpdb.k8s'
+          PasswordEncrypted: 'Oradoc_db1'
+          DriverName: oracle.jdbc.xa.client.OracleXADataSource
+          Properties:
+            user:
+              Value: 'sys as sysdba'
+  FileStore:
+    TestCdtFileStore:
+      Target: 'cluster-1'
+    TestCdt1FileStore:
+      Target: 'cluster-1'
+    TestCdt2FileStore:
+      Target: 'cluster-1'
+  JMSServer:
+    TestCdtJmsServer:
+      ProductionPausedAtStartup: false
+      ConsumptionPausedAtStartup: false
+      Target: 'cluster-1'
+      PersistentStore: 'TestCdtFileStore'
+      InsertionPausedAtStartup: false
+      MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+    TestCdt1JmsServer:
+      ProductionPausedAtStartup: false
+      ConsumptionPausedAtStartup: false
+      Target: 'cluster-1'
+      PersistentStore: 'TestCdt1FileStore'
+      InsertionPausedAtStartup: false
+      MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+    TestCdt2JmsServer:
+      ProductionPausedAtStartup: false
+      ConsumptionPausedAtStartup: false
+      Target: 'cluster-1'
+      PersistentStore: 'TestCdt2FileStore'
+      InsertionPausedAtStartup: false
+      MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+
+  JMSSystemResource:
+    TestCdtJmsModule:
+      Target: 'cluster-1'
+      SubDeployment:
+        TestCdtSubDeployment:
+          Target: TestCdtJmsServer
+      JmsResource:
+        UniformDistributedQueue:
+          testCdtUniformQueue:
+            SubDeploymentName: TestCdtSubDeployment
+            JNDIName: jms/testCdtUniformQueue
