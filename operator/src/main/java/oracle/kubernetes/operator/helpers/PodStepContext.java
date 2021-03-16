@@ -626,12 +626,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private Integer getMetricsPort() {
-    try {
-      return getListenPort() != null ? getListenPort() : getSslListenPort();
-    } catch (NullPointerException e) {
-      LOGGER.warning("Unable to configure Prometheus: both listen port and SSH port are null");
-      return 0;
-    }
+    return getListenPort() != null ? getListenPort() : getSslListenPort();
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
