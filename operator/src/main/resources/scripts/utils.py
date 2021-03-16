@@ -61,5 +61,3 @@ def trace(arg1,arg2='SENTINEL'):
     traceInner('FINE',arg1)
   else:
     traceInner(arg1,arg2)
-
-

@@ -501,20 +501,6 @@ class TopologyGenerator(Generator):
           if adminPortEnabled != firstAdminPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
 
-  # def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
-  #   firstServer = None
-  #   firstListenPortProperty = None
-  #   for server in self.env.getDomain().getServers():
-  #     if cluster is self.env.getClusterOrNone(server):
-  #       listenPortProperty = getServerClusterPortPropertyValue(self, server, clusterListenPortProperty)
-  #       if firstServer is None:
-  #         firstServer = server
-  #         firstListenPortProperty = listenPortProperty
-  #       else:
-  #         if listenPortProperty != firstListenPortProperty:
-  #           self.addError(errorMsg.substitute(cluster=self.name(cluster), server1=self.name(firstServer), property=clusterListenPortProperty, value1=str(firstListenPortProperty), server2=self.name(server), value2=str(firstListenPortProperty)))
-  #           return
-
   def validateNonDynamicClusterServerHaveSameCustomChannels(self, cluster):
      firstServer = None
      serverNap = {}
