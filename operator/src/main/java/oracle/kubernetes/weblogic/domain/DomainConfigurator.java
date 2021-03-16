@@ -284,6 +284,10 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withPodAnnotation(String name, String value);
 
+  public abstract DomainConfigurator withMonitoringExporterConfiguration(String configuration);
+
+  public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
+
   /**
    * Adds a default server configuration to the domain, if not already present.
    *
@@ -478,6 +482,21 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withRuntimeEncryptionSecret(String secret);
+
+  /**
+   * Enable MII Online Update.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withMIIOnlineUpdate();
+
+  /**
+   * Set onNonDynamicChanges to CommitUpdateAndRoll for  MII Online Update.
+   *
+   * @return this object
+   */
+  public abstract DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+
 
   /**
    * Add OPSS wallet password secret for the domain resource.

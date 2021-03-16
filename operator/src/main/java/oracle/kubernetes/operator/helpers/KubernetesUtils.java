@@ -13,13 +13,15 @@ import javax.json.JsonPatchBuilder;
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import org.apache.commons.collections.MapUtils;
 import org.joda.time.DateTime;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
+import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 public class KubernetesUtils {
 
@@ -31,7 +33,7 @@ public class KubernetesUtils {
    * @return true if the maps match.
    */
   static <K, V> boolean mapEquals(Map<K, V> first, Map<K, V> second) {
-    return Objects.equals(first, second) || (MapUtils.isEmpty(first) && MapUtils.isEmpty(second));
+    return Objects.equals(first, second) || (isNullOrEmpty(first) && isNullOrEmpty(second));
   }
 
   /**
@@ -219,5 +221,17 @@ public class KubernetesUtils {
           .map(V1ObjectMeta::getLabels)
           .map(labels -> labels.get(DOMAINUID_LABEL))
           .orElse(null);
+  }
+
+  /**
+   * Returns the image pull policy to use by default, for the specified image.
+   * @param imageName the image name to test
+   */
+  public static String getInferredImagePullPolicy(String imageName) {
+    return useLatestImage(imageName) ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
+  }
+
+  private static boolean useLatestImage(String imageName) {
+    return imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
 }

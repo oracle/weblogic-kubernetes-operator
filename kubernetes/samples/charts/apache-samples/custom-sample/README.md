@@ -3,7 +3,7 @@ In this sample, we will configure the Apache webtier as a load balancer for mult
 
 ## 1. Create a namespace
 In this sample, both the Apache webtier and WebLogic domain instances are located in the namespace `apache-sample`.
-```
+```shell
 $ kubectl create namespace apache-sample
 ```
 
@@ -83,7 +83,7 @@ PathTrim /weblogic2
 ## 5. Prepare your own certificate and private key
 In production, Oracle strongly recommends that you provide your own certificates. Run the following commands to generate your own certificate and private key using `openssl`.
 
-```
+```shell
 $ cd kubernetes/samples/charts/apache-samples/custom-sample
 $ export VIRTUAL_HOST_NAME=apache-sample-host
 $ export SSL_CERT_FILE=apache-sample.crt
@@ -94,14 +94,14 @@ $ sh certgen.sh
 ## 6. Prepare the input values for the Apache webtier Helm chart
 Run the following commands to prepare the input value file for the Apache webtier Helm chart.
 
-```
+```shell
 $ base64 -i ${SSL_CERT_FILE} | tr -d '\n'
 $ base64 -i ${SSL_CERT_KEY_FILE} | tr -d '\n'
 $ touch input.yaml
 ```
 Edit the input parameters file, `input.yaml`. The file content is similar to below.
 
-```
+```yaml
 # Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
@@ -126,24 +126,24 @@ customKey: <key_data>
 ## 7. Install the Apache webtier Helm chart
 The Apache webtier Helm chart is located in the `kubernetes/samples/charts/apache-webtier` directory. Install the Apache webtier Helm chart to the `apache-sample` namespace with the specified input parameters:
 
-```
+```shell
 $ cd kubernetes/samples/charts
 $ helm install my-release --values apache-samples/custom-sample/input.yaml --namespace apache-sample apache-webtier
 ```
 
 ## 8. Run the sample application
 Now you can send requests to different WebLogic domains with the unique entry point of Apache with different paths. Alternatively, you can access the URLs in a web browser.
-```
+```shell
 $ curl --silent http://${HOSTNAME}:30305/weblogic1/testwebapp/
 $ curl --silent http://${HOSTNAME}:30305/weblogic2/testwebapp/
 ```
 Also, you can use SSL URLs to send requests to different WebLogic domains. Access the SSL URL via the `curl` command or a web browser.
-```
+```shell
 $ curl -k --silent https://${HOSTNAME}:30443/weblogic1/testwebapp/
 $ curl -k --silent https://${HOSTNAME}:30443/weblogic2/testwebapp/
 ```
 
 ## 9. Uninstall the Apache webtier
-```
+```shell
 $ helm uninstall my-release --namespace apache-sample
 ```

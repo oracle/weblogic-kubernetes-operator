@@ -127,22 +127,22 @@ class OfflineWlstEnv(object):
 
     # Model in image attributes
 
-    self.DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
-    self.DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
-    self.PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
+    self.MII_DOMAIN_SECRET_MD5_FILE   = '/tmp/DomainSecret.md5'
+    self.MII_DOMAIN_ZIP               = self.INTROSPECT_HOME + '/domainzip.secure'
+    self.MII_PRIMORDIAL_DOMAIN_ZIP    = self.INTROSPECT_HOME + '/primordial_domainzip.secure'
 
-    self.INVENTORY_IMAGE_MD5      = self.INTROSPECT_HOME + '/inventory_image.md5'
-    self.INVENTORY_CM_MD5         = self.INTROSPECT_HOME + '/inventory_cm.md5'
-    self.INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
-    self.MERGED_MODEL_FILE        = self.INTROSPECT_HOME + '/merged_model.json'
-    self.EWALLET                  = self.INTROSPECT_HOME + '/ewallet.p12'
-    self.WLS_VERSION              = self.INTROSPECT_HOME + "/wls.version"
-    self.JDK_PATH                 = self.INTROSPECT_HOME + "/jdk.path"
-    self.SECRETS_AND_ENV_MD5      = self.INTROSPECT_HOME + "/secrets_and_env.md5"
-    self.DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
-    self.WDT_CONFIGMAP_PATH      = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
+    self.MII_INVENTORY_IMAGE_MD5      = self.INTROSPECT_HOME + '/inventory_image.md5'
+    self.MII_INVENTORY_CM_MD5         = self.INTROSPECT_HOME + '/inventory_cm.md5'
+    self.MII_INVENTORY_PASSPHRASE_MD5 = self.INTROSPECT_HOME + '/inventory_passphrase.md5'
+    self.MII_MERGED_MODEL_FILE        = self.INTROSPECT_HOME + '/merged_model.json'
+    self.MII_JRF_EWALLET              = self.INTROSPECT_HOME + '/ewallet.p12'
+    self.WLS_VERSION                  = self.INTROSPECT_HOME + "/wls.version"
+    self.JDK_PATH                     = self.INTROSPECT_HOME + "/jdk.path"
+    self.MII_SECRETS_AND_ENV_MD5      = self.INTROSPECT_HOME + "/secrets_and_env.md5"
+    self.MII_DOMAINZIP_HASH           = self.INTROSPECT_HOME + "/domainzip_hash"
+    self.MII_WDT_CONFIGMAP_PATH       = self.getEnvOrDef('WDT_CONFIGMAP_PATH',
                                                     '/weblogic-operator/wdt-config-map')
-    self.DOMAIN_SOURCE_TYPE      = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+    self.DOMAIN_SOURCE_TYPE           = self.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
     # The following 4 env vars are for unit testing, their defaults are correct for production.
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -772,8 +772,8 @@ class TopologyGenerator(Generator):
     if istio_enabled == 'true':
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
-      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop']
-      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure']
+      tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
+      tls_protocol = [ 't3s', 'iiops', 'cluster-broadcast-secure', 'sips']
       if nap_protocol in http_protocol:
         name = 'http-' + nap.getName().replace(' ', '_')
       elif nap_protocol in https_protocol:
@@ -911,7 +911,7 @@ class UserConfigAndKeyGenerator(Generator):
 class MII_DomainConfigGenerator(Generator):
 
   def __init__(self, env):
-    Generator.__init__(self, env, env.DOMAIN_ZIP)
+    Generator.__init__(self, env, env.MII_DOMAIN_ZIP)
     self.env = env
     self.domain_home = self.env.getDomainHome()
   def generate(self):
@@ -947,7 +947,7 @@ class MII_DomainConfigGenerator(Generator):
 class MII_OpssWalletFileGenerator(Generator):
 
   def __init__(self, env):
-    Generator.__init__(self, env, env.EWALLET)
+    Generator.__init__(self, env, env.MII_JRF_EWALLET)
     self.env = env
     self.domain_home = self.env.getDomainHome()
   def generate(self):
@@ -971,7 +971,7 @@ class MII_OpssWalletFileGenerator(Generator):
 class MII_PrimordialDomainGenerator(Generator):
 
   def __init__(self, env):
-    Generator.__init__(self, env, env.PRIMORDIAL_DOMAIN_ZIP)
+    Generator.__init__(self, env, env.MII_PRIMORDIAL_DOMAIN_ZIP)
     self.env = env
     self.domain_home = self.env.getDomainHome()
   def generate(self):
@@ -1176,11 +1176,9 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
                  (action, http_enabled))
-    self.writeln('<d:tunneling-enabled %s>false</d:tunneling-enabled>' % action)
-    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
+    # This needs to be enabled, since we are splitting from server default channel
+    self.writeln('<d:outbound-enabled %s>true</d:outbound-enabled>' % action)
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:two-way-ssl-enabled %s>false</d:two-way-ssl-enabled>' % action)
-    self.writeln('<d:client-certificate-enforced %s>false</d:client-certificate-enforced>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
@@ -1635,21 +1633,21 @@ class DomainIntrospector(SecretManager):
         trace("cfgmap write domain zip")
         MII_DomainConfigGenerator(self.env).generate()
         trace("cfgmap write merged model")
-        MII_IntrospectCMFileGenerator(self.env, self.env.MERGED_MODEL_FILE,
+        MII_IntrospectCMFileGenerator(self.env, self.env.MII_MERGED_MODEL_FILE,
                                       self.env.DOMAIN_HOME +"/wlsdeploy/domain_model.json").generate()
         trace("cfgmap write md5 image")
-        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.MII_INVENTORY_IMAGE_MD5, '/tmp/inventory_image.md5').generate()
         trace("cfgmap write md5 cm")
-        MII_IntrospectCMFileGenerator(self.env, self.env.INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.MII_INVENTORY_CM_MD5, '/tmp/inventory_cm.md5').generate()
         trace("cfgmap write wls version")
         MII_IntrospectCMFileGenerator(self.env, self.env.WLS_VERSION, '/tmp/wls_version').generate()
         trace("cfgmap write jdk_path")
         MII_IntrospectCMFileGenerator(self.env, self.env.JDK_PATH, '/tmp/jdk_path').generate()
         trace("cfgmap write md5 secrets")
-        MII_IntrospectCMFileGenerator(self.env, self.env.SECRETS_AND_ENV_MD5, '/tmp/secrets_and_env.md5').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.MII_SECRETS_AND_ENV_MD5, '/tmp/secrets_and_env.md5').generate()
         trace("cfgmap write model hash")
         # Must be called after MII_PrimordialDomainGenerator
-        MII_IntrospectCMFileGenerator(self.env, self.env.DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
+        MII_IntrospectCMFileGenerator(self.env, self.env.MII_DOMAINZIP_HASH, '/tmp/domainzip_hash').generate()
 
         if self.env.WDT_DOMAIN_TYPE == 'JRF':
           trace("cfgmap write JRF wallet")
@@ -1760,7 +1758,7 @@ def main(env):
 
     env.open()
     try:
-      env.addGeneratedFile(env.DOMAIN_SECRET_MD5_FILE)
+      env.addGeneratedFile(env.MII_DOMAIN_SECRET_MD5_FILE)
       DomainIntrospector(env).introspect()
       env.printGeneratedFiles()
       trace("Domain introspection complete.")

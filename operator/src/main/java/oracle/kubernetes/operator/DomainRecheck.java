@@ -145,8 +145,7 @@ class DomainRecheck {
   }
 
   private class NamespaceListResponseStep extends DefaultResponseStep<V1NamespaceList> {
-
-    private final List<String> namespacesToStart = Collections.synchronizedList(new ArrayList<>());
+    Step current = getNext();
 
     private NamespaceListResponseStep() {
       super(new Namespaces.NamespaceListAfterStep(domainNamespaces));
@@ -163,7 +162,7 @@ class DomainRecheck {
 
     // Returns true if the failure wasn't due to authorization, and we have a list of namespaces to manage.
     private boolean useBackupStrategy(CallResponse<V1NamespaceList> callResponse) {
-      return Namespaces.getConfiguredDomainNamespaces() != null && isNotAuthorizedOrForbidden(callResponse);
+      return haveExplicitlyConfiguredNamespacesToManage() && isNotAuthorizedOrForbidden(callResponse);
     }
 
     @Override
@@ -174,18 +173,21 @@ class DomainRecheck {
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
     }
 
-    private Step createNextSteps(Set<String> currentBatchOfNamespacesToStart) {
-      List<Step> nextSteps = new ArrayList<>();
-      namespacesToStart.addAll(currentBatchOfNamespacesToStart);
-      if (!namespacesToStart.isEmpty()) {
-        nextSteps.add(createStartNamespacesStep(namespacesToStart));
-        if (Namespaces.getConfiguredDomainNamespaces() == null) {
-          nextSteps.add(
-                RunInParallel.perNamespace(namespacesToStart, DomainRecheck.this::createNamespaceReview));
+    private Step createNextSteps(Set<String> namespacesToStartNow) {
+      if (!namespacesToStartNow.isEmpty()) {
+        List<Step> nextSteps = new ArrayList<>();
+        nextSteps.add(createStartNamespacesStep(namespacesToStartNow));
+        if (!haveExplicitlyConfiguredNamespacesToManage()) {
+          nextSteps.add(createNamespaceReviewStep(namespacesToStartNow));
         }
+        nextSteps.add(current);
+        current = Step.chain(nextSteps.toArray(new Step[0]));
       }
-      nextSteps.add(getNext());
-      return Step.chain(nextSteps.toArray(new Step[0]));
+      return current;
+    }
+
+    private boolean haveExplicitlyConfiguredNamespacesToManage() {
+      return Namespaces.getConfiguredDomainNamespaces() != null;
     }
 
     private Set<String> getNamespacesToStart(List<String> namespaceNames) {
@@ -203,6 +205,10 @@ class DomainRecheck {
 
   Step createStartNamespacesStep(Collection<String> domainNamespaces) {
     return RunInParallel.perNamespace(domainNamespaces, this::startNamespaceSteps);
+  }
+
+  private Step createNamespaceReviewStep(Set<String> namespacesToStartNow) {
+    return RunInParallel.perNamespace(namespacesToStartNow, DomainRecheck.this::createNamespaceReview);
   }
 
   private Step startNamespaceSteps(String ns) {

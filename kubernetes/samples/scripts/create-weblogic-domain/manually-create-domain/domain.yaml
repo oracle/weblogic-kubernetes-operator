@@ -66,9 +66,10 @@ spec:
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
       value: "-Xms256m -Xmx512m -Djava.security.egd=file:/dev/./urandom "
-    requests:
-      cpu: "250m"
-      memory: "768Mi"
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "768Mi"
 
     # If you are storing your domain on a persistent volume (as opposed to inside the image),
     # then uncomment this section and provide the PVC details and mount path here (standard images

@@ -1,0 +1,43 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+  ServerStartMode: 'prod'
+
+topology:
+  Name: "wls-sessmigr-domain-1"
+  AdminServerName: "admin-server"
+  Cluster:
+    "cluster-1":
+      DynamicServers:
+        ServerTemplate:  "cluster-1-template"
+        ServerNamePrefix: "cluster-1-managed-server"
+        DynamicClusterSize: 5
+        MaxDynamicClusterSize: 5
+        CalculatedListenPorts: false
+    "cluster-2":
+      DynamicServers:
+        ServerTemplate: "cluster-2-template"
+        ServerNamePrefix: "cluster-2-managed-server"
+        DynamicClusterSize: 5
+        MaxDynamicClusterSize: 5
+        CalculatedListenPorts: false
+  Server:
+    "admin-server":
+      ListenPort: 7001
+  ServerTemplate:
+    "cluster-1-template":
+      Cluster: "cluster-1"
+      ListenPort : 8001
+    "cluster-2-template":
+      Cluster: "cluster-2"
+      ListenPort : 8001
+
+appDeployments:
+  Application:
+    myear:
+      SourcePath: "wlsdeploy/applications/sessmigr-app.ear"
+      ModuleType: ear
+      Target: 'cluster-1,cluster-2'

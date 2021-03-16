@@ -51,7 +51,7 @@ spec:
 To create the Kubernetes Secret, `my-registry-pull-secret`, in
 the namespace where the domain will be running, `domain1-ns`, the following
 command can be used:
-```bash
+```shell
 $ kubectl create secret docker-registry my-registry-pull-secret \
   -n domain1-ns \
   --docker-server=<registry-server> \
@@ -74,7 +74,7 @@ instance represents a WebLogic domain that the operator is managing).
 
 The Kubernetes Secret would be created in the same manner as shown above and then the
 `ServiceAccount` would be updated to include this image pull secret:
-```bash
+```shell
 $ kubectl patch serviceaccount default -n domain1-ns \
   -p '{"imagePullSecrets": [{"name": "my-registry-pull-secret"}]}'
 ```

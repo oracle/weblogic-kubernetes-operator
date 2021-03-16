@@ -1,0 +1,46 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+    AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+    ServerStartMode: 'prod'
+    RCUDbInfo:
+        rcu_prefix: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@'
+        rcu_schema_password: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@'
+        rcu_db_conn_string: '@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@'
+
+topology:
+    AdminServerName: "admin-server"
+    Name: "domain1"
+    Log:
+        FileName: domain1.log
+    NMProperties:
+        JavaHome: /usr/java/jdk1.8.0_211
+        LogFile: "/u01/oracle/user_projects/domains/jrf-dynamicdomain-mii/nodemanager/nodemanager.log"
+        DomainsFile: "/u01/oracle/user_projects/domains/jrf-dynamicdomain-mii/nodemanager/nodemanager.domains"
+        NodeManagerHome: "/u01/oracle/user_projects/domains/jrf-dynamicdomain-mii/nodemanager"
+        weblogic.StartScriptName: startWebLogic.sh
+    Cluster:
+        "cluster-1":
+            FrontendHost: "jrf-dynamicdomain-mii-cluster-cluster-1"
+            DynamicServers:
+                ServerTemplate:  "cluster-1-template"
+                ServerNamePrefix: "managed-server"
+                DynamicClusterSize: 5
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+    Server:
+        "admin-server":
+            ListenPort: 7001
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            ListenPort : 8001
+
+appDeployments:
+    Application:
+        myear:
+            SourcePath: "wlsdeploy/applications/sample-app.ear"
+            ModuleType: ear
+            Target: "cluster-1"

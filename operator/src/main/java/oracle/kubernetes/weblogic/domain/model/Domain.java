@@ -6,6 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -17,7 +18,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.validation.Valid;
 
-import com.google.common.base.Strings;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
@@ -29,6 +29,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -44,6 +45,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -267,6 +269,18 @@ public class Domain implements KubernetesObject {
     return spec.getEffectiveConfigurationFactory(apiVersion);
   }
 
+  public MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
+    return spec.getMonitoringExporterConfiguration();
+  }
+
+  public String getMonitoringExporterImage() {
+    return spec.getMonitoringExporterImage();
+  }
+
+  public String getMonitoringExporterImagePullPolicy() {
+    return spec.getMonitoringExporterImagePullPolicy();
+  }
+
   /**
    * Returns the specification applicable to a particular server/cluster combination.
    *
@@ -340,6 +354,19 @@ public class Domain implements KubernetesObject {
 
   public int getMaxConcurrentShutdown(String clusterName) {
     return getEffectiveConfigurationFactory().getMaxConcurrentShutdown(clusterName);
+  }
+
+  /**
+   * Return the MII domain.spec.configuration.model.onlineUpdate.nonDynamicChangesMethod
+   * @return {@link MIINonDynamicChangesMethod}
+   */
+  public MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
+    return Optional.of(getSpec())
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getOnNonDynamicChanges)
+        .orElse(MIINonDynamicChangesMethod.CommitUpdateOnly);
   }
 
   /**
@@ -487,6 +514,10 @@ public class Domain implements KubernetesObject {
   }
 
   public boolean isNewIntrospectionRequiredForNewServers() {
+    return isDomainSourceTypeFromModel();
+  }
+
+  public boolean isDomainSourceTypeFromModel() {
     return getDomainHomeSourceType() == DomainSourceType.FromModel;
   }
 
@@ -494,9 +525,107 @@ public class Domain implements KubernetesObject {
     return spec.getHttpAccessLogInLogHome();
   }
 
+  /**
+   * Returns if the domain is using online update.
+   * return true if using online update
+   */
+
+  public boolean isUseOnlineUpdate() {
+    return spec.isUseOnlineUpdate();
+  }
+
+  /**
+   * Returns WDT activate changes timeout.
+   * @return WDT activate timeout
+   */
+  public Long getWDTActivateTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getActivateTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT connect timeout.
+   * @return WDT connect timeout
+   */
+  public Long getWDTConnectTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getConnectTimeoutMillis)
+        .orElse(120000L);
+  }
+
+  /**
+   * Returns WDT deploy application timeout.
+   * @return WDT deploy timeout
+   */
+  public Long getWDTDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getDeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT undeploy application timeout.
+   * @return WDT undeploy timeout
+   */
+  public Long getWDTUnDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getUndeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT redeploy application timeout.
+   * @return WDT redeploy timeout
+   */
+  public Long getWDTReDeployTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getRedeployTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT start application timeout.
+   * @return WDT start application timeout
+   */
+  public Long getWDTStartApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStartApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT stop application timeout.
+   * @return WDT stop application timeout
+   */
+  public Long getWDTStopApplicationTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getStopApplicationTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  /**
+   * Returns WDT set server groups timeout when setting JRF domain server group targeting.
+   * @return WDT set server groups timeout
+   */
+  public Long getWDTSetServerGroupsTimeoutMillis() {
+    return getWDTOnlineUpdateTimeouts()
+        .map(WDTTimeouts::getSetServerGroupsTimeoutMillis)
+        .orElse(180000L);
+  }
+
+  private Optional<WDTTimeouts> getWDTOnlineUpdateTimeouts() {
+    return Optional.ofNullable(spec)
+        .map(DomainSpec::getConfiguration)
+        .map(Configuration::getModel)
+        .map(Model::getOnlineUpdate)
+        .map(OnlineUpdate::getWdtTimeouts);
+  }
+
   public boolean isIstioEnabled() {
     return spec.isIstioEnabled();
   }
+
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
@@ -508,7 +637,7 @@ public class Domain implements KubernetesObject {
    * @return domain home
    */
   public String getDomainHome() {
-    return Strings.emptyToNull(spec.getDomainHome());
+    return emptyToNull(spec.getDomainHome());
   }
 
   /**
@@ -517,7 +646,7 @@ public class Domain implements KubernetesObject {
    * @return Full path of the liveness probe custom script
    */
   public String getLivenessProbeCustomScript() {
-    return Strings.emptyToNull(spec.getLivenessProbeCustomScript());
+    return emptyToNull(spec.getLivenessProbeCustomScript());
   }
 
   public boolean isShuttingDown() {
@@ -814,19 +943,25 @@ public class Domain implements KubernetesObject {
     }
 
     private boolean skipValidation(String mountPath) {
-      List<V1EnvVar> envVars = spec.getEnv();
-      Set<String> varNames = envVars.stream().map(V1EnvVar::getName).collect(toSet());
       StringTokenizer nameList = new StringTokenizer(mountPath, TOKEN_START_MARKER);
       if (!nameList.hasMoreElements()) {
         return false;
       }
       while (nameList.hasMoreElements()) {
         String token = nameList.nextToken();
-        if (noMatchingEnvVarName(varNames, token)) {
+        if (noMatchingEnvVarName(getEnvNames(), token)) {
           return false;
         }
       }
       return true;
+    }
+
+    @Nonnull
+    private Set<String> getEnvNames() {
+      return Optional.ofNullable(spec.getEnv()).stream()
+            .flatMap(Collection::stream)
+            .map(V1EnvVar::getName)
+            .collect(toSet());
     }
 
     private boolean noMatchingEnvVarName(Set<String> varNames, String token) {

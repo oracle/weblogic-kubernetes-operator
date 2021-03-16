@@ -75,7 +75,6 @@ function initialize {
 
   validateKubernetesCliAvailable
   validateJqAvailable
-  validateYqAvailable
 
   if [ -z "${clusterName}" ]; then
     validationError "Please specify cluster name using '-c' parameter e.g. '-c cluster-1'."

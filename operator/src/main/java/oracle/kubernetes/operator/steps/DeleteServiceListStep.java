@@ -19,7 +19,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  */
 public class DeleteServiceListStep extends AbstractListStep<V1Service> {
 
-  DeleteServiceListStep(Collection<V1Service> c, Step next) {
+  public DeleteServiceListStep(Collection<V1Service> c, Step next) {
     super(c, next);
   }
 

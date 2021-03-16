@@ -6,11 +6,11 @@ An operator is an application-specific controller that extends Kubernetes to cre
 
 #### Clone the operator repository to a Cloud Shell instance ####
 First, clone the operator git repository to OCI Cloud Shell.
-```bash
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git -b v2.5.0
 ```
 The output should be similar to the following:
-```bash
+```shell
 Cloning into 'weblogic-kubernetes-operator'...
 remote: Enumerating objects: 1568, done.
 remote: Counting objects: 100% (1568/1568), done.
@@ -35,21 +35,21 @@ Checking out files: 100% (8396/8396), done.
 Kubernetes distinguishes between the concept of a user account and a service account for a number of reasons. The main reason is that user accounts are for humans while service accounts are for processes, which run in pods. The operator also requires service accounts.  If a service account is not specified, it defaults to `default` (for example, the namespace's default service account). If you want to use a different service account, then you must create the operator's namespace and the service account before installing the operator Helm chart.
 
 Thus, create the operator's namespace in advance:
-```bash
-kubectl create namespace sample-weblogic-operator-ns
+```shell
+$ kubectl create namespace sample-weblogic-operator-ns
 ```
 Create the service account:
-```bash
-kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+```shell
+$ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
 ```
 Finally, add a stable repository to Helm, which will be needed later for 3rd party services.
-```bash
-helm repo add stable https://kubernetes-charts.storage.googleapis.com/
+```shell
+$ helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 ```
 #### Install the operator using Helm ####
 Before you execute the operator `helm` install, make sure that you are in the operator's local Git repository folder.
-```bash
-cd ~/weblogic-kubernetes-operator/
+```shell
+$ cd ~/weblogic-kubernetes-operator/
 ```
 Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
 
@@ -74,8 +74,8 @@ Note the arguments and values:
 **Note**: Earlier versions of the operator's Helm chart only supported selecting namespaces that the operator would manage using a list. Now, namespaces may be chosen using a list, label selector, or regular expression.
 
 Execute the following `helm install`:
-```bash
-helm install sample-weblogic-operator \
+```shell
+$ helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0" \
@@ -85,7 +85,7 @@ helm install sample-weblogic-operator \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
 ```
 The output will be similar to the following:
-```bash
+```shell
 NAME: sample-weblogic-operator
 LAST DEPLOYED: Fri Mar  6 18:24:29 2020
 NAMESPACE: sample-weblogic-operator-ns
@@ -94,13 +94,13 @@ REVISION: 1
 TEST SUITE: None
 ```
 Check the operator pod:
-```bash
+```shell
 $ kubectl get po -n sample-weblogic-operator-ns
 NAME                                READY   STATUS    RESTARTS   AGE
 weblogic-operator-86ff6fccc-gh79p   1/1     Running   0          69s
 ```
 Check the operator Helm chart:
-```bash
+```shell
 $ helm list -n sample-weblogic-operator-ns
 NAME                            NAMESPACE                       REVISION        UPDATED                                 STATUS          CHART                   APP VERSION
 sample-weblogic-operator        sample-weblogic-operator-ns     1               2020-03-06 18:24:29.312983566 +0000 UTC deployed        weblogic-operator-2.5.0

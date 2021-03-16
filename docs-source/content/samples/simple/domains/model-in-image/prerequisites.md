@@ -19,7 +19,7 @@ weight: 1
 
    For example:
 
-   ```
+   ```shell
    $ cd /tmp
    $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
@@ -31,7 +31,7 @@ weight: 1
 1. Copy the sample to a new directory; for example, use directory `/tmp/mii-sample`.
 
 
-   ```
+   ```shell
    $ mkdir /tmp/mii-sample
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
@@ -137,26 +137,28 @@ weight: 1
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
-   For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.1` and `1.9.1` respectively, call:
+   For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.9` and `1.9.7` respectively, call:
 
-   ```
+   ```shell
    $ cd /tmp/mii-sample/model-images
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/weblogic-deploy.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.9/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.5/imagetool.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.7/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
 1. To set up the WebLogic Image Tool, run the following commands:
 
-   ```
+   ```shell
    $ cd /tmp/mii-sample/model-images
 
    $ unzip imagetool.zip
+
+   $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
 
    $ ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
@@ -164,8 +166,18 @@ weight: 1
      --path /tmp/mii-sample/model-images/weblogic-deploy.zip
    ```
 
-   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory, plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer. You will use WIT later in the sample for creating model images.
+   Note that the WebLogic Image Tool `cache deleteEntry` command does nothing
+   if the `wdt_latest` key doesn't have a corresponding cache entry. It is included
+   because the WIT cache lookup information is stored in the `$HOME/cache/.metadata`
+   file by default, and if the cache already
+   has a version of WDT in its `--type wdt --version latest` location, then the
+   `cache addInstaller` command would fail.
+   For more information about the WIT cache, see the
+   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
+   These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory,
+   plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.
+   You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.
 
 ### Additional prerequisites for JRF domains
 
@@ -210,7 +222,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
    - Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service` to create an Oracle database running in the pod, `oracle-db`.
 
-     ```
+     ```shell
      $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
      $ start-db-service.sh
      ```
@@ -228,7 +240,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
    Note that this script assumes `Oradoc_db1` is the DBA password, `Oradoc_db1` is the schema password, and that the database URL is `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`.
 
-   ```
+   ```shell
    $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
    $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
@@ -238,7 +250,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
    __NOTE__: If you need to drop the repository, use this command:
 
-   ```
+   ```shell
    $ drop-rcu-schema.sh -s FMW1
    ```
 
@@ -276,7 +288,7 @@ To recover a domain's OPSS tables between domain restarts or to share an OPSS sc
 
 To save the wallet file, assuming that your namespace is `sample-domain1-ns` and your domain UID is `sample-domain1`:
 
-```
+```shell
   $ kubectl -n sample-domain1-ns \
     get configmap sample-domain1-weblogic-domain-introspect-cm \
     -o jsonpath='{.data.ewallet\.p12}' \
@@ -285,7 +297,7 @@ To save the wallet file, assuming that your namespace is `sample-domain1-ns` and
 
 Alternatively, you can save the file using the sample's wallet utility:
 
-```
+```shell
   $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
@@ -296,7 +308,7 @@ To reuse the wallet file in subsequent redeployments or to share the domain's OP
 
 1. Load the saved wallet file into a secret with a key named `walletFile` (again, assuming that your domain UID is `sample-domain1` and your namespace is `sample-domain1-ns`):
 
-```
+```shell
   $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
      --from-file=walletFile=./ewallet.p12
   $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret \
@@ -304,14 +316,14 @@ To reuse the wallet file in subsequent redeployments or to share the domain's OP
 ```
 
 Alternatively, use the sample's wallet utility:
-```
+```shell
   $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 
 2. Modify your Domain JRF YAML files to provide the wallet file secret name, for example:
 
-```
+```yaml
   configuration:
     opss:
       # Name of secret with walletPassword for extracting the wallet

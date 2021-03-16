@@ -4,7 +4,7 @@ date: 2019-02-23T17:32:31-05:00
 weight: 3
 ---
 
-This use case demonstrates dynamically adding a data source to your running domain. It demonstrates several features of WDT and Model in Image:
+This use case demonstrates dynamically adding a data source to your running domain by updating your model and rolling your domain. It demonstrates several features of WDT and Model in Image:
 
 - The syntax used for updating a model is the same syntax you use for creating the original model.
 - A domain's model can be updated dynamically by supplying a model update in a file in a Kubernetes ConfigMap.
@@ -31,7 +31,7 @@ Here are the steps:
    Here's an example data source model configuration that meets these criteria:
 
 
-   ```
+   ```yaml
    resources:
      JDBCSystemResource:
        mynewdatasource:
@@ -49,14 +49,14 @@ Here are the steps:
              PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:password@@'
              Properties:
                user:
-                 Value: 'sys as sysdba'
+                 Value: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:user@@'
                oracle.net.CONNECT_TIMEOUT:
                  Value: 5000
                oracle.jdbc.ReadTimeout:
                  Value: 30000
            JDBCConnectionPoolParams:
                InitialCapacity: 0
-               MaxCapacity: 1
+               MaxCapacity: '@@SECRET:@@ENV:DOMAIN_UID@@-datasource-secret:max-capacity@@'
                TestTableName: SQL ISVALID
                TestConnectionsOnReserve: true
 
@@ -68,15 +68,19 @@ Here are the steps:
 
    The data source references a new secret that needs to be created. Run the following commands to create the secret:
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
-     sample-domain1-datasource-secret \
-      --from-literal=password=Oradoc_db1 \
-      --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+      sample-domain1-datasource-secret \
+      --from-literal='user=sys as sysdba' \
+      --from-literal='password=incorrect_password' \
+      --from-literal='max-capacity=1' \
+      --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    $ kubectl -n sample-domain1-ns label  secret \
-     sample-domain1-datasource-secret \
-     weblogic.domainUID=sample-domain1
+      sample-domain1-datasource-secret \
+      weblogic.domainUID=sample-domain1
    ```
+
+    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
 
     You name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
@@ -88,7 +92,7 @@ Here are the steps:
    Run the following commands:
 
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
@@ -113,7 +117,7 @@ Here are the steps:
 
       - Add the secret to its `spec.configuration.secrets` stanza:
 
-          ```
+          ```yaml
           spec:
             ...
             configuration:
@@ -125,7 +129,7 @@ Here are the steps:
 
       - Change its `spec.configuration.model.configMap` to look like the following:
 
-          ```
+          ```yaml
           spec:
             ...
             configuration:
@@ -139,7 +143,7 @@ Here are the steps:
 
         > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
         ```
 
@@ -147,7 +151,7 @@ Here are the steps:
 
         > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
@@ -190,40 +194,44 @@ Here are the steps:
    - Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-   ```
+   ```shell
      $ ./wl-pod-wait.sh -?
 
-       Usage:
+     Usage:
 
-         wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
-            [-p expected_pod_count] \
-            [-t timeout_secs] \
-            [-q]
+       wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
+          [-p expected_pod_count] \
+          [-t timeout_secs] \
+          [-q]
 
-         Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+       Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
 
-       Parameters:
+     Parameters:
 
-         -d <domain_uid> : Defaults to 'sample-domain1'.
+       -d <domain_uid> : Defaults to 'sample-domain1'.
 
-         -n <namespace>  : Defaults to 'sample-domain1-ns'.
+       -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-         pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
-                           a domain all (a) are ready, (b) have the same
-                           'domainRestartVersion' label value as the
-                           current Domain's 'spec.restartVersion, and
-                           (c) have the same image as the current Domain's
-                           image.
+       -p 0            : Wait until there are no running WebLogic Server pods
+                         for a domain. The default.
 
-         pod_count = 0   : Wait until there are no running WebLogic Server pods
-                           for a domain. The default.
+       -p <pod_count>  : Wait until all of the following are true
+                         for exactly 'pod_count' WebLogic Server pods
+                         in the domain:
+                         - ready
+                         - same 'weblogic.domainRestartVersion' label value as
+                           the domain resource's 'spec.restartVersion'
+                         - same 'weblogic.introspectVersion' label value as
+                           the domain resource's 'spec.introspectVersion'
+                         - same image as the the domain resource's image
 
-         -t <timeout>    : Timeout in seconds. Defaults to '1000'.
+       -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
-         -q              : Quiet mode. Show only a count of wl pods that
-                           have reached the desired criteria.
+       -q              : Quiet mode. Show only a count of wl pods that
+                         have reached the desired criteria.
 
-         -?              : This help.
+       -?              : This help.
+
    ```
      {{% /expand %}}
 
@@ -425,21 +433,21 @@ Here are the steps:
 
    Send a web application request to the ingress controller:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
    Or, if Traefik is unavailable and your Administration Server pod is running, you can run `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
    You will see something like the following:
 
-    ```
+    ```html
     <html><body><pre>
     *****************************************************************
 
@@ -447,22 +455,35 @@ Here are the steps:
 
     Welcome to WebLogic Server 'managed-server1'!
 
-     domain UID  = 'sample-domain1'
-     domain name = 'domain1'
+      domain UID  = 'sample-domain1'
+      domain name = 'domain1'
 
     Found 1 local cluster runtime:
       Cluster 'cluster-1'
 
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     Found 1 local data source:
-      Datasource 'mynewdatasource': State='Running'
+      Datasource 'mynewdatasource':  State='Running', testPool='Failed'
+        ---TestPool Failure Reason---
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
+        ---
+        ...
+        ... invalid host/username/password
+        ...
+        -----------------------------
 
     *****************************************************************
     </pre></body></html>
 
     ```
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
 
-If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) use case, then leave your domain running.
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+
+If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 
 To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).

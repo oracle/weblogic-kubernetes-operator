@@ -22,43 +22,43 @@ Note that the operator Helm chart is available from the GitHub chart repository,
 #### Useful Helm operations
 
 Show the available operator configuration values and their defaults:
-```
+```shell
 $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
 Show the custom values you configured for the operator Helm release:
-```
+```shell
 $ helm get values weblogic-operator
 ```
 
 Show all of the values your operator Helm release is using:
-```
+```shell
 $ helm get values --all weblogic-operator
 ```
 
 List the Helm releases for a specified namespace or all namespaces:
-```
+```shell
 $ helm list --namespace <namespace>
 $ helm list --all-namespaces
 ```
 
 Get the status of the operator Helm release:
-```
+```shell
 $ helm status weblogic-operator --namespace <namespace>
 ```
 
 Show the history of the operator Helm release:
-```
+```shell
 $ helm history weblogic-operator --namespace <namespace>
 ```
 
 Roll back to a previous version of this operator Helm release, in this case, the first version:
-```
+```shell
 $ helm rollback weblogic-operator 1 --namespace <namespace>
 ```
 
 Change one or more values in the operator Helm release. In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained:
-```
+```shell
 $ helm upgrade \
   --reuse-values \
   --set "domainNamespaces={sample-domains-ns1}" \
@@ -81,7 +81,7 @@ The `helm install` or `helm upgrade` command with a non-existing service account
 Defaults to `default`.
 
 Example:
-```
+```yaml
 serviceAccount: "weblogic-operator"
 ```
 
@@ -91,7 +91,7 @@ Specifies the level of Java logging that should be enabled in the operator. Vali
 Defaults to `INFO`.
 
 Example:
-```
+```yaml
 javaLoggingLevel:  "FINE"
 ```
 
@@ -103,7 +103,7 @@ Specifies the container image containing the operator code.
 Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0`.
 
 Example:
-```
+```yaml
 image:  "ghcr.io/oracle/weblogic-kubernetes-operator:some-tag"
 ```
 
@@ -113,7 +113,7 @@ Specifies the image pull policy for the operator container image.
 Defaults to `IfNotPresent`.
 
 Example:
-```
+```yaml
 image:  "Always"
 ```
 
@@ -121,7 +121,7 @@ image:  "Always"
 Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator image. You are responsible for creating the secret. If no secrets are required, then omit this property.
 
 Example:
-```
+```yaml
 imagePullSecrets:
 - name: "my-image-pull-secret"
 ```
@@ -130,7 +130,7 @@ imagePullSecrets:
 Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
 
 Example:
-```
+```yaml
 nodeSelector:
   disktype: ssd
 ```
@@ -139,7 +139,7 @@ nodeSelector:
 Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `nodeAffinity` provides advanced capabilities to limit Pod placement on specific Nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
 
 Example:
-```
+```yaml
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
@@ -179,7 +179,7 @@ create namespaces that the operator should manage, the new namespaces will not y
 RoleBinding.
 
 You can correct this by upgrading the Helm release and reusing values:
-```
+```shell
 $ helm upgrade \
   --reuse-values \
   weblogic-operator \
@@ -209,13 +209,13 @@ The operator will only manage Domains found in these namespaces.
 This value is required if `domainNamespaceSelectionStrategy` is `List` and ignored otherwise.
 
 Example 1: In the configuration below, the operator will manage the `default` Kubernetes Namespace:
-```
+```yaml
 domainNamespaces:
 - "default"
 ```
 
 Example 2: In the configuration below, the operator will manage `namespace1` and `namespace2`:
-```
+```yaml
 domainNamespaces: [ "namespace1", "namespace2" ]
 ```
 
@@ -246,19 +246,19 @@ privilege in these namespaces until you upgrade the Helm release.
 
 Example 1: In the configuration below, the operator will manage namespaces that have the label "weblogic-operator"
 regardless of the value of that label:
-```
+```yaml
 domainNamespaceLabelSelector: weblogic-operator
 ```
 
 Example 2: In the configuration below, the operator will manage all namespaces that have the label "environment",
 but where the value of that label is not "production" or "systemtest":
-```
+```yaml
 domainNamespaceLabelSelector: environment notin (production,systemtest)
 ```
 
 {{% notice note %}}
 To specify the above sample on the Helm command line, escape spaces and commas as follows:
-```
+```yaml
 --set "domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)"
 ```
 {{% /notice %}}
@@ -289,7 +289,7 @@ This field is deprecated. Use `domainNamespaceSelectionStrategy: Dedicated` inst
 Defaults to `false`.
 
 Example:
-```
+```yaml
 dedicated: false
 ```
 
@@ -305,7 +305,7 @@ Specify the number of introspector job retries for a Domain and the interval in 
 Defaults to 5 retries and 10 seconds between each retry.
 
 Example:
-```
+```yaml
 domainPresenceFailureRetryMaxCount: 10
 domainPresenceFailureRetrySeconds: 30
 ```
@@ -338,7 +338,7 @@ Specifies whether or not Elastic Stack integration is enabled.
 Defaults to `false`.
 
 Example:
-```
+```yaml
 elkIntegrationEnabled:  true
 ```
 
@@ -348,7 +348,7 @@ Specifies the container image containing Logstash.  This parameter is ignored if
 Defaults to `logstash:6.6.0`.
 
 Example:
-```
+```yaml
 logStashImage:  "logstash:6.2"
 ```
 
@@ -358,7 +358,7 @@ Specifies the hostname where Elasticsearch is running. This parameter is ignored
 Defaults to `elasticsearch.default.svc.cluster.local`.
 
 Example:
-```
+```yaml
 elasticSearchHost: "elasticsearch2.default.svc.cluster.local"
 ```
 
@@ -368,7 +368,7 @@ Specifies the port number where Elasticsearch is running. This parameter is igno
 Defaults to `9200`.
 
 Example:
-```
+```yaml
 elasticSearchPort: 9201
 ```
 
@@ -382,7 +382,7 @@ Defaults to `false`.
 If set to `true`, you must provide the `externalRestIdentitySecret` property that contains the name of the Kubernetes Secret which contains the SSL certificate and private key for the operator's external REST interface.
 
 Example:
-```
+```yaml
 externalRestEnabled: true
 ```
 
@@ -394,14 +394,14 @@ Only used when `externalRestEnabled` is `true`, otherwise ignored.
 Defaults to `31001`.
 
 Example:
-```
+```yaml
 externalRestHttpsPort: 32009
 ```
 
 ##### `externalRestIdentitySecret`
 Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
 
-```
+```shell
 $ kubectl create secret tls <secret-name> \
   -n <operator-namespace> \
   --cert=<path-to-certificate> \
@@ -417,11 +417,10 @@ Error: render error in "weblogic-operator/templates/main.yaml": template: weblog
     at <include "utils.endVa...>: error calling include: template: weblogic-operator/templates/_utils.tpl:22:6: executing "utils.endValidation"
     at <fail $scope.validati...>: error calling fail:
  string externalRestIdentitySecret must be specified
-
 ```
 
 Example:
-```
+```yaml
 externalRestIdentitySecret: weblogic-operator-external-rest-identity
 ```
 
@@ -443,7 +442,7 @@ Error: render error in "weblogic-operator/templates/main.yaml": template: weblog
 ```
 
 Example:
-```
+```yaml
 externalOperatorCert: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUQwakNDQXJxZ0F3S ...
 ```
 
@@ -465,7 +464,7 @@ Error: render error in "weblogic-operator/templates/main.yaml": template: weblog
 ```
 
 Example:
-```
+```yaml
 externalOperatorKey: QmFnIEF0dHJpYnV0ZXMKICAgIGZyaWVuZGx5TmFtZTogd2VibG9naWMtb3B ...
 ```
 ##### `tokenReviewAuthentication`
@@ -481,7 +480,7 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
  Defaults to `false`.
  
  Example:
- ```
+ ```yaml
  tokenReviewAuthentication: true
  ```
 #### Debugging options
@@ -492,7 +491,7 @@ Specifies whether or not the operator will start a Java remote debug server on t
 Defaults to `false`.
 
 Example:
-```
+```yaml
 remoteDebugNodePortEnabled:  true
 ```
 
@@ -505,7 +504,7 @@ This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise,
 Defaults to `30999`.
 
 Example:
-```
+```yaml
 internalDebugHttpPort:  30888
 ```
 
@@ -517,7 +516,7 @@ This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise,
 Defaults to `30999`.
 
 Example:
-```
+```yaml
 externalDebugHttpPort:  30777
 ```
 
@@ -526,7 +525,7 @@ externalDebugHttpPort:  30777
 #### Installing the operator a second time into the same namespace
 
 A new `FAILED` Helm release is created.
-```
+```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: secrets "weblogic-operator-secrets" already exists
 ```
@@ -543,7 +542,7 @@ See https://github.com/helm/helm/issues/2349
 #### Installing an operator and having it manage a domain namespace that another operator is already managing
 
 A new `FAILED` Helm release is created.
-```
+```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-operator-rolebinding-namespace" already exists
 ```
@@ -568,7 +567,7 @@ For example, if you delete this release, then the first operator will end up wit
 #### Installing an operator and assigning it the same external REST port number as another operator
 
 A new `FAILED` Helm release is created.
-```
+```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 ```
@@ -581,7 +580,7 @@ To recover:
 #### Upgrading an operator and assigning it the same external REST port number as another operator
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.
-```
+```shell
 $ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
 Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 ```
@@ -592,7 +591,7 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 #### Installing an operator and assigning it a service account that doesn't exist
 
 The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
-```
+```shell
 $ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
 ```
 
@@ -617,7 +616,7 @@ To recover:
 #### Installing an operator and having it manage a domain namespace that doesn't exist
 
 A new `FAILED` Helm release is created.
-```
+```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
 Error: release op2 failed: namespaces "myuser-d2-ns" not found
 ```
@@ -631,7 +630,7 @@ To recover:
 #### Upgrading an operator and having it manage a domain namespace that doesn't exist
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.
-```
+```shell
 $ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-hooks
 Error: UPGRADE FAILED: failed to create resource: namespaces "myuser-d2-ns" not found
 ```

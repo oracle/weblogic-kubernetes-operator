@@ -9,16 +9,16 @@ This tutorial demonstrates how to install the [Traefik](https://traefik.io/) ing
 #### Install the Traefik operator with a Helm chart ####
 
 Change to your operator local Git repository folder.
-```bash
-cd ~/weblogic-kubernetes-operator/
+```shell
+$ cd ~/weblogic-kubernetes-operator/
 ```
 Create a namespace for Traefik:
-```bash
-kubectl create namespace traefik
+```shell
+$ kubectl create namespace traefik
 ```
 Install the Traefik operator in the `traefik` namespace with the provided sample values:
-```bash
-helm install traefik-operator \
+```shell
+$ helm install traefik-operator \
 traefik/traefik \
 --namespace traefik \
 --values kubernetes/samples/charts/traefik/values.yaml  \
@@ -27,7 +27,7 @@ traefik/traefik \
 ```
 
 The output should be similar to the following:
-```bash
+```shell
 NAME: traefik-operator
 LAST DEPLOYED: Fri Mar  6 20:31:53 2020
 NAMESPACE: traefik
@@ -51,8 +51,8 @@ NOTES:
 ```
 
 The Traefik installation is basically done. Verify the Traefik (load balancer) services:
-```bash
-kubectl get service -n traefik
+```shell
+$ kubectl get service -n traefik
 NAME                         TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)                      AGE
 traefik-operator             LoadBalancer   10.96.227.82   158.101.24.114   443:30299/TCP,80:31457/TCP   2m27s
 traefik-operator-dashboard   ClusterIP      10.96.53.132   <none>           80/TCP                       2m27s
@@ -60,22 +60,23 @@ traefik-operator-dashboard   ClusterIP      10.96.53.132   <none>           80/T
 Please note the EXTERNAL-IP of the *traefik-operator* service. This is the public IP address of the load balancer that you will use to access the WebLogic Server Administration Console and the sample application.
 
 To print only the public IP address, execute this command:
-```bash
+```shell
 $ kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'
 158.101.24.114
 ```
 
 Verify the `helm` charts:
-```bash
+```shell
 $ helm list -n traefik
 NAME                    NAMESPACE       REVISION        UPDATED                                 STATUS          CHART           APP VERSION
 traefik-operator        traefik         1               2020-03-06 20:31:53.069061578 +0000 UTC deployed        traefik-1.86.2  1.7.20  
 ```
 You can also access the Traefik dashboard using `curl`. Use the `EXTERNAL-IP` address from the result above:
-
-    curl -H 'host: traefik.example.com' http://EXTERNAL_IP_ADDRESS
-
+```shell
+$ curl -H 'host: traefik.example.com' http://EXTERNAL_IP_ADDRESS
+```
 For example:
-
-    $ curl -H 'host: traefik.example.com' http://158.101.24.114
-    <a href="/dashboard/">Found</a>.
+```shell
+$ curl -H 'host: traefik.example.com' http://158.101.24.114
+  <a href="/dashboard/">Found</a>.
+```

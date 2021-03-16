@@ -3,9 +3,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.openapi.models.V1Service;
+import org.junit.jupiter.api.Test;
+
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
+import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
+import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
@@ -14,6 +21,14 @@ public class ManagerServerServiceHelperTest extends ServiceHelperTest {
   }
 
   static class ManagedServerTestFacade extends ServiceHelperTest.ServerTestFacade {
+    ManagedServerTestFacade() {
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNap3()), getNapPort3());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNapSipClear()), getNapPortSipClear());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName(getNapSipSecure()), getNapPortSipSecure());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName("udp-" + getNapSipClear()), getNapPortSipClear());
+      getExpectedNapPorts().put(LegalNames.toDns1123LegalName("udp-" + getNapSipSecure()), getNapPortSipSecure());
+    }
+
     @Override
     public String getServiceCreateLogMessage() {
       return MANAGED_SERVICE_CREATED;
@@ -45,4 +60,12 @@ public class ManagerServerServiceHelperTest extends ServiceHelperTest {
     }
   }
 
+  @Test
+  void whenDomainHasMonitoringExporterConfiguration_serviceHasExporterPort() {
+    configureDomain().withMonitoringExporterConfiguration("queries:\n");
+
+    V1Service service = createService();
+
+    assertThat(service, containsPort(EXPORTER_PORT_NAME, DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
 }

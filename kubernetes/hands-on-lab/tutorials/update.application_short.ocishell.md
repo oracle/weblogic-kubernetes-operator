@@ -16,11 +16,11 @@ Edit  your domain resource definition (*domain.yaml*) and modify the image locat
 Don't forget the leading spaces to keep the proper indentation.
 
 Apply the domain resource changes:
-```bash
-kubectl apply -f ~/domain.yaml
+```shell
+$ kubectl apply -f ~/domain.yaml
 ```
 You can immediately check the status of your servers/pods. (You should observe the restart of the WLS domain):
-```bash
+```shell
 $ kubectl get po -n sample-domain1-ns
 NAME                             READY     STATUS        RESTARTS   AGE
 sample-domain1-admin-server      1/1       Terminating   0          22m

@@ -10,7 +10,6 @@ import java.util.Map;
 
 import oracle.kubernetes.operator.utils.OperatorValues;
 
-import static com.google.common.base.Strings.isNullOrEmpty;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static oracle.kubernetes.operator.helm.MapUtils.addMapEntry;
@@ -18,6 +17,7 @@ import static oracle.kubernetes.operator.helm.MapUtils.addStringMapEntry;
 import static oracle.kubernetes.operator.helm.MapUtils.loadBooleanFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadFromMap;
 import static oracle.kubernetes.operator.helm.MapUtils.loadIntegerFromMap;
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 class HelmOperatorValues extends OperatorValues {
   HelmOperatorValues() {

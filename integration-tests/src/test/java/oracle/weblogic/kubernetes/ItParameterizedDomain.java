@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -154,6 +155,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Verify scaling up and down the clusters in the domain with different domain types.
@@ -274,67 +276,146 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Scale the cluster by patching domain resource for three different type of domains.
+   * Scale the cluster by patching domain resource for three different 
+   * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
-  public void testParamsScaleClustersByPatchingDomainResource(Domain domain) {
+  public void testScaleClustersByPatchingDomainResource(Domain domain) {
     assertDomainNotNull(domain);
 
-    // Verify scale cluster of the domain by patching domain resource
-    logger.info("testScaleClustersByPatchingDomainResource with domain {0}", domain.getMetadata().getName());
-    testScaleClustersByPatchingDomainResource(domain);
+    // get the domain properties
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    int numClusters = domain.getSpec().getClusters().size();
+
+    for (int i = 1; i <= numClusters; i++) {
+      String clusterName = CLUSTER_NAME_PREFIX + i;
+      String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
+
+      int numberOfServers;
+      // scale cluster-1 to 1 server and cluster-2 to 3 servers
+      if (i == 1) {
+        numberOfServers = 1;
+      } else {
+        numberOfServers = 3;
+      }
+
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers);
+      curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+      List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+          replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
+
+      // then scale cluster back to 2 servers
+      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+      managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
+      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+          numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+    }
   }
 
   /**
    * Scale cluster using REST API for three different type of domains.
+   * i.e. domain-on-pv, domain-in-image and model-in-image
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
-  public void testParamsScaleClustersWithRestApi(Domain domain) {
+  public void testScaleClustersWithRestApi(Domain domain) {
     assertDomainNotNull(domain);
 
-    // Verify scale cluster of the domain using REST API
-    logger.info("testScaleClustersWithRestApi with domain {0}", domain.getMetadata().getName());
-    testScaleClustersWithRestApi(domain);
+    // get domain properties
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    int numClusters = domain.getSpec().getClusters().size();
+    String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
+    int numberOfServers = 3;
+
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
+    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
+
+    // then scale cluster back to 2 servers
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+        numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
+        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
   }
 
   /**
    * Scale cluster using WLDF policy for three different type of domains.
+   * i.e. domain-on-pv, domain-in-image and model-in-image
    *
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
-  public void testParamsScaleClustersWithWLDF(Domain domain) {
+  public void testScaleClustersWithWLDF(Domain domain) {
     assertDomainNotNull(domain);
 
-    // Verify scale cluster of the domain with WLDF policy
-    logger.info("testScaleClustersWithWLDF with domain {0}", domain.getMetadata().getName());
-    testScaleClustersWithWLDF(domain);
+    // get domain properties
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    String domainHome = domain.getSpec().getDomainHome();
+    int numClusters = domain.getSpec().getClusters().size();
+    String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
+
+    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+
+    // scale up the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
+    List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
+    String curlCmdForWLDFScript =
+        generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+        replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
+        true, domainHome, "scaleUp", 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
+
+    // scale down the cluster by 1 server
+    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
+        clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
+    managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount + 1);
+
+    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
+        replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
+        true, domainHome, "scaleDown", 1,
+        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
   }
 
   /**
    * Verify admin console login using admin node port.
-   *
+   * Skip the test for slim images due to unavailability of console application
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
@@ -349,14 +430,15 @@ class ItParameterizedDomain {
 
   /**
    * Verify admin console login using ingress controller.
-   *
+   * Skip the test for slim images due to unavailability of console application
    * @param domain oracle.weblogic.domain.Domain object
    */
   @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
   public void testAdminConsoleLoginUsingIngressController(Domain domain) {
-    logger.info("Validating WebLogic admin server access using ingress controller");
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
@@ -383,7 +465,6 @@ class ItParameterizedDomain {
     String domainUid = domain.getSpec().getDomainUid();
     String domainNamespace = domain.getMetadata().getNamespace();
     int numClusters = domain.getSpec().getClusters().size();
-
     String serverName;
     if (numClusters > 1) {
       serverName = domainUid + "-" + clusterName + "-" + MANAGED_SERVER_NAME_BASE + "1";
@@ -596,13 +677,16 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Test rolling restart for a multi-clusters domain and make sure pods are restarted only once.
-   * Verify all pods are terminated and restarted only once.
-   * Rolling restart triggered by changing: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
+   * Test rolling restart for a multi-clusters domain. 
+   * Make sure pods are restarted only once.
+   * Verify all pods are terminated and restarted only once
+   * Rolling restart triggered by changing: 
+   * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
+   * Verify domain changed event is logged.
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
-  public void testRollingRestartBehaviorInMultiClusterMiiDomainByChangingImagePullPolicy() {
+  public void testMultiClustersRollingRestart() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
 
     // get the original domain resource before update
@@ -704,116 +788,6 @@ class ItParameterizedDomain {
    */
   private static Stream<Domain> domainProvider() {
     return domains.stream();
-  }
-
-  /**
-   * Verify scale each cluster of the domain by patching domain resource.
-   * @param domain oracle.weblogic.domain.Domain object
-   */
-  private void testScaleClustersByPatchingDomainResource(Domain domain) {
-    assertDomainNotNull(domain);
-
-    // get the domain properties
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    int numClusters = domain.getSpec().getClusters().size();
-
-    for (int i = 1; i <= numClusters; i++) {
-      String clusterName = CLUSTER_NAME_PREFIX + i;
-      String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
-
-      int numberOfServers;
-      // scale cluster-1 to 1 server and cluster-2 to 3 servers
-      if (i == 1) {
-        numberOfServers = 1;
-      } else {
-        numberOfServers = 3;
-      }
-
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers);
-      curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-      List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-          replicaCount, numberOfServers, curlCmd, managedServersBeforeScale);
-
-      // then scale cluster back to 2 servers
-      logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-          clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-      managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
-      scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-          numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
-    }
-  }
-
-  /**
-   * Verify scale each cluster of the domain by calling REST API.
-   * @param domain oracle.weblogic.domain.Domain object
-   */
-  private void testScaleClustersWithRestApi(Domain domain) {
-    assertDomainNotNull(domain);
-
-    // get domain properties
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    int numClusters = domain.getSpec().getClusters().size();
-    String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
-    int numberOfServers = 3;
-
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, replicaCount, numberOfServers);
-    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-    List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, numberOfServers, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
-
-    // then scale cluster back to 2 servers
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, numberOfServers, replicaCount);
-    managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        numberOfServers, replicaCount, true, externalRestHttpsPort, opNamespace, opServiceAccount,
-        false, "", "", 0, "", "", curlCmd, managedServersBeforeScale);
-  }
-
-  /**
-   * Verify scale each cluster in the domain using WLDF policy.
-   * @param domain oracle.weblogic.domain.Domain object
-   */
-  private void testScaleClustersWithWLDF(Domain domain) {
-    assertDomainNotNull(domain);
-
-    // get domain properties
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    String domainHome = domain.getSpec().getDomainHome();
-    int numClusters = domain.getSpec().getClusters().size();
-    String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
-
-    curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
-
-    // scale up the cluster by 1 server
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, replicaCount, replicaCount + 1);
-    List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
-    String curlCmdForWLDFScript =
-        generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
-
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
-        true, domainHome, "scaleUp", 1,
-        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
-
-    // scale down the cluster by 1 server
-    logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
-        clusterName, domainUid, domainNamespace, replicaCount + 1, replicaCount);
-    managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount + 1);
-
-    scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
-        replicaCount + 1, replicaCount, false, 0, opNamespace, opServiceAccount,
-        true, domainHome, "scaleDown", 1,
-        WLDF_OPENSESSION_APP, curlCmdForWLDFScript, curlCmd, managedServersBeforeScale);
   }
 
   /**

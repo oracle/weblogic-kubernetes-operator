@@ -15,14 +15,14 @@ domain1-admin-server-ext
 
 This service will be in the same namespace as the domain.  The external port number can be obtained by checking this service’s `nodePort`:
 
-```
+```shell
 $ kubectl get service domain1-admin-server-ext -n domain1 -o jsonpath='{.spec.ports[0].nodePort}'
 30012
 ```
 
 In this example, the `nodePort` is `30012`.  If the Kubernetes server’s address was `kubernetes001`, then WLST can connect to `t3://kubernetes001:30012` as shown below:
 
-```
+```shell
 $ ~/wls/oracle_common/common/bin/wlst.sh
 
 Initializing WebLogic Scripting Tool (WLST) ...

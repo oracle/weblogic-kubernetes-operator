@@ -210,7 +210,9 @@ public interface TestConstants {
   public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
+  public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
   public static final String MII_TWO_APP_WDT_MODEL_FILE = "model-singlecluster-two-sampleapp-wls.yaml";
+  public static final String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
 
   // application constants
   public static final String MII_APP_RESPONSE_V1 = "Hello World, you have reached server managed-server";
@@ -275,4 +277,14 @@ public interface TestConstants {
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
   public String OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-external";
+
+  // MII domain dynamic update
+  public static final String MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG =
+      "The Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true', "
+          + "but there are unsupported model changes for online update";
+  public static final String SSL_PROPERTIES =
+      "-Dweblogic.security.SSL.ignoreHostnameVerification=true -Dweblogic.security.TrustKeyStore=DemoTrust";
+
+  public static final boolean WEBLOGIC_SLIM =
+      WEBLOGIC_IMAGE_TAG.contains("slim") ? true : false;
 }

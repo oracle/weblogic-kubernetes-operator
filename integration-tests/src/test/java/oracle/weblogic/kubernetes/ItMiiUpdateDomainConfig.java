@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -39,8 +40,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -70,6 +69,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotEx
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -103,10 +104,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -136,6 +139,7 @@ class ItMiiUpdateDomainConfig {
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String adminServerName = "admin-server";
+  private final String clusterName = "cluster-1";
 
   private static LoggingFacade logger = null;
 
@@ -192,7 +196,7 @@ class ItMiiUpdateDomainConfig {
 
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.sysresources.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.sysresources.yaml"));
 
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
@@ -269,15 +273,18 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Verify the pre-configured SystemResources in the domain")
   public void testMiiCheckSystemResources() {
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JMSSystemResources",
         "TestClusterJmsModule", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("WLDFSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"WLDFSystemResources",
         "TestWldfModule", "200"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
@@ -309,7 +316,7 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "deletesysrescm";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.delete.sysresources.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.delete.sysresources.yaml"));
 
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -346,10 +353,13 @@ class ItMiiUpdateDomainConfig {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-   
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
          "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
@@ -372,7 +382,7 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "dsjmsconfigmap";
     createConfigMapAndVerify(
         configMapName, domainUid, domainNamespace,
-        Arrays.asList("model.jdbc2.yaml", "model.jms2.yaml"));
+        Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jms2.yaml"));
 
     LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -410,11 +420,14 @@ class ItMiiUpdateDomainConfig {
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
 
-    assertTrue(checkSystemResourceConfiguration("JDBCSystemResources", 
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JDBCSystemResources",
           "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration("JMSSystemResources", 
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
           "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
@@ -708,6 +721,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure a rolling restart is triggered.  
    * Now with the modified value
    * Make sure that the cluster can be scaled up to 4 servers.
+   * Make sure JMS Connections and messages are distributed across 4 servers.
    * Make sure that the cluster can be scaled down below 2 servers.
    */
   @Test
@@ -760,6 +774,9 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
+    // Update the Dynamic ClusterSize and add distributed destination 
+    // to verify JMS connection and message distribution after the 
+    // WebLogic cluster is scaled.
     String configMapName = "dynamic-cluster-size-cm";
     createClusterConfigMap(configMapName, "model.cluster.size.yaml");
 
@@ -782,6 +799,9 @@ class ItMiiUpdateDomainConfig {
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
+    // build the standalone JMS Client on Admin pod after rolling restart
+    buildClientOnPod();
+
     // Scale the cluster to replica count 5
     // Here managed-server5 should not come up as new MaxClusterSize is 4
     logger.info("[After Patching] updating the replica count to 5");
@@ -795,6 +815,33 @@ class ItMiiUpdateDomainConfig {
     checkServiceExists(managedServerPrefix + "3", domainNamespace);
     checkServiceExists(managedServerPrefix + "4", domainNamespace);
     checkPodDeleted(managedServerPrefix + "5", domainUid, domainNamespace);
+
+    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
+    // works inside pod before scaling the cluster
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(domainNamespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(adminServerPodName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":.");
+    javapCmd.append(" JmsTestClient ");
+    javapCmd.append(" t3://");
+    javapCmd.append(domainUid);
+    javapCmd.append("-cluster-");
+    javapCmd.append(clusterName);
+    javapCmd.append(":8001 4 true");
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for t3 JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javapCmd)));
     
     // Since the MinDynamicClusterSize is set to 2 in the configmap 
     // and allowReplicasBelowMinDynClusterSize is set false, the replica
@@ -814,9 +861,50 @@ class ItMiiUpdateDomainConfig {
           managedServerPrefix + i, domainNamespace);
       checkServiceExists(managedServerPrefix + i, domainNamespace);
     }
-
     logger.info("New Dynamic Cluster Size attribute verified");
   }
+
+  // Build JMS Client inside the Admin Server Pod
+  private void buildClientOnPod() {
+
+    String destLocation = "/u01/oracle/JmsTestClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+             adminServerPodName, "",
+             Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
+             Paths.get(destLocation)));
+
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+
+    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
+    javacCmd.append(domainNamespace);
+    javacCmd.append(" -it ");
+    javacCmd.append(adminServerPodName);
+    javacCmd.append(" -- /bin/bash -c \"");
+    javacCmd.append("javac -cp ");
+    javacCmd.append(jarLocation);
+    javacCmd.append(" JmsTestClient.java ");
+    javacCmd.append(" \"");
+    logger.info("javac command {0}", javacCmd.toString());
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(javacCmd), true));
+    logger.info("javac returned {0}", result.toString());
+    logger.info("javac returned EXIT value {0}", result.exitValue());
+    assertTrue(result.exitValue() == 0, "Client compilation fails");
+  }
+
+  // Run standalone JMS Client in the pod using wlthint3client.jar in classpath.
+  // The client sends 300 messsage to a Uniform Distributed Queue.
+  // Make sure that each destination get excatly 150 messages each.
+  // and JMS connection is load balanced across all servers
+  private static Callable<Boolean> runJmsClient(String javaCmd) {
+    return (()  -> {
+      ExecResult result = assertDoesNotThrow(() -> exec(new String(javaCmd), true));
+      logger.info("java returned {0}", result.toString());
+      logger.info("java returned EXIT value {0}", result.exitValue());
+      return ((result.exitValue() == 0));
+    });
+  }
+
 
   private static void createDatabaseSecret(
         String secretName, String username, String password, 
@@ -984,31 +1072,6 @@ class ItMiiUpdateDomainConfig {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Can't create ConfigMap %s", configMapName));
     assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-  }
-
-  private boolean checkSystemResourceConfiguration(String resourcesType, 
-         String resourcesName, String expectedStatusCode) {
-
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
-    curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append("/management/weblogic/latest/domainConfig")
-         .append("/")
-         .append(resourcesType)
-         .append("/")
-         .append(resourcesName)
-         .append("/")
-         .append(" --silent --show-error ")
-         .append(" -o /dev/null ")
-         .append(" -w %{http_code});")
-         .append("echo ${status}");
-    logger.info("checkSystemResource: curl command {0}", new String(curlString));
-    return new Command()
-          .withParams(new CommandParams()
-              .command(curlString.toString()))
-          .executeAndVerify(expectedStatusCode);
   }
 
   private ExecResult checkJdbcRuntime(String resourcesName) {

@@ -128,12 +128,6 @@ Configuration overrides allow changing a configuration without modifying its ori
 parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
 and URLs that are stored in a secret.
 
-For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
-
-Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
-parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret.
-
 For Model in Image you use [Runtime Updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ### About the Domain resource
@@ -171,7 +165,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:
 
-  ```bash
+  ```javascript
   # domain log
   cd('/')
   create(dname,'Log')
@@ -190,7 +184,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here is sample WLST offline code for commonly tuned Log MBean attributes:
 
-  ```bash
+  ```javascript
   # minimum log file size before rotation in kilobytes
   set('FileMinSize', 1000)
 
