@@ -78,6 +78,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static final String SERVER_NAME = "ess_server1";
   private static final int LISTEN_PORT = 8001;
+  private static final String SIP_CLEAR = "sip-clear";
+  private static final String SIP_SECURE = "sip-secure";
   private static final String ITEM1 = "item1";
   private static final String ITEM2 = "item2";
   private static final String ITEM3 = "item3";
@@ -890,18 +892,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreatedWithoutPlainPortAndWithoutExportConfiguration_hasNoPrometheusAnnotations() {
-    getServerTopology().setListenPort(null);
-    getServerTopology().setSslListenPort(7002);
-    assertThat(
-        getCreatedPod().getMetadata().getAnnotations(),
-        allOf(
-            not(hasKey("prometheus.io/port")),
-            not(hasKey("prometheus.io/path")),
-            not(hasKey("prometheus.io/scrape"))));
-  }
-
-  @Test
   public void whenPodCreatedWithAdminNap_prometheusAnnotationsSpecifyPlainTextPort() {
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("test", "admin", 8001, 8001));
     getServerTopology().setListenPort(7001);
@@ -1299,6 +1289,21 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
+  String getExpectedPlainPortSha256Annotation() {
+    return ExpectedSHA256Values.MANAGED_SERVER_PLAINPORT_SHA256;
+  }
+
+  @Override
+  String getExpectedSslPortSha256Annotation() {
+    return ExpectedSHA256Values.MANAGED_SERVER_SSLPORT_SHA256;
+  }
+
+  @Override
+  String getExpectedMiiSha256Annotation() {
+    return ExpectedSHA256Values.MANAGED_SERVER_MIIDOMAIN_SHA256;
+  }
+
+  @Override
   protected void verifyPodReplaced() {
     assertThat(computePodsToRoll(), not(anEmptyMap()));
   }
@@ -1334,6 +1339,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
   @Test
   public void whenPodCreated_containerHasTwoPortsForSip() {
+    addSipPorts();
+
     V1Container v1Container = getCreatedPodSpecContainer();
 
     assertThat(v1Container.getPorts().stream()
@@ -1345,8 +1352,15 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         .findFirst().orElseThrow().getProtocol(), equalTo("UDP"));
   }
 
+  void addSipPorts() {
+    getServerTopology()
+        .addNetworkAccessPoint(SIP_CLEAR, "sip", 8003)
+        .addNetworkAccessPoint(SIP_SECURE, "sips", 8004);
+  }
+
   @Test
   public void whenPodCreated_containerHasTwoPortsForSips() {
+    addSipPorts();
     V1Container v1Container = getCreatedPodSpecContainer();
 
     assertThat(v1Container.getPorts().stream()
