@@ -403,8 +403,8 @@ public class ItKubernetesEvents {
       logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
       int countAfter = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
-      assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, " +
-              "Count before scaling is -> " + countBefore + " and count after scaling is -> " + countAfter);
+      assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
+              + "Count before scaling is -> " + countBefore + " and count after scaling is -> " + countAfter);
     }
   }
 

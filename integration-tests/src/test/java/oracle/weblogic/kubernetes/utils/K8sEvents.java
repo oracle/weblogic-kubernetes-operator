@@ -76,7 +76,6 @@ public class K8sEvents {
    */
   public static int getDomainEventCount(
           String domainNamespace, String domainUid, String reason, String type) {
-    int count = 0;
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
@@ -85,13 +84,13 @@ public class K8sEvents {
                 && event.getType().equals(type)
                 && labels.containsKey("weblogic.createdByOperator")
                 && labels.get("weblogic.domainUID").equals(domainUid)) {
-          count = event.getCount();
+          return event.getCount();
         }
       }
     } catch (ApiException ex) {
       Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
-    return count;
+    return 0;
   }
 
   /**
