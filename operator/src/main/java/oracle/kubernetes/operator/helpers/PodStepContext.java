@@ -68,6 +68,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 
 public abstract class PodStepContext extends BasePodStepContext {
@@ -459,7 +460,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean canUseNewDomainZip(V1Pod currentPod) {
-    String dynamicUpdateResult = packet.getValue(ProcessingConstants.MII_DYNAMIC_UPDATE);
+    String dynamicUpdateResult = packet.getValue(MII_DYNAMIC_UPDATE);
 
     if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
       return true;
@@ -610,9 +611,22 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
+    if (!getDomain().isUseOnlineUpdate()) {
+      Optional.ofNullable(miiDomainZipHash)
+            .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+    }
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
+
+    // Add legacy prometheus annotations. These have to remain, as they are included in the computation
+    // of the pod sha256 hash, and removing them will cause pods to roll when customers upgrade to new
+    // versions of the operator.
+    AnnotationHelper.annotateForPrometheus(metadata, "/wls-exporter", getMetricsPort());
     return metadata;
+  }
+
+  private Integer getMetricsPort() {
+    return getListenPort() != null ? getListenPort() : getSslListenPort();
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
