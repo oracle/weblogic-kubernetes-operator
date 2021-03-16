@@ -76,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -97,6 +98,7 @@ public class ItFmwMiiDomain {
   private static String jrfMiiImage = null;
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
+  private static final String RCUSCHEMAPREFIX1 = "jrfdomainmii1";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
@@ -164,6 +166,9 @@ public class ItFmwMiiDomain {
         RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
+    assertDoesNotThrow(() -> createRcuSchema(DB_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX1, dbUrl, dbNamespace),
+        String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+            + "dbUrl %s", RCUSCHEMAPREFIX1, dbNamespace, dbUrl));
 
     dbNodePort = getDBNodePort(dbNamespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
@@ -312,11 +317,11 @@ public class ItFmwMiiDomain {
 
     // create RCU access secret
     logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
-        rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORD, dbUrl);
+        rcuaccessSecretName, RCUSCHEMAPREFIX1, RCUSCHEMAPASSWORD, dbUrl);
     assertDoesNotThrow(() -> createRcuAccessSecret(
         rcuaccessSecretName,
         jrfDomain1Namespace,
-        RCUSCHEMAPREFIX,
+        RCUSCHEMAPREFIX1,
         RCUSCHEMAPASSWORD,
         dbUrl),
         String.format("createSecret failed for %s", rcuaccessSecretName));
@@ -332,7 +337,7 @@ public class ItFmwMiiDomain {
     logger.info("copy the promvalue.yaml to staging location");
 
     String text = "SOMEVERYVERYVERYBIGDATAFORPROPERTY";
-    int numberOfLines = 100000;
+    int numberOfLines = 5000;
     StringBuffer propVal = new StringBuffer();
     for (int i = 0; i < numberOfLines; i++) {
       propVal.append(text);
