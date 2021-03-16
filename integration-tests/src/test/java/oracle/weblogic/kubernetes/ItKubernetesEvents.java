@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -375,10 +376,47 @@ public class ItKubernetesEvents {
   }
 
   /**
+   * Scale down and scale up the domain and verify that
+   * DomainProcessingCompleted normal event is generated.
+   */
+  @Order(7)
+  @Test
+  @DisplayName("Test domain completed event when domain is scaled.")
+  public void testScaleDomainAndVerifyCompletedEvent() {
+    try {
+      scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
+      scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
+    } finally {
+      scaleDomain(2);
+    }
+  }
+
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
+    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
+    int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
+    V1Patch patch = new V1Patch("["
+            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "Failed to patch domain");
+    if (verify) {
+      logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
+      int countAfter = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
+      assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
+              + "Count before scaling is -> " + countBefore + " and count after scaling is -> " + countAfter);
+    }
+  }
+
+  private void scaleDomain(int replicaCount) {
+    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
+  }
+
+  /**
    * Scale the cluster below minimum dynamic cluster size and verify the DomainValidationError
    * warning event is generated.
    */
-  @Order(7)
+  @Order(8)
   @Test
   public void testDomainK8sEventsScaleBelowMin() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -413,7 +451,7 @@ public class ItKubernetesEvents {
    * Replace the pv and pvc in the domain resource with a pv/pvc not containing any WebLogic domain
    * and verify the DomainProcessingFailed warning event is generated.
    */
-  @Order(8)
+  @Order(9)
   @Test
   public void testDomainK8sEventsProcessingFailed() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -462,7 +500,7 @@ public class ItKubernetesEvents {
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
    */
-  @Order(9)
+  @Order(10)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
@@ -496,7 +534,7 @@ public class ItKubernetesEvents {
    * </p>
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
-  @Order(10)
+  @Order(11)
   @Test
   public void testK8SEventsStartWatchingNS() {
     DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
@@ -525,7 +563,7 @@ public class ItKubernetesEvents {
    * </p>
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
-  @Order(11)
+  @Order(12)
   @Test
   @Disabled("Bug - OWLS-87181")
   public void testK8SEventsStopWatchingNS() {
@@ -539,7 +577,6 @@ public class ItKubernetesEvents {
   // Utility method to check event
   private static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
-    //verify domain deleted event
     withStandardRetryPolicy
         .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
         + "(elapsed time {1}ms, remaining time {2}ms)",
