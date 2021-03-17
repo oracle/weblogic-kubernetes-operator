@@ -84,6 +84,8 @@ import os
 import re
 import sys
 import traceback
+import xml.dom.minidom
+from xml.dom.minidom import parse
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
 # sys.path.append('/weblogic-operator/scripts')
@@ -97,11 +99,15 @@ sys.path.append(tmp_scriptdir)
 from utils import *
 from weblogic.management.configuration import LegalHelper
 
+
 class OfflineWlstEnv(object):
 
   def open(self):
 
     # before doing anything, get each env var and verify it exists 
+    global server_template_sslports
+    global server_template_listening_ports
+
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
     self.DOMAIN_HOME              = self.getEnv('DOMAIN_HOME')
@@ -177,6 +183,8 @@ class OfflineWlstEnv(object):
       if os.path.isfile(the_file_path):
         os.unlink(the_file_path)
 
+    server_template_sslports, server_template_listening_ports = get_server_template_listening_ports_from_configxml(self.getDomainHome() + os.sep
+                                                                                                                   + 'config' + os.sep + 'config.xml')
 
     trace("About to load domain from "+self.getDomainHome())
     readDomain(self.getDomainHome())
@@ -396,6 +404,7 @@ class TopologyGenerator(Generator):
       return
     adminServer = None
     for server in self.env.getDomain().getServers():
+      self.validateServerTemplateNapListenPortIsSet(server)
       if adminServerName == server.getName():
         adminServer = server
     if adminServer is None:
@@ -442,26 +451,6 @@ class TopologyGenerator(Generator):
   ADMIN_LISTEN_PORT = 'admin listen port'
   ADMIN_LISTEN_PORT_ENABLED = 'admin listen port enabled'
 
-  def getServerClusterPortPropertyValue(self, server, clusterListenPortProperty):
-    sslListenPort = None
-    sslListenPortEnabled = None
-    ssl = getSSLOrNone(server)
-    if ssl is not None:
-      sslListenPort = ssl.getListenPort()
-      sslListenPortEnabled = ssl.isEnabled()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      sslListenPort = "7002"
-      sslListenPortEnabled = True
-
-    return {
-             LISTEN_PORT: server.getListenPort(),
-             LISTEN_PORT_ENABLED: isListenPortEnabledForServer(server, self.env.getDomain()),
-             SSL_LISTEN_PORT: sslListenPort,
-             SSL_LISTEN_PORT_ENABLED: sslListenPortEnabled,
-             ADMIN_LISTEN_PORT: getAdministrationPort(server, self.env.getDomain()),
-             ADMIN_LISTEN_PORT_ENABLED: isAdministrationPortEnabledForServer(server, self.env.getDomain())
-     }[clusterListenPortProperty]
-
   def validateNonDynamicClusterServersHaveSameListenPort(self, cluster):
     firstServer = None
     firstListenPort = None
@@ -472,17 +461,17 @@ class TopologyGenerator(Generator):
     firstAdminPortEnabled = None
     for server in self.env.getDomain().getServers():
       if cluster is self.env.getClusterOrNone(server):
-        listenPort = server.getListenPort()
+        listenPort = getRealListenPort(server)
         listenPortEnabled = isListenPortEnabledForServer(server, self.env.getDomain())
-        ssl = getSSLOrNone(server)
+        # default is False
+        sslListenPortEnabled = False
         sslListenPort = None
-        sslListenPortEnabled = None
-        if ssl is not None:
-          sslListenPort = ssl.getListenPort()
-          sslListenPortEnabled = ssl.isEnabled()
-        elif isSecureModeEnabledForDomain(self.env.getDomain()):
-          sslListenPort = 7002
+        ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
+        if ssl_listen_port is not None:
+          sslListenPort = ssl_listen_port
           sslListenPortEnabled = True
+
+        # WLST does return ssl listen port as None if SSL is disabled
 
         adminPort = getAdministrationPort(server, self.env.getDomain())
         adminPortEnabled = isAdministrationPortEnabledForServer(server, self.env.getDomain())
@@ -499,28 +488,18 @@ class TopologyGenerator(Generator):
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s listen port is " + str(firstListenPort) + " but its server " + self.name(server) + "'s listen port is " + str(listenPort) + ". All ports for the same channel in a cluster must be the same.")
           if listenPortEnabled != firstListenPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has listen port enabled: " + self.booleanToString(firstListenPortEnabled) + " but its server " + self.name(server) + "'s listen port enabled: " + self.booleanToString(listenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
-          if sslListenPort != firstSslListenPort:
-             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort) + ".  All ports for the same channel in a cluster must be the same.")
+          if sslListenPort is not None and sslListenPort != firstSslListenPort:
+             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstSslListenPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(sslListenPort)
+                           + ".  All ports for the same channel in a cluster must be the same and they must either be "
+                           + "enabled or disabled uniformly")
           if sslListenPortEnabled != firstSslListenPortEnabled:
-            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
+            self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstSslListenPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(sslListenPortEnabled)
+                          + ".  All ports for the same channel in a cluster must be the same and they must either be "
+                          + "enabled or disabled uniformly")
           if adminPort != firstAdminPort:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + "'s ssl listen port is " + str(firstAdminPort) + " but its server " + self.name(server) + "'s ssl listen port is " + str(adminPort) + ".  All ports for the same channel in a cluster must be the same.")
           if adminPortEnabled != firstAdminPortEnabled:
             self.addError("The WebLogic configured cluster " + self.name(cluster) + "'s server " + self.name(firstServer) + " has ssl listen port enabled: " + self.booleanToString(firstAdminPortEnabled) + " but its server " + self.name(server) + "'s ssl listen port enabled: " + self.booleanToString(adminPortEnabled) + ".  Channels in a cluster must be either all enabled or disabled.")
-
-  def validateClusterServersListenPortProperty(self, cluster, errorMsg, clusterListenPortProperty):
-    firstServer = None
-    firstListenPortProperty = None
-    for server in self.env.getDomain().getServers():
-      if cluster is self.env.getClusterOrNone(server):
-        listenPortProperty = getServerClusterPortPropertyValue(self, server, clusterListenPortProperty)
-        if firstServer is None:
-          firstServer = server
-          firstListenPortProperty = listenPortProperty
-        else:
-          if listenPortProperty != firstListenPortProperty:
-            self.addError(errorMsg.substitute(cluster=self.name(cluster), server1=self.name(firstServer), property=clusterListenPortProperty, value1=str(firstListenPortProperty), server2=self.name(server), value2=str(firstListenPortProperty)))
-            return
 
   def validateNonDynamicClusterServerHaveSameCustomChannels(self, cluster):
      firstServer = None
@@ -555,6 +534,7 @@ class TopologyGenerator(Generator):
   def validateDynamicClusterReferencedByOneServerTemplate(self, cluster):
     server_template=None
     for template in self.env.getDomain().getServerTemplates():
+      self.validateServerTemplateNapListenPortIsSet(template)
       if self.env.getClusterOrNone(template) is cluster:
         if server_template is None:
           server_template = template
@@ -564,6 +544,21 @@ class TopologyGenerator(Generator):
             return
     if server_template is None:
       self.addError("The WebLogic dynamic cluster " + self.name(cluster) + "' is not referenced by any server template.")
+
+  def validateServerTemplateNapListenPortIsSet(self, server_or_template):
+    naps = server_or_template.getNetworkAccessPoints()
+    for nap in naps:
+      if nap.getListenPort() == 0:
+        self.addError(
+              "Invalid listen port value '"
+              + str(nap.getListenPort())
+              + "' in the WebLogic Domain for "
+              + server_or_template.getName()
+              + ' Network Channel '
+              + nap.getName()
+              + '. Please provide a valid value for the listen port, this is likely because of not specifying the port '
+                'value during domain '
+                'creation')
 
   def validateDynamicClusterNotReferencedByAnyServers(self, cluster):
     for server in self.env.getDomain().getServers():
@@ -667,22 +662,23 @@ class TopologyGenerator(Generator):
     name=self.name(server)
     self.writeln("- name: " + name)
     if isListenPortEnabledForServer(server, self.env.getDomain(), is_server_template):
-      self.writeln("  listenPort: " + str(server.getListenPort()))
+      listen_port = getRealListenPort(server)
+      self.writeln("  listenPort: " + str(listen_port))
     self.writeln("  listenAddress: " + self.quote(self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + server.getName())))
     if isAdministrationPortEnabledForServer(server, self.env.getDomain(), is_server_template):
       self.writeln("  adminPort: " + str(getAdministrationPort(server, self.env.getDomain())))
-    self.addSSL(server)
+    self.addSSL(server, is_server_template)
     self.addNetworkAccessPoints(server, is_server_template)
 
-  def addSSL(self, server):
-    ssl = getSSLOrNone(server)
-    if ssl is not None and ssl.isEnabled():
+  def addSSL(self, server, is_server_template):
+    '''
+    Write the SSL topology information to the topology yaml output
+    :param server: Server or ServerTemplate
+    '''
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template)
+    if ssl_listen_port is not None:
       self.indent()
-      self.writeln("sslListenPort: " + str(ssl.getListenPort()))
-      self.undent()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      self.indent()
-      self.writeln("sslListenPort: 7002")
+      self.writeln("sslListenPort: " + str(ssl_listen_port))
       self.undent()
 
   def addServerTemplates(self):
@@ -722,7 +718,8 @@ class TopologyGenerator(Generator):
     self.indent()
     template = self.findDynamicClusterServerTemplate(cluster)
     dyn_servers = cluster.getDynamicServers()
-    self.writeln("port: " + str(template.getListenPort()))
+    listen_port = getRealListenPort(template)
+    self.writeln("port: " + str(listen_port))
     self.writeln("maxServers: " + str(dyn_servers.getDynamicClusterSize()))
     self.writeln("baseServerName: " + self.quote(dyn_servers.getServerNamePrefix()))
     self.undent()
@@ -788,12 +785,14 @@ class TopologyGenerator(Generator):
       name=self.name(nap)
     self.writeln("  - name: " + name)
     self.writeln("    protocol: " + self.quote(nap_protocol))
+
     self.writeln("    listenPort: " + str(nap.getListenPort()))
     self.writeln("    publicPort: " + str(nap.getPublicPort()))
 
+
   def addIstioNetworkAccessPoints(self, server, is_server_template, added_nap):
     '''
-    Write the container ports information for operator to create the container ports
+    Write the container ports information for operator to create the container ports in the topology.xml file
     :param server:   server or template mbean
     :param is_server_template:  true if it is from ServerTemplate
     :param added_nap:  true if there are existing nap section in the output
@@ -806,19 +805,14 @@ class TopologyGenerator(Generator):
       self.writeln("  networkAccessPoints:")
       self.indent()
 
-    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", server.getListenPort(), 0)
-    self.addIstioNetworkAccessPoint("tcp-default", "t3", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("tcp-ldap", "ldap", getRealListenPort(server), 0)
+    self.addIstioNetworkAccessPoint("tcp-default", "t3", getRealListenPort(server), 0)
     # No need to to http default, PodStepContext already handle it
-    self.addIstioNetworkAccessPoint("http-default", "http", server.getListenPort(), 0)
-    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", server.getListenPort(), 0)
-    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", server.getListenPort(), 0)
+    self.addIstioNetworkAccessPoint("http-default", "http", getRealListenPort(server), 0)
+    self.addIstioNetworkAccessPoint("tcp-snmp", "snmp", getRealListenPort(server), 0)
+    self.addIstioNetworkAccessPoint("tcp-iiop", "iiop", getRealListenPort(server), 0)
 
-    ssl = getSSLOrNone(server)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = ssl.getListenPort()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template)
 
     if ssl_listen_port is not None:
       self.addIstioNetworkAccessPoint("https-secure", "https", ssl_listen_port, 0)
@@ -1189,7 +1183,7 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-    admin_server_port = server.getListenPort()
+    admin_server_port = getRealListenPort(server)
     # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
@@ -1213,12 +1207,7 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='iiop')
 
-    ssl = getSSLOrNone(server)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = ssl.getListenPort()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -1249,7 +1238,7 @@ class SitConfigGenerator(Generator):
     if istio_readiness_port is None:
       return
 
-    listen_port = template.getListenPort()
+    listen_port = getRealListenPort(template)
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http')
 
@@ -1268,12 +1257,7 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
                         listen_port=listen_port, protocol='iiop')
 
-    ssl = getSSLOrNone(template)
-    ssl_listen_port = None
-    if ssl is not None and ssl.isEnabled():
-      ssl_listen_port = ssl.getListenPort()
-    elif ssl is None and isSecureModeEnabledForDomain(self.env.getDomain()):
-      ssl_listen_port = "7002"
+    ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
 
     if ssl_listen_port is not None:
       self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
@@ -1662,19 +1646,61 @@ class DomainIntrospector(SecretManager):
   
     tg.generate()
 
-# Work-around bugs in off-line WLST when accessing an SSL mbean
-def getSSLOrNone(server):
-  try:
-    # this can throw if SSL mbean not there
-    ret = server.getSSL()
-    # this can throw if SSL mbean is there but enabled is false
-    ret.getListenPort()
-    # this can throw if SSL mbean is there but enabled is false
-    ret.isEnabled()
-  except:
-    trace("Ignoring getSSL() exception, this is expected.")
-    ret = None
-  return ret
+def getRealSSLListenPort(server, sslport):
+  """
+  Return the real listening port that will be used in runtime,
+  which can be different than is reported by WLST off-line.
+
+  The difference occurs when a user specifies 7002 in the model
+  or wlst offline for a server template when creating the domain,
+  which results in an empty entry or 7002 in the config.xml. When subsequently
+  using wlst offline to read the domain, the mbean mistakenly
+  returns 8100 but the actual listening port is 7002.
+
+  If it is not a server template, then just return from the mbean.
+
+  :param server:  server or server template
+  :param sslport: sslport from wlst offline mbean
+  :return: listening port
+  """
+  if server_template_sslports.has_key(server.getName()):
+    configxml_ssl_port = server_template_sslports[server.getName()]
+    if configxml_ssl_port is None or configxml_ssl_port == "7002":
+      return 7002
+
+  if sslport == 0:
+    sslport = 7002
+
+  return sslport
+
+def getRealListenPort(template):
+  """
+  Return the real listening port that will be used in runtime,
+  which can be different than is reported by WLST off-line.
+
+  The difference occurs when a user specifies 7001 in the model
+  or wlst offline for a server template when creating the domain,
+  which results in an empty entry or 7001 entry in the config.xml. When subsequently
+  using wlst offline to read the domain, the mbean mistakenly
+  returns 7100 but the actual listening port is 7001.
+
+  If it is not a server template, then just return from the mbean.
+
+  :param server:  server or server template
+  :return: listening port
+  """
+  if server_template_listening_ports.has_key(template.getName()):
+    port = server_template_listening_ports[template.getName()]
+    if port is None or port == "7001":
+      return 7001
+
+  port = template.getListenPort()
+  # Probably don't need this - unlike NAP that can be 0.
+  if port == 0:
+    return 7001
+
+  return port
+
 
 # Derive the default value for SecureMode of a domain
 def isSecureModeEnabledForDomain(domain):
@@ -1750,6 +1776,82 @@ def isSSLListenPortEnabled(ssl, domain):
     if isSecureModeEnabledForDomain(domain):
       enabled = True
   return enabled
+
+def getSSLPortIfEnabled(server, domain, is_server_template=True):
+  """
+  return the SSL listen port if enabled -
+    If SSL is enabled:
+      If is_server_template is False then just return the SSL listen port from server mbean.
+      If is_server_template is True then return the actual SSL listen port that it listens on.
+
+    If SSL is not configured but domain has SecureMode enabled return 7002.
+    If SSL is configured but explicitly disabled, return None.
+
+  :param server: server or server template
+  :param domain: domain mbean
+  :return: SSL listen port
+  """
+  ssl = None
+  ssl_listen_port = None
+  try:
+    # this can throw if SSL mbean not there
+    ssl = server.getSSL()
+    # this can throw if SSL mbean is there but enabled is false
+    ssl.getListenPort()
+    # this can throw if SSL mbean is there but enabled is false ??
+    ssl.isEnabled()
+  except:
+    pass
+
+  if ssl is not None and ssl.isEnabled():
+    if not is_server_template:
+      ssl_listen_port = ssl.getListenPort()
+    else:
+      ssl_listen_port = getRealSSLListenPort(server, ssl.getListenPort())
+  elif ssl is None and isSecureModeEnabledForDomain(domain):
+    ssl_listen_port = "7002"
+  return ssl_listen_port
+
+def get_server_template_listening_ports_from_configxml(config_xml):
+  '''
+  get_server_tempalate's listening port and ssl port from the config.xml
+  :param config_xml:         full path to config.xml
+  :return: dictionary of servertemplate ssl port and servertemplate listen port
+  '''
+  DOMTree = parse(config_xml)
+  collection = DOMTree.documentElement
+
+  templates = collection.getElementsByTagName("server-template")
+  server_template_ssls = dict()
+  server_template_ports = dict()
+
+  # if port is not specified in config.xml, set to None
+
+  for template in templates:
+    sslport = None
+    port = None
+    if template.parentNode.nodeName != 'domain':
+      continue
+    template_name = template.getElementsByTagName('name')[0].firstChild.nodeValue
+    # Get listen port
+    listen_ports = template.getElementsByTagName('listen-port')
+
+    for listen_port in listen_ports:
+      if listen_port.parentNode.nodeName == 'server-template':
+        port = listen_port.firstChild.nodeValue
+        break
+    server_template_ports[template_name] = port
+
+    # Get ssl port
+    ssls = template.getElementsByTagName('ssl')
+    if len(ssls) > 0:
+      ssl = ssls.item(0)
+      listen_port = ssl.getElementsByTagName('listen-port')
+      if len(listen_port) > 0:
+        sslport = listen_port[0].firstChild.nodeValue
+    server_template_ssls[template_name] = sslport
+
+  return server_template_ssls, server_template_ports
 
 def main(env):
   try:

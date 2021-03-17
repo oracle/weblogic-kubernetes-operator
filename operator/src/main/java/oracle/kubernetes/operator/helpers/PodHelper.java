@@ -497,18 +497,27 @@ public class PodHelper {
     }
 
     @Override
+    V1Pod withNonHashedElements(V1Pod pod) {
+      V1Pod v1Pod = super.withNonHashedElements(pod);
+
+      // Add prometheus annotations. This will overwrite any custom annotations with same name.
+      // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+      // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+      if (exporterContext.isEnabled()) {
+        final V1ObjectMeta metadata = v1Pod.getMetadata();
+        AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
+      }
+
+      return v1Pod;
+    }
+
+    @Override
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata = super.createMetadata();
       if (getClusterName() != null) {
         metadata.putLabelsItem(CLUSTERNAME_LABEL, getClusterName());
       }
 
-      // Add prometheus annotations. This will overwrite any custom annotations with same name.
-      // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
-      // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
-      if (exporterContext.isEnabled()) {
-        AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
-      }
       return metadata;
     }
 

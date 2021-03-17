@@ -66,6 +66,34 @@ public class K8sEvents {
   }
 
   /**
+   * Get the count for a particular event with specified reason, type and domainUid in a given namespace.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid       UID of the domain
+   * @param reason          event reason to get the count for
+   * @param type            type of event, Normal of Warning
+   * @return count          Event count
+   */
+  public static int getDomainEventCount(
+          String domainNamespace, String domainUid, String reason, String type) {
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+                && event.getType().equals(type)
+                && labels.containsKey("weblogic.createdByOperator")
+                && labels.get("weblogic.domainUID").equals(domainUid)) {
+          return event.getCount();
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return 0;
+  }
+
+  /**
    * Get the event count between a specific timestamp.
    *
    * @param domainNamespace namespace in which the domain exists
