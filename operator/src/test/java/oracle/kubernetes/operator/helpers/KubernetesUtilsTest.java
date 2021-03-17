@@ -4,9 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.math.BigInteger;
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import org.junit.jupiter.api.Test;
@@ -16,12 +14,14 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesUtilsTest {
 
+  private static final OffsetDateTime startTime = OffsetDateTime.now();
+  private static final OffsetDateTime time1 = startTime.plusSeconds(1);
+  private static final OffsetDateTime time2 = startTime.plusSeconds(2);
+
   @Test
   public void whenCreationTimesDiffer_metadataWithLaterTimeIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(2), ZoneId.of("UTC"))).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("1");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time2).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("1");
 
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(true));
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
@@ -29,10 +29,8 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenCreationTimesMatch_metadataWithHigherResourceVersionIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("1");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("1");
 
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(true));
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
@@ -40,10 +38,8 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenCreationTimesAndResourceVersionsMatch_neitherIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
-        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
 
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(false));
