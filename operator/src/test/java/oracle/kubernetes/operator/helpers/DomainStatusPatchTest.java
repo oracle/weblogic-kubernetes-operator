@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -325,7 +326,8 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/servers/- {'clusterName':'cluster1',"
-                      + "'health':{'activationTime':'" + activationTime + "','overallHealth':'AOK'},"
+                      + "'health':{'activationTime':'" + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(activationTime)
+                      + "','overallHealth':'AOK'},"
                       + "'serverName':'ms1'}",
                 "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
                 ));
