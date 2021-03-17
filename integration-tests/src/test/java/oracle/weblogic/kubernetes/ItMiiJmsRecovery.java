@@ -92,23 +92,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies JMS Service migration when a cluster is scaled 
- * down by removing the pod. The usecase verifies the JMS service on shutdown 
- * pod/server is migrated to one of the active server and the JMS messages
- * can be recovered after service migration.
- * The dynamic cluster is configured with an ORACLE leasing datasource.
- * The cluster targeted persistent store is configured with 'Dynamic' 
- * distribution policy and 'Always' migration policy.
- * The associated file store directory is on a shared volume so that it can 
- * be accessed from each managed server pod/server.
- * The associated JDBC store is on remote DB instance so that it can be 
- * accessed from each managed server pod/server.
- * An uniform distributed queue is configured with a cluster targeted JMS 
- * system resource with one member on each managed server.
+ * This test class verifies JMS Service migration with JMS messages stored in 
+ * (a) Persistent FileStore (b) Persistent JDBC Store accessible from all pods.
+ * The dynamic cluster is scaled down to trigger the Service migration from 
+ * a stopped pod/managed server to a live pod/managed server.
+ * Configuration : 
+ *   MII cluster domain with 2 managed servers
+ *   Two set of JMS Resources with FileStore and JDBC Store
+ *   All resources are targeted to cluster with enabled JMS service migration
+ *   Two Distributed Queue(s) one with FileStore and the other with JDBC Store
+ *   Separate ORACLE Datasource for cluster leasing
+ * UseCase :  
  * (a) Test client sends 100 messages to member queue@managed-server2
- * (b) Scale down the cluster with replica count 1
- * (c) Make sure all 100 messages got recovered once the 
+ * (b) Scale down the cluster with replica count 1 to shutdown managed-server2
+ * (c) Make sure the JMS Service@managed-server2 is migrated to managed-server1
+ * (d) Make sure all 100 messages got recovered once the 
  *     JMS Service@managed-server2 is migrated to managed-server1 
+ * Above steps are repeated for both FileStore and JDBCStore based Distributed Queue.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -139,7 +139,7 @@ class ItMiiJmsRecovery {
 
   /**
    * Install Operator.
-   * Create domain resource defintion.
+   * Create domain resource definition.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
    *     JUnit engine parameter resolution mechanism
    */
@@ -245,7 +245,7 @@ class ItMiiJmsRecovery {
 
   /**
    * Verify JMS Service is migrated to an available active server.
-   * Here the JMS messages are stored in File store on PV
+   * Here the JMS messages are stored in Filestore on PV
    */
   @Test
   @Order(1)
@@ -281,7 +281,7 @@ class ItMiiJmsRecovery {
 
   /**
    * Verify JMS Service is migrated to an available active server.
-   * Here the JMS messages are stored in JDBC store.
+   * Here the JMS messages are stored in the JDBC store.
    */
   @Test
   @Order(2)
