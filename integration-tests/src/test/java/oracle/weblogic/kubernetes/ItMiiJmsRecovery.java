@@ -8,17 +8,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -50,6 +45,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -62,12 +59,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -123,13 +120,8 @@ class ItMiiJmsRecovery {
   private static final String domainUid = "mii-jms-recovery";
   private static String pvName = domainUid + "-pv"; 
   private static String pvcName = domainUid + "-pvc"; 
-  private StringBuffer curlString = null;
-  private V1Patch patch = null;
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
-  private final String adminServerName = "admin-server";
-  private final String clusterName = "cluster-1";
-
   private static LoggingFacade logger = null;
   private static String cpUrl;
   private static int dbNodePort;
@@ -178,8 +170,8 @@ class ItMiiJmsRecovery {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -357,9 +349,8 @@ class ItMiiJmsRecovery {
   private void restartManagedServer(String serverName) {
 
     String commonParameters = " -d " + domainUid + " -n " + domainNamespace;
-    CommandParams params;
     boolean result;
-    params = new CommandParams().defaults();
+    CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
     params.command("sh "
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString() 
@@ -380,22 +371,6 @@ class ItMiiJmsRecovery {
                 condition.getRemainingTimeInMS()))
         .until(runClientInsidePod(adminServerPodName, domainNamespace,
             "/u01", "JmsSendReceiveClient", "t3://" + domainUid + "-cluster-cluster-1:8001", action, queue, "100"));
-  }
-
-  private static void createDatabaseSecret(
-        String secretName, String username, String password, 
-        String dburl, String domNamespace) throws ApiException {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    secretMap.put("url", dburl);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-
   }
 
   private static void createDomainResource(
