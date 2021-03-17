@@ -74,10 +74,20 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretK
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
@@ -254,6 +264,48 @@ public class JobHelperTest extends DomainValidationBaseTest {
             envVarOEVNContains("item2"),
             envVarOEVNContains("WL_HOME"),
             envVarOEVNContains("MW_HOME")));
+  }
+
+  @Test
+  public void whenDomainIsOnlineUpdate_introspectorPodStartupWithThem() {
+    configureDomain()
+        .withMIIOnlineUpdate();
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        allOf(
+            hasEnvVar(MII_USE_ONLINE_UPDATE, "true"),
+            envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
+            envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
+            envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
+            envVarOEVNContains(MII_WDT_STOP_APPLICAITON_TIMEOUT),
+            envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
+            ));
+  }
+
+  @Test
+  public void whenDomainIsNotOnlineUpdate_introspectorPodStartupWithoutThem() {
+
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(
+        getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+        not(anyOf(envVarOEVNContains(MII_USE_ONLINE_UPDATE),
+            envVarOEVNContains(MII_WDT_ACTIVATE_TIMEOUT),
+            envVarOEVNContains(MII_WDT_CONNECT_TIMEOUT),
+            envVarOEVNContains(MII_WDT_DEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
+            envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
+            envVarOEVNContains(MII_WDT_STOP_APPLICAITON_TIMEOUT),
+            envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
+            )));
+
   }
 
   private V1JobSpec createJobSpec() {
