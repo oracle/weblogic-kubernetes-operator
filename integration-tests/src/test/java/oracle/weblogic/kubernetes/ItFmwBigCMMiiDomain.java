@@ -28,7 +28,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -53,10 +52,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -77,7 +74,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create JRF model in image domain and start the domain")
+@DisplayName("Test to a create JRF model in image domain "
+    + "with introspect Config Map bigger then 1 Mb and start the domain")
 @IntegrationTest
 public class ItFmwBigCMMiiDomain {
 
@@ -163,6 +161,7 @@ public class ItFmwBigCMMiiDomain {
    * Create a JRF model in image domain with big data.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
+   * Verify that multiple introspector CMs are produced if data is > 1Mb
    */
   @Test
   @DisplayName("Create FMW Domain model in image with big introspector CM")
@@ -281,41 +280,6 @@ public class ItFmwBigCMMiiDomain {
     } catch (Exception ex) {
       throw new RuntimeException("Failed to process config maps" + ex.getMessage());
     }
-  }
-
-  /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file.
-   * @param namespace namespace where JRF domain exists
-   * @param domainUid unique domain Uid
-   * @param walletfileSecretName name of wallet file secret
-   */
-  private void saveAndRestoreOpssWalletfileSecret(String namespace, String domainUid,
-                                                  String walletfileSecretName) {
-    Path saveAndRestoreOpssPath =
-        Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
-    String script = saveAndRestoreOpssPath.toString();
-    logger.info("Script for saveAndRestoreOpss is {0)", script);
-
-    //save opss wallet file
-    String command1 = script + " -d " + domainUid + " -n " + namespace + " -s";
-    logger.info("Save wallet file command: {0}", command1);
-    assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command1)
-            .saveResults(true)
-            .redirect(true))
-        .execute());
-
-    //restore opss wallet password secret
-    String command2 = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
-    logger.info("Restore wallet file command: {0}", command2);
-    assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command2)
-            .saveResults(true)
-            .redirect(true))
-        .execute());
-
   }
 
   /**
