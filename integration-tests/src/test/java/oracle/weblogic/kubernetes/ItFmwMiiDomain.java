@@ -135,12 +135,12 @@ public class ItFmwMiiDomain {
     jrfDomainNamespace = namespaces.get(2);
 
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
-            + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
+         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
         RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-            + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
+        + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
@@ -254,9 +254,9 @@ public class ItFmwMiiDomain {
    * @param walletfileSecretName name of wallet file secret
    */
   private void saveAndRestoreOpssWalletfileSecret(String namespace, String domainUid,
-                                                  String walletfileSecretName) {
+       String walletfileSecretName) {
     Path saveAndRestoreOpssPath =
-        Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
+         Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
     String script = saveAndRestoreOpssPath.toString();
     logger.info("Script for saveAndRestoreOpss is {0)", script);
 
@@ -274,7 +274,7 @@ public class ItFmwMiiDomain {
     String command2 = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
     logger.info("Restore wallet file command: {0}", command2);
     assertTrue(() -> Command.withParams(
-        defaultCommandParams()
+          defaultCommandParams()
             .command(command2)
             .saveResults(true)
             .redirect(true))
@@ -348,48 +348,48 @@ public class ItFmwMiiDomain {
       String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
     // create the domain CR
     Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .imagePullPolicy("IfNotPresent")
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                .name(domainUid)
                 .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .opss(new Opss()
-                    .walletPasswordSecret(opssWalletPasswordSecretName))
-                .model(new Model()
-                    .domainType("JRF")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .addSecretsItem(rcuAccessSecretName)
-                .introspectorJobActiveDeadlineSeconds(600L)));
+            .spec(new DomainSpec()
+                .domainUid(domainUid)
+                .domainHomeSourceType("FromModel")
+                .image(miiImage)
+                .imagePullPolicy("IfNotPresent")
+                .addImagePullSecretsItem(new V1LocalObjectReference()
+                    .name(repoSecretName))
+                .webLogicCredentialsSecret(new V1SecretReference()
+                    .name(adminSecretName)
+                    .namespace(domNamespace))
+                .includeServerOutInPodLog(true)
+                .serverStartPolicy("IF_NEEDED")
+                .serverPod(new ServerPod()
+                    .addEnvItem(new V1EnvVar()
+                        .name("JAVA_OPTIONS")
+                        .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .addEnvItem(new V1EnvVar()
+                        .name("USER_MEM_ARGS")
+                        .value("-Djava.security.egd=file:/dev/./urandom ")))
+                .adminServer(new AdminServer()
+                    .serverStartState("RUNNING")
+                    .adminService(new AdminService()
+                        .addChannelsItem(new Channel()
+                            .channelName("default")
+                            .nodePort(0))))
+                .addClustersItem(new Cluster()
+                    .clusterName("cluster-1")
+                    .replicas(replicaCount)
+                    .serverStartState("RUNNING"))
+                .configuration(new Configuration()
+                    .opss(new Opss()
+                        .walletPasswordSecret(opssWalletPasswordSecretName))
+                    .model(new Model()
+                        .domainType("JRF")
+                        .runtimeEncryptionSecret(encryptionSecretName))
+                    .addSecretsItem(rcuAccessSecretName)
+                    .introspectorJobActiveDeadlineSeconds(600L)));
 
     return domain;
   }
@@ -408,7 +408,7 @@ public class ItFmwMiiDomain {
 
     //check access to the em console: http://hostname:port/em
     int nodePort = getServiceNodePort(
-        jrfDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+           jrfDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
@@ -419,5 +419,4 @@ public class ItFmwMiiDomain {
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
   }
-
 }
