@@ -3,9 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,7 +66,7 @@ public class PodPresenceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
-  private long clock;
+  private OffsetDateTime clock = OffsetDateTime.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
       new V1Pod()
@@ -407,6 +405,7 @@ public class PodPresenceTest {
   }
 
   private OffsetDateTime getDateTime() {
-    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(++clock), ZoneId.of("UTC"));
+    clock = clock.plusSeconds(1);
+    return clock;
   }
 }

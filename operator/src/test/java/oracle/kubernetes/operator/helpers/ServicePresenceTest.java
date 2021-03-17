@@ -3,9 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -61,7 +59,7 @@ public class ServicePresenceTest {
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private final Packet packet = new Packet();
-  private long clock;
+  private OffsetDateTime clock = OffsetDateTime.now();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -541,7 +539,8 @@ public class ServicePresenceTest {
   }
 
   private OffsetDateTime getDateTime() {
-    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(++clock), ZoneId.of("UTC"));
+    clock = clock.plusSeconds(1);
+    return clock;
   }
 
   private V1ObjectMeta createMetadata() {

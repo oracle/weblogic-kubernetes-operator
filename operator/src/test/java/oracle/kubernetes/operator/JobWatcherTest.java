@@ -4,9 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
-import java.time.Instant;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,8 +39,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
+  private OffsetDateTime clock = OffsetDateTime.now();
   private final V1Job cachedJob = createJob();
-  private long clock;
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
@@ -67,7 +65,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   private OffsetDateTime getCurrentTime() {
-    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(clock), ZoneId.of("UTC"));
+    return clock;
   }
 
   @Override
@@ -377,7 +375,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   @SuppressWarnings("unused")
   private V1Job createCompletedJobWithDifferentTimestamp(V1Job job) {
-    clock++;
+    clock = clock.plusSeconds(1);
     return markJobCompleted(createJob());
   }
 
