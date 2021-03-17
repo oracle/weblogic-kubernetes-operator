@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +70,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.extensions.ImageBuilders;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.impl.Operator.start;
 import static oracle.weblogic.kubernetes.actions.impl.Operator.stop;
@@ -1174,7 +1174,7 @@ public class TestActions {
    * @return creationTimestamp from metadata section of the Pod
    * @throws ApiException if Kubernetes client API call fails
    **/
-  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static OffsetDateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Pod.getPodCreationTimestamp(namespace, labelSelector, podName);
   }

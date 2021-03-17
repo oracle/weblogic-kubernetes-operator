@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -311,7 +311,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withHealthScalarsWhenOnlyNewStatusHasServers_addThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = OffsetDateTime.now();
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
@@ -333,7 +333,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withHealthScalarsWhenBothStatusesHasServers_modifyThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = OffsetDateTime.now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus()
                 .withServerName("ms1").withClusterName("cluster1")
@@ -360,7 +360,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withSubsystemHealthWhenOnlyNewStatusHasSubsystemValues_addThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = OffsetDateTime.now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1"))
           .addServer(new ServerStatus().withServerName("ms2")
@@ -399,7 +399,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void whenSubsystemRemovedOrModified_patchAsNeeded() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = OffsetDateTime.now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1")
                 .withHealth(new ServerHealth().withOverallHealth("Confused").withActivationTime(activationTime)

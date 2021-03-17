@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -23,7 +24,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 
@@ -54,9 +54,9 @@ public class StuckPodProcessing {
 
   class PodListProcessing extends DefaultResponseStep<V1PodList> {
 
-    private final DateTime now;
+    private final OffsetDateTime now;
 
-    public PodListProcessing(String namespace, DateTime dateTime) {
+    public PodListProcessing(String namespace, OffsetDateTime dateTime) {
       super(new PodActionsStep(namespace));
       now = dateTime;
     }
@@ -70,11 +70,11 @@ public class StuckPodProcessing {
       return doContinueListOrNext(callResponse, packet);
     }
 
-    private boolean isStuck(V1Pod pod, DateTime now)  {
+    private boolean isStuck(V1Pod pod, OffsetDateTime now)  {
       return getExpectedDeleteTime(pod).isBefore(now);
     }
 
-    private DateTime getExpectedDeleteTime(V1Pod pod) {
+    private OffsetDateTime getExpectedDeleteTime(V1Pod pod) {
       return getDeletionTimeStamp(pod).plusSeconds((int) getDeletionGracePeriodSeconds(pod));
     }
 
@@ -82,7 +82,7 @@ public class StuckPodProcessing {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionGracePeriodSeconds).orElse(1L);
     }
 
-    private DateTime getDeletionTimeStamp(V1Pod pod) {
+    private OffsetDateTime getDeletionTimeStamp(V1Pod pod) {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).orElse(SystemClock.now());
     }
 

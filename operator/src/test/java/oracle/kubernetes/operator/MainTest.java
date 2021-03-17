@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.net.HttpURLConnection;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -46,7 +47,6 @@ import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -465,7 +465,7 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat(getStartingNamespaces(), contains(NS_WEBLOGIC1, NS_WEBLOGIC3, NS_WEBLOGIC5));
   }
 
-  private V1ObjectMeta createMetadata(DateTime creationTimestamp) {
+  private V1ObjectMeta createMetadata(OffsetDateTime creationTimestamp) {
     return new V1ObjectMeta()
         .name(DOMAIN_UID)
         .namespace(NS)
@@ -558,7 +558,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_same_DateTime() {
-    DateTime creationDatetime = DateTime.now();
+    OffsetDateTime creationDatetime = OffsetDateTime.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     V1ObjectMeta domain2Meta = createMetadata(creationDatetime);
@@ -568,10 +568,10 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_newer_DateTime() {
-    DateTime creationDatetime = DateTime.now();
+    OffsetDateTime creationDatetime = OffsetDateTime.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
-    DateTime deleteDatetime = creationDatetime.plusMinutes(1);
+    OffsetDateTime deleteDatetime = creationDatetime.plusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(deleteDatetime);
 
     assertFalse(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));
@@ -579,10 +579,10 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_doNotDelete_with_older_DateTime() {
-    DateTime creationDatetime = DateTime.now();
+    OffsetDateTime creationDatetime = OffsetDateTime.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
-    DateTime deleteDatetime = creationDatetime.minusMinutes(1);
+    OffsetDateTime deleteDatetime = creationDatetime.minusMinutes(1);
     V1ObjectMeta domain2Meta = createMetadata(deleteDatetime);
 
     assertTrue(KubernetesUtils.isFirstNewer(domainMeta, domain2Meta));

@@ -4,6 +4,9 @@
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,7 +23,6 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -64,8 +66,8 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return new V1Job().metadata(new V1ObjectMeta().name("test").creationTimestamp(getCurrentTime()));
   }
 
-  private DateTime getCurrentTime() {
-    return new DateTime(clock);
+  private OffsetDateTime getCurrentTime() {
+    return OffsetDateTime.ofInstant(Instant.ofEpochSecond(clock), ZoneId.of("UTC"));
   }
 
   @Override

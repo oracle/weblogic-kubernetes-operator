@@ -59,7 +59,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | `replicas` | number | The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case. |
 | `servers` | array of [Server Status](#server-status) | Status of WebLogic Servers in this domain. |
-| `startTime` | DateTime | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
+| `startTime` | OffsetDateTime | RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available. |
 
 ### Admin Server
 
@@ -171,8 +171,8 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `lastProbeTime` | DateTime | Last time we probed the condition. |
-| `lastTransitionTime` | DateTime | Last time the condition transitioned from one status to another. |
+| `lastProbeTime` | OffsetDateTime | Last time we probed the condition. |
+| `lastTransitionTime` | OffsetDateTime | Last time the condition transitioned from one status to another. |
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
@@ -248,7 +248,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `activationTime` | DateTime | RFC 3339 date and time at which the server started. |
+| `activationTime` | OffsetDateTime | RFC 3339 date and time at which the server started. |
 | `overallHealth` | string | Server health of this WebLogic Server instance. If the value is "Not available", the operator has failed to read the health. If the value is "Not available (possibly overloaded)", the operator has failed to read the health of the server possibly due to the server is in the overloaded state. |
 | `subsystems` | array of [Subsystem Health](#subsystem-health) | Status of unhealthy subsystems, if any. |
 

@@ -4,9 +4,11 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.math.BigInteger;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
@@ -16,8 +18,10 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenCreationTimesDiffer_metadataWithLaterTimeIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(new DateTime(2)).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(new DateTime(1)).resourceVersion("1");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(2), ZoneId.of("UTC"))).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("1");
 
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(true));
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
@@ -25,8 +29,10 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenCreationTimesMatch_metadataWithHigherResourceVersionIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(new DateTime(1)).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(new DateTime(1)).resourceVersion("1");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("1");
 
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(true));
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
@@ -34,8 +40,10 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenCreationTimesAndResourceVersionsMatch_neitherIsNewer() {
-    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(new DateTime(1)).resourceVersion("2");
-    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(new DateTime(1)).resourceVersion("2");
+    V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
+    V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(
+        OffsetDateTime.ofInstant(Instant.ofEpochSecond(1), ZoneId.of("UTC"))).resourceVersion("2");
 
     assertThat(KubernetesUtils.isFirstNewer(meta2, meta1), is(false));
     assertThat(KubernetesUtils.isFirstNewer(meta1, meta2), is(false));
@@ -43,7 +51,7 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenHaveLargeResourceVersionsAndSameTime_succeedIsFirstNewer() {
-    DateTime now = DateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
 
     // This needs to be a value bigger than 2147483647
     String resVersion = "2733280673";
@@ -57,7 +65,7 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenHaveNonParsableResourceVersionsAndSameTime_succeedIsFirstNewer() {
-    DateTime now = DateTime.now();
+    OffsetDateTime now = OffsetDateTime.now();
 
     String resVersion = "ThisIsNotANumber";
     String differentResVersion = "SomeOtherValueAlsoNotANumber";

@@ -251,7 +251,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     }
 
     private long getCreationTime(V1Job job) {
-      return job.getMetadata().getCreationTimestamp().getMillis();
+      return job.getMetadata().getCreationTimestamp().toEpochSecond();
     }
 
     @Override
@@ -319,7 +319,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     private long getJobStartedSeconds() {
       if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-        return (System.currentTimeMillis() - job.getStatus().getStartTime().getMillis()) / 1000;
+        return (System.currentTimeMillis() - job.getStatus().getStartTime().toEpochSecond()) / 1000;
       }
       return -1;
     }

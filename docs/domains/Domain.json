@@ -224,10 +224,6 @@
         }
       }
     },
-    "DateTime": {
-      "format": "date-time",
-      "type": "string"
-    },
     "DomainCondition": {
       "type": "object",
       "properties": {
@@ -247,7 +243,7 @@
         },
         "lastTransitionTime": {
           "description": "Last time the condition transitioned from one status to another.",
-          "$ref": "#/definitions/DateTime"
+          "$ref": "#/definitions/OffsetDateTime"
         },
         "message": {
           "description": "Human-readable message indicating details about last transition.",
@@ -255,7 +251,7 @@
         },
         "lastProbeTime": {
           "description": "Last time we probed the condition.",
-          "$ref": "#/definitions/DateTime"
+          "$ref": "#/definitions/OffsetDateTime"
         },
         "status": {
           "description": "The status of the condition. Can be True, False, Unknown.",
@@ -458,7 +454,7 @@
         },
         "startTime": {
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
-          "$ref": "#/definitions/DateTime"
+          "$ref": "#/definitions/OffsetDateTime"
         },
         "conditions": {
           "description": "Current service state of the domain.",
@@ -609,6 +605,10 @@
         }
       }
     },
+    "OffsetDateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
     "OnlineUpdate": {
       "type": "object",
       "properties": {
@@ -668,7 +668,7 @@
         },
         "activationTime": {
           "description": "RFC 3339 date and time at which the server started.",
-          "$ref": "#/definitions/DateTime"
+          "$ref": "#/definitions/OffsetDateTime"
         },
         "subsystems": {
           "description": "Status of unhealthy subsystems, if any.",
