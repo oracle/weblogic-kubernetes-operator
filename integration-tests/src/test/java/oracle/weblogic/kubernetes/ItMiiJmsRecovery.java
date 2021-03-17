@@ -11,21 +11,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobCondition;
-import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -49,7 +41,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -59,7 +50,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -71,29 +61,26 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -101,10 +88,8 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test class verifies JMS Service migration when a cluster is scaled 
@@ -139,7 +124,6 @@ class ItMiiJmsRecovery {
   private static String pvName = domainUid + "-pv"; 
   private static String pvcName = domainUid + "-pvc"; 
   private StringBuffer curlString = null;
-  private StringBuffer checkCluster = null;
   private V1Patch patch = null;
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
@@ -156,8 +140,8 @@ class ItMiiJmsRecovery {
   /**
    * Install Operator.
    * Create domain resource defintion.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   JUnit engine parameter resolution mechanism
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
+   *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
@@ -260,15 +244,6 @@ class ItMiiJmsRecovery {
   }
 
   /**
-   * Verify all server pods are running.
-   * Verify all k8s services for all servers are created.
-   */
-  @BeforeEach
-  public void beforeEach() {
-    logger.info("Running beforeEach() ....");
-  }
-
-  /**
    * Verify JMS Service is migrated to an available active server.
    * Here the JMS messages are stored in File store on PV
    */
@@ -276,8 +251,18 @@ class ItMiiJmsRecovery {
   @Order(1)
   @DisplayName("Verify JMS Service migration with FileStore")
   public void testMiiJmsServiceMigrationWithFileStore() {
+   
+    // build the standalone JMS Client on Admin pod after rolling restart
+    String destLocation = "/u01/JmsSendReceiveClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "",
+        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+        Paths.get(destLocation)));
+    runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
+    
+    assertTrue(checkJmsServerRuntime("managed-server2"), 
+         "JMSService@managed-server2 is on managed-server2 before migration");
 
-    buildClientOnPod();
     runJmsClientOnAdminPod("send", 
             "ClusterJmsServer@managed-server2@jms.testUniformQueue");
 
@@ -287,6 +272,9 @@ class ItMiiJmsRecovery {
     assertTrue(psuccess,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
+    // Make sure the JMSService@managed-server2 is migrated to managed-server1
+    assertTrue(checkJmsServerRuntime("managed-server1"), 
+            "JMSService@managed-server2 is NOT migrated to managed-server1");
     runJmsClientOnAdminPod("receive", 
             "ClusterJmsServer@managed-server2@jms.testUniformQueue");
   }
@@ -300,11 +288,21 @@ class ItMiiJmsRecovery {
   @DisplayName("Verify JMS Service migration with JDBCStore")
   public void testMiiJmsServiceMigrationWithJdbcStore() {
 
-    // Restart the cluster, so that JMS server runtime are hosted 
-    // on the respective managed server
-    restartCluster();
-    buildClientOnPod();
+    // Restart the managed server(2) if shutdown by previous test method 
+    // Make sure that JMS server runtime JMSService@managed-server2 is 
+    // hosted on managed server 'managed-server2'
+    restartManagedServer("managed-server2");
+    assertTrue(checkJmsServerRuntime("managed-server2"), 
+         "JMSService@managed-server2 is on managed-server2 before migration");
 
+    // build the standalone JMS Client on Admin pod after rolling restart
+    String destLocation = "/u01/JmsSendReceiveClient.java";
+    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
+        adminServerPodName, "",
+        Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
+        Paths.get(destLocation)));
+    runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
+    
     runJmsClientOnAdminPod("send", 
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
     boolean psuccess3 = assertDoesNotThrow(() ->
@@ -314,6 +312,8 @@ class ItMiiJmsRecovery {
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
 
+    assertTrue(checkJmsServerRuntime("managed-server1"), 
+           "JMSService@managed-server2 is NOT migrated to managed-server1");
     runJmsClientOnAdminPod("receive", 
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
   }
@@ -332,7 +332,7 @@ class ItMiiJmsRecovery {
         + ");\n";
 
     assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
-    String destLocation = "/u01/oracle/leasing.ddl";
+    String destLocation = "/u01/leasing.ddl";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
              adminServerPodName, "",
              Paths.get(WORK_DIR, "leasing.ddl"),
@@ -347,119 +347,39 @@ class ItMiiJmsRecovery {
     ecmd.append(" -verbose ");
     ecmd.append(" -u \"sys as sysdba\"");
     ecmd.append(" -p Oradoc_db1");
-    ecmd.append(" /u01/oracle/leasing.ddl");
+    ecmd.append(" /u01/leasing.ddl");
     ExecResult execResult = assertDoesNotThrow(
         () -> execCommand(domainNamespace, adminServerPodName,
             null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not poulate the Leasing Table");
+    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
   }
 
-  private void restartCluster() {
+  private void restartManagedServer(String serverName) {
 
     String commonParameters = " -d " + domainUid + " -n " + domainNamespace;
     CommandParams params;
     boolean result;
     params = new CommandParams().defaults();
-
     String script = "startServer.sh";
     params.command("sh "
         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString() 
-        + commonParameters + " -s managed-server2");
+        + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
-
-    script = "stopCluster.sh";
-    params.command("sh "
-         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString() 
-         + commonParameters + " -c " + clusterName);
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to execute script " + script);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDoesNotExist(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-    script = "startCluster.sh";
-    params.command("sh "
-         + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString() 
-         + commonParameters + " -c " + clusterName);
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to execute script " + script);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-  }
-
-  // Build JMS Client inside the Admin Server Pod
-  private void buildClientOnPod() {
-
-    String destLocation = "/u01/oracle/JmsSendReceiveClient.java";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
-             adminServerPodName, "",
-             Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
-             Paths.get(destLocation)));
-
-    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-
-    StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
-    javacCmd.append(domainNamespace);
-    javacCmd.append(" -it ");
-    javacCmd.append(adminServerPodName);
-    javacCmd.append(" -- /bin/bash -c \"");
-    javacCmd.append("javac -cp ");
-    javacCmd.append(jarLocation);
-    javacCmd.append(" JmsSendReceiveClient.java ");
-    javacCmd.append(" \"");
-    logger.info("javac command {0}", javacCmd.toString());
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(javacCmd), true));
-    logger.info("javac returned {0}", result.toString());
-    logger.info("javac returned EXIT value {0}", result.exitValue());
-    assertTrue(result.exitValue() == 0, "Client compilation fails");
-  }
-
-  private static Callable<Boolean> runClient(String javaCmd) {
-    return (()  -> {
-      ExecResult result = assertDoesNotThrow(() -> exec(new String(javaCmd), true));
-      logger.info("java returned {0}", result.toString());
-      logger.info("java returned EXIT value {0}", result.exitValue());
-      return ((result.exitValue() == 0));
-    });
   }
 
   // Run standalone JMS Client to send/receive message from 
   // Distributed Destination Member
   private void runJmsClientOnAdminPod(String action, String queue) {
-
-    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
-    javapCmd.append(domainNamespace);
-    javapCmd.append(" -it ");
-    javapCmd.append(adminServerPodName);
-    javapCmd.append(" -- /bin/bash -c \"");
-    javapCmd.append("java -cp ");
-    javapCmd.append(jarLocation);
-    javapCmd.append(":.");
-    javapCmd.append(" JmsSendReceiveClient ");
-    javapCmd.append(" t3://");
-    javapCmd.append(domainUid);
-    javapCmd.append("-cluster-");
-    javapCmd.append(clusterName);
-    javapCmd.append(":8001 ");
-    javapCmd.append(action);
-    javapCmd.append(" \'");
-    javapCmd.append(queue);
-    javapCmd.append("\'");
-    javapCmd.append(" 100");
-    javapCmd.append(" \"");
-    logger.info("java command to be run {0}", javapCmd.toString());
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Wait for JMS Client to send/recv msg "
                     + "(elapsed time {0}ms, remaining time {1}ms)",
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(runClient(new String(javapCmd)));
+        .until(runClientInsidePod(adminServerPodName, domainNamespace,
+            "/u01", "JmsSendReceiveClient", "t3://" + domainUid + "-cluster-cluster-1:8001", action, queue, "100"));
   }
 
   private static void createDatabaseSecret(
@@ -476,19 +396,6 @@ class ItMiiJmsRecovery {
             .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
 
-  }
-
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace)
-          throws ApiException {
-    Map<String, String> secretMap = new HashMap();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
   }
 
   private static void createDomainResource(
@@ -560,169 +467,39 @@ class ItMiiJmsRecovery {
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be not created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
-  }
-
   /*
-   * Verify the server MBEAN configuration through rest API.
-   * @param managedServer name of the managed server
+   * Verify the JMS Server Runtime through rest API.
+   * Get the JMSServer Runtime ClusterJmsServer@managed-server2 found on 
+   * specified managed server.
+   * @param managedServer name of managed server to look for JMSServerRuntime
    * @returns true if MBEAN is found otherwise false
    **/
-  private boolean checkManagedServerConfiguration(String managedServer) {
+  private boolean checkJmsServerRuntime(String managedServer) {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-          .append("/management/tenant-monitoring/servers/")
+    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
+          .append("/JMSRuntime/JMSServers/ClusterJmsServer@managed-server2")
           .append(" --silent --show-error ")
           .append(" -o /dev/null")
           .append(" -w %{http_code});")
           .append("echo ${status}");
-    logger.info("checkManagedServerConfiguration: curl command {0}", new String(checkCluster));
-    try {
-      result = exec(new String(checkCluster), true);
-    } catch (Exception ex) {
-      logger.info("Exception in checkManagedServerConfiguration() {0}", ex);
-      return false;
-    }
-    logger.info("checkManagedServerConfiguration: curl command returned {0}", result.toString());
-    if (result.stdout().equals("200")) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // Crate a ConfigMap with a model file to add a new WebLogic cluster
-  private void createClusterConfigMap(String configMapName, String modelFile) {
-    Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.domainUid", domainUid);
-    String dsModelFile =  String.format("%s/%s", MODEL_DIR,modelFile);
-    Map<String, String> data = new HashMap<>();
-    String cmData = null;
-    cmData = assertDoesNotThrow(() -> Files.readString(Paths.get(dsModelFile)),
-        String.format("readString operation failed for %s", dsModelFile));
-    assertNotNull(cmData, String.format("readString() operation failed while creating ConfigMap %s", configMapName));
-    data.put(modelFile, cmData);
-
-    V1ObjectMeta meta = new V1ObjectMeta()
-        .labels(labels)
-        .name(configMapName)
-        .namespace(domainNamespace);
-    V1ConfigMap configMap = new V1ConfigMap()
-        .data(data)
-        .metadata(meta);
-
-    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
-        String.format("Can't create ConfigMap %s", configMapName));
-    assertTrue(cmCreated, String.format("createConfigMap failed while creating ConfigMap %s", configMapName));
-  }
-
-  private ExecResult checkJdbcRuntime(String resourcesName) {
-    int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    ExecResult result = null;
-
-    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
-         .append("/management/wls/latest/datasources/id/")
-         .append(resourcesName)
-         .append("/")
-         .append(" --silent --show-error ");
-    logger.info("checkJdbcRuntime: curl command {0}", new String(curlString));
-    try {
-      result = exec(new String(curlString), true);
-    } catch (Exception ex) {
-      logger.info("checkJdbcRuntime: caught unexpected exception {0}", ex);
-      return null;
-    }
-    return result;
-  }
-
-  private static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
-    logger.info("Running Kubernetes job to create domain");
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("change-permissions-onpv-job-" + pvName) // name of the job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .addContainersItem(
-                        createfixPVCOwnerContainer(pvName,
-                        "/shared")) // mounted under /shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
-
-    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
-
-    // check job status and fail test if the job failed
-    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
-        "Getting the job failed");
-    if (job != null) {
-      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
-          .findAny()
-          .orElse(null);
-      if (jobCondition != null) {
-        logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
-        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
-            namespace, "job-name=" + jobName).getItems(),
-            "Listing pods failed");
-        if (!pods.isEmpty()) {
-          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
-              "Failed to get pod log");
-          logger.severe(podLog);
-          fail("Change permissions on PV hostpath job failed");
-        }
-      }
-    }
-  }
-
-  private void checkLogsOnPV(String commandToExecuteInsidePod, String podName) {
-    logger.info("Checking logs are written on PV by running the command {0} on pod {1}, namespace {2}",
-        commandToExecuteInsidePod, podName, domainNamespace);
-    V1Pod serverPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(domainNamespace, null, podName),
-        String.format("Could not get the server Pod {0} in namespace {1}",
-            podName, domainNamespace));
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(serverPod, null, true,
-        "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, podName, domainNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
-
-    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
-    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
-    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
-        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
-
+    logger.info("checkJmsServerRuntime: curl command {0}", new String(curlString));
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for JMS Service to migrate "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("200");
+          };
+        }));
+    return true;
   }
 
   private static Integer getDBNodePort(String namespace, String dbName) {
