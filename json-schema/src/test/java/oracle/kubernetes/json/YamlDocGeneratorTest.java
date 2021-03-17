@@ -72,7 +72,7 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("dateTime"));
-    assertThat(markdown, containsString(tableEntry("`dateTime`", "OffsetDateTime", "")));
+    assertThat(markdown, containsString(tableEntry("`dateTime`", "DateTime", "")));
   }
 
   @Test

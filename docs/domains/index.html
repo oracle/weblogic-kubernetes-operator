@@ -1145,6 +1145,10 @@ window.onload = function() {
         }
       }
     },
+    "DateTime": {
+      "format": "date-time",
+      "type": "string"
+    },
     "DomainCondition": {
       "type": "object",
       "properties": {
@@ -1164,7 +1168,7 @@ window.onload = function() {
         },
         "lastTransitionTime": {
           "description": "Last time the condition transitioned from one status to another.",
-          "$ref": "#/definitions/OffsetDateTime"
+          "$ref": "#/definitions/DateTime"
         },
         "message": {
           "description": "Human-readable message indicating details about last transition.",
@@ -1172,7 +1176,7 @@ window.onload = function() {
         },
         "lastProbeTime": {
           "description": "Last time we probed the condition.",
-          "$ref": "#/definitions/OffsetDateTime"
+          "$ref": "#/definitions/DateTime"
         },
         "status": {
           "description": "The status of the condition. Can be True, False, Unknown.",
@@ -1375,7 +1379,7 @@ window.onload = function() {
         },
         "startTime": {
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
-          "$ref": "#/definitions/OffsetDateTime"
+          "$ref": "#/definitions/DateTime"
         },
         "conditions": {
           "description": "Current service state of the domain.",
@@ -1526,10 +1530,6 @@ window.onload = function() {
         }
       }
     },
-    "OffsetDateTime": {
-      "format": "date-time",
-      "type": "string"
-    },
     "OnlineUpdate": {
       "type": "object",
       "properties": {
@@ -1589,7 +1589,7 @@ window.onload = function() {
         },
         "activationTime": {
           "description": "RFC 3339 date and time at which the server started.",
-          "$ref": "#/definitions/OffsetDateTime"
+          "$ref": "#/definitions/DateTime"
         },
         "subsystems": {
           "description": "Status of unhealthy subsystems, if any.",

@@ -381,6 +381,9 @@ public class SchemaGenerator {
   }
 
   private String getDefinitionKey(Class<?> type) {
+    if (isDateTime(type)) {
+      return "DateTime";
+    }
     return type.getSimpleName();
   }
 
