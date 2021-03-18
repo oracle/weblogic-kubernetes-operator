@@ -1118,17 +1118,10 @@ public class ItIntrospectVersion {
 
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
         "/bin/sh", "-c", curlCmd));
-    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-    logger.info("OUT");
-    logger.info(execResult.stdout());
-    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
-    logger.info("ERROR");
-    logger.info(execResult.stderr());
-    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
     if (execResult.exitValue() == 0) {
-      logger.info("\n HTTP response is \n " + execResult.stdout());
+      logger.info("\n HTTP response is \n " + execResult.toString());
       assertAll("Check that the HTTP response is 200",
-          () -> assertTrue(execResult.stderr().contains("HTTP/1.1 200 OK"))
+          () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
       );
     } else {
       fail("Failed to change admin port number " + execResult.stderr());
