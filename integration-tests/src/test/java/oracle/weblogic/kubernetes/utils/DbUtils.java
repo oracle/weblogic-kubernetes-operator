@@ -4,10 +4,12 @@
 package oracle.weblogic.kubernetes.utils;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import javax.net.ssl.SSLProtocolException;
@@ -39,14 +41,19 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
+import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -500,5 +507,70 @@ public class DbUtils {
       suffixCount = suffixCount + 1;
       return suffixCount;
     }
+  }
+
+  /**
+   * Returns a DB NodePort value .
+   *
+   * @param dbNamespace database namespace where pod exists
+   * @param dbName database name
+   * @return DB NodePort value
+   */
+  public static Integer getDBNodePort(String dbNamespace, String dbName) {
+    LoggingFacade logger = getLogger();
+    logger.info(dump(Kubernetes.listServices(dbNamespace)));
+    List<V1Service> services = listServices(dbNamespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getSpec().getPorts().get(0).getNodePort();
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
+   * Uses the WebLogic utility utils.Schema to add the table 
+   * So the command MUST be run inside a Weblogic Server pod
+   *
+   * @param podName the pod name
+   * @param namespace where pod exists
+   * @param dbNodePort NodePort for the Oracle DB service
+   */
+  public static void createLeasingTable(String podName, String namespace, int dbNodePort) {
+    Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
+    String ddlString = "DROP TABLE ACTIVE;\n"
+        + "CREATE TABLE ACTIVE (\n" 
+        + "  SERVER VARCHAR2(255) NOT NULL,\n" 
+        + "  INSTANCE VARCHAR2(255) NOT NULL,\n" 
+        + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n" 
+        + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n" 
+        + "  TIMEOUT DATE,\n" 
+        + "  PRIMARY KEY (SERVER, DOMAINNAME, CLUSTERNAME)\n" 
+        + ");\n";
+
+    assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
+    String destLocation = "/u01/leasing.ddl";
+    assertDoesNotThrow(() -> copyFileToPod(namespace,
+             podName, "",
+             Paths.get(WORK_DIR, "leasing.ddl"),
+             Paths.get(destLocation)));
+
+    String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
+                         + dbNodePort + "/devpdb.k8s";
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer ecmd = new StringBuffer("java -cp ");
+    ecmd.append(jarLocation);
+    ecmd.append(" utils.Schema ");
+    ecmd.append(cpUrl);
+    ecmd.append(" oracle.jdbc.OracleDriver");
+    ecmd.append(" -verbose ");
+    ecmd.append(" -u \"sys as sysdba\"");
+    ecmd.append(" -p Oradoc_db1");
+    ecmd.append(" /u01/leasing.ddl");
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(namespace, podName,
+            null, true, "/bin/sh", "-c", ecmd.toString()));
+    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
   }
 }

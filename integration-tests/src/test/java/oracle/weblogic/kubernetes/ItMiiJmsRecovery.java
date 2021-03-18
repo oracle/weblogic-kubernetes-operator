@@ -3,16 +3,13 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -25,7 +22,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -39,10 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -60,6 +53,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServic
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createLeasingTable;
+import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -209,7 +204,7 @@ class ItMiiJmsRecovery {
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
-    createLeasingTable();
+    createLeasingTable(adminServerPodName, domainNamespace, dbNodePort); 
     // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -293,42 +288,6 @@ class ItMiiJmsRecovery {
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
   }
 
-  // Create leasing Table (ACTIVE)
-  private static void createLeasingTable() {
-    Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
-    String ddlString = "DROP TABLE ACTIVE;\n"
-        + "CREATE TABLE ACTIVE (\n" 
-        + "  SERVER VARCHAR2(255) NOT NULL,\n" 
-        + "  INSTANCE VARCHAR2(255) NOT NULL,\n" 
-        + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n" 
-        + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n" 
-        + "  TIMEOUT DATE,\n" 
-        + "  PRIMARY KEY (SERVER, DOMAINNAME, CLUSTERNAME)\n" 
-        + ");\n";
-
-    assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
-    String destLocation = "/u01/leasing.ddl";
-    assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
-             adminServerPodName, "",
-             Paths.get(WORK_DIR, "leasing.ddl"),
-             Paths.get(destLocation)));
-
-    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer ecmd = new StringBuffer("java -cp ");
-    ecmd.append(jarLocation);
-    ecmd.append(" utils.Schema ");
-    ecmd.append(cpUrl);
-    ecmd.append(" oracle.jdbc.OracleDriver");
-    ecmd.append(" -verbose ");
-    ecmd.append(" -u \"sys as sysdba\"");
-    ecmd.append(" -p Oradoc_db1");
-    ecmd.append(" /u01/leasing.ddl");
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(domainNamespace, adminServerPodName,
-            null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
-  }
-
   private void restartManagedServer(String serverName) {
 
     String commonParameters = " -d " + domainUid + " -n " + domainNamespace;
@@ -389,17 +348,6 @@ class ItMiiJmsRecovery {
           };
         }));
     return true;
-  }
-
-  private static Integer getDBNodePort(String namespace, String dbName) {
-    logger.info(dump(Kubernetes.listServices(namespace)));
-    List<V1Service> services = listServices(namespace).getItems();
-    for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
-        return service.getSpec().getPorts().get(0).getNodePort();
-      }
-    }
-    return -1;
   }
 
 }

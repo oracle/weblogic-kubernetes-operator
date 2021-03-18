@@ -26,6 +26,7 @@ public class JmsSendReceiveClient {
     qname    = args[2];
     mcount   = Integer.parseInt(args[3]);
 
+
     try {
      if ( action.equals("send") )  {
         doSend(qname);
@@ -114,6 +115,10 @@ public class JmsSendReceiveClient {
    }
 
    public static void main(String[] args){
+    if ( args.length < 4 ) {
+     System.out.println("Usage : JmsSendReceiveClient  url action(send|receive) qname count");
+     System.exit(-1);
+    }
     JmsSendReceiveClient client = new JmsSendReceiveClient(args);
    }
 }
