@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes.actions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 
@@ -1562,5 +1563,14 @@ public class TestActions {
    */
   public static String helmValuesToString(Map<String, Object> helmValues) {
     return Helm.valuesToString(helmValues);
+  }
+
+  /**
+   * Return the current time, but truncated to the second so that comparisons with Kubernetes timestamps,
+   * which are often to the nearest second, work as expected.
+   * @return Current time.
+   */
+  public static OffsetDateTime now() {
+    return OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
   }
 }
