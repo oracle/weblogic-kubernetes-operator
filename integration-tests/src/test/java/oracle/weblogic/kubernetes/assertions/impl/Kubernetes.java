@@ -818,7 +818,7 @@ public class Kubernetes {
     LoggingFacade logger = getLogger();
     OffsetDateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
-    if (newCreationTime != null
+    if (newCreationTime != null && timestamp != null
         && newCreationTime.isAfter(timestamp)) {
       logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
           podName, newCreationTime, timestamp);
