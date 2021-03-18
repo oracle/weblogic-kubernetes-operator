@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DbUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -73,8 +74,12 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create JRF model in image domain "
+/**
+ * Test to creat a FMW domain in model in image with over 1Mb data
+ * to test that generated introspector Config Maps will be splitted to smaller than 1Mg
+ * and domain will be started and running.
+ */
+@DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
 @IntegrationTest
 public class ItFmwBigCMMiiDomain {
@@ -116,8 +121,8 @@ public class ItFmwBigCMMiiDomain {
 
   /**
    * Start DB service and create RCU schema.
-   * Assigns unique namespaces for operator and domains.
-   * Pull FMW image and Oracle DB image if running tests in Kind cluster.
+   * Assigns unique namespaces for operator and domain.
+   * Pull FMW image and Oracle DB image.
    * Installs operator.
    *
    * @param namespaces injected by JUnit
@@ -135,7 +140,7 @@ public class ItFmwBigCMMiiDomain {
     assertNotNull(namespaces.get(1), "Namespace is null");
     opNamespace = namespaces.get(1);
 
-    logger.info("Assign a unique namespace for JRF domain");
+    logger.info("Assign a unique namespace for FMW domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
@@ -147,7 +152,7 @@ public class ItFmwBigCMMiiDomain {
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
             + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
-    dbNodePort = getDBNodePort(dbNamespace, "oracledb");
+    dbNodePort = DbUtils.getDBNodePort(dbNamespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
@@ -158,7 +163,7 @@ public class ItFmwBigCMMiiDomain {
   }
 
   /**
-   * Create a JRF model in image domain with big data.
+   * Create a FMW model in image domain with big data.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    * Verify that multiple introspector CMs are produced if data is > 1Mb
@@ -374,16 +379,5 @@ public class ItFmwBigCMMiiDomain {
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
-  }
-
-  private static Integer getDBNodePort(String namespace, String dbName) {
-    logger.info(dump(Kubernetes.listServices(namespace)));
-    List<V1Service> services = listServices(namespace).getItems();
-    for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
-        return service.getSpec().getPorts().get(0).getNodePort();
-      }
-    }
-    return -1;
   }
 }

@@ -35,6 +35,7 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.DbUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -152,7 +153,7 @@ public class ItIstioCrossDomainTransaction {
       String.format("Failed to start Oracle DB");
     });
 
-    dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
+    dbNodePort = DbUtils.getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
@@ -493,16 +494,4 @@ public class ItIstioCrossDomainTransaction {
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
         + "for %s in namespace %s", domainUid, domNamespace));
   }
-
-  private static Integer getDBNodePort(String namespace, String dbName) {
-    logger.info(dump(Kubernetes.listServices(namespace)));
-    List<V1Service> services = listServices(namespace).getItems();
-    for (V1Service service : services) {
-      if (service.getMetadata().getName().startsWith(dbName)) {
-        return service.getSpec().getPorts().get(0).getNodePort();
-      }
-    }
-    return -1;
-  }
-
 }
