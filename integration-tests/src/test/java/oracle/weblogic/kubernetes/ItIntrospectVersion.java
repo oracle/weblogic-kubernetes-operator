@@ -1128,7 +1128,7 @@ public class ItIntrospectVersion {
     if (execResult.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + execResult.stdout());
       assertAll("Check that the HTTP response is 200",
-          () -> assertTrue(execResult.stdout().contains("HTTP/1.1 200 OK"))
+          () -> assertTrue(execResult.stderr().contains("HTTP/1.1 200 OK"))
       );
     } else {
       fail("Failed to change admin port number " + execResult.stderr());
