@@ -370,7 +370,7 @@ public class ReadHealthStep extends Step {
               .withOverallHealth(healthState != null ? healthState.asText() : null)
               .withActivationTime(
                   activationTime != null ? OffsetDateTime.ofInstant(
-                      Instant.ofEpochSecond(activationTime.asLong()), ZoneId.of("UTC")) : null);
+                      Instant.ofEpochMilli(activationTime.asLong()), ZoneId.of("UTC")) : null);
       if (subName != null) {
         health
             .getSubsystems()
