@@ -4,7 +4,6 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -242,9 +241,8 @@ public class DomainStatusUpdater {
         EventHelper.createEventStep(
             new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))),
         next);
-
   }
-  
+
   static String getEventMessage(String reason, String message) {
     if (message != null && message.length() > 0) {
       return message;
