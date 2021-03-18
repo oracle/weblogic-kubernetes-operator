@@ -18,8 +18,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.DbUtils;
-import oracle.weblogic.kubernetes.utils.FmwUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -44,8 +42,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -130,7 +131,7 @@ public class ItFmwBigCMMiiDomain {
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
             + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
-    dbNodePort = DbUtils.getDBNodePort(dbNamespace, "oracledb");
+    dbNodePort = getDBNodePort(dbNamespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
@@ -230,7 +231,7 @@ public class ItFmwBigCMMiiDomain {
     dockerLoginAndPushImageToRegistry(jrfMii1Image);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(domainUid,
+    Domain domain = createDomainResource(domainUid,
         jrfDomainNamespace,
         adminSecretName,
         OCIR_SECRET_NAME,
@@ -241,7 +242,7 @@ public class ItFmwBigCMMiiDomain {
         jrfMii1Image);
 
     createDomainAndVerify(domain, jrfDomainNamespace);
-    FmwUtils.verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
     // check if multiple configmaps are created
     try {
       if (!Kubernetes.listConfigMaps(jrfDomainNamespace).getItems().isEmpty()) {

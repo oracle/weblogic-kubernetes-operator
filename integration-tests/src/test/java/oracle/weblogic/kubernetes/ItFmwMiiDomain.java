@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPus
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -207,7 +208,7 @@ public class ItFmwMiiDomain {
         jrfMiiImage);
 
     createDomainAndVerify(domain, jrfDomainNamespace);
-    FmwUtils.verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -226,7 +227,7 @@ public class ItFmwMiiDomain {
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
     startupDomain();
-    FmwUtils.verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
   }
 
   /**
