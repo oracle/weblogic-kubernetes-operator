@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -312,7 +313,9 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withHealthScalarsWhenOnlyNewStatusHasServers_addThem() {
-    OffsetDateTime activationTime = OffsetDateTime.now();
+    // Truncate to seconds because we intermittently see a different number of trailing decimals
+    // that can cause the string comparison to fail
+    OffsetDateTime activationTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
