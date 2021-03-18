@@ -6,27 +6,10 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1Volume;
-import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -48,7 +31,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -58,13 +40,13 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -78,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServic
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -206,9 +187,11 @@ class ItMiiJmsRecovery {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    createDomainResource(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, configMapName, dbSecretName);
+
+    createDomainResourceWithLogHome(domainUid, domainNamespace,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+        adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
+        replicaCount, pvName, pvcName, "cluster-1", configMapName, dbSecretName, false, false);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -371,75 +354,6 @@ class ItMiiJmsRecovery {
                 condition.getRemainingTimeInMS()))
         .until(runClientInsidePod(adminServerPodName, domainNamespace,
             "/u01", "JmsSendReceiveClient", "t3://" + domainUid + "-cluster-cluster-1:8001", action, queue, "100"));
-  }
-
-  private static void createDomainResource(
-      String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
-      int replicaCount, String configmapName, String dbSecretName) {
-    List<String> securityList = new ArrayList<>();
-    securityList.add(dbSecretName);
-    // create the domain CR
-    Domain domain = new Domain()
-            .apiVersion(DOMAIN_API_VERSION)
-            .kind("Domain")
-            .metadata(new V1ObjectMeta()
-                    .name(domainUid)
-                    .namespace(domNamespace))
-            .spec(new DomainSpec()
-                    .allowReplicasBelowMinDynClusterSize(false)
-                    .domainUid(domainUid)
-                    .domainHomeSourceType("FromModel")
-                    .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
-                    .addImagePullSecretsItem(new V1LocalObjectReference()
-                            .name(repoSecretName))
-                    .webLogicCredentialsSecret(new V1SecretReference()
-                            .name(adminSecretName)
-                            .namespace(domNamespace))
-                    .includeServerOutInPodLog(true)
-                    .logHomeEnabled(Boolean.TRUE)
-                    .logHome("/shared/logs")
-                    .dataHome("/shared/data")
-                    .serverStartPolicy("IF_NEEDED")
-                    .serverPod(new ServerPod()
-                            .addEnvItem(new V1EnvVar()
-                                    .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                            .addEnvItem(new V1EnvVar()
-                                    .name("USER_MEM_ARGS")
-                                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                            .addVolumesItem(new V1Volume()
-                                    .name(pvName)
-                                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                                        .claimName(pvcName)))
-                            .addVolumeMountsItem(new V1VolumeMount()
-                                .mountPath("/shared")
-                                .name(pvName)))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING")
-                            .adminService(new AdminService()
-                                    .addChannelsItem(new Channel()
-                                            .channelName("default")
-                                            .nodePort(0))))
-                    .addClustersItem(new Cluster()
-                            .clusterName("cluster-1")
-                            .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
-                    .configuration(new Configuration()
-                            .secrets(securityList)
-                            .model(new Model()
-                                    .domainType("WLS")
-                                    .configMap(configmapName)
-                                    .runtimeEncryptionSecret(encryptionSecretName))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
-    setPodAntiAffinity(domain);
-    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            domainUid, domNamespace);
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
-            String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    domainUid, domNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domNamespace));
   }
 
   /*
