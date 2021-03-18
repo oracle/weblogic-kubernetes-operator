@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +31,6 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +106,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .namespace(namespace)
                 .name(uid)
                 .resourceVersion("1")
-                .creationTimestamp(DateTime.now()));
+                .creationTimestamp(OffsetDateTime.now()));
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {

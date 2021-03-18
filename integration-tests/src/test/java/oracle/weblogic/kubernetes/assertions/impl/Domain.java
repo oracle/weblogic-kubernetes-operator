@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
@@ -19,7 +20,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -207,7 +207,7 @@ public class Domain {
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
                                            String domainNamespace,
-                                           DateTime podOriginalCreationTimestamp) {
+                                           OffsetDateTime podOriginalCreationTimestamp) {
 
     // if pod does not exist, return false
     if (assertDoesNotThrow(() -> doesPodNotExist(domainNamespace, domainUid, podName),

@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,7 +49,6 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.EvaluatedCondition;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -148,7 +148,7 @@ public class ItIntrospectVersion {
       : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
   private final String wlSecretName = "weblogic-credentials";
 
-  private Map<String, DateTime> podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -394,9 +394,9 @@ public class ItIntrospectVersion {
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -546,9 +546,9 @@ public class ItIntrospectVersion {
     }
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -669,9 +669,9 @@ public class ItIntrospectVersion {
     assertNotEquals(-1, adminServerPort, "Couldn't get valid port for default channel");
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {

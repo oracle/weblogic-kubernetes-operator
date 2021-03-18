@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +38,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -278,8 +278,8 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
 
-    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
-    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "NEVER"),
@@ -344,7 +344,7 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
 
-    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
 
     checkPodReadyAndServiceExists(configServerPodName, 
               domainUid, domainNamespace);
@@ -396,7 +396,7 @@ class ItServerStartPolicy {
     String dynamicServerPodName = domainUid + "-managed-server1";
     String configServerPodName = domainUid + "-config-cluster-server1";
 
-    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
+    OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
     checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
     // startCluster.sh does not take any action on a running cluster
     String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.domain;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,6 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 @ApiModel(
     description =
@@ -19,7 +19,7 @@ import org.joda.time.DateTime;
 public class ServerHealth {
 
   @ApiModelProperty("RFC 3339 date and time at which the server started.")
-  private DateTime activationTime;
+  private OffsetDateTime activationTime;
 
   @ApiModelProperty(
       "Server health of this WebLogic Server. If the value is \"Not available\", the operator has "
@@ -31,20 +31,20 @@ public class ServerHealth {
   @ApiModelProperty("Status of unhealthy subsystems, if any.")
   private List<SubsystemHealth> subsystems = new ArrayList<>();
 
-  public ServerHealth activationTime(DateTime activationTime) {
+  public ServerHealth activationTime(OffsetDateTime activationTime) {
     this.activationTime = activationTime;
     return this;
   }
 
-  public DateTime activationTime() {
+  public OffsetDateTime activationTime() {
     return activationTime;
   }
 
-  public DateTime getActivationTime() {
+  public OffsetDateTime getActivationTime() {
     return activationTime;
   }
 
-  public void setActivationTime(DateTime activationTime) {
+  public void setActivationTime(OffsetDateTime activationTime) {
     this.activationTime = activationTime;
   }
 

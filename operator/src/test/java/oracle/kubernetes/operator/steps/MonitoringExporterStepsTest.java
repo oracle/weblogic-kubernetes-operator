@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -292,7 +292,7 @@ public class MonitoringExporterStepsTest {
   }
 
   private void setDeletingState(V1ObjectMeta meta) {
-    meta.setDeletionTimestamp(DateTime.now());
+    meta.setDeletionTimestamp(OffsetDateTime.now());
   }
 
   @Test
