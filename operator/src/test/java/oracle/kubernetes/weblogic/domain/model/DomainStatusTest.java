@@ -144,12 +144,12 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsProgress_removeExistedFailedCondition() {
+  public void whenAddedConditionIsProgress_doNotRmoveExistedFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
 
-    assertThat(domainStatus, not(hasCondition(Failed)));
+    assertThat(domainStatus, hasCondition(Failed));
     assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
   }
 

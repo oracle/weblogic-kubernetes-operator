@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -49,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
-import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
@@ -242,9 +242,10 @@ public class DomainStatusUpdater {
         EventHelper.createEventStep(
             new EventData(EventHelper.EventItem.DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))),
         next);
-  }
 
-  private static String getEventMessage(String reason, String message) {
+  }
+  
+  static String getEventMessage(String reason, String message) {
     if (message != null && message.length() > 0) {
       return message;
     }
@@ -411,7 +412,8 @@ public class DomainStatusUpdater {
 
 
       if (newStatus.getMessage() == null) {
-        newStatus.setMessage(info.getValidationWarningsAsString());
+        newStatus.setMessage(
+            Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
         if (existingError != null) {
           if (hasBackOffLimitCondition()) {
             newStatus.incrementIntrospectJobFailureCount();
@@ -498,13 +500,11 @@ public class DomainStatusUpdater {
       private final WlsDomainConfig config;
       private final Map<String, String> serverState;
       private final Map<String, ServerHealth> serverHealth;
-      private final Optional<DomainPresenceInfo> info;
       private final Packet packet;
 
       StatusUpdateContext(Packet packet, StatusUpdateStep statusUpdateStep) {
         super(packet, statusUpdateStep);
         this.packet = packet;
-        info = DomainPresenceInfo.fromPacket(packet);
         config = packet.getValue(DOMAIN_TOPOLOGY);
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
@@ -550,7 +550,7 @@ public class DomainStatusUpdater {
       }
 
       private MIINonDynamicChangesMethod getMiiNonDynamicChangesMethod() {
-        return info
+        return DomainPresenceInfo.fromPacket(packet)
             .map(DomainPresenceInfo::getDomain)
             .map(Domain::getSpec)
             .map(DomainSpec::getConfiguration)
@@ -566,22 +566,22 @@ public class DomainStatusUpdater {
             .orElse("");
         String message = String.format("%s\n%s",
             LOGGER.formatMessage(MessageKeys.MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED), dynamicUpdateRollBackFile);
-        updateDomainConditions(status, message, DomainConditionType.ConfigChangesPendingRestart);
+        updateDomainConditions(status, message);
       }
 
-      private void updateDomainConditions(DomainStatus status, String message, DomainConditionType domainSourceType) {
-        String introspectVersion = info
+      private void updateDomainConditions(DomainStatus status, String message) {
+        String introspectVersion = DomainPresenceInfo.fromPacket(packet)
             .map(DomainPresenceInfo::getDomain)
             .map(Domain::getSpec)
             .map(DomainSpec::getIntrospectVersion)
             .orElse("");
 
-        DomainCondition onlineUpdateCondition = new DomainCondition(domainSourceType)
+        DomainCondition onlineUpdateCondition = new DomainCondition(ConfigChangesPendingRestart)
             .withMessage(message)
             .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
             .withStatus("True");
 
-        status.removeConditionIf(c -> c.getType() == DomainConditionType.ConfigChangesPendingRestart);
+        status.removeConditionIf(c -> c.getType() == ConfigChangesPendingRestart);
         status.addCondition(onlineUpdateCondition);
       }
 
@@ -625,7 +625,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean shouldBeRunning(ServerStartupInfo startupInfo) {
-        return !startupInfo.isServiceOnly() && RUNNING_STATE.equals(startupInfo.getDesiredState());
+        return startupInfo.isNotServiceOnly() && RUNNING_STATE.equals(startupInfo.getDesiredState());
       }
 
       private boolean isNotRunning(@Nonnull String serverName) {
@@ -675,7 +675,7 @@ public class DomainStatusUpdater {
       private boolean shouldStart(final String serverName) {
         return getServerStartupInfos()
             .filter(s -> Objects.equals(serverName, s.getServerName()))
-            .anyMatch(s -> !s.isServiceOnly());
+            .anyMatch(ServerStartupInfo::isNotServiceOnly);
       }
 
       Integer getReplicaSetting() {

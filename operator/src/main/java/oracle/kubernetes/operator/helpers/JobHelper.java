@@ -382,7 +382,7 @@ public class JobHelper {
 
   private static class DeleteIntrospectorJobStep extends Step {
 
-    public static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
+    static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
 
     DeleteIntrospectorJobStep(Step next) {
       super(next);

@@ -7,7 +7,7 @@ public enum DomainConditionType {
   Progressing {
     @Override
     DomainConditionType[] typesToRemove() {
-      return new DomainConditionType[] {Progressing, Failed};
+      return new DomainConditionType[] {Progressing};
     }
   },
   Available,
