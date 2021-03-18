@@ -1118,6 +1118,13 @@ public class ItIntrospectVersion {
 
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
         "/bin/sh", "-c", curlCmd));
+    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+    logger.info("OUT");
+    logger.info(execResult.stdout());
+    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
+    logger.info("ERROR");
+    logger.info(execResult.stderr());
+    logger.info("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%");
     if (execResult.exitValue() == 0) {
       logger.info("\n HTTP response is \n " + execResult.stdout());
       assertAll("Check that the HTTP response is 200",
