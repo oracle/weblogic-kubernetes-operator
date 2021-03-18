@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -81,7 +82,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
@@ -1596,7 +1596,7 @@ public class CommonTestUtils {
       String domainUid,
       String domNamespace,
       String podName,
-      DateTime lastCreationTime
+      OffsetDateTime lastCreationTime
   ) {
     LoggingFacade logger = getLogger();
     withStandardRetryPolicy
@@ -2400,10 +2400,10 @@ public class CommonTestUtils {
                                            List<String> expectedServerNames) {
     LoggingFacade logger = getLogger();
     // get the original managed server pod creation timestamp before scale
-    List<DateTime> listOfPodCreationTimestamp = new ArrayList<>();
+    List<OffsetDateTime> listOfPodCreationTimestamp = new ArrayList<>();
     for (int i = 1; i <= replicasBeforeScale; i++) {
       String managedServerPodName = manageServerPodNamePrefix + i;
-      DateTime originalCreationTimestamp =
+      OffsetDateTime originalCreationTimestamp =
           assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
               String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                   managedServerPodName, domainNamespace));
@@ -2847,9 +2847,9 @@ public class CommonTestUtils {
    * @param podName name of the pod
    * @return PodCreationTimestamp of the pod
    */
-  public static DateTime getPodCreationTime(String namespace, String podName) {
+  public static OffsetDateTime getPodCreationTime(String namespace, String podName) {
     LoggingFacade logger = getLogger();
-    DateTime podCreationTime =
+    OffsetDateTime podCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(namespace, "", podName),
             String.format("Couldn't get PodCreationTimestamp for pod %s", podName));
     assertNotNull(podCreationTime, "Got null PodCreationTimestamp");
@@ -3370,7 +3370,7 @@ public class CommonTestUtils {
        String managedServerPrefix, int replicaCount) {
 
     // create the map with server pods and their original creation timestamps
-    Map<String, DateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    Map<String, OffsetDateTime> podsWithTimeStamps = new LinkedHashMap<>();
     podsWithTimeStamps.put(adminServerPodName,
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",

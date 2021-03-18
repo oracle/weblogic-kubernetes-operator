@@ -20,7 +20,7 @@ public class YamlDocGenerator {
   private static final String CLASS_TABLE_HEADER =
       "| Name | Type | Description |\n" + "| --- | --- | --- |";
   private static final String DEFINITION_PREFIX = "#/definitions/";
-  private static final List NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
+  private static final List<String> NON_REFERENCE_TYPES = Arrays.asList("Map", "DateTime");
   private final Map<String, Object> schema;
   private final List<String> referencesNeeded = new ArrayList<>();
   private final Set<String> referencesGenerated = new HashSet<>();
@@ -129,6 +129,7 @@ public class YamlDocGenerator {
     }
     Map<String, Object> fieldMap = subMap(subSchema, fieldName);
     Type type = new Type(fieldMap);
+
     String val = type.getString();
     if ("boolean".equals(val)) {
       val = "Boolean";
