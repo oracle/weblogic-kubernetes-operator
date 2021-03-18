@@ -56,12 +56,12 @@ testOnRestoreDomainConfig_whenNoIndexesDefinedCatSingleFile() {
 }
 
 testOnRestoreDomainConfig_whenIndexesDefinedCatMultipleFiles() {
-  mkdir ${INTROSPECTOR_MAP}_1
-  mkdir ${INTROSPECTOR_MAP}_2
+  mkdir ${INTROSPECTOR_MAP}-1
+  mkdir ${INTROSPECTOR_MAP}-2
   echo "0 2" > $INTROSPECTOR_MAP/domainzip.secure.range
   echo -n "abc" > $INTROSPECTOR_MAP/domainzip.secure
-  echo -n "def" > ${INTROSPECTOR_MAP}_1/domainzip.secure
-  echo -n "ghi" > ${INTROSPECTOR_MAP}_2/domainzip.secure
+  echo -n "def" > ${INTROSPECTOR_MAP}-1/domainzip.secure
+  echo -n "ghi" > ${INTROSPECTOR_MAP}-2/domainzip.secure
 
   restoreDomainConfig
 
