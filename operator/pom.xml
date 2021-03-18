@@ -302,15 +302,6 @@
       <artifactId>client-java</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-ext-jdk15on</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-    </dependency>
-
     <!-- test dependencies -->
     <dependency>
       <groupId>com.appscode.voyager</groupId>

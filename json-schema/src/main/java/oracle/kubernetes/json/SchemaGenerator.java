@@ -13,6 +13,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,7 +32,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.joda.time.DateTime;
 
 public class SchemaGenerator {
 
@@ -248,7 +248,7 @@ public class SchemaGenerator {
   }
 
   private boolean isDateTime(Class<?> type) {
-    return type.equals(DateTime.class);
+    return type.equals(OffsetDateTime.class);
   }
 
   private boolean isNumeric(Class<?> type) {
@@ -381,6 +381,9 @@ public class SchemaGenerator {
   }
 
   private String getDefinitionKey(Class<?> type) {
+    if (isDateTime(type)) {
+      return "DateTime";
+    }
     return type.getSimpleName();
   }
 

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -17,10 +19,6 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
-
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 /**
  * A class which can create JSON patches from the difference of two objects.
@@ -61,7 +59,7 @@ class ObjectPatch<T> {
     return this;
   }
 
-  ObjectPatch<T> withDateTimeField(String fieldName, Function<T,DateTime> getter) {
+  ObjectPatch<T> withDateTimeField(String fieldName, Function<T,OffsetDateTime> getter) {
     fields.add(new DateTimeField<>(fieldName, getter));
     return this;
   }
@@ -250,15 +248,14 @@ class ObjectPatch<T> {
   }
 
   static class DateTimeField<T> extends StringField<T> {
-    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-
-    DateTimeField(String name, Function<T, DateTime> getter) {
+    DateTimeField(String name, Function<T, OffsetDateTime> getter) {
       super(name, a -> toString(getter.apply(a)));
     }
 
-    private static String toString(DateTime dateTime) {
-      return Optional.ofNullable(dateTime).map(DATE_FORMAT::print).orElse(null);
+    private static String toString(OffsetDateTime dateTime) {
+      return Optional.ofNullable(dateTime).map(DATE_FORMAT::format).orElse(null);
     }
   }
 

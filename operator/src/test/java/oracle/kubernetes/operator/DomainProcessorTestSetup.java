@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -11,7 +12,6 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
@@ -43,7 +43,7 @@ public class DomainProcessorTestSetup {
    * @return the original metadata object, updated
    */
   private static V1ObjectMeta withTimestamps(V1ObjectMeta meta) {
-    return meta.creationTimestamp(DateTime.now()).resourceVersion("1");
+    return meta.creationTimestamp(OffsetDateTime.now()).resourceVersion("1");
   }
 
   /**

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,7 +30,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -207,14 +207,14 @@ class ItUsabilityOperatorHelmChart {
     // get the admin server pod original creation timestamp
     logger.info("Getting admin server pod original creation timestamp");
     String adminServerPodName = domain1Uid + adminServerPrefix;
-    DateTime adminPodOriginalTimestamp =
+    OffsetDateTime adminPodOriginalTimestamp =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", adminServerPodName),
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domain1Namespace));
 
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps");
-    List<DateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
+    List<OffsetDateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
     for (int i = 1; i <= replicaCountDomain1; i++) {
       final String managedServerPodName = domain1Uid + managedServerPrefix + i;
       managedServerPodOriginalTimestampList.add(

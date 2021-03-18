@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -15,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1ListMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
@@ -136,8 +136,8 @@ public class KubernetesUtils {
       return false;
     }
 
-    DateTime time1 = first.getCreationTimestamp();
-    DateTime time2 = second.getCreationTimestamp();
+    OffsetDateTime time1 = first.getCreationTimestamp();
+    OffsetDateTime time2 = second.getCreationTimestamp();
 
     if (time1.equals(time2)) {
       return getResourceVersion(first).compareTo(getResourceVersion(second)) > 0;
