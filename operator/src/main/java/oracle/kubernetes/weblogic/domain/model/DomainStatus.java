@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -22,7 +23,6 @@ import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
@@ -69,7 +69,7 @@ public class DomainStatus {
       "RFC 3339 date and time at which the operator started the domain. This will be when "
           + "the operator begins processing and will precede when the various servers "
           + "or clusters are available.")
-  private DateTime startTime = SystemClock.now();
+  private OffsetDateTime startTime = SystemClock.now();
 
   @Description(
       "The number of running cluster member Managed Servers in the WebLogic cluster if there is "
@@ -444,7 +444,7 @@ public class DomainStatus {
    *
    * @return start time
    */
-  DateTime getStartTime() {
+  OffsetDateTime getStartTime() {
     return startTime;
   }
 

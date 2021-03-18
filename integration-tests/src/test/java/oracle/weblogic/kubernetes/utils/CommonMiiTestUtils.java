@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,7 +42,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -757,7 +757,7 @@ public class CommonMiiTestUtils {
    * @param domainNamespace namespace where pods exists
    * @param podsCreationTimes map of pods name and pod creation times
    */
-  public static void verifyPodsNotRolled(String domainNamespace, Map<String, DateTime> podsCreationTimes) {
+  public static void verifyPodsNotRolled(String domainNamespace, Map<String, OffsetDateTime> podsCreationTimes) {
     // wait for 2 minutes before checking the pods, make right decision logic
     // that runs every two minutes in the  Operator
     try {
@@ -766,7 +766,7 @@ public class CommonMiiTestUtils {
     } catch (InterruptedException ie) {
       getLogger().info("InterruptedException while sleeping for 2 minutes");
     }
-    for (Map.Entry<String, DateTime> entry : podsCreationTimes.entrySet()) {
+    for (Map.Entry<String, OffsetDateTime> entry : podsCreationTimes.entrySet()) {
       assertEquals(
           entry.getValue(),
           getPodCreationTime(domainNamespace, entry.getKey()),
