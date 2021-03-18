@@ -22,6 +22,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/wdt-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
@@ -159,18 +160,13 @@ function initialize {
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ] || [ ! -d ${domainHomeImageBuildPath} ]; then
-    getDockerSample
-  fi
-}
+  export WDT_DIR="/tmp/dhii-sample/tools"
+  export WIT_DIR="${WDT_DIR}"
 
-#
-# Function to get the dependency docker sample
-#
-function getDockerSample {
-  dockerImagesDir=${domainHomeImageBuildPath%/OracleWebLogic*}
-  rm -rf ${dockerImagesDir}
-  git clone https://github.com/oracle/docker-images.git ${dockerImagesDir}
+  export WDT_VERSION=${wdtVersion}
+  export WIT_VERSION=${witVersion}
+
+  install_wit_if_needed || exit 1
 }
 
 #
@@ -182,31 +178,27 @@ function getDockerSample {
 function createDomainHome {
 
   if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then
-  dockerDir=${domainHomeImageBuildPath}
-  dockerPropsDir=${dockerDir}/properties
-  cp ${domainPropertiesOutput} ${dockerPropsDir}/docker-build
+    echo "WIT_DIR is ${WIT_DIR}"
 
-  # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="${dockerPropsDir}/docker-build/domain_security.properties"
-  passwordFile="${dockerPropsDir}/docker-build/domain_security.properties"
- 
-  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
-  if [ ! -f $usernameFile ]; then
-    usernameFile="${dockerPropsDir}/docker-build/adminuser.properties"
-    passwordFile="${dockerPropsDir}/docker-build/adminpass.properties"
-  fi
-  
-  sed -i -e "s|myuser|${username}|g" $usernameFile
-  sed -i -e "s|mypassword1|${password}|g" $passwordFile
-    
-  if [ ! -z $domainHomeImageBase ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
-  fi
+    domainPropertiesOutput="${domainOutputDir}/domain.properties"
+    domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
-  # Set WDT_VERSION in case dockerDir references a WDT sample
-  # (wdtVersion comes from the inputs file)
-  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
-  bash ${dockerDir}/build.sh
+    sed -i -e "s:%ADMIN_USER_NAME%:${username}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_USER_PASS%:${password}:g" ${domainPropertiesOutput}
+
+    echo "dumping output of ${domainPropertiesOutput}"
+    cat ${domainPropertiesOutput}
+
+    echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
+
+    $WIT_DIR/imagetool/bin/imagetool.sh update \
+      --fromImage $domainHomeImageBase \
+      --tag ""${BUILD_IMAGE_TAG}"" \
+      --wdtModel ${scriptDir}/topology.yaml \
+      --wdtVariables ${domainPropertiesOutput} \
+      --wdtOperation CREATE \
+      --wdtVersion ${WDT_VERSION} \
+      --wdtDomainHome $domainHome --chown=oracle:root
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."

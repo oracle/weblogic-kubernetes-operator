@@ -408,12 +408,8 @@ function createFiles {
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
-    if [ -z $domainHomeImageBuildPath ]; then
-      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
-    fi
- 
     # Generate the properties file that will be used when creating the weblogic domain
-    echo Generating ${domainPropertiesOutput}
+    echo Generating ${domainPropertiesOutput} from ${domainPropertiesInput}
 
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
@@ -437,12 +433,14 @@ function createFiles {
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
-      defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+      defaultImageName="domain-home-in-image"
       baseTag=${domainHomeImageBase#*:}
       defaultImageName=${defaultImageName}:${baseTag:-"latest"}
       sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
-    else 
+      export BUILD_IMAGE_TAG=${defaultImageName}
+    else
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
+      export BUILD_IMAGE_TAG=${image}
     fi
   else
     # we're in the domain in PV case

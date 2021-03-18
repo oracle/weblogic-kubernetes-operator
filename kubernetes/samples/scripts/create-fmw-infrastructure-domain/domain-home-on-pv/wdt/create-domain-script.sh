@@ -76,6 +76,8 @@ source ${SCRIPTPATH}/wdt-utility.sh
 
 # Run
 
+echo "create-domain-script.sh DOMAIN_TYPE is ${DOMAIN_TYPE}"
+
 setup_wdt_shared_dir || exit 1
 
 install_wdt || exit 1
