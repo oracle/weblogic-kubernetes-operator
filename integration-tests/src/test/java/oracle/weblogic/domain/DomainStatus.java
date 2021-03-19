@@ -3,6 +3,7 @@
 
 package oracle.weblogic.domain;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,6 @@ import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 @ApiModel(
     description =
@@ -40,7 +40,7 @@ public class DomainStatus {
       "RFC 3339 date and time at which the operator started the domain. This will be when "
           + "the operator begins processing and will precede when the various servers "
           + "or clusters are available.")
-  private DateTime startTime;
+  private OffsetDateTime startTime;
 
   @ApiModelProperty(
       value =
@@ -174,20 +174,20 @@ public class DomainStatus {
     this.clusters = clusters;
   }
 
-  public DomainStatus startTime(DateTime startTime) {
+  public DomainStatus startTime(OffsetDateTime startTime) {
     this.startTime = startTime;
     return this;
   }
 
-  public DateTime startTime() {
+  public OffsetDateTime startTime() {
     return startTime;
   }
 
-  public DateTime getStartTime() {
+  public OffsetDateTime getStartTime() {
     return startTime;
   }
 
-  public void setStartTime(DateTime startTime) {
+  public void setStartTime(OffsetDateTime startTime) {
     this.startTime = startTime;
   }
 

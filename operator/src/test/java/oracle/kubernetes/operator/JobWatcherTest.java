@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.math.BigInteger;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -20,7 +21,6 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,8 +39,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
+  private OffsetDateTime clock = OffsetDateTime.now();
   private final V1Job cachedJob = createJob();
-  private long clock;
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
@@ -64,8 +64,8 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
     return new V1Job().metadata(new V1ObjectMeta().name("test").creationTimestamp(getCurrentTime()));
   }
 
-  private DateTime getCurrentTime() {
-    return new DateTime(clock);
+  private OffsetDateTime getCurrentTime() {
+    return clock;
   }
 
   @Override
@@ -375,7 +375,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
   @SuppressWarnings("unused")
   private V1Job createCompletedJobWithDifferentTimestamp(V1Job job) {
-    clock++;
+    clock = clock.plusSeconds(1);
     return markJobCompleted(createJob());
   }
 

@@ -5,11 +5,11 @@ package oracle.kubernetes.json;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Map.of;
@@ -25,7 +25,7 @@ public class YamlDocGeneratorTest {
   @Description("An annotated field")
   private Double annotatedDouble;
   @SuppressWarnings("unused")
-  private DateTime dateTime;
+  private OffsetDateTime dateTime;
   @SuppressWarnings("unused")
   private Map<String, String> notes;
   @SuppressWarnings("unused")
