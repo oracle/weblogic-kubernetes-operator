@@ -81,6 +81,7 @@ function getEffectiveAdminPolicy {
   local domainJson=$1
   local __effectivePolicy=$2
   local __adminStartPolicy=""
+  local __domainStartPolicy=""
 
   __adminStartPolicy=$(echo ${domainJson} | jq -cr '(.spec.adminServer.serverStartPolicy)')
   getDomainPolicy "${domainJson}" __domainStartPolicy
