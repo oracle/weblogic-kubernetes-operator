@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ public class ServicePresenceTest {
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private final Packet packet = new Packet();
-  private long clock;
+  private OffsetDateTime clock = OffsetDateTime.now();
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -538,8 +538,9 @@ public class ServicePresenceTest {
     return service;
   }
 
-  private DateTime getDateTime() {
-    return new DateTime(++clock);
+  private OffsetDateTime getDateTime() {
+    clock = clock.plusSeconds(1);
+    return clock;
   }
 
   private V1ObjectMeta createMetadata() {

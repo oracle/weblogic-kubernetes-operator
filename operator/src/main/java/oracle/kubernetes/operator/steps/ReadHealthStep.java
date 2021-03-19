@@ -6,6 +6,9 @@ package oracle.kubernetes.operator.steps;
 import java.io.IOException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -43,7 +46,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
@@ -367,7 +369,8 @@ public class ReadHealthStep extends Step {
           new ServerHealth()
               .withOverallHealth(healthState != null ? healthState.asText() : null)
               .withActivationTime(
-                  activationTime != null ? new DateTime(activationTime.asLong()) : null);
+                  activationTime != null ? OffsetDateTime.ofInstant(
+                      Instant.ofEpochMilli(activationTime.asLong()), ZoneId.of("UTC")) : null);
       if (subName != null) {
         health
             .getSubsystems()

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 2506914ab8c0aa9dac4f78964f5ef4e75e92a71ff56706953509df8e2e93b370
+    weblogic.sha256: 2cfe1523894f4f6f06b9b4bc11181eb0776225dd13fc5d3d13d3cf8706fdc4ad
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -780,8 +780,6 @@ spec:
                                         - path
                                 defaultMode:
                                   type: number
-                              required:
-                              - sources
                             cephfs:
                               type: object
                               properties:
@@ -3480,8 +3478,6 @@ spec:
                                           - path
                                   defaultMode:
                                     type: number
-                                required:
-                                - sources
                               cephfs:
                                 type: object
                                 properties:
@@ -6194,8 +6190,6 @@ spec:
                                     - path
                             defaultMode:
                               type: number
-                          required:
-                          - sources
                         cephfs:
                           type: object
                           properties:
@@ -8779,8 +8773,6 @@ spec:
                                           - path
                                   defaultMode:
                                     type: number
-                                required:
-                                - sources
                               cephfs:
                                 type: object
                                 properties:

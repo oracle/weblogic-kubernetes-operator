@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.utils;
 
-import org.joda.time.DateTime;
+import java.time.OffsetDateTime;
 
 /** A wrapper for the system clock that facilitates unit testing of time. */
 public abstract class SystemClock {
@@ -12,8 +12,8 @@ public abstract class SystemClock {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static SystemClock DELEGATE = new SystemClock() {
         @Override
-        public DateTime getCurrentTime() {
-          return DateTime.now();
+        public OffsetDateTime getCurrentTime() {
+          return OffsetDateTime.now();
         }
       };
 
@@ -22,7 +22,7 @@ public abstract class SystemClock {
    *
    * @return a time instance
    */
-  public static DateTime now() {
+  public static OffsetDateTime now() {
     return DELEGATE.getCurrentTime();
   }
 
@@ -31,5 +31,5 @@ public abstract class SystemClock {
    *
    * @return a time instance
    */
-  public abstract DateTime getCurrentTime();
+  public abstract OffsetDateTime getCurrentTime();
 }

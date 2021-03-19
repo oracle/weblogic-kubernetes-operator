@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -223,7 +225,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   private class WaitForJobReadyStep extends WaitForReadyStep<V1Job> {
-    private final long jobCreationTime;
+    private final OffsetDateTime jobCreationTime;
 
     private WaitForJobReadyStep(V1Job job, Step next) {
       super(job, next);
@@ -247,11 +249,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     }
 
     private boolean hasExpectedCreationTime(V1Job job) {
-      return getCreationTime(job) == jobCreationTime;
+      return getCreationTime(job).equals(jobCreationTime);
     }
 
-    private long getCreationTime(V1Job job) {
-      return job.getMetadata().getCreationTimestamp().getMillis();
+    private OffsetDateTime getCreationTime(V1Job job) {
+      return job.getMetadata().getCreationTimestamp();
     }
 
     @Override
@@ -319,7 +321,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     private long getJobStartedSeconds() {
       if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-        return (System.currentTimeMillis() - job.getStatus().getStartTime().getMillis()) / 1000;
+        return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), OffsetDateTime.now());
       }
       return -1;
     }

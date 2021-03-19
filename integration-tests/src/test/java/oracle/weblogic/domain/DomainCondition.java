@@ -3,12 +3,13 @@
 
 package oracle.weblogic.domain;
 
+import java.time.OffsetDateTime;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 @ApiModel(
     description = "DomainCondition contains details for the current condition of this domain.")
@@ -20,10 +21,10 @@ public class DomainCondition {
   private String type;
 
   @ApiModelProperty("Last time we probed the condition.")
-  private DateTime lastProbeTime;
+  private OffsetDateTime lastProbeTime;
 
   @ApiModelProperty("Last time the condition transitioned from one status to another.")
-  private DateTime lastTransitionTime;
+  private OffsetDateTime lastTransitionTime;
 
   @ApiModelProperty("Human-readable message indicating details about last transition.")
   private String message;
@@ -51,37 +52,37 @@ public class DomainCondition {
     this.type = type;
   }
 
-  public DomainCondition lastProbeTime(DateTime lastProbeTime) {
+  public DomainCondition lastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
     return this;
   }
 
-  public DateTime lastProbeTime() {
+  public OffsetDateTime lastProbeTime() {
     return lastProbeTime;
   }
 
-  public DateTime getLastProbeTime() {
+  public OffsetDateTime getLastProbeTime() {
     return lastProbeTime;
   }
 
-  public void setLastProbeTime(DateTime lastProbeTime) {
+  public void setLastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
   }
 
-  public DomainCondition lastTransitionTime(DateTime lastTransitionTime) {
+  public DomainCondition lastTransitionTime(OffsetDateTime lastTransitionTime) {
     this.lastTransitionTime = lastTransitionTime;
     return this;
   }
 
-  public DateTime lastTransitionTime() {
+  public OffsetDateTime lastTransitionTime() {
     return lastTransitionTime;
   }
 
-  public DateTime getLastTransitionTime() {
+  public OffsetDateTime getLastTransitionTime() {
     return lastTransitionTime;
   }
 
-  public void setLastTransitionTime(DateTime lastTransitionTime) {
+  public void setLastTransitionTime(OffsetDateTime lastTransitionTime) {
     this.lastTransitionTime = lastTransitionTime;
   }
 
