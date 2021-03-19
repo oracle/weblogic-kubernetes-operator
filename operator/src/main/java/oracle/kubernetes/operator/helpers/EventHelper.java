@@ -6,11 +6,11 @@ package oracle.kubernetes.operator.helpers;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
-import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
