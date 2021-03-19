@@ -412,6 +412,11 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
+        if (existingError != null) {
+          if (hasBackOffLimitCondition()) {
+            newStatus.incrementIntrospectJobFailureCount();
+          }
+        }
       }
       if (existingError != null) {
         if (hasBackOffLimitCondition()) {
@@ -798,9 +803,15 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
+      updateFailedCondition(status);
       if (!isPreserveAvailable) {
         status.removeConditionIf(c -> c.getType() == Available);
       }
+    }
+
+    private void updateFailedCondition(DomainStatus status) {
+      DomainCondition condition = status.getConditionWithType(Failed);
+      Optional.ofNullable(condition).map(c -> c.withMessage(null));
     }
   }
 

@@ -168,7 +168,12 @@ public class DomainStatus {
     }
   }
 
-  private DomainCondition getConditionWithType(DomainConditionType type) {
+  /**
+   * Get condition of the given type..
+   *
+   * @return condition
+   */
+  public DomainCondition getConditionWithType(DomainConditionType type) {
     for (DomainCondition condition : conditions) {
       if (type == condition.getType()) {
         return condition;
