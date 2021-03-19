@@ -85,6 +85,8 @@ stoppedWhenAlwaysPolicyReset=""
 replicasEqualsMinReplicas=""
 withReplicas="CONSTANT"
 withPolicy="CONSTANT"
+patchJson=""
+isAdminServer=false
 
 while getopts "vks:m:n:d:h" opt; do
   case $opt in
@@ -135,13 +137,21 @@ if [ -z "${domainJson}" ]; then
 fi
 
 # Validate that specified server is either part of a cluster or is an independent managed server
-validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName
+validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName isAdminServer
 if [ "${isValidServer}" != 'true' ]; then
   printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
 fi
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+if [ "${isAdminServer}" == 'true' ]; then
+    getEffectiveAdminPolicy "${domainJson}" effectivePolicy
+    if [ "${effectivePolicy}" == "NEVER" ]; then
+      printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER'."
+      exit 0
+    fi
+fi
+
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
@@ -151,7 +161,7 @@ if [ -n "${clusterName}" ]; then
   fi
 else
   # Server is an independent managed server. 
-  if [[ "${effectivePolicy}" == "NEVER" || "${effectivePolicy}" == "ADMIN_ONLY" ]]; then
+  if [ "${effectivePolicy}" == "NEVER" ] || [[ "${effectivePolicy}" == "ADMIN_ONLY" && "${isAdminServer}" != 'true' ]]; then
     printInfo "No changes needed, exiting. Server should be already stopping or stopped because effective sever start policy is 'NEVER' or 'ADMIN_ONLY'."
     exit 0
   fi
@@ -219,6 +229,9 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
     createPatchJsonToUpdatePolicy "${neverStartPolicyPatch}" patchJson
   fi
+elif [ "${isAdminServer}" == 'true' ]; then
+  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
+  createPatchJsonToUpdateAdminPolicy "${domainJson}" "${serverStartPolicy}" patchJson
 else
   # Server is an independent managed server, patch server start policy to NEVER
   printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'NEVER'."
