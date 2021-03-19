@@ -811,7 +811,16 @@ public class DomainStatusUpdater {
 
     private void updateFailedCondition(DomainStatus status) {
       DomainCondition condition = status.getConditionWithType(Failed);
-      Optional.ofNullable(condition).map(c -> c.withMessage(null));
+      if (condition != null) {
+        updateMessage(status, condition);
+      }
+    }
+
+    private void updateMessage(DomainStatus status, DomainCondition c) {
+      if (c.getMessage() != null && c.getMessage().equals(status.getMessage())) {
+        status.setMessage(null);
+      }
+      c.withMessage(null);
     }
   }
 
