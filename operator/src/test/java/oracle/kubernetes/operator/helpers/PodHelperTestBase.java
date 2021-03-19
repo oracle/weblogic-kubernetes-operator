@@ -458,8 +458,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
               hasItem(writableVolumeMount(INTROSPECTOR_VOLUME, "/weblogic-operator/introspector")),
-              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_1", "/weblogic-operator/introspector_1")),
-              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_2", "/weblogic-operator/introspector_2"))
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "-1", "/weblogic-operator/introspector-1")),
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "-2", "/weblogic-operator/introspector-2"))
               ));
   }
 
@@ -1392,8 +1392,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(
           getCreatedPod().getSpec().getVolumes(),
           allOf(hasItem(volume(INTROSPECTOR_VOLUME, UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)),
-                hasItem(volume(INTROSPECTOR_VOLUME + "_1", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_1")),
-                hasItem(volume(INTROSPECTOR_VOLUME + "_2", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_2"))));
+                hasItem(volume(INTROSPECTOR_VOLUME + "-1", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "-1")),
+                hasItem(volume(INTROSPECTOR_VOLUME + "-2", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "-2"))));
   }
 
   @Test
