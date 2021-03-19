@@ -297,7 +297,7 @@ class ItServerStartPolicy {
          "Configured managed server pod must not be restated");
 
     // verify that the sample script can start admin server
-    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false);
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, 
