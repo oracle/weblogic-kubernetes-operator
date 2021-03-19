@@ -22,6 +22,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/wdt-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
@@ -155,9 +156,18 @@ function initialize {
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ] || [ ! -d ${domainHomeImageBuildPath} ]; then
-    getDockerSample
+  export WDT_DIR="/tmp/fmw-dhii-sample/tools"
+  export WIT_DIR="${WDT_DIR}"
+
+  if [ -n "${wdtVersion}" ]; then
+    export WDT_VERSION=${wdtVersion}
   fi
+
+  if [ -n "${witVersion}" ]; then
+    export WIT_VERSION=${witVersion}
+  fi
+
+  install_wit_if_needed || exit 1
 }
 
 #
@@ -173,8 +183,27 @@ function getDockerSample {
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  dockerDir=${domainHomeImageBuildPath}
-  dockerPropsDir=${dockerDir}/properties
+
+  echo "debug- domainPropertiesOutput is ${domainPropertiesOutput}"
+
+  echo "dumping output of ${domainPropertiesOutput}"
+  cat ${domainPropertiesOutput}
+
+  echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
+
+  $WIT_DIR/imagetool/bin/imagetool.sh update \
+      --fromImage $domainHomeImageBase \
+      --tag ""${BUILD_IMAGE_TAG}"" \
+      --wdtModel ${scriptDir}/topology.yaml \
+      --wdtVariables ${domainPropertiesOutput} \
+      --wdtOperation CREATE \
+      --wdtVersion ${WDT_VERSION} \
+      --wdtDomainType JRF \
+      --wdtDomainHome $domainHome #--chown=oracle:root
+
+      #--wdtRunRCU \
+  return
+
   cp ${domainPropertiesOutput} ${dockerPropsDir}
 
   # 12213-domain-home-in-image use one properties file for the credentials 

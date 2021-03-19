@@ -432,7 +432,11 @@ function createFiles {
     sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_USER_NAME%:${username}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_USER_PASS%:${password}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%RCU_SCHEMA_PREFIX%:${rcuSchemaPrefix}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%RCU_SCHEMA_PASSWORD%:${rcuSchemaPassword}:g" ${domainPropertiesOutput}
+    sed -i -e "s|%RCU_DB_CONN_STRING%|${rcuDatabaseURL}|g" ${domainPropertiesOutput}
 
+    echo "******** debug - rcuDatabaseURL is '${rcuDatabaseURL}'"
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
       defaultImageName="domain-home-in-image"

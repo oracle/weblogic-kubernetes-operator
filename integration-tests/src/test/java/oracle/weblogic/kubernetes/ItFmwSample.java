@@ -349,6 +349,8 @@ public class ItFmwSample {
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "rcuSchemaPassword: ", "rcuSchemaPassword: " + RCUSCHEMAPASSWORD);
     });
   }
 
