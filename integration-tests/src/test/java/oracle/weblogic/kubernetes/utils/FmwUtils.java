@@ -29,7 +29,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The common utility class for model-in-image tests.
+ * Common utility methods for FMW Domain.
  */
 public class FmwUtils {
   /**
