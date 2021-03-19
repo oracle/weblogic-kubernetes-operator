@@ -418,11 +418,6 @@ public class DomainStatusUpdater {
           }
         }
       }
-      if (existingError != null) {
-        if (hasBackOffLimitCondition()) {
-          newStatus.incrementIntrospectJobFailureCount();
-        }
-      }
       return newStatus;
     }
 
