@@ -14,9 +14,9 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.json.JsonPatchBuilder;
-import javax.validation.Valid;
 
+import jakarta.json.JsonPatchBuilder;
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.utils.SystemClock;

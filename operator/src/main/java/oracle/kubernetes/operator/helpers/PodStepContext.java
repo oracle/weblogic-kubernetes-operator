@@ -15,8 +15,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
@@ -36,6 +34,8 @@ import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
