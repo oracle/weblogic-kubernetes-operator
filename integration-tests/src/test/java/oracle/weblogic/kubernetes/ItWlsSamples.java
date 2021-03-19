@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -188,6 +189,14 @@ public class ItWlsSamples {
 
     //copy the samples directory to a temporary location
     setupSample();
+    String secretName = domainName + "-weblogic-credentials";
+    if (!secretExists(secretName, domainNamespace)) {
+      createSecretWithUsernamePassword(
+          secretName,
+          domainNamespace,
+          ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT);
+    }
     //create PV and PVC used by the domain
     createPvPvc(domainName);
 
