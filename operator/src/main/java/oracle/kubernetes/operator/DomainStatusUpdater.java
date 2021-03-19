@@ -243,7 +243,7 @@ public class DomainStatusUpdater {
         next);
   }
 
-  static String getEventMessage(String reason, String message) {
+  private static String getEventMessage(String reason, String message) {
     if (message != null && message.length() > 0) {
       return message;
     }

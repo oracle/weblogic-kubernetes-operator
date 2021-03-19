@@ -85,13 +85,19 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   @Override
   public String getReason() {
-    return Optional.ofNullable(errorBody.getDetails())
-        .map(ErrorDetails::getCauses)
-        .stream()
-        .findFirst()
-        .map(n -> n[0])
-        .map(Cause::getReason)
-        .orElse("");
+    if (isCausesListNotEmpty()) {
+      return Optional.ofNullable(errorBody.getDetails())
+          .map(ErrorDetails::getCauses)
+          .map(n -> n[0])
+          .map(Cause::getReason)
+          .orElse("");
+    }
+    return "";
+  }
+
+  private boolean isCausesListNotEmpty() {
+    return !Optional.ofNullable(errorBody.getDetails())
+        .map(ErrorDetails::getCauses).isEmpty();
   }
 
   /**

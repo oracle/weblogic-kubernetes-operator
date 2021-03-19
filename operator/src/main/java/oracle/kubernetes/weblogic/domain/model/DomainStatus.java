@@ -63,7 +63,7 @@ public class DomainStatus {
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
   // sorted list of ClusterStatus
-  List<ClusterStatus> clusters = new ArrayList<>();
+  private List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -288,10 +288,9 @@ public class DomainStatus {
   /**
    * Increment the number of introspect job failure count.
    *
-   * @return retryCount
    */
-  public Integer incrementIntrospectJobFailureCount() {
-    return this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
+  public void incrementIntrospectJobFailureCount() {
+    this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
   }
 
 
