@@ -1305,7 +1305,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void invoke() {
       switch (podStatus) {
         case PHASE_FAILED:
-          if (isNotTerminatedByOperator(introspectorPod)) {
+          if (isNotTerminatedByOperator()) {
             delegate.runSteps(
                 DomainStatusUpdater.createFailureRelatedSteps(
                     info, getPodStatusReason(), getPodStatusMessage(), null));
@@ -1348,12 +1348,16 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
     }
 
-    private boolean isNotTerminatedByOperator(V1Pod pod) {
-      return getPodStatusReason() != null || getPodStatusMessage() != null || !isJobPodTerminated(pod);
+    private boolean isNotTerminatedByOperator() {
+      return notNullOrEmpty(getPodStatusReason()) || notNullOrEmpty(getPodStatusMessage()) || !isJobPodTerminated();
     }
 
-    private boolean isJobPodTerminated(V1Pod pod) {
-      return PodWatcher.getContainerStateTerminatedReason(PodWatcher.getContainerStatus(pod)).contains("Error");
+    private boolean notNullOrEmpty(String value) {
+      return value != null && value.length() > 0;
+    }
+
+    private boolean isJobPodTerminated() {
+      return PodWatcher.getContainerStateTerminatedReason(getMatchingContainerStatus()).contains("Error");
     }
 
     private String getPodStatusReason() {
