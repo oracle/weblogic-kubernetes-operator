@@ -16,13 +16,13 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;

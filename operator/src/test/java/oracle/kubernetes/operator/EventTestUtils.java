@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;

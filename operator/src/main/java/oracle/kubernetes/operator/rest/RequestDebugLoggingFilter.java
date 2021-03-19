@@ -8,10 +8,10 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import javax.annotation.Priority;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.ext.Provider;
 
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.ext.Provider;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import org.glassfish.jersey.message.MessageUtils;
