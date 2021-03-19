@@ -125,20 +125,17 @@ public class ItWlsSamples {
   }
 
   /**
-   * Test domain in image samples using domains created by wlst and wdt.
+   * Test domain in image samples using domains created by image tool.
    *
-   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
   @Order(1)
-  @ParameterizedTest
-  @MethodSource("paramProvider")
+  @Test
   @DisplayName("Test samples using domain in image")
-  public void testSampleDomainInImage(String model) {
-    String domainName = model.split(":")[1];
-    String script = model.split(":")[0];
+  public void testSampleDomainInImage() {
+    String domainName = "domain1";
     String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-            : diiImageNameBase + "_" + script + ":" + diiImageTag);
+            ? KIND_REPO + diiImageNameBase + ":" + diiImageTag
+            : diiImageNameBase + ":" + diiImageTag);
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -158,12 +155,6 @@ public class ItWlsSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
               "image: " + imageName);
-
-      if (script.equalsIgnoreCase("wdt")) {
-        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image",
-                "domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
-      }
     });
 
     // build the command to run create-domain.sh
