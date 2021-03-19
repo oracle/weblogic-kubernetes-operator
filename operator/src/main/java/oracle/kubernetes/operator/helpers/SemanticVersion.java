@@ -4,7 +4,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Objects;
-import javax.validation.constraints.NotNull;
+
+import jakarta.validation.constraints.NotNull;
 
 /** Major, minor and revision version specification for a product. */
 public class SemanticVersion implements Comparable<SemanticVersion> {

@@ -4,8 +4,8 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import javax.annotation.Nullable;
-import javax.validation.Valid;
 
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ModelInImageDomainType;

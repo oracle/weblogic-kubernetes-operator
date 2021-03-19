@@ -5,12 +5,12 @@ package oracle.kubernetes.operator.utils;
 
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.json.JsonPatch;
-import javax.json.JsonValue;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonValue;
 
 public class PatchUtils {
   /**
