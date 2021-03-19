@@ -134,6 +134,9 @@ public class Matchers {
     private final String expectedConfigMapName;
 
     private VolumeMatcher(String expectedName, String expectedConfigMapName) {
+      assert LegalNames.isDns1123LegalName(expectedName);
+      assert LegalNames.isDns1123LegalName(expectedConfigMapName);
+
       this.expectedName = expectedName;
       this.expectedConfigMapName = expectedConfigMapName;
     }
@@ -181,6 +184,8 @@ public class Matchers {
     private final boolean readOnly;
 
     private VolumeMountMatcher(String expectedName, String expectedPath, boolean readOnly) {
+      assert LegalNames.isDns1123LegalName(expectedName);
+
       this.expectedName = expectedName;
       this.expectedPath = expectedPath;
       this.readOnly = readOnly;
