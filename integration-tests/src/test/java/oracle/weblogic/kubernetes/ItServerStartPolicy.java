@@ -279,7 +279,7 @@ class ItServerStartPolicy {
     OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
     // verify that the sample script can shutdown admin server
-    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false);
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
 
