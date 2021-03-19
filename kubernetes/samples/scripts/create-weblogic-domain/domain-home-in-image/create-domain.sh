@@ -163,8 +163,13 @@ function initialize {
   export WDT_DIR="/tmp/dhii-sample/tools"
   export WIT_DIR="${WDT_DIR}"
 
-  export WDT_VERSION=${wdtVersion}
-  export WIT_VERSION=${witVersion}
+  if [ -n "${wdtVersion}" ]; then
+     export WDT_VERSION=${wdtVersion}
+  fi
+
+  if [ -n "${wdtVersion}" ]; then
+    export WIT_VERSION=${witVersion}
+  fi
 
   install_wit_if_needed || exit 1
 }
