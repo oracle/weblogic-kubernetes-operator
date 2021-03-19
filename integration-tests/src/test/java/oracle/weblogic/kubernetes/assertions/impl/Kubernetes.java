@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.assertions.impl;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,6 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.joda.time.DateTime;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
@@ -814,11 +814,11 @@ public class Kubernetes {
    */
   public static boolean isPodRestarted(
       String podName,
-      String namespace, DateTime timestamp) throws ApiException {
+      String namespace, OffsetDateTime timestamp) throws ApiException {
     LoggingFacade logger = getLogger();
-    DateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
+    OffsetDateTime newCreationTime = getPodCreationTimestamp(namespace, "", podName);
 
-    if (newCreationTime != null
+    if (newCreationTime != null && timestamp != null
         && newCreationTime.isAfter(timestamp)) {
       logger.info("Pod {0}: new creation time {1} is later than the last creation time {2}",
           podName, newCreationTime, timestamp);
@@ -896,7 +896,7 @@ public class Kubernetes {
    * @return true if the pod's creation timestamp is later than the initial PodCreationTimestamp
    * @throws ApiException when query fails
    */
-  public static Boolean isOperatorPodRestarted(String namespace, DateTime timestamp) throws ApiException {
+  public static Boolean isOperatorPodRestarted(String namespace, OffsetDateTime timestamp) throws ApiException {
     String labelSelector = String.format("weblogic.operatorName in (%s)", namespace);
     V1Pod pod = getPod(namespace, labelSelector, "weblogic-operator-");
     if (pod != null) {

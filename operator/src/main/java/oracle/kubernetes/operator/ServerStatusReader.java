@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -38,7 +39,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -149,7 +149,7 @@ public class ServerStatusReader {
       if (lastKnownStatus != null
           && !WebLogicConstants.UNKNOWN_STATE.equals(lastKnownStatus.getStatus())
           && lastKnownStatus.getUnchangedCount() >= main.unchangedCountToDelayStatusRecheck) {
-        if (DateTime.now()
+        if (OffsetDateTime.now()
             .isBefore(lastKnownStatus.getTime().plusSeconds((int) main.eventualLongDelay))) {
           String state = lastKnownStatus.getStatus();
           serverStateMap.put(serverName, state);

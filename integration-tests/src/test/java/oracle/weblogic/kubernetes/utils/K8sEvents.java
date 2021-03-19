@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -18,7 +19,6 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -42,7 +42,8 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkDomainEvent(
-      String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
@@ -103,7 +104,7 @@ public class K8sEvents {
    * @return count number of events count
    */
   public static int getEventCount(
-      String domainNamespace, String domainUid, String reason, DateTime timestamp) {
+      String domainNamespace, String domainUid, String reason, OffsetDateTime timestamp) {
     int count = 0;
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
@@ -130,7 +131,7 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkPodEventLoggedOnce(
-          String domainNamespace, String serverName, String reason, DateTime timestamp) {
+          String domainNamespace, String serverName, String reason, OffsetDateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged for {1} pod in the domain namespace {2}",
               reason, serverName, domainNamespace);
@@ -146,9 +147,9 @@ public class K8sEvents {
     };
   }
 
-  private static boolean isEqualOrAfter(DateTime timestamp, CoreV1Event event) {
-    return event.getLastTimestamp().isEqual(timestamp.getMillis())
-            || event.getLastTimestamp().isAfter(timestamp.getMillis());
+  private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
+    return event.getLastTimestamp().isEqual(timestamp)
+            || event.getLastTimestamp().isAfter(timestamp);
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {
