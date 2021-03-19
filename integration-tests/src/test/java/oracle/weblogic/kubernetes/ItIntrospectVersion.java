@@ -560,7 +560,26 @@ public class ItIntrospectVersion {
     }
 
     //change admin port from 7001 to 7005
-    changeAdminPort(newAdminPort);
+    String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
+
+    String curlCmd = "curl -v"
+        + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H X-Requested-By:MyClient "
+        + " -H Accept:application/json "
+        + " -H Content-Type:application/json -d \"{listenPort: " + newAdminPort + "}\" "
+        + " -X POST http://" + adminServerPodName + ":7001" + restUrl;
+    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
+
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
+        "/bin/sh", "-c", curlCmd));
+    if (execResult.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + execResult.toString());
+      assertAll("Check that the HTTP response is 200",
+          () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
+      );
+    } else {
+      fail("Failed to change admin port number " + execResult.stderr());
+    }
 
     patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
 
@@ -1100,31 +1119,6 @@ public class ItIntrospectVersion {
         assertTrue(entry.getValue().equals(introspectVersion),
             "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
       }
-    }
-  }
-
-  private static void changeAdminPort(int newAdminPort) {
-    String adminServerName = "admin-server";
-    String adminServerPodName = domainUid + "-" + adminServerName;
-    String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
-
-    String curlCmd = "curl -v"
-        + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
-        + " -H X-Requested-By:MyClient "
-        + " -H Accept:application/json "
-        + " -H Content-Type:application/json -d \"{listenPort: " + newAdminPort + "}\" "
-        + " -X POST http://" + adminServerPodName + ":7001" + restUrl;
-    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
-
-    ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
-        "/bin/sh", "-c", curlCmd));
-    if (execResult.exitValue() == 0) {
-      logger.info("\n HTTP response is \n " + execResult.toString());
-      assertAll("Check that the HTTP response is 200",
-          () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
-      );
-    } else {
-      fail("Failed to change admin port number " + execResult.stderr());
     }
   }
 
