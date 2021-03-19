@@ -99,35 +99,6 @@
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-pmd-plugin</artifactId>
-          <version>${maven-pmd-plugin-version}</version>
-          <configuration>
-            <sourceEncoding>utf-8</sourceEncoding>
-            <rulesets>
-              <ruleset>${root.basedir}/build-tools/pmd/weblogicx-ruleset.xml</ruleset>
-            </rulesets>
-            <printFailingErrors>true</printFailingErrors>
-            <failOnViolation>false</failOnViolation>
-          </configuration>
-          <executions>
-            <execution>
-              <phase>test</phase>
-              <goals>
-                <goal>pmd</goal>
-              </goals>
-            </execution>
-          </executions>
-          <dependencies>
-            <dependency>
-              <groupId>net.sourceforge.pmd</groupId>
-              <artifactId>pmd-java</artifactId>
-              <version>${pmd-java-version}</version>
-            </dependency>
-          </dependencies>
-        </plugin>
-
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
           <version>${maven-enforcer-plugin-version}</version>
           <executions>
@@ -285,11 +256,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-pmd-plugin</artifactId>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
       </plugin>
 
@@ -341,7 +307,6 @@
     </plugins>
   </build>
 
-  <!-- to resolve the warning "[WARNING] Unable to locate Source XRef to link to - DISABLED". With this warning PMD validation will work fine. -->
   <reporting>
     <plugins>
       <plugin>
@@ -627,7 +592,6 @@
     <maven-surefire-plugin-version>2.22.2</maven-surefire-plugin-version>
     <surefire-logger-api-version>2.22.2</surefire-logger-api-version>
     <maven-checkstyle-plugin-version>3.1.2</maven-checkstyle-plugin-version>
-    <maven-pmd-plugin-version>3.13.0</maven-pmd-plugin-version>
     <maven-release-plugin-version>3.0.0-M1</maven-release-plugin-version>
     <maven-javadoc-plugin-version>3.2.0</maven-javadoc-plugin-version>
     <maven-failsafe-plugin-version>3.0.0-M3</maven-failsafe-plugin-version>
@@ -636,13 +600,12 @@
     <spotbugs-maven-plugin-version>4.2.0</spotbugs-maven-plugin-version>
     <spotbugs-version>4.2.1</spotbugs-version>
     <checkstyle-version>8.41</checkstyle-version>
-    <pmd-java-version>6.21.0</pmd-java-version>
     <directory-maven-version>0.1</directory-maven-version>
     <maven-jxr-plugin-version>3.0.0</maven-jxr-plugin-version>
     <maven-gpg-plugin-version>1.6</maven-gpg-plugin-version>
     <hamcrest-junit-version>2.0.0.0</hamcrest-junit-version>
     <simplestub-version>1.3.0</simplestub-version>
-    <jakarta-json-version>1.1.6</jakarta-json-version>
+    <jakarta-json-version>2.0.0</jakarta-json-version>
     <jms-api-version>2.0.1</jms-api-version>
     <kjetland-mbknor-jsonschema-version>1.0.39</kjetland-mbknor-jsonschema-version>
     <networknt-jsonschmema-validator-version>1.0.49</networknt-jsonschmema-validator-version>
@@ -662,8 +625,8 @@
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>2.31</jersey-version>
-    <jackson-version>2.11.1</jackson-version>
+    <jersey-version>3.0.1</jersey-version>
+    <jackson-version>2.12.1</jackson-version>
     <jackson-databind-version>2.11.4</jackson-databind-version>
     <dependency-check-version>6.1.2</dependency-check-version>
     <root-generated-swagger>${project.basedir}/src-generated-swagger</root-generated-swagger>
@@ -672,7 +635,7 @@
     <skip.unit.tests>false</skip.unit.tests>
     <skip.dependency-check>false</skip.dependency-check>
     <jacoco.version>0.8.6</jacoco.version>
-    <git-commit-id-plugin-version>4.0.0</git-commit-id-plugin-version>
+    <git-commit-id-plugin-version>4.0.4</git-commit-id-plugin-version>
     <aggregate.report.dir>buildtime-reports/target/site/jacoco-aggregate/jacoco.xml</aggregate.report.dir>
     <checkstyle.config.location>${root.basedir}/build-tools/checkstyle/customized_google_checks.xml</checkstyle.config.location>
   </properties>

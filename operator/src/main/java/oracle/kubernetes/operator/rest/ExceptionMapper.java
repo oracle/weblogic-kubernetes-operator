@@ -3,11 +3,10 @@
 
 package oracle.kubernetes.operator.rest;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.ext.Provider;
-
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.ext.Provider;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 
@@ -16,7 +15,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
  * warnings for them. It debug logs WebApplicationExceptions then lets them flow through unchanged.
  */
 @Provider
-public class ExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<Exception> {
+public class ExceptionMapper implements jakarta.ws.rs.ext.ExceptionMapper<Exception> {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
