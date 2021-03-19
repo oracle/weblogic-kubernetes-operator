@@ -430,6 +430,8 @@ function createFiles {
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
     sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
     sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_USER_NAME%:${username}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_USER_PASS%:${password}:g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image

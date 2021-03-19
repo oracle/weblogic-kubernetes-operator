@@ -164,7 +164,7 @@ function initialize {
   export WIT_DIR="${WDT_DIR}"
 
   if [ -n "${wdtVersion}" ]; then
-     export WDT_VERSION=${wdtVersion}
+    export WDT_VERSION=${wdtVersion}
   fi
 
   if [ -n "${wdtVersion}" ]; then
@@ -187,9 +187,6 @@ function createDomainHome {
 
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
-
-    sed -i -e "s:%ADMIN_USER_NAME%:${username}:g" ${domainPropertiesOutput}
-    sed -i -e "s:%ADMIN_USER_PASS%:${password}:g" ${domainPropertiesOutput}
 
     echo "dumping output of ${domainPropertiesOutput}"
     cat ${domainPropertiesOutput}

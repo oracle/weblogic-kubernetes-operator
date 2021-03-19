@@ -217,6 +217,9 @@ function setup_wdt_shared_dir {
   mkdir -p $WDT_DIR || return 1
 }
 
+#
+# Install Weblogic Server Deploy Tooling to ${WDT_DIR}
+#
 function install_wdt {
 
   [ "$WDT_VERSION" = "LATEST" ] && WDT_VERSION=$(curl -s https://github.com/oracle/weblogic-deploy-tooling/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
@@ -259,6 +262,10 @@ function install_wdt {
   return 0
 }
 
+#
+# Install WebLogic Image Tool to ${WIT_DIR}. Used by install_wit_if_needed.
+# Do not call this function directory.
+#
 function install_wit {
 
   [ "$WIT_VERSION" = "LATEST" ] && WIT_VERSION=$(curl -s https://github.com/oracle/weblogic-image-tool/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
@@ -299,6 +306,10 @@ function install_wit {
   chmod 775 $WIT_DIR/imagetool/bin/* || return 1
 }
 
+#
+# Checks whether WebLogic Image Tool is already installed under ${WIT_DIR}, and install
+# it if not.
+#
 function install_wit_if_needed {
 
   [ "$WDT_VERSION" = "LATEST" ] && WDT_VERSION=$(curl -s https://github.com/oracle/weblogic-deploy-tooling/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
