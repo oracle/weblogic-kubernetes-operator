@@ -96,8 +96,8 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
   }
 
   private boolean isCausesListNotEmpty() {
-    return !Optional.ofNullable(errorBody.getDetails())
-        .map(ErrorDetails::getCauses).isEmpty();
+    return Optional.ofNullable(errorBody.getDetails())
+        .map(ErrorDetails::getCauses).get().length != 0;
   }
 
   /**
