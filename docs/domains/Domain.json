@@ -348,7 +348,7 @@
           ]
         },
         "image": {
-          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4-ol8.",
+          "description": "The WebLogic Server image; required when `domainHomeSourceType` is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.",
           "type": "string"
         },
         "imagePullPolicy": {
