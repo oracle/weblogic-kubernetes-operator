@@ -29,8 +29,8 @@ For the current production release 3.2.0:
    has all the necessary patches applied.
    * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
    * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
-* Container images based on Oracle Linux 7 and 8 are supported. The Oracle Contianer Registry now hosts container images
-  based on Oracle Linux 8, including Oracle WebLogic Server 14.1.1.0.0 images based on Java 8 or 11.
+* Container images based on Oracle Linux 8 are now supported. The Oracle Container Registry hosts container images
+  based on both Oracle Linux 7 and 8, including Oracle WebLogic Server 14.1.1.0.0 images based on Java 8 and 11.
 * You must have the `cluster-admin` role to install the operator.  The operator does
   not need the `cluster-admin` role at runtime.
 * We do not currently support running WebLogic in non-Linux containers.
