@@ -300,6 +300,7 @@ public class CommonMiiTestUtils {
             .includeServerOutInPodLog(true)
             .logHomeEnabled(Boolean.TRUE)
             .logHome("/shared/logs")
+            .dataHome("/shared/data")
             .serverStartPolicy("IF_NEEDED")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()

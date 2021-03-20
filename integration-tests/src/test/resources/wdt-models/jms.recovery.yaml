@@ -1,0 +1,87 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+topology:
+    Cluster:
+        "cluster-1":
+           DataSourceForAutomaticMigration:  LeasingDataSource
+           AutoMigrationTableName: ACTIVE
+resources:
+    FileStore:
+        ClusterFileStore:
+           DistributionPolicy: Distributed
+           MigrationPolicy: Always
+           Directory: '/shared/data/ClusterFileStore'
+           Target: 'cluster-1'
+    JDBCStore:
+        JdbcFileStore:
+           DistributionPolicy: Distributed
+           MigrationPolicy: Always
+           DataSource: StoreDataSource
+           Target: 'cluster-1'
+    JMSServer:
+        ClusterJmsServer:
+            Target: 'cluster-1'
+            PersistentStore: 'ClusterFileStore'
+        JdbcJmsServer:
+            Target: 'cluster-1'
+            PersistentStore: 'JdbcFileStore'
+
+    JMSSystemResource:
+        ClusterJmsModule:
+            Target: 'cluster-1'
+            SubDeployment:
+                ClusterSubDeployment:
+                    Target: ClusterJmsServer
+            JmsResource:
+              UniformDistributedQueue:
+                testUniformQueue:
+                   SubDeploymentName: ClusterSubDeployment
+                   JNDIName: jms/testUniformQueue
+        JdbcJmsModule:
+            Target: 'cluster-1'
+            SubDeployment:
+                JdbcSubDeployment:
+                    Target: JdbcJmsServer
+            JmsResource:
+              UniformDistributedQueue:
+                jdbcUniformQueue:
+                   SubDeploymentName: JdbcSubDeployment
+                   JNDIName: jms/jdbcUniformQueue
+
+    JDBCSystemResource:
+        LeasingDataSource:
+            Target: 'cluster-1'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    MinCapacity: 0
+                    MaxCapacity: 15
+                JDBCDataSourceParams:
+                    GlobalTransactionsProtocol: OnePhaseCommit
+                    RowPrefetchSize: 200
+                    JNDIName: jdbc/LeasingDataSource
+                JDBCDriverParams:
+                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
+                    PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:username@@'
+        StoreDataSource:
+            Target: 'cluster-1'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    MinCapacity: 0
+                    MaxCapacity: 15
+                JDBCDataSourceParams:
+                    GlobalTransactionsProtocol: OnePhaseCommit
+                    RowPrefetchSize: 200
+                    JNDIName: jdbc/StoreDataSource
+                JDBCDriverParams:
+                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
+                    PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:username@@'
