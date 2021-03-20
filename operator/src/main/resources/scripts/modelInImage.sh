@@ -38,6 +38,7 @@ WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model_filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/wdt_create_filter.py"
+WDT_MII_FILTER="/weblogic-operator/scripts/wdt_mii_filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
@@ -286,9 +287,10 @@ function createWLDomain() {
   fi
 
   # copy the filter related files to the wdt lib
-
+  trace "About to copy filter related files to the wdt lib"
   cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib
   cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
+  cp ${WDT_MII_FILTER} ${WDT_ROOT}/lib
 
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again
@@ -559,7 +561,7 @@ function diff_model() {
     exitOrLoop
   fi
   trace "Exiting diff_model"
-  return ${rc}
+#  return ${rc}
 }
 
 #
@@ -596,9 +598,12 @@ function createPrimordialDomain() {
 
     diff_model ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
 
+    trace "NEW_MERGED_MODEL: $(cat ${NEW_MERGED_MODEL})"
+    trace "DECRYPTED_MERGED_MODEL: $(cat ${DECRYPTED_MERGED_MODEL})"
+
     diff_rc=$(cat /tmp/model_diff_rc)
     rm ${DECRYPTED_MERGED_MODEL}
-    trace "createPrimordialDomain: model diff returns "${diff_rc}
+    trace "createPrimordialDomain: model diff returns ${diff_rc}"
 
 
     local security_info_updated="false"
@@ -676,6 +681,13 @@ function generateMergedModel() {
 
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+
+  trace "About to call '${WDT_BINDIR}/validateModel.sh ${wdtArgs}'."
+
   ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
     ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
   ret=$?
@@ -684,6 +696,9 @@ function generateMergedModel() {
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
+
+  trace "WDT Validate Domain Succeeded, ret=${ret}:"
+  cat ${WDT_OUTPUT}
 
   # restore trap
   start_trap
@@ -804,6 +819,15 @@ function wdtUpdateModelDomain() {
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  trace "About to call '${WDT_BINDIR}/updateDomain.sh ${wdtArgs}'."
+
   ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
   ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
   ret=$?
@@ -813,6 +837,9 @@ function wdtUpdateModelDomain() {
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
+
+  trace "WDT Update Domain Succeeded, ret=${ret}:"
+  cat ${WDT_OUTPUT}
 
   # update the wallet
   if [ ! -z ${UPDATE_RCUPWD_FLAG} ]; then

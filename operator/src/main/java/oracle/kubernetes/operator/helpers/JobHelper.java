@@ -294,6 +294,10 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
 
+      if (getDomainHomeSourceType() == FromModel) {
+        addEnvVar(vars, ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR, "false");
+      }
+
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
