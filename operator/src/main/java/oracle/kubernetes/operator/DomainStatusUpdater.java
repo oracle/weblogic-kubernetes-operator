@@ -289,16 +289,14 @@ public class DomainStatusUpdater {
 
     private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
       if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
-        return Step.chain(next,
-            EventHelper.createEventStep(
+        return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)));
+                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)),next);
       }
       if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
-        return Step.chain(next,
-            EventHelper.createEventStep(
+        return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())));
+                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), next);
       }
       return next;
     }
