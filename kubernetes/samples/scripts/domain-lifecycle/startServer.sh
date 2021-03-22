@@ -43,11 +43,13 @@ function usage() {
 
   cat << EOF
 
-  This script starts a WebLogic managed server in a domain either by increasing
-  the value of 'spec.clusters[<cluster-name>].replicas' by '1' or by updating the
+  This script starts a WebLogic server in a domain. For the managed servers, it either
+  increases the value of 'spec.clusters[<cluster-name>].replicas' by '1' or updates the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain
-  resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value can
-  be kept constant by using '-k' option. Please see README.md for more details.
+  resource or both as necessary for starting the server. For the administration server, it
+  updates the value of `spec.adminServer.serverStartPolicy` attribute of the domain resource.
+  The 'spec.clusters[<cluster-name>].replicas' value can be kept constant by using '-k' option.
+  Please see README.md for more details.
 
   Usage:
 
@@ -59,7 +61,9 @@ function usage() {
 
     -n <namespace>             : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -k <keep_replica_constant> : Keep replica count constant. Default behavior is to increment replica count.
+    -k <keep_replica_constant> : Keep replica count constant for the clustered servers. The default behavior
+                                 is to increment the replica count for the clustered servers. This parameter
+                                 is ignored for the administration and non-clustered managed servers.
 
     -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
                                  variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
@@ -88,6 +92,7 @@ patchJson=""
 serverStarted=""
 startsByPolicyUnset=""
 startsByReplicaIncreaseAndPolicyUnset=""
+isAdminServer=false
 
 while getopts "vkd:n:m:s:h" opt; do
   case $opt in
@@ -139,7 +144,7 @@ if [ -z "${domainJson}" ]; then
 fi
 
 # Validate that specified server is either part of a cluster or is an independent managed server
-validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName
+validateServerAndFindCluster "${domainUid}" "${domainNamespace}" "${serverName}" isValidServer clusterName isAdminServer
 if [ "${isValidServer}" != 'true' ]; then
   printError "Server ${serverName} is not part of any cluster and it's not an independent managed server. Please make sure that server name specified is correct."
   exit 1
@@ -152,12 +157,20 @@ if [ "${clusterPolicy}" == 'NEVER' ]; then
 fi
 
 getDomainPolicy "${domainJson}" domainPolicy
-if [[ "${domainPolicy}" == 'NEVER' || "${domainPolicy}" == 'ADMIN_ONLY' ]]; then
+if [ "${domainPolicy}" == 'NEVER' ] || [[ "${domainPolicy}" == 'ADMIN_ONLY' && "${isAdminServer}" != 'true' ]]; then
   printError "Cannot start server '${serverName}', the .spec.serverStartPolicy in the domain resource is set to 'NEVER' or 'ADMIN_ONLY'."
   exit 1
 fi
 
 getEffectivePolicy "${domainJson}" "${serverName}" "${clusterName}" effectivePolicy
+if [ "${isAdminServer}" == 'true' ]; then
+    getEffectiveAdminPolicy "${domainJson}" effectivePolicy
+    if [[ "${effectivePolicy}" == "IF_NEEDED" || "${effectivePolicy}" == "ALWAYS" ]]; then
+      printInfo "No changes needed, exiting. Server should be already starting or started because effective sever start policy is '${effectivePolicy}'."
+      exit 0
+    fi
+fi
+
 if [ -n "${clusterName}" ]; then
   # Server is part of a cluster, check currently started servers
   checkStartedServers "${domainJson}" "${serverName}" "${clusterName}" "${withReplicas}" "${withPolicy}" serverStarted
@@ -214,6 +227,9 @@ elif [[ -n ${clusterName} && "${keepReplicaConstant}" == 'true' ]]; then
     printInfo "Patching start policy for '${serverName}' to 'ALWAYS'."
     createPatchJsonToUpdatePolicy "${alwaysStartPolicyPatch}" patchJson
   fi
+elif [ "${isAdminServer}" == 'true' ]; then
+  printInfo "Patching start policy of '${serverName}' from '${effectivePolicy}' to 'IF_NEEDED'."
+  createPatchJsonToUpdateAdminPolicy "${domainJson}" "IF_NEEDED" patchJson
 else
   # Server is an independent managed server
   printInfo "Unsetting the current start policy '${effectivePolicy}' for '${serverName}'."
