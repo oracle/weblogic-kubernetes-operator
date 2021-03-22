@@ -14,8 +14,8 @@ For detailed documentation, see the [Oracle WebLogic Server Remote Console](http
 A major benefit of using the Remote Console is that you don't need to install or run the WebLogic Server Administration Console on WebLogic Server instances.
 You can use the Remote Console with WebLogic Server **slim** installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
 or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx;jsessionid=LchBX6sgzwv5MwSaamMxrIIk-etWJLb0IyCet9mcnqAYnINXvWzi!-1201085350).
-Slim installers reduce the size of WebLogic Server downloads, installations, Docker images, and Kubernetes pods.
-For example, a WebLogic Server 12.2.1.4 slim installer download is approximately 180 MB.
+Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
+For example, a WebLogic Server 12.2.1.4 slim installer download is approximately 180 MB smaller.
 
 ## Use the Remote Console
 
@@ -35,8 +35,15 @@ To access WebLogic Server domains running in Kubernetes:
 Access the REST interface of the WebLogic Server Administration Server to verify the connection and that the correct `hostname:port` is being used:
 
 ```
-$ curl --user username:password http://host:lbport/console/login/LoginForm.jsp
+$ curl --user username:password http://${HOSTNAME}:${LB_PORT}/console/login/LoginForm.jsp
 ```
+
+* `${HOSTNAME}` is where you start up the WebLogic domain.
+
+* To determine `${LB_PORT}`:
+
+   `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
+
 
 ### Use the Administration Server `NodePort`
 
@@ -50,31 +57,30 @@ http://hostname:adminserver-NodePort/
 
 1. Configure an ingress path routing rule. For example, see the following `path-routing` YAML file.
 
-   ```
+   ```yaml
    apiVersion: traefik.containo.us/v1alpha1
    kind: IngressRoute
    metadata:
-   annotations:
-   kubernetes.io/ingress.class: traefik
-   name: traefik-pathrouting-1
-   namespace: weblogic-domain
+     annotations:
+       kubernetes.io/ingress.class: traefik
+     name: traefik-pathrouting-1
+     namespace: weblogic-domain
    spec:
-   routes:
-
-       kind: Rule
+     routes:
+     - kind: Rule
        match: PathPrefix(`/domain1`)
        services:
-       kind: Service
-       name: domain1-cluster-dockercluster
-       namespace: weblogic-domain
-       port: 8001
-       kind: Rule
+       - kind: Service
+         name: domain1-cluster-dockercluster
+         namespace: weblogic-domain
+         port: 8001
+     - kind: Rule
        match: PathPrefix(`/`)
        services:
-       kind: Service
-       name: domain1-adminserver
-       namespace: weblogic-domain
-       port: 7001
+       - kind: Service
+         name: domain1-adminserver
+         namespace: weblogic-domain
+         port: 7001
    ```
 
 1. To connect to the Remote Console:
