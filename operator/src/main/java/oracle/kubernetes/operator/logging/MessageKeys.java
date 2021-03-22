@@ -96,7 +96,7 @@ public class MessageKeys {
   public static final String JOB_IS_FAILED = "WLSKO-0136";
   public static final String JOB_DELETED = "WLSKO-0137";
   public static final String WAITING_FOR_JOB_READY = "WLSKO-0138";
-  public static final String JOB_CREATED = "WLSK0-0139";
+  public static final String JOB_CREATED = "WLSKO-0139";
   public static final String JOB_IS_COMPLETE = "WLSKO-0140";
   public static final String CANNOT_PARSE_TOPOLOGY = "WLSKO-0141";
   public static final String CANNOT_PARSE_INTROSPECTOR_RESULT = "WLSKO-0142";

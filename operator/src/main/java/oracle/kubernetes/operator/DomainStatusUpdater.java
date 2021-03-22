@@ -283,22 +283,31 @@ public class DomainStatusUpdater {
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
             : doNext(createAbortedEventStepIfNeeded(
-                newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+                context, newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
                 packet);
     }
 
-    private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
+    private Step createAbortedEventStepIfNeeded(
+        DomainStatusUpdaterContext context, DomainStatus newStatus, DomainStatus oldStatus, Step statusUpdateStep) {
       if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
+        String oldReason = newStatus.getConditionWithType(Failed).getReason();
+        newStatus.getConditionWithType(Failed).withReason(getNewReason(oldReason));
         return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)),next);
+                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)),
+            createDomainStatusReplaceStep(context, newStatus));
       }
       if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
         return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), next);
+                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), statusUpdateStep);
       }
-      return next;
+      return statusUpdateStep;
+    }
+
+    private String getNewReason(String oldReason) {
+      return String.format("Aborted after maximum retry count '%s' has been reached with error '%s'",
+          DomainPresence.getDomainPresenceFailureRetryMaxCount(), oldReason);
     }
 
     private boolean hasJustExceededMaxRetryCount(DomainStatus newStatus, DomainStatus oldStatus) {
@@ -410,13 +419,24 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
-        if (existingError != null) {
-          if (hasBackOffLimitCondition()) {
-            newStatus.incrementIntrospectJobFailureCount();
-          }
-        }
+      }
+
+      //if (existingError != null) {
+      //  if (hasBackOffLimitCondition()
+      //      && newStatus.hasConditionWith(c -> c.getReason().contains("BackoffLimitExceeded"))) {
+      //    newStatus.incrementIntrospectJobFailureCount();
+      //  }
+      //}
+
+      if (isBackoffLimitExceeded(newStatus)) {
+        newStatus.incrementIntrospectJobFailureCount();
       }
       return newStatus;
+    }
+
+    private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
+      return newStatus.hasConditionWith(
+          c -> Optional.ofNullable(c.getReason()).orElse("").contains("BackoffLimitExceeded"));
     }
 
     private boolean hasBackOffLimitCondition() {
@@ -796,7 +816,7 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-      updateFailedCondition(status);
+      //updateFailedCondition(status);
       if (!isPreserveAvailable) {
         status.removeConditionIf(c -> c.getType() == Available);
       }
