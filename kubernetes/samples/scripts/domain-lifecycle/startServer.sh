@@ -43,11 +43,13 @@ function usage() {
 
   cat << EOF
 
-  This script starts a WebLogic managed server in a domain either by increasing
-  the value of 'spec.clusters[<cluster-name>].replicas' by '1' or by updating the
+  This script starts a WebLogic server in a domain. For the managed servers, it either
+  increases the value of 'spec.clusters[<cluster-name>].replicas' by '1' or updates the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain
-  resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value can
-  be kept constant by using '-k' option. Please see README.md for more details.
+  resource or both as necessary for starting the server. For the administration server, it
+  updates the value of `spec.adminServer.serverStartPolicy` attribute of the domain resource.
+  The 'spec.clusters[<cluster-name>].replicas' value can be kept constant by using '-k' option.
+  Please see README.md for more details.
 
   Usage:
 
@@ -59,7 +61,9 @@ function usage() {
 
     -n <namespace>             : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -k <keep_replica_constant> : Keep replica count constant. Default behavior is to increment replica count.
+    -k <keep_replica_constant> : Keep replica count constant for the clustered servers. The default behavior
+                                 is to increment the replica count for the clustered servers. This parameter
+                                 is ignored for the administration and non-clustered managed servers.
 
     -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
                                  variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.

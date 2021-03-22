@@ -41,11 +41,13 @@ function usage() {
 
   cat << EOF
 
-  This script stops a running WebLogic managed server in a domain either by
-  decreasing the value of 'spec.clusters[<cluster-name>].replicas' or by updating 
+  This script stops a running WebLogic server in a domain. For managed servers, it either
+  decreases the value of 'spec.clusters[<cluster-name>].replicas' or updates the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain 
-  resource or both as necessary. The 'spec.clusters[<cluster-name>].replicas' value
-  can be kept constant by using '-k' option. Please see README.md for more details.
+  resource or both as necessary to stop the server. For the administration server, it updates
+  the value of `spec.adminServer.serverStartPolicy` attribute of the domain resource. The
+  'spec.clusters[<cluster-name>].replicas' value can be kept constant by using '-k' option.
+  Please see README.md for more details.
  
   Usage:
  
@@ -57,7 +59,9 @@ function usage() {
 
     -n <namespace>             : Domain namespace. Default is 'sample-domain1-ns'.
     
-    -k <keep_replica_constant> : Keep replica count constant. Default behavior is to decrement replica count.
+    -k <keep_replica_constant> : Keep replica count constant for the clustered servers. The default behavior
+                                 is to decrement the replica count for the clustered servers. This parameter
+                                 is ignored for the administration and non-clustered managed servers.
 
     -m <kubernetes_cli>        : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
                                  variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
