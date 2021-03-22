@@ -330,8 +330,6 @@ public class ItOperatorUpgrade {
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
-
-
     // check CRD version is updated
     logger.info("Checking CRD version ");
     withStandardRetryPolicy
