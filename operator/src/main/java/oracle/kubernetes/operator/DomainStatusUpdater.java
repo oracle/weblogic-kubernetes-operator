@@ -421,10 +421,17 @@ public class DomainStatusUpdater {
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
       }
 
-      if (existingError != null && hasBackOffLimitCondition() && isBackoffLimitExceeded(newStatus)) {
+      if (shouldUpdateFailureCount(newStatus, existingError)) {
         newStatus.incrementIntrospectJobFailureCount();
       }
       return newStatus;
+    }
+
+    private boolean shouldUpdateFailureCount(DomainStatus newStatus, String existingError) {
+      return newStatus.getMessage() != null
+          && existingError != null
+          && hasBackOffLimitCondition()
+          && isBackoffLimitExceeded(newStatus);
     }
 
     private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
