@@ -421,28 +421,14 @@ public class DomainStatusUpdater {
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
       }
 
-      //if (existingError != null) {
-      //  if (hasBackOffLimitCondition()
-      //      && newStatus.hasConditionWith(c -> c.getReason().contains("BackoffLimitExceeded"))) {
-      //    newStatus.incrementIntrospectJobFailureCount();
-      //  }
-      //}
-
-      if (isBackoffLimitExceeded(newStatus)) {
+      if (existingError != null && hasBackOffLimitCondition() && isBackoffLimitExceeded(newStatus)) {
         newStatus.incrementIntrospectJobFailureCount();
       }
       return newStatus;
     }
 
     private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
-      return newStatus.hasConditionWith(
-          c -> Optional.ofNullable(c.getReason()).orElse("").contains("BackoffLimitExceeded"));
-    }
-
-    private boolean hasBackOffLimitCondition() {
-      List<DomainCondition> domainConditions = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
+      List<DomainCondition> domainConditions = Optional.of(newStatus)
           .map(DomainStatus::getConditions)
           .orElse(Collections.emptyList());
 
@@ -452,6 +438,13 @@ public class DomainStatusUpdater {
         }
       }
       return false;
+    }
+
+    private boolean hasBackOffLimitCondition() {
+      return Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(this::isBackoffLimitExceeded).orElse(false);
     }
 
     String getDomainUid() {
