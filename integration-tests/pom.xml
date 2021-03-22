@@ -271,7 +271,8 @@
                   **/ItMiiSample,
                   **/ItFmwDomainInPV,
                   **/ItFmwMiiDomain,
-                  **/ItFmwSample
+                  **/ItFmwSample,
+                  **/ItFmwBigCMMiiDomain
                 </includes-failsafe>
             </properties>
         </profile>
