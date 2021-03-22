@@ -7,9 +7,9 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 
 import com.google.gson.annotations.Expose;
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
