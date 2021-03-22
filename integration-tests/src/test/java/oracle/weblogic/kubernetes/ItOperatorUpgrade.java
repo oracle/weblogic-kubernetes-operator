@@ -294,7 +294,6 @@ public class ItOperatorUpgrade {
 
         assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
-        verifyPodsNotRolled(domainNamespace, pods);
         // check operator image name after upgrade
         logger.info("Checking image name in operator container ");
         withStandardRetryPolicy
@@ -306,6 +305,7 @@ public class ItOperatorUpgrade {
                     condition.getRemainingTimeInMS()))
             .until(assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
                 "Exception while getting the operator image name"));
+        verifyPodsNotRolled(domainNamespace, pods);
       } finally {
         if (accountingThread != null) {
           try {
