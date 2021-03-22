@@ -262,13 +262,10 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Stop the Administration server by patching the resource definition with 
-   *  spec/adminServer/serverStartPolicy set to NEVER.
-   * Make sure that Only the Administration server is stopped. 
-   * Restart the Administration server by patching the resource definition with 
-   *  spec/adminServer/serverStartPolicy set to IF_NEEDED.
+   * Stop the Administration server by using stopServer.sh sample script.
+   * Make sure that Only the Administration server is stopped.
+   * Restart the Administration server by using startServer.sh sample script.
    * Make sure that the Administration server is in RUNNING state.
-   * Verify that the sample script can not start or shutdown admin server
    */
   @Order(1)
   @Test
@@ -281,11 +278,8 @@ class ItServerStartPolicy {
     OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
     OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/adminServer/serverStartPolicy", "NEVER"),
-         "Failed to patch adminServer's serverStartPolicy to NEVER");
-    logger.info("Domain is patched to shutdown administration server");
-
+    // verify that the sample script can shutdown admin server
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
 
@@ -302,29 +296,12 @@ class ItServerStartPolicy {
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
          "Configured managed server pod must not be restated");
 
-    // verify that the sample script can not start admin server
-    String result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
-        String.format("Failed to run %s", START_SERVER_SCRIPT));
-    assertTrue(result.contains("script doesn't support starting or stopping administration server"),
-        "The script shouldn't start the admin server");
-
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-         "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-    logger.info("Domain is patched to start administration server");
-
+    // verify that the sample script can start admin server
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, 
             domainUid, domainNamespace);
-
-    // verify that the sample script can not shutdown admin server
-    result =  assertDoesNotThrow(() ->
-          executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
-          String.format("Failed to run %s", STOP_SERVER_SCRIPT));
-    assertTrue(result.contains("script doesn't support starting or stopping administration server"),
-        "The script shouldn't stop the admin server");
   }
 
   /**
