@@ -72,6 +72,26 @@ function getEffectivePolicy {
 }
 
 #
+# Function to get effective start policy of admin server
+# $1 - Domain resource in json format
+# $2 - Return value containing effective server start policy
+#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ALWAYS".
+#
+function getEffectiveAdminPolicy {
+  local domainJson=$1
+  local __effectivePolicy=$2
+  local __adminStartPolicy=""
+  local __domainStartPolicy=""
+
+  __adminStartPolicy=$(echo ${domainJson} | jq -cr '(.spec.adminServer.serverStartPolicy)')
+  getDomainPolicy "${domainJson}" __domainStartPolicy
+  if [[ "${__adminStartPolicy}" == "null" || "${__domainStartPolicy}" == "NEVER" ]]; then
+    __adminStartPolicy="${__domainStartPolicy}"
+  fi
+  eval $__effectivePolicy="'${__adminStartPolicy}'"
+}
+
+#
 # Function to get current start policy of server
 # $1 - Domain resource in json format
 # $2 - Name of server
@@ -167,6 +187,34 @@ function createPatchJsonToUpdatePolicy {
   local __result=$2
   patchJson="{\"spec\": {\"managedServers\": "${startPolicy}"}}"
   eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to update admin server start policy
+# $1 - Domain resource in json format
+# $2 - Policy value
+# $3 - Return value containing server start policy patch string
+#
+function createPatchJsonToUpdateAdminPolicy {
+  local domainJson=$1
+  local policy=$2
+  local __result=$3
+  local __adminServer=""
+  local __patchJson=""
+  local __serverStartPolicyPatch=""
+
+  eval $__result=""
+  __adminServer=$(echo ${domainJson} | jq -cr '(.spec.adminServer)')
+  if [ "${__adminServer}" == "null" ]; then
+    # admin server specs does not exist, add new spec with server start policy
+    addPolicyCmd="{\"serverStartPolicy\":\"${policy}\"}"
+    __serverStartPolicyPatch=$(echo ${domainJson} | jq .spec.amdinServer | jq -c "${addPolicyCmd}")
+  else
+    addOrReplaceCmd="(.spec.adminServer) | .+  {\"serverStartPolicy\": \"${policy}\"}"
+    __serverStartPolicyPatch=$(echo ${domainJson} | jq "${addOrReplaceCmd}")
+  fi
+  __patchJson="{\"spec\": {\"adminServer\": "${__serverStartPolicyPatch}"}}"
+  eval $__result="'${__patchJson}'"
 }
 
 #
@@ -632,15 +680,16 @@ function validateServerAndFindCluster {
   local serverName=$3
   local __isValidServer=$4
   local __clusterName=$5
+  local __isAdminServer=$6
   local serverCount=""
 
   eval $__isValidServer=false
+  eval $__isAdminServer=false
   eval $__clusterName=UNKNOWN
   getTopology "${domainUid}" "${domainNamespace}" jsonTopology
   adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
   if [ "${serverName}" == "${adminServer}" ]; then
-    printError "Server '${serverName}' is administration server. The '${script}' script doesn't support starting or stopping administration server."
-    exit 1
+    eval $__isAdminServer=true
   fi
   servers=($(echo $jsonTopology | jq -r '.domain.servers[].name'))
   if  checkStringInArray "${serverName}" "${servers[@]}" ; then

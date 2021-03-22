@@ -6,8 +6,8 @@ The operator provides sample scripts to start up or shut down a specific Managed
 
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain. For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
 
-#### Scripts to start and stop a Managed Server
-The `startServer.sh` script starts a Managed Server either by increasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by updating the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+#### Scripts to start and stop a WebLogic Server
+The `startServer.sh` script starts a WebLogic Server in a domain. For clustered Managed Servers, either it increases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 Use the following command to start the server either by increasing the replica count or by updating the server start policy:
 ```shell
@@ -25,7 +25,7 @@ domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched server 'managed-server2' with 'ALWAYS' start policy.
 ```
 
-The `stopServer.sh` script shuts down a running Managed Server either by decreasing the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or by patching the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `stopServer.sh` script shuts down a running WebLogic Server in a domain. For clustered Managed Servers, either it decreases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 Use the following command to stop the server either by decreasing the replica count or by updating the server start policy:
 ```shell
