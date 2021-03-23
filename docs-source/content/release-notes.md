@@ -90,7 +90,7 @@ draft: false
 
 #### Operator 3.1.0
 
-* All fixes included in 3.0.1, 3.0.2, and 3.0.3 are included in 3.1.0.
+* All fixes included in 3.0.1 through 3.0.4 are included in 3.1.0.
 * Sample [scripts to start and stop server instances]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) ([#2002](https://github.com/oracle/weblogic-kubernetes-operator/pull/2002)).
 * Support running with [OpenShift restrictive SCC]({{< relref "/security/openshift#create-a-custom-security-context-constraint" >}}) ([#2007](https://github.com/oracle/weblogic-kubernetes-operator/pull/2007)).
 * Updated [default resource and Java options]({{< relref "/faq/resource-settings.md" >}}) ([#1775](https://github.com/oracle/weblogic-kubernetes-operator/pull/1775)).
