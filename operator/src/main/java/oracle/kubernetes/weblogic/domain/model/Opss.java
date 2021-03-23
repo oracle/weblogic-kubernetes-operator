@@ -3,8 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import javax.validation.Valid;
-
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;

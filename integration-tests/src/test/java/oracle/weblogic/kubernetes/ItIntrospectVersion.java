@@ -12,6 +12,7 @@ import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -48,7 +49,6 @@ import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.EvaluatedCondition;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -80,6 +80,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
@@ -121,11 +122,13 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests related to introspectVersion attribute.
@@ -148,7 +151,7 @@ public class ItIntrospectVersion {
       : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
   private final String wlSecretName = "weblogic-credentials";
 
-  private Map<String, DateTime> podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -394,9 +397,9 @@ public class ItIntrospectVersion {
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -546,9 +549,9 @@ public class ItIntrospectVersion {
     }
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -556,29 +559,27 @@ public class ItIntrospectVersion {
           getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
     }
 
-    logger.info("Getting port for default channel");
-    int adminServerPort = assertDoesNotThrow(()
-        -> getServicePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
-        "Getting admin server port failed");
+    //change admin port from 7001 to 7005
+    String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
 
-    // create a temporary WebLogic WLST property file
-    File wlstPropertiesFile = assertDoesNotThrow(() -> File.createTempFile("wlst", "properties"),
-        "Creating WLST properties file failed");
-    Properties p = new Properties();
-    p.setProperty("admin_host", adminServerPodName);
-    p.setProperty("admin_port", Integer.toString(adminServerPort));
-    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
-    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
-    p.setProperty("cluster_name", clusterName);
-    p.setProperty("new_admin_port", Integer.toString(newAdminPort));
-    p.setProperty("test_name", "change_admin_port");
-    assertDoesNotThrow(() -> p.store(new FileOutputStream(wlstPropertiesFile), "wlst properties file"),
-        "Failed to write the WLST properties to file");
+    String curlCmd = "curl -v"
+        + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H X-Requested-By:MyClient "
+        + " -H Accept:application/json "
+        + " -H Content-Type:application/json -d \"{listenPort: " + newAdminPort + "}\" "
+        + " -X POST http://" + adminServerPodName + ":7001" + restUrl;
+    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
 
-    // change the admin server port to a different value to force pod restart
-    logger.info("changing the admin server port to a different value to force pod restart");
-    Path configScript = Paths.get(RESOURCE_DIR, "python-scripts", "introspect_version_script.py");
-    executeWLSTScript(configScript, wlstPropertiesFile.toPath(), introDomainNamespace);
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
+        "/bin/sh", "-c", curlCmd));
+    if (execResult.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + execResult.toString());
+      assertAll("Check that the HTTP response is 200",
+          () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
+      );
+    } else {
+      fail("Failed to change admin port number " + execResult.stderr());
+    }
 
     patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
 
@@ -669,9 +670,9 @@ public class ItIntrospectVersion {
     assertNotEquals(-1, adminServerPort, "Couldn't get valid port for default channel");
 
     // get the pod creation time stamps
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -767,15 +768,15 @@ public class ItIntrospectVersion {
         introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, serviceNodePort, "Couldn't get valid node port for default channel");
- 
+
     // Make a REST API call to access management console
     // So that the test will also work with WebLogic slim image
     final boolean VALID = true;
     final boolean INVALID = false;
     logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(adminServerPodName, introDomainNamespace, 
+    verifyCredentials(adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
-    verifyCredentials(adminServerPodName, introDomainNamespace, 
+    verifyCredentials(adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
     List<String> managedServerNames = new ArrayList<String>();

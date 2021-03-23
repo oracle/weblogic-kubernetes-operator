@@ -7,7 +7,6 @@ import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,25 +22,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonPatch;
-import javax.json.JsonStructure;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -71,6 +57,11 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonException;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonStructure;
 import okhttp3.internal.http2.ErrorCode;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.builders.CallParams;
@@ -89,9 +80,6 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -608,26 +596,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
-  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
-    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
-
-    @Override
-    public DateTime deserialize(
-        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
-        throws JsonParseException {
-      return je.isJsonObject()
-            ? new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()))
-            : DateTime.parse(je.getAsString());
-    }
-
-    @Override
-    public JsonElement serialize(
-        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
-      String retVal = src == null ? "" : DATE_FORMAT.print(src);
-      return new JsonPrimitive(retVal);
-    }
-  }
-
   private class DataRepository<T> {
     private final Map<String, T> data = new HashMap<>();
     private final Class<?> resourceType;
@@ -891,13 +859,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
-      final GsonBuilder builder =
-          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
-      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
+      return new JSON().deserialize(jsonStructure.toString(), resourceType);
     }
 
     JsonStructure toJsonStructure(T src) {
-      String json = new Gson().toJson(src);
+      String json = new JSON().getGson().toJson(src);
       return Json.createReader(new StringReader(json)).read();
     }
 

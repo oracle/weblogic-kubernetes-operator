@@ -4,11 +4,11 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.List;
-import javax.json.Json;
-import javax.json.JsonPatch;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonPatch;
 import oracle.kubernetes.operator.utils.PatchUtils;
 import org.junit.jupiter.api.Test;
 

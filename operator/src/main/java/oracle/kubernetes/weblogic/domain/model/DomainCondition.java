@@ -3,16 +3,16 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import javax.validation.constraints.NotNull;
+import java.time.OffsetDateTime;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
@@ -28,12 +28,12 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @Description("Last time we probed the condition.")
   @SerializedName("lastProbeTime")
   @Expose
-  private DateTime lastProbeTime;
+  private OffsetDateTime lastProbeTime;
 
   @Description("Last time the condition transitioned from one status to another.")
   @SerializedName("lastTransitionTime")
   @Expose
-  private DateTime lastTransitionTime;
+  private OffsetDateTime lastTransitionTime;
 
   @Description("Human-readable message indicating details about last transition.")
   @SerializedName("message")
@@ -86,7 +86,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @return time
    */
-  public DateTime getLastProbeTime() {
+  public OffsetDateTime getLastProbeTime() {
     return lastProbeTime;
   }
 
@@ -95,7 +95,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @param lastProbeTime time
    */
-  public void setLastProbeTime(DateTime lastProbeTime) {
+  public void setLastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
   }
 
@@ -105,7 +105,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param lastProbeTime time
    * @return this
    */
-  public DomainCondition withLastProbeTime(DateTime lastProbeTime) {
+  public DomainCondition withLastProbeTime(OffsetDateTime lastProbeTime) {
     this.lastProbeTime = lastProbeTime;
     return this;
   }
@@ -115,7 +115,7 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    *
    * @return time
    */
-  public DateTime getLastTransitionTime() {
+  public OffsetDateTime getLastTransitionTime() {
     return lastTransitionTime;
   }
 

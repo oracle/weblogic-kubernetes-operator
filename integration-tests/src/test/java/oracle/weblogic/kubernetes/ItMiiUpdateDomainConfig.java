@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,7 +47,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -318,9 +318,9 @@ class ItMiiUpdateDomainConfig {
         configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.delete.sysresources.yaml"));
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -384,9 +384,9 @@ class ItMiiUpdateDomainConfig {
         configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.jms2.yaml"));
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -454,10 +454,10 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "noreplicaconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the server pods before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
@@ -514,9 +514,9 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "dynamicclusterconfigmap";
     createClusterConfigMap(configMapName, "model.dynamic.cluster.yaml");
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -591,10 +591,10 @@ class ItMiiUpdateDomainConfig {
     String configMapName = "configclusterconfigmap";
     createClusterConfigMap(configMapName, "model.config.cluster.yaml");
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     // get the creation time of the managed server pods before patching
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
@@ -659,9 +659,9 @@ class ItMiiUpdateDomainConfig {
     final boolean VALID = true;
     final boolean INVALID = false;
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -767,8 +767,8 @@ class ItMiiUpdateDomainConfig {
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
 
     // get the creation time of the server pods before patching
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, adminPodCreationTime);
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
@@ -851,7 +851,7 @@ class ItMiiUpdateDomainConfig {
     boolean p4Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
         String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
-    assertTrue(p2Success,
+    assertTrue(p4Success,
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     checkPodDoesNotExist(managedServerPrefix + "3", domainUid, domainNamespace);

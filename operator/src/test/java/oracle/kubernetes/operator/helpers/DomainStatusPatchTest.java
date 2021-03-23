@@ -3,19 +3,22 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonString;
-import javax.json.JsonValue;
 
+import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
@@ -25,7 +28,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -309,9 +311,15 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(), hasItemsInOrder("REMOVE /status/servers/1", "REMOVE /status/servers/0"));
   }
 
+  private OffsetDateTime now() {
+    // Truncate to seconds because we intermittently see a different number of trailing decimals
+    // that can cause the string comparison to fail
+    return OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+  }
+
   @Test
   public void withHealthScalarsWhenOnlyNewStatusHasServers_addThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
@@ -325,7 +333,8 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/servers/- {'clusterName':'cluster1',"
-                      + "'health':{'activationTime':'" + activationTime + "','overallHealth':'AOK'},"
+                      + "'health':{'activationTime':'" + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(activationTime)
+                      + "','overallHealth':'AOK'},"
                       + "'serverName':'ms1'}",
                 "ADD /status/servers/- {'clusterName':'cluster1','serverName':'ms2','state':'STARTING'}"
                 ));
@@ -333,7 +342,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withHealthScalarsWhenBothStatusesHasServers_modifyThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus()
                 .withServerName("ms1").withClusterName("cluster1")
@@ -360,7 +369,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void withSubsystemHealthWhenOnlyNewStatusHasSubsystemValues_addThem() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1"))
           .addServer(new ServerStatus().withServerName("ms2")
@@ -399,7 +408,7 @@ public class DomainStatusPatchTest {
 
   @Test
   public void whenSubsystemRemovedOrModified_patchAsNeeded() {
-    DateTime activationTime = new DateTime();
+    OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1")
                 .withHealth(new ServerHealth().withOverallHealth("Confused").withActivationTime(activationTime)

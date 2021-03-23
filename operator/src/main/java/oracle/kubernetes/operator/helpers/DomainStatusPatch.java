@@ -3,12 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonValue;
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonValue;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 public class DomainStatusPatch {

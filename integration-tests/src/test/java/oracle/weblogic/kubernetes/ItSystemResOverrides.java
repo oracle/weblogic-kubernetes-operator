@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.net.http.HttpResponse;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -38,7 +39,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -110,7 +110,7 @@ public class ItSystemResOverrides {
 
   static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
-  LinkedHashMap<String, DateTime> podTimestamps;
+  LinkedHashMap<String, OffsetDateTime> podTimestamps;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -263,7 +263,7 @@ public class ItSystemResOverrides {
     // get the pod creation time stamps
     podTimestamps = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     podTimestamps.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -275,9 +275,9 @@ public class ItSystemResOverrides {
   //check if the pods are restarted by comparing the pod creationtimestamp.
   private void verifyPodsStateNotChanged() {
     logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
-      String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
+    for (Map.Entry<String, OffsetDateTime> entry : podTimestamps.entrySet()) {
+      String podName = entry.getKey();
+      OffsetDateTime creationTimestamp = entry.getValue();
       assertTrue(podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }

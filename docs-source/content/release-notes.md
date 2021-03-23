@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
-| March ??, 2021 | v3.2.0 | no | Placeholder |
+| March 26, 2021 | v3.2.0 | no | Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes. |
 | March 1, 2021 | v3.1.4 | no | Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies. |
 | February 12, 2021 | v3.1.3 | no | Resolved a pair of issues related to the operator running well in very large Kubernetes clusters. |
 | January 22, 2021 | v3.1.2 | no | Resolved an issue where the operator failed to start servers in which the pods were configured to have an annotation containing a forward slash. |
@@ -38,6 +38,37 @@ draft: false
 ### Change log
 
 #### Operator 3.2.0
+
+##### Features
+
+* The operator's container image is based on Oracle Linux 8.
+* WebLogic Server container images based on Oracle Linux 8 are supported.  
+* [Online updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#online-updates">}}) of dynamic configuration changes for Model in Image.
+* Automatic injection of the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) as a sidecar container.  
+* [Events]({{< relref "/userguide/managing-domains/domain-events.md" >}}) are generated at important moments in the life cycle of the operator or a domain.
+* [PodDisruptionBudgets]({{<relref "/userguide/introduction/architecture/_index.md#draining-a-node-and-poddisruptionbudget">}}) are generated for clusters improving the ability to maintain cluster availability during planned node shutdowns and Kubernetes upgrade.
+* Additional scripts to assist with common tasks, such as the `scaleCluster.sh` script.
+* Support for TCP and UDP on the same channel when the SIP protocol is used.
+
+##### Fixes for Bugs or Regressions
+
+* All fixes included in 3.1.1 through 3.1.4 are included in 3.2.0.
+* Resolved an issue where clustered Managed Servers would not start when the Administration Server was not running ([#2093](https://github.com/oracle/weblogic-kubernetes-operator/pull/2093)).
+* Model in Image generated domain home file systems that exceed 1 MB are supported ([#2095](https://github.com/oracle/weblogic-kubernetes-operator/pull/2095)).
+* An event and status update are generated when a cluster can't be scaled past the cluster's maximum size ([#2097](https://github.com/oracle/weblogic-kubernetes-operator/pull/2097)).
+* Improved the operator's ability to recover from failures during its initialization ([#2118](https://github.com/oracle/weblogic-kubernetes-operator/pull/2118)).
+* Improved the ability for `scalingAction.sh` to discover the latest API version ([#2130](https://github.com/oracle/weblogic-kubernetes-operator/pull/2130)).
+* Resolved an issue where the operator's log would show incorrect warnings related to missing RBAC permissions ([#2138](https://github.com/oracle/weblogic-kubernetes-operator/pull/2138)).
+* Captured WDT errors related to validating the model ([#2140](https://github.com/oracle/weblogic-kubernetes-operator/pull/2140)).
+* Resolved an issue where the operator incorrectly missed Secrets or ConfigMaps in namespaces with a large number of either resource ([#2199](https://github.com/oracle/weblogic-kubernetes-operator/pull/2199)).
+* Resolved an issue where the operator could report incorrect information about an introspection job that failed ([#2201](https://github.com/oracle/weblogic-kubernetes-operator/pull/2201)).
+* Resolved an issue where a Service with the older naming pattern from operator 3.0.x could be stranded ([#2208](https://github.com/oracle/weblogic-kubernetes-operator/pull/2208)).
+* Resolved an issue in the domain and cluster start scripts related to overrides at specific Managed Servers ([#2222](https://github.com/oracle/weblogic-kubernetes-operator/pull/2222)).
+* The operator supports logging rotation and maximum file size configurations through Helm chart values ([#2229](https://github.com/oracle/weblogic-kubernetes-operator/pull/2229).
+* Resolved an issue supporting session replication when Istio is in use ([#2242](https://github.com/oracle/weblogic-kubernetes-operator/pull/2242).
+* Resolved an issue where the operator could swallow exceptions related to SSL negotiation failure ([#2251](https://github.com/oracle/weblogic-kubernetes-operator/pull/2251).
+* Resolved an issue where introspection would detect the wrong SSL port ([#2256](https://github.com/oracle/weblogic-kubernetes-operator/pull/2256).
+* Resolved an issue where introspection would fail if a referenced Secret or ConfigMap name was too long ([#2257](https://github.com/oracle/weblogic-kubernetes-operator/pull/2257).
 
 #### Operator 3.1.4
 
