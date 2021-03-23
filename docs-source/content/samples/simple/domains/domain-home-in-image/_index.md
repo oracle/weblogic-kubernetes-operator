@@ -5,7 +5,7 @@ weight: 3
 description: "Sample for creating a WebLogic domain home inside an image, and the Domain YAML file for deploying the generated WebLogic domain."
 ---
 
-The sample scripts demonstrate the creation of a WebLogic domain home in an image using one of the domain home in image samples in the Oracle WebLogic Server images [GitHub project](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples). The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in an image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
 #### Prerequisites
 
@@ -13,7 +13,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be met prior to running the create domain script:
 
-* The WebLogic Deploy Tooling (WDT) sample requires that `JAVA_HOME` is set to a Java JDK version 1.8 or later.
+* The WebLogic Image Tool (WIT) requires that `JAVA_HOME` is set to a Java JDK version 8 or later.
 * The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
@@ -58,9 +58,44 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
-* Clone the WebLogic docker-images project into the directory that is derived from the `domainHomeImageBuildPath` property using `git clone https://github.com/oracle/docker-images.git`. By default, the script always cleans up the directory and clones it again on every run. You need to specify the `-k` option if you want to use a previously cloned project. Note that if the specified `domainHomeImageBuildPath` is empty, the script will still clone the project even if the `-k` option is specified.
-* Replace the built-in user name and password in the `properties/docker-build/domain_security.properties` file with the `username` and `password` that are supplied on the command line using the `-u` and `-p` options. These credentials need to match the WebLogic domain administrator credentials in the secret that is specified using the `weblogicCredentialsSecretName` property in the `create-domain-inputs.yaml` file.
-* Build a container image based on the Docker sample, [Example Image with a WebLogic Server Domain using the Oracle WebLogic Scripting Tooling (WLST)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image) or [Example Image with a WebLogic Server Domain using the Oracle WebLogic Deploy Tooling (WDT)](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-domain-home-in-image-wdt). It will create a sample WebLogic Server domain in a container image.
+* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images.
+
+   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each. Assuming the version numbers are `1.9.10` and `1.9.9` respectively, the script calls:
+
+   ```shell
+   $ cd /tmp/dhii-sample/tools
+
+   $ curl --silent --show-error --connect-timeout 10 -O -L https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.10/weblogic-deploy.zip \
+     -o /tmp/dhii-sample/tools/weblogic-deploy.zip
+
+   $ curl --silent --show-error --connect-timeout 10 -O -L https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.9/imagetool.zip \
+     -o /tmp/dhii-sample/tools/imagetool.zip
+   ```
+* Set up the WebLogic Image Tool, run the following commands:
+
+   ```shell
+   $ cd /tmp/dhii-sample/tools
+
+   $ unzip imagetool.zip
+  
+   $ export WLSIMG_CACHEDIR="/tmp/dhii-sample/tools/imagetool-cache"
+
+   $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_1.9.10
+
+   $ ./imagetool/bin/imagetool.sh cache addInstaller \
+     --type wdt \
+     --version 1.9.10 \
+     --path /tmp/dhii-sample/tools/weblogic-deploy.zip
+   ```
+
+  For more information about the WIT cache, see the
+  [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+
+  The script then installs WIT to the `/tmp/dhii-sample/tools/imagetool` directory, sets the
+  WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory, and
+  put a `wdt_1.9.10` entry in the tool's cache which points to the WDT ZIP file installer.
+
+* Build a container image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) and its cached reference to the WDT installer.
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
   in the registry (for example, Oracle Cloud Infrastructure Registry, GitHub Container Registry, and such) because
@@ -137,13 +172,12 @@ The following parameters can be provided in the inputs file.
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
 | `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
-| `domainHomeImageBuildPath` | Location of the WebLogic "domain home in image" image in the `https://github.com/oracle/docker-images.git` project. If not specified, use `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image`. Another possible value is `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt` which uses WDT, instead of WLST, to generate the domain configuration. | `./docker-images/OracleWebLogic/samples/12213-domain-home-in-image` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome` if `logHomeOnPV` is true. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Server image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server image with a domain home in it. By default, the scripts tag the generated WebLogic Server image as either `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath` property, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | |
+| `image` | WebLogic Server image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server image with a domain home in it. By default, the scripts tag the generated WebLogic Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` int the pod's stdout. | `true` |
