@@ -409,28 +409,37 @@ public class DomainStatusUpdater {
     DomainStatus getNewStatus() {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
-      String existingError = Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getMessage)
-          .orElse(null);
 
 
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
-        if (existingError == null && hasBackOffLimitCondition()) {
-          newStatus.incrementIntrospectJobFailureCount();
-        }
+      }
+      if (shouldUpdateFailureCount(newStatus)) {
+        newStatus.incrementIntrospectJobFailureCount();
       }
 
       return newStatus;
     }
 
-    private boolean shouldUpdateFailureCount(DomainStatus newStatus, String existingError) {
-      return newStatus.getMessage() != null
-          && existingError != null
-          && hasBackOffLimitCondition()
+    private String getExistingStatusMessage() {
+      return Optional.ofNullable(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getMessage)
+              .orElse(null);
+    }
+
+    private DomainCondition getProgressingCondition() {
+      return Optional.ofNullable(info)
+          .map(DomainPresenceInfo::getDomain)
+          .map(Domain::getStatus)
+          .map(s -> s.getConditionWithType(Progressing)).orElse(null);
+    }
+
+    private boolean shouldUpdateFailureCount(DomainStatus newStatus) {
+      return getProgressingCondition() == null
+          && getExistingStatusMessage() == null
           && isBackoffLimitExceeded(newStatus);
     }
 
