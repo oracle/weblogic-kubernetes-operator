@@ -283,31 +283,23 @@ public class DomainStatusUpdater {
       return context.isStatusUnchanged(newStatus)
             ? doNext(packet)
             : doNext(createAbortedEventStepIfNeeded(
-                context, newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+          newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
                 packet);
     }
 
     private Step createAbortedEventStepIfNeeded(
-        DomainStatusUpdaterContext context, DomainStatus newStatus, DomainStatus oldStatus, Step statusUpdateStep) {
+        DomainStatus newStatus, DomainStatus oldStatus, Step next) {
       if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
-        String oldReason = newStatus.getConditionWithType(Failed).getReason();
-        newStatus.getConditionWithType(Failed).withReason(getNewReason(oldReason));
         return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)),
-            createDomainStatusReplaceStep(context, newStatus));
+                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)), next);
       }
       if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
         return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), statusUpdateStep);
+                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), next);
       }
-      return statusUpdateStep;
-    }
-
-    private String getNewReason(String oldReason) {
-      return String.format("Aborted after maximum retry count '%s' has been reached with error '%s'",
-          DomainPresence.getDomainPresenceFailureRetryMaxCount(), oldReason);
+      return next;
     }
 
     private boolean hasJustExceededMaxRetryCount(DomainStatus newStatus, DomainStatus oldStatus) {

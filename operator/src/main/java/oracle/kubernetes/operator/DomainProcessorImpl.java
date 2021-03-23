@@ -427,7 +427,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         break;
       case "DELETED":
         LOGGER.fine("Introspector Pod " + introspectorPod.getMetadata().getName()
-            + " for domain " + domainUid + " is deleted ");
+            + " for domain " + domainUid + " is deleted.");
         break;
       default:
     }
