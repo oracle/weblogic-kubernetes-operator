@@ -116,10 +116,13 @@ public class DomainStatus {
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
+      conditions = conditions.stream()
+          .filter(c -> preserve(c, newCondition.getType().typesToRemoveOnEqual())).collect(Collectors.toList());
       return this;
     }
 
-    conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
+    conditions = conditions.stream()
+        .filter(c -> preserve(c, newCondition.getType().typesToRemove())).collect(Collectors.toList());
 
     conditions.add(newCondition);
     reason = newCondition.getStatusReason();
@@ -127,8 +130,8 @@ public class DomainStatus {
     return this;
   }
 
-  private boolean preserve(DomainCondition condition, DomainConditionType newType) {
-    for (DomainConditionType type : newType.typesToRemove()) {
+  private boolean preserve(DomainCondition condition, DomainConditionType[] types) {
+    for (DomainConditionType type : types) {
       if (condition.getType() == type) {
         return false;
       }

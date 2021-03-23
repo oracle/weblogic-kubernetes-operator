@@ -419,11 +419,11 @@ public class DomainStatusUpdater {
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
+        if (existingError == null && hasBackOffLimitCondition()) {
+          newStatus.incrementIntrospectJobFailureCount();
+        }
       }
 
-      if (shouldUpdateFailureCount(newStatus, existingError)) {
-        newStatus.incrementIntrospectJobFailureCount();
-      }
       return newStatus;
     }
 
