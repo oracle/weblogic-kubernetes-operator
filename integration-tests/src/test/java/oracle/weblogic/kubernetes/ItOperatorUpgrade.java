@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -46,6 +48,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -55,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
@@ -66,7 +70,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Operator upgrade tests.
+ * Install a released version of Operator from GitHub chart repository.
+ * Create a domain using Domain-In-Image model with a dynamic cluster.
+ * Deploy an application to the cluster in domain and verify the application 
+ * can be accessed while the operator is upgraded and after the upgrade.
+ * Upgrade operator with latest Operator image from develop branch.
+ * Verify CRD version and image are updated.
+ * Scale the cluster in upgraded environment.
+ * Restart the entire domain in upgraded environment.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
@@ -87,7 +98,6 @@ public class ItOperatorUpgrade {
   /**
    * For each test:
    * Assigns unique namespaces for operator and domain.
-   *
    * @param namespaces injected by JUnit
    */
   @BeforeEach
@@ -119,9 +129,6 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 2.6.0 to latest.
-   * Install 2.6.0 Operator from GitHub chart repository and create a domain.
-   * Delete Operator and install latest Operator and verify CRD version is updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
@@ -131,11 +138,6 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 3.0.3 to latest.
-   * Install 3.0.3 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to develop")
@@ -145,11 +147,6 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 3.0.4 to latest.
-   * Install 3.0.4 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to develop")
@@ -159,11 +156,6 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 3.1.2 to latest.
-   * Install 3.1.2 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.2 to develop")
@@ -173,16 +165,20 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 3.1.3 to latest.
-   * Install 3.1.3 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated
-   * and the domain can be managed by scaling the cluster using operator REST api.
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to develop")
   public void testOperatorWlsUpgradeFrom313ToDevelop() {
     upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.1.4 to latest.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.1.4 to develop")
+  public void testOperatorWlsUpgradeFrom314ToDevelop() {
+    upgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -240,6 +236,13 @@ public class ItOperatorUpgrade {
     // create domain
     createDomainHomeInImageAndVerify(
         domainNamespace, operatorVersion, externalServiceNameSuffix);
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
+    }
 
     if (useHelmUpgrade) {
       // deploy application and access the application once to make sure the app is accessible
@@ -291,7 +294,6 @@ public class ItOperatorUpgrade {
 
         assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
-
         // check operator image name after upgrade
         logger.info("Checking image name in operator container ");
         withStandardRetryPolicy
@@ -303,6 +305,7 @@ public class ItOperatorUpgrade {
                     condition.getRemainingTimeInMS()))
             .until(assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
                 "Exception while getting the operator image name"));
+        verifyPodsNotRolled(domainNamespace, pods);
       } finally {
         if (accountingThread != null) {
           try {
@@ -324,7 +327,6 @@ public class ItOperatorUpgrade {
       // uninstall operator 2.5.0/2.6.0
       assertTrue(uninstallOperator(opHelmParams),
           String.format("Uninstall operator failed in namespace %s", opNamespace1));
-
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
