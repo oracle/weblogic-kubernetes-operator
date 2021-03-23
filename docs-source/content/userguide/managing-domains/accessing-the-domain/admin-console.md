@@ -21,7 +21,7 @@ For example, a WebLogic Server 12.2.1.4 slim installer download is approximately
 
 To access WebLogic Server domains running in Kubernetes:
 
-1. Install and configure the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
+1. Install, configure, and start the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
 
 1. For the Remote Console to access the Administration Server running in Kubernetes, you can:
 
@@ -40,7 +40,7 @@ $ curl --user username:password http://${HOSTNAME}:${LB_PORT}/console/login/Logi
 
 * `${HOSTNAME}` is where you start up the WebLogic domain.
 
-* To determine `${LB_PORT}`:
+* To determine `${LB_PORT}` when using a Traefik load balancer:
 
    `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
@@ -55,7 +55,7 @@ http://hostname:adminserver-NodePort/
 
 ### Configure ingress path routing rules
 
-1. Configure an ingress path routing rule. For example, see the following `path-routing` YAML file.
+1. Configure an ingress path routing rule. For example, see the following `path-routing` YAML file for a Traefik load balancer:
 
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
@@ -83,7 +83,7 @@ http://hostname:adminserver-NodePort/
          port: 7001
    ```
 
-1. To connect to the Remote Console:
+1. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, use the URL:
 
    ```
    http://${HOSTNAME}:${LB_PORT}/
