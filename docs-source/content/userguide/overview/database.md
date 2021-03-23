@@ -12,7 +12,7 @@ your state store, leasing tables, and such, in that database, then you can use t
 sample to install the database.
 
 {{% notice warning %}}
-The Oracle Database Docker images are only supported for non-production use.
+The Oracle Database images are only supported for non-production use.
 For more details, see My Oracle Support note:
 Oracle Support for Database Running on Docker (Doc ID 2216342.1)
 {{% /notice %}}
@@ -23,8 +23,8 @@ available storage providers and how to create a persistent volume and attach it 
 
 First, create a namespace for the database:
 
-```
-kubectl create namespace database-namespace
+```shell
+$ kubectl create namespace database-namespace
 ```
 
 Next, create a file called `database.yml` with the following content.  Make sure you update the
@@ -107,22 +107,21 @@ spec:
 If you have not previously done so, you will need to go to the [Oracle Container Registry](https://container-registry.oracle.com)
 and accept the license for the [Oracle database image](https://container-registry.oracle.com/pls/apex/f?p=113:4:11538835301670).
 
-Create a Docker registry secret so that Kubernetes can pull the database image:
+Create a container registry secret so that Kubernetes can pull the database image:
 
-```
+```shell
 kubectl create secret docker-registry regsecret \
         --docker-server=container-registry.oracle.com \
         --docker-username=your.email@some.com \
         --docker-password=your-password \
         --docker-email=your.email@some.com \
         -n database-namespace
-
 ```
 
 Now, use the following command to install the database:
 
-```
-kubectl apply -f database.yml
+```shell
+$ kubectl apply -f database.yml
 ```
 
 This will start up the database and expose it in the cluster at the following address:

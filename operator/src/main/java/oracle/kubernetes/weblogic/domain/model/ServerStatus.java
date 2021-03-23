@@ -5,10 +5,10 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 import javax.annotation.Nonnull;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.Expose;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.utils.OperatorUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;

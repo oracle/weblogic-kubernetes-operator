@@ -6,10 +6,12 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -17,16 +19,17 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonValue;
-import javax.validation.constraints.NotNull;
 
+import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonValue;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -44,7 +47,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.joda.time.DateTime;
+import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
@@ -65,6 +68,7 @@ public class ConfigMapHelper {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private static final String SCRIPT_LOCATION = "/scripts";
+  private static final String UPDATEDOMAINRESULT = "UPDATEDOMAINRESULT";
   private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
@@ -88,15 +92,15 @@ public class ConfigMapHelper {
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
     Map<String, String> map = new HashMap<>();
-    String token = ">>>  updatedomainResult=";
+    String updateResultToken = ">>>  updatedomainResult=";
 
     try (BufferedReader reader = new BufferedReader(new StringReader(text))) {
       String line = reader.readLine();
       while (line != null) {
-        if (line.contains(token)) {
-          int index = line.indexOf(token);
-          int beg = index + 1 + token.length();
-          map.put("UPDATEDOMAINRESULT", line.substring(beg - 1));
+        if (line.contains(updateResultToken)) {
+          int index = line.indexOf(updateResultToken);
+          int beg = index + 1 + updateResultToken.length();
+          map.put(UPDATEDOMAINRESULT, line.substring(beg - 1));
         }
         if (line.startsWith(">>>") && !line.endsWith("EOF")) {
           String filename = extractFilename(line);
@@ -499,6 +503,7 @@ public class ConfigMapHelper {
     private final DomainPresenceInfo info;
     private Map<String, String> data;
     private WlsDomainConfig wlsDomainConfig;
+    private final String nonDynamicChangesFileKey = "non_dynamic_changes.file";
 
     IntrospectionLoader(Packet packet, Step conflictStep) {
       this.packet = packet;
@@ -510,6 +515,8 @@ public class ConfigMapHelper {
     private void parseIntrospectorResult() {
       String result = (String) packet.remove(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT);
       data = ConfigMapHelper.parseIntrospectorResult(result, info.getDomainUid());
+      Optional.ofNullable(data.get(IntrospectorConfigMapConstants.TOPOLOGY_YAML))
+              .map(t -> data.put(IntrospectorConfigMapConstants.TOPOLOGY_JSON, convertToJson(t)));
 
       LOGGER.fine("================");
       LOGGER.fine(data.toString());
@@ -519,6 +526,23 @@ public class ConfigMapHelper {
             .map(this::getDomainTopology)
             .map(DomainTopology::getDomain)
             .orElse(null);
+
+      String updateDomainResult = data.get(UPDATEDOMAINRESULT);
+      if (updateDomainResult != null) {
+        LOGGER.fine("ConfigMapHelper.apply: MII Dynamic update result " + updateDomainResult);
+        packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
+        if (data.containsKey(nonDynamicChangesFileKey)) {
+          String rollbackFileContent = data.get(nonDynamicChangesFileKey);
+          packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE, rollbackFileContent);
+          data.remove(nonDynamicChangesFileKey);
+        }
+        // remove this, there is no need to store it in the configmap
+        data.remove(UPDATEDOMAINRESULT);
+      }
+    }
+
+    public static String convertToJson(String yaml) {
+      return new Gson().toJson(new Yaml().load(yaml), LinkedHashMap.class);
     }
 
     boolean isTopologyNotValid() {
@@ -527,7 +551,7 @@ public class ConfigMapHelper {
 
     private void updatePacket() {
       ScanCache.INSTANCE.registerScan(
-            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
+            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, OffsetDateTime.now()));
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
 
       copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
@@ -843,7 +867,7 @@ public class ConfigMapHelper {
       ScanCache.INSTANCE.registerScan(
           info.getNamespace(),
           info.getDomainUid(),
-          new Scan(domainTopology.getDomain(), new DateTime()));
+          new Scan(domainTopology.getDomain(), OffsetDateTime.now()));
 
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology.getDomain());
     }

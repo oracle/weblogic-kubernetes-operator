@@ -22,17 +22,17 @@ function usage() {
   -s <secret-name>    : Name of secret. Required.
 
   -l <key-value-pair> : Secret 'literal' key/value pair, for example
-                        '-l password=abc123'. Can be specified more than once. 
+                        '-l "password=abc123"'. Can be specified more than once.
 
   -f <key-file-pair>  : Secret 'file-name' key/file pair, for example
                         '-l walletFile=./ewallet.p12'.
                         Can be specified more than once. 
 
-  -dry kubectl        : Show the kubectl commands (prefixed with 'dryun:')
+  -dry kubectl        : Show the kubectl commands (prefixed with 'dryrun:')
                         but do not perform them. 
 
-  -dry yaml           : Show the yaml (prefixed with 'dryun:') but do not
-                        execute it. 
+  -dry yaml           : Show the yaml (prefixed with 'dryrun:') but do not
+                        apply it. 
 
   -?                  : This help.
 
@@ -60,7 +60,7 @@ while [ ! "${1:-}" = "" ]; do
     -s)   SECRET_NAME="${2}" ;;
     -n)   NAMESPACE="${2}" ;;
     -d)   DOMAIN_UID="${2}" ;;
-    -l)   LITERALS="${LITERALS} --from-literal=${2}" ;;
+    -l)   LITERALS="${LITERALS} --from-literal='${2}'" ;;
     -f)   FILENAMES="${FILENAMES} --from-file=${2}" ;;
     -dry) DRY_RUN="${2}"
           case "$DRY_RUN" in
@@ -89,23 +89,51 @@ fi
 
 set -eu
 
-if [ "$DRY_RUN" = "kubectl" ]; then
+function kubectlDryRunDelete() {
+cat << EOF
+dryrun:kubectl -n $NAMESPACE delete secret \\
+dryrun:  $SECRET_NAME \\
+dryrun:  --ignore-not-found
+EOF
+}
 
+function kubectlDryRunCreate() {
+local moredry=""
+if [ "$DRY_RUN" = "yaml" ]; then
+  local moredry="--dry-run -o yaml"
+fi
+cat << EOF
+dryrun:kubectl -n $NAMESPACE create secret generic \\
+dryrun:  $SECRET_NAME \\
+dryrun:  $LITERALS $FILENAMES ${moredry}
+EOF
+}
+
+function kubectlDryRunLabel() {
+cat << EOF
+dryrun:kubectl -n $NAMESPACE label  secret \\
+dryrun:  $SECRET_NAME \\
+dryrun:  weblogic.domainUID=$DOMAIN_UID
+EOF
+}
+
+function kubectlDryRun() {
 cat << EOF
 dryrun:
 dryrun:echo "@@ Info: Setting up secret '$SECRET_NAME'."
 dryrun:
-dryrun:kubectl -n $NAMESPACE delete secret \\
-dryrun:  $SECRET_NAME \\
-dryrun:  --ignore-not-found
-dryrun:kubectl -n $NAMESPACE create secret generic \\
-dryrun:  $SECRET_NAME \\
-dryrun:  $LITERALS $FILENAMES
-dryrun:kubectl -n $NAMESPACE label  secret \\
-dryrun:  $SECRET_NAME \\
-dryrun:  weblogic.domainUID=$DOMAIN_UID
+EOF
+kubectlDryRunDelete
+kubectlDryRunCreate
+kubectlDryRunLabel
+cat << EOF
 dryrun:
 EOF
+}
+
+if [ "$DRY_RUN" = "kubectl" ]; then
+
+  kubectlDryRun
 
 elif [ "$DRY_RUN" = "yaml" ]; then
 
@@ -115,12 +143,7 @@ elif [ "$DRY_RUN" = "yaml" ]; then
   # don't change indent of the sed '/a' commands - the spaces are significant
   # (we use an old form of sed append to stay compatible with old bash on mac)
 
-  kubectl -n $NAMESPACE \
-  \
-  create secret generic \
-  $SECRET_NAME $LITERALS $FILENAMES \
-  --dry-run -o yaml \
-  \
+  source <( kubectlDryRunCreate |  sed 's/dryrun://') \
   | sed -e '/ name:/a\
   labels:' \
   | sed -e '/labels:/a\
@@ -131,8 +154,5 @@ elif [ "$DRY_RUN" = "yaml" ]; then
 
 else
 
-  kubectl -n $NAMESPACE delete secret         $SECRET_NAME --ignore-not-found
-  kubectl -n $NAMESPACE create secret generic $SECRET_NAME $LITERALS $FILENAMES
-  kubectl -n $NAMESPACE label  secret         $SECRET_NAME weblogic.domainUID=$DOMAIN_UID
-
+  source <( kubectlDryRun | sed 's/dryrun://')
 fi

@@ -3,11 +3,12 @@
 
 package oracle.kubernetes.utils;
 
+import java.time.OffsetDateTime;
+
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.joda.time.DateTime;
 
 public class SystemClockTestSupport {
   private static TestSystemClock clock;
@@ -17,7 +18,7 @@ public class SystemClockTestSupport {
     return StaticStubSupport.install(SystemClock.class, "DELEGATE", clock);
   }
 
-  public static Matcher<DateTime> isDuringTest() {
+  public static Matcher<OffsetDateTime> isDuringTest() {
     return new DuringTestTimeMatcher();
   }
 
@@ -37,28 +38,27 @@ public class SystemClockTestSupport {
   }
 
   static class TestSystemClock extends SystemClock {
-    private final long testStartTime = 0;
-    private long currentTime = testStartTime;
+    private final OffsetDateTime testStartTime = OffsetDateTime.now();
+    private OffsetDateTime currentTime = testStartTime;
 
     @Override
-    public DateTime getCurrentTime() {
-      return new DateTime(currentTime);
+    public OffsetDateTime getCurrentTime() {
+      return currentTime;
     }
 
     void increment(long numSeconds) {
-      currentTime = currentTime + 1000 * numSeconds;
+      currentTime = currentTime.plusSeconds(numSeconds);
     }
   }
 
-  static class DuringTestTimeMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<DateTime> {
+  static class DuringTestTimeMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<OffsetDateTime> {
 
     @Override
-    protected boolean matchesSafely(DateTime item, Description mismatchDescription) {
+    protected boolean matchesSafely(OffsetDateTime item, Description mismatchDescription) {
       if (item == null) {
         return foundNullTime(mismatchDescription);
       }
-      long millis = item.getMillis();
-      if (clock.testStartTime <= millis && millis <= clock.currentTime) {
+      if (!clock.testStartTime.isAfter(item) && !item.isAfter(clock.currentTime)) {
         return true;
       }
 

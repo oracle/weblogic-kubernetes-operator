@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -30,7 +31,6 @@ import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
-import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 
@@ -177,6 +177,22 @@ public class TestAssertions {
     return Kubernetes.podRestartVersionUpdated(namespace, domainUid, podName, expectedRestartVersion);
   }
 
+  /**
+   * Check if a pod's introspectVersion has been updated.
+   *
+   * @param podName   name of the pod to check
+   * @param namespace in which the pod is running
+   * @param expectedIntrospectVersion introspectVersion that is expected
+   * @return true if the pod's introspectVersion has been updated
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static boolean podIntrospectVersionUpdated(
+      String podName,
+      String namespace,
+      String expectedIntrospectVersion
+  ) throws ApiException {
+    return Kubernetes.podIntrospectVersionUpdated(namespace, podName, expectedIntrospectVersion);
+  }
 
   /**
    * Check if a WebLogic domain custom resource has been patched with a new WebLogic credentials secret.
@@ -299,7 +315,8 @@ public class TestAssertions {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(Map<String, DateTime> pods, int maxUnavailable, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, OffsetDateTime> pods,
+                                                     int maxUnavailable, String namespace) {
     return Pod.verifyRollingRestartOccurred(pods, maxUnavailable, namespace);
   }
 
@@ -532,7 +549,7 @@ public class TestAssertions {
   public static Callable<Boolean> isPodRestarted(
       String podName,
       String namespace,
-      DateTime timestamp
+      OffsetDateTime timestamp
   ) {
     return () -> {
       return Kubernetes.isPodRestarted(podName, namespace,timestamp);
@@ -548,7 +565,7 @@ public class TestAssertions {
    */
   public static Callable<Boolean> isOperatorPodRestarted(
       String namespace,
-      DateTime timestamp
+      OffsetDateTime timestamp
   ) {
     return () -> {
       return Kubernetes.isOperatorPodRestarted(namespace, timestamp);
@@ -567,7 +584,7 @@ public class TestAssertions {
   public static boolean podStateNotChanged(String podName,
                                            String domainUid,
                                            String namespace,
-                                           DateTime podOriginalCreationTimestamp) {
+                                           OffsetDateTime podOriginalCreationTimestamp) {
     return Domain.podStateNotChanged(podName, domainUid, namespace, podOriginalCreationTimestamp);
   }
 

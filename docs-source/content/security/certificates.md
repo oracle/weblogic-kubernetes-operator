@@ -22,12 +22,12 @@ in the namespace `weblogic-operator-ns` and the Kubernetes `tls secret` is named
 `weblogic-operator-cert`, the following commands can be used to update the operator
 certificates and key:
 
-```bash
+```shell
 $ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \
   --cert=<path-to-certificate> --key=<path-to-private-key>
 ```
 
-```bash
+```shell
 $ helm get values weblogic-operator -n weblogic-operator-ns
 
 $ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblogic-operator \

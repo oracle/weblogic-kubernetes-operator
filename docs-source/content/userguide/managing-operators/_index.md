@@ -37,7 +37,7 @@ You can override these values by doing one of the following:
 - Overriding individual values directly on the Helm command line, using the `--set` option.
 
 You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
-```
+```shell
 $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 

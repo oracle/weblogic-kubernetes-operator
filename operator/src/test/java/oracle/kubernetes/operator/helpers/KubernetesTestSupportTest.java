@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -10,18 +11,16 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -32,6 +31,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1TokenReview;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -46,7 +47,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -292,7 +292,7 @@ public class KubernetesTestSupportTest {
     assertThat(updatedDomain.getSpec().getReplicas(), equalTo(5));
   }
 
-  private DateTime getCreationTimestamp(Domain domain) {
+  private OffsetDateTime getCreationTimestamp(Domain domain) {
     return domain.getMetadata().getCreationTimestamp();
   }
 
@@ -477,15 +477,15 @@ public class KubernetesTestSupportTest {
 
   @Test
   public void listEventWithSelector_returnsMatches() {
-    V1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
-    V1Event s2 = createEvent("ns1", "event2", "walk");
-    V1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
-    V1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
-    V1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
-    V1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
+    CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
+    CoreV1Event s2 = createEvent("ns1", "event2", "walk");
+    CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
+    CoreV1Event s4 = createEvent("ns1", "event4", "run").involvedObject(kind("frog"));
+    CoreV1Event s5 = createEvent("ns1", "event5", "run").involvedObject(kind("bird"));
+    CoreV1Event s6 = createEvent("ns2", "event3", "walk").involvedObject(kind("bird"));
     testSupport.defineResources(s1, s2, s3, s4, s5, s6);
 
-    TestResponseStep<V1EventList> responseStep = new TestResponseStep<>();
+    TestResponseStep<CoreV1EventList> responseStep = new TestResponseStep<>();
     testSupport.runSteps(
           new CallBuilder()
                 .withFieldSelector("action=walk,involvedObject.kind=bird")
@@ -498,8 +498,8 @@ public class KubernetesTestSupportTest {
     return new V1ObjectReference().kind(kind);
   }
 
-  private V1Event createEvent(String namespace, String name, String act) {
-    return new V1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
+  private CoreV1Event createEvent(String namespace, String name, String act) {
+    return new CoreV1Event().metadata(new V1ObjectMeta().name(name).namespace(namespace)).action(act);
   }
 
   @Test

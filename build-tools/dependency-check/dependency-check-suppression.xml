@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-api@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-proto@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/weblogic\-kubernetes\-operator@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/integration\-tests@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/json\-schema@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+</suppressions>

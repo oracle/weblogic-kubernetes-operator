@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,7 +48,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -138,7 +138,7 @@ public class ItConfigDistributionStrategy {
 
   static Path clusterViewAppPath;
   String overridecm = "configoverride-cm";
-  LinkedHashMap<String, DateTime> podTimestamps;
+  LinkedHashMap<String, OffsetDateTime> podTimestamps;
 
   static int mysqlDBPort1;
   static int mysqlDBPort2;
@@ -746,7 +746,7 @@ public class ItConfigDistributionStrategy {
     // get the pod creation time stamps
     podTimestamps = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     podTimestamps.put(adminServerPodName, adminPodCreationTime);
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -758,9 +758,9 @@ public class ItConfigDistributionStrategy {
   //check if the pods are restarted by comparing the pod creationtimestamp.
   private void verifyPodsStateNotChanged() {
     logger.info("Verifying the WebLogic server pod states are not changed");
-    for (Map.Entry<String, DateTime> entry : podTimestamps.entrySet()) {
+    for (Map.Entry<String, OffsetDateTime> entry : podTimestamps.entrySet()) {
       String podName = (String) entry.getKey();
-      DateTime creationTimestamp = (DateTime) entry.getValue();
+      OffsetDateTime creationTimestamp = (OffsetDateTime) entry.getValue();
       assertTrue(podStateNotChanged(podName, domainUid, domainNamespace,
           creationTimestamp), "Pod is restarted");
     }

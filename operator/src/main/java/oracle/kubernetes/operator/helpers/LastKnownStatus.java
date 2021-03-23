@@ -3,15 +3,16 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
+
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 public class LastKnownStatus {
   private final String status;
   private final int unchangedCount;
-  private final DateTime time;
+  private final OffsetDateTime time;
 
   public LastKnownStatus(String status) {
     this(status, 0);
@@ -25,7 +26,7 @@ public class LastKnownStatus {
   public LastKnownStatus(String status, int unchangedCount) {
     this.status = status;
     this.unchangedCount = unchangedCount;
-    this.time = new DateTime();
+    this.time = OffsetDateTime.now();
   }
 
   public String getStatus() {
@@ -36,7 +37,7 @@ public class LastKnownStatus {
     return unchangedCount;
   }
 
-  public DateTime getTime() {
+  public OffsetDateTime getTime() {
     return time;
   }
 

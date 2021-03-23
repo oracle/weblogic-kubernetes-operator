@@ -10,19 +10,19 @@ weight: 7
 
 1.	Remove the domain's ingress by using `helm`:
 
-    ```bash
+    ```shell
     $ helm uninstall sample-domain1-ingress -n sample-domain1-ns
     ```
 
 1.	Remove the Kubernetes resources associated with the domain by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
 
-    ```bash
+    ```shell
     $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
     ```
 
 1.	Use `kubectl` to confirm that the WebLogic Server instance Pods and Domain are gone:
 
-    ```bash
+    ```shell
     $ kubectl get pods -n sample-domain1-ns
     $ kubectl get domains -n sample-domain1-ns
     ```
@@ -30,7 +30,7 @@ weight: 7
 #### Remove the domain namespace.
 1.	Configure the Traefik ingress controller to stop managing the ingresses in the domain namespace:
 
-    ```bash
+    ```shell
     $ helm upgrade traefik-operator traefik/traefik \
         --namespace traefik \
         --reuse-values \
@@ -39,7 +39,7 @@ weight: 7
 
 1.	Delete the domain namespace:
 
-    ```bash
+    ```shell
     $ kubectl delete namespace sample-domain1-ns
     ```
 
@@ -48,13 +48,13 @@ weight: 7
 
 1.	Remove the operator:
 
-    ```bash
+    ```shell
     $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
     ```
 
 1.	Remove the operator's namespace:
 
-    ```bash
+    ```shell
     $ kubectl delete namespace sample-weblogic-operator-ns
     ```
 
@@ -62,12 +62,12 @@ weight: 7
 
 1.	Remove the Traefik ingress controller:
 
-    ```bash
+    ```shell
     $ helm uninstall traefik-operator -n traefik
     ```
 
 1.	Remove the Traefik namespace:
 
-    ```bash
+    ```shell
     $ kubectl delete namespace traefik
     ```

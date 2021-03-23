@@ -7,9 +7,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
-import com.google.common.base.Strings;
 import oracle.kubernetes.operator.TuningParameters;
+
+import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /** A class to create DNS-1123 legal names for Kubernetes objects. */
 public class LegalNames {
@@ -51,6 +53,9 @@ public class LegalNames {
 
   // The maximum length of a legal DNS label name
   public static final int LEGAL_DNS_LABEL_NAME_MAX_LENGTH = 63;
+
+  private static final String DNS_NAME_REGEXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?";
+  private static final Pattern DNS_NAME_PATTERN = Pattern.compile(DNS_NAME_REGEXP);
 
   static String[] dns1123Fields;
 
@@ -132,6 +137,18 @@ public class LegalNames {
     return value.toLowerCase().replace('_', '-');
   }
 
+  public static boolean isDns1123LegalName(String value) {
+    return hasValidLength(value) && followsPattern(value);
+  }
+
+  private static boolean hasValidLength(String value) {
+    return value.length() > 0 && value.length() <= LEGAL_DNS_LABEL_NAME_MAX_LENGTH;
+  }
+
+  private static boolean followsPattern(String value) {
+    return DNS_NAME_PATTERN.matcher(value).matches();
+  }
+
   /**
    * Returns a list of field names of fields that needs to be in DNS-1123 format from the
    * "dns1123Fields" tuning parameter, if it is configured with a comma delimited values
@@ -148,7 +165,7 @@ public class LegalNames {
     }
 
     configuredValue = configuredValue.trim();
-    if (Strings.isNullOrEmpty(configuredValue)) {
+    if (isNullOrEmpty(configuredValue)) {
       return null;
     }
 

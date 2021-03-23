@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1Probe;
+import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import org.hamcrest.Description;
@@ -68,8 +69,22 @@ public class Matchers {
     return hasItem(new V1VolumeMount().name(name).mountPath(path));
   }
 
+  static Matcher<Iterable<? super V1VolumeMount>> hasVolumeMount(String name, String path, boolean readOnly) {
+    return hasItem(new V1VolumeMount().name(name).mountPath(path).readOnly(readOnly));
+  }
+
   static Matcher<Iterable<? super V1Volume>> hasVolume(String name, String path) {
     return hasItem(new V1Volume().name(name).hostPath(new V1HostPathVolumeSource().path(path)));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasSecretVolume(String name, String secretName, Integer defaultMode) {
+    return hasItem(new V1Volume().name(name).secret(new V1SecretVolumeSource()
+            .secretName(secretName).defaultMode(defaultMode)));
+  }
+
+  static Matcher<Iterable<? super V1Volume>> hasConfigMapVolume(String name, String cmName, Integer defaultMode) {
+    return hasItem(new V1Volume().name(name).configMap(new V1ConfigMapVolumeSource().name(cmName)
+            .defaultMode(defaultMode)));
   }
 
   static Matcher<Iterable<? super V1Volume>> hasPvClaimVolume(String name, String claimName) {
@@ -119,6 +134,9 @@ public class Matchers {
     private final String expectedConfigMapName;
 
     private VolumeMatcher(String expectedName, String expectedConfigMapName) {
+      assert LegalNames.isDns1123LegalName(expectedName);
+      assert LegalNames.isDns1123LegalName(expectedConfigMapName);
+
       this.expectedName = expectedName;
       this.expectedConfigMapName = expectedConfigMapName;
     }
@@ -166,6 +184,8 @@ public class Matchers {
     private final boolean readOnly;
 
     private VolumeMountMatcher(String expectedName, String expectedPath, boolean readOnly) {
+      assert LegalNames.isDns1123LegalName(expectedName);
+
       this.expectedName = expectedName;
       this.expectedPath = expectedPath;
       this.readOnly = readOnly;

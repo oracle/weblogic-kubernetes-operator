@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.operator.rest;
 
-import javax.ws.rs.Priorities;
+import jakarta.ws.rs.Priorities;
 
 /** FilterPriorities orders the WebLogic operator REST api's jaxrs filters. */
 public class FilterPriorities {

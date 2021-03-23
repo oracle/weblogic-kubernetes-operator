@@ -7,7 +7,6 @@ import java.io.StringReader;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,30 +22,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonPatch;
-import javax.json.JsonStructure;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.JSON;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1ListMeta;
@@ -69,6 +55,13 @@ import io.kubernetes.client.openapi.models.V1SubjectAccessReview;
 import io.kubernetes.client.openapi.models.V1SubjectRulesReviewStatus;
 import io.kubernetes.client.openapi.models.V1TokenReview;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonException;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonStructure;
 import okhttp3.internal.http2.ErrorCode;
 import okhttp3.internal.http2.StreamResetException;
 import oracle.kubernetes.operator.builders.CallParams;
@@ -87,9 +80,6 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -109,6 +99,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public static final String PV = "PersistentVolume";
   public static final String PVC = "PersistentVolumeClaim";
   public static final String POD = "Pod";
+  public static final String PODDISRUPTIONBUDGET = "PodDisruptionBudget";
   public static final String PODLOG = "PodLog";
   public static final String SECRET = "Secret";
   public static final String SERVICE = "Service";
@@ -151,10 +142,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     supportNamespaced(CONFIG_MAP, V1ConfigMap.class, this::createConfigMapList);
     supportNamespaced(DOMAIN, Domain.class, this::createDomainList).withStatusSubresource();
-    supportNamespaced(EVENT, V1Event.class, this::createEventList);
+    supportNamespaced(EVENT, CoreV1Event.class, this::createEventList);
     supportNamespaced(JOB, V1Job.class, this::createJobList);
     supportNamespaced(POD, V1Pod.class, this::createPodList);
     supportNamespaced(PODLOG, String.class);
+    supportNamespaced(PODDISRUPTIONBUDGET, V1beta1PodDisruptionBudget.class, this::createPodDisruptionBudgetList);
     supportNamespaced(PVC, V1PersistentVolumeClaim.class, this::createPvcList);
     supportNamespaced(SECRET, V1Secret.class, this::createSecretList);
     supportNamespaced(SERVICE, V1Service.class, this::createServiceList);
@@ -170,8 +162,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     return new DomainList().withMetadata(createListMeta()).withItems(items);
   }
 
-  private V1EventList createEventList(List<V1Event> items) {
-    return new V1EventList().metadata(createListMeta()).items(items);
+  private CoreV1EventList createEventList(List<CoreV1Event> items) {
+    return new CoreV1EventList().metadata(createListMeta()).items(items);
   }
 
   private V1PersistentVolumeList createPvList(List<V1PersistentVolume> items) {
@@ -200,6 +192,10 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
   private V1ServiceList createServiceList(List<V1Service> items) {
     return new V1ServiceList().metadata(createListMeta()).items(items);
+  }
+
+  private V1beta1PodDisruptionBudgetList createPodDisruptionBudgetList(List<V1beta1PodDisruptionBudget> items) {
+    return new V1beta1PodDisruptionBudgetList().metadata(createListMeta()).items(items);
   }
 
   private V1ListMeta createListMeta() {
@@ -526,8 +522,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
     boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
           && (this.operation == null || this.operation == operation)
-          && Objects.equals(name, operation.getName(requestParams))
-          && Objects.equals(namespace, requestParams.namespace);
+          && (name == null || Objects.equals(name, operation.getName(requestParams)))
+          && (namespace == null || Objects.equals(namespace, requestParams.namespace));
     }
 
     HttpErrorException getException() {
@@ -597,26 +593,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       } catch (HttpErrorException e) {
         throw e.getApiException();
       }
-    }
-  }
-
-  static class DateTimeSerializer implements JsonDeserializer<DateTime>, JsonSerializer<DateTime> {
-    private static final DateTimeFormatter DATE_FORMAT = ISODateTimeFormat.dateTime();
-
-    @Override
-    public DateTime deserialize(
-        final JsonElement je, final Type type, final JsonDeserializationContext jdc)
-        throws JsonParseException {
-      return je.isJsonObject()
-            ? new DateTime(Long.parseLong(je.getAsJsonObject().get("iMillis").getAsString()))
-            : DateTime.parse(je.getAsString());
-    }
-
-    @Override
-    public JsonElement serialize(
-        final DateTime src, final Type typeOfSrc, final JsonSerializationContext context) {
-      String retVal = src == null ? "" : DATE_FORMAT.print(src);
-      return new JsonPrimitive(retVal);
     }
   }
 
@@ -883,13 +859,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
-      final GsonBuilder builder =
-          new GsonBuilder().registerTypeAdapter(DateTime.class, new DateTimeSerializer());
-      return (T) builder.create().fromJson(jsonStructure.toString(), resourceType);
+      return new JSON().deserialize(jsonStructure.toString(), resourceType);
     }
 
     JsonStructure toJsonStructure(T src) {
-      String json = new Gson().toJson(src);
+      String json = new JSON().getGson().toJson(src);
       return Json.createReader(new StringReader(json)).read();
     }
 
@@ -1122,7 +1096,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
 
     private Object execute() {
       if (failure != null && failure.matches(resourceType, requestParams, operation)) {
-        throw failure.getException();
+        try {
+          throw failure.getException();
+        } finally {
+          failure = null;
+        }
       }
 
       return operation.execute(this, selectRepository(resourceType));

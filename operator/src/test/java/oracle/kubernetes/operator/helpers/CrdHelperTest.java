@@ -4,10 +4,12 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -19,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionVersion;
+import io.kubernetes.client.openapi.models.V1JSONSchemaProps;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1beta1CustomResourceDefinitionNames;
@@ -42,8 +45,11 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CREATE_CRD_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_CRD;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLACE_CRD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -70,11 +76,11 @@ public class CrdHelperTest {
   private final TerminalStep terminalStep = new TerminalStep();
 
   private V1CustomResourceDefinition defineDefaultCrd() {
-    return CrdHelper.CrdContext.createModel(KUBERNETES_VERSION_16, PRODUCT_VERSION);
+    return CrdHelper.CrdContext.createModel(PRODUCT_VERSION);
   }
 
   private V1beta1CustomResourceDefinition defineDefaultBetaCrd() {
-    return CrdHelper.CrdContext.createBetaModel(KUBERNETES_VERSION_15, PRODUCT_VERSION);
+    return CrdHelper.CrdContext.createBetaModel(PRODUCT_VERSION);
   }
 
   private V1CustomResourceDefinition defineCrd(SemanticVersion operatorVersion) {
@@ -132,6 +138,7 @@ public class CrdHelperTest {
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(FileGroupReader.class, "uriToPath", pathFunction));
+    mementos.add(StaticStubSupport.install(CrdHelper.class, "uriToPath", pathFunction));
 
     defaultCrd = defineDefaultCrd();
     defaultBetaCrd = defineDefaultBetaCrd();
@@ -143,6 +150,29 @@ public class CrdHelperTest {
 
     mementos.forEach(Memento::revert);
   }
+
+  @Test
+  void verifyOperatorMapPropertiesGenerated() {
+    assertThat(getAdditionalPropertiesMap("spec", "serverService", "labels"), hasEntry("type", "string"));
+    assertThat(getAdditionalPropertiesMap("spec", "serverService", "annotations"), hasEntry("type", "string"));
+    assertThat(getAdditionalPropertiesMap("spec", "adminServer", "adminService", "labels"), hasEntry("type", "string"));
+    assertThat(
+          getAdditionalPropertiesMap("spec", "adminServer", "adminService", "annotations"),
+          hasEntry("type", "string"));
+    assertThat(getAdditionalPropertiesMap("spec", "serverPod", "resources", "limits"), hasEntry("type", "string"));
+  }
+
+  @SuppressWarnings({"ConstantConditions", "unchecked"})
+  <T> Map<String, T> getAdditionalPropertiesMap(String... pathElements) {
+    V1JSONSchemaProps schemaProps = defaultCrd.getSpec().getVersions().get(0).getSchema().getOpenAPIV3Schema();
+    for (String pathElement : pathElements) {
+      schemaProps = schemaProps.getProperties().get(pathElement);
+    }
+
+    assertThat(schemaProps.getAdditionalProperties(), instanceOf(Map.class));
+    return (Map<String,T>) schemaProps.getAdditionalProperties();
+  }
+
 
   @Test
   public void whenUnableToReadBetaCrd_reportFailure() {
@@ -337,4 +367,10 @@ public class CrdHelperTest {
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptCrdStep));
   }
 
+  @Test
+  void whenCrdWritten_containsPreserveFieldsAnnotation() throws URISyntaxException {
+    CrdHelper.writeCrdFiles("/crd.yaml", "/beta-crd.yaml");
+
+    assertThat(fileSystem.getContents("/crd.yaml"), containsString("x-kubernetes-preserve-unknown-fields"));
+  }
 }

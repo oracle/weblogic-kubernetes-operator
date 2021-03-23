@@ -62,14 +62,14 @@ domainNamespaces:
 # will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
 enableClusterRoleBinding: false
 
-# image specifies the Docker image containing the operator.
-image: "oracle/weblogic-kubernetes-operator:3.2.0"
+# image specifies the container image containing the operator.
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0"
 
-# imagePullPolicy specifies the image pull policy for the operator's Docker image.
+# imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent
 
 # imagePullSecrets contains an optional list of Kubernetes Secrets, in the operator's namespace,
-# that are needed to access the registry containing the operator's Docker image.
+# that are needed to access the registry containing the operator's container image.
 # The customer is responsible for creating the Secret.
 # If no Secrets are required, then omit this property.
 #
@@ -105,7 +105,7 @@ istioEnabled: false
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 
-# logStashImage specifies the Docker image containing logstash.
+# logStashImage specifies the container image containing logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 logStashImage: "logstash:6.6.0"
 
@@ -117,9 +117,18 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
-# javaLoggingLevel specifies the Java logging level for the operator.
+# javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
+# log output and the contents of log files in the container's /logs/ directory.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
 javaLoggingLevel: "INFO"
+
+# javaLoggingFileSizeLimit specifies the maximum size in bytes of the Java logging files in the operator container's
+# /logs/ directory.
+javaLoggingFileSizeLimit: 20000000
+
+# javaLoggingFileCount specifies the number of Java logging files to preserve in the operator container's /logs/
+# directory as the files are rotated.
+javaLoggingFileCount: 10
 
 # nodeSelector specifies a matching rule that the Kubernetes scheduler will use when selecting the node
 # where the operator will run. If the nodeSelector value is specified, then this content will be added to

@@ -28,11 +28,11 @@ Be aware of the following important considerations for WebLogic domains running 
 
   {{% notice warning %}}
   Oracle strongly recommends storing an image containing a WebLogic domain home (`domainHomeSourceType` is `Image`)
-  as private in the registry (for example, Oracle Cloud Infrastructure Registry, Docker Hub, and such).
-  A Docker image that contains a WebLogic domain has sensitive information including
+  as private in the registry (for example, Oracle Cloud Infrastructure Registry, GitHub Container Registry, and such).
+  A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in Docker image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-docker-image-protection">}}).
+  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
@@ -108,10 +108,10 @@ When a domain resource or WebLogic domain configuration violates the limits, the
 
 ### Creating and managing WebLogic domains
 
-You can locate a WebLogic domain either in a persistent volume (PV) or in a Docker image.
+You can locate a WebLogic domain either in a persistent volume (PV) or in an image.
 For examples of each, see the [WebLogic Server Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
-If you want to create your own Docker images, for example, to choose a specific set of patches or to create a domain
+If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource
 manually to deploy your domain.  This process is documented in [this
 sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}}).
@@ -121,12 +121,6 @@ sample]({{< relref "/samples/simple/domains/manually-create-domain/_index.md" >}
 You can modify the WebLogic domain configuration for Domain in PV, Domain in Image, and Model in Image before deploying a Domain YAML file:
 
 When the domain is in a persistent volume, you can use WLST or WDT to change the configuration.
-
-For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
-
-Configuration overrides allow changing a configuration without modifying its original `config.xml` or system resource XML files, and supports
-parameterizing overrides so that you can inject values into them from Kubernetes Secrets. For example, you can inject database user names, passwords,
-and URLs that are stored in a secret.
 
 For Domain in Image and Domain in PV you can use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
@@ -171,7 +165,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here are some WLST offline examples for creating and accessing commonly tuned Log MBeans:
 
-  ```bash
+  ```javascript
   # domain log
   cd('/')
   create(dname,'Log')
@@ -190,7 +184,7 @@ Servers, you can set corresponding system properties in `JAVA_OPTIONS`:
 
 - Here is sample WLST offline code for commonly tuned Log MBean attributes:
 
-  ```bash
+  ```javascript
   # minimum log file size before rotation in kilobytes
   set('FileMinSize', 1000)
 

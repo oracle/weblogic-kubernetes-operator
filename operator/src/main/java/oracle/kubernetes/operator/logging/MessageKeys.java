@@ -131,6 +131,15 @@ public class MessageKeys {
   public static final String CRD_NOT_INSTALLED = "WLSKO-0178";
   public static final String POD_FORCE_DELETED = "WLSKO-0179";
   public static final String CREATING_EVENT = "WLSKO-0180";
+  public static final String REPLACING_EVENT = "WLSKO-0181";
+  public static final String CREATING_EVENT_FORBIDDEN = "WLSKO-0182";
+  public static final String CLUSTER_PDB_CREATED = "WLSKO-0183";
+  public static final String CLUSTER_PDB_EXISTS = "WLSKO-0184";
+  public static final String CLUSTER_PDB_PATCHED = "WLSKO-0185";
+  public static final String BEGIN_MANAGING_NAMESPACE = "WLSKO-0186";
+  public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
+  public static final String MII_DOMAIN_DYNAMICALLY_UPDATED = "WLSKO-0188";
+  public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -152,6 +161,7 @@ public class MessageKeys {
   public static final String ILLEGAL_CLUSTER_SERVICE_NAME_LENGTH = "WLSDO-0017";
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
+  public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
 
   private MessageKeys() {
   }

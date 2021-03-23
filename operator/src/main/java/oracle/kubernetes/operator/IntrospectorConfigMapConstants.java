@@ -13,6 +13,9 @@ public interface IntrospectorConfigMapConstants {
   /** The topology generated from the WebLogic domain. */
   String TOPOLOGY_YAML = "topology.yaml";
 
+  /** The topology generated from the WebLogic domain in json format. */
+  String TOPOLOGY_JSON = "topology.json";
+
   /** An MD5 has of the Model-in-Image secrets. */
   String SECRETS_MD_5 = "secrets.md5";
 
@@ -52,7 +55,7 @@ public interface IntrospectorConfigMapConstants {
 
   /**  A (possibly empty) suffix for introspector config maps. */
   static String suffix(int index) {
-    return index == 0 ? "" : "_" + index;
+    return index == 0 ? "" : "-" + index;
   }
 
   /**

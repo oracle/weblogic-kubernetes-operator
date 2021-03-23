@@ -4,13 +4,13 @@
 package oracle.kubernetes.operator.helm;
 
 import oracle.kubernetes.operator.create.CreateOperatorGeneratedFilesDebugEnabledTestBase;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class CreateOperatorGeneratedFilesDebugEnabledIT
     extends CreateOperatorGeneratedFilesDebugEnabledTestBase {
 
-  @BeforeClass
+  @BeforeAll
   public static void setup() throws Exception {
     defineOperatorYamlFactory(new HelmOperatorYamlFactory());
   }

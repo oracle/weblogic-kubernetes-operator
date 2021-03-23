@@ -24,7 +24,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
 
   - A WDT archive ZIP file that contains your applications.
   - A WDT model that describes your WebLogic configuration.
-  - A Docker image that contains your WDT model files and archive.
+  - A container image that contains your WDT model files and archive.
   - Creating secrets for the domain.
   - Creating a Domain YAML for the domain that references your Secrets and image.
 
@@ -59,7 +59,7 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
 
 {{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 
-```
+```java
 <%-- Copyright (c) 2019, 2021, Oracle and/or its affiliates. --%>
 <%-- Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl. --%>
 <%@ page import="javax.naming.InitialContext" %>
@@ -81,30 +81,63 @@ The archive top directory, named `wlsdeploy`, contains a directory named `applic
     out.println();
     out.println("Welcome to WebLogic Server '" + srName + "'!");
     out.println();
-    out.println(" domain UID  = '" + domainUID +"'");
-    out.println(" domain name = '" + domainName +"'");
+    out.println("  domain UID  = '" + domainUID +"'");
+    out.println("  domain name = '" + domainName +"'");
     out.println();
 
     MBeanServer mbs = (MBeanServer)ic.lookup("java:comp/env/jmx/runtime");
 
     // display the current server's cluster name
+
     Set<ObjectInstance> clusterRuntimes = mbs.queryMBeans(new ObjectName("*:Type=ClusterRuntime,*"), null);
-    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s:":":"));
+    out.println("Found " + clusterRuntimes.size() + " local cluster runtime" + (String)((clusterRuntimes.size()!=1)?"s":"") + ":");
     for (ObjectInstance clusterRuntime : clusterRuntimes) {
        String cName = (String)mbs.getAttribute(clusterRuntime.getObjectName(), "Name");
        out.println("  Cluster '" + cName + "'");
     }
     out.println();
 
+    // display the Work Manager configuration created by the sample
+
+    Set<ObjectInstance> minTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*"), null);
+    for (ObjectInstance minTCRuntime : minTCRuntimes) {
+       String cName = (String)mbs.getAttribute(minTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(minTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found min threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
+
+    Set<ObjectInstance> maxTCRuntimes = mbs.queryMBeans(new ObjectName("*:Type=MaxThreadsConstraintRuntime,Name=SampleMaxThreads,*"), null);
+    for (ObjectInstance maxTCRuntime : maxTCRuntimes) {
+       String cName = (String)mbs.getAttribute(maxTCRuntime.getObjectName(), "Name");
+       int count = (int)mbs.getAttribute(maxTCRuntime.getObjectName(), "ConfiguredCount");
+       out.println("Found max threads constraint runtime named '" + cName + "' with configured count: " + count);
+    }
+    out.println();
 
     // display local data sources
+    // - note that data source tests are expected to fail until the sample Update 4 use case updates the data source's secret
+
     ObjectName jdbcRuntime = new ObjectName("com.bea:ServerRuntime=" + srName + ",Name=" + srName + ",Type=JDBCServiceRuntime");
     ObjectName[] dataSources = (ObjectName[])mbs.getAttribute(jdbcRuntime, "JDBCDataSourceRuntimeMBeans");
-    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s:":":"));
+    out.println("Found " + dataSources.length + " local data source" + (String)((dataSources.length!=1)?"s":"") + ":");
     for (ObjectName dataSource : dataSources) {
        String dsName  = (String)mbs.getAttribute(dataSource, "Name");
        String dsState = (String)mbs.getAttribute(dataSource, "State");
-       out.println("  Datasource '" + dsName + "': State='" + dsState +"'");
+       String dsTest  = (String)mbs.invoke(dataSource, "testPool", new Object[] {}, new String[] {});
+       out.println(
+           "  Datasource '" + dsName + "': "
+           + " State='" + dsState + "',"
+           + " testPool='" + (String)(dsTest==null ? "Passed" : "Failed") + "'"
+       );
+       if (dsTest != null) {
+         out.println(
+               "    ---TestPool Failure Reason---\n"
+             + "    NOTE: Ignore 'mynewdatasource' failures until the MII sample's Update 4 use case.\n"
+             + "    ---\n"
+             + "    " + dsTest.replaceAll("\n","\n   ").replaceAll("\n *\n","\n") + "\n"
+             + "    -----------------------------");
+       }
     }
     out.println();
 
@@ -124,11 +157,11 @@ The application displays important details about the WebLogic Server instance th
 
 #### Staging a ZIP file of the archive
 
-When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
+When you create the image, you will use the files in the staging directory, `/tmp/mii-sample/model-images/model-in-image__WLS-v1`. In preparation, you need it to contain a ZIP file of the WDT application archive.
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```
+```shell
 # Delete existing archive.zip in case we have an old leftover version
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
 
@@ -141,7 +174,7 @@ $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdepl
 
 #### Staging model files
 
-In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
+In this step, you explore the staged WDT model YAML file and properties in the `/tmp/mii-sample/model-images/model-in-image__WLS-v1` directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, `model.10.properties`, a file with a single property, and, `model.10.yaml`, a YAML file with your WebLogic configuration `model.10.yaml`.
 
 ```
 CLUSTER_SIZE=5
@@ -149,7 +182,7 @@ CLUSTER_SIZE=5
 
 Here is the WLS `model.10.yaml`:
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -181,12 +214,28 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 
 
 {{%expand "Click here to view the JRF `model.10.yaml`, and note the `RCUDbInfo` stanza and its references to a `DOMAIN_UID-rcu-access` secret." %}}
 
-```
+```yaml
 domainInfo:
     AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
     AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
@@ -223,6 +272,22 @@ appDeployments:
             SourcePath: 'wlsdeploy/applications/myapp-v1'
             ModuleType: ear
             Target: 'cluster-1'
+
+resources:
+  SelfTuning:
+    MinThreadsConstraint:
+      SampleMinThreads:
+        Target: 'cluster-1'
+        Count: 1
+    MaxThreadsConstraint:
+      SampleMaxThreads:
+        Target: 'cluster-1'
+        Count: 10
+    WorkManager:
+      SampleWM:
+        Target: 'cluster-1'
+        MinThreadsConstraint: 'SampleMinThreads'
+        MaxThreadsConstraint: 'SampleMaxThreads'
 ```
 {{% /expand %}}
 
@@ -233,6 +298,7 @@ The model files:
   - Cluster `cluster-1`
   - Administration Server `admin-server`
   - A `cluster-1` targeted `ear` application that's located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`
+  - A Work Manager `SampleWM` configured with minimum threads constraint `SampleMinThreads` and maximum threads constraint `SampleMaxThreads`
 
 - Leverage macros to inject external values:
   - The property file `CLUSTER_SIZE` property is referenced in the model YAML file `DynamicClusterSize` and `MaxDynamicClusterSize` fields using a PROP macro.
@@ -264,9 +330,9 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 Run the following commands to create the model image and verify that it worked:
 
 {{% notice note %}}
-If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below. 
+If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
 {{% /notice %}}
-  ```
+  ```shell
   $ cd /tmp/mii-sample/model-images
   $ ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
@@ -283,7 +349,7 @@ If you don't see the `imagetool` directory, then you missed a step in the [prere
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
-  - Builds the final Docker image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
+  - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
   - Copies the WDT ZIP file that's referenced in the WIT cache into the image.
     - Note that you cached WDT in WIT using the keyword `latest` when you set up the cache during the sample prerequisites steps.
     - This lets WIT implicitly assume it's the desired WDT version and removes the need to pass a `-wdtVersion` flag.
@@ -295,7 +361,7 @@ When the command succeeds, it should end with output like the following:
   [INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
   ```
 
-Also, if you run the `docker images` command, then you will see a Docker image named `model-in-image:WLS-v1`.
+Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
 
 > Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
@@ -318,7 +384,7 @@ First, create the secrets needed by both `WLS` and `JRF` type model domains. In 
 
 Run the following `kubectl` commands to deploy the required secrets:
 
-  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
@@ -361,7 +427,7 @@ Run the following `kubectl` commands to deploy the required secrets:
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
-  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-rcu-access \
      --from-literal=rcu_prefix=FMW1 \
@@ -389,7 +455,7 @@ Now, you create a Domain YAML file. A Domain is the key resource that tells the 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
   {{%expand "Click here to view the WLS Domain YAML file." %}}
-  ```
+  ```yaml
     #
     # This is an example of how to define a Domain resource.
     #
@@ -409,7 +475,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       # the image for 'Model in Image' domains.
       domainHome: /u01/domains/sample-domain1
 
-      # The WebLogic Server Docker image that the Operator uses to start the domain
+      # The WebLogic Server image that the Operator uses to start the domain
       image: "model-in-image:WLS-v1"
 
       # Defaults to "Always" if image tag (version) is ':latest'
@@ -509,7 +575,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   {{% /expand %}}
 
   {{%expand "Click here to view the JRF Domain YAML file." %}}
-  ```
+  ```yaml
   # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
   # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
   #
@@ -531,7 +597,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     # the image for 'Model in Image' domains.
     domainHome: /u01/domains/sample-domain1
 
-    # The WebLogic Server Docker image that the Operator uses to start the domain
+    # The WebLogic Server image that the Operator uses to start the domain
     image: "model-in-image:JRF-v1"
 
     # Defaults to "Always" if image tag (version) is ':latest'
@@ -646,7 +712,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 
   Run the following command to create the domain custom resource:
 
-  ```
+  ```shell
   $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
   ```
 
@@ -655,7 +721,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:
 
   {{%expand "Click here to expand." %}}
-  ```
+  ```shell
   $ kubectl get pods -n sample-domain1-ns --watch
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
@@ -681,8 +747,8 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
-  ```
-  $ ./wl-pod-wait.sh -?
+  ```shell
+    $ ./wl-pod-wait.sh -?
 
     Usage:
 
@@ -699,15 +765,18 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
       -n <namespace>  : Defaults to 'sample-domain1-ns'.
 
-      pod_count > 0   : Wait until exactly 'pod_count' WebLogic Server pods for
-                        a domain all (a) are ready, (b) have the same
-                        'domainRestartVersion' label value as the
-                        current Domain's 'spec.restartVersion, and
-                        (c) have the same image as the current Domain's
-                        image.
-
-      pod_count = 0   : Wait until there are no running WebLogic Server pods
+      -p 0            : Wait until there are no running WebLogic Server pods
                         for a domain. The default.
+
+      -p <pod_count>  : Wait until all of the following are true
+                        for exactly 'pod_count' WebLogic Server pods
+                        in the domain:
+                        - ready
+                        - same 'weblogic.domainRestartVersion' label value as
+                          the domain resource's 'spec.restartVersion'
+                        - same 'weblogic.introspectVersion' label value as
+                          the domain resource's 'spec.introspectVersion'
+                        - same image as the the domain resource's image
 
       -t <timeout>    : Timeout in seconds. Defaults to '1000'.
 
@@ -715,6 +784,7 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
                         have reached the desired criteria.
 
       -?              : This help.
+
   ```
   {{% /expand %}}
 
@@ -806,20 +876,20 @@ Now that all the initial use case resources have been deployed, you can invoke t
 
 Send a web application request to the load balancer:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain1-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 Or, if Traefik is unavailable and your Administration Server pod is running, you can use `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
 You will see output like the following:
 
-   ```
+   ```html
    <html><body><pre>
    *****************************************************************
 
@@ -827,11 +897,15 @@ You will see output like the following:
 
    Welcome to WebLogic Server 'managed-server2'!
 
-    domain UID  = 'sample-domain1'
-    domain name = 'domain1'
+     domain UID  = 'sample-domain1'
+     domain name = 'domain1'
 
    Found 1 local cluster runtime:
      Cluster 'cluster-1'
+
+   Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+   Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
 
    Found 0 local data sources:
 

@@ -23,16 +23,16 @@ clusters:
   replicas: 2
 ```
 Modify `replicas` to 3 and save the changes. You can use the `vi` editor for example:
-```bash
-vi ~/domain.yaml`
+```shell
+$ vi ~/domain.yaml`
 ```
 Apply the changes using `kubectl`:
-```bash
-kubectl apply -f ~/domain.yaml
+```shell
+$ kubectl apply -f ~/domain.yaml
 ```
 Check the changes in the number of pods using `kubectl`:
-```bash
-kubectl get po -n sample-domain1-ns
+```shell
+$ kubectl get po -n sample-domain1-ns
 NAME                             READY     STATUS        RESTARTS   AGE
 sample-domain1-admin-server      1/1       Running       0          57m
 sample-domain1-managed-server1   1/1       Running       0          56m
@@ -45,13 +45,13 @@ Soon, Managed Server 3 will appear and will be ready within a few minutes. You c
 
 Note! You can edit the existing (running) domain resource file directly by using the `kubectl edit` command. In this case, your `domain.yaml` file, available on your desktop, will not reflect the changes of the running domain resource.
 
-```bash
-kubectl edit domain DOMAIN_UID -n DOMAIN_NAMESPACE
+```shell
+$ kubectl edit domain DOMAIN_UID -n DOMAIN_NAMESPACE
 ```
 In case you used the default settings, the syntax is:
 
-```bash
-kubectl edit domain sample-domain1 -n sample-domain1-ns
+```shell
+$ kubectl edit domain sample-domain1 -n sample-domain1-ns
 ```
 It will use a `vi`-like editor.
 

@@ -16,7 +16,7 @@ function getClusterPolicy {
   local __clusterPolicy=$3
   local effectivePolicy=""
 
-  clusterPolicyCmd="(.spec.clusters[] \
+  clusterPolicyCmd="(.spec.clusters // empty | .[] \
     | select (.clusterName == \"${clusterName}\")).serverStartPolicy"
   effectivePolicy=$(echo ${domainJson} | jq "${clusterPolicyCmd}")
   if [ "${effectivePolicy}" == "null" ]; then
@@ -111,14 +111,24 @@ function createServerStartPolicyPatch {
   local policy=$3
   local __result=$4
   local currentStartPolicy=""
+  local serverStartPolicyPatch=""
 
   # Get server start policy for this server
   getServerPolicy "${domainJson}" "${serverName}" currentStartPolicy
-  if [ -z "${currentStartPolicy}" ]; then
+  managedServers=$(echo ${domainJson} | jq -cr '(.spec.managedServers)')
+  if [[ -z "${currentStartPolicy}" && "${managedServers}" == "null" ]]; then
     # Server start policy doesn't exist, add a new policy
     addPolicyCmd=".[.| length] |= . + {\"serverName\":\"${serverName}\", \
       \"serverStartPolicy\":\"${policy}\"}"
     serverStartPolicyPatch=$(echo ${domainJson} | jq .spec.managedServers | jq -c "${addPolicyCmd}")
+  elif [ "${managedServers}" != "null" ]; then
+    extractSpecCmd="(.spec.managedServers)"
+    mapCmd="\
+      . |= (map(.serverName) | index (\"${serverName}\")) as \$idx | \
+      if \$idx then \
+      .[\$idx][\"serverStartPolicy\"] = \"${policy}\" \
+      else .+  [{serverName: \"${serverName}\" , serverStartPolicy: \"${policy}\"}] end"
+    serverStartPolicyPatch=$(echo ${domainJson} | jq "${extractSpecCmd}" | jq "${mapCmd}")
   else
     # Server start policy exists, replace policy value 
     replacePolicyCmd="(.spec.managedServers[] \
@@ -142,9 +152,7 @@ function createPatchJsonToUnsetPolicyAndUpdateReplica {
   local replicaPatch=$3
   local __result=$4
 
-  replacePolicyCmd="[(.spec.managedServers[] \
-    | select (.serverName != \"${serverName}\"))]"
-  serverStartPolicyPatch=$(echo ${domainJson} | jq "${replacePolicyCmd}")
+  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
   patchJson="{\"spec\": {\"clusters\": "${replicaPatch}",\"managedServers\": "${serverStartPolicyPatch}"}}"
   eval $__result="'${patchJson}'"
 }
@@ -199,11 +207,34 @@ function createPatchJsonToUnsetPolicy {
   local serverName=$2
   local __result=$3
 
-  replacePolicyCmd="[(.spec.managedServers[] \
-    | select (.serverName != \"${serverName}\"))]"
-  serverStartPolicyPatch=$(echo ${domainJson} | jq "${replacePolicyCmd}")
+  unsetServerStartPolicy "${domainJson}" "${serverName}" serverStartPolicyPatch
   patchJson="{\"spec\": {\"managedServers\": "${serverStartPolicyPatch}"}}"
   eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch string with server start policy unset
+# $1 - Domain resource in json format
+# $2 - Name of server whose policy will be unset
+# $3 - Return value containing patch string with server start policy unset
+#
+function unsetServerStartPolicy {
+  local domainJson=$1
+  local serverName=$2
+  local __result=$3
+  local unsetStartPolicyPatch=""
+  local mapCmd=""
+
+  unsetCmd="(.spec.managedServers[] | select (.serverName == \"${serverName}\") | del (.serverStartPolicy))"
+  replacePolicyCmd=$(echo ${domainJson} | jq -cr "${unsetCmd}")
+  replacePolicyCmdLen=$(echo "${replacePolicyCmd}" | jq -e keys_unsorted | jq length)
+  if [ ${replacePolicyCmdLen} == 1 ]; then
+    mapCmd=". |= map(if .serverName == \"${serverName}\" then del(.) else . end)"
+  else
+    mapCmd=". |= map(if .serverName == \"${serverName}\" then . = ${replacePolicyCmd} else . end)"
+  fi
+  unsetStartPolicyPatch=$(echo ${domainJson} | jq "(.spec.managedServers)" | jq "${mapCmd}")
+  eval $__result="'${unsetStartPolicyPatch}'"
 }
 
 #
@@ -218,12 +249,65 @@ function createPatchJsonToUpdateClusterPolicy {
   local clusterName=$2
   local policy=$3
   local __result=$4
+  local addClusterStartPolicyCmd=""
+  local mapCmd=""
+  local existingClusters=""
+  local patchJsonVal=""
+  local startPolicyPatch=""
   
-  replacePolicyCmd="(.spec.clusters[] | select (.clusterName == \"${clusterName}\") \
-    | .serverStartPolicy) |= \"${policy}\""
-  startPolicy=$(echo ${domainJson} | jq "${replacePolicyCmd}" | jq -cr '(.spec.clusters)')
-  patchJson="{\"spec\": {\"clusters\": "${startPolicy}"}}"
-  eval $__result="'${patchJson}'"
+  existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
+  if [ "${existingClusters}" == "null" ]; then
+    # cluster doesn't exist, add cluster with server start policy
+    addClusterStartPolicyCmd=".[.| length] |= . + {\"clusterName\":\"${clusterName}\", \
+      \"serverStartPolicy\":\"${policy}\"}"
+    startPolicyPatch=$(echo ${existingClusters} | jq -c "${addClusterStartPolicyCmd}")
+  else
+    mapCmd="\
+      . |= (map(.clusterName) | index (\"${clusterName}\")) as \$idx | \
+      if \$idx then \
+      .[\$idx][\"serverStartPolicy\"] = \"${policy}\" \
+      else .+  [{clusterName: \"${clusterName}\" , serverStartPolicy: \"${policy}\"}] end"
+    startPolicyPatch=$(echo ${existingClusters} | jq "${mapCmd}")
+  fi
+
+  patchJsonVal="{\"spec\": {\"clusters\": "${startPolicyPatch}"}}"
+  eval $__result="'${patchJsonVal}'"
+}
+
+#
+# Function to create patch json to update cluster replicas
+# $1 - Domain resource in json format
+# $2 - Name of cluster whose replicas will be patched
+# $3 - replica count
+# $4 - Return value containing patch json string
+#
+function createPatchJsonToUpdateReplicas {
+  local domainJson=$1
+  local clusterName=$2
+  local replicas=$3
+  local __result=$4
+  local existingClusters=""
+  local addClusterReplicasCmd=""
+  local replicasPatch=""
+  local mapCmd=""
+  local patchJsonVal=""
+
+  existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
+  if [ "${existingClusters}" == "null" ]; then
+    # cluster doesn't exist, add cluster with replicas
+    addClusterReplicasCmd=".[.| length] |= . + {\"clusterName\":\"${clusterName}\", \
+      \"replicas\":${replicas}}"
+    replicasPatch=$(echo ${existingClusters} | jq -c "${addClusterReplicasCmd}")
+  else
+    mapCmd="\
+      . |= (map(.clusterName) | index (\"${clusterName}\")) as \$idx | \
+      if \$idx then \
+      .[\$idx][\"replicas\"] = ${replicas} \
+      else .+  [{clusterName: \"${clusterName}\" , replicas: ${replicas}}] end"
+    replicasPatch=$(echo ${existingClusters} | jq "${mapCmd}")
+  fi
+  patchJsonVal="{\"spec\": {\"clusters\": "${replicasPatch}"}}"
+  eval $__result="'${patchJsonVal}'"
 }
 
 #
@@ -431,6 +515,33 @@ function isReplicaCountEqualToMinReplicas {
 }
 
 #
+# Function to check if provided replica count is in the allowed range
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Replica count
+# $4 - Returns "true" or "false" indicating if replica count is in
+#      the allowed range
+# $5 - Returns allowed range for replica count for the given cluster
+#
+function isReplicasInAllowedRange {
+  local domainJson=$1
+  local clusterName=$2
+  local replicas=$3
+  local __result=$4
+  local __range=$5
+  local rangeVal=""
+
+  eval $__result=true
+  getMinReplicas "${domainJson}" "${clusterName}" minReplicas
+  getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
+  rangeVal="${minReplicas} to ${maxReplicas}"
+  eval $__range="'${rangeVal}'"
+  if [ ${replicas} -lt ${minReplicas} ] || [ ${replicas} -gt ${maxReplicas} ]; then
+    eval $__result=false
+  fi
+}
+
+#
 # Function to get minimum replica count for cluster
 # $1 - Domain resource in json format
 # $2 - Name of the cluster
@@ -440,12 +551,33 @@ function getMinReplicas {
   local domainJson=$1
   local clusterName=$2
   local __result=$3
+  local minReplicaCmd=""
+  local minReplicasVal=""
 
   eval $__result=0
   minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
     | .minimumReplicas"
-  minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}")
-  eval $__result=${minReplicas}
+  minReplicasVal=$(echo ${domainJson} | jq "${minReplicaCmd}")
+  eval $__result=${minReplicasVal:-0}
+}
+
+#
+# Function to get maximum replica count for cluster
+# $1 - Domain resource in json format
+# $2 - Name of the cluster
+# $3 - Return value containing maximum replica count
+#
+function getMaxReplicas {
+  local domainJson=$1
+  local clusterName=$2
+  local __result=$3
+  local maxReplicaCmd=""
+  local maxReplicasVal=""
+
+  maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    | .maximumReplicas"
+  maxReplicasVal=$(echo ${domainJson} | jq "${maxReplicaCmd}")
+  eval $__result=${maxReplicasVal:-0}
 }
 
 #
@@ -467,13 +599,11 @@ function createReplicaPatch {
   local infoMessage="Current replica count value is same as or greater than maximum number of replica count. \
 Not increasing replica count value."
 
-  maxReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
-    | .maximumReplicas"
   getReplicaCount  "${domainJson}" "${clusterName}" replica
   if [ "${operation}" == "DECREMENT" ]; then
     replica=$((replica-1))
   elif [ "${operation}" == "INCREMENT" ]; then
-    maxReplicas=$(echo ${domainJson} | jq "${maxReplicaCmd}")
+    getMaxReplicas "${domainJson}" "${clusterName}" maxReplicas
     if [ ${replica} -ge ${maxReplicas} ]; then
       printInfo "${infoMessage}"
     else
@@ -527,15 +657,14 @@ function validateServerAndFindCluster {
       if [[ "${serverName}" == "${prefix}"* ]]; then
         maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
         number='^[0-9]+$'
-        if [ $(echo "${serverName}" | grep -c -Eo '[0-9]+$') -gt 0 ]; then
-          serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
-        fi
+        serverCount=$(echo "${serverName:${#prefix}}")
         if ! [[ $serverCount =~ $number ]] ; then
-           printError "Server name is not valid for dynamic cluster."
+           printError "Server name ${serverName} is not valid for dynamic cluster."
            exit 1
         fi
-        if [ "${serverCount}" -gt "${maxSize}" ]; then
-          printError "Server name is outside the range of allowed servers. \
+        if [ "${serverCount}" -lt 1 ] || [ "${serverCount}" -gt "${maxSize}" ]; then
+          printError "Index of server name ${serverName} for dynamic cluster is outside \
+            the allowed range of 1 to ${maxSize}. \
             Please make sure server name is correct."
           exit 1
         fi
@@ -585,6 +714,8 @@ function getTopology {
   local domainUid=$1
   local domainNamespace=$2
   local __result=$3 
+  local __jsonTopology=""
+  local __topology=""
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
@@ -598,14 +729,31 @@ function getTopology {
       This script requires that the introspector job for the specified domain ran \
       successfully and generated this config map. Exiting."
     exit 1
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
   else
-    topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
-    jsonTopology=$(python -c \
-    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+    __jsonTopology=$(echo "${configMap}" | jq -r '.data["topology.json"]')
   fi
-  eval $__result="'${jsonTopology}'"
+  if [ ${__jsonTopology} == null ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      if ! [ -x "$(command -v yq)" ]; then
+        validationError "MacOS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'yq' is not installed locally. To fix this, install 'yq', \
+          call the script from Linux instead of MacOS, or upgrade the Operator version."
+        exit 1
+      fi
+      __jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
+    else
+      if ! [ -x "$(command -v python)" ]; then
+        validationError "Linux OS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'python' is not installed locally. To fix this, install 'python' \
+          or upgrade the Operator version."
+        exit 1
+      fi
+      __topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
+      __jsonTopology=$(python -c \
+      'import sys, yaml, json; print json.dumps(yaml.safe_load('"${__topology}"'), indent=4)')
+    fi
+  fi
+  eval $__result="'${__jsonTopology}'"
 }
 
 
@@ -626,19 +774,6 @@ checkStringInArray() {
 function validateJqAvailable {
   if ! [ -x "$(command -v jq)" ]; then
     validationError "jq is not installed"
-  fi
-}
-
-function validateYqAvailable {
-  if [[ "$OSTYPE" == "darwin"* ]] && ! [ -x "$(command -v yq)" ]; then
-    validationError "yq is not installed"
-  fi
-}
-
-# try to execute python to see whether python is available
-function validatePythonAvailable {
-  if ! [ -x "$(command -v python)" ]; then
-    validationError "python is not installed"
   fi
 }
 

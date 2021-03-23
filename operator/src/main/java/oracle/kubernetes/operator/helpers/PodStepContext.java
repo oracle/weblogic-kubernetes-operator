@@ -14,8 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.V1Patch;
@@ -35,11 +34,14 @@ import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
@@ -64,6 +66,10 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -84,6 +90,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String miiModelSecretsHash;
   private final String miiDomainZipHash;
   private final String domainRestartVersion;
+  private boolean addRestartRequiredLabel;
 
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -120,7 +127,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Map<String, String> getPodAnnotations();
 
-  String getNamespace() {
+  private String getNamespace() {
     return info.getNamespace();
   }
 
@@ -150,7 +157,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return info.getDomain();
   }
 
-  String getDomainName() {
+  private String getDomainName() {
     return domainTopology.getName();
   }
 
@@ -166,7 +173,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology.getAdminServerName();
   }
 
-  Integer getAsPort() {
+  private Integer getAsPort() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
@@ -220,69 +227,55 @@ public abstract class PodStepContext extends BasePodStepContext {
     return getDomain().getRuntimeEncryptionSecret();
   }
 
-  private List<V1ContainerPort> getContainerPorts() {
-    if (scan != null) {
-      List<V1ContainerPort> ports = new ArrayList<>();
-      if (scan.getNetworkAccessPoints() != null) {
-        for (NetworkAccessPoint nap : scan.getNetworkAccessPoints()) {
-          String napName = nap.getName();
-          V1ContainerPort port =
-              new V1ContainerPort()
-                  .name(LegalNames.toDns1123LegalName(napName))
-                  .containerPort(nap.getListenPort())
-                  .protocol("TCP");
-          ports.add(port);
-        }
-      }
-      // Istio type is already passed from the introspector output, no need to create it again
-      if (!this.getDomain().isIstioEnabled()) {
-        if (scan.getListenPort() != null) {
-          String napName = "default";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getListenPort())
-                  .protocol("TCP"));
-        }
-        if (scan.getSslListenPort() != null) {
-          String napName = "default-secure";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getSslListenPort())
-                  .protocol("TCP"));
-        }
-        if (scan.getAdminPort() != null) {
-          String napName = "default-admin";
-          ports.add(
-              new V1ContainerPort()
-                  .name(napName)
-                  .containerPort(scan.getAdminPort())
-                  .protocol("TCP"));
-        }
-      }
-      return ports;
+  List<V1ContainerPort> getContainerPorts() {
+    List<V1ContainerPort> ports = new ArrayList<>();
+    getNetworkAccessPoints(scan).forEach(nap -> addContainerPort(ports, nap));
+
+    if (!getDomain().isIstioEnabled()) { // if Istio enabled, the following were added to the NAPs by introspection.
+      addContainerPort(ports, "default", getListenPort(), "TCP");
+      addContainerPort(ports, "default-secure", getSslListenPort(), "TCP");
+      addContainerPort(ports, "default-admin", getAdminPort(), "TCP");
     }
-    return null;
+
+    return ports;
   }
 
-  /**
-   * Returns the configured listen port of the WLS instance.
-   *
-   * @return the non-SSL port of the WLS instance or null if not enabled
-   */
-  Integer getDefaultPort() {
-    return scan.getListenPort();
+  List<NetworkAccessPoint> getNetworkAccessPoints(WlsServerConfig config) {
+    return Optional.ofNullable(config).map(WlsServerConfig::getNetworkAccessPoints).orElse(Collections.emptyList());
   }
 
-  /**
-   * Returns the configured SSL port of the WLS instance.
-   *
-   * @return the SSL port of the WLS instance or null if not enabled
-   */
-  Integer getSSLPort() {
-    return scan.getSslListenPort();
+  private boolean isSipProtocol(NetworkAccessPoint nap) {
+    return "sip".equals(nap.getProtocol()) || "sips".equals(nap.getProtocol());
   }
+
+  private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
+    String name = LegalNames.toDns1123LegalName(nap.getName());
+    addContainerPort(ports, name, nap.getListenPort(), "TCP");
+
+    if (isSipProtocol(nap)) {
+      addContainerPort(ports, "udp-" + name, nap.getListenPort(), "UDP");
+    }
+  }
+
+  private void addContainerPort(List<V1ContainerPort> ports, String name,
+                                @Nullable Integer listenPort, String protocol) {
+    if (listenPort != null) {
+      ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
+    }
+  }
+
+  Integer getListenPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getListenPort).orElse(null);
+  }
+
+  Integer getSslListenPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getSslListenPort).orElse(null);
+  }
+
+  Integer getAdminPort() {
+    return Optional.ofNullable(scan).map(WlsServerConfig::getAdminPort).orElse(null);
+  }
+
 
   abstract String getServerName();
 
@@ -383,14 +376,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createProgressingStep(patchPod(currentPod, next));
   }
 
-  protected Step patchPod(V1Pod currentPod, Step next) {
+  private Step patchPod(V1Pod currentPod, Step next) {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
-
     return new CallBuilder()
         .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
@@ -398,9 +389,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private Map<String, String> getNonHashedPodLabels() {
     Map<String,String> result = new HashMap<>(getPodLabels());
+    Optional.ofNullable(miiDomainZipHash)
+          .ifPresent(h -> result.put(MODEL_IN_IMAGE_DOMAINZIP_HASH, formatHashLabel(h)));
 
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
+
+    if (addRestartRequiredLabel) {
+      result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
+    }
 
     return result;
   }
@@ -447,8 +444,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
+
     boolean useCurrent =
-        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
+        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
+            && canUseNewDomainZip(currentPod);
+
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.fine(
           MessageKeys.POD_DUMP,
@@ -457,6 +457,28 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     return useCurrent;
+  }
+
+  private boolean canUseNewDomainZip(V1Pod currentPod) {
+    String dynamicUpdateResult = packet.getValue(MII_DYNAMIC_UPDATE);
+
+    if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
+      return true;
+    } else if (dynamicUpdateResult == null) {
+      return false;
+    } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
+      return true;
+    } else if (getDomain().getMiiNonDynamicChangesMethod() == MIINonDynamicChangesMethod.CommitUpdateOnly) {
+      addRestartRequiredLabel = true;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private boolean isDomainZipUnchanged(V1Pod currentPod) {
+    return formatHashLabel(miiDomainZipHash)
+        .equals(currentPod.getMetadata().getLabels().get(MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
@@ -502,6 +524,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     getPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
+    Optional.ofNullable(miiDomainZipHash)
+        .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
 
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
@@ -587,16 +611,22 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    Optional.ofNullable(miiDomainZipHash)
-          .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+    if (!getDomain().isUseOnlineUpdate()) {
+      Optional.ofNullable(miiDomainZipHash)
+            .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+    }
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
-    // Add prometheus annotations. This will overwrite any custom annotations with same name.
-    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
-    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
-    AnnotationHelper.annotateForPrometheus(metadata, getDefaultPort() != null ? getDefaultPort() : getSSLPort());
+    // Add legacy prometheus annotations. These have to remain, as they are included in the computation
+    // of the pod sha256 hash, and removing them will cause pods to roll when customers upgrade to new
+    // versions of the operator.
+    AnnotationHelper.annotateForPrometheus(metadata, "/wls-exporter", getMetricsPort());
     return metadata;
+  }
+
+  private Integer getMetricsPort() {
+    return getListenPort() != null ? getListenPort() : getSslListenPort();
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
@@ -645,8 +675,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return volumes;
   }
 
-  protected V1Container createContainer(TuningParameters tuningParameters) {
-    V1Container v1Container = super.createContainer(tuningParameters)
+  protected V1Container createPrimaryContainer(TuningParameters tuningParameters) {
+    V1Container v1Container = super.createPrimaryContainer(tuningParameters)
             .ports(getContainerPorts())
             .lifecycle(createLifecycle())
             .livenessProbe(createLivenessProbe(tuningParameters.getPodTuning()));
@@ -885,9 +915,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
-
       // reset introspect failure job count - if any
-
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
@@ -921,7 +949,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
-      if (UnrecoverableErrorBuilder.isAsyncCallFailure(callResponse)) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
         return onFailure(getConflictStep(), packet, callResponse);

@@ -1,0 +1,54 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    weblogic.domainUID: fluentd-domain
+    weblogic.resourceVersion: domain-v1
+  name: fluentd-config
+  namespace: fluentd-namespace
+data:
+  fluentd.conf: |
+    <match fluent.**>
+      @type null
+    </match>
+    <source>
+      @type tail
+      @log_level debug
+      path "#{ENV['LOG_PATH']}"
+      pos_file /tmp/server.log.pos
+      read_from_head true
+      tag "#{ENV['DOMAIN_UID']}"
+      # multiline_flush_interval 20s
+      <parse>
+        @type multiline
+        format_firstline /^####/
+        format1 /^####<(?<timestamp>(.*?))>/
+        format2 / <(?<level>(.*?))>/
+        format3 / <(?<subSystem>(.*?))>/
+        format4 / <(?<serverName>(.*?))>/
+        format5 / <(?<serverName2>(.*?))>/
+        format6 / <(?<threadName>(.*?))>/
+        format7 / <(?<info1>(.*?))>/
+        format8 / <(?<info2>(.*?))>/
+        format9 / <(?<info3>(.*?))>/
+        format10 / <(?<sequenceNumber>(.*?))>/
+        format11 / <(?<severity>(.*?))>/
+        format12 / <(?<messageID>(.*?))>/
+        format13 / <(?<message>(.*?))>/
+      </parse>
+    </source>
+    <match **>
+      @type elasticsearch
+      @log_level debug
+      host "#{ENV['ELASTICSEARCH_HOST']}"
+      port "#{ENV['ELASTICSEARCH_PORT']}"
+      index_name "#{ENV['DOMAIN_UID']}"
+      type_name fluentd
+      logstash_format true
+      logstash_prefix fluentd
+      #include_tag_key true
+      #tag_key @log_name
+    </match>

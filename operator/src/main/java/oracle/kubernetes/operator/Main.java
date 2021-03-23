@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -19,8 +20,10 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,6 +36,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -53,8 +57,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -70,14 +72,15 @@ public class Main {
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final AtomicReference<DateTime> lastFullRecheck =
-      new AtomicReference<>(DateTime.now());
+  private static final AtomicReference<OffsetDateTime> lastFullRecheck =
+      new AtomicReference<>(OffsetDateTime.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
 
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
+  protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
 
   private static String getConfiguredServiceAccount() {
@@ -112,6 +115,10 @@ public class Main {
                   TuningParameters.getInstance(),
                 ThreadFactory.class,
                 threadFactory));
+  }
+
+  Object getOperatorNamespaceEventWatcher() {
+    return operatorNamespaceEventWatcher;
   }
 
   static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
@@ -169,7 +176,8 @@ public class Main {
     }
 
     private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
-      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, StringUtils.join(configuredDomainNamespaces, ", "));
+      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES,
+          configuredDomainNamespaces.stream().collect(Collectors.joining(", ")));
     }
 
     @Override
@@ -297,6 +305,33 @@ public class Main {
     return Namespaces.getSelection(new StartupStepsVisitor());
   }
 
+  private Step createOperatorNamespaceEventListStep() {
+    return new CallBuilder()
+        .withLabelSelectors(ProcessingConstants.OPERATOR_EVENT_LABEL_FILTER)
+        .listEventAsync(getOperatorNamespace(), new EventListResponseStep(delegate.getDomainProcessor()));
+  }
+
+  private class EventListResponseStep extends ResponseStep<CoreV1EventList> {
+    DomainProcessor processor;
+
+    EventListResponseStep(DomainProcessor processor) {
+      this.processor = processor;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<CoreV1EventList> callResponse) {
+      CoreV1EventList list = callResponse.getResult();
+      operatorNamespaceEventWatcher = startWatcher(getOperatorNamespace(), KubernetesUtils.getResourceVersion(list));
+      list.getItems().forEach(DomainProcessorImpl::updateEventK8SObjects);
+      return doContinueListOrNext(callResponse, packet);
+    }
+
+    OperatorEventWatcher startWatcher(String ns, String resourceVersion) {
+      return OperatorEventWatcher.create(DomainNamespaces.getThreadFactory(), ns,
+          resourceVersion, DomainNamespaces.getWatchTuning(), processor::dispatchEventWatch, null);
+    }
+  }
+
   private class StartupStepsVisitor implements NamespaceStrategyVisitor<Step> {
 
     @Override
@@ -308,6 +343,7 @@ public class Main {
     public Step getDefaultSelection() {
       return Step.chain(
             new CallBuilder().listNamespaceAsync(new StartNamespaceWatcherStep()),
+            createOperatorNamespaceEventListStep(),
             createDomainRecheckSteps());
     }
   }
@@ -364,10 +400,10 @@ public class Main {
 
 
   Step createDomainRecheckSteps() {
-    return createDomainRecheckSteps(DateTime.now());
+    return createDomainRecheckSteps(OffsetDateTime.now());
   }
 
-  private Step createDomainRecheckSteps(DateTime now) {
+  private Step createDomainRecheckSteps(OffsetDateTime now) {
     int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {

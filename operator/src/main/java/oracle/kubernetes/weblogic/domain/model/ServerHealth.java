@@ -3,17 +3,17 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.validation.Valid;
 
 import com.google.gson.annotations.Expose;
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
@@ -22,7 +22,7 @@ public class ServerHealth {
 
   @Description("RFC 3339 date and time at which the server started.")
   @Expose
-  private DateTime activationTime;
+  private OffsetDateTime activationTime;
 
   @Description(
       "Server health of this WebLogic Server instance. If the value is \"Not available\", the operator has "
@@ -55,7 +55,7 @@ public class ServerHealth {
    *
    * @return activation time
    */
-  private DateTime getActivationTime() {
+  private OffsetDateTime getActivationTime() {
     return activationTime;
   }
 
@@ -65,7 +65,7 @@ public class ServerHealth {
    * @param activationTime activation time
    * @return this
    */
-  public ServerHealth withActivationTime(DateTime activationTime) {
+  public ServerHealth withActivationTime(OffsetDateTime activationTime) {
     this.activationTime = activationTime;
     return this;
   }

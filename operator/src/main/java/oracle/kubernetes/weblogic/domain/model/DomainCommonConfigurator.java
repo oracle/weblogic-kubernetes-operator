@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.AdminServerConfigurator;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
@@ -149,6 +150,18 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   @Override
   public DomainConfigurator withPodAnnotation(String name, String value) {
     getDomainSpec().addPodAnnotation(name, value);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMonitoringExporterConfiguration(String configuration) {
+    getDomainSpec().createMonitoringExporterConfiguration(configuration);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMonitoringExporterImage(String imageName) {
+    getDomainSpec().setMonitoringExporterImage(imageName);
     return this;
   }
 
@@ -311,6 +324,25 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     getOrCreateModel().withRuntimeEncryptionSecret(secret);
     return this;
   }
+
+  @Override
+  public DomainConfigurator withMIIOnlineUpdate() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateOnly);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll() {
+    OnlineUpdate onlineUpdate = new OnlineUpdate();
+    onlineUpdate.setEnabled(true);
+    getOrCreateModel().withOnlineUpdate(onlineUpdate).getOnlineUpdate()
+        .setOnNonDynamicChanges(MIINonDynamicChangesMethod.CommitUpdateAndRoll);
+    return this;
+  }
+
 
   @Override
   public DomainConfigurator withOpssWalletPasswordSecret(String secret) {

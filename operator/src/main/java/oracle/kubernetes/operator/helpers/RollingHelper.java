@@ -134,6 +134,7 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
+        LOGGER.fine("Restarting server " + packet.get(ProcessingConstants.SERVER_NAME));
         for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(

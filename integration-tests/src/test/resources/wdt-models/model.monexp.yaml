@@ -9,11 +9,19 @@ domainInfo:
 topology:
   Name: "wls-monexp-domain-1"
   AdminServerName: "admin-server"
+
   Cluster:
     "cluster-1":
       DynamicServers:
-        ServerTemplate:  "cluster-1-template"
-        ServerNamePrefix: "managed-server"
+        ServerTemplate: "cluster-1-template"
+        ServerNamePrefix: "cluster-1-managed-server"
+        DynamicClusterSize: 5
+        MaxDynamicClusterSize: 5
+        CalculatedListenPorts: false
+    "cluster-2":
+      DynamicServers:
+        ServerTemplate: "cluster-2-template"
+        ServerNamePrefix: "cluster-2-managed-server"
         DynamicClusterSize: 5
         MaxDynamicClusterSize: 5
         CalculatedListenPorts: false
@@ -28,15 +36,22 @@ topology:
         Enabled: true
         ListenPort: 8100
         HostnameVerificationIgnored: true
+    "cluster-2-template":
+      Cluster: "cluster-2"
+      ListenPort : 8001
+      SSL:
+        Enabled: true
+        ListenPort: 8100
+        HostnameVerificationIgnored: true
 
 appDeployments:
   Application:
     "wls-exporter":
       SourcePath: "wlsdeploy/applications/wls-exporter.war"
       ModuleType: war
-      Target: 'cluster-1'
+      Target: 'cluster-1,cluster-2'
     myear:
       SourcePath: "wlsdeploy/applications/sessmigr-app.ear"
       ModuleType: ear
-      Target: 'cluster-1'
+      Target: 'cluster-1,cluster-2'
 

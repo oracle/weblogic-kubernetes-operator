@@ -6,12 +6,17 @@ package oracle.kubernetes.operator.http;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Stack;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Flow;
+import java.util.function.Consumer;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -29,9 +34,19 @@ public class HttpAsyncTestSupport {
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private HttpAsyncRequestStep.FutureFactory futureFactory = this::getFuture;
   private final Map<URI, List<RequestHandler>> cannedResponses = new HashMap<>();
+  private final Stack<HttpRequest> receivedRequests = new Stack<>();
+  private final List<Consumer<HttpRequest>> callbacks = new ArrayList<>();
 
   /**
-   * Defines the response for an async http request.
+   * Add a callback to be invoked whenever a request is handled.
+   * @param callback the callback
+   */
+  public void addCallback(Consumer<HttpRequest> callback) {
+    callbacks.add(callback);
+  }
+
+  /**
+   * Defines the response for an async http request and returns the handler.
    * @param request the expected request
    * @param response the desired result
    */
@@ -40,14 +55,42 @@ public class HttpAsyncTestSupport {
     cannedResponses.get(request.uri()).add(new RequestHandler(request, response));
   }
 
-  HttpResponse<String> getResponse(HttpRequest request) {
-    return getHandler(request).getResponse();
+  /**
+   * Returns the last request handled by this class.
+   */
+  public HttpRequest getLastRequest() {
+    return receivedRequests.peek();
+  }
+
+  /**
+   * Returns the requests handled by this class, in order. A request is only considered to have been
+   * handled if a matching response was defined for it before it was received.
+   */
+  public List<HttpRequest> getHandledRequests() {
+    return Collections.unmodifiableList(receivedRequests);
+  }
+
+  /**
+   * Returns the contents of the specified request as a string.
+   * @return a string, which could be null
+   */
+  public String getLastRequestContents() {
+    final RequestContent requestContent = new RequestContent();
+    getLastRequest().bodyPublisher().ifPresent(p -> p.subscribe(requestContent));
+    return requestContent.getContents();
   }
 
   RequestHandler getHandler(HttpRequest request) {
-    return Optional.ofNullable(cannedResponses.get(request.uri()))
+    final RequestHandler requestHandler = Optional.ofNullable(cannedResponses.get(request.uri()))
           .map(l -> getMatchingRequest(l, request))
           .orElse(NO_SUCH_HANDLER);
+    requestHandler.ifMatched(r -> recordRequestHandled(request));
+    return requestHandler;
+  }
+
+  private void recordRequestHandled(HttpRequest request) {
+    receivedRequests.push(request);
+    callbacks.forEach(callback -> callback.accept(request));
   }
 
   private RequestHandler getMatchingRequest(List<RequestHandler> handlers, HttpRequest request) {
@@ -70,7 +113,7 @@ public class HttpAsyncTestSupport {
       this.response = response;
     }
 
-    private HttpResponse<String> getResponse() {
+    HttpResponse<String> getResponse() {
       return response;
     }
 
@@ -81,9 +124,42 @@ public class HttpAsyncTestSupport {
     private boolean isMatchingRequest(HttpRequest left, HttpRequest right) {
       return left.method().equals(right.method());
     }
+
+    public void ifMatched(Consumer<HttpRequest> processRequest) {
+      Optional.ofNullable(request).ifPresent(processRequest);
+    }
   }
 
   public Memento install() throws NoSuchFieldException {
     return StaticStubSupport.install(HttpAsyncRequestStep.class, "factory", futureFactory);
+  }
+
+  static class RequestContent implements Flow.Subscriber<ByteBuffer> {
+
+    private String contents;
+
+    String getContents() {
+      return contents;
+    }
+
+    @Override
+    public void onSubscribe(Flow.Subscription subscription) {
+      subscription.request(1);
+    }
+
+    @Override
+    public void onNext(ByteBuffer item) {
+      contents = new String(item.array());
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+
+    }
+
+    @Override
+    public void onComplete() {
+
+    }
   }
 }

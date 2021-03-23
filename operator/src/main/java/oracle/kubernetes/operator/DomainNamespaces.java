@@ -14,16 +14,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1Event;
-import io.kubernetes.client.openapi.models.V1EventList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.watcher.WatchListener;
@@ -49,14 +51,18 @@ public class DomainNamespaces {
         = new WatcherControl<>(ConfigMapWatcher::create, d -> d::dispatchConfigMapWatch);
   private final WatcherControl<Domain, DomainWatcher> domainWatchers
         = new WatcherControl<>(DomainWatcher::create, d -> d::dispatchDomainWatch);
-  private final WatcherControl<V1Event, EventWatcher> eventWatchers
+  private final WatcherControl<CoreV1Event, EventWatcher> eventWatchers
         = new WatcherControl<>(EventWatcher::create, d -> d::dispatchEventWatch);
+  private final WatcherControl<CoreV1Event, OperatorEventWatcher> operatorEventWatchers
+      = new WatcherControl<>(OperatorEventWatcher::create, d -> d::dispatchEventWatch);
   private final WatcherControl<V1Job, JobWatcher> jobWatchers
         = new WatcherControl<>(JobWatcher::create, d -> NULL_LISTENER);
   private final WatcherControl<V1Pod, PodWatcher> podWatchers
         = new WatcherControl<>(PodWatcher::create, d -> d::dispatchPodWatch);
   private final WatcherControl<V1Service, ServiceWatcher> serviceWatchers
         = new WatcherControl<>(ServiceWatcher::create, d -> d::dispatchServiceWatch);
+  private final WatcherControl<V1beta1PodDisruptionBudget, PodDisruptionBudgetWatcher> podDisruptionBudgetWatchers
+          = new WatcherControl<>(PodDisruptionBudgetWatcher::create, d -> d::dispatchPodDisruptionBudgetWatch);
 
   AtomicBoolean isStopping(String ns) {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
@@ -72,7 +78,7 @@ public class DomainNamespaces {
   /**
    * Constructs a DomainNamespace object.
    */
-  public DomainNamespaces() {
+  DomainNamespaces() {
     namespaceStatuses.clear();
     namespaceStoppingMap.clear();
   }
@@ -102,8 +108,10 @@ public class DomainNamespaces {
 
     domainWatchers.removeWatcher(ns);
     eventWatchers.removeWatcher(ns);
+    operatorEventWatchers.removeWatcher(ns);
     podWatchers.removeWatcher(ns);
     serviceWatchers.removeWatcher(ns);
+    podDisruptionBudgetWatchers.removeWatcher(ns);
     configMapWatchers.removeWatcher(ns);
     jobWatchers.removeWatcher(ns);
   }
@@ -120,6 +128,10 @@ public class DomainNamespaces {
     return eventWatchers.getWatcher(namespace);
   }
 
+  OperatorEventWatcher getDomainEventWatcher(String namespace) {
+    return operatorEventWatchers.getWatcher(namespace);
+  }
+
   JobWatcher getJobWatcher(String namespace) {
     return jobWatchers.getWatcher(namespace);
   }
@@ -132,6 +144,10 @@ public class DomainNamespaces {
     return serviceWatchers.getWatcher(namespace);
   }
 
+  PodDisruptionBudgetWatcher getPodDisruptionBudgetWatcher(String namespace) {
+    return podDisruptionBudgetWatchers.getWatcher(namespace);
+  }
+
   /**
    * Returns the internal status object for the specified namespace.
    * @param ns the name of the namespace.
@@ -141,11 +157,11 @@ public class DomainNamespaces {
     return namespaceStatuses.computeIfAbsent(ns, (key) -> new NamespaceStatus());
   }
 
-  private static WatchTuning getWatchTuning() {
+  static WatchTuning getWatchTuning() {
     return TuningParameters.getInstance().getWatchTuning();
   }
 
-  private static ThreadFactory getThreadFactory() {
+  static ThreadFactory getThreadFactory() {
     return ThreadFactorySingleton.getInstance();
   }
 
@@ -184,7 +200,7 @@ public class DomainNamespaces {
     private final WatcherFactory<T,W> factory;
     private final ListenerSelector<T> selector;
 
-    public WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
+    private WatcherControl(WatcherFactory<T, W> factory, ListenerSelector<T> selector) {
       this.factory = factory;
       this.selector = selector;
     }
@@ -206,7 +222,7 @@ public class DomainNamespaces {
     }
   }
 
-  NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
+  private NamespacedResources.Processors createWatcherStartupProcessing(String ns, DomainProcessor domainProcessor) {
     return new WatcherStartupProcessing(ns, domainProcessor);
   }
 
@@ -225,8 +241,13 @@ public class DomainNamespaces {
     }
 
     @Override
-    Consumer<V1EventList> getEventListProcessing() {
+    Consumer<CoreV1EventList> getEventListProcessing() {
       return l -> eventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    Consumer<CoreV1EventList> getOperatorEventListProcessing() {
+      return l -> operatorEventWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override
@@ -242,6 +263,11 @@ public class DomainNamespaces {
     @Override
     Consumer<V1ServiceList> getServiceListProcessing() {
       return l -> serviceWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
+    }
+
+    @Override
+    Consumer<V1beta1PodDisruptionBudgetList> getPodDisruptionBudgetListProcessing() {
+      return l -> podDisruptionBudgetWatchers.startWatcher(ns, getResourceVersion(l), domainProcessor);
     }
 
     @Override

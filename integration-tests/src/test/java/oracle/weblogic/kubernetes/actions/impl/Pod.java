@@ -3,12 +3,13 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.time.OffsetDateTime;
+
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
-import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
@@ -88,7 +89,7 @@ public class Pod {
    * @return creationTimestamp from metadata section of the pod
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static OffsetDateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
     return Kubernetes.getPodCreationTimestamp(namespace, labelSelector, podName);
   }
@@ -117,6 +118,19 @@ public class Pod {
    */
   public static String getPodIP(String namespace, String labelSelector, String podName) throws ApiException {
     return Kubernetes.getPodIP(namespace, labelSelector, podName);
+  }
+
+  /**
+   * Returns the status phase of the pod.
+   *
+   * @param namespace in which to check for the pod status
+   * @param labelSelectors in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod to check
+   * @return the status phase of the pod
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static String getPodStatusPhase(String namespace, String labelSelectors, String podName) throws ApiException {
+    return Kubernetes.getPodStatusPhase(namespace, labelSelectors, podName);
   }
 
   /**

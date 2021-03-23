@@ -65,12 +65,13 @@ public class ConfigMapHelperTest {
     "wlst.sh",
     "tailLog.sh",
     "monitorLog.sh",
-    "model_diff.py",
+    "model-diff.py",
+    "model-diff-v1.py",
     "modelInImage.sh",
-    "wdt_create_filter.py",
+    "model-wdt-create-filter.py",
     "wdt_mii_filter.py",
-    "model_filters.json",
-    "encryption_util.py"
+    "model-filters.json",
+    "model-encryption-util.py"
   };
   private static final String DOMAIN_NS = "namespace";
 

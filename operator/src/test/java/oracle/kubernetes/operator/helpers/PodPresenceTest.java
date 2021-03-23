@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.junit.MatcherAssert;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ public class PodPresenceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
-  private long clock;
+  private OffsetDateTime clock = OffsetDateTime.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
       new V1Pod()
@@ -327,7 +327,7 @@ public class PodPresenceTest {
   @Test
   public void onDeleteEventWithNoRecordedServerPod_ignoreIt() {
     V1Pod service = createServerPod();
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(service).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -339,7 +339,7 @@ public class PodPresenceTest {
     V1Pod oldPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(oldPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(oldPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -350,7 +350,7 @@ public class PodPresenceTest {
   public void onDeleteEventWithSameServerPod_removeIt() {
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(currentPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(currentPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -362,7 +362,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -374,7 +374,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -387,7 +387,7 @@ public class PodPresenceTest {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
-    Watch.Response<V1Pod> event = WatchEvent.createDeleteEvent(newerPod).toWatchResponse();
+    Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(newerPod).toWatchResponse();
 
     processor.dispatchPodWatch(event);
 
@@ -404,7 +404,8 @@ public class PodPresenceTest {
     return pod;
   }
 
-  private DateTime getDateTime() {
-    return new DateTime(++clock);
+  private OffsetDateTime getDateTime() {
+    clock = clock.plusSeconds(1);
+    return clock;
   }
 }

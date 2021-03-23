@@ -19,7 +19,7 @@ spec:
   # the image for 'Model in Image' domains.
   domainHome: /u01/domains/sample-domain2
 
-  # The WebLogic Server Docker image that the Operator uses to start the domain
+  # The WebLogic Server image that the Operator uses to start the domain
   image: "model-in-image:WLS-v1"
 
   # Defaults to "Always" if image tag (version) is ':latest'
@@ -110,12 +110,17 @@ spec:
                       values:
                         - $(CLUSTER_NAME)
                 topologyKey: "kubernetes.io/hostname"
+    # The number of managed servers to start for this cluster
     replicas: 2
 
   # Change the restartVersion to force the introspector job to rerun
   # and apply any new model configuration, to also force a subsequent
   # roll of your domain's WebLogic Server pods.
   restartVersion: '1'
+
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
 
   configuration:
 

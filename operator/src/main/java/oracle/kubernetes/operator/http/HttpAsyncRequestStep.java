@@ -8,7 +8,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -19,6 +18,8 @@ import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 
 /**
  * An asynchronous step to handle http requests.
@@ -39,7 +40,9 @@ public class HttpAsyncRequestStep extends Step {
   private static FutureFactory factory = DEFAULT_FACTORY;
   private final HttpRequest request;
   private long timeoutSeconds = DEFAULT_TIMEOUT_SECONDS;
-  private static final HttpClient httpClient = HttpClient.newBuilder().build();
+  private static final HttpClient httpClient = HttpClient.newBuilder()
+      .sslContext(getTrustingSSLContext())
+      .build();
 
   private HttpAsyncRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     super(responseStep);
@@ -53,7 +56,7 @@ public class HttpAsyncRequestStep extends Step {
    * @param responseStep the step to handle the response
    * @return a new step to run as part of a fiber, linked to the response step
    */
-  public static HttpAsyncRequestStep createGetRequest(String url, HttpResponseStep responseStep) {
+  static HttpAsyncRequestStep createGetRequest(String url, HttpResponseStep responseStep) {
     HttpRequest request = HttpRequest.newBuilder(URI.create(url)).GET().build();
     return create(request, responseStep);
   }
@@ -107,11 +110,14 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
-      if (throwable != null) {
-        LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, request.method(), request.uri(), throwable);
+      if (throwable instanceof HttpTimeoutException) {
+        LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
+      } else if (response != null) {
+        recordResponse(response);
+      } else if (throwable != null) {
+        recordThrowableResponse(throwable);
       }
-      
-      Optional.ofNullable(response).ifPresent(this::recordResponse);
+
       fiber.resume(packet);
     }
 
@@ -121,8 +127,12 @@ public class HttpAsyncRequestStep extends Step {
       }
       HttpResponseStep.addToPacket(packet, response);
     }
-  }
 
+    private void recordThrowableResponse(Throwable throwable) {
+      LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
+      HttpResponseStep.addToPacket(packet, throwable);
+    }
+  }
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {
     return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString());
@@ -132,7 +142,7 @@ public class HttpAsyncRequestStep extends Step {
     private final String method;
     private final URI uri;
 
-    public HttpTimeoutException(String method, URI uri) {
+    HttpTimeoutException(String method, URI uri) {
       this.method = method;
       this.uri = uri;
     }

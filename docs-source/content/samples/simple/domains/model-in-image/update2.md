@@ -33,7 +33,7 @@ Here are the steps for this use case:
 
    Run the following commands:
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
    $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
@@ -55,7 +55,7 @@ Here are the steps for this use case:
 1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the Domain YAML file.
 
    Run the following commands:
-   ```
+   ```shell
    # spec.webLogicCredentialsSecret
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-weblogic-credentials \
@@ -74,13 +74,16 @@ Here are the steps for this use case:
 
    # referenced by spec.configuration.secrets and by the data source model YAML in the ConfigMap
    $ kubectl -n sample-domain1-ns create secret generic \
-     sample-domain2-datasource-secret \
-      --from-literal=password=Oradoc_db1 \
-      --from-literal=url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+      sample-domain2-datasource-secret \
+      --from-literal='user=sys as sysdba' \
+      --from-literal='password=incorrect_password' \
+      --from-literal='max-capacity=1' \
+      --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
    $ kubectl -n sample-domain1-ns label  secret \
-     sample-domain2-datasource-secret \
-     weblogic.domainUID=sample-domain2
+      sample-domain2-datasource-secret \
+      weblogic.domainUID=sample-domain2
    ```
+
 
    Observations:
      - We are leaving the namespace `sample-domain1-ns` unchanged for each secret because you will deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
@@ -90,12 +93,13 @@ Here are the steps for this use case:
      - You use a different set of secrets for the new domain for two reasons:
        - To make it easier to keep the life cycle and/or CI/CD process for the two domains simple and independent.
        - To 'future proof' the new domain so that changes to the original domain's secrets or new domain's secrets can be independent.
+     - We deliberately specify an incorrect password and a low maximum pool capacity in the data source secret because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case.
 
    If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation. Note that we are using the RCU prefix `FMW2` for this domain, because the first domain is already using `FMW1`.
 
    {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
 
-   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-rcu-access \
       --from-literal=rcu_prefix=FMW2 \
@@ -145,7 +149,7 @@ Here are the steps for this use case:
 
         Specifically, change the corresponding Domain `spec.serverPod.env` YAML file stanza to look something like this:
 
-        ```
+        ```yaml
         ...
         spec:
           ...
@@ -159,7 +163,7 @@ Here are the steps for this use case:
 
       - Change the `/tmp/mii-sample/mii-update2.yaml` Domain YAML file's `spec.domainHome` value to `/u01/domains/sample-domain2`. The corresponding YAML file stanza will look something like this:
 
-        ```
+        ```yaml
         ...
         spec:
           ...
@@ -171,7 +175,7 @@ Here are the steps for this use case:
 
       - Change the `/tmp/mii-sample/mii-update2.yaml` secret references in the `spec.webLogicCredentialsSecret` and `spec.configuration.secrets` stanzas to reference this use case's secrets. Specifically, change:
 
-          ```
+          ```yaml
           spec:
             ...
             webLogicCredentialsSecret:
@@ -190,7 +194,7 @@ Here are the steps for this use case:
         To this:
 
 
-          ```
+          ```yaml
           spec:
             ...
             webLogicCredentialsSecret:
@@ -210,7 +214,7 @@ Here are the steps for this use case:
 
 
       - Change the Domain YAML file's `spec.configuration.model.configMap` value from `sample-domain1-wdt-config-map` to `sample-domain2-wdt-config-map`. The corresponding YAML file stanza will look something like this:
-         ```
+         ```yaml
          spec:
            ...
            configuration:
@@ -222,7 +226,7 @@ Here are the steps for this use case:
 
       - Now, compare your original and changed Domain YAML files to double check your changes.
 
-          ```
+          ```shell
           $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
           9c9
           <   name: sample-domain1
@@ -286,7 +290,7 @@ Here are the steps for this use case:
 
           > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-          ```
+          ```shell
           $ kubectl apply -f /tmp/mii-sample/mii-update2.yaml
           ```
 
@@ -294,7 +298,7 @@ Here are the steps for this use case:
 
         > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
-        ```
+        ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update2-d2-WLS-v1-ds.yaml
         ```
 
@@ -303,7 +307,7 @@ Here are the steps for this use case:
    If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job for `sample-domain2` run and your WebLogic Server pods start. The output will look something like this:
 
    {{%expand "Click here to expand." %}}
-   ```
+   ```shell
    $ kubectl get pods -n sample-domain1-ns --watch
    NAME                             READY   STATUS    RESTARTS   AGE
    sample-domain1-admin-server      1/1     Running   0          5d2h
@@ -337,7 +341,7 @@ Here are the steps for this use case:
    For a more detailed view of this activity, you can instead call `/tmp/mii-sample/utils/wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3`. The output will look something like this:
 
    {{%expand "Click here to expand." %}}
-   ```
+   ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
 
    @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
@@ -428,21 +432,21 @@ Here are the steps for this use case:
 
    Send a web application request to the ingress controller for `sample-domain2`:
 
-   ```
+   ```shell
    $ curl -s -S -m 10 -H 'host: sample-domain2-cluster-cluster-1.mii-sample.org' \
       http://localhost:30305/myapp_war/index.jsp
    ```
 
    Or, if Traefik is unavailable and your `domain2` Administration Server pod is running, you can run `kubectl exec`:
 
-   ```
+   ```shell
    $ kubectl exec -n sample-domain1-ns sample-domain2-admin-server -- bash -c \
      "curl -s -S -m 10 http://sample-domain2-cluster-cluster-1:8001/myapp_war/index.jsp"
    ```
 
    You will see something like the following:
 
-    ```
+    ```html
     <html><body><pre>
     *****************************************************************
 
@@ -450,21 +454,34 @@ Here are the steps for this use case:
 
     Welcome to WebLogic Server 'managed-server1'!
 
-     domain UID  = 'sample-domain2'
-     domain name = 'domain2'
+      domain UID  = 'sample-domain2'
+      domain name = 'domain2'
 
     Found 1 local cluster runtime:
       Cluster 'cluster-1'
 
+    Found min threads constraint runtime named 'SampleMinThreads' with configured count: 1
+
+    Found max threads constraint runtime named 'SampleMaxThreads' with configured count: 10
+
     Found 1 local data source:
-      Datasource 'mynewdatasource': State='Running'
+      Datasource 'mynewdatasource':  State='Running', testPool='Failed'
+        ---TestPool Failure Reason---
+        NOTE: Ignore 'mynewdatasource' failures until the sample's Update 4 use case.
+        ---
+        ...
+        ... invalid host/username/password
+        ...
+        -----------------------------
 
     *****************************************************************
     </pre></body></html>
 
     ```
 
-If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes for `sample-domain1` in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
+
+If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 You will not be using the `sample-domain2` domain again in this sample; if you wish, you can shut it down now by calling `kubectl -n sample-domain1-ns delete domain sample-domain2`.
 

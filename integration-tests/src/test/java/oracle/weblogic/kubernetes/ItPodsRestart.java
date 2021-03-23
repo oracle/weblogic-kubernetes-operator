@@ -4,6 +4,7 @@
 package oracle.weblogic.kubernetes;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -26,9 +27,7 @@ import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.annotations.tags.Slow;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -83,7 +82,7 @@ class ItPodsRestart {
   private static final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
-  private Map<String, DateTime> podsWithTimeStamps = null;
+  private Map<String, OffsetDateTime> podsWithTimeStamps = null;
 
 
   /**
@@ -228,7 +227,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
-  @Slow
   public void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -283,7 +281,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
-  @Slow
   public void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -349,7 +346,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
-  @Slow
   public void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -414,7 +410,6 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
-  @Slow
   public void testServerPodsRestartByChangingImagePullPolicy() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),

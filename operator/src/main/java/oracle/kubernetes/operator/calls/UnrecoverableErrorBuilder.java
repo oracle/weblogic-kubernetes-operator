@@ -10,16 +10,30 @@ public class UnrecoverableErrorBuilder {
 
   /**
    * Returns true if the specified call response indicates an unrecoverable response from Kubernetes.
-   * @param callResponse the response from a Kubernetes call
    * @param <T> call response type
+   * @param callResponse the response from a Kubernetes call
    * @return true if an unprocessable entity failure has been reported
    */
-  public static <T> boolean isAsyncCallFailure(CallResponse<T> callResponse) {
+  public static <T> boolean isAsyncCallUnrecoverableFailure(CallResponse<T> callResponse) {
     return callResponse.isFailure() && isUnrecoverable(callResponse.getE());
+  }
+
+  /**
+   * Returns true if the specified call response indicates a NotFound/Gone response from Kubernetes.
+   * @param callResponse the response from a Kubernetes call
+   * @param <T> call response type
+   * @return true if a NotFound/Gone entity failure has been reported
+   */
+  public static <T> boolean isAsyncCallNotFoundFailure(CallResponse<T> callResponse) {
+    return callResponse.isFailure() && isNotFound(callResponse.getE());
   }
 
   private static boolean isUnrecoverable(ApiException e) {
     return UnrecoverableErrorBuilderImpl.isUnrecoverable(e);
+  }
+
+  private static boolean isNotFound(ApiException e) {
+    return UnrecoverableErrorBuilderImpl.isNotFound(e);
   }
 
   /**

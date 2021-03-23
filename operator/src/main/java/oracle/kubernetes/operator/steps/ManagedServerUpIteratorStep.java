@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -17,9 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -46,11 +49,11 @@ public class ManagedServerUpIteratorStep extends Step {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /** The interval in msec that the operator will wait to ensure that started pods have been scheduled on a node. */
-  public static final int SCHEDULING_DETECTION_DELAY = 100;
+  static final int SCHEDULING_DETECTION_DELAY = 100;
 
   private final Collection<ServerStartupInfo> startupInfos;
 
-  public ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
+  ManagedServerUpIteratorStep(Collection<ServerStartupInfo> startupInfos, Step next) {
     super(next);
     this.startupInfos = startupInfos;
   }
@@ -96,6 +99,11 @@ public class ManagedServerUpIteratorStep extends Step {
                               entry.getValue().getServerStartsStepAndPackets(), null), packet.copy()));
     }
 
+    Collection<StepAndPacket> startupWaiters =
+            startupInfos.stream()
+                    .map(ssi -> createManagedServerUpWaiters(packet, ssi)).collect(Collectors.toList());
+    work.addAll(startupWaiters);
+
     if (!work.isEmpty()) {
       return doForkJoin(DomainStatusUpdater.createStatusUpdateStep(
               new ManagedServerUpAfterStep(getNext())), packet, work);
@@ -116,6 +124,17 @@ public class ManagedServerUpIteratorStep extends Step {
   private StepAndPacket createManagedServerUpDetails(Packet packet, ServerStartupInfo ssi) {
     return new StepAndPacket(ServiceHelper.createForServerStep(PodHelper.createManagedPodStep(null)),
             createPacketForServer(packet, ssi));
+  }
+
+  private StepAndPacket createManagedServerUpWaiters(Packet packet, ServerStartupInfo ssi) {
+    String podName = getPodName(packet.getSpi(DomainPresenceInfo.class), ssi.getServerName());
+    return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
+            .map(p -> p.waitForReady(podName, null)).orElse(null),
+            createPacketForServer(packet, ssi));
+  }
+
+  private String getPodName(DomainPresenceInfo info, String serverName) {
+    return LegalNames.toPodName(info.getDomainUid(), serverName);
   }
 
   private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
@@ -215,7 +234,7 @@ public class ManagedServerUpIteratorStep extends Step {
       this.maxConcurrency = maxConcurrency;
     }
 
-    public int getMaxConcurrency() {
+    int getMaxConcurrency() {
       return this.maxConcurrency;
     }
 

@@ -117,8 +117,8 @@ You can modify these fields using the `kubectl` command-line tool's `edit` and `
 
 For example, to edit the Domain YAML file directly using the `kubectl` command-line tool:
 
-```
-kubectl edit domain <domain name> -n <domain namespace>
+```shell
+$ kubectl edit domain <domain name> -n <domain namespace>
 ```
 
 The `edit` command opens a text editor which lets you edit the Domain in place.
@@ -170,8 +170,8 @@ a. Select a different name for the new image.
 
 b. For Domain in Image, it is important to keep your original domain home in your new image.
 
-Using the same domain home-in-image Docker image as a base, create a new Docker image by copying (`COPY`
-command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the Docker image during the Docker image build.
+Using the same domain home-in-image image as a base, create a new image by copying (`COPY`
+command in a Dockerfile) the updated application deployment files or WebLogic Server patches into the image during the image build.
 
 {{% notice note %}}
 The key here is to make sure that you do not re-run WLST or WDT to create a new domain home even though it will
@@ -179,16 +179,16 @@ The key here is to make sure that you do not re-run WLST or WDT to create a new 
     rolling restart.
 {{% /notice %}}
 
-c. Deploy the new Docker image to your Docker repository with the new name.
+c. Deploy the new image to your container registry with the new name.
 
 d. Update the `image` field of the Domain YAML file, specifying the new image name.
 
    For example:
 
-     ```
+     ```yaml
      domain:
        spec:
-         image: oracle/weblogic-updated:3.2.0
+         image: ghcr.io/oracle/weblogic-updated:3.2.0
      ```
 e. The operator will now initiate a rolling restart, which will apply the updated image, for all the servers in the domain.
 

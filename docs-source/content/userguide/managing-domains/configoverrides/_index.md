@@ -157,7 +157,7 @@ A `MODULENAME` must correspond to the MBean name of a system resource defined in
 An override template must define the exact schemas required by the configuration overrides feature.  The schemas vary based on the file type you wish to override.
 
 _`config.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
@@ -167,7 +167,7 @@ _`config.xml`_
 ```
 
 _`jdbc-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
                        xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
@@ -177,7 +177,7 @@ _`jdbc-MODULENAME.xml`_
 ```
 
 _`jms-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jms:weblogic-jms xmlns:jms="http://xmlns.oracle.com/weblogic/weblogic-jms"
                   xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-jms-fragment"
@@ -187,7 +187,7 @@ _`jms-MODULENAME.xml`_
 ```
 
 _`diagnostics-MODULENAME.xml`_
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <wldf:wldf-resource xmlns:wldf="http://xmlns.oracle.com/weblogic/weblogic-diagnostics"
                     xmlns:f="http://xmlns.oracle.com/weblogic/weblogic-diagnostics-fragment"
@@ -249,7 +249,7 @@ The following `config.xml` override file demonstrates:
  *  Sets the `public-address` and `public-port` fields with values obtained from a Secret named `test-host` with keys `hostname` and `port`. It assumes the original config.xml already sets these fields, and so uses `replace` instead of `add`.
  *  Sets two debug settings. It assumes the original config.xml does not have a `server-debug` stanza, so it uses `add` throughout the entire stanza.
 
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <d:domain xmlns:d="http://xmlns.oracle.com/weblogic/domain"
           xmlns:f="http://xmlns.oracle.com/weblogic/domain-fragment"
@@ -280,7 +280,7 @@ Best practices for data source modules and their overrides:
 * Set your original (non-overridden) URL, username, and password to invalid values. This helps prevent accidentally starting a server without overrides, and then having the data source successfully connect to a database that's wrong for the current environment. For example, if these attributes are set to reference a QA database in your original configuration, then a mistake configuring overrides in your production Kubernetes Deployment could cause your production applications to use your QA database.
 * Set your original (non-overridden) `JDBCConnectionPoolParams` `MinCapacity` and `InitialCapacity` to `0`, and set your original `DriverName` to a reference an existing JDBC Driver. This ensures that you can still successfully boot a server even when you have configured invalid URL/username/password values, your database isn't running, or you haven't specified your overrides yet.
 
-```
+```xml
 <?xml version='1.0' encoding='UTF-8'?>
 <jdbc:jdbc-data-source xmlns:jdbc="http://xmlns.oracle.com/weblogic/jdbc-data-source"
                        xmlns:f="http://xmlns.oracle.com/weblogic/jdbc-data-source-fragment"
@@ -317,9 +317,9 @@ Best practices for data source modules and their overrides:
   * If the ConfigMap is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example, assuming `./mydir` contains your `version.txt` and situation configuration template files:
 
-    ```
-    kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
-    kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
+    ```shell
+    $ kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+    $ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
 * Create any Kubernetes Secrets referenced by a template "secret macro".
   * Secrets can have multiple keys (files) that can hold either cleartext or base64 values. We recommend that you use base64 values for passwords by using `Opaque` type secrets in their `data` field, so that they can't be easily read at a casual glance. For more information, see https://kubernetes.io/docs/concepts/configuration/secret/.
@@ -327,9 +327,9 @@ Best practices for data source modules and their overrides:
   * If a Secret is going to be used by a single `DOMAIN_UID`, then we recommend adding the `weblogic.domainUID=<mydomainuid>` label to help track the resource.
   * For example:
 
-    ```
-    kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
-    kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
+    ```shell
+    $ kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
+    $ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
     ```
 * Configure the name of the ConfigMap in the Domain YAML file `configuration.overridesConfigMap` field.
 * Configure the names of each Secret in Domain YAML file.
@@ -343,7 +343,7 @@ Best practices for data source modules and their overrides:
 * See [Debugging](#debugging) for ways to check if the configuration overrides are taking effect or if there are errors.
 
 Example Domain YAML:
-```
+```yaml
 apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
@@ -364,35 +364,58 @@ spec:
 ---
 ### Debugging
 
-Incorrectly formatted override files may be accepted without warnings or errors and may not prevent WebLogic Server instance Pods from booting. So, it is important to make sure that the template files are correct in a QA environment, otherwise your WebLogic Servers may start even though critically required overrides are failing to take effect.
+Use this information to verify that your overrides are taking effect or if there are errors.
 
-On WebLogic Server versions that support the `weblogic.SituationalConfig.failBootOnError` system property (Note: It is not supported in WebLogic Server 12.2.1.3.0),
-by default the WebLogic Server will fail to boot if any configuration overrides files are invalid,
-or if it encounters an error while loading configuration overrides files.
-By setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR` environment variable in the Kubernetes containers for the WebLogic Servers to `false`, you can start up the WebLogic Servers even with incorrectly formatted override files.
+__Background notes:__
 
-* Make sure you've followed each step in the [Step-by-step guide](#step-by-step-guide).
+- The WebLogic Server Administration Console will _not_ reflect any override changes.
+  - You cannot use the Console to verify that overrides are taking effect.
+  - Instead, you can check overrides using WLST; see the `wlst.sh` script below for details.
+
+- Incorrect override files may be silently accepted without warnings or errors.
+  - For example, WebLogic Server instance Pods may fully start regardless of XML
+    override syntax errors or if the specified name of an MBean is incorrect.
+  - So, it is important to make sure that the template files are correct in a QA environment,
+    otherwise, WebLogic Servers may start even though critically required
+    overrides are failing to take effect.
+
+- Some incorrect overrides may be detected on WebLogic Server versions that
+  support the `weblogic.SituationalConfig.failBootOnError` system property
+  (not applicable to WebLogic Server 12.2.1.3.0).
+  - If the system property is supported, then, by default, WebLogic Server will fail to boot
+    if it encounters a syntax error while loading configuration overrides files.
+  - If you _want_ to start up WebLogic Servers with incorrectly formatted override files,
+    then disable this check by setting the `FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR`
+    environment variable in the Kubernetes
+    containers for the WebLogic Servers to `false`.
+
+
+__Debugging steps:__
+
+* Make sure that you've followed each step in the [Step-by-step guide](#step-by-step-guide).
 
 * If WebLogic Server instance Pods do not come up at all, then:
   * Examine your Domain resource status: `kubectl -n MYDOMAINNAMESPACE describe domain MYDOMAIN`
-  * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector` and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
+  * Check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
+  For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
+
+  * Check the introspector job and its log.
+    * In the domain's namespace, see if you can find a job named `DOMAIN_UID-introspector`
+      and a corresponding pod named something like `DOMAIN_UID-introspector-xxxx`.  If so, examine:
       * `kubectl -n MYDOMAINNAMESPACE describe job INTROSPECTJOBNAME`
       * `kubectl -n MYDOMAINNAMESPACE logs INTROSPECTPODNAME`
-  * Check your operator log for Warning/Error/Severe messages.
+    * The introspector log is mirrored to the Domain resource `spec.logHome` directory
+      when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
+  * Check the operator log for `Warning`/`Error`/`Severe` messages.
       * `kubectl -n MYOPERATORNAMESPACE logs OPERATORPODNAME`
 
-{{% notice tip %}}
-The introspector log is mirrored to the Domain resource `spec.logHome` directory
-when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
-{{% /notice %}}
-
 * If WebLogic Server instance Pods do start, then:
-  * Search your Administration Server Pod's `kubectl log` for the keyword `situational`, for example `kubectl logs MYADMINPOD | grep -i situational`.
+  * Search your Administration Server Pod's `kubectl log` for the keyword `situational`, for example, `kubectl logs MYADMINPOD | grep -i situational`.
       * The only WebLogic Server log lines that match should look something like:
          * `<Dec 14, 2018 12:20:47 PM UTC> <Info> <Management> <BEA-141330> <Loading situational configuration file: /shared/domains/domain1/optconfig/custom-situational-config.xml>`
          * This line indicates a configuration overrides file has been loaded.
-      * If the search yields Warning or Error lines, then the format of the custom configuration overrides template is incorrect, and the Warning or Error text should describe the problem.
-      * Note: The following exception may show up in your server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored (a fix is pending for them):
+      * If the search yields `Warning` or `Error` lines, then the format of the custom configuration overrides template is incorrect, and the `Warning` or `Error` text should describe the problem.
+      * **Note**: The following exception may show up in the server logs when overriding JDBC modules. It is not expected to affect runtime behavior, and can be ignored:
          ```
          java.lang.NullPointerException
            at weblogic.management.provider.internal.situationalconfig.SituationalConfigManagerImpl.registerListener(SituationalConfigManagerImpl.java:227)
@@ -402,24 +425,28 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
            ...
          ```
   * Look in your `DOMAIN_HOME/optconfig` directory.
-    * This directory, or a subdirectory within this directory, should contain each of your custom configuration ovrrides files.
-    * If it doesn't, then this likely indicates your Domain YAML file `configuration.overridesConfigMap` was not set to match your custom override ConfigMap name, or that your custom override ConfigMap does not contain your override files.
+    * This directory, or a subdirectory within this directory, should contain each of your custom configuration overrides files.
+    * If it doesn't, then this likely indicates that your Domain YAML file `configuration.overridesConfigMap` was not set to match your custom override ConfigMap name, or that your custom override ConfigMap does not contain your override files.
 
 * If the Administration Server Pod does start but fails to reach ready state or tries to restart:
   * Check for this message ` WebLogic Server failed to start due to missing or invalid situational configuration files` in the Administration Server Pod's `kubectl log`
     * This suggests that the Administration Server failure to start may have been caused by errors found in a configuration override file.
       * Lines containing the String `situational` may be found in the Administration Server Pod log to provide more hints.
       * For example:
-        * `<Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323> <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".`
-      * The warning message suggests a syntax error is found in the provided configuration override file for the testDS JDBC datasource.
+      ```
+        <Jun 20, 2019 3:48:45 AM GMT> <Warning> <Management> <BEA-141323>
+        <The situational config file has an invalid format, it is being ignored: XMLSituationalConfigFile[/shared/domains/domain1/optconfig/jdbc/testDS-0527-jdbc-situational-config.xml] because org.xml.sax.SAXParseException; lineNumber: 8; columnNumber: 3; The element type "jdbc:jdbc-driver-params" must be terminated by the matching end-tag "</jdbc:jdbc-driver-params>".
+        ```
+      * The warning message suggests a syntax error is found in the provided configuration override file for the `testDS` JDBC data source.
+  * Check for pod-related Kubernetes events: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
 * If you'd like to verify that the configuration overrides are taking effect in the WebLogic MBean tree, then one way to do this is to compare the `server config` and `domain config` MBean tree values.
   * The `domain config` value should reflect the original value in your domain home configuration.
   * The `server config` value should reflect the overridden value.
   * For example, assuming your `DOMAIN_UID` is `domain1`, and your domain contains a WebLogic Server named `admin-server`, then:
 
-  ```
-  kubectl exec -it domain1-admin-server /bin/bash
+  ```shell
+  $ kubectl exec -it domain1-admin-server /bin/bash
   $ wlst.sh
   > connect(MYADMINUSERNAME, MYADMINPASSWORD, 't3://domain1-admin-server:7001')
   > domainConfig()
@@ -429,12 +456,10 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
   > exit()
   ```
 * To cause the WebLogic configuration overrides feature to produce additional debugging information in the WebLogic Server logs, configure the `JAVA_OPTIONS` environment variable in your Domain YAML file with:
-```
--Dweblogic.debug.DebugSituationalConfig=true
--Dweblogic.debug.DebugSituationalConfigDumpXml=true
-```
-
-* **NOTE**: The WebLogic Server Administration Console will _not_ reflect any override changes. You cannot use the Console to verify overrides are taking effect.
+  ```
+  -Dweblogic.debug.DebugSituationalConfig=true
+  -Dweblogic.debug.DebugSituationalConfigDumpXml=true
+  ```
 
 
 ---

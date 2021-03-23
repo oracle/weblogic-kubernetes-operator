@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,7 +13,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -229,10 +229,10 @@ public class ItOperatorRestart {
     final boolean VALID = true;
     final boolean INVALID = false;
 
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime =
+    OffsetDateTime adminPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
         String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
     assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
@@ -245,13 +245,13 @@ public class ItOperatorRestart {
 
     pods.put(adminServerPodName, adminPodCreationTime);
 
-    List<DateTime> msLastCreationTime = new ArrayList<DateTime>();
+    List<OffsetDateTime> msLastCreationTime = new ArrayList<OffsetDateTime>();
     // get the creation time of the managed server pods before patching
     assertDoesNotThrow(
         () -> {
             for (int i = 1; i <= replicaCount; i++) {
               String managedServerPodName = managedServerPrefix + i;
-              DateTime creationTime = getPodCreationTimestamp(domainNamespace, "", managedServerPodName);
+              OffsetDateTime creationTime = getPodCreationTimestamp(domainNamespace, "", managedServerPodName);
               msLastCreationTime.add(creationTime);
               pods.put(managedServerPodName, creationTime);
 
@@ -307,7 +307,7 @@ public class ItOperatorRestart {
 
     for (int i = 1; i <= replicaCount; i++) {
       final String podName = managedServerPrefix + i;
-      final DateTime lastCreationTime = msLastCreationTime.get(i - 1);
+      final OffsetDateTime lastCreationTime = msLastCreationTime.get(i - 1);
       // check that the managed server pod's label has been updated with the new restartVersion
       checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
     }
@@ -327,7 +327,7 @@ public class ItOperatorRestart {
         "Failed to get the name of the operator pod");
 
     // get the creation time of the admin server pod before patching
-    DateTime opPodCreationTime =
+    OffsetDateTime opPodCreationTime =
         assertDoesNotThrow(() -> getPodCreationTimestamp(opNamespace, "", opPodName),
             String.format("Failed to get creationTimestamp for pod %s", opPodName));
     assertNotNull(opPodCreationTime, "creationTimestamp of the operator pod is null");

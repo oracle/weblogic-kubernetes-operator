@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.stream.IntStream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.models.V1Event;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -30,7 +31,6 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +106,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .namespace(namespace)
                 .name(uid)
                 .resourceVersion("1")
-                .creationTimestamp(DateTime.now()));
+                .creationTimestamp(OffsetDateTime.now()));
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {
@@ -193,8 +193,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
     testSupport.defineResources(createEventResource(uid, serverName, message));
   }
 
-  private V1Event createEventResource(String uid, String serverName, String message) {
-    return new V1Event()
+  private CoreV1Event createEventResource(String uid, String serverName, String message) {
+    return new CoreV1Event()
         .metadata(createNamespacedMetadata(uid, NS))
         .involvedObject(new V1ObjectReference().name(LegalNames.toEventName(uid, serverName)))
         .message(message);

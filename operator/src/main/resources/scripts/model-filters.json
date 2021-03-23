@@ -1,0 +1,15 @@
+{
+    "create": [
+      { "name": "primordial_filter", "path": "/u01/wdt/weblogic-deploy/lib/model-wdt-create-filter.py" }
+    ],
+    "deploy": [
+    ],
+    "discover": [
+    ],
+    "update": [
+      { "name": "update_mii_filter", "path": "/u01/wdt/weblogic-deploy/lib/wdt_mii_filter.py" }
+    ],
+    "validate": [
+      { "name": "validate_mii_filter", "path": "/u01/wdt/weblogic-deploy/lib/wdt_mii_filter.py" }
+    ]
+  }

@@ -21,11 +21,11 @@ To control Elasticsearch memory parameters (Heap allocation and Enabling/Disabli
 * bootstrap.memory_lock: value may contain true (enables the usage of mlockall to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out) or false (disables the usage of mlockall to try to lock the process address space into RAM, preventing any Elasticsearch memory from being swapped out). 
 
 To install Elasticsearch and Kibana, use:
-```
-$  kubectl apply -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
+```shell
+$ kubectl apply -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
 ```
 
 To remove them, use:
-```
-$  kubectl delete -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
+```shell
+$ kubectl delete -f kubernetes/samples/scripts/elasticsearch-and-kibana/elasticsearch_and_kibana.yaml
 ```

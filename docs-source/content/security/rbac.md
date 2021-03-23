@@ -42,7 +42,7 @@ the operator where the operator was installed using the
 Helm release name `weblogic-operator`, look for the Kubernetes objects, `Role`, `RoleBinding`,
 `ClusterRole`, and `ClusterRoleBinding`, when using the Helm `status` command:
 
-```bash
+```shell
 $ helm status weblogic-operator
 ```
 
@@ -51,7 +51,7 @@ with a target namespaces of `domain1-ns`, the following
 commands can be used to display a _subset_ of the Kubernetes Roles and
 related RoleBindings:
 
-```bash
+```shell
 $ kubectl describe clusterrole \
   weblogic-operator-ns-weblogic-operator-clusterrole-general
 
@@ -113,7 +113,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | --- | --- | --- | --- |
 | `weblogic-operator-rolebinding` | `weblogic-operator-role` | **Edit**: secrets, configmaps, events | The RoleBinding is created in the namespace `weblogic-operator-ns` [^1] |
 | `weblogic-operator-rolebinding-namespace` | Operator Cluster Role `namespace` | **Read**: secrets, pods/log, pods/exec | The RoleBinding is created in the namespace `domain1-ns` [^2] |
-| | | **Edit**: configmaps, events, pods, services, jobs.batch | |
+| | | **Edit**: configmaps, events, pods, services, jobs.batch, poddisruptionbudgets.policy | |
 | | | **Create**: pods/exec | |
 
 #### ClusterRoleBindings

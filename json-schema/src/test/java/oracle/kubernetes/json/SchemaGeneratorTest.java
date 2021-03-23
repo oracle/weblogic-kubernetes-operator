@@ -9,8 +9,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasJsonPath;
 import static com.jayway.jsonpath.matchers.JsonPathMatchers.hasNoJsonPath;
@@ -19,13 +19,14 @@ import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SchemaGeneratorTest {
 
   private static final String K8S_SCHEMA_URL =
       "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json";
   private static final String K8S_CACHE_FILE = "caches/kubernetes-1.9.0.json";
-  private SchemaGenerator generator = new SchemaGenerator();
+  private final SchemaGenerator generator = new SchemaGenerator();
 
   private URL schemaUrl;
   private URL cacheUrl;
@@ -64,10 +65,27 @@ public class SchemaGeneratorTest {
   @SuppressWarnings("unused")
   @Description("An annotated field")
   private Double annotatedDouble;
+
   @SuppressWarnings("unused")
   private SimpleObject simpleObject;
+  
+  @SuppressWarnings("unused")
+  private Map<String,String> stringMap;
 
-  @Before
+  @SuppressWarnings("unused")
+  private Map<String,Object> objectMap;
+
+  @SuppressWarnings("unused")
+  @PreserveUnknown
+  private Map<String,Object> arbitraryObjectMap;
+
+  @SuppressWarnings({"unused", "rawtypes"})
+  private Map genericMap;
+
+  @SuppressWarnings("unused")
+  private Map<String,SpecializedObject> specializedMap;
+
+  @BeforeEach
   public void setUp() throws Exception {
     schemaUrl = new URL(K8S_SCHEMA_URL);
     cacheUrl = getClass().getResource(K8S_CACHE_FILE);
@@ -221,7 +239,7 @@ public class SchemaGeneratorTest {
 
   @Test
   public void whenAdditionalPropertiesDisabled_doNotGenerateTheProperty() {
-    generator.setIncludeAdditionalProperties(false);
+    generator.setForbidAdditionalProperties(false);
 
     Object schema = generator.generate(SimpleObject.class);
 
@@ -284,6 +302,41 @@ public class SchemaGeneratorTest {
         schema, hasJsonPath("$.properties.derived.properties.aaString.type", equalTo("string")));
     assertThat(
         schema, hasJsonPath("$.properties.derived.properties.anInt.type", equalTo("number")));
+  }
+
+  @Test
+  void whenFieldIsMapAndNoObjectReferences_additionalPropertiesTypeDefaultsToString() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("genericMap"));
+
+    assertThat(schema, hasJsonPath("$.genericMap.additionalProperties.type", equalTo("string")));
+  }
+
+  @Test
+  void whenFieldIsStringMapAndNoObjectReferences_additionalPropertiesTypeMatchesField() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("stringMap"));
+
+    assertThat(schema, hasJsonPath("$.stringMap.additionalProperties.type", equalTo("string")));
+  }
+
+  @Test
+  void whenFieldIsObjectMapAndNoObjectReferences_additionalPropertiesIsFalse() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("objectMap"));
+
+    assertThat(schema, hasJsonPath("$.objectMap.type", equalTo("object")));
+    assertThat(schema, hasJsonPath("$.objectMap.additionalProperties", equalTo("false")));
+  }
+
+  @Test
+  void whenFieldIsObjectMapAnnotatedWithPreserveFields_addK8sPreserveElement() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    Object schema = generateForField(getClass().getDeclaredField("arbitraryObjectMap"));
+
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.x-kubernetes-preserve-unknown-fields", equalTo("true")));
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.type", equalTo("object")));
+    assertThat(schema, hasJsonPath("$.arbitraryObjectMap.additionalProperties", equalTo("false")));
   }
 
   @Test
@@ -369,9 +422,18 @@ public class SchemaGeneratorTest {
             equalTo(schemaUrl + "#/definitions/io.k8s.api.core.v1.EnvVar")));
   }
 
-  @Test(expected = IOException.class)
-  public void whenNonCachedK8sVersionSpecified_throwException() throws IOException {
-    generator.useKubernetesVersion("1.12.0");
+  @Test
+  public void whenNonCachedK8sVersionSpecified_throwException() {
+    assertThrows(IOException.class, () -> generator.useKubernetesVersion("1.12.0"));
+  }
+
+  @Test
+  void useExternalSchemaItem() throws NoSuchFieldException {
+    generator.setSupportObjectReferences(false);
+    generator.defineAdditionalProperties(SpecializedObject.class, "string");
+    Object schema = generateForField(getClass().getDeclaredField("specializedMap"));
+
+    assertThat(schema, hasJsonPath("$.specializedMap.additionalProperties.type", equalTo("string")));
   }
 
   @SuppressWarnings("unused")

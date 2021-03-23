@@ -29,7 +29,7 @@ If the operator's service account cannot have the privileges to access the clust
 In order to display the `ServiceAccount` used by the operator,
 where the operator was installed using the Helm release name `weblogic-operator`,
 look for the `serviceAccount` value using the Helm command:
-```bash
+```shell
 $ helm get values --all weblogic-operator
 ```
 #### Additional reading
