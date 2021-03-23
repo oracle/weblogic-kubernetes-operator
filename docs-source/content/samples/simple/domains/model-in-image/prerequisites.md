@@ -139,15 +139,13 @@ weight: 1
 
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
-   For example, visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each, and then, assuming the version numbers are `1.9.9` and `1.9.7` respectively, call:
-
    ```shell
    $ cd /tmp/mii-sample/model-images
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.9/weblogic-deploy.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
 
-   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.7/imagetool.zip \
+   $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
 
