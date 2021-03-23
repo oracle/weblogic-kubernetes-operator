@@ -64,11 +64,11 @@ draft: false
 * Resolved an issue where the operator could report incorrect information about an introspection job that failed ([#2201](https://github.com/oracle/weblogic-kubernetes-operator/pull/2201)).
 * Resolved an issue where a Service with the older naming pattern from operator 3.0.x could be stranded ([#2208](https://github.com/oracle/weblogic-kubernetes-operator/pull/2208)).
 * Resolved an issue in the domain and cluster start scripts related to overrides at specific Managed Servers ([#2222](https://github.com/oracle/weblogic-kubernetes-operator/pull/2222)).
-* The operator supports logging rotation and maximum file size configurations through Helm chart values ([#2229](https://github.com/oracle/weblogic-kubernetes-operator/pull/2229).
-* Resolved an issue supporting session replication when Istio is in use ([#2242](https://github.com/oracle/weblogic-kubernetes-operator/pull/2242).
-* Resolved an issue where the operator could swallow exceptions related to SSL negotiation failure ([#2251](https://github.com/oracle/weblogic-kubernetes-operator/pull/2251).
-* Resolved an issue where introspection would detect the wrong SSL port ([#2256](https://github.com/oracle/weblogic-kubernetes-operator/pull/2256).
-* Resolved an issue where introspection would fail if a referenced Secret or ConfigMap name was too long ([#2257](https://github.com/oracle/weblogic-kubernetes-operator/pull/2257).
+* The operator supports logging rotation and maximum file size configurations through Helm chart values ([#2229](https://github.com/oracle/weblogic-kubernetes-operator/pull/2229)).
+* Resolved an issue supporting session replication when Istio is in use ([#2242](https://github.com/oracle/weblogic-kubernetes-operator/pull/2242)).
+* Resolved an issue where the operator could swallow exceptions related to SSL negotiation failure ([#2251](https://github.com/oracle/weblogic-kubernetes-operator/pull/2251)).
+* Resolved an issue where introspection would detect the wrong SSL port ([#2256](https://github.com/oracle/weblogic-kubernetes-operator/pull/2256)).
+* Resolved an issue where introspection would fail if a referenced Secret or ConfigMap name was too long ([#2257](https://github.com/oracle/weblogic-kubernetes-operator/pull/2257)).
 
 #### Operator 3.1.4
 
