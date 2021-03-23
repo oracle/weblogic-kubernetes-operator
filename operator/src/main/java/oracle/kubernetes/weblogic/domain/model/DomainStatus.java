@@ -117,7 +117,7 @@ public class DomainStatus {
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
       conditions = conditions.stream()
-          .filter(c -> preserve(c, newCondition.getType().typesToRemoveOnEqual())).collect(Collectors.toList());
+          .filter(c -> preserve(c, newCondition.getType().typesToRemoveAlways())).collect(Collectors.toList());
       return this;
     }
 

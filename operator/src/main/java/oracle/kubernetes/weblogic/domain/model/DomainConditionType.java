@@ -34,7 +34,7 @@ public enum DomainConditionType {
     }
 
     @Override
-    DomainConditionType[] typesToRemoveOnEqual() {
+    DomainConditionType[] typesToRemoveAlways() {
       return new DomainConditionType[] {Progressing};
     }
   };
@@ -43,7 +43,7 @@ public enum DomainConditionType {
     return new DomainConditionType[] {Progressing, Available, Failed};
   }
 
-  DomainConditionType[] typesToRemoveOnEqual() {
+  DomainConditionType[] typesToRemoveAlways() {
     return new DomainConditionType[] {};
   }
 
