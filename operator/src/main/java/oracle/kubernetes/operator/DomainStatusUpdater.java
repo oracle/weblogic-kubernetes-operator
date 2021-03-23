@@ -434,13 +434,23 @@ public class DomainStatusUpdater {
       return Optional.ofNullable(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
+          .map(this::getProgressingCondition).orElse(null);
+    }
+
+    private DomainCondition getProgressingCondition(DomainStatus status) {
+      return Optional.ofNullable(status)
           .map(s -> s.getConditionWithType(Progressing)).orElse(null);
     }
 
     private boolean shouldUpdateFailureCount(DomainStatus newStatus) {
-      return getProgressingCondition() == null
+      return transitFromProgessing(newStatus)
           && getExistingStatusMessage() == null
           && isBackoffLimitExceeded(newStatus);
+    }
+
+    private boolean transitFromProgessing(DomainStatus newStatus) {
+      return getProgressingCondition() != null
+          && getProgressingCondition(newStatus) == null;
     }
 
     private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
@@ -454,13 +464,6 @@ public class DomainStatusUpdater {
         }
       }
       return false;
-    }
-
-    private boolean hasBackOffLimitCondition() {
-      return Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(this::isBackoffLimitExceeded).orElse(false);
     }
 
     String getDomainUid() {
@@ -825,15 +828,9 @@ public class DomainStatusUpdater {
     @Override
     void modifyStatus(DomainStatus status) {
       status.addCondition(new DomainCondition(Progressing).withStatus(TRUE).withReason(reason));
-      //updateFailedCondition(status);
       if (!isPreserveAvailable) {
         status.removeConditionIf(c -> c.getType() == Available);
       }
-    }
-
-    private void updateFailedCondition(DomainStatus status) {
-      DomainCondition condition = status.getConditionWithType(Failed);
-      Optional.ofNullable(condition).map(c -> c.withMessage(null));
     }
   }
 
