@@ -25,10 +25,6 @@ This release was published on February 26, 2020.
 Please review the prerequisites and supported environments [here]({{< relref "/userguide/introduction/introduction" >}}).
 {{% /notice %}}
 
-#### Operator earlier versions
-
-Documentation for prior releases of the operator is available [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md).
-
 #### Backward compatibility guidelines
 
 Starting from the 2.0.1 release, operator releases are backward compatible with respect to the domain
