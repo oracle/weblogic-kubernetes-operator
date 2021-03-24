@@ -64,6 +64,6 @@ To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{
  - [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})
  - [WebLogic Deploy Tool (WDT)](https://github.com/oracle/weblogic-deploy-tooling)
  - [WebLogic Image Tool (WIT)](https://github.com/oracle/weblogic-image-tool)
- - Domain [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md), [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}})
+ - Domain [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md), [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}})
  - HTTP load balancers: Ingress [documentation]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}), [sample]({{< relref "/samples/simple/ingress/_index.md" >}})
  - [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}})

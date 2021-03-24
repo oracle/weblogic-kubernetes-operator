@@ -31,11 +31,11 @@ public class SwaggerBuildHelper {
   public static void main(String[] args) {
 
     try {
-      doBuild("swagger/src/main/resources/operator-swagger.json", "docs/swagger/index.html");
+      doBuild("swagger/src/main/resources/operator-swagger.json", "documentation/swagger/index.html");
       doDomain(
           "swagger/src/main/resources/domain-swagger.json",
-          "docs/domains/Domain.json",
-          "docs/domains/index.html");
+          "documentation/domains/Domain.json",
+          "documentation/domains/index.html");
     } catch (Throwable e) {
       e.printStackTrace();
     }
