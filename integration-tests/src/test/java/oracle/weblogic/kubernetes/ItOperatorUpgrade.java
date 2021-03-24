@@ -146,8 +146,8 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.3 to develop")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom303ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
-    upgradeOperator(domainType,"3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -157,7 +157,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.0.4 to develop")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom304ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    logger.info("Starting test testOperatorWlsUpgradeFrom304ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -168,7 +168,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.1.2 to develop")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom312ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    logger.info("Starting test testOperatorWlsUpgradeFrom312ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -179,7 +179,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.1.3 to develop")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom313ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    logger.info("Starting test testOperatorWlsUpgradeFrom313ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -190,7 +190,7 @@ public class ItOperatorUpgrade {
   @DisplayName("Upgrade Operator from 3.1.4 to develop")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom314ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    logger.info("Starting test testOperatorWlsUpgradeFrom314ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -458,9 +458,9 @@ public class ItOperatorUpgrade {
     Path destDomainYaml =
         Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "miidomain.yaml");
     assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for domain.yaml");
+        "File copy failed for miidomain.yaml");
 
-    // replace apiVersion, namespace and image in domain.yaml
+    // replace apiVersion, namespace and image in miidomain.yaml
     assertDoesNotThrow(() -> replaceStringInFile(
         destDomainYaml.toString(), "v8", getApiVersion(operatorVersion)),
         "Could not modify the apiVersion in the miidomain.yaml file");
@@ -489,7 +489,6 @@ public class ItOperatorUpgrade {
       return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
-
   }
 
   private Callable<Boolean> checkCrdVersion() {
