@@ -6,4 +6,4 @@ weight: 3
 description: "Use this document to set up and configure your own domain resource."
 ---
 
-View the domain resource reference document [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
+View the domain resource reference document [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
