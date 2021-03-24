@@ -24,17 +24,17 @@ helm_package=$(echo $out | cut -d ':' -f 2)
 helm_package_name=$(basename $helm_package)
 
 dsttime=0
-if [ -f $SCRIPTPATH/../docs/charts/$helm_package_name ]; then
-  dsttime="$(stat $mod_time_fmt $SCRIPTPATH/../docs/charts/$helm_package_name)"
+if [ -f $SCRIPTPATH/../documentation/charts/$helm_package_name ]; then
+  dsttime="$(stat $mod_time_fmt $SCRIPTPATH/../documentation/charts/$helm_package_name)"
 fi
 
 if [ $srctime \> $dsttime ];
 then
-  if [[ ! -e $SCRIPTPATH/../docs/charts ]]; then
-    mkdir $SCRIPTPATH/../docs/charts
+  if [[ ! -e $SCRIPTPATH/../documentation/charts ]]; then
+    mkdir $SCRIPTPATH/../documentation/charts
   fi
-  mv -f $helm_package $SCRIPTPATH/../docs/charts/
-  helm repo index $SCRIPTPATH/../docs/charts/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts
+  mv -f $helm_package $SCRIPTPATH/../documentation/charts/
+  helm repo index $SCRIPTPATH/../documentation/charts/ --url https://oracle.github.io/weblogic-kubernetes-operator/charts
 else
   rm $helm_package
 fi;
