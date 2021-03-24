@@ -4,11 +4,12 @@
 package oracle.kubernetes.operator.steps;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -16,10 +17,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -29,8 +30,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.SecretHelper;
-import oracle.kubernetes.operator.helpers.SecretType;
-import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.HttpResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -38,31 +37,28 @@ import oracle.kubernetes.operator.logging.LoggingFilter;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
+import oracle.kubernetes.operator.wlsconfig.PortDetails;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.SubsystemHealth;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_HEALTH_TO_READ;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createRequestStep;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 public class ReadHealthStep extends Step {
 
-  private static final String HTTP_PROTOCOL = "http://";
-  private static final String HTTPS_PROTOCOL = "https://";
-  public static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
-  public static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
+  static final String OVERALL_HEALTH_NOT_AVAILABLE = "Not available";
+  static final String OVERALL_HEALTH_FOR_SERVER_OVERLOADED =
       OVERALL_HEALTH_NOT_AVAILABLE + " (possibly overloaded)";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final Integer HTTP_TIMEOUT_SECONDS = 60;
 
   private ReadHealthStep(Step next) {
     super(next);
@@ -90,126 +86,47 @@ public class ReadHealthStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-
-    Domain dom = info.getDomain();
-    V1ObjectMeta meta = dom.getMetadata();
-    String namespace = meta.getNamespace();
-
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
-
-    String secretName = dom.getWebLogicCredentialsSecretName();
-
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     V1Service service = info.getServerService(serverName);
-    V1Pod pod = info.getServerPod(serverName);
-    if (service != null) {
-      Step getSecretReadHealthAndProcessResponse =
-          SecretHelper.getSecretData(
-              SecretType.WebLogicCredentials,
-              secretName,
-              namespace,
-              new WithSecretDataStep(
-                  new ReadHealthWithHttpStep(service, pod, getNext())));
-      return doNext(getSecretReadHealthAndProcessResponse, packet);
-    }
-    return doNext(packet);
-  }
 
-  private static class WithSecretDataStep extends Step {
-
-    WithSecretDataStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      @SuppressWarnings("unchecked")
-      Map<String, byte[]> secretData =
-          (Map<String, byte[]>) packet.get(SecretHelper.SECRET_DATA_KEY);
-      if (secretData != null) {
-        byte[] username = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_USERNAME);
-        byte[] password = secretData.get(SecretHelper.ADMIN_SERVER_CREDENTIALS_PASSWORD);
-        packet.put(ProcessingConstants.ENCODED_CREDENTIALS, createEncodedCredentials(username, password));
-
-        clearCredential(username);
-        clearCredential(password);
-      }
+    if (service == null) {
       return doNext(packet);
+    } else {
+      return doNext(
+            Step.chain(
+                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                new ReadHealthWithHttpStep(service, info.getServerPod(serverName), getNext())),
+            packet);
     }
   }
 
-  /**
-   * Create encoded credentials from username and password.
-   *
-   * @param username Username
-   * @param password Password
-   * @return encoded credentials
-   */
-  private static String createEncodedCredentials(final byte[] username, final byte[] password) {
-    // Get encoded credentials with authentication information.
-    String encodedCredentials = null;
-    if (username != null && password != null) {
-      byte[] usernameAndPassword = new byte[username.length + password.length + 1];
-      System.arraycopy(username, 0, usernameAndPassword, 0, username.length);
-      usernameAndPassword[username.length] = (byte) ':';
-      System.arraycopy(password, 0, usernameAndPassword, username.length + 1, password.length);
-      encodedCredentials = java.util.Base64.getEncoder().encodeToString(usernameAndPassword);
+  static final class ReadHealthProcessing extends HttpRequestProcessing {
+
+    ReadHealthProcessing(Packet packet, @Nonnull V1Service service, V1Pod pod) {
+      super(packet, service, pod);
     }
-    return encodedCredentials;
-  }
 
-  /**
-   * Erase authentication credential so that it is not sitting in memory where a rogue program can
-   * find it.
-   */
-  private static void clearCredential(byte[] credential) {
-    if (credential != null) {
-      Arrays.fill(credential, (byte) 0);
-    }
-  }
-
-  static final class ReadHealthProcessing {
-    private final Packet packet;
-    private final V1Service service;
-    private final V1Pod pod;
-
-    ReadHealthProcessing(Packet packet, V1Service service, V1Pod pod) {
-      this.packet = packet;
-      this.service = service;
-      this.pod = pod;
+    private HttpRequest createRequest() {
+      return createRequestBuilder(getRequestUrl())
+            .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
+            .build();
     }
 
     private String getRequestUrl() {
       return getServiceUrl() + getRetrieveHealthSearchPath();
     }
 
-    private HttpRequest createRequest(String url) {
-      return HttpRequest.newBuilder()
-          .uri(URI.create(url))
-          .header("Authorization", "Basic " + getEncodedCredentials())
-          .header("Accept", "application/json")
-          .header("Content-Type", "application/json")
-          .header("X-Requested-By", "WebLogic Operator")
-          .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
-          .build();
+    protected PortDetails getPortDetails() {
+      Integer port = getPort();
+      return new PortDetails(port, !port.equals(getWlsServerConfig().getListenPort()));
     }
 
-    private String getServiceUrl() {
-      return Optional.ofNullable(getService()).map(V1Service::getSpec).map(this::getServiceUrl).orElse(null);
-    }
-
-    private String getServiceUrl(V1ServiceSpec spec) {
-      String url = getProtocol(spec) + getPortalIP(spec) + ":" + getPort(spec);
-      LOGGER.fine(MessageKeys.SERVICE_URL, url);
-      return url;
-    }
-
-    private String getProtocol(V1ServiceSpec spec) {
-      return getPort(spec).equals(getWlsServerConfig().getListenPort()) ? HTTP_PROTOCOL : HTTPS_PROTOCOL;
-    }
-
-    private Integer getPort(V1ServiceSpec spec) {
-      return Optional.ofNullable(getServicePort(spec)).map(V1ServicePort::getPort).orElse(-1);
+    private Integer getPort() {
+      return Optional.ofNullable(getService().getSpec())
+            .map(this::getServicePort)
+            .map(V1ServicePort::getPort)
+            .orElse(-1);
     }
 
     private V1ServicePort getServicePort(V1ServiceSpec spec) {
@@ -236,20 +153,6 @@ public class ReadHealthStep extends Step {
       return getWlsServerConfig().getAdminProtocolChannelName();
     }
 
-    private String getPortalIP(V1ServiceSpec spec) {
-      String portalIP = spec.getClusterIP();
-      if ("None".equalsIgnoreCase(spec.getClusterIP())) {
-        if (getPod() != null && getPod().getStatus().getPodIP() != null) {
-          portalIP = getPod().getStatus().getPodIP();
-        } else {
-          portalIP =
-              getService().getMetadata().getName()
-                  + "."
-                  + getService().getMetadata().getNamespace();
-        }
-      }
-      return portalIP;
-    }
 
     private WlsServerConfig getWlsServerConfig() {
       // standalone server that does not belong to any cluster
@@ -287,22 +190,6 @@ public class ReadHealthStep extends Step {
       }
       return domainConfig;
     }
-
-    public Packet getPacket() {
-      return packet;
-    }
-
-    String getEncodedCredentials() {
-      return (String) packet.get(ProcessingConstants.ENCODED_CREDENTIALS);
-    }
-
-    public V1Service getService() {
-      return service;
-    }
-
-    public V1Pod getPod() {
-      return pod;
-    }
   }
 
   /**
@@ -312,10 +199,11 @@ public class ReadHealthStep extends Step {
    *  DOMAIN_TOPOLOGY                   the topology of the domain
    */
   static final class ReadHealthWithHttpStep extends Step {
+    @Nonnull
     private final V1Service service;
     private final V1Pod pod;
 
-    ReadHealthWithHttpStep(V1Service service, V1Pod pod, Step next) {
+    ReadHealthWithHttpStep(@Nonnull V1Service service, V1Pod pod, Step next) {
       super(next);
       this.service = service;
       this.pod = pod;
@@ -324,13 +212,7 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
-      HttpRequest request = processing.createRequest(processing.getRequestUrl());
-      return doNext(createRequestStep(request, new RecordHealthStep(getNext())), packet);
-    }
-
-    private HttpAsyncRequestStep createRequestStep(HttpRequest request, RecordHealthStep responseStep) {
-      return HttpAsyncRequestStep.create(request, responseStep)
-            .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
+      return doNext(createRequestStep(processing.createRequest(), new RecordHealthStep(getNext())), packet);
     }
 
   }
@@ -425,7 +307,10 @@ public class ReadHealthStep extends Step {
       }
 
       private boolean isServerOverloaded() {
-        return isServerOverloaded(getResponse().statusCode());
+        return Optional.ofNullable(getResponse())
+            .map(HttpResponse::statusCode)
+            .map(this::isServerOverloaded)
+            .orElse(false);
       }
 
       private boolean isServerOverloaded(int statusCode) {
@@ -484,7 +369,8 @@ public class ReadHealthStep extends Step {
           new ServerHealth()
               .withOverallHealth(healthState != null ? healthState.asText() : null)
               .withActivationTime(
-                  activationTime != null ? new DateTime(activationTime.asLong()) : null);
+                  activationTime != null ? OffsetDateTime.ofInstant(
+                      Instant.ofEpochMilli(activationTime.asLong()), ZoneId.of("UTC")) : null);
       if (subName != null) {
         health
             .getSubsystems()
@@ -505,6 +391,7 @@ public class ReadHealthStep extends Step {
     }
   }
 
+  @SuppressWarnings("SameParameterValue")
   private static void decrementIntegerInPacketAtomically(Packet packet, String key) {
     packet.<AtomicInteger>getValue(key).getAndDecrement();
   }

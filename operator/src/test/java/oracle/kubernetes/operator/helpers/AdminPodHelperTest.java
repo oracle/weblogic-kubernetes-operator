@@ -101,6 +101,21 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getServerTopology().setAdminPort(port);
   }
 
+  @Override
+  String getExpectedPlainPortSha256Annotation() {
+    return ExpectedSHA256Values.ADMIN_SERVER_PLAINPORT_SHA256;
+  }
+
+  @Override
+  String getExpectedSslPortSha256Annotation() {
+    return ExpectedSHA256Values.ADMIN_SERVER_SSLPORT_SHA256;
+  }
+
+  @Override
+  String getExpectedMiiSha256Annotation() {
+    return ExpectedSHA256Values.ADMIN_SERVER_MIIDOMAIN_SHA256;
+  }
+
   String getDomainValidationFailedKey() {
     return DOMAIN_VALIDATION_FAILED;
   }

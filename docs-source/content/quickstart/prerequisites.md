@@ -11,6 +11,6 @@ The operator uses Helm to create and deploy the necessary resources and then run
 
 You should clone this repository to your local machine so that you have access to the
 various sample files mentioned throughout this guide:
-```bash
+```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator
 ```

@@ -250,6 +250,10 @@ public class WlsServerConfig {
     this.sslListenPort = listenPort;
   }
 
+  public PortDetails getSslListenPortDetails() {
+    return sslListenPort == null ? null : new PortDetails(sslListenPort, true);
+  }
+
   /**
    * Return whether the SSL listen port is configured to be enabled or not.
    *
@@ -291,7 +295,11 @@ public class WlsServerConfig {
   }
 
   public WlsServerConfig addNetworkAccessPoint(String name, int listenPort) {
-    addNetworkAccessPoint(new NetworkAccessPoint(name, "TCP", listenPort, null));
+    return addNetworkAccessPoint(name, "TCP", listenPort);
+  }
+
+  public WlsServerConfig addNetworkAccessPoint(String name, String protocol, int listenPort) {
+    addNetworkAccessPoint(new NetworkAccessPoint(name, protocol, listenPort, null));
     return this;
   }
 
@@ -458,4 +466,5 @@ public class WlsServerConfig {
         .append("networkAccessPoints", networkAccessPoints)
         .toString();
   }
+
 }

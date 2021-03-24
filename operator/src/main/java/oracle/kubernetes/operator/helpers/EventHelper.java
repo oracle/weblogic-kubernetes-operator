@@ -3,13 +3,14 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
-import javax.validation.constraints.NotNull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -23,7 +24,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
@@ -556,8 +556,8 @@ public class EventHelper {
       return String.format(getPattern(), eventData.getResourceName());
     }
 
-    DateTime getCurrentTimestamp() {
-      return DateTime.now();
+    OffsetDateTime getCurrentTimestamp() {
+      return OffsetDateTime.now();
     }
 
     void addLabels(V1ObjectMeta metadata, EventData eventData) {

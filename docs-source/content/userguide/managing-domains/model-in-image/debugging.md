@@ -41,7 +41,7 @@ To prevent the introspector job from retrying while you are debugging a failure,
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
 
-  ```
+  ```shell
   $ # here we see a failed introspector job pod among the domain's pods:
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
   NAME                                         READY   STATUS    RESTARTS   AGE
@@ -100,7 +100,7 @@ then see [Online update status and labels]({{<relref "/userguide/managing-domain
 
 Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
-  ```
+  ```shell
   $ # find your operator
   $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
 
@@ -116,7 +116,7 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
   You can filter out operator log messages specific to your `domainUID` by piping the above logs command through `grep "domainUID...MY_DOMAINUID"`. For example, assuming your operator is running in namespace `sample-weblogic-operator-ns` and your domain UID is `sample-domain1`:
 
-  ```
+  ```shell
   $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
     | egrep -e "level...(SEVERE|WARNING)" \
     | grep "domainUID...sample-domain1"

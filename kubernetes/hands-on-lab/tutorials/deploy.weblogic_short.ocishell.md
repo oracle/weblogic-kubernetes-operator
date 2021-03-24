@@ -5,19 +5,19 @@
 #### Prepare the Kubernetes cluster to run WebLogic Server domains ####
 
 Create the domain namespace:
-```bash
-kubectl create namespace sample-domain1-ns
+```shell
+$ kubectl create namespace sample-domain1-ns
 ```
 Create a Kubernetes Secret containing the Administration Server boot credentials:
-```bash
-kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
+```shell
+$ kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
   --from-literal=username=weblogic \
   --from-literal=password=welcome1
 ```
 
 Label the domain namespace:
-```bash
-kubectl label ns sample-domain1-ns weblogic-operator=enabled
+```shell
+$ kubectl label ns sample-domain1-ns weblogic-operator=enabled
 ```
 
 #### Update the Traefik ingress controller configuration ####
@@ -25,8 +25,8 @@ kubectl label ns sample-domain1-ns weblogic-operator=enabled
 After you have your domain namespace (the WebLogic domain is not deployed yet), you have to update the ingress controller configuration to specify where the domain will be deployed.
 
 To update Traefik, execute the following `helm upgrade` command:
-```bash
-helm upgrade traefik-operator \
+```shell
+$ helm upgrade traefik-operator \
   stable/traefik \
   --namespace traefik \
   --reuse-values \
@@ -40,23 +40,23 @@ Note that the only updated parameter is to add the domain namespace.
 To deploy WebLogic domain, you need to create a Domain resource definition which contains the necessary parameters for the operator to start the WebLogic Server domain properly.
 
 We provided for you a `domain.yaml` file that contains a YAML representation of the custom resource object. Please copy it locally:
-```bash
-curl -LSs https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/master/kubernetes/hands-on-lab/domain.yaml >~/domain.yaml
+```shell
+$ curl -LSs https://raw.githubusercontent.com/oracle/weblogic-kubernetes-operator/master/kubernetes/hands-on-lab/domain.yaml >~/domain.yaml
 ```
 Review it in your favorite editor or a [browser](../domain.yaml).
 
 Create the domain custom resource object with the following command:
-```bash
-kubectl apply -f ~/domain.yaml
+```shell
+$ kubectl apply -f ~/domain.yaml
 ```
 Check the introspector job, which will run first:
-```bash
+```shell
 $ kubectl get pod -n sample-domain1-ns
 NAME                                         READY     STATUS              RESTARTS   AGE
 sample-domain1-introspect-domain-job-kcn4n   0/1       ContainerCreating   0          7s
 ```
 Periodically check the pods in the domain namespace and soon you will see the servers starting:
-```bash
+```shell
 $ kubectl get po -n sample-domain1-ns -o wide
 NAME                             READY     STATUS    RESTARTS   AGE       IP            NODE            NOMINATED NODE
 sample-domain1-admin-server      1/1       Running   0          2m        10.244.2.10   130.61.84.41    <none>
@@ -70,8 +70,8 @@ In order to access any application or the Administration Console deployed on Web
 As a simple solution, it's best to configure path routing, which will route external traffic through *Traefik* to the domain cluster address or the Administration Server Console.
 
 Execute the following Ingress resource definition:
-```bash
-cat << EOF | kubectl apply -f -
+```shell
+$ cat << EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -95,7 +95,6 @@ spec:
 EOF
 ```
 
-
 Please note the two backends and the namespace, `serviceName`, `servicePort` definitions. The first backend is the domain cluster service to reach the application at the root context path. The second is for the admin console which is a different service.
 
 Once the Ingress has been created construct the URL of the Administration Console based on the following pattern:
@@ -103,7 +102,7 @@ Once the Ingress has been created construct the URL of the Administration Consol
 `http://EXTERNAL-IP/console`
 
 The `EXTERNAL-IP` was determined during the Traefik install. If you forgot to note it, then execute the following command to get the public IP address:
-```
+```shell
 $ kubectl describe svc traefik-operator --namespace traefik | grep Ingress | awk '{print $3}'
 129.213.172.44
 ```

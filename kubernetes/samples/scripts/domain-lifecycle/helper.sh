@@ -72,6 +72,26 @@ function getEffectivePolicy {
 }
 
 #
+# Function to get effective start policy of admin server
+# $1 - Domain resource in json format
+# $2 - Return value containing effective server start policy
+#      Legal retrun values are "NEVER" or "IF_NEEDED" or "ALWAYS".
+#
+function getEffectiveAdminPolicy {
+  local domainJson=$1
+  local __effectivePolicy=$2
+  local __adminStartPolicy=""
+  local __domainStartPolicy=""
+
+  __adminStartPolicy=$(echo ${domainJson} | jq -cr '(.spec.adminServer.serverStartPolicy)')
+  getDomainPolicy "${domainJson}" __domainStartPolicy
+  if [[ "${__adminStartPolicy}" == "null" || "${__domainStartPolicy}" == "NEVER" ]]; then
+    __adminStartPolicy="${__domainStartPolicy}"
+  fi
+  eval $__effectivePolicy="'${__adminStartPolicy}'"
+}
+
+#
 # Function to get current start policy of server
 # $1 - Domain resource in json format
 # $2 - Name of server
@@ -167,6 +187,34 @@ function createPatchJsonToUpdatePolicy {
   local __result=$2
   patchJson="{\"spec\": {\"managedServers\": "${startPolicy}"}}"
   eval $__result="'${patchJson}'"
+}
+
+#
+# Function to create patch json string to update admin server start policy
+# $1 - Domain resource in json format
+# $2 - Policy value
+# $3 - Return value containing server start policy patch string
+#
+function createPatchJsonToUpdateAdminPolicy {
+  local domainJson=$1
+  local policy=$2
+  local __result=$3
+  local __adminServer=""
+  local __patchJson=""
+  local __serverStartPolicyPatch=""
+
+  eval $__result=""
+  __adminServer=$(echo ${domainJson} | jq -cr '(.spec.adminServer)')
+  if [ "${__adminServer}" == "null" ]; then
+    # admin server specs does not exist, add new spec with server start policy
+    addPolicyCmd="{\"serverStartPolicy\":\"${policy}\"}"
+    __serverStartPolicyPatch=$(echo ${domainJson} | jq .spec.amdinServer | jq -c "${addPolicyCmd}")
+  else
+    addOrReplaceCmd="(.spec.adminServer) | .+  {\"serverStartPolicy\": \"${policy}\"}"
+    __serverStartPolicyPatch=$(echo ${domainJson} | jq "${addOrReplaceCmd}")
+  fi
+  __patchJson="{\"spec\": {\"adminServer\": "${__serverStartPolicyPatch}"}}"
+  eval $__result="'${__patchJson}'"
 }
 
 #
@@ -632,15 +680,16 @@ function validateServerAndFindCluster {
   local serverName=$3
   local __isValidServer=$4
   local __clusterName=$5
+  local __isAdminServer=$6
   local serverCount=""
 
   eval $__isValidServer=false
+  eval $__isAdminServer=false
   eval $__clusterName=UNKNOWN
   getTopology "${domainUid}" "${domainNamespace}" jsonTopology
   adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
   if [ "${serverName}" == "${adminServer}" ]; then
-    printError "Server '${serverName}' is administration server. The '${script}' script doesn't support starting or stopping administration server."
-    exit 1
+    eval $__isAdminServer=true
   fi
   servers=($(echo $jsonTopology | jq -r '.domain.servers[].name'))
   if  checkStringInArray "${serverName}" "${servers[@]}" ; then
@@ -657,15 +706,14 @@ function validateServerAndFindCluster {
       if [[ "${serverName}" == "${prefix}"* ]]; then
         maxSize=$(echo ${dynaClusterNamePrefix} | jq -r .max)
         number='^[0-9]+$'
-        if [ $(echo "${serverName}" | grep -c -Eo '[0-9]+$') -gt 0 ]; then
-          serverCount=$(echo "${serverName}" | grep -Eo '[0-9]+$')
-        fi
+        serverCount=$(echo "${serverName:${#prefix}}")
         if ! [[ $serverCount =~ $number ]] ; then
-           printError "Server name is not valid for dynamic cluster."
+           printError "Server name ${serverName} is not valid for dynamic cluster."
            exit 1
         fi
-        if [ "${serverCount}" -gt "${maxSize}" ]; then
-          printError "Server name is outside the range of allowed servers. \
+        if [ "${serverCount}" -lt 1 ] || [ "${serverCount}" -gt "${maxSize}" ]; then
+          printError "Index of server name ${serverName} for dynamic cluster is outside \
+            the allowed range of 1 to ${maxSize}. \
             Please make sure server name is correct."
           exit 1
         fi
@@ -715,6 +763,8 @@ function getTopology {
   local domainUid=$1
   local domainNamespace=$2
   local __result=$3 
+  local __jsonTopology=""
+  local __topology=""
 
   if [[ "$OSTYPE" == "darwin"* ]]; then
     configMap=$(${kubernetesCli} get cm ${domainUid}-weblogic-domain-introspect-cm \
@@ -728,14 +778,31 @@ function getTopology {
       This script requires that the introspector job for the specified domain ran \
       successfully and generated this config map. Exiting."
     exit 1
-  elif [[ "$OSTYPE" == "darwin"* ]]; then
-    jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
   else
-    topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
-    jsonTopology=$(python -c \
-    'import sys, yaml, json; print json.dumps(yaml.safe_load('"${topology}"'), indent=4)')
+    __jsonTopology=$(echo "${configMap}" | jq -r '.data["topology.json"]')
   fi
-  eval $__result="'${jsonTopology}'"
+  if [ ${__jsonTopology} == null ]; then
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+      if ! [ -x "$(command -v yq)" ]; then
+        validationError "MacOS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'yq' is not installed locally. To fix this, install 'yq', \
+          call the script from Linux instead of MacOS, or upgrade the Operator version."
+        exit 1
+      fi
+      __jsonTopology=$(echo "${configMap}" | yq r - data.[topology.yaml] | yq r - -j)
+    else
+      if ! [ -x "$(command -v python)" ]; then
+        validationError "Linux OS detected, the domain is hosted on a pre-3.2.0 version of \
+          the Operator, and 'python' is not installed locally. To fix this, install 'python' \
+          or upgrade the Operator version."
+        exit 1
+      fi
+      __topology=$(echo "${configMap}" | jq '.data["topology.yaml"]')
+      __jsonTopology=$(python -c \
+      'import sys, yaml, json; print json.dumps(yaml.safe_load('"${__topology}"'), indent=4)')
+    fi
+  fi
+  eval $__result="'${__jsonTopology}'"
 }
 
 
@@ -756,19 +823,6 @@ checkStringInArray() {
 function validateJqAvailable {
   if ! [ -x "$(command -v jq)" ]; then
     validationError "jq is not installed"
-  fi
-}
-
-function validateYqAvailable {
-  if [[ "$OSTYPE" == "darwin"* ]] && ! [ -x "$(command -v yq)" ]; then
-    validationError "yq is not installed"
-  fi
-}
-
-# try to execute python to see whether python is available
-function validatePythonAvailable {
-  if ! [ -x "$(command -v python)" ]; then
-    validationError "python is not installed"
   fi
 }
 

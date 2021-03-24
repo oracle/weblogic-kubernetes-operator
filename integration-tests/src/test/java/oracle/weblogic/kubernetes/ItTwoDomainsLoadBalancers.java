@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,7 +71,6 @@ import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -218,9 +218,9 @@ public class ItTwoDomainsLoadBalancers {
   private int t3ChannelPort = 0;
   private int replicasAfterScale;
   private List<String> domainAdminServerPodNames = new ArrayList<>();
-  private List<DateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
-  private List<DateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
-  private List<DateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private List<OffsetDateTime> domainAdminPodOriginalTimestamps = new ArrayList<>();
+  private List<OffsetDateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
+  private List<OffsetDateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)

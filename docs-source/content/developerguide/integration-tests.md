@@ -11,7 +11,7 @@ The project includes integration tests that can be run against a Kubernetes clus
 
 You will need to obtain the `kube.config` file for an administrative user and make it available on the machine running the build.  To run the tests, update the `KUBECONFIG` environment variable to point to your config file and then execute:
 
-```bash
+```shell
 $ mvn clean verify -P java-integration-tests
 ```
 

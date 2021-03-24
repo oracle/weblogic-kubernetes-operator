@@ -108,7 +108,7 @@ The basic requirements for configuring a custom channel for remote EJB and JMS a
 
 For example, here is a snippet of a WebLogic domain `config.xml` file for channel `MyChannel` defined for an operator controlled WebLogic dynamic cluster named `cluster-1`:
 
-```
+```xml
 <server-template>
   <name>cluster-1-template</name>
   <listen-port>8001</listen-port>
@@ -144,7 +144,7 @@ For example, here is a snippet of a WebLogic domain `config.xml` file for channe
 
 And, here is a snippet of offline WLST code that corresponds to the above `config.xml` file snippet:
 
-```
+```javascript
   templateName = "cluster-1-template"
   cd('/ServerTemplates/%s' % templateName)
   templateChannelName = "MyChannel"
@@ -196,7 +196,7 @@ Setting up a `NodePort` usually also requires setting up a custom network channe
 
 The following `NodePort` YAML file exposes an external node port of `30999` and internal port `7999` for a domain UID of `DOMAIN_UID`, a domain name of `DOMAIN_NAME`, and a cluster name of `CLUSTER_NAME`. It assumes that `7999` corresponds to a T3 protocol port of a channel that's configured on your WebLogic cluster.
 
-```
+```yaml
 apiVersion: v1
 kind: Service
 metadata:

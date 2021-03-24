@@ -48,7 +48,6 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
@@ -80,15 +79,21 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
+import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
+import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
@@ -136,6 +141,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
+  static final Integer SSL_PORT = 7002;
   protected static final String DOMAIN_NAME = "domain1";
   protected static final String UID = "uid1";
   protected static final String KUBERNETES_UID = "12345";
@@ -168,6 +174,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1PodSecurityContext podSecurityContext = createPodSecurityContext(123L);
   protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
   protected final V1Affinity affinity = createAffinity();
+  private Memento hashMemento;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -228,21 +235,17 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return (DomainSpec) getDomainSpec.invoke(configurator);
   }
 
-  /**
-   * Setup test.
-   * @throws Exception on failure
-   */
   @BeforeEach
   public void setUp() throws Exception {
+    mementos.add(testSupport.install());
+    mementos.add(TuningParametersStub.install());
+    mementos.add(hashMemento = UnitTestHash.install());
+    mementos.add(InMemoryCertificates.install());
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
-    mementos.add(testSupport.install());
-    mementos.add(TuningParametersStub.install());
-    mementos.add(UnitTestHash.install());
-    mementos.add(InMemoryCertificates.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -275,15 +278,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     };
   }
 
-  /**
-   * Tear down test.
-   * @throws Exception on failure
-   */
   @AfterEach
   public void tearDown() throws Exception {
-    for (Memento memento : mementos) {
-      memento.revert();
-    }
+    mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
   }
@@ -318,7 +315,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     configureDomain().withDefaultImage(image);
   }
 
-  private DomainConfigurator configureDomain() {
+  final DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domainPresenceInfo.getDomain());
   }
 
@@ -350,6 +347,45 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   public void whenPodCreated_hasSha256HashAnnotationForRecipe() {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
+  }
+
+  // These are the SHA256 annotation values computed by release 3.1.4, and must be preserved, going forward.
+  // Changes to the WlsServerConfiguration can affect them, so the tests must be run with the original config.
+  abstract String getExpectedPlainPortSha256Annotation();
+
+  abstract String getExpectedSslPortSha256Annotation();
+
+  abstract String getExpectedMiiSha256Annotation();
+
+  @Test
+  public void whenPodCreateWithoutSslPort_hashMatches31Release() {
+    useProductionHash();
+    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
+          equalTo(getExpectedPlainPortSha256Annotation()));
+  }
+
+  void useProductionHash() {
+    hashMemento.revert();
+  }
+
+  @Test
+  public void whenPodCreateWithSslPort_hashMatches31Release() {
+    useProductionHash();
+    getServerTopology().setSslListenPort(7002);
+
+    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
+          equalTo(getExpectedSslPortSha256Annotation()));
+  }
+
+  @Test
+  public void afterPodCreatedForMiiDomain_hashMatches31Release() {
+    useProductionHash();
+    testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
+    testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
+
+
+    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
+          equalTo(getExpectedMiiSha256Annotation()));
   }
 
   @Test
@@ -422,8 +458,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getCreatedPodSpecContainer().getVolumeMounts(),
         allOf(
               hasItem(writableVolumeMount(INTROSPECTOR_VOLUME, "/weblogic-operator/introspector")),
-              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_1", "/weblogic-operator/introspector_1")),
-              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "_2", "/weblogic-operator/introspector_2"))
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "-1", "/weblogic-operator/introspector-1")),
+              hasItem(writableVolumeMount(INTROSPECTOR_VOLUME + "-2", "/weblogic-operator/introspector-2"))
               ));
   }
 
@@ -739,22 +775,38 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_hasPrometheusAnnotations() {
-    assertThat(
-        getCreatedPod().getMetadata().getAnnotations(),
-        allOf(
-            hasEntry("prometheus.io/port", Integer.toString(listenPort)),
-            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
-            hasEntry("prometheus.io/scrape", "true")));
+  public void whenPodCreated_containerUsesListenPort() {
+    final V1ContainerPort plainPort = getContainerPort("default");
+
+    assertThat(plainPort, notNullValue());
+    assertThat(plainPort.getProtocol(), equalTo("TCP"));
+    assertThat(plainPort.getContainerPort(), equalTo(listenPort));
+  }
+
+  private V1ContainerPort getContainerPort(String portName) {
+    return getCreatedPodSpecContainer().getPorts().stream().filter(
+          p -> p.getName().equalsIgnoreCase(portName)).findFirst().orElse(null);
   }
 
   @Test
-  public void whenPodCreated_containerUsesListenPort() {
-    V1Container v1Container = getCreatedPodSpecContainer();
+  public void whenPodCreatedWithSslPort_containerUsesIt() {
+    domainTopology.getServerConfig(serverName).setSslListenPort(SSL_PORT);
+    final V1ContainerPort sslPort = getContainerPort("default-secure");
 
-    assertThat(v1Container.getPorts(), hasSize(1));
-    assertThat(v1Container.getPorts().get(0).getProtocol(), equalTo("TCP"));
-    assertThat(v1Container.getPorts().get(0).getContainerPort(), equalTo(listenPort));
+    assertThat(sslPort, notNullValue());
+    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getContainerPort(), equalTo(SSL_PORT));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminPortEnabled__containerUsesIt() {
+    final Integer adminPort = 9002;
+    domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
+    final V1ContainerPort sslPort = getContainerPort("default-admin");
+
+    assertThat(sslPort, notNullValue());
+    assertThat(sslPort.getProtocol(), equalTo("TCP"));
+    assertThat(sslPort.getContainerPort(), equalTo(adminPort));
   }
 
   abstract String getCreatedMessageKey();
@@ -1020,7 +1072,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     configurator.withIntrospectVersion("123");
 
-    verifyPodPatched();
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, not(containsFine(getExistsMessageKey())));
+    assertThat(logRecords, containsInfo(getPatchedMessageKey()));
   }
 
   @Test
@@ -1052,22 +1107,94 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   public void whenMiiSecretsHashChanged_replacePod() {
-    testSupport.addToPacket(IntrospectorConfigMapConstants.SECRETS_MD_5, "originalSecret");
+    testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     initializeExistingPod();
 
-    testSupport.addToPacket(IntrospectorConfigMapConstants.SECRETS_MD_5, "newSecret");
+    testSupport.addToPacket(SECRETS_MD_5, "newSecret");
 
     verifyPodReplaced();
   }
 
   @Test
   public void whenMiiDomainZipHashChanged_replacePod() {
-    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "originalSecret");
+    testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
     initializeExistingPod();
 
-    testSupport.addToPacket(IntrospectorConfigMapConstants.DOMAINZIP_HASH, "newSecret");
+    testSupport.addToPacket(DOMAINZIP_HASH, "newSecret");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnlyButOnlineUpdateDisabled_replacePod() {
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodReplaced();
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodPatched();
+  }
+
+  private void initializeMiiUpdateTest(String miiDynamicUpdateResult) {
+    testSupport.addToPacket(DOMAINZIP_HASH, "originalZip");
+    disableAutoIntrospectOnNewMiiPods();
+    initializeExistingPod();
+
+    testSupport.addToPacket(DOMAINZIP_HASH, "newZipHash");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, miiDynamicUpdateResult);
+  }
+
+  // Mii requires an introspection when bringing up a new pod. To disable that in these tests,
+  // we will pretend that the domain is not MII.
+  private void disableAutoIntrospectOnNewMiiPods() {
+    domain.getSpec().setDomainHomeSourceType(DomainSourceType.Image);
+  }
+
+  @Test
+  public void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
+
+    verifyPodPatched();
+
+    assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
+  }
+
+  private String getPodLabel(String labelName) {
+    return domainPresenceInfo.getServerPod(getServerName()).getMetadata().getLabels().get(labelName);
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodPatched();
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_addRestartRequiredLabel() {
+    configureDomain().withMIIOnlineUpdate();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    assertThat(getPatchedPod().getMetadata().getLabels(), hasEntry(MII_UPDATED_RESTART_REQUIRED_LABEL, "true"));
+  }
+
+  @Test
+  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_replacePod() {
+    configureDomain().withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
+    initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
+
+    verifyPodReplaced();
+  }
+
+  private String paddedZipHash(String hash) {
+    return "md5." + hash + ".md5";
   }
 
   @Test
@@ -1138,7 +1265,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .putLabelsItem(LabelConstants.DOMAINHOME_LABEL, "/u01/oracle/user_projects/domains")
             .putLabelsItem(LabelConstants.SERVERNAME_LABEL, getServerName())
             .putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
-    AnnotationHelper.annotateForPrometheus(meta, listenPort);
+    AnnotationHelper.annotateForPrometheus(meta, "/wls-exporter", listenPort);
     return meta;
   }
 
@@ -1265,8 +1392,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(
           getCreatedPod().getSpec().getVolumes(),
           allOf(hasItem(volume(INTROSPECTOR_VOLUME, UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)),
-                hasItem(volume(INTROSPECTOR_VOLUME + "_1", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_1")),
-                hasItem(volume(INTROSPECTOR_VOLUME + "_2", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "_2"))));
+                hasItem(volume(INTROSPECTOR_VOLUME + "-1", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "-1")),
+                hasItem(volume(INTROSPECTOR_VOLUME + "-2", UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX + "-2"))));
   }
 
   @Test

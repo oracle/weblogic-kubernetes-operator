@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,7 +38,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -262,13 +262,10 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Stop the Administration server by patching the resource definition with 
-   *  spec/adminServer/serverStartPolicy set to NEVER.
-   * Make sure that Only the Administration server is stopped. 
-   * Restart the Administration server by patching the resource definition with 
-   *  spec/adminServer/serverStartPolicy set to IF_NEEDED.
+   * Stop the Administration server by using stopServer.sh sample script.
+   * Make sure that Only the Administration server is stopped.
+   * Restart the Administration server by using startServer.sh sample script.
    * Make sure that the Administration server is in RUNNING state.
-   * Verify that the sample script can not start or shutdown admin server
    */
   @Order(1)
   @Test
@@ -278,14 +275,11 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
 
-    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
-    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
 
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/adminServer/serverStartPolicy", "NEVER"),
-         "Failed to patch adminServer's serverStartPolicy to NEVER");
-    logger.info("Domain is patched to shutdown administration server");
-
+    // verify that the sample script can shutdown admin server
+    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     checkPodDeleted(adminServerPodName, domainUid, domainNamespace);
     logger.info("Administration server shutdown success");
 
@@ -302,29 +296,12 @@ class ItServerStartPolicy {
     assertFalse(assertDoesNotThrow(isCfgRestarted::call),
          "Configured managed server pod must not be restated");
 
-    // verify that the sample script can not start admin server
-    String result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
-        String.format("Failed to run %s", START_SERVER_SCRIPT));
-    assertTrue(result.contains("script doesn't support starting or stopping administration server"),
-        "The script shouldn't start the admin server");
-
-    assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
-         "/spec/adminServer/serverStartPolicy", "IF_NEEDED"),
-         "Failed to patch adminServer's serverStartPolicy to IF_NEEDED");
-    logger.info("Domain is patched to start administration server");
-
+    // verify that the sample script can start admin server
+    executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", true);
     logger.info("Check admin service/pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, 
             domainUid, domainNamespace);
-
-    // verify that the sample script can not shutdown admin server
-    result =  assertDoesNotThrow(() ->
-          executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "admin-server", "", false),
-          String.format("Failed to run %s", STOP_SERVER_SCRIPT));
-    assertTrue(result.contains("script doesn't support starting or stopping administration server"),
-        "The script shouldn't stop the admin server");
   }
 
   /**
@@ -344,7 +321,7 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
 
-    DateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
+    OffsetDateTime dynTs = getPodCreationTime(domainNamespace, dynamicServerPodName);
 
     checkPodReadyAndServiceExists(configServerPodName, 
               domainUid, domainNamespace);
@@ -396,7 +373,7 @@ class ItServerStartPolicy {
     String dynamicServerPodName = domainUid + "-managed-server1";
     String configServerPodName = domainUid + "-config-cluster-server1";
 
-    DateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
+    OffsetDateTime cfgTs = getPodCreationTime(domainNamespace, configServerPodName);
     checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
     // startCluster.sh does not take any action on a running cluster
     String result = executeLifecycleScript(START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
@@ -924,7 +901,7 @@ class ItServerStartPolicy {
     assertTrue(verifyExecuteResult(result, regex),"The script shouldn't start a server that is beyond the limit");
 
     // verify that the script can not start a server in dynamic cluster that exceeds the max cluster size
-    regex = ".*outside the range of allowed servers";
+    regex = ".*is outside the allowed range of";
     result =  assertDoesNotThrow(() ->
         executeLifecycleScript(START_SERVER_SCRIPT, SERVER_LIFECYCLE, dynServerName, "", false),
         String.format("Failed to run %s", START_SERVER_SCRIPT));

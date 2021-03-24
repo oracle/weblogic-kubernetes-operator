@@ -8,7 +8,7 @@ that the domain will run in.
 
 To use the sample, run the command:
 
-```
+```shell
 $ ./create-weblogic-credentials.sh -u username -p password -d domainUID -n namespace -s secretName
 ```
 
@@ -27,7 +27,7 @@ This creates a `generic` secret containing the user name and password as literal
 You can check the secret with the `kubectl get secret` command.  An example is shown below,
 including the output:
 
-```
+```shell
 $ kubectl -n domain-namespace-1 get secret domain1-weblogic-credentials -o yaml
 apiVersion: v1
 data:

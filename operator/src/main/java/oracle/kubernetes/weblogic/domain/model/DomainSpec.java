@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Pattern;
@@ -26,17 +26,16 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ServerStartPolicy;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.weblogic.domain.EffectiveConfigurationFactory;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
-import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -301,6 +300,54 @@ public class DomainSpec extends BaseConfiguration {
   private List<String> configOverrideSecrets;
 
   /**
+   * The WebLogic Monitoring Exporter configuration.
+   *
+   * @since 3.2
+   */
+  @Description("Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.")
+  private MonitoringExporterSpecification monitoringExporter;
+
+  MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
+    return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getConfiguration).orElse(null);
+  }
+
+  void createMonitoringExporterConfiguration(String yaml) {
+    if (monitoringExporter == null) {
+      monitoringExporter = new MonitoringExporterSpecification();
+    }
+
+    monitoringExporter.createConfiguration(yaml);
+  }
+
+  String getMonitoringExporterImage() {
+    return monitoringExporter == null ? null : monitoringExporter.getImage();
+  }
+
+  String getMonitoringExporterImagePullPolicy() {
+    return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
+  }
+
+  /**
+   * Specifies the image for the monitoring exporter sidecar.
+   * @param imageName the name of the docker image
+   */
+  public void setMonitoringExporterImage(String imageName) {
+    assert monitoringExporter != null : "May not set image without configuration";
+
+    monitoringExporter.setImage(imageName);
+  }
+
+  /**
+   * Specifies the pull policy for the exporter image.
+   * @param pullPolicy a Kubernetes pull policy
+   */
+  public void setMonitoringExporterImagePullPolicy(String pullPolicy) {
+    assert monitoringExporter != null : "May not set image pull policy without configuration";
+
+    monitoringExporter.setImagePullPolicy(pullPolicy);
+  }
+
+  /**
    * The configuration for the admin server.
    *
    * @since 2.0
@@ -332,7 +379,6 @@ public class DomainSpec extends BaseConfiguration {
           + "WebLogic domain configuration.")
   protected final List<Cluster> clusters = new ArrayList<>();
 
-  /**
   /**
    * Adds a Cluster to the DomainSpec.
    *
@@ -476,15 +522,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   public String getImagePullPolicy() {
-    return Optional.ofNullable(imagePullPolicy).orElse(getInferredPullPolicy());
-  }
-
-  private String getInferredPullPolicy() {
-    return useLatestImage() ? ALWAYS_IMAGEPULLPOLICY : IFNOTPRESENT_IMAGEPULLPOLICY;
-  }
-
-  private boolean useLatestImage() {
-    return getImage().endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
+    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
   }
 
   public void setImagePullPolicy(@Nullable String imagePullPolicy) {
@@ -838,28 +876,30 @@ public class DomainSpec extends BaseConfiguration {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .appendSuper(super.toString())
-            .append("domainUID", domainUid)
+            .append("adminServer", adminServer)
+            .append("allowReplicasBelowMinDynClusterSize", allowReplicasBelowMinDynClusterSize)
+            .append("clusters", clusters)
+            .append("configOverrides", configOverrides)
+            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("configuration", configuration)
             .append("domainHome", domainHome)
             .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
-            .append("introspectVersion", introspectVersion)
-            .append("configuration", configuration)
-            .append("serverStartPolicy", serverStartPolicy)
-            .append("webLogicCredentialsSecret", webLogicCredentialsSecret)
+            .append("domainUID", domainUid)
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
             .append("imagePullSecrets", imagePullSecrets)
-            .append("adminServer", adminServer)
-            .append("managedServers", managedServers)
-            .append("clusters", clusters)
-            .append("replicas", replicas)
+            .append("includeServerOutInPodLog", includeServerOutInPodLog)
+            .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
-            .append("includeServerOutInPodLog", includeServerOutInPodLog)
-            .append("configOverrides", configOverrides)
-            .append("configOverrideSecrets", configOverrideSecrets)
+            .append("managedServers", managedServers)
+            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
             .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
-            .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown);
+            .append("monitoringExporter", monitoringExporter)
+            .append("replicas", replicas)
+            .append("serverStartPolicy", serverStartPolicy)
+            .append("webLogicCredentialsSecret", webLogicCredentialsSecret);
 
     return builder.toString();
   }
@@ -869,29 +909,30 @@ public class DomainSpec extends BaseConfiguration {
     HashCodeBuilder builder =
         new HashCodeBuilder()
             .appendSuper(super.hashCode())
-            .append(domainUid)
+            .append(adminServer)
+            .append(allowReplicasBelowMinDynClusterSize)
+            .append(clusters)
+            .append(configOverrides)
+            .append(configOverrideSecrets)
+            .append(configuration)
             .append(domainHome)
             .append(domainHomeInImage)
             .append(domainHomeSourceType)
-            .append(introspectVersion)
-            .append(configuration)
-            .append(serverStartPolicy)
-            .append(webLogicCredentialsSecret)
+            .append(domainUid)
             .append(image)
             .append(imagePullPolicy)
             .append(imagePullSecrets)
-            .append(adminServer)
-            .append(managedServers)
-            .append(clusters)
-            .append(replicas)
+            .append(includeServerOutInPodLog)
+            .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
-            .append(includeServerOutInPodLog)
-            .append(configOverrides)
-            .append(configOverrideSecrets)
-            .append(allowReplicasBelowMinDynClusterSize)
+            .append(managedServers)
+            .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
-            .append(maxClusterConcurrentShutdown);
+            .append(monitoringExporter)
+            .append(replicas)
+            .append(serverStartPolicy)
+            .append(webLogicCredentialsSecret);
 
     return builder.toHashCode();
   }
@@ -926,6 +967,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
             .append(configOverrideSecrets, rhs.configOverrideSecrets)

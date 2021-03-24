@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: b509c50e66ecef1f884ed925dcf5bc83778fae3211f9e453413c451536f24f40
+    weblogic.sha256: 2cfe1523894f4f6f06b9b4bc11181eb0776225dd13fc5d3d13d3cf8706fdc4ad
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -21,19 +21,40 @@ spec:
   - name: v8
     schema:
       openAPIV3Schema:
-        type: object
         properties:
           spec:
-            type: object
             description: The specification of the operation of the WebLogic domain.
               Required.
             properties:
-              configuration:
+              monitoringExporter:
+                description: Configuration for the use of the WebLogic Monitoring
+                  Exporter as part of this domain.
+                properties:
+                  image:
+                    description: The WebLogic Monitoring Exporter sidecar image name.
+                      Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0
+                    type: string
+                  imagePullPolicy:
+                    description: The image pull policy for the WebLogic Monitoring
+                      Exporter sidecar image. Legal values are Always, Never, and
+                      IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent,
+                      otherwise.
+                    enum:
+                    - Always
+                    - Never
+                    - IfNotPresent
+                    type: string
+                  configuration:
+                    description: The configuration for the WebLogic Monitoring Exporter
+                      sidecar. If specified, the operator will deploy a sidecar alongside
+                      each server instance. See https://github.com/oracle/weblogic-monitoring-exporter
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
                 type: object
+              configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.
                 properties:
                   overrideDistributionStrategy:
-                    type: string
                     description: Determines how updated configuration overrides are
                       distributed to already running WebLogic Server instances following
                       introspection when the `domainHomeSourceType` is PersistentVolume
@@ -49,51 +70,49 @@ spec:
                     enum:
                     - DYNAMIC
                     - ON_RESTART
+                    type: string
                   opss:
-                    type: object
                     description: Settings for OPSS security.
                     properties:
                       walletFileSecret:
-                        type: string
                         description: Name of a Secret containing the OPSS key wallet
                           file, which must be in a field named `walletFile`. Use this
                           to allow a JRF domain to reuse its entries in the RCU database.
                           This allows you to specify a wallet file that was obtained
                           from the domain home after the domain was booted for the
                           first time.
-                      walletPasswordSecret:
                         type: string
+                      walletPasswordSecret:
                         description: Name of a Secret containing the OPSS key passphrase,
                           which must be in a field named `walletPassword`. Used to
                           encrypt and decrypt the wallet that is used for accessing
                           the domain's entries in its RCU database.
-                  model:
+                        type: string
                     type: object
+                  model:
                     description: Model in image model files and properties.
                     properties:
                       runtimeEncryptionSecret:
-                        type: string
                         description: Runtime encryption secret. Required when `domainHomeSourceType`
                           is set to FromModel.
-                      domainType:
                         type: string
+                      domainType:
                         description: 'WebLogic Deploy Tooling domain type. Legal values:
                           WLS, RestrictedJRF, JRF. Defaults to WLS.'
                         enum:
                         - WLS
                         - RestrictedJRF
                         - JRF
-                      configMap:
                         type: string
+                      configMap:
                         description: Name of a ConfigMap containing the WebLogic Deploy
                           Tooling model.
+                        type: string
                       onlineUpdate:
-                        type: object
                         description: Online update option for Model In Image dynamic
                           update.
                         properties:
                           onNonDynamicChanges:
-                            type: string
                             description: "Controls behavior when non-dynamic WebLogic\
                               \ configuration changes are detected during an online\
                               \ update. Non-dynamic changes are changes that require\
@@ -115,92 +134,95 @@ spec:
                             enum:
                             - CommitUpdateAndRoll
                             - CommitUpdateOnly
+                            type: string
                           enabled:
-                            type: boolean
                             description: Enable online update. Default is 'false'.
+                            type: boolean
                           wdtTimeouts:
-                            type: object
                             properties:
                               setServerGroupsTimeoutMillis:
-                                type: number
                                 description: 'WDT set server groups timeout for extending
                                   a JRF domain configured cluster in milliseconds.
                                   Default: 180000.'
-                              connectTimeoutMillis:
                                 type: number
+                              connectTimeoutMillis:
                                 description: 'WDT connect to WebLogic admin server
                                   timeout in milliseconds. Default: 120000.'
-                              undeployTimeoutMillis:
                                 type: number
+                              undeployTimeoutMillis:
                                 description: 'WDT application or library undeployment
                                   timeout in milliseconds. Default: 180000.'
-                              deployTimeoutMillis:
                                 type: number
+                              deployTimeoutMillis:
                                 description: 'WDT application or library deployment
                                   timeout in milliseconds. Default: 180000.'
-                              startApplicationTimeoutMillis:
                                 type: number
+                              startApplicationTimeoutMillis:
                                 description: 'WDT application start timeout in milliseconds.
                                   Default: 180000.'
-                              activateTimeoutMillis:
                                 type: number
+                              activateTimeoutMillis:
                                 description: 'WDT activate WebLogic configuration
                                   changes timeout in milliseconds. Default: 180000.'
-                              stopApplicationTimeoutMillis:
                                 type: number
+                              stopApplicationTimeoutMillis:
                                 description: 'WDT application stop timeout in milliseconds.
                                   Default: 180000.'
-                              redeployTimeoutMillis:
                                 type: number
+                              redeployTimeoutMillis:
                                 description: 'WDT application or library redeployment
                                   timeout in milliseconds. Default: 180000.'
+                                type: number
+                            type: object
+                        type: object
                       modelHome:
-                        type: string
                         description: Location of the WebLogic Deploy Tooling model
                           home. Defaults to /u01/wdt/models.
+                        type: string
+                    type: object
                   secrets:
-                    type: array
                     description: A list of names of the Secrets for WebLogic configuration
                       overrides or model. If this field is specified, then the value
                       of `spec.configOverrideSecrets` is ignored.
                     items:
                       type: string
+                    type: array
                   istio:
-                    type: object
                     description: The Istio service mesh integration settings.
                     properties:
                       readinessPort:
-                        type: number
                         description: The operator will create a WebLogic network access
                           point with this port that will then be exposed from the
                           container running the WebLogic Server instance. The readiness
                           probe will use this network access point to verify that
                           the server instance is ready for application traffic. Defaults
                           to 8888.
+                        type: number
                       enabled:
-                        type: boolean
                         description: True, if this domain is deployed under an Istio
                           service mesh. Defaults to true when the `istio` field is
                           specified.
+                        type: boolean
+                    type: object
                   overridesConfigMap:
-                    type: string
                     description: The name of the ConfigMap for WebLogic configuration
                       overrides. If this field is specified, then the value of `spec.configOverrides`
                       is ignored.
+                    type: string
                   introspectorJobActiveDeadlineSeconds:
-                    type: number
                     description: The introspector job timeout value in seconds. If
                       this field is specified, then the operator's ConfigMap `data.introspectorJobActiveDeadlineSeconds`
                       value is ignored. Defaults to 120 seconds.
+                    type: number
+                type: object
               configOverrideSecrets:
-                type: array
                 description: Deprecated. Use `configuration.secrets` instead. Ignored
                   if `configuration.secrets` is specified. A list of names of the
                   Secrets for optional WebLogic configuration overrides.
                 items:
                   type: string
-              imagePullSecrets:
                 type: array
+              imagePullSecrets:
                 description: A list of image pull Secrets for the WebLogic Server
                   image.
                 items:
@@ -208,8 +230,8 @@ spec:
                   properties:
                     name:
                       type: string
+                type: array
               domainUID:
-                type: string
                 description: Domain unique identifier. It is recommended that this
                   value be unique to assist in future work to identify related domains
                   in active-passive scenarios across data centers; however, it is
@@ -218,35 +240,35 @@ spec:
                   need not match the domain name from the WebLogic domain configuration.
                   Defaults to the value of `metadata.name`.
                 pattern: ^[a-z0-9-.]{1,45}$
+                type: string
               serverService:
-                type: object
                 description: Customization affecting the generation of Kubernetes
                   Services for WebLogic Server instances.
                 properties:
                   precreateService:
-                    type: boolean
                     description: If true, the operator will create Services even for
                       Managed Server instances without running Pods.
+                    type: boolean
                   annotations:
-                    type: object
                     additionalProperties:
                       type: string
                     description: The annotations to be added to generated resources.
-                  labels:
                     type: object
+                  labels:
                     additionalProperties:
                       type: string
                     description: The labels to be added to generated resources. The
                       label names must not start with "weblogic.".
+                    type: object
+                type: object
               domainHome:
-                type: string
                 description: The directory containing the WebLogic domain configuration
                   inside the container. Defaults to /shared/domains/domains/<domainUID>
                   if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/
                   if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID>
                   if `domainHomeSourceType` is FromModel.
-              domainHomeSourceType:
                 type: string
+              domainHomeSourceType:
                 description: 'Domain home file system source type: Legal values: Image,
                   PersistentVolume, FromModel. Image indicates that the domain home
                   file system is present in the container image specified by the `image`
@@ -260,14 +282,14 @@ spec:
                 - Image
                 - PersistentVolume
                 - FromModel
+                type: string
               httpAccessLogInLogHome:
-                type: boolean
                 description: Specifies whether the server HTTP access log files will
                   be written to the same directory specified in `logHome`. Otherwise,
                   server HTTP access log files will be written to the directory configured
                   in the WebLogic domain configuration. Defaults to true.
+                type: boolean
               webLogicCredentialsSecret:
-                type: object
                 description: Reference to a Kubernetes Secret that contains the user
                   name and password needed to boot a WebLogic Server under the `username`
                   and `password` fields.
@@ -276,70 +298,68 @@ spec:
                     type: string
                   namespace:
                     type: string
-              adminServer:
                 type: object
+              adminServer:
                 description: Lifecycle options for the Administration Server, including
                   Java options, environment variables, additional Pod content, and
                   which channels or network access points should be exposed using
                   a NodePort Service.
                 properties:
                   serverStartState:
-                    type: string
                     description: The WebLogic runtime state in which the server is
                       to be started. Use ADMIN if the server should start in the admin
                       state. Defaults to RUNNING.
                     enum:
                     - RUNNING
                     - ADMIN
+                    type: string
                   serverService:
-                    type: object
                     description: Customization affecting the generation of Kubernetes
                       Services for WebLogic Server instances.
                     properties:
                       precreateService:
-                        type: boolean
                         description: If true, the operator will create Services even
                           for Managed Server instances without running Pods.
+                        type: boolean
                       annotations:
-                        type: object
                         additionalProperties:
                           type: string
                         description: The annotations to be added to generated resources.
-                      labels:
                         type: object
+                      labels:
                         additionalProperties:
                           type: string
                         description: The labels to be added to generated resources.
                           The label names must not start with "weblogic.".
-                  serverPod:
+                        type: object
                     type: object
+                  serverPod:
                     description: Customization affecting the generation of Pods for
                       WebLogic Server instances.
                     properties:
                       nodeName:
-                        type: string
                         description: NodeName is a request to schedule this Pod onto
                           a specific Node. If it is non-empty, the scheduler simply
                           schedules this pod onto that node, assuming that it fits
                           the resource requirements. See `kubectl explain pods.spec.nodeName`.
+                        type: string
                       livenessProbe:
-                        type: object
                         description: Settings for the liveness probe associated with
                           a WebLogic Server instance.
                         properties:
                           periodSeconds:
-                            type: number
                             description: The number of seconds between checks.
-                          timeoutSeconds:
                             type: number
+                          timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
-                          initialDelaySeconds:
                             type: number
+                          initialDelaySeconds:
                             description: The number of seconds before the first check
                               is performed.
+                            type: number
+                        type: object
                       readinessGates:
-                        type: array
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
                           are ready AND all conditions specified in the readiness
@@ -351,21 +371,20 @@ spec:
                               type: string
                           required:
                           - conditionType
+                        type: array
                       serviceAccountName:
-                        type: string
                         description: Name of the ServiceAccount to be used to run
                           this Pod. If it is not set, default ServiceAccount will
                           be used. The ServiceAccount has to exist at the time the
                           Pod is created. See `kubectl explain pods.spec.serviceAccountName`.
+                        type: string
                       podSecurityContext:
-                        type: object
                         description: Pod-level security attributes. See `kubectl explain
                           pods.spec.securityContext`.
                         properties:
                           runAsUser:
                             type: number
                           seLinuxOptions:
-                            type: object
                             properties:
                               role:
                                 type: string
@@ -375,10 +394,10 @@ spec:
                                 type: string
                               user:
                                 type: string
+                            type: object
                           fsGroup:
                             type: number
                           seccompProfile:
-                            type: object
                             properties:
                               localhostProfile:
                                 type: string
@@ -386,8 +405,8 @@ spec:
                                 type: string
                             required:
                             - type
-                          windowsOptions:
                             type: object
+                          windowsOptions:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
@@ -395,18 +414,18 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                            type: object
                           fsGroupChangePolicy:
                             type: string
                           supplementalGroups:
-                            type: array
                             items:
                               type: number
+                            type: array
                           runAsGroup:
                             type: number
                           runAsNonRoot:
                             type: boolean
                           sysctls:
-                            type: array
                             items:
                               type: object
                               properties:
@@ -417,8 +436,9 @@ spec:
                               required:
                               - name
                               - value
+                            type: array
+                        type: object
                       priorityClassName:
-                        type: string
                         description: If specified, indicates the Pod's priority. "system-node-critical"
                           and "system-cluster-critical" are two special keywords which
                           indicate the highest priorities with the former being the
@@ -426,8 +446,8 @@ spec:
                           a PriorityClass object with that name. If not specified,
                           the pod priority will be the default or zero, if there is
                           no default. See `kubectl explain pods.spec.priorityClassName`.
+                        type: string
                       volumes:
-                        type: array
                         description: Additional volumes to be created in the server
                           Pod. See `kubectl explain pods.spec.volumes`.
                         items:
@@ -552,7 +572,6 @@ spec:
                                                 type: string
                                               fieldsV1:
                                                 type: object
-                                                properties: {}
                                               manager:
                                                 type: string
                                               time:
@@ -761,8 +780,6 @@ spec:
                                         - path
                                 defaultMode:
                                   type: number
-                              required:
-                              - sources
                             cephfs:
                               type: object
                               properties:
@@ -1170,26 +1187,26 @@ spec:
                               - path
                           required:
                           - name
+                        type: array
                       resources:
-                        type: object
                         description: Memory and CPU minimum requirements and limits
                           for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
                         properties:
                           requests:
-                            type: object
                             additionalProperties:
                               type: string
+                            type: object
                           limits:
-                            type: object
                             additionalProperties:
                               type: string
-                      annotations:
+                            type: object
                         type: object
+                      annotations:
                         additionalProperties:
                           type: string
                         description: The annotations to be added to generated resources.
+                        type: object
                       env:
-                        type: array
                         description: 'A list of environment variables to set in the
                           container running a WebLogic Server instance. More info:
                           https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
@@ -1257,21 +1274,21 @@ spec:
                                   - fieldPath
                           required:
                           - name
+                        type: array
                       restartPolicy:
-                        type: string
                         description: 'Restart policy for all containers within the
                           Pod. One of Always, OnFailure, Never. Default to Always.
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                           See `kubectl explain pods.spec.restartPolicy`.'
+                        type: string
                       nodeSelector:
-                        type: object
                         additionalProperties:
                           type: string
                         description: Selector which must match a Node's labels for
                           the Pod to be scheduled on that Node. See `kubectl explain
                           pods.spec.nodeSelector`.
+                        type: object
                       volumeMounts:
-                        type: array
                         description: Additional volume mounts for the container running
                           a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
                         items:
@@ -1292,14 +1309,14 @@ spec:
                           required:
                           - mountPath
                           - name
+                        type: array
                       labels:
-                        type: object
                         additionalProperties:
                           type: string
                         description: The labels to be added to generated resources.
                           The label names must not start with "weblogic.".
+                        type: object
                       runtimeClassName:
-                        type: string
                         description: 'RuntimeClassName refers to a RuntimeClass object
                           in the node.k8s.io group, which should be used to run this
                           Pod. If no RuntimeClass resource matches the named class,
@@ -1309,8 +1326,8 @@ spec:
                           More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
                           This is an alpha feature and may change in the future. See
                           `kubectl explain pods.spec.runtimeClassName`.'
+                        type: string
                       tolerations:
-                        type: array
                         description: If specified, the Pod's tolerations. See `kubectl
                           explain pods.spec.tolerations`.
                         items:
@@ -1326,24 +1343,24 @@ spec:
                               type: string
                             operator:
                               type: string
+                        type: array
                       readinessProbe:
-                        type: object
                         description: Settings for the readiness probe associated with
                           a WebLogic Server instance.
                         properties:
                           periodSeconds:
-                            type: number
                             description: The number of seconds between checks.
-                          timeoutSeconds:
                             type: number
+                          timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
-                          initialDelaySeconds:
                             type: number
+                          initialDelaySeconds:
                             description: The number of seconds before the first check
                               is performed.
+                            type: number
+                        type: object
                       containers:
-                        type: array
                         description: Additional containers to be included in the server
                           Pod. See `kubectl explain pods.spec.containers`.
                         items:
@@ -1923,8 +1940,8 @@ spec:
                                         type: boolean
                           required:
                           - name
+                        type: array
                       containerSecurityContext:
-                        type: object
                         description: Container-level security attributes. Will override
                           any matching Pod-level attributes. See `kubectl explain
                           pods.spec.containers.securityContext`.
@@ -1934,18 +1951,17 @@ spec:
                           runAsUser:
                             type: number
                           capabilities:
-                            type: object
                             properties:
                               add:
-                                type: array
                                 items:
                                   type: string
+                                type: array
                               drop:
-                                type: array
                                 items:
                                   type: string
-                          seLinuxOptions:
+                                type: array
                             type: object
+                          seLinuxOptions:
                             properties:
                               role:
                                 type: string
@@ -1955,8 +1971,8 @@ spec:
                                 type: string
                               user:
                                 type: string
-                          seccompProfile:
                             type: object
+                          seccompProfile:
                             properties:
                               localhostProfile:
                                 type: string
@@ -1964,8 +1980,8 @@ spec:
                                 type: string
                             required:
                             - type
-                          windowsOptions:
                             type: object
+                          windowsOptions:
                             properties:
                               gmsaCredentialSpec:
                                 type: string
@@ -1973,6 +1989,7 @@ spec:
                                 type: string
                               gmsaCredentialSpecName:
                                 type: string
+                            type: object
                           procMount:
                             type: string
                           allowPrivilegeEscalation:
@@ -1983,13 +2000,13 @@ spec:
                             type: boolean
                           readOnlyRootFilesystem:
                             type: boolean
+                        type: object
                       schedulerName:
-                        type: string
                         description: If specified, the Pod will be dispatched by the
                           specified scheduler. If not specified, the Pod will be dispatched
                           by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                        type: string
                       initContainers:
-                        type: array
                         description: Initialization containers to be included in the
                           server Pod. See `kubectl explain pods.spec.initContainers`.
                         items:
@@ -2569,41 +2586,38 @@ spec:
                                         type: boolean
                           required:
                           - name
+                        type: array
                       shutdown:
-                        type: object
                         description: Configures how the operator should shut down
                           the server instance.
                         properties:
                           ignoreSessions:
-                            type: boolean
                             description: For graceful shutdown only, indicates to
                               ignore pending HTTP sessions during in-flight work handling.
                               Defaults to false.
+                            type: boolean
                           shutdownType:
-                            type: string
                             description: Specifies how the operator will shut down
                               server instances. Defaults to graceful shutdown.
                             enum:
                             - Graceful
                             - Forced
+                            type: string
                           timeoutSeconds:
-                            type: number
                             description: For graceful shutdown only, number of seconds
                               to wait before aborting in-flight work and shutting
                               down the server. Defaults to 30 seconds.
-                      affinity:
+                            type: number
                         type: object
+                      affinity:
                         description: If specified, the Pod's scheduling constraints.
                           See `kubectl explain pods.spec.affinity`
                         properties:
                           nodeAffinity:
-                            type: object
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: object
                                 properties:
                                   nodeSelectorTerms:
-                                    type: array
                                     items:
                                       type: object
                                       properties:
@@ -2639,10 +2653,11 @@ spec:
                                             required:
                                             - key
                                             - operator
+                                    type: array
                                 required:
                                 - nodeSelectorTerms
+                                type: object
                               preferredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 items:
                                   type: object
                                   properties:
@@ -2686,11 +2701,11 @@ spec:
                                   required:
                                   - preference
                                   - weight
+                                type: array
+                            type: object
                           podAffinity:
-                            type: object
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 items:
                                   type: object
                                   properties:
@@ -2725,8 +2740,8 @@ spec:
                                         type: string
                                   required:
                                   - topologyKey
-                              preferredDuringSchedulingIgnoredDuringExecution:
                                 type: array
+                              preferredDuringSchedulingIgnoredDuringExecution:
                                 items:
                                   type: object
                                   properties:
@@ -2769,11 +2784,11 @@ spec:
                                   required:
                                   - podAffinityTerm
                                   - weight
+                                type: array
+                            type: object
                           podAntiAffinity:
-                            type: object
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 items:
                                   type: object
                                   properties:
@@ -2808,8 +2823,8 @@ spec:
                                         type: string
                                   required:
                                   - topologyKey
-                              preferredDuringSchedulingIgnoredDuringExecution:
                                 type: array
+                              preferredDuringSchedulingIgnoredDuringExecution:
                                 items:
                                   type: object
                                   properties:
@@ -2852,8 +2867,11 @@ spec:
                                   required:
                                   - podAffinityTerm
                                   - weight
+                                type: array
+                            type: object
+                        type: object
+                    type: object
                   serverStartPolicy:
-                    type: string
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
                       Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
@@ -2861,8 +2879,8 @@ spec:
                     - ALWAYS
                     - NEVER
                     - IF_NEEDED
+                    type: string
                   adminService:
-                    type: object
                     description: Customization affecting the generation of the Kubernetes
                       Service for the Administration Server. These settings can also
                       specify the creation of a second NodePort Service to expose
@@ -2870,7 +2888,6 @@ spec:
                       cluster.
                     properties:
                       channels:
-                        type: array
                         description: Specifies which of the Administration Server's
                           WebLogic channels should be exposed outside the Kubernetes
                           cluster via a NodePort Service, along with the port for
@@ -2903,34 +2920,36 @@ spec:
                               type: number
                           required:
                           - channelName
+                        type: array
                       annotations:
-                        type: object
                         additionalProperties:
                           type: string
                         description: Annotations to associate with the Administration
                           Server's Service(s).
-                      labels:
                         type: object
+                      labels:
                         additionalProperties:
                           type: string
                         description: Labels to associate with the Administration Server's
                           Service(s).
+                        type: object
+                    type: object
                   restartVersion:
-                    type: string
                     description: 'Changes to this field cause the operator to restart
                       WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
+                    type: string
+                type: object
               logHome:
-                type: string
                 description: The directory in a server's container in which to store
                   the domain, Node Manager, server logs, server *.out, introspector
                   .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
                   is true. Ignored if `logHomeEnabled` is false.
+                type: string
               includeServerOutInPodLog:
-                type: boolean
                 description: Specifies whether the server .out file will be included
                   in the Pod's log. Defaults to true.
+                type: boolean
               clusters:
-                type: array
                 description: Lifecycle options for all of the Managed Server members
                   of a WebLogic cluster, including Java options, environment variables,
                   additional Pod content, and the ability to explicitly start, stop,
@@ -3251,7 +3270,6 @@ spec:
                                                   type: string
                                                 fieldsV1:
                                                   type: object
-                                                  properties: {}
                                                 manager:
                                                   type: string
                                                 time:
@@ -3460,8 +3478,6 @@ spec:
                                           - path
                                   defaultMode:
                                     type: number
-                                required:
-                                - sources
                               cephfs:
                                 type: object
                                 properties:
@@ -5602,20 +5618,20 @@ spec:
                       type: string
                   required:
                   - clusterName
+                type: array
               serverStartState:
-                type: string
                 description: The WebLogic runtime state in which the server is to
                   be started. Use ADMIN if the server should start in the admin state.
                   Defaults to RUNNING.
                 enum:
                 - RUNNING
                 - ADMIN
-              image:
                 type: string
+              image:
                 description: The WebLogic Server image; required when `domainHomeSourceType`
                   is Image or FromModel; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
-              imagePullPolicy:
                 type: string
+              imagePullPolicy:
                 description: The image pull policy for the WebLogic Server image.
                   Legal values are Always, Never, and IfNotPresent. Defaults to Always
                   if image ends in :latest; IfNotPresent, otherwise.
@@ -5623,16 +5639,16 @@ spec:
                 - Always
                 - Never
                 - IfNotPresent
+                type: string
               maxClusterConcurrentStartup:
-                type: number
                 description: The maximum number of cluster member Managed Server instances
                   that the operator will start in parallel for a given cluster, if
                   `maxConcurrentStartup` is not specified for a specific cluster under
                   the `clusters` field. A value of 0 means there is no configured
                   limit. Defaults to 0.
                 minimum: 0.0
-              replicas:
                 type: number
+              replicas:
                 description: The default number of cluster member Managed Server instances
                   to start for each WebLogic cluster in the domain configuration,
                   unless `replicas` is specified for that cluster under the `clusters`
@@ -5651,23 +5667,23 @@ spec:
                   a cluster may have more cluster members running than its `replicas`
                   count. Defaults to 0.
                 minimum: 0.0
-              maxClusterConcurrentShutdown:
                 type: number
+              maxClusterConcurrentShutdown:
                 description: The default maximum number of WebLogic Server instances
                   that a cluster will shut down in parallel when it is being partially
                   shut down by lowering its replica count. You can override this default
                   on a per cluster basis by setting the cluster's `maxConcurrentShutdown`
                   field. A value of 0 means there is no limit. Defaults to 1.
                 minimum: 0.0
+                type: number
               domainHomeInImage:
-                type: boolean
                 description: Deprecated. Use `domainHomeSourceType` instead. Ignored
                   if `domainHomeSourceType` is specified. True indicates that the
                   domain home file system is present in the container image specified
                   by the image field. False indicates that the domain home file system
                   is located on a persistent volume. Defaults to unset.
+                type: boolean
               serverStartPolicy:
-                type: string
                 description: 'The strategy for deciding whether to start a WebLogic
                   Server instance. Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
                   Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.'
@@ -5675,8 +5691,8 @@ spec:
                 - NEVER
                 - IF_NEEDED
                 - ADMIN_ONLY
-              livenessProbeCustomScript:
                 type: string
+              livenessProbeCustomScript:
                 description: Full path of an optional liveness probe custom script
                   for WebLogic Server instance pods. The existing liveness probe script
                   `livenessProbe.sh` will invoke this custom script after the existing
@@ -5686,12 +5702,12 @@ spec:
                   the liveness probe and Kubernetes will restart the container. If
                   the script specified by this element value is not found, then it
                   is ignored.
-              restartVersion:
                 type: string
+              restartVersion:
                 description: 'Changes to this field cause the operator to restart
                   WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.'
-              introspectVersion:
                 type: string
+              introspectVersion:
                 description: 'Changes to this field cause the operator to repeat its
                   introspection of the WebLogic domain configuration. Repeating introspection
                   is required for the operator to recognize changes to the domain
@@ -5704,57 +5720,56 @@ spec:
                   introspection also occurs when a running server must be restarted
                   because of changes to any of the fields listed here: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#properties-that-cause-servers-to-be-restarted.
                   See also `domains.spec.configuration.overrideDistributionStrategy`.'
-              dataHome:
                 type: string
+              dataHome:
                 description: An optional directory in a server's container for data
                   storage of default and custom file stores. If `dataHome` is not
                   specified or its value is either not set or empty, then the data
                   storage directories are determined from the WebLogic domain configuration.
-              configOverrides:
                 type: string
+              configOverrides:
                 description: Deprecated. Use `configuration.overridesConfigMap` instead.
                   Ignored if `configuration.overridesConfigMap` is specified. The
                   name of the ConfigMap for optional WebLogic configuration overrides.
+                type: string
               logHomeEnabled:
-                type: boolean
                 description: Specifies whether the log home folder is enabled. Defaults
                   to true if `domainHomeSourceType` is PersistentVolume; false, otherwise.
-              allowReplicasBelowMinDynClusterSize:
                 type: boolean
+              allowReplicasBelowMinDynClusterSize:
                 description: Whether to allow the number of running cluster member
                   Managed Server instances to drop below the minimum dynamic cluster
                   size configured in the WebLogic domain configuration, if this is
                   not specified for a specific cluster under the `clusters` field.
                   Defaults to true.
+                type: boolean
               serverPod:
-                type: object
                 description: Customization affecting the generation of Pods for WebLogic
                   Server instances.
                 properties:
                   nodeName:
-                    type: string
                     description: NodeName is a request to schedule this Pod onto a
                       specific Node. If it is non-empty, the scheduler simply schedules
                       this pod onto that node, assuming that it fits the resource
                       requirements. See `kubectl explain pods.spec.nodeName`.
+                    type: string
                   livenessProbe:
-                    type: object
                     description: Settings for the liveness probe associated with a
                       WebLogic Server instance.
                     properties:
                       periodSeconds:
-                        type: number
                         description: The number of seconds between checks.
-                      timeoutSeconds:
                         type: number
+                      timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                      initialDelaySeconds:
                         type: number
+                      initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
+                        type: number
+                    type: object
                   readinessGates:
-                    type: array
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
                       ready AND all conditions specified in the readiness gates have
@@ -5766,21 +5781,20 @@ spec:
                           type: string
                       required:
                       - conditionType
+                    type: array
                   serviceAccountName:
-                    type: string
                     description: Name of the ServiceAccount to be used to run this
                       Pod. If it is not set, default ServiceAccount will be used.
                       The ServiceAccount has to exist at the time the Pod is created.
                       See `kubectl explain pods.spec.serviceAccountName`.
+                    type: string
                   podSecurityContext:
-                    type: object
                     description: Pod-level security attributes. See `kubectl explain
                       pods.spec.securityContext`.
                     properties:
                       runAsUser:
                         type: number
                       seLinuxOptions:
-                        type: object
                         properties:
                           role:
                             type: string
@@ -5790,10 +5804,10 @@ spec:
                             type: string
                           user:
                             type: string
+                        type: object
                       fsGroup:
                         type: number
                       seccompProfile:
-                        type: object
                         properties:
                           localhostProfile:
                             type: string
@@ -5801,8 +5815,8 @@ spec:
                             type: string
                         required:
                         - type
-                      windowsOptions:
                         type: object
+                      windowsOptions:
                         properties:
                           gmsaCredentialSpec:
                             type: string
@@ -5810,18 +5824,18 @@ spec:
                             type: string
                           gmsaCredentialSpecName:
                             type: string
+                        type: object
                       fsGroupChangePolicy:
                         type: string
                       supplementalGroups:
-                        type: array
                         items:
                           type: number
+                        type: array
                       runAsGroup:
                         type: number
                       runAsNonRoot:
                         type: boolean
                       sysctls:
-                        type: array
                         items:
                           type: object
                           properties:
@@ -5832,8 +5846,9 @@ spec:
                           required:
                           - name
                           - value
+                        type: array
+                    type: object
                   priorityClassName:
-                    type: string
                     description: If specified, indicates the Pod's priority. "system-node-critical"
                       and "system-cluster-critical" are two special keywords which
                       indicate the highest priorities with the former being the highest
@@ -5841,8 +5856,8 @@ spec:
                       object with that name. If not specified, the pod priority will
                       be the default or zero, if there is no default. See `kubectl
                       explain pods.spec.priorityClassName`.
+                    type: string
                   volumes:
-                    type: array
                     description: Additional volumes to be created in the server Pod.
                       See `kubectl explain pods.spec.volumes`.
                     items:
@@ -5967,7 +5982,6 @@ spec:
                                             type: string
                                           fieldsV1:
                                             type: object
-                                            properties: {}
                                           manager:
                                             type: string
                                           time:
@@ -6176,8 +6190,6 @@ spec:
                                     - path
                             defaultMode:
                               type: number
-                          required:
-                          - sources
                         cephfs:
                           type: object
                           properties:
@@ -6585,26 +6597,26 @@ spec:
                           - path
                       required:
                       - name
+                    type: array
                   resources:
-                    type: object
                     description: Memory and CPU minimum requirements and limits for
                       the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
                     properties:
                       requests:
-                        type: object
                         additionalProperties:
                           type: string
+                        type: object
                       limits:
-                        type: object
                         additionalProperties:
                           type: string
-                  annotations:
+                        type: object
                     type: object
+                  annotations:
                     additionalProperties:
                       type: string
                     description: The annotations to be added to generated resources.
+                    type: object
                   env:
-                    type: array
                     description: 'A list of environment variables to set in the container
                       running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
                       See `kubectl explain pods.spec.containers.env`.'
@@ -6671,20 +6683,20 @@ spec:
                               - fieldPath
                       required:
                       - name
+                    type: array
                   restartPolicy:
-                    type: string
                     description: 'Restart policy for all containers within the Pod.
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                       See `kubectl explain pods.spec.restartPolicy`.'
+                    type: string
                   nodeSelector:
-                    type: object
                     additionalProperties:
                       type: string
                     description: Selector which must match a Node's labels for the
                       Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
+                    type: object
                   volumeMounts:
-                    type: array
                     description: Additional volume mounts for the container running
                       a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
                     items:
@@ -6705,14 +6717,14 @@ spec:
                       required:
                       - mountPath
                       - name
+                    type: array
                   labels:
-                    type: object
                     additionalProperties:
                       type: string
                     description: The labels to be added to generated resources. The
                       label names must not start with "weblogic.".
+                    type: object
                   runtimeClassName:
-                    type: string
                     description: 'RuntimeClassName refers to a RuntimeClass object
                       in the node.k8s.io group, which should be used to run this Pod.
                       If no RuntimeClass resource matches the named class, the Pod
@@ -6721,8 +6733,8 @@ spec:
                       that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
                       This is an alpha feature and may change in the future. See `kubectl
                       explain pods.spec.runtimeClassName`.'
+                    type: string
                   tolerations:
-                    type: array
                     description: If specified, the Pod's tolerations. See `kubectl
                       explain pods.spec.tolerations`.
                     items:
@@ -6738,24 +6750,24 @@ spec:
                           type: string
                         operator:
                           type: string
+                    type: array
                   readinessProbe:
-                    type: object
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance.
                     properties:
                       periodSeconds:
-                        type: number
                         description: The number of seconds between checks.
-                      timeoutSeconds:
                         type: number
+                      timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                      initialDelaySeconds:
                         type: number
+                      initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
+                        type: number
+                    type: object
                   containers:
-                    type: array
                     description: Additional containers to be included in the server
                       Pod. See `kubectl explain pods.spec.containers`.
                     items:
@@ -7335,8 +7347,8 @@ spec:
                                     type: boolean
                       required:
                       - name
+                    type: array
                   containerSecurityContext:
-                    type: object
                     description: Container-level security attributes. Will override
                       any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
                     properties:
@@ -7345,18 +7357,17 @@ spec:
                       runAsUser:
                         type: number
                       capabilities:
-                        type: object
                         properties:
                           add:
-                            type: array
                             items:
                               type: string
+                            type: array
                           drop:
-                            type: array
                             items:
                               type: string
-                      seLinuxOptions:
+                            type: array
                         type: object
+                      seLinuxOptions:
                         properties:
                           role:
                             type: string
@@ -7366,8 +7377,8 @@ spec:
                             type: string
                           user:
                             type: string
-                      seccompProfile:
                         type: object
+                      seccompProfile:
                         properties:
                           localhostProfile:
                             type: string
@@ -7375,8 +7386,8 @@ spec:
                             type: string
                         required:
                         - type
-                      windowsOptions:
                         type: object
+                      windowsOptions:
                         properties:
                           gmsaCredentialSpec:
                             type: string
@@ -7384,6 +7395,7 @@ spec:
                             type: string
                           gmsaCredentialSpecName:
                             type: string
+                        type: object
                       procMount:
                         type: string
                       allowPrivilegeEscalation:
@@ -7394,13 +7406,13 @@ spec:
                         type: boolean
                       readOnlyRootFilesystem:
                         type: boolean
+                    type: object
                   schedulerName:
-                    type: string
                     description: If specified, the Pod will be dispatched by the specified
                       scheduler. If not specified, the Pod will be dispatched by the
                       default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                    type: string
                   initContainers:
-                    type: array
                     description: Initialization containers to be included in the server
                       Pod. See `kubectl explain pods.spec.initContainers`.
                     items:
@@ -7980,41 +7992,38 @@ spec:
                                     type: boolean
                       required:
                       - name
+                    type: array
                   shutdown:
-                    type: object
                     description: Configures how the operator should shut down the
                       server instance.
                     properties:
                       ignoreSessions:
-                        type: boolean
                         description: For graceful shutdown only, indicates to ignore
                           pending HTTP sessions during in-flight work handling. Defaults
                           to false.
+                        type: boolean
                       shutdownType:
-                        type: string
                         description: Specifies how the operator will shut down server
                           instances. Defaults to graceful shutdown.
                         enum:
                         - Graceful
                         - Forced
+                        type: string
                       timeoutSeconds:
-                        type: number
                         description: For graceful shutdown only, number of seconds
                           to wait before aborting in-flight work and shutting down
                           the server. Defaults to 30 seconds.
-                  affinity:
+                        type: number
                     type: object
+                  affinity:
                     description: If specified, the Pod's scheduling constraints. See
                       `kubectl explain pods.spec.affinity`
                     properties:
                       nodeAffinity:
-                        type: object
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: object
                             properties:
                               nodeSelectorTerms:
-                                type: array
                                 items:
                                   type: object
                                   properties:
@@ -8050,10 +8059,11 @@ spec:
                                         required:
                                         - key
                                         - operator
+                                type: array
                             required:
                             - nodeSelectorTerms
+                            type: object
                           preferredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             items:
                               type: object
                               properties:
@@ -8097,11 +8107,11 @@ spec:
                               required:
                               - preference
                               - weight
+                            type: array
+                        type: object
                       podAffinity:
-                        type: object
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             items:
                               type: object
                               properties:
@@ -8136,8 +8146,8 @@ spec:
                                     type: string
                               required:
                               - topologyKey
-                          preferredDuringSchedulingIgnoredDuringExecution:
                             type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
                             items:
                               type: object
                               properties:
@@ -8180,11 +8190,11 @@ spec:
                               required:
                               - podAffinityTerm
                               - weight
+                            type: array
+                        type: object
                       podAntiAffinity:
-                        type: object
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             items:
                               type: object
                               properties:
@@ -8219,8 +8229,8 @@ spec:
                                     type: string
                               required:
                               - topologyKey
-                          preferredDuringSchedulingIgnoredDuringExecution:
                             type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
                             items:
                               type: object
                               properties:
@@ -8263,8 +8273,11 @@ spec:
                               required:
                               - podAffinityTerm
                               - weight
+                            type: array
+                        type: object
+                    type: object
+                type: object
               managedServers:
-                type: array
                 description: Lifecycle options for individual Managed Servers, including
                   Java options, environment variables, additional Pod content, and
                   the ability to explicitly start, stop, or restart a named server
@@ -8552,7 +8565,6 @@ spec:
                                                   type: string
                                                 fieldsV1:
                                                   type: object
-                                                  properties: {}
                                                 manager:
                                                   type: string
                                                 time:
@@ -8761,8 +8773,6 @@ spec:
                                           - path
                                   defaultMode:
                                     type: number
-                                required:
-                                - sources
                               cephfs:
                                 type: object
                                 properties:
@@ -10870,17 +10880,17 @@ spec:
                       type: string
                   required:
                   - serverName
-          status:
+                type: array
             type: object
+          status:
             description: The current status of the operation of the WebLogic domain.
               Updated automatically by the operator.
             properties:
               reason:
-                type: string
                 description: A brief CamelCase message indicating details about why
                   the domain is in this state.
+                type: string
               servers:
-                type: array
                 description: Status of WebLogic Servers in this domain.
                 items:
                   type: object
@@ -10939,8 +10949,8 @@ spec:
                     state:
                       description: Current state of this WebLogic Server instance.
                       type: string
+                type: array
               introspectJobFailureCount:
-                type: number
                 description: Non-zero if the introspector job fails for any reason.
                   You can configure an introspector job retry limit for jobs that
                   log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount'
@@ -10948,8 +10958,8 @@ spec:
                   such as a Domain resource reference to an unknown secret name; in
                   which case, the retries are unlimited.
                 minimum: 0.0
-              replicas:
                 type: number
+              replicas:
                 description: The number of running cluster member Managed Servers
                   in the WebLogic cluster if there is exactly one cluster defined
                   in the domain configuration and where the `replicas` field is set
@@ -10957,14 +10967,14 @@ spec:
                   This field is provided to support use of Kubernetes scaling for
                   this limited use case.
                 minimum: 0.0
+                type: number
               startTime:
-                type: string
                 description: RFC 3339 date and time at which the operator started
                   the domain. This will be when the operator begins processing and
                   will precede when the various servers or clusters are available.
                 format: date-time
+                type: string
               conditions:
-                type: array
                 description: Current service state of the domain.
                 items:
                   type: object
@@ -10999,12 +11009,12 @@ spec:
                       description: The status of the condition. Can be True, False,
                         Unknown.
                       type: string
+                type: array
               message:
-                type: string
                 description: A human readable message indicating details about why
                   the domain is in this condition.
+                type: string
               clusters:
-                type: array
                 description: Status of WebLogic clusters in this domain.
                 items:
                   type: object
@@ -11034,6 +11044,9 @@ spec:
                         than zero.
                       type: number
                       minimum: 0.0
+                type: array
+            type: object
+        type: object
     served: true
     storage: true
     subresources:
@@ -11044,25 +11057,22 @@ spec:
   - name: v7
     schema:
       openAPIV3Schema:
-        type: object
         properties:
           spec:
-            type: object
             description: DomainSpec is a description of a domain.
             properties:
               serverStartState:
-                type: string
                 description: The state in which the server is to be started. Use ADMIN
                   if server should start in the admin state. Defaults to RUNNING.
                 enum:
                 - RUNNING
                 - ADMIN
-              image:
                 type: string
+              image:
                 description: The WebLogic Docker image; required when domainHomeInImage
                   is true; otherwise, defaults to container-registry.oracle.com/middleware/weblogic:12.2.1.4.
-              imagePullPolicy:
                 type: string
+              imagePullPolicy:
                 description: The image pull policy for the WebLogic Docker image.
                   Legal values are Always, Never and IfNotPresent. Defaults to Always
                   if image ends in :latest, IfNotPresent otherwise.
@@ -11070,36 +11080,36 @@ spec:
                 - Always
                 - Never
                 - IfNotPresent
+                type: string
               configuration:
-                type: object
                 description: Properties affecting the WebLogic domain configuration.
                 properties:
                   istio:
-                    type: object
                     description: The Istio service mesh integration settings
                     properties:
                       readinessPort:
-                        type: number
                         description: The WebLogic readiness port for Istio. Defaults
                           to 8888. Not required.
+                        type: number
                       enabled:
-                        type: boolean
                         description: True, if this domain is deployed under an Istio
                           service mesh. Defaults to true when the 'istio' element
                           is included. Not required.
+                        type: boolean
+                    type: object
+                type: object
               replicas:
-                type: number
                 description: The number of managed servers to run in any cluster that
                   does not specify a replica count.
                 minimum: 0.0
+                type: number
               configOverrideSecrets:
-                type: array
                 description: A list of names of the secrets for optional WebLogic
                   configuration overrides.
                 items:
                   type: string
-              imagePullSecrets:
                 type: array
+              imagePullSecrets:
                 description: A list of image pull secrets for the WebLogic Docker
                   image.
                 items:
@@ -11110,143 +11120,141 @@ spec:
                     name:
                       description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names'
                       type: string
+                type: array
               domainHomeInImage:
-                type: boolean
                 description: True indicates that the domain home file system is contained
                   in the Docker image specified by the image field. False indicates
                   that the domain home file system is located on a persistent volume.
+                type: boolean
               domainUID:
-                type: string
                 description: Domain unique identifier. Must be unique across the Kubernetes
                   cluster. Not required. Defaults to the value of metadata.name.
                 pattern: ^[a-z0-9-.]{1,253}$
-              serverStartPolicy:
                 type: string
+              serverStartPolicy:
                 description: The strategy for deciding whether to start a server.
                   Legal values are ADMIN_ONLY, NEVER, or IF_NEEDED.
                 enum:
                 - NEVER
                 - IF_NEEDED
                 - ADMIN_ONLY
-              restartVersion:
                 type: string
+              restartVersion:
                 description: If present, every time this value is updated the operator
                   will restart the required servers.
-              dataHome:
                 type: string
+              dataHome:
                 description: 'An optional, in-pod location for data storage of default
                   and custom file stores. If dataHome is not specified or its value
                   is either not set or empty (e.g. dataHome: "") then the data storage
                   directories are determined from the WebLogic domain home configuration.'
-              configOverrides:
                 type: string
+              configOverrides:
                 description: The name of the config map for optional WebLogic configuration
                   overrides.
+                type: string
               serverService:
-                type: object
                 description: Customization affecting ClusterIP Kubernetes services
                   for WebLogic Server instances.
                 properties:
                   precreateService:
-                    type: boolean
                     description: If true, operator will create server services even
                       for server instances without running pods.
+                    type: boolean
                   annotations:
-                    type: object
                     additionalProperties:
                       type: string
                     description: The annotations to be attached to generated resources.
-                  labels:
                     type: object
+                  labels:
                     additionalProperties:
                       type: string
                     description: The labels to be attached to generated resources.
                       The label names must not start with 'weblogic.'.
+                    type: object
+                type: object
               domainHome:
-                type: string
                 description: The folder for the WebLogic Domain. Not required. Defaults
                   to /shared/domains/domains/domainUID if domainHomeInImage is false.
                   Defaults to /u01/oracle/user_projects/domains/ if domainHomeInImage
                   is true.
+                type: string
               logHomeEnabled:
-                type: boolean
                 description: 'Specified whether the log home folder is enabled. Not
                   required. Defaults to true if domainHomeInImage is false. Defaults
                   to false if domainHomeInImage is true. '
+                type: boolean
               webLogicCredentialsSecret:
-                type: object
                 description: The name of a pre-created Kubernetes secret, in the domain's
                   namespace, that holds the username and password needed to boot WebLogic
                   Server under the 'username' and 'password' fields.
                 properties:
                   name:
-                    type: string
                     description: Name is unique within a namespace to reference a
                       secret resource.
-                  namespace:
                     type: string
+                  namespace:
                     description: Namespace defines the space within which the secret
                       name must be unique.
-              adminServer:
+                    type: string
                 type: object
+              adminServer:
                 description: Configuration for the Administration Server.
                 properties:
                   serverStartState:
-                    type: string
                     description: The state in which the server is to be started. Use
                       ADMIN if server should start in the admin state. Defaults to
                       RUNNING.
                     enum:
                     - RUNNING
                     - ADMIN
+                    type: string
                   serverService:
-                    type: object
                     description: Customization affecting ClusterIP Kubernetes services
                       for WebLogic Server instances.
                     properties:
                       precreateService:
-                        type: boolean
                         description: If true, operator will create server services
                           even for server instances without running pods.
+                        type: boolean
                       annotations:
-                        type: object
                         additionalProperties:
                           type: string
                         description: The annotations to be attached to generated resources.
-                      labels:
                         type: object
+                      labels:
                         additionalProperties:
                           type: string
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
-                  serverPod:
+                        type: object
                     type: object
+                  serverPod:
                     description: Configuration affecting server pods.
                     properties:
                       nodeName:
-                        type: string
                         description: NodeName is a request to schedule this pod onto
                           a specific node. If it is non-empty, the scheduler simply
                           schedules this pod onto that node, assuming that it fits
                           resource requirements.
+                        type: string
                       livenessProbe:
-                        type: object
                         description: Settings for the liveness probe associated with
                           a server.
                         properties:
                           periodSeconds:
-                            type: number
                             description: The number of seconds between checks.
-                          timeoutSeconds:
                             type: number
+                          timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
-                          initialDelaySeconds:
                             type: number
+                          initialDelaySeconds:
                             description: The number of seconds before the first check
                               is performed.
+                            type: number
+                        type: object
                       readinessGates:
-                        type: array
                         description: 'If specified, all readiness gates will be evaluated
                           for pod readiness. A pod is ready when all its containers
                           are ready AND all conditions specified in the readiness
@@ -11262,47 +11270,46 @@ spec:
                               type: string
                           required:
                           - conditionType
+                        type: array
                       serviceAccountName:
-                        type: string
                         description: Name of the ServiceAccount to be used to run
                           this pod. If it is not set, default ServiceAccount will
                           be used. The ServiceAccount has to exist at the time the
                           pod is created.
+                        type: string
                       podSecurityContext:
-                        type: object
                         description: Pod-level security attributes.
                         properties:
                           runAsUser:
-                            type: number
                             description: The UID to run the entrypoint of the container
                               process. Defaults to user specified in image metadata
                               if unspecified. May also be set in SecurityContext.  If
                               set in both SecurityContext and PodSecurityContext,
                               the value specified in SecurityContext takes precedence
                               for that container.
+                            type: number
                           seLinuxOptions:
-                            type: object
                             description: SELinuxOptions are the labels to be applied
                               to the container
                             properties:
                               role:
-                                type: string
                                 description: Role is a SELinux role label that applies
                                   to the container.
-                              level:
                                 type: string
+                              level:
                                 description: Level is SELinux level label that applies
                                   to the container.
-                              type:
                                 type: string
+                              type:
                                 description: Type is a SELinux type label that applies
                                   to the container.
-                              user:
                                 type: string
+                              user:
                                 description: User is a SELinux user label that applies
                                   to the container.
+                                type: string
+                            type: object
                           fsGroup:
-                            type: number
                             description: 'A special supplemental group that applies
                               to all containers in a pod. Some volume types allow
                               the Kubelet to change the ownership of that volume to
@@ -11312,21 +11319,20 @@ spec:
                               bits are OR''d with rw-rw----  If unset, the Kubelet
                               will not modify the ownership and permissions of any
                               volume.'
+                            type: number
                           windowsOptions:
-                            type: object
                             description: WindowsSecurityContextOptions contain Windows-specific
                               options and credentials.
                             properties:
                               gmsaCredentialSpec:
-                                type: string
                                 description: GMSACredentialSpec is where the GMSA
                                   admission webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                                   inlines the contents of the GMSA credential spec
                                   named by the GMSACredentialSpecName field. This
                                   field is alpha-level and is only honored by servers
                                   that enable the WindowsGMSA feature flag.
-                              runAsUserName:
                                 type: string
+                              runAsUserName:
                                 description: The UserName in Windows to run the entrypoint
                                   of the container process. Defaults to the user specified
                                   in image metadata if unspecified. May also be set
@@ -11335,29 +11341,30 @@ spec:
                                   takes precedence. This field is alpha-level and
                                   it is only honored by servers that enable the WindowsRunAsUserName
                                   feature flag.
-                              gmsaCredentialSpecName:
                                 type: string
+                              gmsaCredentialSpecName:
                                 description: GMSACredentialSpecName is the name of
                                   the GMSA credential spec to use. This field is alpha-level
                                   and is only honored by servers that enable the WindowsGMSA
                                   feature flag.
+                                type: string
+                            type: object
                           supplementalGroups:
-                            type: array
                             description: A list of groups applied to the first process
                               run in each container, in addition to the container's
                               primary GID.  If unspecified, no groups will be added
                               to any container.
                             items:
                               type: number
+                            type: array
                           runAsGroup:
-                            type: number
                             description: The GID to run the entrypoint of the container
                               process. Uses runtime default if unset. May also be
                               set in SecurityContext.  If set in both SecurityContext
                               and PodSecurityContext, the value specified in SecurityContext
                               takes precedence for that container.
+                            type: number
                           runAsNonRoot:
-                            type: boolean
                             description: Indicates that the container must run as
                               a non-root user. If true, the Kubelet will validate
                               the image at runtime to ensure that it does not run
@@ -11366,8 +11373,8 @@ spec:
                               performed. May also be set in SecurityContext.  If set
                               in both SecurityContext and PodSecurityContext, the
                               value specified in SecurityContext takes precedence.
+                            type: boolean
                           sysctls:
-                            type: array
                             description: Sysctls hold a list of namespaced sysctls
                               used for the pod. Pods with unsupported sysctls (by
                               the container runtime) might fail to launch.
@@ -11385,8 +11392,9 @@ spec:
                               required:
                               - name
                               - value
+                            type: array
+                        type: object
                       priorityClassName:
-                        type: string
                         description: If specified, indicates the pod's priority. "system-node-critical"
                           and "system-cluster-critical" are two special keywords which
                           indicate the highest priorities with the former being the
@@ -11394,8 +11402,8 @@ spec:
                           a PriorityClass object with that name. If not specified,
                           the pod priority will be default or zero if there is no
                           default.
+                        type: string
                       volumes:
-                        type: array
                         description: Additional volumes to be created in the server
                           pod.
                         items:
@@ -12870,13 +12878,12 @@ spec:
                               - path
                           required:
                           - name
+                        type: array
                       resources:
-                        type: object
                         description: Memory and CPU minimum requirements and limits
                           for the server.
                         properties:
                           requests:
-                            type: object
                             additionalProperties:
                               type: string
                             description: 'Requests describes the minimum amount of
@@ -12884,19 +12891,20 @@ spec:
                               a container, it defaults to Limits if that is explicitly
                               specified, otherwise to an implementation-defined value.
                               More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                          limits:
                             type: object
+                          limits:
                             additionalProperties:
                               type: string
                             description: 'Limits describes the maximum amount of compute
                               resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                      annotations:
+                            type: object
                         type: object
+                      annotations:
                         additionalProperties:
                           type: string
                         description: The annotations to be attached to generated resources.
+                        type: object
                       env:
-                        type: array
                         description: A list of environment variables to add to a server.
                         items:
                           description: EnvVar represents an environment variable present
@@ -13054,19 +13062,19 @@ spec:
                                   - fieldPath
                           required:
                           - name
+                        type: array
                       restartPolicy:
-                        type: string
                         description: 'Restart policy for all containers within the
                           pod. One of Always, OnFailure, Never. Default to Always.
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                        type: string
                       nodeSelector:
-                        type: object
                         additionalProperties:
                           type: string
                         description: Selector which must match a node's labels for
                           the pod to be scheduled on that node.
+                        type: object
                       volumeMounts:
-                        type: array
                         description: Additional volume mounts for the server pod.
                         items:
                           description: VolumeMount describes a mounting of a Volume
@@ -13106,14 +13114,14 @@ spec:
                           required:
                           - mountPath
                           - name
+                        type: array
                       labels:
-                        type: object
                         additionalProperties:
                           type: string
                         description: The labels to be attached to generated resources.
                           The label names must not start with 'weblogic.'.
+                        type: object
                       runtimeClassName:
-                        type: string
                         description: 'RuntimeClassName refers to a RuntimeClass object
                           in the node.k8s.io group, which should be used to run this
                           pod.  If no RuntimeClass resource matches the named class,
@@ -13122,8 +13130,8 @@ spec:
                           an empty definition that uses the default runtime handler.
                           More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
                           This is an alpha feature and may change in the future.'
+                        type: string
                       tolerations:
-                        type: array
                         description: If specified, the pod's tolerations.
                         items:
                           description: The pod this Toleration is attached to tolerates
@@ -13163,24 +13171,24 @@ spec:
                                 for value, so that a pod can tolerate all taints of
                                 a particular category.
                               type: string
+                        type: array
                       readinessProbe:
-                        type: object
                         description: Settings for the readiness probe associated with
                           a server.
                         properties:
                           periodSeconds:
-                            type: number
                             description: The number of seconds between checks.
-                          timeoutSeconds:
                             type: number
+                          timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
-                          initialDelaySeconds:
                             type: number
+                          initialDelaySeconds:
                             description: The number of seconds before the first check
                               is performed.
+                            type: number
+                        type: object
                       containers:
-                        type: array
                         description: Additional containers to be included in the server
                           pod.
                         items:
@@ -14381,74 +14389,72 @@ spec:
                                         type: boolean
                           required:
                           - name
+                        type: array
                       containerSecurityContext:
-                        type: object
                         description: Container-level security attributes. Will override
                           any matching pod-level attributes.
                         properties:
                           privileged:
-                            type: boolean
                             description: Run container in privileged mode. Processes
                               in privileged containers are essentially equivalent
                               to root on the host. Defaults to false.
+                            type: boolean
                           runAsUser:
-                            type: number
                             description: The UID to run the entrypoint of the container
                               process. Defaults to user specified in image metadata
                               if unspecified. May also be set in PodSecurityContext.  If
                               set in both SecurityContext and PodSecurityContext,
                               the value specified in SecurityContext takes precedence.
+                            type: number
                           capabilities:
-                            type: object
                             description: Adds and removes POSIX capabilities from
                               running containers.
                             properties:
                               add:
-                                type: array
                                 description: Added capabilities
                                 items:
                                   type: string
-                              drop:
                                 type: array
+                              drop:
                                 description: Removed capabilities
                                 items:
                                   type: string
-                          seLinuxOptions:
+                                type: array
                             type: object
+                          seLinuxOptions:
                             description: SELinuxOptions are the labels to be applied
                               to the container
                             properties:
                               role:
-                                type: string
                                 description: Role is a SELinux role label that applies
                                   to the container.
-                              level:
                                 type: string
+                              level:
                                 description: Level is SELinux level label that applies
                                   to the container.
-                              type:
                                 type: string
+                              type:
                                 description: Type is a SELinux type label that applies
                                   to the container.
-                              user:
                                 type: string
+                              user:
                                 description: User is a SELinux user label that applies
                                   to the container.
-                          windowsOptions:
+                                type: string
                             type: object
+                          windowsOptions:
                             description: WindowsSecurityContextOptions contain Windows-specific
                               options and credentials.
                             properties:
                               gmsaCredentialSpec:
-                                type: string
                                 description: GMSACredentialSpec is where the GMSA
                                   admission webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                                   inlines the contents of the GMSA credential spec
                                   named by the GMSACredentialSpecName field. This
                                   field is alpha-level and is only honored by servers
                                   that enable the WindowsGMSA feature flag.
-                              runAsUserName:
                                 type: string
+                              runAsUserName:
                                 description: The UserName in Windows to run the entrypoint
                                   of the container process. Defaults to the user specified
                                   in image metadata if unspecified. May also be set
@@ -14457,36 +14463,37 @@ spec:
                                   takes precedence. This field is alpha-level and
                                   it is only honored by servers that enable the WindowsRunAsUserName
                                   feature flag.
-                              gmsaCredentialSpecName:
                                 type: string
+                              gmsaCredentialSpecName:
                                 description: GMSACredentialSpecName is the name of
                                   the GMSA credential spec to use. This field is alpha-level
                                   and is only honored by servers that enable the WindowsGMSA
                                   feature flag.
+                                type: string
+                            type: object
                           procMount:
-                            type: string
                             description: procMount denotes the type of proc mount
                               to use for the containers. The default is DefaultProcMount
                               which uses the container runtime defaults for readonly
                               paths and masked paths. This requires the ProcMountType
                               feature flag to be enabled.
+                            type: string
                           allowPrivilegeEscalation:
-                            type: boolean
                             description: 'AllowPrivilegeEscalation controls whether
                               a process can gain more privileges than its parent process.
                               This bool directly controls if the no_new_privs flag
                               will be set on the container process. AllowPrivilegeEscalation
                               is true always when the container is: 1) run as Privileged
                               2) has CAP_SYS_ADMIN'
+                            type: boolean
                           runAsGroup:
-                            type: number
                             description: The GID to run the entrypoint of the container
                               process. Uses runtime default if unset. May also be
                               set in PodSecurityContext.  If set in both SecurityContext
                               and PodSecurityContext, the value specified in SecurityContext
                               takes precedence.
+                            type: number
                           runAsNonRoot:
-                            type: boolean
                             description: Indicates that the container must run as
                               a non-root user. If true, the Kubelet will validate
                               the image at runtime to ensure that it does not run
@@ -14495,17 +14502,18 @@ spec:
                               performed. May also be set in PodSecurityContext.  If
                               set in both SecurityContext and PodSecurityContext,
                               the value specified in SecurityContext takes precedence.
-                          readOnlyRootFilesystem:
                             type: boolean
+                          readOnlyRootFilesystem:
                             description: Whether this container has a read-only root
                               filesystem. Default is false.
+                            type: boolean
+                        type: object
                       schedulerName:
-                        type: string
                         description: If specified, the pod will be dispatched by specified
                           scheduler. If not specified, the pod will be dispatched
                           by default scheduler.
+                        type: string
                       initContainers:
-                        type: array
                         description: Initialization containers to be included in the
                           server pod.
                         items:
@@ -15706,46 +15714,43 @@ spec:
                                         type: boolean
                           required:
                           - name
+                        type: array
                       shutdown:
-                        type: object
                         description: Configures how the operator should shutdown the
                           server instance.
                         properties:
                           ignoreSessions:
-                            type: boolean
                             description: For graceful shutdown only, indicates to
                               ignore pending HTTP sessions during in-flight work handling.
                               Not required. Defaults to false.
+                            type: boolean
                           shutdownType:
-                            type: string
                             description: Tells the operator how to shutdown server
                               instances. Not required. Defaults to graceful shutdown.
                             enum:
                             - Graceful
                             - Forced
+                            type: string
                           timeoutSeconds:
-                            type: number
                             description: For graceful shutdown only, number of seconds
                               to wait before aborting in-flight work and shutting
                               down the server. Not required. Defaults to 30 seconds.
-                      affinity:
+                            type: number
                         type: object
+                      affinity:
                         description: If specified, the pod's scheduling constraints
                         properties:
                           nodeAffinity:
-                            type: object
                             description: Node affinity is a group of node affinity
                               scheduling rules.
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: object
                                 description: A node selector represents the union
                                   of the results of one or more label queries over
                                   a set of nodes; that is, it represents the OR of
                                   the selectors represented by the node selector terms.
                                 properties:
                                   nodeSelectorTerms:
-                                    type: array
                                     description: Required. A list of node selector
                                       terms. The terms are ORed.
                                     items:
@@ -15831,10 +15836,11 @@ spec:
                                             required:
                                             - key
                                             - operator
+                                    type: array
                                 required:
                                 - nodeSelectorTerms
+                                type: object
                               preferredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 description: The scheduler will prefer to schedule
                                   pods to nodes that satisfy the affinity expressions
                                   specified by this field, but it may choose a node
@@ -15945,13 +15951,13 @@ spec:
                                   required:
                                   - preference
                                   - weight
-                          podAffinity:
+                                type: array
                             type: object
+                          podAffinity:
                             description: Pod affinity is a group of inter pod affinity
                               scheduling rules.
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 description: If the affinity requirements specified
                                   by this field are not met at scheduling time, the
                                   pod will not be scheduled onto the node. If the
@@ -16047,8 +16053,8 @@ spec:
                                         type: string
                                   required:
                                   - topologyKey
-                              preferredDuringSchedulingIgnoredDuringExecution:
                                 type: array
+                              preferredDuringSchedulingIgnoredDuringExecution:
                                 description: The scheduler will prefer to schedule
                                   pods to nodes that satisfy the affinity expressions
                                   specified by this field, but it may choose a node
@@ -16167,13 +16173,13 @@ spec:
                                   required:
                                   - podAffinityTerm
                                   - weight
-                          podAntiAffinity:
+                                type: array
                             type: object
+                          podAntiAffinity:
                             description: Pod anti affinity is a group of inter pod
                               anti affinity scheduling rules.
                             properties:
                               requiredDuringSchedulingIgnoredDuringExecution:
-                                type: array
                                 description: If the anti-affinity requirements specified
                                   by this field are not met at scheduling time, the
                                   pod will not be scheduled onto the node. If the
@@ -16269,8 +16275,8 @@ spec:
                                         type: string
                                   required:
                                   - topologyKey
-                              preferredDuringSchedulingIgnoredDuringExecution:
                                 type: array
+                              preferredDuringSchedulingIgnoredDuringExecution:
                                 description: The scheduler will prefer to schedule
                                   pods to nodes that satisfy the anti-affinity expressions
                                   specified by this field, but it may choose a node
@@ -16389,22 +16395,24 @@ spec:
                                   required:
                                   - podAffinityTerm
                                   - weight
+                                type: array
+                            type: object
+                        type: object
+                    type: object
                   serverStartPolicy:
-                    type: string
                     description: The strategy for deciding whether to start a server.
                       Legal values are ALWAYS, NEVER, or IF_NEEDED.
                     enum:
                     - ALWAYS
                     - NEVER
                     - IF_NEEDED
+                    type: string
                   adminService:
-                    type: object
                     description: Configures which of the Administration Server's WebLogic
                       admin channels should be exposed outside the Kubernetes cluster
                       via a node port service.
                     properties:
                       channels:
-                        type: array
                         description: Specifies which of the Administration Server's
                           WebLogic channels should be exposed outside the Kubernetes
                           cluster via a node port service, along with the node port
@@ -16436,49 +16444,50 @@ spec:
                               type: number
                           required:
                           - channelName
+                        type: array
                       annotations:
-                        type: object
                         additionalProperties:
                           type: string
                         description: Annotations to associate with the external channel
                           service.
-                      labels:
                         type: object
+                      labels:
                         additionalProperties:
                           type: string
                         description: Labels to associate with the external channel
                           service.
+                        type: object
+                    type: object
                   restartVersion:
-                    type: string
                     description: If present, every time this value is updated the
                       operator will restart the required servers.
-              serverPod:
+                    type: string
                 type: object
+              serverPod:
                 description: Configuration affecting server pods.
                 properties:
                   nodeName:
-                    type: string
                     description: NodeName is a request to schedule this pod onto a
                       specific node. If it is non-empty, the scheduler simply schedules
                       this pod onto that node, assuming that it fits resource requirements.
+                    type: string
                   livenessProbe:
-                    type: object
                     description: Settings for the liveness probe associated with a
                       server.
                     properties:
                       periodSeconds:
-                        type: number
                         description: The number of seconds between checks.
-                      timeoutSeconds:
                         type: number
+                      timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                      initialDelaySeconds:
                         type: number
+                      initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
+                        type: number
+                    type: object
                   readinessGates:
-                    type: array
                     description: 'If specified, all readiness gates will be evaluated
                       for pod readiness. A pod is ready when all its containers are
                       ready AND all conditions specified in the readiness gates have
@@ -16494,45 +16503,44 @@ spec:
                           type: string
                       required:
                       - conditionType
+                    type: array
                   serviceAccountName:
-                    type: string
                     description: Name of the ServiceAccount to be used to run this
                       pod. If it is not set, default ServiceAccount will be used.
                       The ServiceAccount has to exist at the time the pod is created.
+                    type: string
                   podSecurityContext:
-                    type: object
                     description: Pod-level security attributes.
                     properties:
                       runAsUser:
-                        type: number
                         description: The UID to run the entrypoint of the container
                           process. Defaults to user specified in image metadata if
                           unspecified. May also be set in SecurityContext.  If set
                           in both SecurityContext and PodSecurityContext, the value
                           specified in SecurityContext takes precedence for that container.
+                        type: number
                       seLinuxOptions:
-                        type: object
                         description: SELinuxOptions are the labels to be applied to
                           the container
                         properties:
                           role:
-                            type: string
                             description: Role is a SELinux role label that applies
                               to the container.
-                          level:
                             type: string
+                          level:
                             description: Level is SELinux level label that applies
                               to the container.
-                          type:
                             type: string
+                          type:
                             description: Type is a SELinux type label that applies
                               to the container.
-                          user:
                             type: string
+                          user:
                             description: User is a SELinux user label that applies
                               to the container.
+                            type: string
+                        type: object
                       fsGroup:
-                        type: number
                         description: 'A special supplemental group that applies to
                           all containers in a pod. Some volume types allow the Kubelet
                           to change the ownership of that volume to be owned by the
@@ -16541,21 +16549,20 @@ spec:
                           by FSGroup) 3. The permission bits are OR''d with rw-rw----  If
                           unset, the Kubelet will not modify the ownership and permissions
                           of any volume.'
+                        type: number
                       windowsOptions:
-                        type: object
                         description: WindowsSecurityContextOptions contain Windows-specific
                           options and credentials.
                         properties:
                           gmsaCredentialSpec:
-                            type: string
                             description: GMSACredentialSpec is where the GMSA admission
                               webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                               inlines the contents of the GMSA credential spec named
                               by the GMSACredentialSpecName field. This field is alpha-level
                               and is only honored by servers that enable the WindowsGMSA
                               feature flag.
-                          runAsUserName:
                             type: string
+                          runAsUserName:
                             description: The UserName in Windows to run the entrypoint
                               of the container process. Defaults to the user specified
                               in image metadata if unspecified. May also be set in
@@ -16564,28 +16571,29 @@ spec:
                               takes precedence. This field is alpha-level and it is
                               only honored by servers that enable the WindowsRunAsUserName
                               feature flag.
-                          gmsaCredentialSpecName:
                             type: string
+                          gmsaCredentialSpecName:
                             description: GMSACredentialSpecName is the name of the
                               GMSA credential spec to use. This field is alpha-level
                               and is only honored by servers that enable the WindowsGMSA
                               feature flag.
+                            type: string
+                        type: object
                       supplementalGroups:
-                        type: array
                         description: A list of groups applied to the first process
                           run in each container, in addition to the container's primary
                           GID.  If unspecified, no groups will be added to any container.
                         items:
                           type: number
+                        type: array
                       runAsGroup:
-                        type: number
                         description: The GID to run the entrypoint of the container
                           process. Uses runtime default if unset. May also be set
                           in SecurityContext.  If set in both SecurityContext and
                           PodSecurityContext, the value specified in SecurityContext
                           takes precedence for that container.
+                        type: number
                       runAsNonRoot:
-                        type: boolean
                         description: Indicates that the container must run as a non-root
                           user. If true, the Kubelet will validate the image at runtime
                           to ensure that it does not run as UID 0 (root) and fail
@@ -16593,8 +16601,8 @@ spec:
                           such validation will be performed. May also be set in SecurityContext.  If
                           set in both SecurityContext and PodSecurityContext, the
                           value specified in SecurityContext takes precedence.
+                        type: boolean
                       sysctls:
-                        type: array
                         description: Sysctls hold a list of namespaced sysctls used
                           for the pod. Pods with unsupported sysctls (by the container
                           runtime) might fail to launch.
@@ -16611,16 +16619,17 @@ spec:
                           required:
                           - name
                           - value
+                        type: array
+                    type: object
                   priorityClassName:
-                    type: string
                     description: If specified, indicates the pod's priority. "system-node-critical"
                       and "system-cluster-critical" are two special keywords which
                       indicate the highest priorities with the former being the highest
                       priority. Any other name must be defined by creating a PriorityClass
                       object with that name. If not specified, the pod priority will
                       be default or zero if there is no default.
+                    type: string
                   volumes:
-                    type: array
                     description: Additional volumes to be created in the server pod.
                     items:
                       description: Volume represents a named volume in a pod that
@@ -18017,32 +18026,32 @@ spec:
                           - path
                       required:
                       - name
+                    type: array
                   resources:
-                    type: object
                     description: Memory and CPU minimum requirements and limits for
                       the server.
                     properties:
                       requests:
-                        type: object
                         additionalProperties:
                           type: string
                         description: 'Requests describes the minimum amount of compute
                           resources required. If Requests is omitted for a container,
                           it defaults to Limits if that is explicitly specified, otherwise
                           to an implementation-defined value. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                      limits:
                         type: object
+                      limits:
                         additionalProperties:
                           type: string
                         description: 'Limits describes the maximum amount of compute
                           resources allowed. More info: https://kubernetes.io/docs/concepts/configuration/manage-compute-resources-container/'
-                  annotations:
+                        type: object
                     type: object
+                  annotations:
                     additionalProperties:
                       type: string
                     description: The annotations to be attached to generated resources.
+                    type: object
                   env:
-                    type: array
                     description: A list of environment variables to add to a server.
                     items:
                       description: EnvVar represents an environment variable present
@@ -18191,19 +18200,19 @@ spec:
                               - fieldPath
                       required:
                       - name
+                    type: array
                   restartPolicy:
-                    type: string
                     description: 'Restart policy for all containers within the pod.
                       One of Always, OnFailure, Never. Default to Always. More info:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy'
+                    type: string
                   nodeSelector:
-                    type: object
                     additionalProperties:
                       type: string
                     description: Selector which must match a node's labels for the
                       pod to be scheduled on that node.
+                    type: object
                   volumeMounts:
-                    type: array
                     description: Additional volume mounts for the server pod.
                     items:
                       description: VolumeMount describes a mounting of a Volume within
@@ -18242,14 +18251,14 @@ spec:
                       required:
                       - mountPath
                       - name
+                    type: array
                   labels:
-                    type: object
                     additionalProperties:
                       type: string
                     description: The labels to be attached to generated resources.
                       The label names must not start with 'weblogic.'.
+                    type: object
                   runtimeClassName:
-                    type: string
                     description: 'RuntimeClassName refers to a RuntimeClass object
                       in the node.k8s.io group, which should be used to run this pod.  If
                       no RuntimeClass resource matches the named class, the pod will
@@ -18257,8 +18266,8 @@ spec:
                       be used, which is an implicit class with an empty definition
                       that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
                       This is an alpha feature and may change in the future.'
+                    type: string
                   tolerations:
-                    type: array
                     description: If specified, the pod's tolerations.
                     items:
                       description: The pod this Toleration is attached to tolerates
@@ -18297,24 +18306,24 @@ spec:
                             so that a pod can tolerate all taints of a particular
                             category.
                           type: string
+                    type: array
                   readinessProbe:
-                    type: object
                     description: Settings for the readiness probe associated with
                       a server.
                     properties:
                       periodSeconds:
-                        type: number
                         description: The number of seconds between checks.
-                      timeoutSeconds:
                         type: number
+                      timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
-                      initialDelaySeconds:
                         type: number
+                      initialDelaySeconds:
                         description: The number of seconds before the first check
                           is performed.
+                        type: number
+                    type: object
                   containers:
-                    type: array
                     description: Additional containers to be included in the server
                       pod.
                     items:
@@ -19484,74 +19493,72 @@ spec:
                                     type: boolean
                       required:
                       - name
+                    type: array
                   containerSecurityContext:
-                    type: object
                     description: Container-level security attributes. Will override
                       any matching pod-level attributes.
                     properties:
                       privileged:
-                        type: boolean
                         description: Run container in privileged mode. Processes in
                           privileged containers are essentially equivalent to root
                           on the host. Defaults to false.
+                        type: boolean
                       runAsUser:
-                        type: number
                         description: The UID to run the entrypoint of the container
                           process. Defaults to user specified in image metadata if
                           unspecified. May also be set in PodSecurityContext.  If
                           set in both SecurityContext and PodSecurityContext, the
                           value specified in SecurityContext takes precedence.
+                        type: number
                       capabilities:
-                        type: object
                         description: Adds and removes POSIX capabilities from running
                           containers.
                         properties:
                           add:
-                            type: array
                             description: Added capabilities
                             items:
                               type: string
-                          drop:
                             type: array
+                          drop:
                             description: Removed capabilities
                             items:
                               type: string
-                      seLinuxOptions:
+                            type: array
                         type: object
+                      seLinuxOptions:
                         description: SELinuxOptions are the labels to be applied to
                           the container
                         properties:
                           role:
-                            type: string
                             description: Role is a SELinux role label that applies
                               to the container.
-                          level:
                             type: string
+                          level:
                             description: Level is SELinux level label that applies
                               to the container.
-                          type:
                             type: string
+                          type:
                             description: Type is a SELinux type label that applies
                               to the container.
-                          user:
                             type: string
+                          user:
                             description: User is a SELinux user label that applies
                               to the container.
-                      windowsOptions:
+                            type: string
                         type: object
+                      windowsOptions:
                         description: WindowsSecurityContextOptions contain Windows-specific
                           options and credentials.
                         properties:
                           gmsaCredentialSpec:
-                            type: string
                             description: GMSACredentialSpec is where the GMSA admission
                               webhook (https://github.com/kubernetes-sigs/windows-gmsa)
                               inlines the contents of the GMSA credential spec named
                               by the GMSACredentialSpecName field. This field is alpha-level
                               and is only honored by servers that enable the WindowsGMSA
                               feature flag.
-                          runAsUserName:
                             type: string
+                          runAsUserName:
                             description: The UserName in Windows to run the entrypoint
                               of the container process. Defaults to the user specified
                               in image metadata if unspecified. May also be set in
@@ -19560,36 +19567,37 @@ spec:
                               takes precedence. This field is alpha-level and it is
                               only honored by servers that enable the WindowsRunAsUserName
                               feature flag.
-                          gmsaCredentialSpecName:
                             type: string
+                          gmsaCredentialSpecName:
                             description: GMSACredentialSpecName is the name of the
                               GMSA credential spec to use. This field is alpha-level
                               and is only honored by servers that enable the WindowsGMSA
                               feature flag.
+                            type: string
+                        type: object
                       procMount:
-                        type: string
                         description: procMount denotes the type of proc mount to use
                           for the containers. The default is DefaultProcMount which
                           uses the container runtime defaults for readonly paths and
                           masked paths. This requires the ProcMountType feature flag
                           to be enabled.
+                        type: string
                       allowPrivilegeEscalation:
-                        type: boolean
                         description: 'AllowPrivilegeEscalation controls whether a
                           process can gain more privileges than its parent process.
                           This bool directly controls if the no_new_privs flag will
                           be set on the container process. AllowPrivilegeEscalation
                           is true always when the container is: 1) run as Privileged
                           2) has CAP_SYS_ADMIN'
+                        type: boolean
                       runAsGroup:
-                        type: number
                         description: The GID to run the entrypoint of the container
                           process. Uses runtime default if unset. May also be set
                           in PodSecurityContext.  If set in both SecurityContext and
                           PodSecurityContext, the value specified in SecurityContext
                           takes precedence.
+                        type: number
                       runAsNonRoot:
-                        type: boolean
                         description: Indicates that the container must run as a non-root
                           user. If true, the Kubelet will validate the image at runtime
                           to ensure that it does not run as UID 0 (root) and fail
@@ -19597,17 +19605,18 @@ spec:
                           such validation will be performed. May also be set in PodSecurityContext.  If
                           set in both SecurityContext and PodSecurityContext, the
                           value specified in SecurityContext takes precedence.
-                      readOnlyRootFilesystem:
                         type: boolean
+                      readOnlyRootFilesystem:
                         description: Whether this container has a read-only root filesystem.
                           Default is false.
+                        type: boolean
+                    type: object
                   schedulerName:
-                    type: string
                     description: If specified, the pod will be dispatched by specified
                       scheduler. If not specified, the pod will be dispatched by default
                       scheduler.
+                    type: string
                   initContainers:
-                    type: array
                     description: Initialization containers to be included in the server
                       pod.
                     items:
@@ -20777,46 +20786,43 @@ spec:
                                     type: boolean
                       required:
                       - name
+                    type: array
                   shutdown:
-                    type: object
                     description: Configures how the operator should shutdown the server
                       instance.
                     properties:
                       ignoreSessions:
-                        type: boolean
                         description: For graceful shutdown only, indicates to ignore
                           pending HTTP sessions during in-flight work handling. Not
                           required. Defaults to false.
+                        type: boolean
                       shutdownType:
-                        type: string
                         description: Tells the operator how to shutdown server instances.
                           Not required. Defaults to graceful shutdown.
                         enum:
                         - Graceful
                         - Forced
+                        type: string
                       timeoutSeconds:
-                        type: number
                         description: For graceful shutdown only, number of seconds
                           to wait before aborting in-flight work and shutting down
                           the server. Not required. Defaults to 30 seconds.
-                  affinity:
+                        type: number
                     type: object
+                  affinity:
                     description: If specified, the pod's scheduling constraints
                     properties:
                       nodeAffinity:
-                        type: object
                         description: Node affinity is a group of node affinity scheduling
                           rules.
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: object
                             description: A node selector represents the union of the
                               results of one or more label queries over a set of nodes;
                               that is, it represents the OR of the selectors represented
                               by the node selector terms.
                             properties:
                               nodeSelectorTerms:
-                                type: array
                                 description: Required. A list of node selector terms.
                                   The terms are ORed.
                                 items:
@@ -20902,10 +20908,11 @@ spec:
                                         required:
                                         - key
                                         - operator
+                                type: array
                             required:
                             - nodeSelectorTerms
+                            type: object
                           preferredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             description: The scheduler will prefer to schedule pods
                               to nodes that satisfy the affinity expressions specified
                               by this field, but it may choose a node that violates
@@ -21014,13 +21021,13 @@ spec:
                               required:
                               - preference
                               - weight
-                      podAffinity:
+                            type: array
                         type: object
+                      podAffinity:
                         description: Pod affinity is a group of inter pod affinity
                           scheduling rules.
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             description: If the affinity requirements specified by
                               this field are not met at scheduling time, the pod will
                               not be scheduled onto the node. If the affinity requirements
@@ -21112,8 +21119,8 @@ spec:
                                     type: string
                               required:
                               - topologyKey
-                          preferredDuringSchedulingIgnoredDuringExecution:
                             type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods
                               to nodes that satisfy the affinity expressions specified
                               by this field, but it may choose a node that violates
@@ -21224,13 +21231,13 @@ spec:
                               required:
                               - podAffinityTerm
                               - weight
-                      podAntiAffinity:
+                            type: array
                         type: object
+                      podAntiAffinity:
                         description: Pod anti affinity is a group of inter pod anti
                           affinity scheduling rules.
                         properties:
                           requiredDuringSchedulingIgnoredDuringExecution:
-                            type: array
                             description: If the anti-affinity requirements specified
                               by this field are not met at scheduling time, the pod
                               will not be scheduled onto the node. If the anti-affinity
@@ -21322,8 +21329,8 @@ spec:
                                     type: string
                               required:
                               - topologyKey
-                          preferredDuringSchedulingIgnoredDuringExecution:
                             type: array
+                          preferredDuringSchedulingIgnoredDuringExecution:
                             description: The scheduler will prefer to schedule pods
                               to nodes that satisfy the anti-affinity expressions
                               specified by this field, but it may choose a node that
@@ -21434,16 +21441,19 @@ spec:
                               required:
                               - podAffinityTerm
                               - weight
+                            type: array
+                        type: object
+                    type: object
+                type: object
               logHome:
-                type: string
                 description: The in-pod name of the directory in which to store the
                   domain, Node Manager, server logs, and server *.out files
+                type: string
               includeServerOutInPodLog:
-                type: boolean
                 description: If true (the default), then the server .out file will
                   be included in the pod's stdout.
+                type: boolean
               managedServers:
-                type: array
                 description: Configuration for individual Managed Servers.
                 items:
                   description: ManagedServer represents the operator configuration
@@ -26772,8 +26782,8 @@ spec:
                       type: string
                   required:
                   - serverName
-              clusters:
                 type: array
+              clusters:
                 description: Configuration for the clusters.
                 items:
                   description: An element representing a cluster in the domain configuration.
@@ -32126,17 +32136,17 @@ spec:
                       type: string
                   required:
                   - clusterName
-          status:
+                type: array
             type: object
+          status:
             description: DomainStatus represents information about the status of a
               domain. Status may trail the actual state of a system.
             properties:
               reason:
-                type: string
                 description: A brief CamelCase message indicating details about why
                   the domain is in this state.
+                type: string
               servers:
-                type: array
                 description: Status of WebLogic Servers in this domain.
                 items:
                   type: object
@@ -32195,21 +32205,21 @@ spec:
                     state:
                       description: Current state of this WebLogic Server. Required.
                       type: string
+                type: array
               replicas:
-                type: number
                 description: The number of running Managed Servers in the WebLogic
                   cluster if there is only one cluster in the domain and where the
                   cluster does not explicitly configure its replicas in a cluster
                   specification.
                 minimum: 0.0
+                type: number
               startTime:
-                type: string
                 description: RFC 3339 date and time at which the operator started
                   the domain. This will be when the operator begins processing and
                   will precede when the various servers or clusters are available.
                 format: date-time
+                type: string
               conditions:
-                type: array
                 description: Current service state of domain.
                 items:
                   type: object
@@ -32243,12 +32253,12 @@ spec:
                       description: Status is the status of the condition. Can be True,
                         False, Unknown. Required.
                       type: string
+                type: array
               message:
-                type: string
                 description: A human readable message indicating details about why
                   the domain is in this condition.
+                type: string
               clusters:
-                type: array
                 description: Status of WebLogic clusters in this domain.
                 items:
                   type: object
@@ -32278,6 +32288,9 @@ spec:
                         if this value is larger than zero.
                       type: number
                       minimum: 0.0
+                type: array
+            type: object
+        type: object
     served: true
     storage: false
     subresources:

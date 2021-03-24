@@ -3,13 +3,13 @@
 
 package oracle.weblogic.kubernetes.assertions.impl;
 
+import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1Pod;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -25,7 +25,8 @@ public class Pod {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if pods are restarted in a rolling fashion
    */
-  public static boolean verifyRollingRestartOccurred(Map<String, DateTime> pods, int maxUnavailable, String namespace) {
+  public static boolean verifyRollingRestartOccurred(Map<String, OffsetDateTime> pods,
+                                                     int maxUnavailable, String namespace) {
 
     // check the pods list is not empty
     if (pods.isEmpty()) {
@@ -37,7 +38,7 @@ public class Pod {
     ConditionFactory retry
         = with().pollInterval(5, SECONDS).atMost(5, MINUTES).await();
 
-    for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+    for (Map.Entry<String, OffsetDateTime> entry : pods.entrySet()) {
       // check pods are replaced
       retry
           .conditionEvaluationListener(condition -> getLogger().info("Waiting for pod {0} to be "
@@ -74,14 +75,14 @@ public class Pod {
    * @param namespace name of the namespace in which the pod restart status to be checked
    * @return true if given pod is restarted
    */
-  private static Callable<Boolean> podRestarted(String podName, Map<String, DateTime> pods, int maxUnavailable,
+  private static Callable<Boolean> podRestarted(String podName, Map<String, OffsetDateTime> pods, int maxUnavailable,
       String namespace) {
     return () -> {
       int terminatingPods = 0;
       boolean podRestartStatus = false;
-      for (Map.Entry<String, DateTime> entry : pods.entrySet()) {
+      for (Map.Entry<String, OffsetDateTime> entry : pods.entrySet()) {
         V1Pod pod = Kubernetes.getPod(namespace, null, entry.getKey());
-        DateTime deletionTimeStamp = Optional.ofNullable(pod)
+        OffsetDateTime deletionTimeStamp = Optional.ofNullable(pod)
             .map(metadata -> metadata.getMetadata())
             .map(timeStamp -> timeStamp.getDeletionTimestamp()).orElse(null);
         if (deletionTimeStamp != null) {
@@ -93,7 +94,7 @@ public class Pod {
         }
         if (podName.equals(entry.getKey())) {
           if (pod != null && pod.getMetadata().getCreationTimestamp() != null) {
-            DateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
+            OffsetDateTime newCreationTimeStamp = pod.getMetadata().getCreationTimestamp();
             getLogger().info("Comparing creation timestamps old: {0} new {1}",
                 entry.getValue(), newCreationTimeStamp);
             if (newCreationTimeStamp.isAfter(entry.getValue())) {
