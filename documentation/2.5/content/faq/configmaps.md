@@ -15,7 +15,7 @@ In each case, the access is configured within the `serverPod` element of the des
 For example, given
 a ConfigMap named `my-map` with entries `key-1` and `key-2`, you can provide access to both values as separate files
 in the same directory within the `cluster-1` cluster with the following
-in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md):
+in your [domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md):
  
 
 ```
