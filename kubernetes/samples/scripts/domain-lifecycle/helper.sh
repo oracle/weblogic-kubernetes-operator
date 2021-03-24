@@ -481,6 +481,28 @@ function generateDomainRestartVersion {
 }
 
 #
+# Function to generate the domain introspectVersion by incrementing the
+# existing value. If the introspectVersion doesn't exist or the introspectVersion
+# value is non-numeric, then return '1'.
+# $1 - Domain resource in json format
+# $2 - Name of cluster
+# $3 - Return value containing the restart version.
+#
+function generateDomainIntrospectVersion {
+  local domainJson=$1
+  local __result=$2
+  local __introspectVersion=""
+
+  eval $__result=""
+  __introspectVersion=$(echo ${domainJson} | jq -cr .spec.introspectVersion)
+  if ! [[ "$__introspectVersion" =~ ^[0-9]+$ ]] ; then
+   __introspectVersion=0
+  fi
+  __introspectVersion=$((__introspectVersion+1))
+  eval $__result=${__introspectVersion}
+}
+
+#
 # Function to generate the cluster restartVersion by incrementing the
 # existing value. If the restartVersion doesn't exist at the cluster level, 
 # then it increments the domain level restartVersion value. If the effective 
@@ -523,6 +545,20 @@ function createPatchJsonToUpdateDomainRestartVersion {
 
   __restartVersionPatch="{\"spec\": {\"restartVersion\": \"${restartVersion}\"}}"
   eval $__result="'${__restartVersionPatch}'"
+}
+
+#
+# Function to create patch json to update domain introspect version
+# $1 - domain introspect version
+# $2 - Return value containing patch json string
+#
+function createPatchJsonToUpdateDomainIntrospectVersion {
+  local introspectVersion=$1
+  local __result=$2
+  local __introspectVersionPatch=""
+
+  __introspectVersionPatch="{\"spec\": {\"introspectVersion\": \"${introspectVersion}\"}}"
+  eval $__result="'${__introspectVersionPatch}'"
 }
 
 #

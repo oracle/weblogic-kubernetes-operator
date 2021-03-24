@@ -12,28 +12,31 @@ function usage() {
 
   cat << EOF
 
-  This script performs rolling restart of a WebLogic cluster server pods in a domain by updating the
-  value of 'spec.clusters[<cluster-name>].restartVersion' attribute of the domain resource. This change
-  will cause the operator to perform a rolling restart of the WebLogic cluster server pods.
+  This script initiates a rolling restart of a WebLogic cluster server pods in a domain by updating
+  the value of 'spec.clusters[<cluster-name>].restartVersion' attribute of the domain resource.
  
   Usage:
  
     $(basename $0) -c mycluster [-n mynamespace] [-d mydomainuid] [-r restartVersion] [-m kubecli]
   
-    -c <cluster-name>   : Cluster name parameter is required.
+    -c <cluster-name>   : Cluster name (required parameter).
 
     -d <domain_uid>     : Domain unique-id. Default is 'sample-domain1'.
 
     -n <namespace>      : Domain namespace. Default is 'sample-domain1-ns'.
 
-    -r <restartVersion> : Restart version. If this parameter is not provided, then the script will generate the
-                          'restartVersion' value of the cluster by incrementing the existing value. If the
-                          'restartVersion' value doesn't exist for the cluster then it will increment the domain
-                          'restartVersion'. If the domain 'restartVersion' also doesn't exist or the effective
-                          value is non-numeric, then the script will set the 'restartVersion' value to '1'.
+    -r <restartVersion> : Restart version. If this parameter is not provided, 
+                          then the script will generate the 'restartVersion' 
+                          value of the cluster by incrementing the existing 
+                          value. If the 'restartVersion' value doesn't exist
+                          for the cluster then it will increment the domain 
+                          'restartVersion'.  If the domain 'restartVersion' also
+                          doesn't exist or effective value is non-numeric, then 
+                          the script will set the 'restartVersion' value to '1'.
 
-    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env
-                          variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
+    -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'
+                          if KUBERNETES_CLI env variable is not set. Otherwise 
+                          the default is the value of KUBERNETES_CLI env variable.
 
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 
