@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -32,6 +33,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
@@ -164,6 +166,23 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
         getCreatedPodSpecContainer().getEnv(),
         allOf(hasEnvVar(ITEM1, VALUE1), hasEnvVar(ITEM2, VALUE2)));
   }
+
+  @Test
+  public void whenPodCreatedForDomainSourceTypeFromModel_sitConfigOverrideSpecified() {
+    configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        hasEnvVar(ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR, "false"));
+  }
+
+  @Test
+  public void whenPodCreatedForDomainSourceTypeImage_sitConfigOverrideNotSpecified() {
+    // Situational Config override defaults to true (enabled) if not specified
+    assertThat(
+        getCreatedPodSpecContainer().getEnv(),
+        not(hasEnvVar(ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR)));
+  }
+
 
   private V1EnvVar toEnvVar(String name, String value) {
     return envItem(name, value);
