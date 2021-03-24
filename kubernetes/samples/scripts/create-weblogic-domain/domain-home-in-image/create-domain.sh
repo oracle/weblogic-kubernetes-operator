@@ -9,13 +9,13 @@
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
 #
 #  The following pre-requisites must be handled prior to running this script:
-#    * The WDT sample requires that JAVA_HOME is set to a java JDK version 1.8 or greater
+#    * The WebLogic Image Tool (WIT) requires that JAVA_HOME is set to a java JDK version 8 or greater
 #    * The kubernetes namespace must already be created
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #    * The host directory that will be used as the persistent volume must already exist
 #      and have the appropriate file permissions set.
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume claim must already be created
 #
 
 # Initialize
@@ -160,16 +160,11 @@ function initialize {
 
   initOutputDir
 
-  export WDT_DIR="/tmp/dhii-sample/tools"
+  export WDT_DIR=${toolsDir:-"/tmp/dhii-sample/tools"}
   export WIT_DIR="${WDT_DIR}"
 
-  if [ -n "${wdtVersion}" ]; then
-    export WDT_VERSION=${wdtVersion}
-  fi
-
-  if [ -n "${wdtVersion}" ]; then
-    export WIT_VERSION=${witVersion}
-  fi
+  export WDT_VERSION=${wdtVersion:-LATEST}
+  export WIT_VERSION=${witVersion:-LATEST}
 
   install_wit_if_needed || exit 1
 }

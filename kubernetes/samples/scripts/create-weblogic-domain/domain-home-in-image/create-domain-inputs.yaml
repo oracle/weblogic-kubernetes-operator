@@ -160,6 +160,11 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 # Set to "LATEST" to use the latest version.
 # witVersion: LATEST
 
+# Uncomment to customize the directory where WebLogic Deploy Tool (WDT)
+# and WebLogic Image Tool (WIT) are installed.
+# Default is /tmp/dhii-image/tools
+# toolsDir: /tmp/dhii-image/tools
+
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
 # These are optional. 
