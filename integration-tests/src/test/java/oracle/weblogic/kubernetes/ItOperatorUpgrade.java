@@ -28,6 +28,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -35,6 +37,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
@@ -71,7 +75,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Install a released version of Operator from GitHub chart repository.
- * Create a domain using Domain-In-Image model with a dynamic cluster.
+ * Create a domain using Domain-In-Image or Model-In-Image model with a dynamic cluster.
  * Deploy an application to the cluster in domain and verify the application 
  * can be accessed while the operator is upgraded and after the upgrade.
  * Upgrade operator with latest Operator image from develop branch.
@@ -124,7 +128,6 @@ public class ItOperatorUpgrade {
     withQuickRetryPolicy = with().pollDelay(0, SECONDS)
         .and().with().pollInterval(4, SECONDS)
         .atMost(10, SECONDS).await();
-
   }
 
   /**
@@ -133,52 +136,62 @@ public class ItOperatorUpgrade {
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
   public void testOperatorWlsUpgradeFrom260ToDevelop() {
-    upgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
+    upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
   /**
    * Operator upgrade from 3.0.3 to latest.
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.3 to develop")
-  public void testOperatorWlsUpgradeFrom303ToDevelop() {
-    upgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom303ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    upgradeOperator(domainType,"3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
    * Operator upgrade from 3.0.4 to latest.
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.4 to develop")
-  public void testOperatorWlsUpgradeFrom304ToDevelop() {
-    upgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom304ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
    * Operator upgrade from 3.1.2 to latest.
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.2 to develop")
-  public void testOperatorWlsUpgradeFrom312ToDevelop() {
-    upgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom312ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    upgradeOperator(domainType, "3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
    * Operator upgrade from 3.1.3 to latest.
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.3 to develop")
-  public void testOperatorWlsUpgradeFrom313ToDevelop() {
-    upgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom313ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    upgradeOperator(domainType, "3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
    * Operator upgrade from 3.1.4 to latest.
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.4 to develop")
-  public void testOperatorWlsUpgradeFrom314ToDevelop() {
-    upgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom314ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom303ToDevelop with domainType {0}", domainType);
+    upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -201,7 +214,8 @@ public class ItOperatorUpgrade {
   // Since Operator version 3.1.0 the service pod prefix has been changed 
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
-  private void upgradeOperator(String operatorVersion, String externalServiceNameSuffix, boolean useHelmUpgrade) {
+  private void upgradeOperator(String domainType, String operatorVersion, String externalServiceNameSuffix,
+                               boolean useHelmUpgrade) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);
@@ -230,14 +244,17 @@ public class ItOperatorUpgrade {
     // install operator
     String opNamespace = opNamespace1;
     String opServiceAccount = opNamespace + "-sa";
-    installAndVerifyOperator(opNamespace, opServiceAccount, true,
-        0, opHelmParams, domainNamespace);
+    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, opHelmParams, domainNamespace);
 
     // create domain
-    createDomainHomeInImageAndVerify(
-        domainNamespace, operatorVersion, externalServiceNameSuffix);
+    if (domainType.equalsIgnoreCase("domain-in-image")) {
+      createDomainHomeInImageAndVerify(
+          domainNamespace, operatorVersion, externalServiceNameSuffix);
+    } else {
+      createModelInImageAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
+    }
+
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
@@ -258,7 +275,7 @@ public class ItOperatorUpgrade {
 
       // start a new thread to collect the availability data of the application while the
       // main thread performs operator upgrade
-      List<Integer> appAvailability = new ArrayList<Integer>();
+      List<Integer> appAvailability = new ArrayList<>();
       logger.info("Start a thread to keep track of the application's availability");
       Thread accountingThread =
           new Thread(
@@ -330,6 +347,7 @@ public class ItOperatorUpgrade {
       // install latest operator
       installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
+
     // check CRD version is updated
     logger.info("Checking CRD version ");
     withStandardRetryPolicy
@@ -393,6 +411,66 @@ public class ItOperatorUpgrade {
         destDomainYaml.toString(), "domain-home-in-image:12.2.1.4",
         WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
         "Could not modify image name in the domain.yaml file");
+
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("kubectl create -f " + destDomainYaml))
+        .execute(), "kubectl create failed");
+
+    checkDomainStarted(domainUid, domainNamespace);
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+
+  }
+
+  private void createModelInImageAndVerify(
+      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "domain1-runtime-encryption-secret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
+    // use the checked in domain.yaml to create domain for old releases
+    // copy domain.yaml to results dir
+    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "miidomain-300.yaml");
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
+        String.format("Could not create directory under %s", RESULTS_ROOT));
+    Path destDomainYaml =
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "miidomain.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
+        "File copy failed for domain.yaml");
+
+    // replace apiVersion, namespace and image in domain.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "v8", getApiVersion(operatorVersion)),
+        "Could not modify the apiVersion in the miidomain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "miidomain300-ns", domainNamespace),
+        "Could not modify the namespace in the miidomain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "model-in-image:12.2.1.4",
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
+        "Could not modify image name in the miidomain.yaml file");
 
     assertTrue(new Command()
         .withParams(new CommandParams()
