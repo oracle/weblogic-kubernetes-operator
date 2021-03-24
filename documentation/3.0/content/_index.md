@@ -38,7 +38,7 @@ See the [Release Notes]({{< relref "release-notes.md" >}})  for recent changes t
 
 #### Operator earlier versions
 
-Documentation for prior releases of the operator is available [here](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/site/README.md).
+Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/) and [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/).
 
 #### Backward compatibility guidelines
 
