@@ -102,7 +102,7 @@ The operator automatically updates the `status` section of a deploy domain resou
 Here are some references you can use for the fields in these sections:
 
 - See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
-- See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md).
+- See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 - Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
 
