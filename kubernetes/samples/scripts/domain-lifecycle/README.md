@@ -115,9 +115,9 @@ weblogic-domain-1  domain1  cluster-1  0    4    2     2        2
 weblogic-domain-1  domain1  cluster-2  0    4    0     0        0
 ```
 
-### Scripts to perform a rolling restart of a WebLogic domain or cluster
+### Scripts to initiate a rolling restart of a WebLogic domain or cluster
 
-The `rollDomain.sh` script can be used to perform a rolling restart of the WebLogic Server Pods in a domain managed by the operator. Similarly, `rollCluster.sh` script can be used to perform a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
+The `rollDomain.sh` script can be used to initiate a rolling restart of the WebLogic Server Pods in a domain managed by the operator. Similarly, `rollCluster.sh` script can be used to initiate a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
 
 The `rollDomain.sh` script updates the value of `spec.restartVersion` attribute of the domain resource.  The operator will then do a rolling restart of the Server Pods in the WebLogic domain once the value of `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
 
@@ -154,7 +154,7 @@ domain.weblogic.oracle/domain1 patched
 ```
 
 ### Scripts to restart a WebLogic Server in a domain
-The `restartServer.sh` can be used to restart a WebLogic Server in a domain. This script restarts the server by deleting the Server Pod for the WebLogic Server instance.
+The `restartServer.sh` script can be used to restart a WebLogic Server in a domain. This script restarts the Server by deleting the Server Pod for the WebLogic Server instance.
 ```
 $ restartServer.sh -s managed-server1 -d domain1 -n weblogic-domain-1
 [2021-03-24T22:20:22.498 UTC][INFO] Initiating restart of 'managed-server1' by deleting server pod 'domain1-managed-server1'.
@@ -172,7 +172,7 @@ domain.weblogic.oracle/domain1 patched
 [2021-03-24T21:37:56.110 UTC][INFO] Successfully patched introspectVersion for domain 'domain1'!
 ```
 
-Use the following command to roll the Server Pods in a WebLogic domain with a specific `introspectVersion`:
+Use the following command to update a specific `introspectVersion` value:
 ```
 $ introspectDomain.sh -i v1 -d domain1 -n weblogic-domain-1
 [2021-03-24T21:38:34.369 UTC][INFO] Patching introspectVersion for domain 'domain1' to 'v1'.

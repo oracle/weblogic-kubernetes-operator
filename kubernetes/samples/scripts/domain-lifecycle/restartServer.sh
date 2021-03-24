@@ -41,7 +41,7 @@ clusterName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 
-while getopts "vs:m:n:d:h" opt; do
+while getopts "s:m:n:d:h" opt; do
   case $opt in
     s) serverName="${OPTARG}"
     ;;
@@ -50,8 +50,6 @@ while getopts "vs:m:n:d:h" opt; do
     m) kubernetesCli="${OPTARG}"
     ;;
     d) domainUid="${OPTARG}"
-    ;;
-    v) verboseMode=true;
     ;;
     h) usage 0
     ;;

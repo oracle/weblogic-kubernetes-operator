@@ -463,8 +463,7 @@ function getReplicaCount {
 # existing value. If the restartVersion doesn't exist or the restartVersion
 # value is non-numeric, then return '1'.
 # $1 - Domain resource in json format
-# $2 - Name of cluster
-# $3 - Return value containing the restart version.
+# $2 - Return value containing the restart version.
 #
 function generateDomainRestartVersion {
   local domainJson=$1
@@ -485,8 +484,7 @@ function generateDomainRestartVersion {
 # existing value. If the introspectVersion doesn't exist or the introspectVersion
 # value is non-numeric, then return '1'.
 # $1 - Domain resource in json format
-# $2 - Name of cluster
-# $3 - Return value containing the restart version.
+# $2 - Return value containing the introspect version.
 #
 function generateDomainIntrospectVersion {
   local domainJson=$1
