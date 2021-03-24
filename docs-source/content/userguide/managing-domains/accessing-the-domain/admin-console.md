@@ -10,13 +10,12 @@ The Oracle WebLogic Server Remote Console is a lightweight, open source console 
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Server Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
 For detailed documentation, see the [Oracle WebLogic Server Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
 
+A major benefit of using the Remote Console is that it runs in your browser and can be used to connect to different WebLogic Server instances.
 You can use the Remote Console with WebLogic Server _slim_ installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
 or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx;jsessionid=LchBX6sgzwv5MwSaamMxrIIk-etWJLb0IyCet9mcnqAYnINXvWzi!-1201085350).
 Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
 For example, a WebLogic Server 12.2.1.4 slim installer download is approximately 180 MB smaller.
 
-A major benefit of using the Remote Console is that it runs in your browser and can be used to connect to different WebLogic Server instances.
-Also, when accessing the Remote Console through a load balancer, it's easier to set up access to multiple different domains than when using WebLogic Server Administration Console.
 
 The Remote Console is deployed as a standalone Java program, which can connect to multiple WebLogic Server Administration Servers using REST APIs.
 You connect to the Remote Console using a web browser and, when prompted, supply the WebLogic Server login credentials
@@ -37,8 +36,7 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
    * Deploy a load balancer with [ingress path routing rules](#configure-ingress-path-routing-rules).
 
 
-
-### Use an Administration Server `NodePort`
+#### Use an Administration Server `NodePort`
 
 For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the URL:
 
@@ -46,7 +44,17 @@ For the Remote Console to connect to the Kubernetes WebLogic Server Administrati
 http://hostname:adminserver-NodePort/
 ```
 
-### Configure ingress path routing rules
+The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
+For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/docs/domains/Domain.md) document.
+
+{{% notice warning %}}
+Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
+can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
+is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
+For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
+{{% /notice %}}
+
+#### Configure ingress path routing rules
 
 1. Configure an ingress path routing rule. For more information about ingresses, see the [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) documentation.
 
@@ -62,13 +70,6 @@ http://hostname:adminserver-NodePort/
      namespace: weblogic-domain
    spec:
      routes:
-     - kind: Rule
-       match: PathPrefix(`/domain1`)
-       services:
-       - kind: Service
-         name: domain1-cluster-dockercluster
-         namespace: weblogic-domain
-         port: 8001
      - kind: Rule
        match: PathPrefix(`/`)
        services:
@@ -90,3 +91,11 @@ http://hostname:adminserver-NodePort/
      * To determine the `${LB_PORT}` when using a Traefik load balancer:
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
+
+### Test
+
+To verify the connection and that the correct `hostname:port` is being used, use the following curl command to access the REST interface of WebLogic Server Administration Server:
+
+```
+curl --user username:password http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/
+```
