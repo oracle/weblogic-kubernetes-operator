@@ -45,7 +45,7 @@ function usage() {
   decreases the value of 'spec.clusters[<cluster-name>].replicas' or updates the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain 
   resource or both as necessary to stop the server. For the administration server, it updates
-  the value of `spec.adminServer.serverStartPolicy` attribute of the domain resource. The
+  the value of 'spec.adminServer.serverStartPolicy' attribute of the domain resource. The
   'spec.clusters[<cluster-name>].replicas' value can be kept constant by using '-k' option.
   Please see README.md for more details.
  

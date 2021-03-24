@@ -114,3 +114,41 @@ namespace          domain   cluster    min  max  goal  current  ready
 weblogic-domain-1  domain1  cluster-1  0    4    2     2        2
 weblogic-domain-1  domain1  cluster-2  0    4    0     0        0
 ```
+
+### Scripts to perform a rolling restart of a WebLogic domain or cluster
+
+The `rollDomain.sh` script can be used to perform a rolling restart of the WebLogic Server Pods in a domain managed by the operator. Similarly, `rollCluster.sh` script can be used to perform a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
+
+The `rollDomain.sh` script updates the value of `spec.restartVersion` attribute of the domain resource.  The operator will then do a rolling restart of the Server Pods in the WebLogic domain once the value of `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
+
+```shell
+$ rollDomain.sh -d domain1 -n weblogic-domain-1
+[2021-03-24T04:01:19.733 UTC][INFO] Patching restartVersion for domain 'domain1' to '1'.
+domain.weblogic.oracle/domain1 patched
+[2021-03-24T04:01:19.850 UTC][INFO] Successfully patched restartVersion for domain 'domain1'!
+```
+
+Use the following command to roll the Server Pods in a WebLogic domain with a specific `restartVersion`:
+```shell
+$ rollDomain.sh -r v1 -d domain1 -n weblogic-domain-1
+[2021-03-24T13:43:47.586 UTC][INFO] Patching restartVersion for domain 'domain1' to 'v1'.
+domain.weblogic.oracle/domain1 patched
+[2021-03-24T13:43:47.708 UTC][INFO] Successfully patched restartVersion for domain 'domain1'!
+```
+
+The `rollCluster.sh` script updates the value of `spec.clusters[<cluster-name>].restartVersion` attribute of the domain resource. The operator will then do a rolling restart of the WebLogic cluster Server Pods once the value of `spec.clusters[<cluster-name>].restartVersion` is updated. You can provide the new value of `restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
+
+```shell
+$ rollCluster.sh -c cluster-1 -d domain1 -n weblogic-domain-1
+[2021-03-24T04:03:27.521 UTC][INFO] Patching restartVersion for cluster 'cluster-1' to '2'.
+domain.weblogic.oracle/domain1 patched
+[2021-03-24T04:03:27.669 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+```
+
+Use the following command to roll the WebLogic Cluster Servers with a specific `restartVersion`:
+```shell
+$ rollCluster.sh -r v2 -c cluster-1 -d domain1 -n weblogic-domain-1
+[2021-03-24T13:46:16.833 UTC][INFO] Patching restartVersion for cluster 'cluster-1' to 'v2'.
+domain.weblogic.oracle/domain1 patched
+[2021-03-24T13:46:16.975 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+```
