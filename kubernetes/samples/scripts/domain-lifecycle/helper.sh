@@ -528,11 +528,11 @@ function createPatchJsonToUpdateDomainRestartVersion {
 #
 # Function to create patch json to update cluster restartVersion
 # $1 - Domain resource in json format
-# $2 - Name of cluster whose replicas will be patched
-# $3 - replica count
+# $2 - Name of the cluster whose restartVersion will be patched
+# $3 - restart version
 # $4 - Return value containing patch json string
 #
-function createPatchJsonToUpdateRestartVersion {
+function createPatchJsonToUpdateClusterRestartVersion {
   local domainJson=$1
   local clusterName=$2
   local restartVersion=$3

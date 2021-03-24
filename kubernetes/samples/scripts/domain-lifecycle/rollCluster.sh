@@ -113,7 +113,7 @@ if [ -z "${restartVersion}" ]; then
 fi
 
 printInfo "Patching restartVersion for cluster '${clusterName}' to '${restartVersion}'."
-createPatchJsonToUpdateRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
+createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "${restartVersion}" patchJson
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
