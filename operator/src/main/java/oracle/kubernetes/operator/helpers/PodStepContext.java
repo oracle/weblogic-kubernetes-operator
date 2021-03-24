@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -71,8 +72,9 @@ import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
+import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 
-public abstract class PodStepContext extends BasePodStepContext {
+abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -93,6 +95,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private final String miiDomainZipHash;
   private final String domainRestartVersion;
   private boolean addRestartRequiredLabel;
+  private String sha256Hash;
 
   PodStepContext(Step conflictStep, Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -106,8 +109,11 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private static boolean isPatchableItem(Map.Entry<String, String> entry) {
-    return isCustomerItem(entry) || entry.getKey().equals(INTROSPECTION_STATE_LABEL);
+    return isCustomerItem(entry) || PATCHABLE_OPERATOR_KEYS.contains(entry.getKey());
   }
+
+  private static final Set<String> PATCHABLE_OPERATOR_KEYS
+        = Set.of(INTROSPECTION_STATE_LABEL, OPERATOR_VERSION, MODEL_IN_IMAGE_DOMAINZIP_HASH, SHA256_ANNOTATION);
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
@@ -387,7 +393,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     KubernetesUtils.addPatches(
         patchBuilder, "/metadata/labels/", getLabels(currentPod), getNonHashedPodLabels());
     KubernetesUtils.addPatches(
-        patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getPodAnnotations());
+        patchBuilder, "/metadata/annotations/", getAnnotations(currentPod), getNonHashedPodAnnotations());
     return new CallBuilder()
         .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
             new V1Patch(patchBuilder.build().toString()), patchResponse(next));
@@ -400,10 +406,19 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     Optional.ofNullable(getDomain().getSpec().getIntrospectVersion())
         .ifPresent(version -> result.put(INTROSPECTION_STATE_LABEL, version));
+    Optional.ofNullable(productVersion)
+          .ifPresent(productVersion -> result.put(LabelConstants.OPERATOR_VERSION, productVersion));
 
     if (addRestartRequiredLabel) {
       result.put(MII_UPDATED_RESTART_REQUIRED_LABEL, "true");
     }
+
+    return result;
+  }
+
+  private Map<String, String> getNonHashedPodAnnotations() {
+    Map<String,String> result = new HashMap<>(getPodAnnotations());
+    result.put(SHA256_ANNOTATION, sha256Hash);
 
     return result;
   }
@@ -538,7 +553,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   V1Pod createPodModel() {
-    return withNonHashedElements(AnnotationHelper.withSha256Hash(createPodRecipe()));
+    final V1Pod podRecipe = createPodRecipe();
+    sha256Hash = AnnotationHelper.createHash(podRecipe);
+    return withNonHashedElements(podRecipe);
   }
 
   @Override
@@ -556,13 +573,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     getNonHashedPodLabels().entrySet().stream()
         .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putLabelsItem(e.getKey(), e.getValue()));
-    getPodAnnotations().entrySet().stream()
+    getNonHashedPodAnnotations().entrySet().stream()
         .filter(PodStepContext::isPatchableItem)
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
-    Optional.ofNullable(miiDomainZipHash)
-        .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
-    Optional.ofNullable(productVersion)
-          .ifPresent(productVersion -> metadata.putLabelsItem(LabelConstants.OPERATOR_VERSION, productVersion));
 
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
@@ -1049,7 +1062,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     @Override
-    public void logPodChanged() {
+    void logPodChanged() {
       logPodReplaced();
     }
 
@@ -1067,7 +1080,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       super(next);
     }
 
-    public void logPodChanged() {
+    void logPodChanged() {
       logPodPatched();
     }
 

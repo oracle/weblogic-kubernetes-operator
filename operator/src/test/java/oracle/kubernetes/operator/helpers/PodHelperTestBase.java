@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -160,6 +161,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final String TEST_PRODUCT_VERSION = "unit-test";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -243,6 +245,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(hashMemento = UnitTestHash.install());
     mementos.add(InMemoryCertificates.install());
+    mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
@@ -266,6 +269,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         new PassthroughPodAwaiterStepFactory());
+  }
+
+  private Memento setProductVersion(String productVersion) throws NoSuchFieldException {
+    return StaticStubSupport.install(PodStepContext.class, "productVersion", productVersion);
   }
 
   abstract V1Pod createPod(Packet packet);
@@ -381,14 +388,18 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void afterUpgradeFrom31_dontRollPod() {
+  public void afterUpgradeFrom31_patchPod() throws NoSuchFieldException {
     useProductionHash();
     testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
     disableAutoIntrospectOnNewMiiPods();
     initializeExistingPod(loadPodModel(getReferencePodYaml()));
 
-    verifyPodNotReplaced();
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   private V1Pod loadPodModel(String podYaml) {
@@ -697,10 +708,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenPodCreated_hasProductVersion() {
-    PodHelper.setProductVersion("unit-test");
-
-    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(OPERATOR_VERSION, "unit-test"));
+  void whenPodCreated_hasProductVersion() throws NoSuchFieldException {
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(OPERATOR_VERSION, TEST_PRODUCT_VERSION));
   }
 
   @Test
