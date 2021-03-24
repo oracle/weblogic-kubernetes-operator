@@ -281,14 +281,13 @@ public class DomainStatusUpdater {
       DomainStatus newStatus = context.getNewStatus();
 
       return context.isStatusUnchanged(newStatus)
-            ? doNext(packet)
-            : doNext(createAbortedEventStepIfNeeded(
-          newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
-                packet);
+          ? doNext(packet)
+          : doNext(createAbortedEventStepIfNeeded(
+              newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+          packet);
     }
 
-    private Step createAbortedEventStepIfNeeded(
-        DomainStatus newStatus, DomainStatus oldStatus, Step next) {
+    private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
       if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
         return Step.chain(EventHelper.createEventStep(
                 new EventData(DOMAIN_PROCESSING_ABORTED)
@@ -402,7 +401,6 @@ public class DomainStatusUpdater {
       DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
 
-
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
@@ -435,14 +433,13 @@ public class DomainStatusUpdater {
     }
 
     private boolean shouldUpdateFailureCount(DomainStatus newStatus) {
-      return transitFromProgessing(newStatus)
+      return transitFromProgressing(newStatus)
           && getExistingStatusMessage() == null
           && isBackoffLimitExceeded(newStatus);
     }
 
-    private boolean transitFromProgessing(DomainStatus newStatus) {
-      return getProgressingCondition() != null
-          && getProgressingCondition(newStatus) == null;
+    private boolean transitFromProgressing(DomainStatus newStatus) {
+      return getProgressingCondition() != null && getProgressingCondition(newStatus) == null;
     }
 
     private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
