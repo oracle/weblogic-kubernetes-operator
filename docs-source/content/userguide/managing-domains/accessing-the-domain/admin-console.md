@@ -22,15 +22,13 @@ The Remote Console is deployed as a standalone Java program, which can connect t
 You connect to the Remote Console using a web browser and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server's administration port to which you want to connect.
 
-**Note**:  An Administration Server administration port is typically the same as its default port unless either an SSL port or an administration port is configured and enabled.
+**Note**:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
 
 ### Setup
 
 To set up access to WebLogic Server domains running in Kubernetes using the Remote Console:
 
-1. Install and configure the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
-
-1. Start the Remote Console and connect to a domain, as described [here](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md#start-connect).
+1. Install, configure, and start the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
 
 1. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
 
@@ -50,7 +48,9 @@ http://hostname:adminserver-NodePort/
 
 ### Configure ingress path routing rules
 
-1. Configure an ingress path routing rule. For an example, see the following `path-routing` YAML file for a Traefik load balancer:
+1. Configure an ingress path routing rule. For more information about ingresses, see the [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) documentation.
+
+   For an example, see the following `path-routing` YAML file for a Traefik load balancer:
 
    ```yaml
    apiVersion: traefik.containo.us/v1alpha1
