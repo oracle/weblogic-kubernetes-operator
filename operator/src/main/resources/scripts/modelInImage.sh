@@ -679,7 +679,7 @@ function createPrimordialDomain() {
     encrypt_decrypt_model "decrypt" ${INTROSPECTCM_MERGED_MODEL}  ${MII_PASSPHRASE} \
       ${DECRYPTED_MERGED_MODEL}
 
-    if [ "{" != $(headhead -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
+    if [ "{" != $(head -c 1 ${DECRYPTED_MERGED_MODEL}) ] ; then
       base64 -d ${DECRYPTED_MERGED_MODEL} > ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
       rm ${DECRYPTED_MERGED_MODEL}  || exitOrLoop
       gunzip ${DECRYPTED_MERGED_MODEL}.gz  || exitOrLoop
