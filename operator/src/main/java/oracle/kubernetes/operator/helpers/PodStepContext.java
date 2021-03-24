@@ -68,6 +68,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
+import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 
@@ -80,6 +81,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private static final String LIVENESS_PROBE = "/weblogic-operator/scripts/livenessProbe.sh";
 
   private static final String READINESS_PATH = "/weblogic/ready";
+  private static String productVersion;
 
   final WlsServerConfig scan;
   @Nonnull
@@ -109,6 +111,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private static boolean isCustomerItem(Map.Entry<String, String> entry) {
     return !entry.getKey().startsWith("weblogic.");
+  }
+
+  static void setProductVersion(String productVersion) {
+    PodStepContext.productVersion = productVersion;
   }
 
   void init() {
@@ -446,7 +452,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   private boolean canUseCurrentPod(V1Pod currentPod) {
 
     boolean useCurrent =
-        AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod))
+        getRequiredHash(currentPod).equals(AnnotationHelper.getHash(currentPod))
             && canUseNewDomainZip(currentPod);
 
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
@@ -459,12 +465,42 @@ public abstract class PodStepContext extends BasePodStepContext {
     return useCurrent;
   }
 
+  private String getRequiredHash(V1Pod currentPod) {
+    if (isLegacyMiiPod(currentPod)) {
+      return adjustedMiiHash(currentPod);
+    } else {
+      return AnnotationHelper.getHash(getPodModel());
+    }
+  }
+
+  private boolean isLegacyMiiPod(V1Pod currentPod) {
+    return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH) && !hasLabel(currentPod, OPERATOR_VERSION);
+  }
+
+  private boolean hasLabel(V1Pod pod, String key) {
+    return pod.getMetadata().getLabels().containsKey(key);
+  }
+
+  private String adjustedMiiHash(V1Pod currentPod) {
+    return AnnotationHelper.createHash(
+          withLegacyDomainHash(createPodRecipe(), getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH)));
+  }
+
+  private String getLabel(V1Pod currentPod, String key) {
+    return currentPod.getMetadata().getLabels().get(key);
+  }
+
+  private V1Pod withLegacyDomainHash(V1Pod pod, String oldDomainHash) {
+    pod.getMetadata().putLabelsItem(MODEL_IN_IMAGE_DOMAINZIP_HASH, oldDomainHash);
+    return pod;
+  }
+
   private boolean canUseNewDomainZip(V1Pod currentPod) {
     String dynamicUpdateResult = packet.getValue(MII_DYNAMIC_UPDATE);
 
     if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
       return true;
-    } else if (dynamicUpdateResult == null) {
+    } else if (dynamicUpdateResult == null || !getDomain().isUseOnlineUpdate()) {
       return false;
     } else if (dynamicUpdateResult.equals(MII_DYNAMIC_UPDATE_SUCCESS)) {
       return true;
@@ -477,8 +513,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private boolean isDomainZipUnchanged(V1Pod currentPod) {
-    return formatHashLabel(miiDomainZipHash)
-        .equals(currentPod.getMetadata().getLabels().get(MODEL_IN_IMAGE_DOMAINZIP_HASH));
+    return formatHashLabel(miiDomainZipHash).equals(getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
   private String getReasonToRecycle(V1Pod currentPod) {
@@ -526,6 +561,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         .forEach(e -> metadata.putAnnotationsItem(e.getKey(), e.getValue()));
     Optional.ofNullable(miiDomainZipHash)
         .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
+    Optional.ofNullable(productVersion)
+          .ifPresent(productVersion -> metadata.putLabelsItem(LabelConstants.OPERATOR_VERSION, productVersion));
 
     setTerminationGracePeriod(pod);
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
@@ -611,10 +648,6 @@ public abstract class PodStepContext extends BasePodStepContext {
         .putLabelsItem(
             LabelConstants.SERVERRESTARTVERSION_LABEL, getServerSpec().getServerRestartVersion());
 
-    if (!getDomain().isUseOnlineUpdate()) {
-      Optional.ofNullable(miiDomainZipHash)
-            .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH, hash));
-    }
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 

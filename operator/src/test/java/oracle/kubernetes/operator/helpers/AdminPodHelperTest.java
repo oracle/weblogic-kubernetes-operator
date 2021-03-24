@@ -112,8 +112,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getExpectedMiiSha256Annotation() {
-    return ExpectedSHA256Values.ADMIN_SERVER_MIIDOMAIN_SHA256;
+  String getReferencePodYaml() {
+    return ReferenceObjects.ADMIN_POD_3_1;
   }
 
   String getDomainValidationFailedKey() {

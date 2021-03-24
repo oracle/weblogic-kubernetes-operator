@@ -1299,8 +1299,8 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getExpectedMiiSha256Annotation() {
-    return ExpectedSHA256Values.MANAGED_SERVER_MIIDOMAIN_SHA256;
+  String getReferencePodYaml() {
+    return ReferenceObjects.MANAGED_POD_3_1;
   }
 
   @Override

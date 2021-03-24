@@ -58,6 +58,14 @@ public class PodHelper {
   }
 
   /**
+   * Specifies the product version used to create pods.
+   * @param productVersion the version of the operator.
+   */
+  public static void setProductVersion(String productVersion) {
+    PodStepContext.setProductVersion(productVersion);
+  }
+
+  /**
    * Creates an admin server pod resource, based on the specified packet.
    * Expects the packet to contain a domain presence info as well as:
    *   SCAN                 the topology for the server (WlsServerConfig)

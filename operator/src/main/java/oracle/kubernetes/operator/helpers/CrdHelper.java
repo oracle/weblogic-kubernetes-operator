@@ -226,7 +226,7 @@ public class CrdHelper {
           .name(KubernetesConstants.CRD_NAME);
 
       if (productVersion != null) {
-        metadata.putLabelsItem(LabelConstants.OPERATOR_VERISON, productVersion.toString());
+        metadata.putLabelsItem(LabelConstants.OPERATOR_VERSION, productVersion.toString());
       }
       return metadata;
     }
@@ -733,7 +733,7 @@ public class CrdHelper {
     private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
       return Optional.ofNullable(metadata)
           .map(V1ObjectMeta::getLabels)
-          .map(labels -> labels.get(LabelConstants.OPERATOR_VERISON))
+          .map(labels -> labels.get(LabelConstants.OPERATOR_VERSION))
           .map(SemanticVersion::new)
           .orElse(null);
     }
