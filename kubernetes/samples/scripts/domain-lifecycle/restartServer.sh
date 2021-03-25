@@ -42,7 +42,7 @@ clusterName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
 podName=""
-legalPodName=""
+legalDNSPodName=""
 
 while getopts "s:m:n:d:h" opt; do
   case $opt in
