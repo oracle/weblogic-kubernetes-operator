@@ -969,7 +969,9 @@ function wdtHandleOnlineUpdate() {
   # temporarily disable it
   stop_trap
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] ; then
-    # no op for offline use case
+    # no op for offline use case'
+    trace "Domain resource disabled 'domain.spec.configuration.model.onlineUpdate' or not defined - no op"
+    trace "Exiting wdtHandleOnlineUpdate"
     return
   fi
 
