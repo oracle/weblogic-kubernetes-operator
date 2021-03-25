@@ -29,7 +29,9 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
 
 1. Install, configure, and start the Remote Console according to these [instructions](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md).
 
-1. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
+   **NOTE**: These instructions assume that you are installing and running the Remote Console Java program externally to your Kubernetes cluster.
+
+1. When you first connect your browser to the Remote Console, which is at `http://localhost:8012` by default, the console will prompt you with a login dialog for a WebLogic Server Administration Server URL. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
 
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
@@ -56,7 +58,7 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
 
 #### Configure ingress path routing rules
 
-1. Configure an ingress path routing rule. For more information about ingresses, see the [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) documentation.
+1. Configure an ingress path routing rule. For information about ingresses, see the [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) documentation.
 
    For an example, see the following `path-routing` YAML file for a Traefik load balancer:
 
@@ -79,14 +81,14 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
          port: 7001
    ```
 
-1. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, use the URL:
+1. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:
 
    ```
    http://${HOSTNAME}:${LB_PORT}/
    ```
    Where:
 
-     * `${HOSTNAME}` is where you start up the WebLogic domain.
+     * `${HOSTNAME}` is where the ingress load balancer is running, in this case, the `External-IP` address of the Traefik load balancer.
 
      * To determine the `${LB_PORT}` when using a Traefik load balancer:
 
@@ -94,8 +96,20 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
 
 ### Test
 
-To verify the connection and that the correct `hostname:port` is being used, use the following curl command to access the REST interface of WebLogic Server Administration Server:
+To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer
+or `NodePort` are working as expected, run the following curl commands at the same location as your browser:
+
 
 ```
-curl --user username:password http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/
+$ curl --user username:password \
+     http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/domainRuntime?fields=name\&links=none ; echo
+
+$ curl --user username:password \
+     http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/serverRuntime?fields=name\&links=none ; echo
 ```
+
+These commands access the REST interface of the WebLogic Server Administration Server in a way that is similar to the Remote Console's use of REST.
+If successful, then the output from the two commands will be `{"name": "your-weblogic-domain-name"}` and `{"name": "your-weblogic-admin-server-name"}`, respectively.
+
+If you want to see the full content of the domainRuntime and serverRuntime beans, then rerun the commands
+but remove `?fields=name\&links=none`, which is appended at the end of each URL.
