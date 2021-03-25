@@ -36,6 +36,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -145,6 +146,8 @@ public class Main {
 
       engine = new Engine(scheduledExecutorService);
       domainProcessor = new DomainProcessorImpl(this);
+
+      PodHelper.setProductVersion(productVersion.toString());
     }
 
     private static String getBuildVersion(Properties buildProps) {
