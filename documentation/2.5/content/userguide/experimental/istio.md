@@ -206,7 +206,7 @@ flowing:
 In this example you can see how the traffic flows to the cluster services and 
 then to the individual managed servers.
 
-![Traffic visualization with Kiali](/weblogic-kubernetes-operator/images/kiali.png)
+{{< img "Traffic visualization with Kiali" "images/kiali.png" >}}
 
 You can learn more about [Istio traffic management](https://istio.io/docs/concepts/traffic-management/)
 in their documentation.
@@ -221,7 +221,7 @@ The image below shows an example of a distributed trace
 that shows a transaction following the same path through the system
 as shown in the image above.
 
-![Distributed tracing with Jaeger](/weblogic-kubernetes-operator/images/jaeger.png)
+{{< img "Distributed tracing with Jaeger" "images/jaeger.png" >}}
 
 You can learn more about [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/)
 in their documentation.

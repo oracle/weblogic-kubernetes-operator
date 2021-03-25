@@ -69,7 +69,7 @@ various approaches.  We can start by asking ourselves questions like these:
 
 The diagram below summarizes these concerns in a decision tree for the “domain-in-image” case:
 
-![Decision model for the "domain-in-image" approach](/weblogic-kubernetes-operator/images/flowchart.png)
+{{< img "Decision model for the \"domain-in-image\" approach" "images/flowchart.png" >}}
 
 If you are using the "domain-on-PV" or "model-in-image" approach, many of these concerns become
 moot because you have an effective separation between your domain and the image.

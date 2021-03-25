@@ -7,20 +7,19 @@ set -o errexit
 set -o pipefail
 
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
 function usage {
   echo "usage: ${script} [-o <directory>] [-h]"
   echo "  -o Output directory (optional) "
-  echo "      (default: \${WORKSPACE}/WORK, if \${WORKSPACE} defined, else /tmp/WORK) "
+  echo "      (default: \${WORKSPACE}/documentation, if \${WORKSPACE} defined, else /tmp/documentation) "
   echo "  -h Help"
   exit $1
 }
 
 if [[ -z "${WORKSPACE}" ]]; then
-  outdir="/tmp/WORK"
+  outdir="/tmp/documentation"
 else
-  outdir="${WORKSPACE}/WORK"
+  outdir="${WORKSPACE}/documentation"
 fi
 
 while getopts "o:h" opt; do
@@ -35,7 +34,7 @@ while getopts "o:h" opt; do
 done
 
 if [ -d "${outdir}" ]; then
-  rm -Rf "${outdir}/*"
+  rm -Rf "${outdir:?}/*"
 else
   mkdir -m777 -p "${outdir}"
 fi
@@ -49,6 +48,8 @@ hugo -s 3.1 -d "${outdir}/3.1" -b https://oracle.github.io/weblogic-kubernetes-o
 
 echo "Copying static files into place..."
 cp -R charts domains swagger "${outdir}"
+
+echo "Successfully generated documentation in ${outdir}..."
 
 
 
