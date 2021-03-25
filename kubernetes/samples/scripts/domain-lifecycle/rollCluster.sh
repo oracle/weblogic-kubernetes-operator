@@ -120,4 +120,4 @@ createPatchJsonToUpdateClusterRestartVersion "${domainJson}" "${clusterName}" "$
 
 executePatchCommand "${kubernetesCli}" "${domainUid}" "${domainNamespace}" "${patchJson}" "${verboseMode}"
 
-printInfo "Successfully patched replicas for cluster '${clusterName}'!"
+printInfo "Successfully patched restartVersion for cluster '${clusterName}'!"

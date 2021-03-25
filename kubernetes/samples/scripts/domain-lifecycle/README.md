@@ -142,7 +142,7 @@ The `rollCluster.sh` script updates the value of the `spec.clusters[<cluster-nam
 $ rollCluster.sh -c cluster-1 -d domain1 -n weblogic-domain-1
 [2021-03-24T04:03:27.521 UTC][INFO] Patching restartVersion for cluster 'cluster-1' to '2'.
 domain.weblogic.oracle/domain1 patched
-[2021-03-24T04:03:27.669 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+[2021-03-24T04:03:27.669 UTC][INFO] Successfully patched restartVersion for cluster 'cluster-1'!
 ```
 
 Use the following command to roll the WebLogic Cluster Servers with a specific `restartVersion`:
@@ -150,7 +150,7 @@ Use the following command to roll the WebLogic Cluster Servers with a specific `
 $ rollCluster.sh -r v2 -c cluster-1 -d domain1 -n weblogic-domain-1
 [2021-03-24T13:46:16.833 UTC][INFO] Patching restartVersion for cluster 'cluster-1' to 'v2'.
 domain.weblogic.oracle/domain1 patched
-[2021-03-24T13:46:16.975 UTC][INFO] Successfully patched replicas for cluster 'cluster-1'!
+[2021-03-24T13:46:16.975 UTC][INFO] Successfully patched restartVersion for cluster 'cluster-1'!
 ```
 
 ### Scripts to restart a WebLogic Server in a domain
