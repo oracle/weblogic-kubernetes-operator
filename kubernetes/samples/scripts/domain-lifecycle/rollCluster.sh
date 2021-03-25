@@ -29,8 +29,8 @@ function usage() {
                           then the script will generate the 'restartVersion' 
                           value of the cluster by incrementing the existing 
                           value. If the 'restartVersion' value doesn't exist
-                          for the cluster then it will increment the domain 
-                          'restartVersion'.  If the domain 'restartVersion' also
+                          for the cluster then it will use the incremented value of
+                          domain 'restartVersion'. If the domain 'restartVersion' also
                           doesn't exist or effective value is non-numeric, then 
                           the script will set the 'restartVersion' value to '1'.
 
