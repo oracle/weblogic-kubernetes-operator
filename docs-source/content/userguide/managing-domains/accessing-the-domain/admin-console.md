@@ -88,7 +88,7 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
    ```
    Where:
 
-     * `${HOSTNAME}` is where the ingress load balancer is running, in this case, the `External-IP` address of the Traefik load balancer.
+     * `${HOSTNAME}` is where the ingress load balancer is running.
 
      * To determine the `${LB_PORT}` when using a Traefik load balancer:
 
