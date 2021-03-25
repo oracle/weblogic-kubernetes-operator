@@ -1289,18 +1289,18 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getExpectedPlainPortSha256Annotation() {
-    return ExpectedSHA256Values.MANAGED_SERVER_PLAINPORT_SHA256;
+  String getReferencePlainPortPodYaml() {
+    return ReferenceObjects.MANAGED_PLAINPORT_POD_3_1;
   }
 
   @Override
-  String getExpectedSslPortSha256Annotation() {
-    return ExpectedSHA256Values.MANAGED_SERVER_SSLPORT_SHA256;
+  String getReferenceSslPortPodYaml() {
+    return ReferenceObjects.MANAGED_SSLPORT_POD_3_1;
   }
 
   @Override
-  String getExpectedMiiSha256Annotation() {
-    return ExpectedSHA256Values.MANAGED_SERVER_MIIDOMAIN_SHA256;
+  String getReferenceMiiPodYaml() {
+    return ReferenceObjects.MANAGED_MII_POD_3_1;
   }
 
   @Override
