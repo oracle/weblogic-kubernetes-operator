@@ -102,18 +102,18 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getExpectedPlainPortSha256Annotation() {
-    return ExpectedSHA256Values.ADMIN_SERVER_PLAINPORT_SHA256;
+  String getReferencePlainPortPodYaml() {
+    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_1;
   }
 
   @Override
-  String getExpectedSslPortSha256Annotation() {
-    return ExpectedSHA256Values.ADMIN_SERVER_SSLPORT_SHA256;
+  String getReferenceSslPortPodYaml() {
+    return ReferenceObjects.ADMIN_SSLPORT_POD_3_1;
   }
 
   @Override
-  String getExpectedMiiSha256Annotation() {
-    return ExpectedSHA256Values.ADMIN_SERVER_MIIDOMAIN_SHA256;
+  String getReferenceMiiPodYaml() {
+    return ReferenceObjects.ADMIN_MII_POD_3_1;
   }
 
   String getDomainValidationFailedKey() {
