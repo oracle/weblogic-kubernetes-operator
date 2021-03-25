@@ -103,7 +103,7 @@ public class CrdHelperTest {
   private V1ObjectMeta createMetadata(SemanticVersion operatorVersion) {
     return new V1ObjectMeta()
         .name(KubernetesConstants.CRD_NAME)
-        .putLabelsItem(LabelConstants.OPERATOR_VERISON, operatorVersion.toString());
+        .putLabelsItem(LabelConstants.OPERATOR_VERSION, operatorVersion.toString());
   }
 
   private V1CustomResourceDefinitionSpec createSpec() {
@@ -279,7 +279,7 @@ public class CrdHelperTest {
   private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
     return Optional.ofNullable(metadata)
             .map(V1ObjectMeta::getLabels)
-            .map(labels -> labels.get(LabelConstants.OPERATOR_VERISON))
+            .map(labels -> labels.get(LabelConstants.OPERATOR_VERSION))
             .map(SemanticVersion::new)
             .orElse(null);
   }
