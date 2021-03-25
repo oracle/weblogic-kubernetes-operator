@@ -13,7 +13,7 @@ then you can see these layers using the command  `docker inspect container-regis
 (the domain layer will not be there).  You are not required to use layers, but
 efficient use of layers is considered a best practice.
 
-![Container image layers](/weblogic-kubernetes-operator/images/layers.png)
+{{< img "Container image layers" "images/layers.png" >}}
 
 #### Why is it important to maintain the layering of images?
 
@@ -31,14 +31,14 @@ the nodes.  Using the approach shown below (that is, standard image layering tec
 we are going to need to store all six of these layers on each node.  If you add up the
 sizes, then you will see that it comes out to about 1.5GB per node.
 
-![Container images with layers](/weblogic-kubernetes-operator/images/more-layers.png)
+{{< img "Container images with layers" "images/more-layers.png" >}}
 
 Now, let's consider the alternative, where we do not use layers, but instead,
 build images for each domain and put everything in one big layer (this is often
 called "squashing" the layers).  In this case, we have the same content, but if
 you add up the size of the images, you get 2.9GB per node. That’s almost twice the size!
 
-![Container images without layers](/weblogic-kubernetes-operator/images/no-layers.png)
+{{< img "Container images without layers" "images/no-layers.png" >}}
 
 With only two domains, you start to see the problem.  In the layered approach, each
 new domain is adding only a relatively very small increment.  In the non-layered

@@ -376,22 +376,22 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
 
 1. Install "Docker for Mac" [https://download.docker.com/mac/edge/Docker.dmg](https://hub.docker.com/editions/community/docker-ce-desktop-mac).  Then start up the Docker application (press Command-Space bar, type in `Docker` and run it).  After it is running you will see the Docker icon appear in your status bar:
 
-    ![Docker icon in status bar](/weblogic-kubernetes-operator/images/docker-icon-in-status-bar.png)
+   {{< img "Docker icon in status bar" "images/docker-icon-in-status-bar.png" >}}
 
 1. Click the Docker icon and select "Preferences..." from the drop down menu.  Go to the "Advanced" tab and give Docker a bit more memory if you have enough to spare:
 
-    ![Docker memory settings](/weblogic-kubernetes-operator/images/docker-memory.png)
+   {{< img "Docker memory settings" "images/docker-memory.png" >}}
 
 1. Go to the "Kubernetes" tab and click on the option to enable Kubernetes:
 
-    ![Enable Kubernetes setting](/weblogic-kubernetes-operator/images/docker-enable-k8s.png)
+   {{< img "Enable Kubernetes setting" "images/docker-enable-k8s.png" >}}
 
     {{% notice note %}} If you are behind an HTTP proxy, then you should also go to the "Proxies" tab and enter your proxy details.
     {{% /notice %}}
 
     Docker will download the Kubernetes components and start them up for you.  When it is done, you will see the Kubernetes status go to green/running in the menu:
 
-    ![Kubernetes running](/weblogic-kubernetes-operator/images/docker-k8s-running.png)
+   {{< img "Kubernetes running" "images/docker-k8s-running.png" >}}
 
 1. Ensure that `kubectl` on your Mac, is pointing to the correct cluster and context.
 
