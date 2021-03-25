@@ -18,7 +18,7 @@ disadvantage that your builds would depend on the previous good build and
 this is somewhat contrary to typical CI/CD practices.  You also have to work
 out what to do with the bad builds, or "holes" in the sequence.
 
-![Mutating the previous state](/weblogic-kubernetes-operator/images/n-1.png)
+{{< img "Mutating the previous state" "images/n-1.png" >}}
 
 An alternative is to capture a "primordial state" of the domain before starting
 the sequence.  In practical terms, this might mean creating a very simple domain
@@ -33,7 +33,7 @@ have benefits when you remove things from the domain, because you would not have
 "lost" ("whited out" is the Docker layer term) space in the intermediate layers.
 Although, these layers tend to be relatively small, so this is possibly not a big issue.
 
-![Rebuilding from a primordial state](/weblogic-kubernetes-operator/images/primordial.png)
+{{< img "Rebuilding from a primordial state" "images/primordial.png" >}}
 
 This approach is probably an improvement.  It does get interesting though when you
 update a lower layer, for example when you patch WebLogic or update the JDK.  When
