@@ -358,20 +358,38 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
-  // These are the SHA256 annotation values computed by release 3.1.4, and must be preserved, going forward.
-  // Changes to the WlsServerConfiguration can affect them, so the tests must be run with the original config.
-  abstract String getExpectedPlainPortSha256Annotation();
+  // Returns the YAML for a 3.1 domain-in-image pod with only theplain port enabled.
+  abstract String getReferencePlainPortPodYaml();
 
-  abstract String getExpectedSslPortSha256Annotation();
+  // Returns the YAML for a 3.1 domain-in-image pod with the SSL port enabled.
+  abstract String getReferenceSslPortPodYaml();
 
   // Returns the YAML for a 3.1 Mii Pod.
-  abstract String getReferencePodYaml();
+  abstract String getReferenceMiiPodYaml();
 
   @Test
-  public void whenPodCreateWithoutSslPort_hashMatches31Release() {
+  public void afterUpgradingPlainPortPodFrom31_patchIt() {
     useProductionHash();
-    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
-          equalTo(getExpectedPlainPortSha256Annotation()));
+    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  public void afterUpgradingSslPortPodFrom31_patchIt() {
+    useProductionHash();
+    getServerTopology().setSslListenPort(7002);
+    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   void useProductionHash() {
@@ -379,21 +397,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreateWithSslPort_hashMatches31Release() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-
-    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
-          equalTo(getExpectedSslPortSha256Annotation()));
-  }
-
-  @Test
-  public void afterUpgradeFrom31_patchPod() throws NoSuchFieldException {
+  public void afterUpgradingMiiPodFrom31_patchIt() {
     useProductionHash();
     testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
     disableAutoIntrospectOnNewMiiPods();
-    initializeExistingPod(loadPodModel(getReferencePodYaml()));
+    initializeExistingPod(loadPodModel(getReferenceMiiPodYaml()));
 
     verifyPodPatched();
 

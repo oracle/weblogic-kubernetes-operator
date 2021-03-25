@@ -74,7 +74,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 
-abstract class PodStepContext extends BasePodStepContext {
+public abstract class PodStepContext extends BasePodStepContext {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -481,24 +481,50 @@ abstract class PodStepContext extends BasePodStepContext {
   }
 
   private String getRequiredHash(V1Pod currentPod) {
-    if (isLegacyMiiPod(currentPod)) {
-      return adjustedMiiHash(currentPod);
+    if (isLegacyPod(currentPod)) {
+      return adjustedHash(currentPod);
     } else {
       return AnnotationHelper.getHash(getPodModel());
     }
   }
 
-  private boolean isLegacyMiiPod(V1Pod currentPod) {
-    return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH) && !hasLabel(currentPod, OPERATOR_VERSION);
+  private boolean isLegacyPod(V1Pod currentPod) {
+    return !hasLabel(currentPod, OPERATOR_VERSION);
   }
 
   private boolean hasLabel(V1Pod pod, String key) {
     return pod.getMetadata().getLabels().containsKey(key);
   }
 
-  private String adjustedMiiHash(V1Pod currentPod) {
-    return AnnotationHelper.createHash(
-          withLegacyDomainHash(createPodRecipe(), getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH)));
+  private String adjustedHash(V1Pod currentPod) {
+    V1Pod recipe = createPodRecipe();
+    addLegacyPrometheusAnnotations(recipe);
+
+    if (isLegacyMiiPod(currentPod)) {
+      copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
+    }
+
+    return AnnotationHelper.createHash(recipe);
+  }
+
+  private void addLegacyPrometheusAnnotations(V1Pod pod) {
+    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
+  }
+
+  private Integer getMetricsPort() {
+    return getListenPort() != null ? getListenPort() : getSslListenPort();
+  }
+
+  private boolean isLegacyMiiPod(V1Pod currentPod) {
+    return hasLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH);
+  }
+
+  private void copyLabel(V1Pod fromPod, V1Pod toPod, String key) {
+    setLabel(toPod, key, getLabel(fromPod, key));
+  }
+
+  private void setLabel(V1Pod currentPod, String key, String value) {
+    currentPod.getMetadata().putLabelsItem(key, value);
   }
 
   private String getLabel(V1Pod currentPod, String key) {
@@ -664,15 +690,7 @@ abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(miiModelSecretsHash)
           .ifPresent(hash -> addHashLabel(metadata, LabelConstants.MODEL_IN_IMAGE_MODEL_SECRETS_HASH, hash));
 
-    // Add legacy prometheus annotations. These have to remain, as they are included in the computation
-    // of the pod sha256 hash, and removing them will cause pods to roll when customers upgrade to new
-    // versions of the operator.
-    AnnotationHelper.annotateForPrometheus(metadata, "/wls-exporter", getMetricsPort());
     return metadata;
-  }
-
-  private Integer getMetricsPort() {
-    return getListenPort() != null ? getListenPort() : getSslListenPort();
   }
 
   private void addHashLabel(V1ObjectMeta metadata, String label, String hash) {
