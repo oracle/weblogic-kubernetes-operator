@@ -57,10 +57,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Configure custom identity and custom trust on server template
  * Enable SSL on server template with port 8002 (default 7002 does not work) 
  * Put the IdentityKeyStore.jks  and TrustKeyStore.jks on /shared directory 
- *  after administration server pod is started so taht it can be accessible 
+ *  after administration server pod is started so that it can be accessible 
  *  from all managed server pods
  * Once all servers are started get the JNDI initial context using cluster 
- *  serice URL with t3s protocol.
+ *  service URL with t3s protocol.
  * Repeat the same after scaling the cluster 
  */
 

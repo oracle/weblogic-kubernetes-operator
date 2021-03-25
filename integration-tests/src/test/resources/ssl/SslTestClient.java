@@ -9,9 +9,7 @@ import javax.naming.NamingException;
 import javax.jms.ConnectionFactory;
 
 public class SslTestClient {
-
   private String    url;
-  private String    action;
 
   public SslTestClient(String[] args)
   {
