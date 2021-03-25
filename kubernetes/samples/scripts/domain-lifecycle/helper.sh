@@ -1035,3 +1035,16 @@ function failIfValidationErrors {
     usage 1
   fi
 }
+
+#
+# Function to lowercase a value and make it a legal DNS1123 name
+# $1 - value to convert to DNS legal name
+# $2 - return value containing DNS legal name.
+function toDNS1123Legal {
+  local name=$1
+  local __result=$2
+  local val=`echo "${name}" | tr "[:upper:]" "[:lower:]"`
+  val=${val//"_"/"-"}
+  eval $__result="'$val'"
+}
+

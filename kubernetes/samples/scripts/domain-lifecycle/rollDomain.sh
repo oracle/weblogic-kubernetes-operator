@@ -13,7 +13,7 @@ function usage() {
   cat << EOF
 
   This script initiates a rolling restart of pods in a WebLogic domain by updating
-  the value of 'spec.restartVersion' attribute of the domain resource. 
+  the value of the 'spec.restartVersion' attribute of the domain resource. 
  
   Usage:
  
@@ -31,7 +31,7 @@ function usage() {
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'
                           if KUBERNETES_CLI env variable is not set. Otherwise 
-                          the default is the value of KUBERNETES_CLI env variable.
+                          the default is the value of the KUBERNETES_CLI env variable.
 
     -v <verbose_mode>   : Enables verbose mode. Default is 'false'.
 

@@ -19,7 +19,8 @@ function usage() {
  
     $(basename $0) -s myserver [-n mynamespace] [-d mydomainuid] [-m kubecli]
   
-    -s <server_name>           : Server name parameter is required.
+    -s <server_name>           : The WebLogic server name (not the pod name).
+                                 This parameter is required.
 
     -d <domain_uid>            : Domain unique-id. Default is 'sample-domain1'.
 
@@ -40,6 +41,8 @@ serverName=""
 clusterName=""
 domainUid="sample-domain1"
 domainNamespace="sample-domain1-ns"
+podName=""
+legalPodName=""
 
 while getopts "s:m:n:d:h" opt; do
   case $opt in
@@ -92,8 +95,10 @@ if [ "${isValidServer}" != 'true' ]; then
   exit 1
 fi
 
-printInfo "Initiating restart of '${serverName}' by deleting server pod '${domainUid}-${serverName}'."
-result=$(${kubernetesCli} -n ${domainNamespace} delete pod ${domainUid}-${serverName} --ignore-not-found)
+podName=${domainUid}-${serverName}
+toDNS1123Legal ${podName} legalDNSPodName
+printInfo "Initiating restart of '${serverName}' by deleting server pod '${legalDNSPodName}'."
+result=$(${kubernetesCli} -n ${domainNamespace} delete pod ${legalDNSPodName} --ignore-not-found)
 if [ -z "${result}" ]; then
   printError "Server '${serverName}' is not running."
 else

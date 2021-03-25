@@ -53,7 +53,8 @@ function usage() {
  
     $(basename $0) -s myserver [-n mynamespace] [-d mydomainuid] [-k] [-m kubecli] [-v]
   
-    -s <server_name>           : Server name parameter is required.
+    -s <server_name>           : The WebLogic server name (not the pod name). 
+                                 This parameter is required.
 
     -d <domain_uid>            : Domain unique-id. Default is 'sample-domain1'.
 
