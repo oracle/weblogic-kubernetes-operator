@@ -502,9 +502,12 @@ function generateDomainIntrospectVersion {
 
 #
 # Function to generate the cluster restartVersion by incrementing the
-# existing value. If the restartVersion doesn't exist at the cluster level, 
-# then it increments the domain level restartVersion value. If the effective 
-# restartVersion value at cluster/domain level is non-numeric, then it returns 1.
+# existing value of cluster restartVersion. If the restartVersion
+# value at the cluster level is non-numeric, then it returns 1.
+# If the restartVersion doesn't exist at the cluster level, then it
+# increments the domain level restartVersion value. In this case, if
+# the restartVersion value at the domain level is non-numeric,
+# then it returns 1.
 # $1 - Domain resource in json format
 # $2 - Name of cluster
 # $3 - Return value containing the restart version.

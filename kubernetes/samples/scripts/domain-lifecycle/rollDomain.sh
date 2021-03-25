@@ -26,7 +26,7 @@ function usage() {
     -r <restartVersion> : Restart version. If this parameter is not provided, 
                           then the script will generate the 'restartVersion' by
                           incrementing the existing value. If the 'spec.restartVersion' 
-                          doesn't exist or it's value is non-numeric, then the script
+                          doesn't exist or its value is non-numeric, then the script
                           will set the 'spec.restartVersion' value to '1'.
 
     -m <kubernetes_cli> : Kubernetes command line interface. Default is 'kubectl'
