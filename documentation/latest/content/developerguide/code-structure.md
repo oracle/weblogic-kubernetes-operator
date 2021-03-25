@@ -7,18 +7,18 @@ weight: 6
 
 This project has the following directory structure:
 
-* `docs`: Helm charts, Javadoc, Operator REST API Swagger, and Domain reference
-* `docs-source`: This documentation
-* `integration-tests`: Original, JUnit 4 integration test suite (see also `new-integration-tests`)
-* `json-schema`: Java model to JSON schema generator
+* `documentation/latest`: This documentation
+* `documentation/<numbered directory>`: The archived documentation for a previous release
+* `documentation/charts`: Helm chart repository
+* `documentation/swagger`: The operator REST API swagger
+* `documentation/domains`: Reference for Domain resource schema 
+* `json-schema-generator`: Java model to JSON schema generator
 * `json-schema-maven-plugin`: Maven plugin for schema generator
 * `kubernetes/charts`: Helm charts
 * `kubernetes/samples`: All samples, including for WebLogic domain creation
-* `new-integration-tests`: JUnit 5 integration test suite (see also `integration-tests`)
+* `integration-tests`: JUnit 5 integration test suite
 * `operator`: Operator runtime
-* `site`: Historical documentation
-* `src/scripts`: Scripts operator injects into WebLogic Server instance Pods
-* `swagger`: Swagger files for the Kubernetes API server and Domain type
+* `swagger-generator`: Swagger file generator for the Kubernetes API server and Domain type
 
 ### Watch package
 
