@@ -21,7 +21,7 @@ The most common causes are:
 
 Let's review what happens when Kubernetes starts a pod.
 
-![Pulling an image](/weblogic-kubernetes-operator/images/image-pull.png)
+{{< img "Pulling an image" "images/image-pull.png" >}}
 
 The definition of the pod contains a list of container specifications.  Each container
 specification contains the name (and optionally, tag) of the image that should be used

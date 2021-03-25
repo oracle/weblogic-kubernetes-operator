@@ -12,7 +12,7 @@ description: "Learn why Docker image layering affects CI/CD processes."
 Now that we know more about layering, let’s talk about why it is important to our
 CI/CD process.  Let's consider the kinds of updates we might want to make to our domain:
 
-![Types of updates](/weblogic-kubernetes-operator/images/updates.png)
+{{< img "Types of updates" "images/updates.png" >}}
 
 You might want to update the domain by:
 
@@ -88,7 +88,7 @@ If we want to make a change in a lower layer without losing our domain encryptio
 keys, then we need to find a way to "save" the domain and then put it back into a
 new layer, later, on top of the other new (lower) layers, as depicted in the image below:
 
-![Rebuilding layers](/weblogic-kubernetes-operator/images/rebuild.png)
+{{< img "Rebuilding layers" "images/rebuild.png" >}}
 
 The process looks like this:
 
