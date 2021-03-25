@@ -16,7 +16,6 @@ public class SslTestClient {
   public SslTestClient(String[] args)
   {
     url      = args[0];
-
     try {
        Context ctx = getInitialContext();
        System.out.println("Got the Initial JNDI Context ["+ctx+"]");
@@ -24,19 +23,16 @@ public class SslTestClient {
        ConnectionFactory qcf=(ConnectionFactory)ctx.lookup(cfName);
        System.out.println("Looked up default JMS connection factory ["+qcf+"]");
      } catch ( Exception  ex ) { 
-       System.out.println("Got Unknown Exception ---> "+ ex);
+       System.out.println("Got Unknown Exception ["+ ex + "]");
        ex.printStackTrace();
        System.exit(-1);
      } 
    } 
 
-   private void debug(String err) { System.out.println("<DEBUG> " + err); }
-   private void log(String err) { System.out.println(err); }
-
    private Context getInitialContext()
    {
       Context jndiContext = null;
-      System.out.println("Lookup Url [" + url + "]");
+      System.out.println("Lookup URL [" + url + "]");
       Hashtable props = new Hashtable();
       props.put(Context.PROVIDER_URL, url);
 
@@ -60,5 +56,4 @@ public class SslTestClient {
     }
     SslTestClient client = new SslTestClient(args);
    }
- 
 }
