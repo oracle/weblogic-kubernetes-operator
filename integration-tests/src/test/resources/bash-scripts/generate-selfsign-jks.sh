@@ -33,8 +33,6 @@ keytool -importkeystore -destkeystore IdentityKeyStore.jks \
 keytool -import -file cacert.pem -keystore TrustKeyStore.jks \
         -storepass changeit -noprompt
 
-#keytool -list -v -keystore TrustKeyStore.jks -storepass changeit
-#keytool -list -v -keystore IdentityKeyStore.jks -storepass changeit
 )
 
 }
