@@ -846,12 +846,12 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasFailedCondition_progressingStepRemovesIt() {
+  public void whenDomainHasFailedCondition_progressingStepShouldNotRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
-    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+    assertThat(getRecordedDomain(), hasCondition(Failed));
   }
 
   @Test
