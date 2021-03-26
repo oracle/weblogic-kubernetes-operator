@@ -436,7 +436,6 @@ function createFiles {
     sed -i -e "s:%RCU_SCHEMA_PASSWORD%:${rcuSchemaPassword}:g" ${domainPropertiesOutput}
     sed -i -e "s|%RCU_DB_CONN_STRING%|${rcuDatabaseURL}|g" ${domainPropertiesOutput}
 
-    echo "******** debug - rcuDatabaseURL is '${rcuDatabaseURL}'"
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
       defaultImageName="domain-home-in-image"
@@ -519,6 +518,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
+    sed -i -e "s|%HTTPS_PROXY%|${https_proxy}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}

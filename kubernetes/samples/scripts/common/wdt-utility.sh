@@ -85,6 +85,29 @@ WIT_VERSION=${WIT_VERSION:-1.9.10}
 
 DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
+function download {
+  local fileUrl="${1}"
+
+  local curl_res=1
+  max=20
+  count=0
+  while [ $curl_res -ne 0 -a $count -lt $max ] ; do
+    sleep 1
+    count=`expr $count + 1`
+    for proxy in "${https_proxy}" "${https_proxy2}"; do
+	  echo @@ "Info:  Downloading $fileUrl with https_proxy=\"$proxy\""
+	  https_proxy="${proxy}" \
+	    curl --silent --show-error --connect-timeout 10 -O -L $fileUrl
+	  curl_res=$?
+	  [ $curl_res -eq 0 ] && break
+	done
+  done
+  if [ $curl_res -ne 0 ]; then
+    echo @@ "Error: Download failed."
+    return 1
+  fi
+}
+
 function run_wdt {
   #
   # Run WDT using WDT_VAR_FILE, WDT_MODEL_FILE, and ORACLE_HOME.  
@@ -194,6 +217,9 @@ function run_wdt {
 
   local wdt_res=$?
 
+  echo "debug-- contents for domain${action}.yaml is "
+  cat domain${action}.yaml
+
   cd $save_dir
 
   if [ $wdt_res -ne 0 ]; then
@@ -231,7 +257,7 @@ function install_wdt {
   cd $WDT_DIR || return 1
 
   echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL "
-  curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL
+  download $WDT_INSTALL_ZIP_URL || return 1
 
   if [ ! -f $WDT_INSTALL_ZIP_FILE ]; then
     cd $save_dir
@@ -279,7 +305,7 @@ function install_wit {
   echo @@ "imagetool.sh not found in ${imagetoolBinDir}. Installing imagetool..."
 
   echo @@ "Info:  Downloading $WIT_INSTALL_ZIP_URL "
-  curl --silent --show-error --connect-timeout 10 -O -L $WIT_INSTALL_ZIP_URL
+  download $WIT_INSTALL_ZIP_URL || return 1
 
   if [ ! -f $WIT_INSTALL_ZIP_FILE ]; then
     cd $save_dir
