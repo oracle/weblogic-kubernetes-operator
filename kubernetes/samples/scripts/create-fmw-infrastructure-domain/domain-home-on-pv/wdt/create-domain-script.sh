@@ -83,3 +83,12 @@ setup_wdt_shared_dir || exit 1
 install_wdt || exit 1
 
 run_wdt "create" || exit 1
+
+echo "Does ${WDT_DIR}/doneExtract exist?"
+while [ ! -f "${WDT_DIR}/doneExtract" ]; do
+   echo @@ "${WDT_DIR}/doneExtract does not exist yet"
+   sleep 20
+done
+echo "Found it and removing the doneExtract file"
+rm -rf ${WDT_DIR}/doneExtract || exit 1
+
