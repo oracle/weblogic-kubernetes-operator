@@ -64,6 +64,31 @@ public class DomainStatusTest {
   }
 
   @Test
+  public void whenAddedConditionProgressing_addedItWithoutRemovingFailed() {
+    DomainCondition originalCondition1 = new DomainCondition(Failed).withStatus("True");
+    domainStatus.addCondition(originalCondition1);
+    DomainCondition originalCondition2 = new DomainCondition(Progressing).withStatus("True");
+    domainStatus.addCondition(originalCondition2);
+
+    assertThat(domainStatus.getConditionWithType(Failed), sameInstance(originalCondition1));
+    assertThat(domainStatus.getConditionWithType(Progressing), sameInstance(originalCondition2));
+  }
+
+  @Test
+  public void whenAddedConditionFailed_removeProgressingCondition() {
+    DomainCondition originalCondition1 = new DomainCondition(Failed).withStatus("True");
+    domainStatus.addCondition(originalCondition1);
+    DomainCondition originalCondition2 = new DomainCondition(Progressing).withStatus("True");
+    domainStatus.addCondition(originalCondition2);
+
+    SystemClockTestSupport.increment();
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
+
+    assertThat(domainStatus.getConditionWithType(Failed), sameInstance(originalCondition1));
+    assertThat(domainStatus.getConditionWithType(Progressing), is(nullValue()));
+  }
+
+  @Test
   public void whenAddedConditionIsFailed_replaceOldFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
@@ -144,12 +169,12 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsProgress_removeExistedFailedCondition() {
+  public void whenAddedConditionIsProgress_doNotRmoveExistedFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
 
-    assertThat(domainStatus, not(hasCondition(Failed)));
+    assertThat(domainStatus, hasCondition(Failed));
     assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
   }
 
