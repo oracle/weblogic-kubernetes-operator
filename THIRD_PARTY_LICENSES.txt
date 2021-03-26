@@ -2,10 +2,6 @@ oracle.kubernetes:operator-parent
 -------- Copyrights
 Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 ?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>LegalNames.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Project Reports</a> &gt; <a href="../index.html" class="el_bundle">weblogic-kubernetes-operator</a> &gt; <a href="index.source.html" class="el_package">oracle.kubernetes.operator.helpers</a> &gt; <span class="el_source">LegalNames.java</span></div><h1>LegalNames.java</h1><pre class="source lang-java linenums">// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
-p class="legalCopy"><small>Copyright &#169; 2017&#x2013;2019. All rights reserved.</small></p>
-p class="legalCopy"><small>Copyright &#169; 2017&#x2013;2020. All rights reserved.</small></p>
-p class="legalCopy"><small><p>Copyright 2018, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p></small></p>
-p class="legalCopy"><small><p>Copyright 2018, 2019, <a href="http://www.oracle.com">Oracle Corporation</a> and/or its affiliates.  All rights reserved. <br />Licensed under the Universal Permissive License v 1.0 as shown at <a href="http://oss.oracle.com/licenses/upl">http://oss.oracle.com/licenses/upl</a>.<p></small></p>
 Copyright (c) 2014 Grav
 Copyright (c) 2016 MATHIEU CORNIC
 Copyright (c) 2017 Valere JEANTET
@@ -13,7 +9,6 @@ Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Copyright (c) 2021, Oracle and/or its affiliates.
 Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 Copyright (c) 2019, 2021, Oracle and/or its affiliates.
-Copyright (c) 2017, 2020, Oracle Corporation and/or its affiliates.
 Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
 Copyright (C) 2007 Free Software Foundation, Inc."
 Copyright (C) 2019 Free Software Foundation, Inc.",
@@ -58,219 +53,6 @@ SOFTWARE.
 
 ----------------------- Dependencies Grouped by License ------------
 -------- Dependency
-jakarta.xml.bind:jakarta.xml.bind-api
--------- Copyrights
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2005, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2003, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2006, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2007, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2004, 2018 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notices for Eclipse Project for JAXB
-
-This content is produced and maintained by the Eclipse Project for JAXB project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaxb
-
-## Trademarks
-
-Eclipse Project for JAXB is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Distribution License v. 1.0 which is available
-at http://www.eclipse.org/org/documents/edl-v10.php.
-
-SPDX-License-Identifier: BSD-3-Clause
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaxb-api
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-None
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
-
-
--------- Dependencies Summary
-jakarta.xml.bind:jakarta.xml.bind-api
-
--------- License used by Dependencies
-
-    Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-   
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-   
-      - Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-   
-      - Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-   
-      - Neither the name of the Eclipse Foundation, Inc. nor the names of its
-        contributors may be used to endorse or promote products derived
-        from this software without specific prior written permission.
-   
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
------------------------ Dependencies Grouped by License ------------
--------- Dependency
-com.sun.activation:jakarta.activation
--------- Copyrights
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2019 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notices for Jakarta Activation
-
-This content is produced and maintained by Jakarta Activation project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaf
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Distribution License v. 1.0,
-which is available at http://www.eclipse.org/org/documents/edl-v10.php.
-
-SPDX-License-Identifier: BSD-3-Clause
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaf
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-JUnit (4.12)
-
-* License: Eclipse Public License
-
-
--------- Dependency
-jakarta.activation:jakarta.activation-api
--------- Copyrights
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notices for Eclipse Project for JAF
-
-This content is produced and maintained by the Eclipse Project for JAF project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jaf
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Distribution License v. 1.0,
-which is available at http://www.eclipse.org/org/documents/edl-v10.php.
-
-SPDX-License-Identifier: BSD-3-Clause
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jaf
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-JUnit (4.12)
-
-* License: Eclipse Public License
-
-
--------- Dependencies Summary
-com.sun.activation:jakarta.activation
-jakarta.activation:jakarta.activation-api
-
--------- License used by Dependencies
-
-    Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-   
-    Redistribution and use in source and binary forms, with or without
-    modification, are permitted provided that the following conditions
-    are met:
-   
-      - Redistributions of source code must retain the above copyright
-        notice, this list of conditions and the following disclaimer.
-   
-      - Redistributions in binary form must reproduce the above copyright
-        notice, this list of conditions and the following disclaimer in the
-        documentation and/or other materials provided with the distribution.
-   
-      - Neither the name of the Eclipse Foundation, Inc. nor the names of its
-        contributors may be used to endorse or promote products derived
-        from this software without specific prior written permission.
-   
-    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-    IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-    THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-    PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-    CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-    EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-    PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-    PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
------------------------ Dependencies Grouped by License ------------
--------- Dependency
 org.glassfish.jersey.containers:jersey-container-grizzly2-http
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
@@ -286,10 +68,9 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -334,13 +115,13 @@ aopalliance Version 1
 * Project: http://aopalliance.sourceforge.net
 * Copyright: Material in the public domain is not protected by copyright
 
-Bean Validation API 2.0.2
+Bean Validation API 3.0.0
 * License: Apache License, 2.0
 * Project: http://beanvalidation.org/1.1/
 * Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
 * by the @authors tag.
 
-Hibernate Validator CDI, 6.1.2.Final 
+Hibernate Validator CDI, 7.0.0.Final
 * License: Apache License, 2.0
 * Project: https://beanvalidation.org/
 * Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
@@ -363,7 +144,7 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.10.1
+Jackson JAX-RS Providers Version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -388,7 +169,7 @@ KineticJS, v4.7.1
 * Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
 * Copyright: Eric Rowell
 
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -422,27 +203,28 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates.
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018, 2019 Payara Foundation and/or its affiliates.
+Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -487,13 +269,13 @@ aopalliance Version 1
 * Project: http://aopalliance.sourceforge.net
 * Copyright: Material in the public domain is not protected by copyright
 
-Bean Validation API 2.0.2
+Bean Validation API 3.0.0
 * License: Apache License, 2.0
 * Project: http://beanvalidation.org/1.1/
 * Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
 * by the @authors tag.
 
-Hibernate Validator CDI, 6.1.2.Final 
+Hibernate Validator CDI, 7.0.0.Final
 * License: Apache License, 2.0
 * Project: https://beanvalidation.org/
 * Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
@@ -516,7 +298,7 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.10.1
+Jackson JAX-RS Providers Version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -541,7 +323,7 @@ KineticJS, v4.7.1
 * Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
 * Copyright: Eric Rowell
 
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -576,20 +358,24 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2019, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (C) 2007 The Guava Authors
 Copyright (C) 2012 The Guava Authors
 Copyright (C) 2010 The Guava Authors
@@ -600,13 +386,16 @@ Copyright (C) 2006 The Guava Authors
 Copyright (C) 2014 The Guava Authors
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates.
+Copyright (c) 2012, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2009, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey Core Common module 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -672,26 +461,31 @@ Copyright: (c) 2009 Antonello Pasella antonello.pasella@gmail.com
 Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2000-2011 INRIA, France Telecom
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2018 Payara Foundation and/or its affiliates.
-Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2021 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010, 2013 Coda Hale and Yammer, Inc.
 Copyright 2015, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey Core Server module 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -731,7 +525,7 @@ org.glassfish.jersey.server.internal.monitoring.core
 * Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 * Copyright 2010-2013 Coda Hale and Yammer, Inc.
 
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright: (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -756,10 +550,11 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
 This content is produced and maintained by the Eclipse Jersey project.
@@ -804,13 +599,13 @@ aopalliance Version 1
 * Project: http://aopalliance.sourceforge.net
 * Copyright: Material in the public domain is not protected by copyright
 
-Bean Validation API 2.0.2
+Bean Validation API 3.0.0
 * License: Apache License, 2.0
 * Project: http://beanvalidation.org/1.1/
 * Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
 * by the @authors tag.
 
-Hibernate Validator CDI, 6.1.2.Final 
+Hibernate Validator CDI, 7.0.0.Final
 * License: Apache License, 2.0
 * Project: https://beanvalidation.org/
 * Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
@@ -833,7 +628,7 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.10.1
+Jackson JAX-RS Providers Version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -858,7 +653,7 @@ KineticJS, v4.7.1
 * Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
 * Copyright: Eric Rowell
 
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -893,6 +688,8 @@ Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2021 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2017, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
@@ -938,13 +735,13 @@ aopalliance Version 1
 * Project: http://aopalliance.sourceforge.net
 * Copyright: Material in the public domain is not protected by copyright
 
-Bean Validation API 2.0.2
+Bean Validation API 3.0.0
 * License: Apache License, 2.0
 * Project: http://beanvalidation.org/1.1/
 * Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
 * by the @authors tag.
 
-Hibernate Validator CDI, 6.1.2.Final 
+Hibernate Validator CDI, 7.0.0.Final
 * License: Apache License, 2.0
 * Project: https://beanvalidation.org/
 * Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
@@ -967,7 +764,7 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.10.1
+Jackson JAX-RS Providers Version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -992,147 +789,7 @@ KineticJS, v4.7.1
 * Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
 * Copyright: Eric Rowell
 
-org.objectweb.asm Version 8.0
-* License: Modified BSD (http://asm.objectweb.org/license.html)
-* Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
-
-org.osgi.core version 6.0.0
-* License: Apache License, 2.0
-* Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
-
-org.glassfish.jersey.server.internal.monitoring.core
-* License: Apache License, 2.0
-* Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
-* Copyright 2010-2013 Coda Hale and Yammer, Inc.
-
-W3.org documents
-* License: W3C License
-* Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-
-
--------- Dependency
-org.glassfish.jersey.media:jersey-media-jaxb
--------- Copyrights
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
-Copyright: 2011-2016 Twitter, Inc
-Copyright (C) 2009 The Guava Authors
-Copyright (C) 2009 The JSR-330 Expert Group
-Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
-Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Copyright: (c) 2009 Antonello Pasella antonello.pasella@gmail.com
-Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
-Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
-Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
-Copyright 2010-2013 Coda Hale and Yammer, Inc.
-Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
-
-## Third-party Content
-
-Angular JS, v1.6.6
-* License MIT (http://www.opensource.org/licenses/mit-license.php)
-* Project: http://angularjs.org
-* Coyright: (c) 2010-2017 Google, Inc.
-
-aopalliance Version 1
-* License: all the source code provided by AOP Alliance is Public Domain.
-* Project: http://aopalliance.sourceforge.net
-* Copyright: Material in the public domain is not protected by copyright
-
-Bean Validation API 2.0.2
-* License: Apache License, 2.0
-* Project: http://beanvalidation.org/1.1/
-* Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
-* by the @authors tag.
-
-Hibernate Validator CDI, 6.1.2.Final 
-* License: Apache License, 2.0
-* Project: https://beanvalidation.org/
-* Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
-
-Bootstrap v3.3.7
-* License: MIT license (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-* Project: http://getbootstrap.com
-* Copyright: 2011-2016 Twitter, Inc
-
-Google Guava Version 18.0
-* License: Apache License, 2.0
-* Copyright (C) 2009 The Guava Authors
-
-javax.inject Version: 1
-* License: Apache License, 2.0
-* Copyright (C) 2009 The JSR-330 Expert Group
-
-Javassist Version 3.25.0-GA
-* License: Apache License, 2.0
-* Project: http://www.javassist.org/
-* Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
-
-Jackson JAX-RS Providers Version 2.10.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-
-jQuery v1.12.4
-* License: jquery.org/license
-* Project: jquery.org
-* Copyright: (c) jQuery Foundation
-
-jQuery Barcode plugin 0.3
-* License: MIT & GPL (http://www.opensource.org/licenses/mit-license.php & http://www.gnu.org/licenses/gpl.html)
-* Project:  http://www.pasella.it/projects/jQuery/barcode
-* Copyright: (c) 2009 Antonello Pasella antonello.pasella@gmail.com
-
-JSR-166 Extension - JEP 266
-* License: CC0
-* No copyright
-* Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/
-
-KineticJS, v4.7.1
-* License: MIT license (http://www.opensource.org/licenses/mit-license.php)
-* Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
-* Copyright: Eric Rowell
-
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -1169,7 +826,7 @@ Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Ins
 Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
@@ -1206,7 +863,7 @@ The project maintains the following source code repositories:
 
 ## Third-party Content
 
-Jackson JAX-RS Providers version 2.10.1
+Jackson JAX-RS Providers version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -1227,6 +884,7 @@ Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
 Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
 Copyright 2010-2013 Coda Hale and Yammer, Inc.
 Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notice for Jersey 
@@ -1272,13 +930,13 @@ aopalliance Version 1
 * Project: http://aopalliance.sourceforge.net
 * Copyright: Material in the public domain is not protected by copyright
 
-Bean Validation API 2.0.2
+Bean Validation API 3.0.0
 * License: Apache License, 2.0
 * Project: http://beanvalidation.org/1.1/
 * Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
 * by the @authors tag.
 
-Hibernate Validator CDI, 6.1.2.Final 
+Hibernate Validator CDI, 7.0.0.Final
 * License: Apache License, 2.0
 * Project: https://beanvalidation.org/
 * Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
@@ -1301,7 +959,7 @@ Javassist Version 3.25.0-GA
 * Project: http://www.javassist.org/
 * Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
 
-Jackson JAX-RS Providers Version 2.10.1
+Jackson JAX-RS Providers Version 2.11.3
 * License: Apache License, 2.0
 * Project: https://github.com/FasterXML/jackson-jaxrs-providers
 * Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
@@ -1326,145 +984,7 @@ KineticJS, v4.7.1
 * Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
 * Copyright: Eric Rowell
 
-org.objectweb.asm Version 8.0
-* License: Modified BSD (http://asm.objectweb.org/license.html)
-* Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
-
-org.osgi.core version 6.0.0
-* License: Apache License, 2.0
-* Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
-
-org.glassfish.jersey.server.internal.monitoring.core
-* License: Apache License, 2.0
-* Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
-* Copyright 2010-2013 Coda Hale and Yammer, Inc.
-
-W3.org documents
-* License: W3C License
-* Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-
-
--------- Dependency
-org.glassfish.jersey.media:jersey-media-multipart
--------- Copyrights
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
-Copyright: 2011-2016 Twitter, Inc
-Copyright (C) 2009 The Guava Authors
-Copyright (C) 2009 The JSR-330 Expert Group
-Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
-Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-Copyright: (c) 2009 Antonello Pasella antonello.pasella@gmail.com
-Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
-Copyright (c) OSGi Alliance (2005, 2008). All Rights Reserved.
-Copyright (c) 2015-2018 Oracle and/or its affiliates. All rights reserved.
-Copyright 2010-2013 Coda Hale and Yammer, Inc.
-Copyright: Copyright (c) 1994-2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University). All Rights Reserved. http://www.w3.org/Consortium/Legal/
-Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2016, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notice for Jersey 
-This content is produced and maintained by the Eclipse Jersey project.
-
-*  Project home: https://projects.eclipse.org/projects/ee4j.jersey
-
-## Trademarks
-Eclipse Jersey is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jersey
-
-## Third-party Content
-
-Angular JS, v1.6.6
-* License MIT (http://www.opensource.org/licenses/mit-license.php)
-* Project: http://angularjs.org
-* Coyright: (c) 2010-2017 Google, Inc.
-
-aopalliance Version 1
-* License: all the source code provided by AOP Alliance is Public Domain.
-* Project: http://aopalliance.sourceforge.net
-* Copyright: Material in the public domain is not protected by copyright
-
-Bean Validation API 2.0.2
-* License: Apache License, 2.0
-* Project: http://beanvalidation.org/1.1/
-* Copyright: 2009, Red Hat, Inc. and/or its affiliates, and individual contributors
-* by the @authors tag.
-
-Hibernate Validator CDI, 6.1.2.Final 
-* License: Apache License, 2.0
-* Project: https://beanvalidation.org/
-* Repackaged in org.glassfish.jersey.server.validation.internal.hibernate
-
-Bootstrap v3.3.7
-* License: MIT license (https://github.com/twbs/bootstrap/blob/master/LICENSE)
-* Project: http://getbootstrap.com
-* Copyright: 2011-2016 Twitter, Inc
-
-Google Guava Version 18.0
-* License: Apache License, 2.0
-* Copyright (C) 2009 The Guava Authors
-
-javax.inject Version: 1
-* License: Apache License, 2.0
-* Copyright (C) 2009 The JSR-330 Expert Group
-
-Javassist Version 3.25.0-GA
-* License: Apache License, 2.0
-* Project: http://www.javassist.org/
-* Copyright (C) 1999- Shigeru Chiba. All Rights Reserved.
-
-Jackson JAX-RS Providers Version 2.10.1
-* License: Apache License, 2.0
-* Project: https://github.com/FasterXML/jackson-jaxrs-providers
-* Copyright: (c) 2009-2011 FasterXML, LLC. All rights reserved unless otherwise indicated.
-
-jQuery v1.12.4
-* License: jquery.org/license
-* Project: jquery.org
-* Copyright: (c) jQuery Foundation
-
-jQuery Barcode plugin 0.3
-* License: MIT & GPL (http://www.opensource.org/licenses/mit-license.php & http://www.gnu.org/licenses/gpl.html)
-* Project:  http://www.pasella.it/projects/jQuery/barcode
-* Copyright: (c) 2009 Antonello Pasella antonello.pasella@gmail.com
-
-JSR-166 Extension - JEP 266
-* License: CC0
-* No copyright
-* Written by Doug Lea with assistance from members of JCP JSR-166 Expert Group and released to the public domain, as explained at http://creativecommons.org/publicdomain/zero/1.0/
-
-KineticJS, v4.7.1
-* License: MIT license (http://www.opensource.org/licenses/mit-license.php)
-* Project: http://www.kineticjs.com, https://github.com/ericdrowell/KineticJS
-* Copyright: Eric Rowell
-
-org.objectweb.asm Version 8.0
+org.objectweb.asm Version 9.0
 * License: Modified BSD (http://asm.objectweb.org/license.html)
 * Copyright (c) 2000-2011 INRIA, France Telecom. All rights reserved.
 
@@ -1489,10 +1009,8 @@ org.glassfish.jersey.core:jersey-common
 org.glassfish.jersey.core:jersey-server
 org.glassfish.jersey.ext:jersey-entity-filtering
 org.glassfish.jersey.inject:jersey-hk2
-org.glassfish.jersey.media:jersey-media-jaxb
 org.glassfish.jersey.media:jersey-media-json-jackson
 org.glassfish.jersey.media:jersey-media-json-processing
-org.glassfish.jersey.media:jersey-media-multipart
 
 -------- License used by Dependencies
 # Eclipse Public License - v 2.0
@@ -2139,9 +1657,10 @@ org.glassfish.jersey.media:jersey-media-multipart
 jakarta.annotation:jakarta.annotation-api
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2005, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2009, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2005, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Jakarta Annotations
 
@@ -2184,21 +1703,124 @@ permitted.
 
 
 -------- Dependency
+jakarta.json:jakarta.json-api
+-------- Copyrights
+Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2016, 2020 Oracle and/or its affiliates. All rights reserved.
+-------- Notices
+[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
+[//]: # "  "
+[//]: # " This program and the accompanying materials are made available under the "
+[//]: # " terms of the Eclipse Public License v. 2.0, which is available at "
+[//]: # " http://www.eclipse.org/legal/epl-2.0. "
+[//]: # "  "
+[//]: # " This Source Code may also be made available under the following Secondary "
+[//]: # " Licenses when the conditions for such availability set forth in the "
+[//]: # " Eclipse Public License v. 2.0 are satisfied: GNU General Public License, "
+[//]: # " version 2 with the GNU Classpath Exception, which is available at "
+[//]: # " https://www.gnu.org/software/classpath/license.html. "
+[//]: # "  "
+[//]: # " SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 "
+
+# Notices for Jakarta JSON Processing
+
+This content is produced and maintained by the Jakarta JSON Processing project.
+
+* Project home: https://projects.eclipse.org/projects/ee4j.jsonp
+
+## Trademarks
+
+ Jakarta JSON Processing is a trademark of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Eclipse Public License v. 2.0 which is available at
+http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
+available under the following Secondary Licenses when the conditions for such
+availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
+General Public License v2.0 w/Classpath exception which is available at
+https://www.gnu.org/software/classpath/license.html.
+
+SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+* https://github.com/eclipse-ee4j/jsonp
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+javax.ws.rs-api:2.0.1 (2.0.1)
+
+* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
+   Apache-2.0
+* Project: https://github.com/jax-rs/api
+* Source: https://github.com/jax-rs/api
+
+javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
+
+* License: CDDL-1.0 AND Apache-2.0
+* Project: https://github.com/jax-rs/api
+* Source:
+   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
+
+javax:javaee-web-api:jar:7.0 (7.0)
+
+* License: (CDDL-1.0 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
+   (EPL-1.0 OR BSD-3-Clause) AND Apache-2.0 AND LicenseRef-Public Domain
+* Project: https://javaee.github.io
+* Source:
+   http://search.maven.org/remotecontent?filepath=javax/javaee-web-api/7.0/javaee-web-api-7.0-sources.jar
+
+JUnit (4.12)
+
+* License: Eclipse Public License
+
+## Cryptography
+
+Content may contain encryption software. The country in which you are currently
+may have restrictions on the import, possession, and use, and/or re-export to
+another country, of encryption software. BEFORE using any encryption software,
+please check the country's laws, regulations and policies concerning the import,
+possession, or use, and re-export of encryption software, to see if this is
+permitted.
+
+-------- Dependency
 jakarta.ws.rs:jakarta.ws.rs-api
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2006 Google Inc.
+Copyright (c) 2010, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2019 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2006 Google Inc.
+Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2017, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
-# Notices for the Jakarta RESTful Web Services Project
+# Notices for Jakarta RESTful Web Services
 
 This content is produced and maintained by the **Jakarta RESTful Web Services**
 project.
@@ -2265,125 +1887,86 @@ permitted.
 org.glassfish.grizzly:grizzly-framework
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2008, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2018 Payara Services Ltd.
+Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2007, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2018 Payara Services Ld.
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates and others.
+Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
 
 -------- Dependency
 org.glassfish.grizzly:grizzly-http
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2008, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2007, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
 
 -------- Dependency
 org.glassfish.grizzly:grizzly-http-server
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2008, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2007, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2011, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2008, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2007, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 1994-2004 The Apache Software Foundation
-Copyright (c) 2014, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2010, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2017 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2014, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2010, 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1997, 2020 Oracle and/or its affiliates. All rights reserved.
 Copyright 2004 The Apache Software Foundation
-Copyright (c) 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2009, 2017 Oracle and/or its affiliates. All rights reserved.
-
--------- Dependency
-org.glassfish:jakarta.json
--------- Copyrights
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2016, 2017 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2017 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-# Notices for Jakarta JSON Processing
-
-This content is produced and maintained by the Eclipse Project for JSON
-Processing project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.jsonp
-
-## Trademarks
-
-Jakarta JSON Processing is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/jsonp
-
-## Third-party Content
-
-JUnit (4.12)
-
-* License: Eclipse Public License
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
-
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2009, 2020 Oracle and/or its affiliates. All rights reserved.
 
 -------- Dependency
 org.glassfish:jsonp-jaxrs
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
+[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
+Copyright (c) 2020 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2012, 2020 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
+[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
+[//]: # "  "
+[//]: # " This program and the accompanying materials are made available under the "
+[//]: # " terms of the Eclipse Public License v. 2.0, which is available at "
+[//]: # " http://www.eclipse.org/legal/epl-2.0. "
+[//]: # "  "
+[//]: # " This Source Code may also be made available under the following Secondary "
+[//]: # " Licenses when the conditions for such availability set forth in the "
+[//]: # " Eclipse Public License v. 2.0 are satisfied: GNU General Public License, "
+[//]: # " version 2 with the GNU Classpath Exception, which is available at "
+[//]: # " https://www.gnu.org/software/classpath/license.html. "
+[//]: # "  "
+[//]: # " SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0 "
+
 # Notices for Jakarta JSON Processing
 
-This content is produced and maintained by the Eclipse Project for JSON
-Processing project.
+This content is produced and maintained by the Jakarta JSON Processing project.
 
 * Project home: https://projects.eclipse.org/projects/ee4j.jsonp
 
 ## Trademarks
 
-Jakarta JSON Processing is a trademark of the Eclipse Foundation.
+ Jakarta JSON Processing is a trademark of the Eclipse Foundation.
 
 ## Copyright
 
@@ -2398,8 +1981,8 @@ of the Eclipse Public License v. 2.0 which is available at
 http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
 available under the following Secondary Licenses when the conditions for such
 availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
+General Public License v2.0 w/Classpath exception which is available at
+https://www.gnu.org/software/classpath/license.html.
 
 SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
 
@@ -2410,6 +1993,30 @@ The project maintains the following source code repositories:
 * https://github.com/eclipse-ee4j/jsonp
 
 ## Third-party Content
+
+This project leverages the following third party content.
+
+javax.ws.rs-api:2.0.1 (2.0.1)
+
+* License: (CDDL-1.1 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
+   Apache-2.0
+* Project: https://github.com/jax-rs/api
+* Source: https://github.com/jax-rs/api
+
+javax.ws.rs:jsr311-api:jar:1.1.1 (1.1.1)
+
+* License: CDDL-1.0 AND Apache-2.0
+* Project: https://github.com/jax-rs/api
+* Source:
+   http://search.maven.org/remotecontent?filepath=javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1-sources.jar
+
+javax:javaee-web-api:jar:7.0 (7.0)
+
+* License: (CDDL-1.0 OR GPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0) AND
+   (EPL-1.0 OR BSD-3-Clause) AND Apache-2.0 AND LicenseRef-Public Domain
+* Project: https://javaee.github.io
+* Source:
+   http://search.maven.org/remotecontent?filepath=javax/javaee-web-api/7.0/javaee-web-api-7.0-sources.jar
 
 JUnit (4.12)
 
@@ -2424,14 +2031,13 @@ please check the country's laws, regulations and policies concerning the import,
 possession, or use, and re-export of encryption software, to see if this is
 permitted.
 
-
 -------- Dependencies Summary
 jakarta.annotation:jakarta.annotation-api
+jakarta.json:jakarta.json-api
 jakarta.ws.rs:jakarta.ws.rs-api
 org.glassfish.grizzly:grizzly-framework
 org.glassfish.grizzly:grizzly-http
 org.glassfish.grizzly:grizzly-http-server
-org.glassfish:jakarta.json
 org.glassfish:jsonp-jaxrs
 
 -------- License used by Dependencies
@@ -3138,69 +2744,6 @@ permitted.
 
 
 -------- Dependency
-org.glassfish.hk2.external:jakarta.inject
--------- Copyrights
-Copyright (C) 1989, 1991 Free Software Foundation, Inc.
-Copyright (C) 2009 The JSR-330 Expert Group
--------- Notices
-# Notices for Eclipse GlassFish
-
-This content is produced and maintained by the Eclipse GlassFish project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.glassfish
-
-## Trademarks
-
-Eclipse GlassFish, and GlassFish are trademarks of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Public License v. 2.0 which is available at
-http://www.eclipse.org/legal/epl-2.0. This Source Code may also be made
-available under the following Secondary Licenses when the conditions for such
-availability set forth in the Eclipse Public License v. 2.0 are satisfied: GNU
-General Public License, version 2 with the GNU Classpath Exception which is
-available at https://www.gnu.org/software/classpath/license.html.
-
-SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/glassfish-ha-api
-* https://github.com/eclipse-ee4j/glassfish-logging-annotation-processor
-* https://github.com/eclipse-ee4j/glassfish-shoal
-* https://github.com/eclipse-ee4j/glassfish-cdi-porting-tck
-* https://github.com/eclipse-ee4j/glassfish-jsftemplating
-* https://github.com/eclipse-ee4j/glassfish-hk2-extra
-* https://github.com/eclipse-ee4j/glassfish-hk2
-* https://github.com/eclipse-ee4j/glassfish-fighterfish
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-None
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
-
-
--------- Dependency
 org.glassfish.hk2:hk2-api
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc.
@@ -3208,10 +2751,13 @@ Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Payara Services Ltd.
 Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2007, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2011, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2019 Payara Services and/or its affiliates. All rights reserved.
+Copyright (c) 2013, 2019 Oracle and/or its affiliates. All rights reserved.
 -------- Notices
 # Notices for Eclipse GlassFish
 
@@ -3278,6 +2824,8 @@ Copyright (c) 2012, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2015, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2014, 2018 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2013, 2018 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2020 Payara Services ltd.
+Copyright (c) 2020 Payara Services Ltd.
 Copyright (c) 2019 Payara Service Ltd. and/or its affiliates.
 Copyright (c) 2012, 2019 Oracle and/or its affiliates. All rights reserved.
 Copyright (c) 2016, 2018 Oracle and/or its affiliates. All rights reserved.
@@ -3410,7 +2958,6 @@ permitted.
 
 -------- Dependencies Summary
 org.glassfish.hk2.external:aopalliance-repackaged
-org.glassfish.hk2.external:jakarta.inject
 org.glassfish.hk2:hk2-api
 org.glassfish.hk2:hk2-locator
 org.glassfish.hk2:hk2-utils
@@ -5461,6 +5008,30 @@ As a special exception, the copyright holders of this library give you permissio
 
 ----------------------- Dependencies Grouped by License ------------
 -------- Dependency
+com.fasterxml.jackson.core:jackson-core
+-------- Copyrights
+Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
+-------- Notices
+# Jackson JSON processor
+
+Jackson is a high-performance, Free/Open Source JSON processing library.
+It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
+been in development since 2007.
+It is currently developed by a community of developers.
+
+## Licensing
+
+Jackson 2.x core and extension components are licensed under Apache License 2.0
+To find the details that apply to this artifact see the accompanying LICENSE file.
+
+## Credits
+
+A list of contributors may be found from CREDITS(-2.x) file, which is included
+in some artifacts (usually source distributions); but is always available
+from the source code management (SCM) system project uses.
+
+
+-------- Dependency
 com.google.code.findbugs:jsr305
 -------- Copyrights
 Copyright (c) 2005 Brian Goetz
@@ -5479,53 +5050,15 @@ Copyright (C) 2010 The Android Open Source Project
 Copyright (C) 2012 Google Inc.
 
 -------- Dependency
-com.google.errorprone:error_prone_annotations
--------- Copyrights
-Copyright 2015 The Error Prone Authors.
-Copyright 2017 The Error Prone Authors.
-Copyright 2016 The Error Prone Authors.
-Copyright 2014 The Error Prone Authors.
-
--------- Dependency
-com.google.guava:failureaccess
--------- Copyrights
-Copyright (C) 2018 The Guava Authors
-
--------- Dependency
-com.google.guava:guava
--------- Copyrights
-Copyright (C) 2010 The Guava Authors
-Copyright (C) 2009 The Guava Authors
-Copyright (C) 2006 The Guava Authors
-Copyright (C) 2011 The Guava Authors
-Copyright (C) 2007 The Guava Authors
-Copyright (C) 2008 The Guava Authors
-Copyright (C) 2016 The Guava Authors
-Copyright (C) 2014 The Guava Authors
-Copyright (C) 2012 The Guava Authors
-Copyright (C) 2013 The Guava Authors
-Copyright (C) 2018 The Guava Authors
-Copyright (C) 2015 The Guava Authors
-Copyright (C) 2019 The Guava Authors
-Copyright (C) 2017 The Guava Authors
-Copyright (C) 2011 The Guava Authors.
-Copyright (C) 2020 The Guava Authors
-Copyright (C) 2005 The Guava Authors
-Copyright 2019 The Guava Authors
-
--------- Dependency
-com.google.guava:listenablefuture
--------- Copyrights
-
--------- Dependency
-com.google.j2objc:j2objc-annotations
--------- Copyrights
-Copyright 2012 Google Inc. All Rights Reserved.
-
--------- Dependency
 com.google.protobuf:protobuf-java
 -------- Copyrights
 Copyright 2008 Google Inc.  All rights reserved.
+
+-------- Dependency
+com.networknt:json-schema-validator
+-------- Copyrights
+Copyright (c) 2020 Network New Technologies Inc.
+Copyright (c) 2016 Network New Technologies Inc.
 
 -------- Dependency
 com.squareup.okhttp3:logging-interceptor
@@ -5569,11 +5102,13 @@ io.gsonfire:gson-fire
 io.kubernetes:client-java
 -------- Copyrights
 Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 -------- Dependency
 io.kubernetes:client-java-api
 -------- Copyrights
 Copyright 2020 The Kubernetes Authors.
+Copyright 2021 The Kubernetes Authors.
 
 -------- Dependency
 io.kubernetes:client-java-proto
@@ -5594,33 +5129,51 @@ io.prometheus:simpleclient_httpserver
 -------- Copyrights
 
 -------- Dependency
-io.sundr:builder-annotations
+jakarta.inject:jakarta.inject-api
 -------- Copyrights
-Copyright 2015 The original authors.
-Copyright 2018 The original authors.
-Copyright 2016 The original authors.
-Copyright 2017 The original authors.
+Copyright (C) 2009 The JSR-330 Expert Group
+-------- Notices
+# Notices for Eclipse Jakarta Dependency Injection
 
--------- Dependency
-io.sundr:resourcecify-annotations
--------- Copyrights
-Copyright 2017 The original authors.
+This content is produced and maintained by the Eclipse Jakarta Dependency Injection project.
 
--------- Dependency
-io.sundr:sundr-codegen
--------- Copyrights
-Copyright 2016 The original authors.
-Copyright 2018 The original authors.
-Copyright 2015 The original authors.
-Copyright 2019 The original authors.
+* Project home: https://projects.eclipse.org/projects/cdi.batch
 
--------- Dependency
-io.sundr:sundr-core
--------- Copyrights
-Copyright 2015 The original authors.
-Copyright 2016 The original authors.
-Copyright 2018 The original authors.
-Copyright 2019 The original authors.
+## Trademarks
+
+Jakarta Dependency Injection is a trademark of the Eclipse Foundation.
+
+## Copyright
+
+All content is the property of the respective authors or their employers. For
+more information regarding authorship of content, please consult the listed
+source code repository logs.
+
+## Declared Project Licenses
+
+This program and the accompanying materials are made available under the terms
+of the Apache License, Version 2.0 which is available at
+https://www.apache.org/licenses/LICENSE-2.0.
+
+SPDX-License-Identifier: Apache-2.0
+
+## Source Code
+
+The project maintains the following source code repositories:
+
+https://github.com/eclipse-ee4j/injection-api
+https://github.com/eclipse-ee4j/injection-spec
+https://github.com/eclipse-ee4j/injection-tck
+
+## Third-party Content
+
+This project leverages the following third party content.
+
+None
+
+## Cryptography
+
+None
 
 -------- Dependency
 jakarta.validation:jakarta.validation-api
@@ -5721,10 +5274,10 @@ Julian Seward, jseward@acm.org
 -------- Dependency
 org.apache.commons:commons-lang3
 -------- Copyrights
-Copyright 2001-2020 The Apache Software Foundation
+Copyright 2001-2021 The Apache Software Foundation
 -------- Notices
 Apache Commons Lang
-Copyright 2001-2020 The Apache Software Foundation
+Copyright 2001-2021 The Apache Software Foundation
 
 This product includes software developed at
 The Apache Software Foundation (https://www.apache.org/).
@@ -5801,10 +5354,6 @@ org.bouncycastle:bcpkix-jdk15on
 -------- Copyrights
 
 -------- Dependency
-org.checkerframework:checker-qual
--------- Copyrights
-
--------- Dependency
 org.codehaus.plexus:plexus-classworlds
 -------- Copyrights
 Copyright 2001-2010 Codehaus Foundation.
@@ -5878,35 +5427,6 @@ System.out.println("Copyright (C) 1999-2019 Shigeru Chiba."
 Copyright (C) 2004 Bill Burke. All Rights Reserved.
 
 -------- Dependency
-org.joda:joda-convert
--------- Copyrights
-Copyright 2010-present Stephen Colebourne
-Copyright (C) 2011 The Guava Authors
-Copyright (C) 2012 The Guava Authors
--------- Notices
-Joda Convert
-Copyright 2010-present Stephen Colebourne
-
-This product includes software developed by
-Joda.org (https://www.joda.org/).
-
-
-Joda-Convert includes code from Google Guava, which is licensed as follows:
-
-Copyright (C) 2011 The Guava Authors
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
-in compliance with the License. You may obtain a copy of the License at
-
-https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License
-is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
-or implied. See the License for the specific language governing permissions and limitations under
-the License.
-
-
--------- Dependency
 org.slf4j:slf4j-api
 -------- Copyrights
 Copyright (c) 2004-2011 QOS.ch
@@ -5919,14 +5439,11 @@ Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switze
 Copyright (c) 2008 Google Inc.
 
 -------- Dependencies Summary
+com.fasterxml.jackson.core:jackson-core
 com.google.code.findbugs:jsr305
 com.google.code.gson:gson
-com.google.errorprone:error_prone_annotations
-com.google.guava:failureaccess
-com.google.guava:guava
-com.google.guava:listenablefuture
-com.google.j2objc:j2objc-annotations
 com.google.protobuf:protobuf-java
+com.networknt:json-schema-validator
 com.squareup.okhttp3:logging-interceptor
 com.squareup.okhttp3:okhttp
 com.squareup.okio:okio
@@ -5937,10 +5454,7 @@ io.kubernetes:client-java-proto
 io.prometheus:simpleclient
 io.prometheus:simpleclient_common
 io.prometheus:simpleclient_httpserver
-io.sundr:builder-annotations
-io.sundr:resourcecify-annotations
-io.sundr:sundr-codegen
-io.sundr:sundr-core
+jakarta.inject:jakarta.inject-api
 jakarta.validation:jakarta.validation-api
 javax.annotation:jsr250-api
 javax.enterprise:cdi-api
@@ -5954,7 +5468,6 @@ org.apache.maven:maven-model
 org.apache.maven:maven-plugin-api
 org.bitbucket.b_c:jose4j
 org.bouncycastle:bcpkix-jdk15on
-org.checkerframework:checker-qual
 org.codehaus.plexus:plexus-classworlds
 org.codehaus.plexus:plexus-component-annotations
 org.codehaus.plexus:plexus-utils
@@ -5962,7 +5475,6 @@ org.eclipse.sisu:org.eclipse.sisu.inject
 org.eclipse.sisu:org.eclipse.sisu.plexus
 org.glassfish.hk2:osgi-resource-locator
 org.javassist:javassist
-org.joda:joda-convert
 org.slf4j:slf4j-api
 org.yaml:snakeyaml
 
@@ -6287,323 +5799,17 @@ http://www.apache.org/licenses/LICENSE-2.0
 
 ----------------------- Dependencies Grouped by License ------------
 -------- Dependency
-com.fasterxml.jackson.core:jackson-core
--------- Copyrights
-Copyright (c) 2007- Tatu Saloranta, tatu.saloranta@iki.fi
--------- Notices
-# Jackson JSON processor
-
-Jackson is a high-performance, Free/Open Source JSON processing library.
-It was originally written by Tatu Saloranta (tatu.saloranta@iki.fi), and has
-been in development since 2007.
-It is currently developed by a community of developers, as well as supported
-commercially by FasterXML.com.
-
-## Licensing
-
-Jackson core and extension components may licensed under different licenses.
-To find the details that apply to this artifact see the accompanying LICENSE file.
-For more information, including possible other licensing options, contact
-FasterXML.com (http://fasterxml.com).
-
-## Credits
-
-A list of contributors may be found from CREDITS file, which is included
-in some artifacts (usually source distributions); but is always available
-from the source code management (SCM) system project uses.
-
-
--------- Dependency
-com.fasterxml.jackson.datatype:jackson-datatype-joda
--------- Copyrights
-
--------- Dependencies Summary
-com.fasterxml.jackson.core:jackson-core
-com.fasterxml.jackson.datatype:jackson-datatype-joda
-
--------- License used by Dependencies
-This copy of Jackson JSON processor streaming parser/generator is licensed under the
-Apache (Software) License, version 2.0 ("the License").
-See the License for details about distribution rights, and the
-specific rights regarding derivate works.
-
-You may obtain a copy of the License at:
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-
------------------------ Dependencies Grouped by License ------------
--------- Dependency
-org.jvnet.mimepull:mimepull
--------- Copyrights
-[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2020 Oracle and/or its affiliates. All rights reserved.
-Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
--------- Notices
-[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
-[//]: # "  "
-[//]: # " This program and the accompanying materials are made available under the "
-[//]: # " terms of the Eclipse Distribution License v. 1.0, which is available at "
-[//]: # " http://www.eclipse.org/org/documents/edl-v10.php. "
-[//]: # "  "
-[//]: # " SPDX-License-Identifier: BSD-3-Clause "
-
-# Notices for Eclipse Metro
-
-This content is produced and maintained by the Eclipse Metro project.
-
-* Project home: https://projects.eclipse.org/projects/ee4j.metro
-
-## Trademarks
-
-Eclipse Metro is a trademark of the Eclipse Foundation.
-
-## Copyright
-
-All content is the property of the respective authors or their employers. For
-more information regarding authorship of content, please consult the listed
-source code repository logs.
-
-## Declared Project Licenses
-
-This program and the accompanying materials are made available under the terms
-of the Eclipse Distribution License v. 1.0 which is available at
-http://www.eclipse.org/org/documents/edl-v10.php.
-
-SPDX-License-Identifier: BSD-3-Clause
-
-## Source Code
-
-The project maintains the following source code repositories:
-
-* https://github.com/eclipse-ee4j/metro-xmlstreambuffer
-* https://github.com/eclipse-ee4j/metro-policy
-* https://github.com/eclipse-ee4j/metro-wsit
-* https://github.com/eclipse-ee4j/metro-mimepull
-* https://github.com/eclipse-ee4j/metro-ws-test-harness
-* https://github.com/eclipse-ee4j/metro-package-rename-task
-* https://github.com/eclipse-ee4j/metro-jax-ws
-* https://github.com/eclipse-ee4j/metro-saaj
-* https://github.com/eclipse-ee4j/metro-jwsdp-samples
-* https://github.com/eclipse-ee4j/jax-rpc-ri
-
-## Third-party Content
-
-This project leverages the following third party content.
-
-addressing.xml Version: 2004/10 (n/a)
-
-* License: W3C
-* Project: https://www.w3.org/Submission/ws-addressing/
-* Source: http://schemas.xmlsoap.org/ws/2004/08/addressing/
-
-ant-launcher (1.10.2)
-
-* License: Apache-2.0 AND SAX-PD AND W3C
-* Project: https://ant.apache.org/
-* Source:
-   http://central.maven.org/maven2/org/apache/ant/ant-launcher/1.10.2/ant-launcher-1.10.2-sources.jar
-
-Apache Ant (1.6)
-
-* License: Apache-1.1
-* Project: https://ant.apache.org/
-* Source: https://repo1.maven.org/maven2/ant/ant/1.6/ant-1.6-sources.jar
-
-Apache Ant (1.10.2)
-
-* License: Apache-2.0 AND W3C AND LicenseRef-Public-Domain
-
-commons-logging (1.1.2)
-
-* License: Apache-2.0
-* Project: https://commons.apache.org/proper/commons-logging/
-* Source:
-   http://central.maven.org/maven2/commons-logging/commons-logging/1.1.2/commons-logging-1.1.2-sources.jar
-
-JUnit (4.12)
-
-* License: Eclipse Public License
-
-maven-core (3.5.2)
-
-* License: Apache-2.0
-
-maven-plugin-annotations (3.5.1)
-
-* License: Apache-2.0
-* Project:
-   https://maven.apache.org/plugin-tools/maven-plugin-annotations/project-info.html
-* Source:
-   https://github.com/apache/maven-plugin-tools/tree/maven-plugin-tools-3.5.1/maven-plugin-annotations
-
-maven-plugin-api (3.5.2)
-
-* License: Apache-2.0
-* Project: https://maven.apache.org/
-* Source: https://github.com/apache/maven/tree/master/maven-plugin-api
-
-maven-resolver-api (1.1.1)
-
-* License: Apache-2.0
-
-maven-resolver-util (1.1.1)
-
-* License: Apache-2.0
-
-maven-settings (3.5.2)
-
-* License: Apache-2.0
-
-mex.xsd Version: 2004/09 (n/a)
-
-* License: Oasis Style
-* Project: https://www.w3.org/Submission/WS-MetadataExchange/#appendix-II
-* Source: http://schemas.xmlsoap.org/ws/2004/09/mex/MetadataExchange.xsd
-
-plexus-utils (3.1.0)
-
-* License: Apache- 2.0 or Apache- 1.1 or BSD or Public Domain or Indiana
-   University Extreme! Lab Software License V1.1.1 (Apache 1.1 style)
-
-relaxng-datatype (1.0)
-
-* License: New BSD license
-
-stax2-api (4.1)
-
-* License: Pending
-* Project: https://github.com/FasterXML/stax2-api
-* Source:
-   http://central.maven.org/maven2/org/codehaus/woodstox/stax2-api/4.1/stax2-api-4.1-sources.jar
-
-testng (6.14.2)
-
-* License: Apache-2.0 AND MIT
-* Project: https://testng.org/doc/index.html
-* Source: https://github.com/cbeust/testng
-
-woodstox-core-asl (4.4.1)
-
-* License: Apache-2.0
-
-woodstox-core-asl (5.1.0)
-
-* License: Pending
-* Project: https://github.com/FasterXML/woodstox
-* Source: https://github.com/FasterXML/woodstox
-
-ws-addr.wsd (1.0)
-
-* License: W3C
-* Project: https://www.w3.org/2005/08/addressing/
-* Source: https://www.w3.org/2006/03/addressing/ws-addr.xsd
-
-wsat.xsd Version: 2004/10 (n/a)
-
-* License: Oasis Style
-* Project: http://schemas.xmlsoap.org/ws/2004/10/wsat/
-* Source: http://schemas.xmlsoap.org/ws/2004/10/wsat/wsat.xsd
-
-wscoor.xsd (1.0)
-
-* License: OASIS Style
-
-wscoor.xsd (1.1)
-
-* License: Oasis (Custom)
-* Project: http://docs.oasis-open.org/ws-tx/wscoor/2006/06
-* Source:
-   http://docs.oasis-open.org/ws-tx/wscoor/2006/06/wstx-wscoor-1.1-schema-200701.xsd
-
-wsrm Version: 2005/02 (n/a)
-
-* License: Oasis (Custom)
-* Project: http://schemas.xmlsoap.org/ws/2005/02/rm/
-* Source:
-   http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm.xsd;%20http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd
-
-wsrm.xsd (1.2)
-
-* License: Oasis
-
-wstx-wsat.xsd (1.1)
-
-* License: Oasis (Custom)
-
-xmlsec (1.5.8)
-
-* License: Apache-2.0
-* Project: http://santuario.apache.org/
-* Source:
-   https://repo1.maven.org/maven2/org/apache/santuario/xmlsec/1.5.8/xmlsec-1.5.8-sources.jar
-
-## Cryptography
-
-Content may contain encryption software. The country in which you are currently
-may have restrictions on the import, possession, and use, and/or re-export to
-another country, of encryption software. BEFORE using any encryption software,
-please check the country's laws, regulations and policies concerning the import,
-possession, or use, and re-export of encryption software, to see if this is
-permitted.
-
-
--------- Dependencies Summary
-org.jvnet.mimepull:mimepull
-
--------- License used by Dependencies
-[//]: # " Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved. "
-[//]: # "  "
-[//]: # " This program and the accompanying materials are made available under the "
-[//]: # " terms of the Eclipse Distribution License v. 1.0, which is available at "
-[//]: # " http://www.eclipse.org/org/documents/edl-v10.php. "
-[//]: # "  "
-[//]: # " SPDX-License-Identifier: BSD-3-Clause "
-
-Copyright (c) 2018 Oracle and/or its affiliates. All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-  - Redistributions of source code must retain the above copyright
-    notice, this list of conditions and the following disclaimer.
-
-  - Redistributions in binary form must reproduce the above copyright
-    notice, this list of conditions and the following disclaimer in the
-    documentation and/or other materials provided with the distribution.
-
-  - Neither the name of the Eclipse Foundation, Inc. nor the names of its
-    contributors may be used to endorse or promote products derived
-    from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
------------------------ Dependencies Grouped by License ------------
--------- Dependency
 org.bouncycastle:bcprov-ext-jdk15on
 -------- Copyrights
-Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
-Copyright (c) 2000-2019 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org) "
+Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
+Copyright (c) 2000-2021 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org) "
 Copyright (c) 2011 Tim Buktu (tbuktu@hotmail.com)
 
 -------- Dependency
 org.bouncycastle:bcprov-jdk15on
 -------- Copyrights
-Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
-Copyright (c) 2000-2019 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org) "
+Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
+Copyright (c) 2000-2021 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org) "
 Copyright (c) 2011 Tim Buktu (tbuktu@hotmail.com)
 
 -------- Dependencies Summary
@@ -6618,7 +5824,7 @@ import org.bouncycastle.util.Strings;
 /**
  * The Bouncy Castle License
  *
- * Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
+ * Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
  * <p>
  * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
  * and associated documentation files (the "Software"), to deal in the Software without restriction, 
@@ -6639,7 +5845,7 @@ import org.bouncycastle.util.Strings;
 public class LICENSE
 {
     public static final String licenseText =
-      "Copyright (c) 2000-2019 The Legion of the Bouncy Castle Inc. (http://www.bouncycastle.org) "
+      "Copyright (c) 2000-2021 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org) "
       + Strings.lineSeparator()
       + Strings.lineSeparator()
       + "Permission is hereby granted, free of charge, to any person obtaining a copy of this software "
