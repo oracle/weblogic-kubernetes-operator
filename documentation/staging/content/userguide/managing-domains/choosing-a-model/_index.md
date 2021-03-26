@@ -1,0 +1,30 @@
++++
+title = "Choose a domain home source type"
+date = 2019-02-23T16:44:54-05:00
+weight = 1
+pre = "<b> </b>"
++++
+
+When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
+
+ - **Domain in PV**: Supply your domain home configuration in a persistent volume.
+ - **Domain in Image**: Supply your domain home in an image.
+ - **Model in Image**: Supply a WebLogic Deployment Tool (WDT) model file in an image.
+
+There are advantages for each domain home source type, but sometimes there are also technical limitations of various cloud providers that may make one type better suited to your needs.
+
+Note that you can use different domain home types for different domains; there's no restriction on having domains with different domain home types in the same Kubernetes cluster or namespace.
+
+| Domain in PV | Domain in Image | Model in Image |
+| --- | --- | --- |
+| Lets you use the same standard WebLogic Server image for every server in every domain. | Requires a different image for each domain, but all servers in that domain use the same image. | Different domains can use the same image, but require different domainUID and may have different configuration.  |
+| No state is kept in images making the containers created from these images completely throw away (cattle not pets). | Runtime state should not be kept in the images, but applications and configuration are. | Runtime state should not be kept in the images.  Application and configuration may be. |
+| The domain is long-lived, so you can mutate the configuration or deploy new applications using the Administration Console or WLST. You can also mutate the configuration using configuration overrides. | If you want to mutate the domain home configuration, then you can apply configuration overrides or create a new image. If you want to deploy application updates, then you must create a new image. | If you want to mutate the domain home configuration, then you can override it with additional model files supplied in a ConfigMap or you can supply a new image. If you want to deploy application updates, then you must create a new image.  |
+| You can use configuration overrides to mutate the domain configuration, but there are [limitations]({{< relref "/userguide/managing-domains/configoverrides/_index.md#unsupported-overrides" >}}). | You can use configuration overrides to mutate the domain configuration, but there are [limitations]({{< relref "/userguide/managing-domains/configoverrides/_index.md#unsupported-overrides" >}}). | You can deploy model files to a ConfigMap to mutate the domain, and may not need to restart the entire domain for the change to take effect. Instead, you can initiate a rolling upgrade, which restarts your WebLogic Server instance Pods one at a time. Also, the model file syntax is far simpler and less error prone than the configuration override syntax, and, unlike configuration overrides, allows you to directly add data sources and JMS modules. |
+| You can change WebLogic domain configuration using the Administration Console or WLST. You can also change configuration overrides and [distribute the new overrides]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}}) to running servers; however, non-dynamic configuration attributes can only be changed when servers are starting. |  You can also change configuration overrides and [distribute the new overrides]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md#distributing-changes-to-configuration-overrides" >}}) to running servers; however, non-dynamic configuration attributes can only be changed when servers are starting. You should not use the Administration Console or WLST for these domains as changes are ephemeral and will be lost when servers restart. |  You should not use the Administration Console or WLST for these domains as changes are ephemeral and will be lost when servers restart. |
+| Logs are automatically placed on persistent storage and sent to the pod's stdout.  | Logs are kept in the containers and sent to the pod's log (`stdout`) by default. To change the log location, you can set the Domain `logHomeEnabled` to true and configure the desired directory using `logHome`. | Same as Domain in Image.  |
+| Patches can be applied by simply changing the image and rolling the domain.  | To apply patches, you must update the domain-specific image and then restart or roll the domain depending on the nature of the patch.  | Same as Domain in PV.  |
+| Many cloud providers do not provide persistent volumes that are shared across availability zones, so you may not be able to use a single persistent volume.  You may need to use some kind of volume replication technology or a clustered file system. | Provided you do not store and state in containers, you do not have to worry about volume replication across availability zones because each pod has its own copy of the domain.  WebLogic replication will handle propagation of any online configuration changes.  | Same as Domain in Image. |
+| CI/CD pipelines may be more complicated because you would need to run WLST against the live domain directory to effect changes.  | CI/CD pipelines are simpler because you can create the whole domain in the image and don't have to worry about a persistent copy of the domain.  | CI/CD pipelines are even simpler because you don't need to generate a domain home. The operator will create a domain home for you based on the model that you supply. |
+| There are fewer images to manage and store, which could provide significant storage and network savings.  |  There are more images to manage and store in this approach. | Same as Domain in Image.|
+| You may be able to use standard Oracle-provided images or, at least, a very small number of self-built images, for example, with patches installed. | You may need to do more work to set up processes to build and maintain your images. | Same as Domain in Image.|
