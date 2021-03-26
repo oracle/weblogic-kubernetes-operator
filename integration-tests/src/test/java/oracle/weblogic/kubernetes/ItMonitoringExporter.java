@@ -614,22 +614,20 @@ class ItMonitoringExporter {
 
 
   /**
-   * Test covers basic functionality for MonitoringExporter SideCar .
-   * Create Prometheus, Grafana.
-   * Create Model in Image with SSL enabled.
-   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
-   * Check basic functionality of monitoring exporter.
+   * Test covers scenario when admin port enabled .
+   * Create Model in Image with admin port and ssl enabled.
+   * Check generated monitoring exporter WebLogic metrics via https request.
    */
 
   @Test
   @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
   public void testAdminPortEnabled() throws Exception {
 
-    // create and verify one cluster mii domain with admin pod enabled
+    // create and verify one cluster mii domain with admin port enabled
     logger.info("Create domain and verify that it's running");
     String  miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/model-adminportenabled.yaml");
     createAndVerifyDomain(miiImage1, domain8Uid, domain8Namespace, "FromModel", 2, false);
-    logger.info("checking access to wl metrics via https connection");
+    logger.info("checking access to wls metrics via https connection");
 
     assertTrue(verifyMonExpAppAccess("wls-exporter",
         "type: WebAppComponentRuntime",
