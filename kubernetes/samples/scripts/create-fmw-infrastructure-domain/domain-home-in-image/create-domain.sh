@@ -26,15 +26,13 @@ source ${scriptDir}/../../common/wdt-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the image for WebLogic domain in image."
   echo "  -p Password used in building the image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
-  echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
-  echo "     If not specified, this script will always remove existing project directory and clone again."
   echo "  -h Help"
   exit $1
 }
@@ -44,7 +42,6 @@ function usage {
 #
 doValidation=false
 executeIt=false
-cloneIt=true
 while getopts "evhki:o:u:p:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
@@ -58,8 +55,6 @@ while getopts "evhki:o:u:p:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
-    ;;
-    k) cloneIt=false;
     ;;
     h) usage 0
     ;;
