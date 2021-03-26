@@ -650,7 +650,7 @@ function diff_model() {
     exitOrLoop
   fi
   trace "Exiting diff_model"
-#  return ${rc}
+  return ${rc}
 }
 
 #
@@ -691,12 +691,8 @@ function createPrimordialDomain() {
       diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
     fi
 
-    trace "NEW_MERGED_MODEL: $(cat ${NEW_MERGED_MODEL})"
-    trace "DECRYPTED_MERGED_MODEL: $(cat ${DECRYPTED_MERGED_MODEL})"
-
     diff_rc=$(cat /tmp/model_diff_rc)
     rm ${DECRYPTED_MERGED_MODEL}
-
     trace "createPrimordialDomain: model diff return code list (can be empty): "${diff_rc}
 
     local security_info_updated="false"
@@ -813,9 +809,6 @@ function generateMergedModel() {
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
-
-  trace "WDT Validate Domain Succeeded, ret=${ret}:"
-  cat ${WDT_OUTPUT}
 
   # restore trap
   start_trap
@@ -950,9 +943,6 @@ function wdtUpdateModelDomain() {
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
-
-  trace "WDT Update Domain Succeeded, ret=${ret}:"
-  cat ${WDT_OUTPUT}
 
   # update the wallet
   if [ ! -z ${UPDATE_RCUPWD_FLAG} ]; then
