@@ -87,6 +87,7 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
   public String getReason() {
     return Optional.ofNullable(errorBody.getDetails())
         .map(ErrorDetails::getCauses)
+        .filter(list -> list.length != 0)
         .map(n -> n[0])
         .map(Cause::getReason)
         .orElse("");

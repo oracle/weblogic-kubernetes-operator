@@ -89,6 +89,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -401,10 +402,8 @@ public class ItKubernetesEvents {
             "Failed to patch domain");
     if (verify) {
       logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
-      int countAfter = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
-      assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
-              + "Count before scaling is -> " + countBefore + " and count after scaling is -> " + countAfter);
+      checkEventWithCount(
+          opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
     }
   }
 
@@ -586,6 +585,19 @@ public class ItKubernetesEvents {
         condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             reason, type, timestamp));
+  }
+
+  private static void checkEventWithCount(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp, int countBefore) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+            reason,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(checkDomainEventWithCount(opNamespace, domainNamespace, domainUid,
+            reason, type, timestamp, countBefore));
   }
 
   // Create and start a WebLogic domain in PV

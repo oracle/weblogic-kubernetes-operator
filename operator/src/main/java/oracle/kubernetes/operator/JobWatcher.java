@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
@@ -36,7 +37,7 @@ import oracle.kubernetes.operator.work.Step;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
-  public static final WatchListener<V1Job> NULL_LISTENER = r -> {};
+  static final WatchListener<V1Job> NULL_LISTENER = r -> {};
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
@@ -113,7 +114,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     V1JobStatus status = job.getStatus();
     LOGGER.fine(
-        "JobWatcher.isComplete status of job " + job.getMetadata().getName() + ": " + status);
+        "JobWatcher.isComplete status of job " + Objects.requireNonNull(job.getMetadata()).getName() + ": " + status);
     if (status != null) {
       List<V1JobCondition> conds = status.getConditions();
       if (conds != null) {

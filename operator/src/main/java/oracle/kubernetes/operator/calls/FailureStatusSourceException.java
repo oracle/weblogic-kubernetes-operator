@@ -25,7 +25,6 @@ public class FailureStatusSourceException extends Exception {
    * Log the exception.
    */
   public void log() {
-    Throwable cause = getCause();
     LOGGER.severe(MessageKeys.CALL_FAILED, failureStatusSource.getMessage(), failureStatusSource.getReason());
     LOGGER.fine(MessageKeys.EXCEPTION, getCause());
   }
