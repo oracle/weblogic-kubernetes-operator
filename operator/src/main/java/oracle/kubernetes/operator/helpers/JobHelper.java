@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -367,7 +368,7 @@ public class JobHelper {
         return doNext(
             Step.chain(
                 DomainValidationSteps.createAdditionalDomainValidationSteps(
-                    context.getJobModel().getSpec().getTemplate().getSpec()),
+                    Objects.requireNonNull(context.getJobModel().getSpec()).getTemplate().getSpec()),
                 createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
@@ -382,7 +383,7 @@ public class JobHelper {
 
   private static class DeleteIntrospectorJobStep extends Step {
 
-    public static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
+    static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
 
     DeleteIntrospectorJobStep(Step next) {
       super(next);
@@ -587,7 +588,7 @@ public class JobHelper {
     if (logged == null || !logged) {
       packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
-          domainIntrospectorJob.getMetadata().getName(),
+          Objects.requireNonNull(domainIntrospectorJob.getMetadata()).getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getStatus().toString(),
           jobPodName);
@@ -609,7 +610,7 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String domainUid = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
-      Integer currentIntrospectFailureRetryCount = Optional.ofNullable(info)
+      Integer currentIntrospectFailureRetryCount = Optional.of(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getIntrospectJobFailureCount)

@@ -46,9 +46,9 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final String WEBLOGIC_OPERATOR_SCRIPTS_INTROSPECT_DOMAIN_SH =
         "/weblogic-operator/scripts/introspectDomain.sh";
   private static final int MAX_ALLOWED_VOLUME_NAME_LENGTH = 63;
-  public static final String VOLUME_NAME_SUFFIX = "-volume";
-  public static final String CONFIGMAP_TYPE = "cm";
-  public static final String SECRET_TYPE = "st";
+  private static final String VOLUME_NAME_SUFFIX = "-volume";
+  private static final String CONFIGMAP_TYPE = "cm";
+  private static final String SECRET_TYPE = "st";
   private V1Job jobModel;
 
   JobStepContext(Packet packet) {
@@ -69,7 +69,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   // ------------------------ data methods ----------------------------
 
-  protected V1Job getJobModel() {
+  V1Job getJobModel() {
     return jobModel;
   }
 
@@ -156,24 +156,24 @@ public abstract class JobStepContext extends BasePodStepContext {
     return NODEMGR_HOME;
   }
 
-  protected String getDataHome() {
+  String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
   }
 
-  protected String getModelHome() {
+  String getModelHome() {
     return getDomain().getModelHome();
   }
 
-  protected String getWdtDomainType() {
+  String getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }
 
-  protected DomainSourceType getDomainHomeSourceType() {
+  DomainSourceType getDomainHomeSourceType() {
     return getDomain().getDomainHomeSourceType();
   }
 
-  public boolean isUseOnlineUpdate() {
+  boolean isUseOnlineUpdate() {
     return getDomain().isUseOnlineUpdate();
   }
 
@@ -181,7 +181,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().isIstioEnabled();
   }
 
-  public int getIstioReadinessPort() {
+  int getIstioReadinessPort() {
     return getDomain().getIstioReadinessPort();
   }
 
@@ -216,7 +216,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   // ---------------------- model methods ------------------------------
 
-  String getWdtConfigMap() {
+  private String getWdtConfigMap() {
     return emptyToNull(getDomain().getWdtConfigMap());
   }
 
@@ -230,7 +230,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .spec(createJobSpec(TuningParameters.getInstance()));
   }
 
-  V1ObjectMeta createMetadata() {
+  private V1ObjectMeta createMetadata() {
     return updateForOwnerReference(
         new V1ObjectMeta()
           .name(getJobName())
@@ -470,7 +470,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .defaultMode(ALL_READ_AND_EXECUTE);
   }
 
-  protected V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
+  private V1ConfigMapVolumeSource getIntrospectMD5VolumeSource() {
     V1ConfigMapVolumeSource result =
         new V1ConfigMapVolumeSource()
             .name(getDomainUid() + IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)
@@ -516,7 +516,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
   }
 
-  protected V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
+  private V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);
   }
 

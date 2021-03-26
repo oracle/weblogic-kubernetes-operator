@@ -187,13 +187,6 @@ public class DomainPresenceInfo {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
   }
 
-  V1Service[] getServiceServices() {
-    return servers.values().stream()
-        .map(ServerKubernetesObjects::getService)
-        .map(AtomicReference::get)
-        .toArray(V1Service[]::new);
-  }
-
   /**
    * Specifies the pod associated with an operator-managed server.
    *
@@ -405,7 +398,7 @@ public class DomainPresenceInfo {
     clusters.put(clusterName, service);
   }
 
-  public void setPodDisruptionBudget(String clusterName, V1beta1PodDisruptionBudget pdb) {
+  void setPodDisruptionBudget(String clusterName, V1beta1PodDisruptionBudget pdb) {
     podDisruptionBudgets.put(clusterName, pdb);
   }
 
@@ -424,7 +417,7 @@ public class DomainPresenceInfo {
    * @param clusterName the name of the cluster associated with the event
    * @param event the pod disruption budget associated with the event
    */
-  public void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+  void setPodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
     if (clusterName == null) {
       return;
     }
@@ -439,7 +432,7 @@ public class DomainPresenceInfo {
    * @param event the pod disruption budget associated with the event
    * @return true if the pod disruption budget was actually removed
    */
-  public boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
+  boolean deletePodDisruptionBudgetFromEvent(String clusterName, V1beta1PodDisruptionBudget event) {
     return removeIfPresentAnd(
             podDisruptionBudgets,
             clusterName,
@@ -711,8 +704,8 @@ public class DomainPresenceInfo {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
 
-    public boolean isServiceOnly() {
-      return isServiceOnly;
+    public boolean isNotServiceOnly() {
+      return !isServiceOnly;
     }
 
     @Override
