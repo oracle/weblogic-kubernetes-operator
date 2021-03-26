@@ -62,40 +62,15 @@ The script will perform the following steps:
 
    Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each. Assuming the version numbers are `1.9.10` and `1.9.9` respectively, the script calls:
 
-   ```shell
-   $ cd /tmp/dhii-sample/tools
-
-   $ curl --silent --show-error --connect-timeout 10 -O -L https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.10/weblogic-deploy.zip \
-     -o /tmp/dhii-sample/tools/weblogic-deploy.zip
-
-   $ curl --silent --show-error --connect-timeout 10 -O -L https://github.com/oracle/weblogic-image-tool/releases/download/release-1.9.9/imagetool.zip \
-     -o /tmp/dhii-sample/tools/imagetool.zip
-   ```
-* Set up the WebLogic Image Tool, run the following commands:
-
-   ```shell
-   $ cd /tmp/dhii-sample/tools
-
-   $ unzip imagetool.zip
+* Set up the WebLogic Image Tool to the `/tmp/dhii-sample/tools/imagetool` directory, sets the
+  WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory, and
+  put a `wdt_{WDT_VERSION}` entry in the tool's cache which points to the WDT ZIP file installer.
   
-   $ export WLSIMG_CACHEDIR="/tmp/dhii-sample/tools/imagetool-cache"
-
-   $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_1.9.10
-
-   $ ./imagetool/bin/imagetool.sh cache addInstaller \
-     --type wdt \
-     --version 1.9.10 \
-     --path /tmp/dhii-sample/tools/weblogic-deploy.zip
-   ```
-
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+  
+* Build a container image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) and its cached reference to the WDT installer, using the model defined in `wdt_model_dyanmic.yaml` and the properties in `domain.properties` file.
 
-  The script then installs WIT to the `/tmp/dhii-sample/tools/imagetool` directory, sets the
-  WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory, and
-  put a `wdt_1.9.10` entry in the tool's cache which points to the WDT ZIP file installer.
-
-* Build a container image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) and its cached reference to the WDT installer.
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
   in the registry (for example, Oracle Cloud Infrastructure Registry, GitHub Container Registry, and such) because
@@ -104,6 +79,7 @@ The script will perform the following steps:
   For more information, see
   [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
+  
 * Create a tag that refers to the generated image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```shell
@@ -196,11 +172,11 @@ The following parameters can be provided in the inputs file.
 | `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only, in a single server (all-in-one) Kubernetes Deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. |  If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster. |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes Secret for the Administration Server user name and password. | `domain1-weblogic-credentials` |
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
-| `wdtVersion` | Customize the WebLogic Deploy Tool (WDT) version used by the WIT. | `LATEST` |
-| `witVersion` | Customize the WebLogic Image Tool (WIT) version. | `LATEST` |
-| `toolsDir` | Customize the directory where WebLogic Deploy Tool (WDT) and WebLogic Image Tool (WIT) are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
+| `wdtVersion` | Version of the WebLogic Deploy Tool (WDT) to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
+| `witVersion` | Version of the WebLogic Image Tool (WIT) to be installed by the script. This can be a specifiv version, such as 1.9,10, or `LATEST`.  | `LATEST` |
+| `toolsDir` | The directory where WebLogic Deploy Tool (WDT) and WebLogic Image Tool (WIT) are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
 
-Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
+Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-domain-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.
 
