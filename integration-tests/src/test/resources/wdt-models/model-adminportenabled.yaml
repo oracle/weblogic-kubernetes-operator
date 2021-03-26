@@ -1,0 +1,47 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+  AdminUserName: '@@SECRET:__weblogic-credentials__:username@@'
+  AdminPassword: '@@SECRET:__weblogic-credentials__:password@@'
+  ServerStartMode: 'prod'
+
+topology:
+  Name: "wls-monexp-domain-1"
+  AdminServerName: "admin-server"
+  AdministrationPortEnabled: true
+
+  Cluster:
+    "cluster-1":
+      DynamicServers:
+        ServerTemplate: "cluster-1-template"
+        ServerNamePrefix: "managed-server"
+        DynamicClusterSize: 5
+        MaxDynamicClusterSize: 5
+        CalculatedListenPorts: false
+  Server:
+    "admin-server":
+      ListenPort: 7001
+      AdministrationPort: 7099
+      SSL:
+        Enabled: true
+        ListenPort: 7002
+  ServerTemplate:
+    "cluster-1-template":
+      Cluster: "cluster-1"
+      ListenPort : 8001
+      SSL:
+        Enabled: true
+        ListenPort: 8100
+        HostnameVerificationIgnored: true
+
+appDeployments:
+  Application:
+    "wls-exporter":
+      SourcePath: "wlsdeploy/applications/wls-exporter.war"
+      ModuleType: war
+      Target: 'cluster-1'
+    myear:
+      SourcePath: "wlsdeploy/applications/sessmigr-app.ear"
+      ModuleType: ear
+      Target: 'cluster-1'
