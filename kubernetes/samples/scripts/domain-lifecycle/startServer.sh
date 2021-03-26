@@ -47,7 +47,7 @@ function usage() {
   increases the value of 'spec.clusters[<cluster-name>].replicas' by '1' or updates the
   'spec.managedServers[<server-name>].serverStartPolicy' attribute of the domain
   resource or both as necessary for starting the server. For the administration server, it
-  updates the value of `spec.adminServer.serverStartPolicy` attribute of the domain resource.
+  updates the value of 'spec.adminServer.serverStartPolicy' attribute of the domain resource.
   The 'spec.clusters[<cluster-name>].replicas' value can be kept constant by using '-k' option.
   Please see README.md for more details.
 
@@ -55,7 +55,8 @@ function usage() {
 
     $(basename $0) -s myserver [-n mynamespace] [-d mydomainuid] [-k] [-m kubecli] [-v]
 
-    -s <server_name>           : Server name parameter is required.
+    -s <server_name>           : The WebLogic server name (not the pod name). 
+                                 This parameter is required.
 
     -d <domain_uid>            : Domain unique-id. Default is 'sample-domain1'.
 
