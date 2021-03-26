@@ -57,10 +57,6 @@ class OfflineWlstEnv(object):
   def isAccessLogInLogHome(self):
     return self.ACCESS_LOG_IN_LOG_HOME == 'true'
 
-  def encrypt(self, cleartext):
-    return cleartext
-#    return encrypt(cleartext, self.getDomainHome())
-
   def readFile(self, path):
     file = open(path, 'r')
     contents = file.read()
@@ -96,9 +92,6 @@ class SecretManager(object):
   def __init__(self, env):
     self.env = env
 
-  def encrypt(self, cleartext):
-    return self.env.encrypt(cleartext)
-
   def readCredentialsSecret(self, key):
     path = self.env.CREDENTIALS_SECRET_PATH + '/' + key
     return self.env.readFile(path)
@@ -109,8 +102,7 @@ def filter_model(model):
     if getOfflineWlstEnv() is None:
         initOfflineWlstEnv(model)
 
-    global secret_manager
-    secret_manager = SecretManager(env)
+    initSecretManager(env)
 
     if model and 'resources' in model:
       customizeCustomFileStores(model)
@@ -141,6 +133,9 @@ def getOfflineWlstEnv():
 def setOfflineWlstEnv(offlineWlstEnv):
   env = offlineWlstEnv
 
+def initSecretManager(env):
+  global secret_manager
+  secret_manager = SecretManager(env)
 
 def customizeServerTemplates(model):
   topology = model['topology']
@@ -184,32 +179,33 @@ def getServerNamePrefix(topology, template):
 
 def customizeNodeManagerCreds(topology):
   username = getSecretManager().readCredentialsSecret('username')
-  pwd_clear = getSecretManager().readCredentialsSecret('password')
-#  password = getSecretManager().encrypt(pwd_clear)
+  pwd = getSecretManager().readCredentialsSecret('password')
 
   if not ('SecurityConfiguration' in topology):
     topology['SecurityConfiguration'] = {}
 
   topology['SecurityConfiguration']['NodeManagerUsername'] = username
-  topology['SecurityConfiguration']['NodeManagerPasswordEncrypted'] = pwd_clear
+  topology['SecurityConfiguration']['NodeManagerPasswordEncrypted'] = pwd
 
 
 def customizeDomainLogPath(topology):
   customizeLog(env.getDomainName(), topology)
 
 
-def customizeLog(name, config):
+def customizeLog(name, topologyOrServer):
+  if name is None:
+    # domain name is req'd to create domain log configuration.
+    # Missing domain name indicates our model is a fragment
+    return
+
   logs_dir = env.getDomainLogHome()
   if logs_dir is None or len(logs_dir) == 0:
     return
 
-  log = getLogOrNone(config)
+  if 'Log' not in topologyOrServer:
+    topologyOrServer['Log'] = {}
 
-  if log is None:
-    config['Log'] = {}
-    log = config['Log']
-
-  log['FileName'] = logs_dir + "/" + name + ".log"
+  topologyOrServer['Log']['FileName'] = logs_dir + "/" + name + ".log"
 
 
 def customizeCustomFileStores(model):

@@ -48,27 +48,27 @@ class WdtUpdateFilterCase(unittest.TestCase):
     nap['ClientCertificateEnforced'] = 'false'
 
   def getModel(self):
+    # Load model as dictionary
     file = open(r'../resources/model.dynamic_cluster.yaml')
     model = yaml.load(file)
 
+    # Setup mock environment
     mock_env= MockOfflineWlstEnv()
     mock_env.open(model)
-
     wdt_mii_filter.env = mock_env
-    wdt_mii_filter.filter_model(model)
 
     return model
 
 
   def getStaticModel(self):
+    # Load model as dictionary
     file = open(r'../resources/model.static_cluster.yaml')
     model = yaml.load(file)
 
+    # Setup mock environment
     mock_env= MockOfflineWlstEnv()
     mock_env.open(model)
-
     wdt_mii_filter.env = mock_env
-    wdt_mii_filter.filter_model(model)
 
     return model
 
@@ -197,6 +197,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
   def test_customize_node_manager_creds(self):
     model = self.getModel()
+    wdt_mii_filter.initSecretManager(wdt_mii_filter.getOfflineWlstEnv())
     wdt_mii_filter.customizeNodeManagerCreds(model['topology'])
     self.assertEquals(MockOfflineWlstEnv.WLS_CRED_USERNAME, model['topology']['SecurityConfiguration']['NodeManagerUsername'], "Expected node manager username to be \'" + MockOfflineWlstEnv.WLS_CRED_USERNAME + "\'")
     self.assertEquals(MockOfflineWlstEnv.WLS_CRED_PASSWORD, model['topology']['SecurityConfiguration']['NodeManagerPasswordEncrypted'], "Expected node manager password to be \'" + MockOfflineWlstEnv.WLS_CRED_PASSWORD + "\'")
@@ -205,6 +206,11 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
     wdt_mii_filter.customizeDomainLogPath(model['topology'])
     self.assertEquals('/u01/logs/sample-domain1/sample-domain1.log', model['topology']['Log']['FileName'], "Expected domain log file name to be \'/u01/logs/sample-domain1/sample-domain1.log\'")
+
+  def test_customizeLog_whenNoNameProvided(self):
+    model = self.getModel()
+    wdt_mii_filter.customizeLog(None, model['topology'])
+    self.assertNotIn('Log', model['topology'], "Did not expect \'Log\' to be configured")
 
   def test_customizeCustomFileStores(self):
     model = self.getModel()
