@@ -16,6 +16,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
@@ -76,6 +77,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
@@ -90,6 +92,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -158,6 +161,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
+  private static final String TEST_PRODUCT_VERSION = "unit-test";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -241,6 +245,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(TuningParametersStub.install());
     mementos.add(hashMemento = UnitTestHash.install());
     mementos.add(InMemoryCertificates.install());
+    mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
     mementos.add(
         TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
@@ -264,6 +269,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         new PassthroughPodAwaiterStepFactory());
+  }
+
+  private Memento setProductVersion(String productVersion) throws NoSuchFieldException {
+    return StaticStubSupport.install(PodStepContext.class, "productVersion", productVersion);
   }
 
   abstract V1Pod createPod(Packet packet);
@@ -349,19 +358,38 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
-  // These are the SHA256 annotation values computed by release 3.1.4, and must be preserved, going forward.
-  // Changes to the WlsServerConfiguration can affect them, so the tests must be run with the original config.
-  abstract String getExpectedPlainPortSha256Annotation();
+  // Returns the YAML for a 3.1 domain-in-image pod with only theplain port enabled.
+  abstract String getReferencePlainPortPodYaml();
 
-  abstract String getExpectedSslPortSha256Annotation();
+  // Returns the YAML for a 3.1 domain-in-image pod with the SSL port enabled.
+  abstract String getReferenceSslPortPodYaml();
 
-  abstract String getExpectedMiiSha256Annotation();
+  // Returns the YAML for a 3.1 Mii Pod.
+  abstract String getReferenceMiiPodYaml();
 
   @Test
-  public void whenPodCreateWithoutSslPort_hashMatches31Release() {
+  public void afterUpgradingPlainPortPodFrom31_patchIt() {
     useProductionHash();
-    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
-          equalTo(getExpectedPlainPortSha256Annotation()));
+    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  public void afterUpgradingSslPortPodFrom31_patchIt() {
+    useProductionHash();
+    getServerTopology().setSslListenPort(7002);
+    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
   }
 
   void useProductionHash() {
@@ -369,23 +397,22 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreateWithSslPort_hashMatches31Release() {
-    useProductionHash();
-    getServerTopology().setSslListenPort(7002);
-
-    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
-          equalTo(getExpectedSslPortSha256Annotation()));
-  }
-
-  @Test
-  public void afterPodCreatedForMiiDomain_hashMatches31Release() {
+  public void afterUpgradingMiiPodFrom31_patchIt() {
     useProductionHash();
     testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
+    disableAutoIntrospectOnNewMiiPods();
+    initializeExistingPod(loadPodModel(getReferenceMiiPodYaml()));
 
+    verifyPodPatched();
 
-    assertThat(getCreatedPod().getMetadata().getAnnotations().get(SHA256_ANNOTATION),
-          equalTo(getExpectedMiiSha256Annotation()));
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  private V1Pod loadPodModel(String podYaml) {
+    return new Yaml().loadAs(podYaml, V1Pod.class);
   }
 
   @Test
@@ -687,6 +714,11 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             hasEnvVar(
                 "USER_MEM_ARGS",
                 "-Djava.security.egd=file:/dev/./urandom")));
+  }
+
+  @Test
+  void whenPodCreated_hasProductVersion() throws NoSuchFieldException {
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(OPERATOR_VERSION, TEST_PRODUCT_VERSION));
   }
 
   @Test
@@ -1163,6 +1195,16 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     verifyPodPatched();
 
     assertThat(getPodLabel(LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH), equalTo(paddedZipHash("newZipHash")));
+  }
+
+  @Test
+  public void whenMiiOnlineUpdateSettingEnabled_dontReplacePod() {
+    testSupport.addToPacket(DOMAINZIP_HASH, "originalZip");
+    disableAutoIntrospectOnNewMiiPods();
+    initializeExistingPod();
+
+    configureDomain().withMIIOnlineUpdate();
+    verifyPodNotReplaced();
   }
 
   private String getPodLabel(String labelName) {
