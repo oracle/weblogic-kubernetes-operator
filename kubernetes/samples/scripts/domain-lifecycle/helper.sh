@@ -459,6 +459,146 @@ function getReplicaCount {
 }
 
 #
+# Function to generate the domain restartVersion by incrementing the
+# existing value. If the restartVersion doesn't exist or the restartVersion
+# value is non-numeric, then return '1'.
+# $1 - Domain resource in json format
+# $2 - Return value containing the restart version.
+#
+function generateDomainRestartVersion {
+  local domainJson=$1
+  local __result=$2
+  local __restartVersion=""
+
+  eval $__result=""
+  __restartVersion=$(echo ${domainJson} | jq -cr .spec.restartVersion)
+  if ! [[ "$__restartVersion" =~ ^[0-9]+$ ]] ; then
+   __restartVersion=0
+  fi
+  __restartVersion=$((__restartVersion+1))
+  eval $__result=${__restartVersion}
+}
+
+#
+# Function to generate the domain introspectVersion by incrementing the
+# existing value. If the introspectVersion doesn't exist or the introspectVersion
+# value is non-numeric, then return '1'.
+# $1 - Domain resource in json format
+# $2 - Return value containing the introspect version.
+#
+function generateDomainIntrospectVersion {
+  local domainJson=$1
+  local __result=$2
+  local __introspectVersion=""
+
+  eval $__result=""
+  __introspectVersion=$(echo ${domainJson} | jq -cr .spec.introspectVersion)
+  if ! [[ "$__introspectVersion" =~ ^[0-9]+$ ]] ; then
+   __introspectVersion=0
+  fi
+  __introspectVersion=$((__introspectVersion+1))
+  eval $__result=${__introspectVersion}
+}
+
+#
+# Function to generate the cluster restartVersion by incrementing the
+# existing value of cluster restartVersion. If the restartVersion
+# value at the cluster level is non-numeric, then it returns 1.
+# If the restartVersion doesn't exist at the cluster level, then it
+# returns the incremented value of the domain level restartVersion.
+# In this case, if the restartVersion value at the domain level is
+# non-numeric, then it returns 1.
+# $1 - Domain resource in json format
+# $2 - Name of cluster
+# $3 - Return value containing the restart version.
+#
+function generateClusterRestartVersion {
+  local domainJson=$1
+  local clusterName=$2
+  local __result=$3
+  local __restartVersionCmd=""
+  local __restartVersion=""
+
+  eval $__result=""
+  __restartVersionCmd="(.spec.clusters // empty | .[] \
+    | select (.clusterName == \"${clusterName}\")).restartVersion"
+  __restartVersion=$(echo ${domainJson} | jq -cr "${__restartVersionCmd}")
+  if [ "${__restartVersion}" == "null" ]; then
+    __restartVersion=$(echo ${domainJson} | jq -cr .spec.restartVersion)
+  fi
+  if ! [[ "${__restartVersion}" =~ ^[0-9]+$ ]] ; then
+   __restartVersion=0
+  fi
+  __restartVersion=$((__restartVersion+1))
+  eval $__result=${__restartVersion}
+
+}
+
+#
+# Function to create patch json to update domain restart version
+# $1 - domain restart version
+# $2 - Return value containing patch json string
+#
+function createPatchJsonToUpdateDomainRestartVersion {
+  local restartVersion=$1
+  local __result=$2
+  local __restartVersionPatch=""
+
+  __restartVersionPatch="{\"spec\": {\"restartVersion\": \"${restartVersion}\"}}"
+  eval $__result="'${__restartVersionPatch}'"
+}
+
+#
+# Function to create patch json to update domain introspect version
+# $1 - domain introspect version
+# $2 - Return value containing patch json string
+#
+function createPatchJsonToUpdateDomainIntrospectVersion {
+  local introspectVersion=$1
+  local __result=$2
+  local __introspectVersionPatch=""
+
+  __introspectVersionPatch="{\"spec\": {\"introspectVersion\": \"${introspectVersion}\"}}"
+  eval $__result="'${__introspectVersionPatch}'"
+}
+
+#
+# Function to create patch json to update cluster restartVersion
+# $1 - Domain resource in json format
+# $2 - Name of the cluster whose restartVersion will be patched
+# $3 - restart version
+# $4 - Return value containing patch json string
+#
+function createPatchJsonToUpdateClusterRestartVersion {
+  local domainJson=$1
+  local clusterName=$2
+  local restartVersion=$3
+  local __result=$4
+  local __existingClusters=""
+  local __addClusterReplicasCmd=""
+  local __restartVersionPatch=""
+  local __mapCmd=""
+  local __patchJsonVal=""
+
+  __existingClusters=$(echo ${domainJson} | jq -cr '(.spec.clusters)')
+  if [ "${__existingClusters}" == "null" ]; then
+    # cluster doesn't exist, add cluster with replicas
+    __addClusterReplicasCmd=".[.| length] |= . + {\"clusterName\":\"${clusterName}\", \
+      \"restartVersion\":\"${restartVersion}\"}"
+    __restartVersionPatch=$(echo ${__existingClusters} | jq -c "${__addClusterReplicasCmd}")
+  else
+    __mapCmd="\
+      . |= (map(.clusterName) | index (\"${clusterName}\")) as \$idx | \
+      if \$idx then \
+      .[\$idx][\"restartVersion\"] = \"${restartVersion}\" \
+      else .+  [{clusterName: \"${clusterName}\" , restartVersion: \"${restartVersion}\"}] end"
+    __restartVersionPatch=$(echo ${__existingClusters} | jq "${__mapCmd}")
+  fi
+  __patchJsonVal="{\"spec\": {\"clusters\": "${__restartVersionPatch}"}}"
+  eval $__result="'${__patchJsonVal}'"
+}
+
+#
 # Check servers started in a cluster based on server start policy and 
 # replica count.
 # $1 - Domain resource in json format
@@ -898,3 +1038,16 @@ function failIfValidationErrors {
     usage 1
   fi
 }
+
+#
+# Function to lowercase a value and make it a legal DNS1123 name
+# $1 - value to convert to DNS legal name
+# $2 - return value containing DNS legal name.
+function toDNS1123Legal {
+  local name=$1
+  local __result=$2
+  local val=`echo "${name}" | tr "[:upper:]" "[:lower:]"`
+  val=${val//"_"/"-"}
+  eval $__result="'$val'"
+}
+

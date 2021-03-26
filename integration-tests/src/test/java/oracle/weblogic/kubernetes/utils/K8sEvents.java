@@ -67,6 +67,45 @@ public class K8sEvents {
   }
 
   /**
+   * Check if a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param countBefore the count to check against
+   */
+  public static Callable<Boolean> checkDomainEventWithCount(
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp, int countBefore) {
+    return () -> {
+      logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
+      try {
+        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        for (CoreV1Event event : events) {
+          if (event.getReason().equals(reason)
+              && (isEqualOrAfter(timestamp, event))) {
+            logger.info(Yaml.dump(event));
+            verifyOperatorDetails(event, opNamespace, domainUid);
+            //verify type
+            logger.info("Verifying domain event type {0}", type);
+            assertTrue(event.getType().equals(type));
+            int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
+            assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
+                + "Count before is -> " + countBefore + " and count after is -> " + countAfter);
+            return true;
+          }
+        }
+      } catch (ApiException ex) {
+        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      return false;
+    };
+  }
+
+  /**
    * Get the count for a particular event with specified reason, type and domainUid in a given namespace.
    *
    * @param domainNamespace namespace in which the domain exists
