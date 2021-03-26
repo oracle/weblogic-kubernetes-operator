@@ -215,7 +215,7 @@
                 </resource>
               </resources>
               <outputDirectory>
-                ${project.basedir}/../docs/domains
+                ${project.basedir}/../documentation/domains
               </outputDirectory>
             </configuration>
           </execution>

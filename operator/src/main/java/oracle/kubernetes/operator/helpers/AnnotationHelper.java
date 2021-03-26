@@ -61,8 +61,12 @@ public class AnnotationHelper {
   }
 
   private static <K extends KubernetesObject> K addHash(K kubernetesObject, Object objectToHash) {
-    kubernetesObject.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, HASH_FUNCTION.apply(objectToHash));
+    kubernetesObject.getMetadata().putAnnotationsItem(SHA256_ANNOTATION, createHash(objectToHash));
     return kubernetesObject;
+  }
+
+  static String createHash(Object objectToHash) {
+    return HASH_FUNCTION.apply(objectToHash);
   }
 
   static String getHash(KubernetesObject kubernetesObject) {

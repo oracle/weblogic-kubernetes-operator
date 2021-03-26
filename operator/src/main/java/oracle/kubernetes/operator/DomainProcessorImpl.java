@@ -412,9 +412,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
-  private void processIntrospectorJobPodWatch(V1Pod pod, String watchType) {
-    String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
+  private void processIntrospectorJobPodWatch(V1Pod introspectorPod, String watchType) {
+    String domainUid = getPodLabel(introspectorPod, LabelConstants.DOMAINUID_LABEL);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(introspectorPod), domainUid);
     if (info == null) {
       return;
     }
@@ -422,8 +422,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (watchType) {
       case "ADDED":
       case "MODIFIED":
-        PodWatcher.PodStatus podStatus = PodWatcher.getPodStatus(pod);
-        new DomainStatusUpdate(pod, domainUid, delegate, info, podStatus).invoke();
+        PodWatcher.PodStatus podStatus = PodWatcher.getPodStatus(introspectorPod);
+        new DomainStatusUpdate(introspectorPod, domainUid, delegate, info, podStatus).invoke();
+        break;
+      case "DELETED":
+        LOGGER.fine("Introspector Pod " + introspectorPod.getMetadata().getName()
+            + " for domain " + domainUid + " is deleted.");
         break;
       default:
     }
@@ -1283,15 +1287,15 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static class DomainStatusUpdate {
-    private final V1Pod pod;
+    private final V1Pod introspectorPod;
     private final String domainUid;
     private final DomainProcessorDelegate delegate;
     private final DomainPresenceInfo info;
     private final PodWatcher.PodStatus podStatus;
 
-    DomainStatusUpdate(V1Pod pod, String domainUid, DomainProcessorDelegate delegate,
+    DomainStatusUpdate(V1Pod introspectorPod, String domainUid, DomainProcessorDelegate delegate,
                        DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {
-      this.pod = pod;
+      this.introspectorPod = introspectorPod;
       this.domainUid = domainUid;
       this.delegate = delegate;
       this.info = info;
@@ -1301,9 +1305,11 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void invoke() {
       switch (podStatus) {
         case PHASE_FAILED:
-          delegate.runSteps(
-                  DomainStatusUpdater.createFailureRelatedSteps(
-                          info, getPodStatusReason(), getPodStatusMessage(), null));
+          if (isNotTerminatedByOperator()) {
+            delegate.runSteps(
+                DomainStatusUpdater.createFailureRelatedSteps(
+                    info, getPodStatusReason(), getPodStatusMessage(), null));
+          }
           break;
         case WAITING_NON_NULL_MESSAGE:
           Optional.ofNullable(getMatchingContainerStatus())
@@ -1342,16 +1348,28 @@ public class DomainProcessorImpl implements DomainProcessor {
       }
     }
 
+    private boolean isNotTerminatedByOperator() {
+      return notNullOrEmpty(getPodStatusReason()) || notNullOrEmpty(getPodStatusMessage()) || !isJobPodTerminated();
+    }
+
+    private boolean notNullOrEmpty(String value) {
+      return value != null && value.length() > 0;
+    }
+
+    private boolean isJobPodTerminated() {
+      return PodWatcher.getContainerStateTerminatedReason(getMatchingContainerStatus()).contains("Error");
+    }
+
     private String getPodStatusReason() {
-      return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getReason).orElse(null);
+      return Optional.ofNullable(introspectorPod).map(V1Pod::getStatus).map(V1PodStatus::getReason).orElse(null);
     }
 
     private String getPodStatusMessage() {
-      return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
+      return Optional.ofNullable(introspectorPod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
     }
 
     private V1ContainerStatus getMatchingContainerStatus() {
-      return Optional.ofNullable(pod.getStatus())
+      return Optional.ofNullable(introspectorPod.getStatus())
               .map(V1PodStatus::getContainerStatuses)
               .flatMap(this::getMatchingContainerStatus)
               .orElse(null);
@@ -1362,7 +1380,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private V1PodCondition getMatchingPodCondition() {
-      return Optional.ofNullable(pod.getStatus())
+      return Optional.ofNullable(introspectorPod.getStatus())
               .map(V1PodStatus::getConditions)
               .flatMap(this::getPodCondition)
               .orElse(null);

@@ -190,7 +190,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    * @param pod pob
    * @return true, if failed
    */
-  static boolean isFailed(@Nonnull V1Pod pod) {
+  private static boolean isFailed(@Nonnull V1Pod pod) {
 
     LOGGER.fine(
         "PodWatcher.isFailed status of pod " + getPodName(pod) + ": " + pod.getStatus());
@@ -198,10 +198,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   }
 
   static PodStatus getPodStatus(@Nonnull V1Pod pod) {
-    V1ContainerStatus conStatus = getContainerStatuses(pod)
-            .stream()
-            .findFirst()
-            .orElse(new V1ContainerStatus());
+    V1ContainerStatus conStatus = getContainerStatus(pod);
     String phase = Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse("");
     if (phase.equals("Failed")) {
       return PodStatus.PHASE_FAILED;
@@ -215,7 +212,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return PodStatus.SUCCESS;
   }
 
-  static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
+  static V1ContainerStatus getContainerStatus(@Nonnull V1Pod pod) {
+    return getContainerStatuses(pod)
+            .stream()
+            .findFirst()
+            .orElse(new V1ContainerStatus());
+  }
+
+  private static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
     return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(Collections.emptyList());
   }
 
@@ -226,8 +230,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         || getContainerStateTerminatedReason(conStatus).contains("Error"));
   }
 
-  static boolean isUnschedulable(@Nonnull V1Pod pod) {
-
+  private static boolean isUnschedulable(@Nonnull V1Pod pod) {
     LOGGER.fine("PodWatcher.isUnschedulable status of pod " + getPodName(pod) + ": " + pod.getStatus());
     return getPodConditions(pod).stream().anyMatch(PodWatcher::isPodUnschedulable);
   }
@@ -248,7 +251,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return !Optional.ofNullable(conStatus).map(V1ContainerStatus::getReady).orElse(false);
   }
 
-  private static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
+  static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
     return Optional.of(conStatus)
         .map(V1ContainerStatus::getState)
         .map(V1ContainerState::getTerminated)
