@@ -1,0 +1,12 @@
+#### Prerequisites
+
+This sample assumes the following prerequisite environment.
+
+* Operating System: GNU/Linux, macOS or [WSL2 for Windows 10](https://docs.microsoft.com/windows/wsl/install-win10).
+* [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
+* [Azure CLI](https://docs.microsoft.com/cli/azure); use `az --version` to test if `az` works.  This document was tested with version 2.9.1.
+* [Docker for Desktop](https://www.docker.com/products/docker-desktop).  This document was tested with `Docker version 20.10.2, build 2291f61`
+* [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.16.3.
+* [Helm](https://helm.sh/docs/intro/install/), version 3.1 and later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.4.
+* A Java JDK, Version 8 or 11. Azure recommends [Azul Zulu for Azure](https://www.azul.com/downloads/azure-only/zulu/). Ensure that your `JAVA_HOME` environment variable is set correctly in the shells in which you run the commands.
+* Ensure that you have the zip/unzip utility installed; use `zip/unzip -v` to test if `zip/unzip` works.

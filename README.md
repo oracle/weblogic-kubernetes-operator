@@ -18,16 +18,17 @@ The fastest way to experience the operator is to follow the [Quick Start guide](
 
 ***
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.2.0.
-This release was published on March ??, 2021.
+This release was published on March 26, 2021.
 ***
 
 # Documentation
 
-Documentation for the operator is available [here](https://oracle.github.io/weblogic-kubernetes-operator) and includes
-information for users and for developers.  It provides samples, reference material like API documentation, security
-information and a *Quick Start* guide if you just want to get up and running quickly.
+Documentation for the operator is [available here](https://oracle.github.io/weblogic-kubernetes-operator).
 
-Documentation for old releases of the operator is available [here](site/README.md).
+This documentation includes information for users and for developers.  It provides samples, reference material, security
+information and a [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide if you just want to get up and running quickly.
+
+Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), and [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/).
 
 # Backward compatibility guidelines
 

@@ -159,7 +159,41 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_dontPatchDomain() {
+  public void whenNewJobPodFailedBecauseDeletionAfterDeadlineExceeded_dontPatchDomain() {
+    processor.dispatchPodWatch(
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
+            .toWatchResponse());
+    processor.dispatchPodWatch(
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithPhaseReasonMessage(
+                "Failed", null, null, createTerminatedState("Error", null)))
+            .toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(DEADLINE_EXCEEDED));
+    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+  }
+
+  @Test
+  public void whenNewJobPodFailedWithoutTerminatedAfterDeadlineExceeded_patchDomain() {
+    processor.dispatchPodWatch(
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
+            .toWatchResponse());
+    processor.dispatchPodWatch(
+        WatchEvent.createModifiedEvent(
+            createIntrospectorJobPodWithPhase("Failed", "Unknown"))
+            .toWatchResponse());
+
+    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+    assertThat(updatedDomain.getStatus().getReason(), equalTo("Unknown"));
+    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+  }
+
+
+  @Test
+  public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
             createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
@@ -217,6 +251,31 @@ public class IntrospectionStatusTest {
                 .withReason(reason)
                 .withMessage(MESSAGE)
                 .build());
+  }
+
+  private V1Pod createIntrospectorJobPodWithPhaseReasonMessage(
+      String phase, String reason, String message, V1ContainerState conState) {
+    return createIntrospectorJobPod(UID)
+        .status(
+            new V1PodStatusBuilder()
+                .withPhase(phase)
+                .withReason(reason)
+                .withMessage(message)
+                .addNewContainerStatus()
+                .withImage(IMAGE_NAME)
+                .withName(toJobIntrospectorName(UID))
+                .withReady(false)
+                .withState(conState)
+                .endContainerStatus()
+                .build());
+  }
+
+  private V1ContainerState createTerminatedState(String reason, String message) {
+    return new V1ContainerStateBuilder()
+        .withNewTerminated().withReason(reason)
+        .withMessage(message)
+        .endTerminated()
+        .build();
   }
 
   private V1ContainerState createWaitingState(String reason, String message) {
