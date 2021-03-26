@@ -191,7 +191,7 @@ function createDomainHome {
     $WIT_DIR/imagetool/bin/imagetool.sh update \
       --fromImage "$domainHomeImageBase" \
       --tag "${BUILD_IMAGE_TAG}" \
-      --wdtModel ${scriptDir}/topology.yaml \
+      --wdtModel ${scriptDir}/wdt_model_dynamic.yaml \
       --wdtVariables "${domainPropertiesOutput}" \
       --wdtOperation CREATE \
       --wdtVersion ${WDT_VERSION} \
