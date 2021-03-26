@@ -7,7 +7,7 @@ weight: 6
 
 This project has the following directory structure:
 
-* `docs`: Helm charts, Javadoc, Operator REST API Swagger, and Domain reference
+* `docs`: Helm charts, Operator REST API Swagger, and Domain reference
 * `docs-source`: This documentation
 * `integration-tests`: Original, JUnit 4 integration test suite (see also `new-integration-tests`)
 * `json-schema`: Java model to JSON schema generator

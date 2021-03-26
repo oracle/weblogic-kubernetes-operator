@@ -7,7 +7,7 @@ weight: 6
 
 This project has the following directory structure:
 
-* `docs`: Generated Javadoc and Swagger
+* `docs`: Generated Swagger
 * `integration-tests`: Integration test suite
 * `json-schema`: Java model to JSON schema generator
 * `json-schema-maven-plugin`: Maven plugin for schema generator
