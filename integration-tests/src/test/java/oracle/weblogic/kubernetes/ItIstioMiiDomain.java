@@ -5,6 +5,7 @@ package oracle.weblogic.kubernetes;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,7 +31,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -278,9 +278,9 @@ class ItIstioMiiDomain {
   @Order(2)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
   public void testMiiIstioDynamicUpdate() {
-    LinkedHashMap<String, DateTime> pods = new LinkedHashMap<>();
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    DateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
     pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -13,16 +14,15 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.json.JsonPatchBuilder;
-import javax.validation.Valid;
 
+import jakarta.json.JsonPatchBuilder;
+import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
@@ -63,13 +63,13 @@ public class DomainStatus {
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
   // sorted list of ClusterStatus
-  List<ClusterStatus> clusters = new ArrayList<>();
+  private List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
           + "the operator begins processing and will precede when the various servers "
           + "or clusters are available.")
-  private DateTime startTime = SystemClock.now();
+  private OffsetDateTime startTime = SystemClock.now();
 
   @Description(
       "The number of running cluster member Managed Servers in the WebLogic cluster if there is "
@@ -116,10 +116,13 @@ public class DomainStatus {
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
+      conditions = conditions.stream()
+          .filter(c -> preserve(c, newCondition.getType().typesToRemoveAlways())).collect(Collectors.toList());
       return this;
     }
 
-    conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
+    conditions = conditions.stream()
+        .filter(c -> preserve(c, newCondition.getType().typesToRemove())).collect(Collectors.toList());
 
     conditions.add(newCondition);
     reason = newCondition.getStatusReason();
@@ -127,8 +130,8 @@ public class DomainStatus {
     return this;
   }
 
-  private boolean preserve(DomainCondition condition, DomainConditionType newType) {
-    for (DomainConditionType type : newType.typesToRemove()) {
+  private boolean preserve(DomainCondition condition, DomainConditionType[] types) {
+    for (DomainConditionType type : types) {
       if (condition.getType() == type) {
         return false;
       }
@@ -168,7 +171,12 @@ public class DomainStatus {
     }
   }
 
-  private DomainCondition getConditionWithType(DomainConditionType type) {
+  /**
+   * Get condition of the given type..
+   *
+   * @return condition
+   */
+  public DomainCondition getConditionWithType(DomainConditionType type) {
     for (DomainCondition condition : conditions) {
       if (type == condition.getType()) {
         return condition;
@@ -283,10 +291,9 @@ public class DomainStatus {
   /**
    * Increment the number of introspect job failure count.
    *
-   * @return retryCount
    */
-  public Integer incrementIntrospectJobFailureCount() {
-    return this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
+  public void incrementIntrospectJobFailureCount() {
+    this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
   }
 
 
@@ -444,7 +451,7 @@ public class DomainStatus {
    *
    * @return start time
    */
-  DateTime getStartTime() {
+  OffsetDateTime getStartTime() {
     return startTime;
   }
 

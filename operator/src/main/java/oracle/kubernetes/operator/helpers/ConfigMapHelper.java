@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -18,10 +19,6 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonValue;
-import javax.validation.constraints.NotNull;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.custom.V1Patch;
@@ -29,6 +26,10 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonValue;
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -46,7 +47,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.joda.time.DateTime;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
@@ -551,7 +551,7 @@ public class ConfigMapHelper {
 
     private void updatePacket() {
       ScanCache.INSTANCE.registerScan(
-            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, new DateTime()));
+            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, OffsetDateTime.now()));
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
 
       copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
@@ -867,7 +867,7 @@ public class ConfigMapHelper {
       ScanCache.INSTANCE.registerScan(
           info.getNamespace(),
           info.getDomainUid(),
-          new Scan(domainTopology.getDomain(), new DateTime()));
+          new Scan(domainTopology.getDomain(), OffsetDateTime.now()));
 
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology.getDomain());
     }

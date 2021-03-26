@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -47,6 +48,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
@@ -66,7 +68,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -169,6 +170,7 @@ public class DomainProcessorTest {
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(StaticStubSupport.install(PodStepContext.class, "productVersion", "unit-test"));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(UnitTestHash.install());
@@ -256,7 +258,7 @@ public class DomainProcessorTest {
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
   }
 
-  private List<CoreV1Event> getEventsAfterTimestamp(long timestamp) {
+  private List<CoreV1Event> getEventsAfterTimestamp(OffsetDateTime timestamp) {
     return testSupport.<CoreV1Event>getResources(KubernetesTestSupport.EVENT).stream()
             .filter(e -> e.getLastTimestamp().isAfter(timestamp)).collect(Collectors.toList());
   }
@@ -323,7 +325,7 @@ public class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
@@ -339,7 +341,7 @@ public class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    newDomain.getMetadata().setCreationTimestamp(new DateTime());
+    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
@@ -473,7 +475,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).execute();
 
     // Run the make right flow again with explicit recheck and no domain updates
-    long timestamp = System.currentTimeMillis();
+    OffsetDateTime timestamp = OffsetDateTime.now();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_STARTED",
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
@@ -494,7 +496,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).execute();
 
     // Run the make right flow again with explicit recheck and no domain updates
-    long timestamp = System.currentTimeMillis();
+    OffsetDateTime timestamp = OffsetDateTime.now();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_STARTED",
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
@@ -519,8 +521,8 @@ public class DomainProcessorTest {
 
     // Scale up the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(new DateTime());
-    long timestamp = System.currentTimeMillis();
+    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
+    OffsetDateTime timestamp = OffsetDateTime.now();
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",

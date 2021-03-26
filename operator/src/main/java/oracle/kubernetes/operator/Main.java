@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -35,6 +36,7 @@ import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
@@ -56,7 +58,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.joda.time.DateTime;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 
@@ -72,8 +73,8 @@ public class Main {
   private static final ThreadFactory threadFactory = new WrappedThreadFactory();
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
-  private static final AtomicReference<DateTime> lastFullRecheck =
-      new AtomicReference<>(DateTime.now());
+  private static final AtomicReference<OffsetDateTime> lastFullRecheck =
+      new AtomicReference<>(OffsetDateTime.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
 
@@ -145,6 +146,8 @@ public class Main {
 
       engine = new Engine(scheduledExecutorService);
       domainProcessor = new DomainProcessorImpl(this);
+
+      PodHelper.setProductVersion(productVersion.toString());
     }
 
     private static String getBuildVersion(Properties buildProps) {
@@ -400,10 +403,10 @@ public class Main {
 
 
   Step createDomainRecheckSteps() {
-    return createDomainRecheckSteps(DateTime.now());
+    return createDomainRecheckSteps(OffsetDateTime.now());
   }
 
-  private Step createDomainRecheckSteps(DateTime now) {
+  private Step createDomainRecheckSteps(OffsetDateTime now) {
     int recheckInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
     boolean isFullRecheck = false;
     if (lastFullRecheck.get().plusSeconds(recheckInterval).isBefore(now)) {

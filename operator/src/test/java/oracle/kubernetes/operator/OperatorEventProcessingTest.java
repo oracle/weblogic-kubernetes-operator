@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,6 @@ import oracle.kubernetes.operator.helpers.KubernetesEventObjects;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import org.jetbrains.annotations.NotNull;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -317,7 +317,7 @@ public class OperatorEventProcessingTest {
         .metadata(createMetadata(createDomainEventName(nameAppendix, item), NS, true))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(OPERATOR_POD_NAME)
-        .lastTimestamp(DateTime.now())
+        .lastTimestamp(OffsetDateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
         .message(item.getMessage(new EventHelper.EventData(item, message)))
@@ -336,7 +336,7 @@ public class OperatorEventProcessingTest {
         .metadata(createMetadata(createNSEventName(nameAppendix, item), OP_NS, false))
         .reportingComponent(WEBLOGIC_OPERATOR_COMPONENT)
         .reportingInstance(OPERATOR_POD_NAME)
-        .lastTimestamp(DateTime.now())
+        .lastTimestamp(OffsetDateTime.now())
         .type(EventConstants.EVENT_NORMAL)
         .reason(item.getReason())
         .message(item.getMessage(new EventHelper.EventData(item, "")))

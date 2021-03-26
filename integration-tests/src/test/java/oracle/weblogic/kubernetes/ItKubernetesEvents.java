@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,7 +33,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -58,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -89,6 +89,8 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -181,7 +183,7 @@ public class ItKubernetesEvents {
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   public void testDomainK8SEventsSuccess() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     logger.info("Creating domain");
     createDomain();
 
@@ -200,7 +202,7 @@ public class ItKubernetesEvents {
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
   public void testDomainK8sEventsNonExistingManagedServer() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with non-existing managed server");
     String patchStr
         = "[{\"op\": \"add\",\"path\": \""
@@ -217,7 +219,7 @@ public class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
 
     // remove the managed server from domain resource
-    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    timestamp = now();
     patchStr
         = "[{\"op\": \"remove\",\"path\": \""
         + "/spec/managedServers\""
@@ -239,7 +241,7 @@ public class ItKubernetesEvents {
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing cluster")
   public void testDomainK8sEventsNonExistingCluster() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with new cluster");
     String patchStr
         = "["
@@ -254,7 +256,7 @@ public class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
 
     //remove the cluster from domain resource
-    timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    timestamp = now();
     patchStr = "[{\"op\": \"remove\",\"path\": \"/spec/clusters/1\"}]";
     logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
     patch = new V1Patch(patchStr);
@@ -281,7 +283,7 @@ public class ItKubernetesEvents {
     V1Patch patch;
     String patchStr;
 
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     try {
       logger.info("remove the webLogicCredentialsSecret to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
@@ -301,7 +303,7 @@ public class ItKubernetesEvents {
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
-      timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+      timestamp = now();
       // add back the webLogicCredentialsSecret
       patchStr = "[{\"op\": \"add\", \"path\": \"/spec/webLogicCredentialsSecret\", "
           + "\"value\" : {\"name\":\"" + wlSecretName + "\" , \"namespace\":\"" + domainNamespace1 + "\"}"
@@ -328,7 +330,7 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsMultiClusterEvents() {
     createNewCluster();
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
         externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the DomainProcessing Starting/Completed event is generated");
@@ -346,7 +348,7 @@ public class ItKubernetesEvents {
   @Order(6)
   @Test
   public void testDomainK8sEventsScalePastMax() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
       String patchStr
@@ -361,7 +363,7 @@ public class ItKubernetesEvents {
       logger.info("verify the DomainValidationError event is generated");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
     } finally {
-      timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+      timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
       String patchStr
           = "["
@@ -375,13 +377,48 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Scale the cluster below minimum dynamic cluster size and verify the DomainValidationError
-   * warning event is generated.
+   * Scale down and scale up the domain and verify that
+   * DomainProcessingCompleted normal event is generated.
    */
   @Order(7)
   @Test
+  @DisplayName("Test domain completed event when domain is scaled.")
+  public void testScaleDomainAndVerifyCompletedEvent() {
+    try {
+      scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
+      scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
+    } finally {
+      scaleDomain(2);
+    }
+  }
+
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
+    OffsetDateTime timestamp = now();
+    logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
+    int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
+    V1Patch patch = new V1Patch("["
+            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+            "Failed to patch domain");
+    if (verify) {
+      logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
+      checkEventWithCount(
+          opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
+    }
+  }
+
+  private void scaleDomain(int replicaCount) {
+    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
+  }
+
+  /**
+   * Scale the cluster below minimum dynamic cluster size and verify the DomainValidationError
+   * warning event is generated.
+   */
+  @Order(8)
+  @Test
   public void testDomainK8sEventsScaleBelowMin() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     try {
       String patchStr
           = "["
@@ -396,7 +433,7 @@ public class ItKubernetesEvents {
       logger.info("verify the DomainValidationError event is generated");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_VALIDATION_ERROR, "Warning", timestamp);
     } finally {
-      timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+      timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");
       String patchStr
           = "["
@@ -413,10 +450,10 @@ public class ItKubernetesEvents {
    * Replace the pv and pvc in the domain resource with a pv/pvc not containing any WebLogic domain
    * and verify the DomainProcessingFailed warning event is generated.
    */
-  @Order(8)
+  @Order(9)
   @Test
   public void testDomainK8sEventsProcessingFailed() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     try {
       createPV("sample-pv", domainUid, this.getClass().getSimpleName());
       createPVC("sample-pv", "sample-pvc", domainUid, domainNamespace1);
@@ -448,7 +485,7 @@ public class ItKubernetesEvents {
           + "]";
       logger.info("Updating pv/pvcs in domain resource using patch string: {0}", patchStr);
       V1Patch patch = new V1Patch(patchStr);
-      timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+      timestamp = now();
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
@@ -462,11 +499,11 @@ public class ItKubernetesEvents {
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
    */
-  @Order(9)
+  @Order(10)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
 
     deleteDomainCustomResource(domainUid, domainNamespace1);
     checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
@@ -496,10 +533,10 @@ public class ItKubernetesEvents {
    * </p>
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
-  @Order(10)
+  @Order(11)
   @Test
   public void testK8SEventsStartWatchingNS() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     logger.info("Adding a new domain namespace in the operator watch list");
     upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
     logger.info("verify NamespaceWatchingStarted event is logged");
@@ -525,11 +562,11 @@ public class ItKubernetesEvents {
    * </p>
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
-  @Order(11)
+  @Order(12)
   @Test
   @Disabled("Bug - OWLS-87181")
   public void testK8SEventsStopWatchingNS() {
-    DateTime timestamp = new DateTime(Instant.now().getEpochSecond() * 1000L);
+    OffsetDateTime timestamp = now();
     logger.info("Removing domain namespace in the operator watch list");
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
@@ -538,8 +575,8 @@ public class ItKubernetesEvents {
 
   // Utility method to check event
   private static void checkEvent(
-      String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
-    //verify domain deleted event
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
     withStandardRetryPolicy
         .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
         + "(elapsed time {1}ms, remaining time {2}ms)",
@@ -548,6 +585,19 @@ public class ItKubernetesEvents {
         condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid,
             reason, type, timestamp));
+  }
+
+  private static void checkEventWithCount(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp, int countBefore) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+            reason,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(checkDomainEventWithCount(opNamespace, domainNamespace, domainUid,
+            reason, type, timestamp, countBefore));
   }
 
   // Create and start a WebLogic domain in PV

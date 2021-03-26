@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -293,23 +294,25 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, Boolean.toString(isUseOnlineUpdate()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,
-          Long.toString(getDomain().getWDTActivateTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT,
-          Long.toString(getDomain().getWDTConnectTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTReDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTUnDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT,
-          Long.toString(getDomain().getWDTStartApplicationTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT,
-          Long.toString(getDomain().getWDTStopApplicationTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT,
-          Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
+      if (isUseOnlineUpdate()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, "true");
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,
+            Long.toString(getDomain().getWDTActivateTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT,
+            Long.toString(getDomain().getWDTConnectTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT,
+            Long.toString(getDomain().getWDTDeployTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT,
+            Long.toString(getDomain().getWDTReDeployTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT,
+            Long.toString(getDomain().getWDTUnDeployTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT,
+            Long.toString(getDomain().getWDTStartApplicationTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT,
+            Long.toString(getDomain().getWDTStopApplicationTimeoutMillis()));
+        addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT,
+            Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
+      }
 
 
       String dataHome = getDataHome();
@@ -365,7 +368,7 @@ public class JobHelper {
         return doNext(
             Step.chain(
                 DomainValidationSteps.createAdditionalDomainValidationSteps(
-                    context.getJobModel().getSpec().getTemplate().getSpec()),
+                    Objects.requireNonNull(context.getJobModel().getSpec()).getTemplate().getSpec()),
                 createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
@@ -380,7 +383,7 @@ public class JobHelper {
 
   private static class DeleteIntrospectorJobStep extends Step {
 
-    public static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
+    static final int JOB_DELETE_TIMEOUT_SECONDS = 1;
 
     DeleteIntrospectorJobStep(Step next) {
       super(next);
@@ -585,7 +588,7 @@ public class JobHelper {
     if (logged == null || !logged) {
       packet.put(ProcessingConstants.INTROSPECTOR_JOB_FAILURE_LOGGED, Boolean.TRUE);
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
-          domainIntrospectorJob.getMetadata().getName(),
+          Objects.requireNonNull(domainIntrospectorJob.getMetadata()).getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),
           domainIntrospectorJob.getStatus().toString(),
           jobPodName);
@@ -607,7 +610,7 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String domainUid = info.getDomain().getDomainUid();
       String namespace = info.getNamespace();
-      Integer currentIntrospectFailureRetryCount = Optional.ofNullable(info)
+      Integer currentIntrospectFailureRetryCount = Optional.of(info)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getIntrospectJobFailureCount)

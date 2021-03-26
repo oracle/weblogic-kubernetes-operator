@@ -55,7 +55,7 @@ public interface IntrospectorConfigMapConstants {
 
   /**  A (possibly empty) suffix for introspector config maps. */
   static String suffix(int index) {
-    return index == 0 ? "" : "_" + index;
+    return index == 0 ? "" : "-" + index;
   }
 
   /**

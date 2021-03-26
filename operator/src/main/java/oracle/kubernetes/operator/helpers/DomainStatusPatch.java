@@ -3,13 +3,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import javax.json.Json;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonValue;
-
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonValue;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 public class DomainStatusPatch {
 
@@ -23,8 +23,9 @@ public class DomainStatusPatch {
    * @param reason the reason, a camel-cased string with no spaces
    * @param message a text description of the new status; may include multiple lines
    */
-  public static void updateSynchronously(Domain domain, String reason, String message) {
+  static void updateSynchronously(Domain domain, String reason, String message) {
     new DomainStatusPatch(domain, reason, message).update();
+    updateCachedDomainStatus(domain, reason, message);
   }
 
   private DomainStatusPatch(Domain domain, String reason, String message) {
@@ -44,6 +45,14 @@ public class DomainStatusPatch {
       setSubField(patchBuilder, "/status/message", domain.getStatus().getMessage(), message);
     }
     return patchBuilder;
+  }
+
+  private static void updateCachedDomainStatus(Domain domain, String reason, String message) {
+    if (domain.getStatus() == null) {
+      domain.setStatus(new DomainStatus());
+    }
+    domain.getStatus().setReason(reason);
+    domain.getStatus().setMessage(message);
   }
 
   private static void setSubField(JsonPatchBuilder patchBuilder, String path, String oldValue, String newValue) {

@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -18,7 +19,6 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.joda.time.DateTime;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -42,7 +42,8 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkDomainEvent(
-      String opNamespace, String domainNamespace, String domainUid, String reason, String type, DateTime timestamp) {
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
@@ -66,6 +67,73 @@ public class K8sEvents {
   }
 
   /**
+   * Check if a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param countBefore the count to check against
+   */
+  public static Callable<Boolean> checkDomainEventWithCount(
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp, int countBefore) {
+    return () -> {
+      logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
+      try {
+        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        for (CoreV1Event event : events) {
+          if (event.getReason().equals(reason)
+              && (isEqualOrAfter(timestamp, event))) {
+            logger.info(Yaml.dump(event));
+            verifyOperatorDetails(event, opNamespace, domainUid);
+            //verify type
+            logger.info("Verifying domain event type {0}", type);
+            assertTrue(event.getType().equals(type));
+            int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
+            assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
+                + "Count before is -> " + countBefore + " and count after is -> " + countAfter);
+            return true;
+          }
+        }
+      } catch (ApiException ex) {
+        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      return false;
+    };
+  }
+
+  /**
+   * Get the count for a particular event with specified reason, type and domainUid in a given namespace.
+   *
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid       UID of the domain
+   * @param reason          event reason to get the count for
+   * @param type            type of event, Normal of Warning
+   * @return count          Event count
+   */
+  public static int getDomainEventCount(
+          String domainNamespace, String domainUid, String reason, String type) {
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        Map<String, String> labels = event.getMetadata().getLabels();
+        if (event.getReason().equals(reason)
+                && event.getType().equals(type)
+                && labels.containsKey("weblogic.createdByOperator")
+                && labels.get("weblogic.domainUID").equals(domainUid)) {
+          return event.getCount();
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return 0;
+  }
+
+  /**
    * Get the event count between a specific timestamp.
    *
    * @param domainNamespace namespace in which the domain exists
@@ -75,7 +143,7 @@ public class K8sEvents {
    * @return count number of events count
    */
   public static int getEventCount(
-      String domainNamespace, String domainUid, String reason, DateTime timestamp) {
+      String domainNamespace, String domainUid, String reason, OffsetDateTime timestamp) {
     int count = 0;
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
@@ -102,7 +170,7 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    */
   public static Callable<Boolean> checkPodEventLoggedOnce(
-          String domainNamespace, String serverName, String reason, DateTime timestamp) {
+          String domainNamespace, String serverName, String reason, OffsetDateTime timestamp) {
     return () -> {
       logger.info("Verifying {0} event is logged for {1} pod in the domain namespace {2}",
               reason, serverName, domainNamespace);
@@ -118,9 +186,9 @@ public class K8sEvents {
     };
   }
 
-  private static boolean isEqualOrAfter(DateTime timestamp, CoreV1Event event) {
-    return event.getLastTimestamp().isEqual(timestamp.getMillis())
-            || event.getLastTimestamp().isAfter(timestamp.getMillis());
+  private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
+    return event.getLastTimestamp().isEqual(timestamp)
+            || event.getLastTimestamp().isAfter(timestamp);
   }
 
   private static Boolean isEventLoggedOnce(String serverName, int count) {

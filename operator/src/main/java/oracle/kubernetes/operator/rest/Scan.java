@@ -3,14 +3,15 @@
 
 package oracle.kubernetes.operator.rest;
 
+import java.time.OffsetDateTime;
+
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
-import org.joda.time.DateTime;
 
 public class Scan {
   public final WlsDomainConfig domainConfig;
-  public final DateTime lastScanTime;
+  public final OffsetDateTime lastScanTime;
 
-  public Scan(WlsDomainConfig domainConfig, DateTime lastScanTime) {
+  public Scan(WlsDomainConfig domainConfig, OffsetDateTime lastScanTime) {
     this.domainConfig = domainConfig;
     this.lastScanTime = lastScanTime;
   }

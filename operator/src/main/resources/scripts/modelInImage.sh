@@ -569,7 +569,7 @@ function restorePrimordialDomain() {
 # $1 the name of the encoded file in the config map
 function restoreEncodedTar() {
   cd / || return 1
-  cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -V) > /tmp/domain.secure || return 1
+  cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
 
   tar -xzf /tmp/domain.tar.gz || return 1
@@ -969,7 +969,9 @@ function wdtHandleOnlineUpdate() {
   # temporarily disable it
   stop_trap
   if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] ; then
-    # no op for offline use case
+    # no op for offline use case'
+    trace "Domain resource specified 'domain.spec.configuration.model.onlineUpdate=false' or not defined - no op"
+    trace "Exiting wdtHandleOnlineUpdate"
     return
   fi
 

@@ -17,8 +17,6 @@ spec:
 
   replicas: 2
 
-  # The Operator currently does not support other images
-  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
   # imagePullPolicy defaults to "Always" if image version is :latest
   imagePullPolicy: IfNotPresent
   livenessProbeCustomScript: "/u01/customLiveness.sh"

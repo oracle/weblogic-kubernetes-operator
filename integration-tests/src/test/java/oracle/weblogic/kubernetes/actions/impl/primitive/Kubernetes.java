@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -84,7 +85,6 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.joda.time.DateTime;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -553,7 +553,7 @@ public class Kubernetes {
    * @return creationTimestamp DateTime from metadata of the Pod
    * @throws ApiException if Kubernetes client API call fail
    */
-  public static DateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
+  public static OffsetDateTime getPodCreationTimestamp(String namespace, String labelSelector, String podName)
       throws ApiException {
 
     V1Pod pod = getPod(namespace, labelSelector, podName);

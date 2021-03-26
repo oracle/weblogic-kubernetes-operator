@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.junit.MatcherAssert;
-import org.joda.time.DateTime;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,7 +66,7 @@ public class PodPresenceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
-  private long clock;
+  private OffsetDateTime clock = OffsetDateTime.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
       new V1Pod()
@@ -404,7 +404,8 @@ public class PodPresenceTest {
     return pod;
   }
 
-  private DateTime getDateTime() {
-    return new DateTime(++clock);
+  private OffsetDateTime getDateTime() {
+    clock = clock.plusSeconds(1);
+    return clock;
   }
 }

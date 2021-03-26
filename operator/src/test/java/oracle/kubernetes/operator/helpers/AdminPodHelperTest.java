@@ -101,6 +101,21 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     getServerTopology().setAdminPort(port);
   }
 
+  @Override
+  String getReferencePlainPortPodYaml() {
+    return ReferenceObjects.ADMIN_PLAINPORT_POD_3_1;
+  }
+
+  @Override
+  String getReferenceSslPortPodYaml() {
+    return ReferenceObjects.ADMIN_SSLPORT_POD_3_1;
+  }
+
+  @Override
+  String getReferenceMiiPodYaml() {
+    return ReferenceObjects.ADMIN_MII_POD_3_1;
+  }
+
   String getDomainValidationFailedKey() {
     return DOMAIN_VALIDATION_FAILED;
   }

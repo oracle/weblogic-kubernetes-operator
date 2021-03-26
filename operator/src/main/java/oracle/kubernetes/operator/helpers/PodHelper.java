@@ -58,6 +58,14 @@ public class PodHelper {
   }
 
   /**
+   * Specifies the product version used to create pods.
+   * @param productVersion the version of the operator.
+   */
+  public static void setProductVersion(String productVersion) {
+    PodStepContext.setProductVersion(productVersion);
+  }
+
+  /**
    * Creates an admin server pod resource, based on the specified packet.
    * Expects the packet to contain a domain presence info as well as:
    *   SCAN                 the topology for the server (WlsServerConfig)
@@ -497,18 +505,27 @@ public class PodHelper {
     }
 
     @Override
+    V1Pod withNonHashedElements(V1Pod pod) {
+      V1Pod v1Pod = super.withNonHashedElements(pod);
+
+      // Add prometheus annotations. This will overwrite any custom annotations with same name.
+      // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+      // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+      if (exporterContext.isEnabled()) {
+        final V1ObjectMeta metadata = v1Pod.getMetadata();
+        AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
+      }
+
+      return v1Pod;
+    }
+
+    @Override
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata = super.createMetadata();
       if (getClusterName() != null) {
         metadata.putLabelsItem(CLUSTERNAME_LABEL, getClusterName());
       }
 
-      // Add prometheus annotations. This will overwrite any custom annotations with same name.
-      // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
-      // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
-      if (exporterContext.isEnabled()) {
-        AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
-      }
       return metadata;
     }
 
