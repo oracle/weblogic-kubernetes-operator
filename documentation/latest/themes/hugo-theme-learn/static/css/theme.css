@@ -635,14 +635,14 @@ code {
     border: 1px solid #fbf0cb;
     padding: 0px 2px;
 }
-/* code + .copy-to-clipboard {
+code + .copy-to-clipboard {
     margin-left: -1px;
     border-left: 0 !important;
     font-size: inherit !important;
     vertical-align: middle;
     height: 21px;
     top: 0;
-} */
+}
 pre {
     padding: 1rem;
     margin: 2rem 0;
@@ -1053,7 +1053,7 @@ td {
         cursor: pointer;
     }
 }
-/* .copy-to-clipboard {
+.copy-to-clipboard {
     background-image: url(../images/clippy.svg);
     background-position: 50% 50%;
     background-size: 16px 16px;
@@ -1078,14 +1078,14 @@ pre .copy-to-clipboard {
     position: absolute;
     right: 4px;
     top: 4px;
-    background-color: #949bab;
+    background-color: #C1C4C6;
     color: #ccc;
     border-radius: 2px;
 }
 pre .copy-to-clipboard:hover {
-    background-color: #656c72;
+    background-color: #00bdf3;
     color: #fff;
-} */
+}
 .parent-element {
     -webkit-transform-style: preserve-3d;
     -moz-transform-style: preserve-3d;
@@ -1127,6 +1127,17 @@ pre .copy-to-clipboard:hover {
     padding-left: 1rem;
 }
 
+#homelinks {
+  background-color: #9c6fb6;
+  color: #fff;
+  padding: 7px 0;
+  border-bottom: 4px solid #9c6fb6;
+}
+
 #searchResults {
     text-align: left;
+}
+
+option {
+    color: initial;
 }

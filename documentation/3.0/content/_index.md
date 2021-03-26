@@ -59,7 +59,7 @@ please consult this table of contents:
 * The [Samples]({{< relref "/samples/_index.md" >}}) provide detailed example code and instructions that show you how to perform
   various tasks related to the operator.
 * The [Developer guide]({{< relref "/developerguide/_index.md" >}}) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to contribute to the operator code will find useful information here.  This section also includes
-  API documentation (Javadoc) and Swagger/OpenAPI documentation for the REST APIs.
+  the Swagger/OpenAPI documentation for the REST APIs.
 * The [Contributing](#contributing-to-the-operator) section provides information about contribution requirements.
 
 
@@ -92,8 +92,6 @@ Documentation for APIs:
 * The operator provides a REST API that you can use to obtain configuration information and to initiate scaling actions. For details about how to use the REST APIs, see [Use the operator's REST services]({{< relref "/userguide/managing-operators/using-the-operator/the-rest-api#use-the-operators-rest-services" >}}).
 
 * See the [Swagger](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html) documentation for the operator's REST interface.
-
-* See the [Javadoc](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html) for the operator.
 
 ### Need more help? Have a suggestion? Come and say, "Hello!"
 

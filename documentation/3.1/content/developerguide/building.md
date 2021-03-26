@@ -18,16 +18,6 @@ This will compile the source files, build JAR files containing the compiled clas
 
 Contributions must conform to [coding and formatting standards]({{< relref "/developerguide/coding-standards.md" >}}).
 
-#### Building Javadoc
-
-To build the Javadoc for the operator, issue the following command:
-
-```
-$ mvn javadoc:aggregate
-```
-
-The Javadoc is also available in the GitHub repository [here](https://oracle.github.io/weblogic-kubernetes-operator/apidocs/index.html).
-
 #### Building the operator container image
 
 These commands should be executed in the project root directory:
