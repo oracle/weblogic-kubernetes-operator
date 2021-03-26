@@ -84,7 +84,9 @@ spec:
             - name: ISTIO_READINESS_PORT
               value: "%ISTIO_READINESS_PORT%"
             - name: WDT_VERSION
-              value: %WDT_VERSION%
+              value: "%WDT_VERSION%"
+            - name: https_proxy
+              value: "%HTTPS_PROXY%"
       volumes:
         - name: create-weblogic-sample-domain-job-cm-volume
           configMap:
