@@ -13,13 +13,13 @@ public class SslTestClient {
 
   public SslTestClient(String[] args)
   {
-    url      = args[0];
+    url = args[0];
     try {
        Context ctx = getInitialContext();
-       System.out.println("Got the Initial JNDI Context ["+ctx+"]");
+       System.out.println("Got the Initial JNDI Context ["+ ctx +"]");
        String cfName="weblogic.jms.ConnectionFactory";
        ConnectionFactory qcf=(ConnectionFactory)ctx.lookup(cfName);
-       System.out.println("Looked up default JMS connection factory ["+qcf+"]");
+       System.out.println("Looked up JMS connection factory ["+ qcf +"]");
      } catch ( Exception  ex ) { 
        System.out.println("Got Unknown Exception ["+ ex + "]");
        ex.printStackTrace();
@@ -41,7 +41,7 @@ public class SslTestClient {
       try {
         jndiContext = new InitialContext(props);
       } catch (Exception e) {
-       System.out.println("Unable to get Initial JNDI Context "+e);
+       System.out.println("Unable to get Initial JNDI Context " + e);
        System.exit(-1);
       }
       return jndiContext;
