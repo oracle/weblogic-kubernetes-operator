@@ -40,9 +40,8 @@ productionModeEnabled: true
 # OracleFMWInfrastructure Server image that the operator uses to start the domain.
 #
 # The create domain scripts generate a OracleFMWInfrastructure Server image with a domain home in it.
-# By default, the scripts tag the generated OracleFMWInfrastructure server image as either
-# `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath`
-# property, and use it to set the `image` element in the generated domain YAML file.
+# By default, the scripts tag the generated OracleFMWInfrastructure server image as 
+# `domain-home-in-image`, and use it to set the `image` element in the generated domain YAML file.
 #
 # If this property is set, the create domain scripts will use the value specified, instead of the
 # default value, to tag the generated image and set the `image` in the domain YAML file.
@@ -135,17 +134,19 @@ domainPVMountPath: /shared
 # See README.md for more help.
 domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 
-# Location of the OracleFMWInfrastructure "domain home in image" image sample in the
-# `https://github.com/oracle/docker-images.git` project.
-# If not specified, use "./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image".
-# Another possible value is "./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image-wdt",
-# which uses WDT, instead of WLST, to generate the domain configuration.
-domainHomeImageBuildPath: ./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image
-
 # Uncomment to customize the WebLogic Deploy Tool (WDT) version used by the WDT
 # "domain home in image" image sample in the Docker images project. See
 # "domainHomeImageBuildPath". Set to "LATEST" to use the latest version.
 # wdtVersion: LATEST
+
+Uncomment to customize the WebLogic Image Tool (WIT) version.
+# Set to "LATEST" to use the latest version.
+# witVersion: LATEST
+
+# Uncomment to customize the directory where WebLogic Deploy Tool (WDT)
+# and WebLogic Image Tool (WIT) are installed.
+# Default is /tmp/dhii-sample/tools
+# toolsDir: /tmp/dhii-sample/tools
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.

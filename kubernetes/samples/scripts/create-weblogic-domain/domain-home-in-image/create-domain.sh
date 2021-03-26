@@ -189,10 +189,10 @@ function createDomainHome {
     echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
     $WIT_DIR/imagetool/bin/imagetool.sh update \
-      --fromImage $domainHomeImageBase \
-      --tag ""${BUILD_IMAGE_TAG}"" \
+      --fromImage "$domainHomeImageBase" \
+      --tag "${BUILD_IMAGE_TAG}" \
       --wdtModel ${scriptDir}/topology.yaml \
-      --wdtVariables ${domainPropertiesOutput} \
+      --wdtVariables "${domainPropertiesOutput}" \
       --wdtOperation CREATE \
       --wdtVersion ${WDT_VERSION} \
       --wdtDomainHome $domainHome --chown=oracle:root

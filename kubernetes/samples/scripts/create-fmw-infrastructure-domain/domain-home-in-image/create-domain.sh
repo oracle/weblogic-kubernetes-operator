@@ -156,16 +156,11 @@ function initialize {
 
   initOutputDir
 
-  export WDT_DIR="/tmp/fmw-dhii-sample/tools"
+  export WDT_DIR=${toolsDir:-"/tmp/dhii-sample/tools"}
   export WIT_DIR="${WDT_DIR}"
 
-  if [ -n "${wdtVersion}" ]; then
-    export WDT_VERSION=${wdtVersion}
-  fi
-
-  if [ -n "${witVersion}" ]; then
-    export WIT_VERSION=${witVersion}
-  fi
+  export WDT_VERSION=${wdtVersion:-LATEST}
+  export WIT_VERSION=${witVersion:-LATEST}
 
   install_wit_if_needed || exit 1
 }
@@ -191,15 +186,32 @@ function createDomainHome {
 
   echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
+  echo "fmwDomainType is [${fmwDomainType}]"
+  # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
+  if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
+    wdtModelFile=wdt_model_restricted_jrf_configured.yaml
+    wdtDomainType=RestrictedJRF
+  else
+    wdtModelFile=wdt_model_configured.yaml
+    wdtDomainType=JRF
+  fi
+
+    echo "debug- wdtModel is ${scriptDir}/${wdtModelFile}"
+    echo "debug- wdtVariables is ${domainPropertiesOutput}"
+    echo "debug- WDT_VERSION is ${WDT_VERSION}"
+    echo "debug- wdtDomainHome is ${domainHome}"
+    echo "debug- wdtDomainType is ${wdtDomainType}"
+
+
   $WIT_DIR/imagetool/bin/imagetool.sh update \
       --fromImage $domainHomeImageBase \
-      --tag ""${BUILD_IMAGE_TAG}"" \
-      --wdtModel ${scriptDir}/topology.yaml \
+      --tag "${BUILD_IMAGE_TAG}" \
+      --wdtModel ${scriptDir}/${wdtModelFile} \
       --wdtVariables ${domainPropertiesOutput} \
       --wdtOperation CREATE \
       --wdtVersion ${WDT_VERSION} \
-      --wdtDomainType JRF \
-      --wdtDomainHome $domainHome #--chown=oracle:root
+      --wdtDomainType ${wdtDomainType} \
+      --wdtDomainHome ${domainHome} #--chown=oracle:root
 
       #--wdtRunRCU \
   return
