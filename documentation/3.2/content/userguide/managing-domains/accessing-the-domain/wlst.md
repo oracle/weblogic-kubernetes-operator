@@ -17,6 +17,8 @@ This service will be in the same namespace as the domain.  The external port num
 
 ```shell
 $ kubectl get service domain1-admin-server-ext -n domain1 -o jsonpath='{.spec.ports[0].nodePort}'
+```
+```
 30012
 ```
 
@@ -24,7 +26,8 @@ In this example, the `nodePort` is `30012`.  If the Kubernetes server’s addres
 
 ```shell
 $ ~/wls/oracle_common/common/bin/wlst.sh
-
+```
+```
 Initializing WebLogic Scripting Tool (WLST) ...
 
 Welcome to WebLogic Server Administration Scripting Shell

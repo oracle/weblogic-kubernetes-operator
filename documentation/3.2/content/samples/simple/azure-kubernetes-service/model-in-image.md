@@ -31,6 +31,8 @@ Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github
 
 ```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+```
+```shell
 $ cd weblogic-kubernetes-operator
 ```
 
@@ -47,10 +49,14 @@ Create a namespace and service account for the operator.
 
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
+```
+```
 namespace/sample-weblogic-operator-ns created
-
-
+```
+```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+```
+```
 serviceaccount/sample-weblogic-operator-sa created
 ```
 
@@ -58,7 +64,8 @@ Validate the service account was created with this command.
 
 ```shell
 $ kubectl -n sample-weblogic-operator-ns get serviceaccount
-
+```
+```
 NAME                          SECRETS   AGE
 default                       1         9m24s
 sample-weblogic-operator-sa   1         9m5s
@@ -66,8 +73,10 @@ sample-weblogic-operator-sa   1         9m5s
 
 Install the operator. Ensure your current directory is `weblogic-kubernetes-operator`. It may take you several minutes to install the operator.
 
-```shell
+```
 # cd weblogic-kubernetes-operator
+```
+```
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
   --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1 \
@@ -76,7 +85,8 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
-
+```
+```
 NAME: weblogic-operator
 LAST DEPLOYED: Tue Nov 17 09:33:58 2020
 NAMESPACE: sample-weblogic-operator-ns
@@ -93,11 +103,15 @@ Verify the operator with the following commands; the status will be `Running`.
 
 ```shell
 $ helm list -A
+```
+```
 NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
 sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
-
-
+```
+```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
+```
+```
 NAME                                 READY   STATUS    RESTARTS   AGE
 weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
@@ -126,7 +140,11 @@ If you have a Docker image built with domain models following [Model in Image]({
 
    ```shell
    $ mkdir /tmp/mii-sample
+    ```
+    ```shell
    $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image
+    ```
+    ```shell
    $ cp -r * /tmp/mii-sample
    ```
 
@@ -136,10 +154,12 @@ If you have a Docker image built with domain models following [Model in Image]({
 
    ```shell
    $ cd /tmp/mii-sample/model-images
-
+    ```
+    ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-
+    ```
+    ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
@@ -148,9 +168,11 @@ If you have a Docker image built with domain models following [Model in Image]({
    To set up the WebLogic Image Tool, run the following commands:
    ```shell
    $ cd /tmp/mii-sample/model-images
-
+    ```
+    ```shell
    $ unzip imagetool.zip
-
+    ```
+    ```shell
    $ ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
@@ -191,14 +213,22 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```shell
+```
 # Delete existing archive.zip in case we have an old leftover version
+```
+```shell
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
-
+```
+```
 # Move to the directory which contains the source files for our archive
+```
+```shell
 $ cd /tmp/mii-sample/archives/archive-v1
-
+```
+```
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
+```
+```shell
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
@@ -283,6 +313,8 @@ Run the following commands to create the model image and verify that it worked:
 
 ```shell
 $ cd /tmp/mii-sample/model-images
+```
+```shell
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
@@ -314,6 +346,8 @@ Verify the image is available in the local Docker server with the following comm
 
 ```shell
 $ docker images | grep WLS-v1
+```
+```
 model-in-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 ```
 
@@ -341,6 +375,8 @@ Use this value to sign in to the ACR instance. Note that because you are signing
 
 ```shell
 $ export AKS_PERS_ACR=<you-ACR-loginServer>
+```
+```shell
 $ az acr login --name $AKS_PERS_ACR
 ```
 
@@ -348,7 +384,11 @@ Ensure Docker is running on your local machine.  Run the following commands to t
 
 ```shell
 $ docker tag model-in-image:WLS-v1 $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks
+```
+```shell
 $ docker push $AKS_PERS_ACR/$AKS_PERS_ACR:model-in-image-aks
+```
+```
 The push refers to repository [contosorgresourcegroup1610068510.azurecr.io/contosorgresourcegroup1610068510.azurecr.io]
 model-in-image-aks: digest: sha256:208217afe336053e4c524caeea1a415ccc9cc73b206ee58175d0acc5a3eeddd9 size: 2415
 ```
@@ -384,8 +424,11 @@ Create a namespace that can host one or more domains:
 
 ```shell
 $ kubectl create namespace sample-domain1-ns
-
+```
+```
 ## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
+```
+```shell
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
@@ -399,13 +442,18 @@ Run the following `kubectl` commands to deploy the required secrets:
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
+```
+```shell
 $ kubectl -n sample-domain1-ns label  secret \
   sample-domain1-weblogic-credentials \
   weblogic.domainUID=sample-domain1
-
+```
+```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
    --from-literal=password=welcome1
+```
+```shell
 $ kubectl -n sample-domain1-ns label  secret \
   sample-domain1-runtime-encryption-secret \
   weblogic.domainUID=sample-domain1
@@ -441,7 +489,11 @@ Use `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentia
 
 ```shell
 $ cd weblogic-kubernetes-operator
+```
+```shell
 $ cd kubernetes/samples/scripts/create-kuberetes-secrets
+```
+```shell
 $ ./create-docker-credentials-secret.sh -h
 ```
 
@@ -449,6 +501,8 @@ Get the password for the ACR and store it in the Kubernetes secret.
 
 ```shell
 $ az acr credential show --name $AKS_PERS_ACR
+```
+```
 The login server endpoint suffix '.azurecr.io' is automatically omitted.
 {
   "passwords": [
@@ -463,15 +517,23 @@ The login server endpoint suffix '.azurecr.io' is automatically omitted.
   ],
   "username": "contosoresourcegroup1610068510"
 }
+```
+```shell
 $ export AKS_PERS_ACR_PASSWORD=<the-password-from-your-output>
 ```
 
 Use the `create-docker-credentials-secret.sh` script to store the ACR credentials as a Kubernetes secret.
 
-```shell
+```
 # cd kubernetes/samples/scripts/create-kuberetes-secrets
+```
+```shell
 $ export SECRET_NAME_DOCKER="regsecret"
+```
+```shell
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e $AKS_PERS_RESOURCE_GROUP -p $AKS_PERS_ACR_PASSWORD -u $AKS_PERS_RESOURCE_GROUP -d $AKS_PERS_ACR -n sample-domain1-ns
+```
+```
 secret/regsecret created
 The secret regsecret has been successfully created in the sample-domain1-ns namespace.
 ```
@@ -484,6 +546,8 @@ We provide a sample file at `kubernetes/samples/scripts/create-weblogic-domain/m
 
 ```shell
 $ cd kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources/WLS
+```
+```shell
 $ cp mii-initial-d1-WLS-v1.yaml /tmp/mii-sample/mii-initial.yaml
 ```
 
@@ -500,7 +564,7 @@ Run the following command to create the domain custom resource:
 $ kubectl apply -f /tmp/mii-sample/mii-initial.yaml
 ```
 
-Successfull output will look like:
+Successful output will look like:
 
 ```
 domain.weblogic.oracle/sample-domain1 created
@@ -510,6 +574,8 @@ Verify the WebLogic Server pods are all running:
 
 ```shell
 $ kubectl get pods -n sample-domain1-ns --watch
+```
+```
 NAME                                READY   STATUS              RESTARTS   AGE
 sample-domain1-introspector-xwpbn   0/1     ContainerCreating   0          0s
 sample-domain1-introspector-xwpbn   1/1     Running             0          1s
@@ -533,7 +599,11 @@ sample-domain1-managed-server1      0/1     Running             0          53s
 sample-domain1-managed-server1      1/1     Running             0          93s
 
 # The success deployment should be:
+```
+```shell
 $ kubectl get all -n sample-domain1-ns
+```
+```
 NAME                                 READY   STATUS    RESTARTS   AGE
 pod/sample-domain1-admin-server      1/1     Running   0          16m
 pod/sample-domain1-managed-server1   1/1     Running   0          15m
@@ -605,10 +675,17 @@ Create the load balancer services using the following command:
 
 ```shell
 $ cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/model-in-image
+```
+```shell
 $ kubectl apply -f admin-lb.yaml
+```
+```
 service/sample-domain1-admin-server-external-lb created
-
+```
+```shell
 $ kubectl  apply -f cluster-lb.yaml
+```
+```
 service/sample-domain1-cluster-1-external-lb created
 ```
 
@@ -616,6 +693,8 @@ Get the external IP addresses of the Administration Server and cluster load bala
 
 ```shell
 $ kubectl get svc -n sample-domain1-ns --watch
+```
+```
 NAME                                      TYPE           CLUSTER-IP     EXTERNAL-IP      PORT(S)          AGE
 sample-domain1-admin-server               ClusterIP      None           <none>           7001/TCP         8m33s
 sample-domain1-admin-server-external-lb   LoadBalancer   10.0.184.118   52.191.234.149   7001:30655/TCP   2m30s
@@ -765,10 +844,13 @@ Access the Administration Console using the admin load balancer IP address, `htt
 
 Access the sample application using the cluster load balancer IP address.
 
-```shell
+```
 ## Access the sample application using the cluster load balancer IP (52.191.235.71)
+```
+```
 $ curl http://52.191.235.71:8001/myapp_war/index.jsp
-
+```
+```
 <html><body><pre>
 *****************************************************************
 
@@ -787,8 +869,11 @@ Found 0 local data sources:
 *****************************************************************
 </pre></body></html>
 
+```
+```shell
 $ curl http://52.191.235.71:8001/myapp_war/index.jsp
-
+```
+```
 <html><body><pre>
 *****************************************************************
 
