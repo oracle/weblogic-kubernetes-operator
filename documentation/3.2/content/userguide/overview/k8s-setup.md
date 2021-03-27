@@ -48,6 +48,8 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
     ```shell
     $ cd terraform-kubernetes-installer
+    ```
+    ```shell
     $ terraform init
     ```
 
@@ -95,6 +97,8 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
 
     ```shell
     $ terraform plan
+    ```
+    ```shell
     $ terraform apply
     ```
 
@@ -104,8 +108,10 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
     $ scripts/cluster-check.sh
     ```
 1. Output the SSH private key:
-    ```shell
+    ```
     # output the ssh private key for use later
+    ```
+    ```shell
     $ rm -f generated/instances_id_rsa && terraform output ssh_private_key > generated/instances_id_rsa && chmod 600 generated/instances_id_rsa
     ```
 
@@ -122,12 +128,22 @@ Alternatively, you may install an NFS server on one node and share the file syst
 
 ```shell
 $ terraform output worker_public_ips
+```
+```
 IP1,
 IP2
+```
+```shell
 $ terraform output worker_private_ips
+```
+```
 PRIVATE_IP1,
 PRIVATE_IP2
+```
+```shell
 $ ssh -i `pwd`/generated/instances_id_rsa opc@IP1
+```
+```
 worker-1$ sudo su -
 worker-1# yum install -y nfs-utils
 worker-1# mkdir /scratch
@@ -136,7 +152,11 @@ worker-1# systemctl restart nfs
 worker-1# exit
 worker-1$ exit
 # configure worker-2 to mount the share from worker-1
+```
+```shell
 $ ssh -i `pwd`/generated/instances_id_rsa opc@IP2
+```
+```
 worker-2$ sudo su -
 worker-2# yum install -y nfs-utils
 worker-2# mkdir /scratch
@@ -145,7 +165,6 @@ worker-2# mount /scratch
 worker-2# exit
 worker-2$ exit
 ```
-
 
 #### Install Kubernetes on your own compute resources (for example, Oracle Linux servers outside a cloud)
 
@@ -158,12 +177,14 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
     ```shell
     $ export docker_dir=/scratch/docker
+    ```
+    ```shell
     $ export k8s_dir=/scratch/k8s_dir
     ```
 
 1. Create a shell script that sets up the necessary environment variables. You should probably just append this to the user's `.bashrc` so that it will get executed at login.  You will also need to configure your proxy settings here if you are behind an HTTP proxy:
 
-    ```shell
+    ```bash
     #!/bin/bash
     export PATH=$PATH:/sbin:/usr/sbin
     pod_network_cidr="10.244.0.0/16"
@@ -201,6 +222,8 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
     ```shell
     $ mkdir -p $docker_dir $k8s_dir/kubelet
+    ```
+    ```shell
     $ ln -s $k8s_dir/kubelet /var/lib/kubelet
     ```
 
@@ -212,28 +235,46 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
 1. Install Docker, removing any previously installed version:
 
-    ```shell
+    ```
     ### install docker and curl-devel (for git if needed)
+    ```
+    ```shell
     $ yum-config-manager --enable ol7_addons ol7_latest
+    ```
+    ```
     # we are going to just uninstall any docker-engine that is installed
+    ```
+    ```shell
     $ yum -y erase docker-engine docker-engine-selinux
+    ```
+    ```
     # now install the docker-engine at our specified version
+    ```
+    ```shell
     $ yum -y install docker-engine-$docker_version curl-devel
     ```
 
 1. Update the Docker options:
 
-    ```shell
+    ```
     # edit /etc/sysconfig/docker to add custom OPTIONS
+    ```
+    ```shell
     $ cat /etc/sysconfig/docker | sed "s#^OPTIONS=.*#OPTIONS='--selinux-enabled --group=docker -g $docker_dir'#g" > /tmp/docker.out
+    ```
+    ```shell
     $ diff /etc/sysconfig/docker /tmp/docker.out
+    ```
+    ```shell
     $ mv /tmp/docker.out /etc/sysconfig/docker
     ```
 
 1. Set up the Docker network, including the HTTP proxy configuration, if you need it:
 
-    ```shell
+    ```
     # generate a custom /setc/sysconfig/docker-network
+    ```
+    ```shell
     $ cat <<EOF > /etc/sysconfig/docker-network
     # /etc/sysconfig/docker-network
     DOCKER_NETWORK_OPTIONS="-H tcp://0.0.0.0:4243 -H unix:///var/run/docker.sock"
@@ -257,7 +298,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
 1. Install the Kubernetes packages:
 
-    ```shell
+    ```bash
     #!/bin/bash
     # generate the yum repo config
     cat <<EOF > /etc/yum.repos.d/kubernetes.repo
@@ -306,7 +347,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
 1. Install and use Flannel for CNI:
 
-    ```shell
+    ```bash
     #!/bin/bash
     # run kubeadm init as root
     echo Running kubeadm init --skip-preflight-checks --apiserver-advertise-address=$ip_addr  --pod-network-cidr=$pod_network_cidr
@@ -334,12 +375,14 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
     ```shell
     $ sudo -u YOUR_USERID kubectl create clusterrolebinding permissive-binding --clusterrole=cluster-admin --user=admin --user=kubelet --group=system:serviceaccounts
+    ```
+    ```shell
     $ sudo -u YOUR_USERID kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
     ```
 
     Wait for `kubectl get nodes` to show `Ready` for this host:
 
-    ```shell
+    ```bash
     #!/bin/bash
     host=`hostname | awk -F. '{print $1}'`
     status="NotReady"
@@ -363,7 +406,11 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
 
     ```shell
     $ sudo -u YOUR_USERID kubectl taint nodes --all node-role.kubernetes.io/master-
+    ```
+    ```shell
     $ sudo -u YOUR_USERID kubectl get nodes
+    ```
+    ```shell
     $ sudo -u YOUR_USERID kubeadm version
     ```
 
@@ -395,19 +442,32 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
 
 1. Ensure that `kubectl` on your Mac, is pointing to the correct cluster and context.
 
-
     ```shell
     $ kubectl config get-contexts
+    ```
+    ```
     CURRENT   NAME                          CLUSTER                      AUTHINFO             NAMESPACE
               docker-for-desktop            docker-for-desktop-cluster   docker-for-desktop
               kubernetes-admin@kubernetes   kubernetes                   kubernetes-admin
+    ```
+    ```shell
     $ kubectl config use-context docker-for-desktop
+    ```
+    ```
     Switched to context "docker-for-desktop".
+    ```
+    ```shell
     $ kubectl config get-clusters
+    ```
+    ```
     NAME
     kubernetes
     docker-for-desktop-cluster
+    ```
+    ```shell
     $ kubectl config set-cluster docker-for-desktop-cluster
+    ```
+    ```
     Cluster "docker-for-desktop-cluster" set.
     ```
 
@@ -435,6 +495,8 @@ Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.do
 
     ```shell
     $ kubectl cluster-info
+    ```
+    ```
     Kubernetes master is running at https://docker-for-desktop:6443
 
     To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.

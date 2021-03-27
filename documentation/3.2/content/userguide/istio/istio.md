@@ -43,6 +43,8 @@ injection enabled.  Before installing the operator, create the namespace in whic
 
 ```shell
 $ kubectl create namespace weblogic-operator
+```
+```shell
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
@@ -54,6 +56,8 @@ You can validate this using the following commands:
 
 ```shell
 $ kubectl --namespace weblogic-operator get pods
+```
+```shell
 $ kubectl --namespace weblogic-operator get pod weblogic-operator-xxx-xxx -o yaml
 ```
 
@@ -67,6 +71,8 @@ and label it for automatic injection.
 
 ```shell
 $ kubectl create namespace domain1
+```
+```shell
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
@@ -148,7 +154,8 @@ After all the servers are up, you will see output like this:
 
 ```shell
 $ kubectl -n sample-domain1-ns get pods
-
+```
+```
 NAME                             READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server      2/2     Running   0          154m
 sample-domain1-managed-server1   2/2     Running   0          153m
@@ -157,8 +164,10 @@ sample-domain1-managed-server2   2/2     Running   0          153m
 
 If you use `istioctl proxy-status`, you will see the mesh status:
 
-```
+```shell
 istioctl proxy-status
+```
+```
 NAME                                                               CDS        LDS        EDS        RDS          PILOT                            VERSION
 istio-ingressgateway-5c7d8d7b5d-tjgtd.istio-system                 SYNCED     SYNCED     SYNCED     NOT SENT     istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4

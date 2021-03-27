@@ -77,6 +77,8 @@ but initially the external IP is shown as `<pending>`.
 
 ```shell
 $ kubectl -n bob get svc
+```
+```
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>        8888/TCP,7001/TCP,30101/TCP   9d
 bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>        7001:32401/TCP                9d
@@ -91,6 +93,8 @@ external IP address will be displayed:
 
 ```shell
 $ kubectl -n bob get svc
+```
+```
 NAME                                   TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                       AGE
 bobs-bookstore-admin-server            ClusterIP      None            <none>            8888/TCP,7001/TCP,30101/TCP   9d
 bobs-bookstore-admin-server-ext        NodePort       10.96.224.13    <none>            7001:32401/TCP                9d

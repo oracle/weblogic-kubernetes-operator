@@ -161,14 +161,22 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```shell
+```
 # Delete existing archive.zip in case we have an old leftover version
+```
+```shell
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
-
+```
+```
 # Move to the directory which contains the source files for our archive
+```
+```shell
 $ cd /tmp/mii-sample/archives/archive-v1
-
+```
+```
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
+```
+```shell
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
@@ -231,7 +239,6 @@ resources:
         MinThreadsConstraint: 'SampleMinThreads'
         MaxThreadsConstraint: 'SampleMaxThreads'
 ```
-
 
 {{%expand "Click here to view the JRF `model.10.yaml`, and note the `RCUDbInfo` stanza and its references to a `DOMAIN_UID-rcu-access` secret." %}}
 
@@ -334,6 +341,8 @@ If you are taking the `JRF` path through the sample, then remove `--chown oracle
 {{% /notice %}}
   ```shell
   $ cd /tmp/mii-sample/model-images
+    ```
+    ```shell
   $ ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
@@ -388,13 +397,18 @@ Run the following `kubectl` commands to deploy the required secrets:
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-weblogic-credentials \
     weblogic.domainUID=sample-domain1
-
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-runtime-encryption-secret \
      --from-literal=password=my_runtime_password
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-runtime-encryption-secret \
     weblogic.domainUID=sample-domain1
@@ -422,7 +436,6 @@ Run the following `kubectl` commands to deploy the required secrets:
     - To make it obvious which secrets belong to which domains.
     - To make it easier to clean up a domain. Typical cleanup scripts use the `weblogic.domainUID` label as a convenience for finding all resources associated with a domain.
 
-
   If you're following the `JRF` path through the sample, then you also need to deploy the additional secret referenced by macros in the `JRF` model `RCUDbInfo` clause, plus an `OPSS` wallet password secret. For details about the uses of these secrets, see the [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation.
 
   {{%expand "Click here for the commands for deploying additional secrets for JRF." %}}
@@ -433,13 +446,18 @@ Run the following `kubectl` commands to deploy the required secrets:
      --from-literal=rcu_prefix=FMW1 \
      --from-literal=rcu_schema_password=Oradoc_db1 \
      --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-rcu-access \
     weblogic.domainUID=sample-domain1
-
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-opss-wallet-password-secret \
      --from-literal=walletPassword=welcome1
+    ```
+    ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-opss-wallet-password-secret \
     weblogic.domainUID=sample-domain1
@@ -723,6 +741,8 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   {{%expand "Click here to expand." %}}
   ```shell
   $ kubectl get pods -n sample-domain1-ns --watch
+    ```
+    ```
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
   sample-domain1-introspector-lqqj9   0/1   ContainerCreating   0     0s
@@ -749,7 +769,8 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```shell
     $ ./wl-pod-wait.sh -?
-
+    ```
+    ```
     Usage:
 
       wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
@@ -784,7 +805,6 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
                         have reached the desired criteria.
 
       -?              : This help.
-
   ```
   {{% /expand %}}
 
