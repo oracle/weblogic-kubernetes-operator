@@ -16,7 +16,7 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 
 The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
 
-{{% notice tip %}} Step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/hands-on-lab/README.md)
+{{% notice tip %}} Step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/hands-on-lab/README.md)
 using the operator to deploy and run a WebLogic domain container-packaged web application on an Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) cluster.
 {{% /notice %}}
 

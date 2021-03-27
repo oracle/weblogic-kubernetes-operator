@@ -17,7 +17,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Make sure the WebLogic Server Kubernetes Operator is running.
 * The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
-* In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
+* In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes Namespace as the domain.
 
 {{% notice note %}}
@@ -70,6 +70,8 @@ The usage of the create script is as follows:
 
 ```shell
 $ sh create-domain.sh -h
+```
+```
 usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
@@ -235,6 +237,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl describe domain domain1
+```
+```
 Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
@@ -377,6 +381,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl get pods
+```
+```
 NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          1m
 domain1-managed-server1                      1/1       Running   0          8m
@@ -394,6 +400,8 @@ $ kubectl get services -n NAMESPACE
 Here is an example of the output of this command:
 ```shell
 $ kubectl get services
+```
+```
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   10.96.206.134    <none>        7001/TCP          23m
 domain1-admin-server-ext                    NodePort    10.107.164.241   <none>        30012:30012/TCP   22m
@@ -419,8 +427,8 @@ To determine if this is the problem:
 
     * Execute `kubectl get all --all-namespaces` to find the name of the `create-weblogic-sample-domain-job`.
     * Execute  `kubectl describe pod <name-of-create-weblogic-sample-domain-job>` to see if there is an event that has text similar to `persistentvolumeclaim "domain1-weblogic-sample-pvc" not found`.
-    * Find the name of the PVC that was created by executing [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
-    * Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh).
+    * Find the name of the PVC that was created by executing [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh), using `kubectl describe pvc`. It is likely to be `weblogic-sample-pvc`.
+    * Change the value of `persistentVolumeClaimName` to match the name created when you executed [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh).
     * Rerun the `create-domain.sh` script with the same arguments as you did before.
     * Verify that the operator is deployed. Use the command:
 ```shell

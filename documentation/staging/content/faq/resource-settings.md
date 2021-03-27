@@ -133,10 +133,15 @@ It's also important to keep in mind that if you set a value of CPU core count th
 
 ```shell
 $ kubectl get pod sample-domain1-managed-server1 -n sample-domain1-ns
+```
+```
 NAME                              READY   STATUS    RESTARTS   AGE
 sample-domain1-managed-server1    0/1     Pending   0          65s
-
+```
+```shell
 $ kubectl describe pod sample-domain1-managed-server1 -n sample-domain1-ns
+```
+```
 Events:
   Type     Reason            Age                From               Message
   ----     ------            ----               ----               -------

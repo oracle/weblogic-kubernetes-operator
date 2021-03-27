@@ -54,7 +54,7 @@ additional pods become ready, or pods enter a non-ready state.
     Ingress resources contain routing rules to one or more backends. An ingress controller is responsible to apply the rules to the underlying load balancer.
     There are two approaches to create the Ingress resource:
 
-      * Use the Helm chart [ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain).  
+      * Use the Helm chart [ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/ingress-per-domain).  
 
         Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two ingress providers: Traefik and Voyager.
 
@@ -66,9 +66,9 @@ additional pods become ready, or pods enter a non-ready state.
 
 Information about how to install and configure these ingress controllers to load balance WebLogic clusters is provided here:
 
- - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/README.md)
- - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/README.md)
- - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/nginx/README.md)
+ - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md)
+ - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/voyager/README.md)
+ - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/nginx/README.md)
 
  {{% notice note %}}
  For production environments, we recommend NGINX, Voyager, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.
@@ -76,5 +76,5 @@ Information about how to install and configure these ingress controllers to load
 
 Samples are also provided for these two ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:
 
-- [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/traefik/samples)
-- [Voyager samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/voyager/samples)
+- [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/samples)
+- [Voyager samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/voyager/samples)
