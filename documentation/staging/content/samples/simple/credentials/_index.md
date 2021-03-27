@@ -37,6 +37,8 @@ including the output:
 
 ```shell
 $ kubectl -n domain-namespace-1 get secret domain1-weblogic-credentials -o yaml
+```
+```
 apiVersion: v1
 data:
   password: d2VsY29tZTE=
@@ -53,5 +55,4 @@ metadata:
   selfLink: /api/v1/namespaces/domain-namespace-1/secrets/domain1-weblogic-credentials
   uid: 0c2b3510-fe4c-11e8-994d-00001700101d
 type: Opaque
-
 ```

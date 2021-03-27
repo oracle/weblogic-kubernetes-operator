@@ -41,9 +41,13 @@ To prevent the introspector job from retrying while you are debugging a failure,
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:
 
-  ```shell
+  ```
   $ # here we see a failed introspector job pod among the domain's pods:
+  ```
+   ```shell
   $ kubectl -n sample-domain1-ns get pods -l weblogic.domainUID=sample-domain1
+  ```
+  ```
   NAME                                         READY   STATUS    RESTARTS   AGE
   sample-domain1-admin-server                  1/1     Running   0          19h
   sample-domain1-introspector-v2l7k            0/1     Error     0          75m
@@ -51,27 +55,28 @@ For example, assuming your domain UID is `sample-domain1` and your domain namesp
   sample-domain1-managed-server2               1/1     Running   0          19h
 
   $ # let's look at the job's describe
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns describe job/sample-domain1-introspector
 
-  ...
-
+  ```
+  ```
   $ # now let's look at the job's pod describe, in particular look at its 'events'
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns describe pod/sample-domain1-introspector-v2l7k
-
-  ...
-
+  ```
+  ```
   $ # finally let's look at job's pod's log
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns logs job/sample-domain1-introspector
-
-  ...
-
+  ```
+  ```
   $ # alternative log command (will have same output as previous)
   # kubectl -n sample-domain1-ns logs pod/sample-domain1-introspector-v2l7k
-  ```
 
   A common reason for the introspector job to fail is because of an error in a model file. Here's some sample log output from an introspector job that shows such a failure:
-
-  ```
   ...
 
   SEVERE Messages:
@@ -100,17 +105,23 @@ then see [Online update status and labels]({{<relref "/userguide/managing-domain
 
 Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
-  ```shell
+  ```
   $ # find your operator
+  ```
+  ```shell
   $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
-
+  ```
+  ```
   NAMESPACE                     NAME                DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
   sample-weblogic-operator-ns   weblogic-operator   1         1         1            1           20h
 
   $ # grep operator log for SEVERE and WARNING level messages
+  ```
+  ```shell
   $ kubectl logs deployment/weblogic-operator -n sample-weblogic-operator-ns  \
     | egrep -e "level...(SEVERE|WARNING)"
-
+  ```
+  ```json
   {"timestamp":"03-18-2020T20:42:21.702+0000","thread":11,"fiber":"","domainUID":"","level":"WARNING","class":"oracle.kubernetes.operator.helpers.HealthCheckHelper","method":"createAndValidateKubernetesVersion","timeInMillis":1584564141702,"message":"Kubernetes minimum version check failed. Supported versions are 1.13.5+,1.14.8+,1.15.7+, but found version v1.12.3","exception":"","code":"","headers":{},"body":""}
   ```
 

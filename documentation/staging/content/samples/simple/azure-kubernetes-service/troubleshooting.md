@@ -40,6 +40,8 @@ This is an output example:
 
 ```shell
 $ kubectl describe pod domain1-create-weblogic-sample-domain-job-nj7wl
+```
+```
 Events:
 Type     Reason       Age                  From                                        Message
 ----     ------       ----                 ----                                        -------
@@ -66,6 +68,8 @@ The following output is an example of when the Administration Server has started
 
 ```shell
 $ kubectl get svc
+```
+```
 NAME                               TYPE           CLUSTER-IP    EXTERNAL-IP     PORT(S)              AGE
 domain1-admin-server               ClusterIP      None          <none>          30012/TCP,7001/TCP   7m3s
 domain1-admin-server-ext           NodePort       10.0.78.211   <none>          7001:30701/TCP       7m3s
@@ -139,17 +143,26 @@ If you are running with WSL2, you may run into the [bad timestamp issue](https:/
 
 ```shell
 $ kubectl get pod
+```
+```
 Unable to connect to the server: x509: certificate has expired or is not yet valid: current time 2020-11-25T15:58:10+08:00 is before 2020-11-27T04:25:04Z
 ```
 
 You can run the following command to update WSL2 system time:
 
-```shell
+```
 # Fix the outdated systime time
+```
+```shell
 $ sudo hwclock -s
-
+```
+```
 # Check systime time
+```
+```shell
 $ data
+```
+```
 Fri Nov 27 13:07:14 CST 2020
 ```
 
@@ -165,21 +178,29 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
    --set "domainNamespaceSelectionStrategy=LabelSelector" \
    --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
 --wait
+```
+```
 Error: timed out waiting for the condition
 ```
 
-Make sure you are working with the master branch. Remove the operator and install again.
+Make sure you are working with the main branch. Remove the operator and install again.
 
 ```shell
 $ helm uninstall weblogic-operator -n sample-weblogic-operator-ns
+```
+```
 release "weblogic-operator" uninstalled
 ```
 
-Check out master and install the operator.
+Check out main and install the operator.
 
 ```shell
 $ cd weblogic-kubernetes-operator
-$ git checkout master
+```
+```shell
+$ git checkout main
+```
+```shell
 $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
    --namespace sample-weblogic-operator-ns \
    --set serviceAccount=sample-weblogic-operator-sa \
@@ -203,6 +224,8 @@ To resolve the error, either upgrade to a newer version of WIT or disable the Do
 
 ```shell
 $ export DOCKER_BUILDKIT=0
+```
+```shell
 $ export COMPOSE_DOCKER_CLI_BUILD=0
 ```
 
@@ -223,6 +246,8 @@ This is an error example with warning message **no nodes available to schedule p
 
 ```shell
 $ kubectl get pod -A
+```
+```
 NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
 default                       weblogic-operator-c5c78b8b5-ssvqk           0/1     Pending   0          13m
 kube-system                   coredns-79766dfd68-wcmkd                    0/1     Pending   0          3h22m
@@ -233,8 +258,11 @@ kube-system                   metrics-server-7f5b4f6d8c-bqzrn             0/1   
 kube-system                   tunnelfront-765bf6df59-msj27                0/1     Pending   0          3h22m
 sample-weblogic-operator-ns   weblogic-operator-f86b879fd-v2xrz           0/1     Pending   0          35m
 
+```
+```shell
 $ kubectl describe pod weblogic-operator-f86b879fd-v2xrz -n sample-weblogic-operator-ns
-...
+```
+```
 Events:
   Type     Reason            Age                 From               Message
   ----     ------            ----                ----               -------
@@ -247,6 +275,8 @@ Run the `kubectl get pod -A` to make sure all the system pods are running.
 
 ```shell
 $ kubectl get pod -A
+```
+```
 NAMESPACE                     NAME                                        READY   STATUS    RESTARTS   AGE
 kube-system                   coredns-79766dfd68-ch5b9                    1/1     Running   0          3h44m
 kube-system                   coredns-79766dfd68-sxk4g                    1/1     Running   0          3h43m
@@ -270,9 +300,14 @@ If you got an error of **ErrImagePull** from pod status, use `docker pull` to ch
 
 ```shell
 $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:<version>
-
+```
+```
 # Example: pull 3.1.1.
+```
+```shell
 $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.1.1
+```
+```
 3.1.1: Pulling from oracle/weblogic-kubernetes-operator
 980316e41237: Pull complete
 c980371d97ea: Pull complete
@@ -294,6 +329,8 @@ First, find the `objectId` of the service principal used when the AKS cluster wa
 
 ```shell
 $ az ad sp show --id http://<your-name-from-the-saved-output> | grep objectId
+```
+```
 "objectId": "nror4p30-qnoq-4129-o89r-p60n71805npp",
 ```
 
@@ -301,6 +338,8 @@ Next, assign the `acrpull` role to that service principal with this command.
 
 ```shell
 $ az role assignment create --assignee-object-id <your-objectId-from-above> --scope $AKS_PERS_RESOURCE_GROUP --role acrpull
+```
+```
 {
   "canDelegate": null,
   "condition": null,
@@ -326,7 +365,8 @@ $ az aks create \
    --location $AKS_PERS_LOCATION \
    --service-principal $SP_APP_ID \
    --client-secret $SP_CLIENT_SECRET
-
+```
+```
 BadRequestError: Operation failed with status: 'Bad Request'. Details: Virtual Machine size: 'Standard_DS2_v2' is not supported for subscription subscription-id in location 'eastus'. The available VM sizes are 'basic_a0,basic_a1,basic_a2,basic_a3,basic_a4,standard_a2'. Please refer to aka.ms/aks-vm-sizes for the details.
 ResourceNotFoundError: The Resource 'Microsoft.ContainerService/managedClusters/wlsaks1613726008' under resource group 'wlsresourcegroup1613726008' was not found. For more details please go to https://aka.ms/ARMResourceNotFoundFix
 ```
