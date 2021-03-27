@@ -49,14 +49,22 @@ Here are the steps for this use case:
 
      Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-     ```shell
+     ```
      # Delete existing archive.zip in case we have an old leftover version
+     ```
+     ```shell
      $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip
-
+     ```
+     ```
      # Move to the directory which contains the source files for our new archive
+     ```
+     ```shell
      $ cd /tmp/mii-sample/archives/archive-v2
-
+     ```
+     ```
      # Zip the archive to the location will later use when we run the WebLogic Image Tool
+     ```
+     ```shell
      $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip wlsdeploy
      ```
 
@@ -100,6 +108,8 @@ Here are the steps for this use case:
 
      ```shell
      $ cd /tmp/mii-sample/model-images
+     ```
+     ```shell
      $ ./imagetool/bin/imagetool.sh update \
        --tag model-in-image:WLS-v2 \
        --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
@@ -183,7 +193,8 @@ Here are the steps for this use case:
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```shell
      $ ./wl-pod-wait.sh -?
-
+   ```
+   ```
      Usage:
 
        wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
@@ -225,7 +236,8 @@ Here are the steps for this use case:
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows a rolling domain." %}}
    ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
-
+   ```
+   ```
    @@ [2020-05-14T17:28:47][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-05-14T17:28:47][seconds=1] Info:   ready='true'
    @@ [2020-05-14T17:28:47][seconds=1] Info:   image='model-in-image:WLS-v2'

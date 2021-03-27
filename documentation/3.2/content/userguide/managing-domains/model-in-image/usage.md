@@ -71,6 +71,8 @@ For example, place additional `.yaml` and `.properties` files in a directory cal
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create configmap MY-DOMAINUID-my-wdt-config-map \
     --from-file /home/acmeuser/wdtoverride
+  ```
+  ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     label  configmap MY-DOMAINUID-my-wdt-config-map \
     weblogic.domainUID=MY-DOMAINUID
@@ -91,6 +93,8 @@ Example:
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     create secret generic MY-DOMAINUID-runtime-encrypt-secret \
     --from-literal=password=welcome1
+  ```
+  ```shell
   $ kubectl -n MY-DOMAIN-NAMESPACE \
     label secret MY-DOMAINUID-runtime-encrypt-secret \
     weblogic.domainUID=MY-DOMAINUID
@@ -208,6 +212,8 @@ To reuse the wallet:
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-password-secret \
       --from-literal=walletPassword=welcome1
+    ```
+    ```shell
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       label secret MY_DOMAIN_UID-my-opss-wallet-password-secret \
       weblogic.domainUID=sample-domain1
@@ -217,6 +223,8 @@ To reuse the wallet:
     $ kubectl -n MY_DOMAIN_NAMESPACE \
       create secret generic MY_DOMAIN_UID-my-opss-wallet-file-secret \
       --from-file=walletFile=ewallet.p12
+    ```
+    ```shell
     $ kubectl -n sample-domain1-ns \
       label secret MY_DOMAIN_UID-my-opss-wallet-file-secret \
       weblogic.domainUID=sample-domain1

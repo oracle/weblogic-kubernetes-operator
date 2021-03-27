@@ -10,6 +10,8 @@ weight: 5
 
     ```shell
     $ kubectl create namespace sample-domain1-ns
+    ```
+    ```shell
     $ kubectl label ns sample-domain1-ns weblogic-operator=enabled
     ```
 

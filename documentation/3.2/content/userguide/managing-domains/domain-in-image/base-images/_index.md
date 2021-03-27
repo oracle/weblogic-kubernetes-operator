@@ -104,7 +104,8 @@ To build the WebLogic Server image and apply the patches:
     --type=jdk \
     --version=8u241 \
     --path=/home/acmeuser/wls-installers/jre-8u241-linux-x64.tar.gz
-
+    ```
+    ```shell
     $ imagetool cache addInstaller \
     --type=wls \
     --version=12.2.1.4.0 \
