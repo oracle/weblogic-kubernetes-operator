@@ -21,6 +21,8 @@ The following prerequisites must be met prior to running the create domain scrip
 
 ```shell
 $ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
+```
+```shell
 $ create-weblogic-credentials.sh
    -u <username>
    -p <password>
@@ -83,6 +85,8 @@ The usage of the create script is as follows:
 
 ```shell
 $ sh create-domain.sh -h
+```
+```
 usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
@@ -93,7 +97,6 @@ usage: create-domain.sh -o dir -i file -u username -p password [-k] [-e] [-h]
   -k Keep what has been previously cloned from https://github.com/oracle/docker-images.git, optional.
      If not specified, this script will always remove the existing project and clone again.
   -h Help
-
 ```
 
 If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together into the target directory, maintaining the original directory hierarchy.
@@ -269,6 +272,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl describe domain domain1
+```
+```
 Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
@@ -404,6 +409,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl get pods
+```
+```
 NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          30m
 domain1-managed-server1                      1/1       Running   0          29m
@@ -421,6 +428,8 @@ $ kubectl get services -n NAMESPACE
 Here is an example of the output of this command:
 ```shell
 $ kubectl get services
+```
+```
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   None             <none>        7001/TCP          32m
 domain1-cluster-cluster-1                   ClusterIP   10.99.151.142    <none>        8001/TCP          31m

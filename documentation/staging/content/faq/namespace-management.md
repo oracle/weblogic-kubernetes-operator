@@ -34,6 +34,8 @@ For example, the following command shows all the values of the operator release 
 
 ```shell
 $ helm get values weblogic-operator
+```
+```
 domainNamespaces:
 - default
 - ns1
@@ -71,6 +73,8 @@ If you don't know the release name of the operator, you can use `helm list` to l
 
 ```shell
 $ helm list --namespace <namespace>
+```
+```shell
 $ helm list --all-namespaces
 ```
 
@@ -102,8 +106,9 @@ $ kubetctl get cm -n <namespace>
 For example, the following example shows that the domain `configmap` resource exists in the namespace `ns1`.
 
 ```shell
-bash-4.2$ kubectl get cm -n ns1
-
+$ kubectl get cm -n ns1
+```
+```
 NAME                 DATA      AGE
 
 weblogic-scripts-cm   14        12m
@@ -118,9 +123,9 @@ Helm release:
 
 ```shell
 $ helm upgrade \
-  weblogic-operator \
-  kubernetes/charts/weblogic-operator \
-  --reuse-values
+    weblogic-operator \
+    kubernetes/charts/weblogic-operator \
+    --reuse-values
 ```
 
 ####  Delete a Kubernetes namespace from the operator
@@ -134,12 +139,12 @@ name of the operator, and `kubernetes/charts/weblogic-operator` is the location 
 
 ```shell
 $ helm upgrade \
-  --reuse-values \
-  --set "domainNamespaces={default}" \
-  --wait \
-  --force \
-  weblogic-operator \
-  kubernetes/charts/weblogic-operator
+    --reuse-values \
+    --set "domainNamespaces={default}" \
+    --wait \
+    --force \
+    weblogic-operator \
+    kubernetes/charts/weblogic-operator
 ```
 
 For operators configured to select managed namespaces through the use of a label selector or regular expression,

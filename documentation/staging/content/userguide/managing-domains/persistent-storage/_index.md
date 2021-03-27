@@ -40,6 +40,8 @@ other than for the user and group along with the PersistentVolume being annotate
 
 ```shell
 $ chmod 770 /path/to/domain1PersistentVolume
+```
+```shell
 $ kubectl annotate pv domain1-weblogic-sample-pv pv.beta.kubernetes.io/gid=6789
 ```
 
@@ -52,8 +54,14 @@ An example of updating the group ownership on the PersistentVolume would be as f
 
 ```shell
 $ cd /path/to/domain1PersistentVolume
+```
+```shell
 $ sudo chgrp 6789 applications domains logs stores
+```
+```shell
 $ sudo chgrp -R 6789 domains/
+```
+```shell
 $ sudo chgrp -R 6789 logs/
 ```
 
@@ -69,8 +77,9 @@ After you have written your YAML files, use them to create the PersistentVolume 
 
 ```shell
 $ kubectl create -f pv.yaml
+```
+```shell
 $ kubectl create -f pvc.yaml
-
 ```
 
 #### Verify the results
@@ -79,6 +88,8 @@ To confirm that the PersistentVolume was created, use these commands:
 
 ```shell
 $ kubectl describe pv [persistent volume name]
+```
+```shell
 $ kubectl describe pvc -n NAMESPACE [persistent volume claim name]
 ```
 

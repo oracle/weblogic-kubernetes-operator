@@ -319,6 +319,8 @@ Best practices for data source modules and their overrides:
 
     ```shell
     $ kubectl -n MYNAMESPACE create cm MYCMNAME --from-file ./mydir
+    ```
+    ```shell
     $ kubectl -n MYNAMESPACE label cm MYCMNAME weblogic.domainUID=DOMAIN_UID
     ```
 * Create any Kubernetes Secrets referenced by a template "secret macro".
@@ -329,6 +331,8 @@ Best practices for data source modules and their overrides:
 
     ```shell
     $ kubectl -n MYNAMESPACE create secret generic my-secret --from-literal=key1=supersecret --from-literal=key2=topsecret
+    ```
+    ```shell
     $ kubectl -n MYNAMESPACE label secret my-secret weblogic.domainUID=DOMAIN_UID
     ```
 * Configure the name of the ConfigMap in the Domain YAML file `configuration.overridesConfigMap` field.
