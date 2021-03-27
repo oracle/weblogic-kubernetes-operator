@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
@@ -248,10 +249,10 @@ public class ItOperatorUpgrade {
 
     // create domain
     if (domainType.equalsIgnoreCase("domain-in-image")) {
-      createDomainHomeInImageAndVerify(
-          domainNamespace, operatorVersion, externalServiceNameSuffix);
+      createDomainHomeInImageAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
     } else {
-      createModelInImageAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
+      createMiiDomainAndVerify(domainNamespace, domainUid, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+          adminServerPodName, managedServerPodNamePrefix, replicaCount);
     }
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
@@ -430,65 +431,6 @@ public class ItOperatorUpgrade {
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
 
-  }
-
-  private void createModelInImageAndVerify(
-      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "domain1-runtime-encryption-secret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-
-    // use the checked in domain.yaml to create domain for old releases
-    // copy domain.yaml to results dir
-    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "miidomain-300.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT));
-    Path destDomainYaml =
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "miidomain.yaml");
-    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for miidomain.yaml");
-
-    // replace apiVersion, namespace and image in miidomain.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "v8", getApiVersion(operatorVersion)),
-        "Could not modify the apiVersion in the miidomain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "miidomain300-ns", domainNamespace),
-        "Could not modify the namespace in the miidomain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "model-in-image:12.2.1.4",
-        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG),
-        "Could not modify image name in the miidomain.yaml file");
-
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
-
-    checkDomainStarted(domainUid, domainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   private Callable<Boolean> checkCrdVersion() {
