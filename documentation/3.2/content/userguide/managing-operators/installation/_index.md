@@ -61,7 +61,7 @@ For more information on specifying the registry credentials when the operator im
 Add this repository to the Helm installation:
 
 ```shell
-$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+$ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 
 Verify that the repository was added correctly:
@@ -72,12 +72,6 @@ $ helm repo list
 ```
 NAME           URL
 weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
-```
-
-Update with the latest information about charts from the chart repositories:
-
-```shell
-$ helm repo update
 ```
 
 Install the operator from the repository:
