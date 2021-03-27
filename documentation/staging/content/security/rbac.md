@@ -54,13 +54,16 @@ related RoleBindings:
 ```shell
 $ kubectl describe clusterrole \
   weblogic-operator-ns-weblogic-operator-clusterrole-general
-
+```
+```shell
 $ kubectl describe clusterrolebinding \
   weblogic-operator-ns-weblogic-operator-clusterrolebinding-general
-
+```
+```shell
 $ kubectl -n weblogic-operator-ns \
   describe role weblogic-operator-role
-
+```
+```shell
 $ kubectl -n domain1-ns \
   describe rolebinding weblogic-operator-rolebinding-namespace \
 ```

@@ -9,6 +9,8 @@ To remove the resources you have created in these samples:
 1. Delete the resources associated with the domain.
    ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
+   ```
+   ```shell
    $ /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain2
    ```
 
@@ -22,6 +24,8 @@ To remove the resources you have created in these samples:
 
    ```shell
    $ helm uninstall traefik-operator -n traefik
+   ```
+   ```shell
    $ kubectl delete namespace traefik
    ```
 
@@ -33,6 +37,8 @@ To remove the resources you have created in these samples:
 4. Delete the operator and its namespace:
    ```shell
    $ helm uninstall sample-weblogic-operator -n sample-weblogic-operator-ns
+   ```
+   ```shell
    $ kubectl delete namespace sample-weblogic-operator-ns
    ```
 
@@ -44,7 +50,13 @@ To remove the resources you have created in these samples:
 7. Delete the images you may have created in this sample:
    ```shell
    $ docker image rm model-in-image:WLS-v1
+   ```
+   ```shell
    $ docker image rm model-in-image:WLS-v2
+   ```
+   ```shell
    $ docker image rm model-in-image:JRF-v1
+   ```
+   ```shell
    $ docker image rm model-in-image:JRF-v2
    ```

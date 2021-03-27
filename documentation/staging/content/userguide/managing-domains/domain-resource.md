@@ -112,6 +112,8 @@ If you are using Kubernetes 1.16 or later, you can access the description of any
 
 ```shell
 $ kubectl explain domain.spec.domainUID
+```
+```
 KIND:     Domain
 VERSION:  weblogic.oracle/v8
 
