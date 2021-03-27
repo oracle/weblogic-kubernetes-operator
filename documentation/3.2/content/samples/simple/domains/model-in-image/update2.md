@@ -36,6 +36,8 @@ Here are the steps for this use case:
    ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain2-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain2-wdt-config-map \
      weblogic.domainUID=sample-domain2
    ```
@@ -55,35 +57,48 @@ Here are the steps for this use case:
 1. Create the secrets that are referenced by the WDT model files in the image and ConfigMap; they also will be referenced by the Domain YAML file.
 
    Run the following commands:
-   ```shell
+   ```
    # spec.webLogicCredentialsSecret
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-weblogic-credentials \
       --from-literal=username=weblogic --from-literal=password=welcome1
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
      sample-domain2-weblogic-credentials \
      weblogic.domainUID=sample-domain2
-
+   ```
+   ```
    # spec.configuration.model.runtimeEncryptionSecret
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-runtime-encryption-secret \
       --from-literal=password=my_runtime_password
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
      sample-domain2-runtime-encryption-secret \
      weblogic.domainUID=sample-domain2
-
+   ```
+   ```
    # referenced by spec.configuration.secrets and by the data source model YAML in the ConfigMap
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
       sample-domain2-datasource-secret \
       --from-literal='user=sys as sysdba' \
       --from-literal='password=incorrect_password' \
       --from-literal='max-capacity=1' \
       --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
       sample-domain2-datasource-secret \
       weblogic.domainUID=sample-domain2
    ```
-
 
    Observations:
      - We are leaving the namespace `sample-domain1-ns` unchanged for each secret because you will deploy domain `sample-domain2` to the same namespace as `sample-domain1`.
@@ -105,13 +120,18 @@ Here are the steps for this use case:
       --from-literal=rcu_prefix=FMW2 \
       --from-literal=rcu_schema_password=Oradoc_db1 \
       --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
      sample-domain2-rcu-access \
      weblogic.domainUID=sample-domain2
-
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
      sample-domain2-opss-wallet-password-secret \
       --from-literal=walletPassword=welcome1
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
      sample-domain2-opss-wallet-password-secret \
      weblogic.domainUID=sample-domain2
@@ -131,7 +151,7 @@ Here are the steps for this use case:
 
         The final result will look something like this:
 
-          ```
+          ```yaml
           apiVersion: "weblogic.oracle/v8"
           kind: Domain
           metadata:
@@ -192,8 +212,7 @@ Here are the steps for this use case:
           ```
 
         To this:
-
-
+    
           ```yaml
           spec:
             ...
@@ -228,6 +247,8 @@ Here are the steps for this use case:
 
           ```shell
           $ diff /tmp/mii-sample/mii-update1.yaml /tmp/mii-sample/mii-update2.yaml
+          ```
+          ```
           9c9
           <   name: sample-domain1
           ---
@@ -309,6 +330,8 @@ Here are the steps for this use case:
    {{%expand "Click here to expand." %}}
    ```shell
    $ kubectl get pods -n sample-domain1-ns --watch
+   ```
+   ```
    NAME                             READY   STATUS    RESTARTS   AGE
    sample-domain1-admin-server      1/1     Running   0          5d2h
    sample-domain1-managed-server1   1/1     Running   1          5d2h
@@ -343,7 +366,8 @@ Here are the steps for this use case:
    {{%expand "Click here to expand." %}}
    ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain2 -p 3
-
+   ```
+   ```
    @@ [2020-05-13T17:06:00][seconds=1] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-05-13T17:06:00][seconds=1] Info:   ready='true'
    @@ [2020-05-13T17:06:00][seconds=1] Info:   image='model-in-image:WLS-v1'

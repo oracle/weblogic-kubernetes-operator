@@ -68,6 +68,8 @@ Verify that the repository was added correctly:
 
 ```shell
 $ helm repo list
+```
+```
 NAME           URL
 weblogic-operator    https://oracle.github.io/weblogic-kubernetes-operator/charts
 ```

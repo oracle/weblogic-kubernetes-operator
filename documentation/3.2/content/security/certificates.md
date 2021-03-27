@@ -29,7 +29,8 @@ $ kubectl create secret tls weblogic-operator-cert -n weblogic-operator-ns \
 
 ```shell
 $ helm get values weblogic-operator -n weblogic-operator-ns
-
+```
+```shell
 $ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblogic-operator \
   --wait --recreate-pods --reuse-values \
   --set externalRestEnabled=true \

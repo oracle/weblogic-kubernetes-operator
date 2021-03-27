@@ -11,7 +11,7 @@ weight: 6
    * Select a user name and password, following the required rules for password creation (at least 8 alphanumeric characters with at least one number or special character).
    * Pick or create a directory to which you can write output.
 
-1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
+1. Create a Kubernetes Secret for the WebLogic domain administrator credentials containing the `username` and `password` for the domain, using the [create-weblogic-credentials](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh) script:
 
     ```shell
     $ kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh \
@@ -22,7 +22,7 @@ weight: 6
     with the value specified by the `-d` flag.  For example, the command above would create a secret named
     `sample-domain1-weblogic-credentials`.
 
-1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
+1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
        * `domainUID`: `sample-domain1`
        * `image`: Leave empty unless you need to tag the new image that the script builds to a different name.
           For example if you are using a remote cluster that will need to pull the image from a container registry,
@@ -36,6 +36,8 @@ weight: 6
 
     ```shell
     $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
+    ```
+    ```shell
     $ ./create-domain.sh -i my-inputs.yaml -o /<your output directory> -u <username> -p <password> -e
     ```
     {{% notice note %}}You need to provide the same WebLogic domain administrator user name and password in the `-u` and `-p` options
@@ -62,7 +64,7 @@ weight: 6
     $ kubectl get services -n sample-domain1-ns
     ```
 
-1.	Create an ingress for the domain, in the domain namespace, by using the [sample](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
+1.	Create an ingress for the domain, in the domain namespace, by using the [sample](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/ingress-per-domain/README.md) Helm chart:
 
     ```shell
     $ helm install sample-domain1-ingress kubernetes/samples/charts/ingress-per-domain \
@@ -78,6 +80,8 @@ weight: 6
 
     ```shell
     $ curl -v -H 'host: sample-domain1.org' http://localhost:30305/weblogic/ready
+    ```
+    ```
       About to connect() to localhost port 30305 (#0)
         Trying 10.196.1.64...
         Connected to localhost (10.196.1.64) port 30305 (#0)

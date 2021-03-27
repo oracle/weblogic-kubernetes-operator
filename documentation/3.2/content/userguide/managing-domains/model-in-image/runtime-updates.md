@@ -811,9 +811,11 @@ compares two domain models and generates the YAML file for updating the first do
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
 
-  ```shell
+  ```
   # (1) Run discover for your existing domain home.
 
+  ```
+  ```shell
   $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
     -domain_home $DOMAIN_HOME \
@@ -821,11 +823,14 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
     -archive_file old.zip \
     -model_file old.yaml \
     -variable_file old.properties
-
+  ```
+  ```
   # (2) Now make some WebLogic config changes using the console or WLST.
 
   # (3) Run discover for your changed domain home.
 
+  ```
+  ```shell
   $ /u01/wdt/weblogic-deploy/bin/discoverDomain.sh \
     -oracle_home $ORACLE_HOME \
     -domain_home $DOMAIN_HOME \
@@ -833,11 +838,15 @@ For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and ass
     -archive_file new.zip \
     -model_file new.yaml \
     -variable_file new.properties
-
+  ```
+  ```
   # (4) Compare your old and new yaml using diff
 
+  ```
+  ```shell
   $ diff new.yaml old.yaml
-
+  ```
+  ```
   # (5) Compare your old and new yaml using compareDomain to generate
   #     the YAML update file you can use for transforming the old to new.
 
@@ -873,7 +882,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
    that takes a namespace as the first parameter (default `sample-domain1-ns`)
    and a domainUID as the second parameter (default `sample-domain1`):
 
-   ```shell
+   ```bash
    #!/bin/bash
    NAMESPACE=${1:-sample-domain1-ns}
    DOMAINUID=${2:-sample-domain1}
@@ -892,7 +901,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
 
    Here's a similar sample script for `introspectVersion`:
 
-   ```shell
+   ```bash
    #!/bin/bash
    NAMESPACE=${1:-sample-domain1-ns}
    DOMAINUID=${2:-sample-domain1}
