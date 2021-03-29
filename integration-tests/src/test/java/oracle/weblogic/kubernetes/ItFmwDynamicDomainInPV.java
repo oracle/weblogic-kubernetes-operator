@@ -149,7 +149,7 @@ public class ItFmwDynamicDomainInPV {
    */
   @Test
   @DisplayName("Create FMW Dynamic Domain in PV")
-  public void testJrfDynamicDomainInPV() {
+  public void testFmwDynamicDomainInPV() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady();
