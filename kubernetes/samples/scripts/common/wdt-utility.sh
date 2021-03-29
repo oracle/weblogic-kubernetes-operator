@@ -217,9 +217,6 @@ function run_wdt {
 
   local wdt_res=$?
 
-  echo "debug-- contents for domain${action}.yaml is "
-  cat domain${action}.yaml
-
   cd $save_dir
 
   if [ $wdt_res -ne 0 ]; then

@@ -174,8 +174,6 @@ function getDockerSample {
 #
 function createDomainHome {
 
-  echo "debug- domainPropertiesOutput is ${domainPropertiesOutput}"
-
   echo "dumping output of ${domainPropertiesOutput}"
   cat ${domainPropertiesOutput}
 
@@ -190,12 +188,6 @@ function createDomainHome {
     wdtModelFile=wdt_model_configured.yaml
     wdtDomainType=JRF
   fi
-
-    echo "debug- wdtModel is ${scriptDir}/${wdtModelFile}"
-    echo "debug- wdtVariables is ${domainPropertiesOutput}"
-    echo "debug- WDT_VERSION is ${WDT_VERSION}"
-    echo "debug- wdtDomainHome is ${domainHome}"
-    echo "debug- wdtDomainType is ${wdtDomainType}"
 
 
   $WIT_DIR/imagetool/bin/imagetool.sh update \
