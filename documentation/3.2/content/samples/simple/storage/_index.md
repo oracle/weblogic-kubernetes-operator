@@ -32,6 +32,8 @@ The `create-pv-pvc.sh` script will create a subdirectory `pv-pvcs` under the giv
 
 ```shell
 $ kubectl create -f weblogic-sample-pv.yaml
+```
+```shell
 $ kubectl create -f weblogic-sample-pvc.yaml
 ```
 
@@ -41,6 +43,8 @@ The usage of the create script is as follows:
 
 ```shell
 $ sh create-pv-pvc.sh -h
+```
+```
 usage: create-pv-pvc.sh -i file -o dir [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated yaml files, must be specified.
@@ -179,6 +183,8 @@ should have the value `Bound`, indicating the that PersistentVolume has been cla
 
 ```shell
 $ kubectl describe pv weblogic-sample-pv
+```
+```
 Name:            weblogic-sample-pv
 Annotations:     pv.kubernetes.io/bound-by-controller=yes
 StorageClass:    weblogic-sample-storage-class
@@ -200,6 +206,8 @@ You can use this command to verify the PersistentVolumeClaim was created:
 
 ```shell
 $ kubectl describe pvc weblogic-sample-pvc
+```
+```
 Name:          weblogic-sample-pvc
 Namespace:     default
 StorageClass:  weblogic-sample-storage-class

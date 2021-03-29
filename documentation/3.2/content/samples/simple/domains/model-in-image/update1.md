@@ -75,6 +75,8 @@ Here are the steps:
       --from-literal='password=incorrect_password' \
       --from-literal='max-capacity=1' \
       --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
       sample-domain1-datasource-secret \
       weblogic.domainUID=sample-domain1
@@ -95,6 +97,8 @@ Here are the steps:
    ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
      weblogic.domainUID=sample-domain1
    ```
@@ -155,7 +159,6 @@ Here are the steps:
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
         ```
 
-
 1. Restart ('roll') the domain.
 
    Now that the data source is deployed in a ConfigMap and its secret is also deployed, and you have applied an updated Domain YAML file with its `spec.configuration.model.configMap` and `spec.configuration.secrets` referencing the ConfigMap and secret, tell the operator to roll the domain.
@@ -170,14 +173,14 @@ Here are the steps:
 
    - Option 2: Dynamically change your domain using `kubectl patch`.
      - To get the current `restartVersion` call:
-       ```
+       ```shell
        $ kubectl -n sample-domain1-ns get domain sample-domain1 '-o=jsonpath={.spec.restartVersion}'
        ```
      - Choose a new restart version that's different from the current restart version.
        - The field is a string; typically, you use a number in this field and increment it with each restart.
 
      - Use `kubectl patch` to set the new value. For example, assuming the new restart version is `2`:
-       ```
+       ```shell
        $ kubectl -n sample-domain1-ns patch domain sample-domain1 --type=json '-p=[{"op": "replace", "path": "/spec/restartVersion", "value": "2" }]'
        ```
    - Option 3: Use the sample helper script.
@@ -196,7 +199,8 @@ Here are the steps:
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```shell
      $ ./wl-pod-wait.sh -?
-
+   ```
+   ```
      Usage:
 
        wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \

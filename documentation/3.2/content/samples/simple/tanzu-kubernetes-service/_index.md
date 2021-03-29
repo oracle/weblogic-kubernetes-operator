@@ -39,6 +39,8 @@ After your Kubernetes cluster is up and running, run the following commands to m
 
 ```shell
 $ kubectl get nodes -o wide
+```
+```
 NAME                                    STATUS     ROLES    AGE     VERSION            INTERNAL-IP       EXTERNAL-IP       OS-IMAGE                 KERNEL-VERSION   CONTAINER-RUNTIME
 k8s-cluster-101-control-plane-8nj7t     NotReady   master   2d20h   v1.18.6+vmware.1   192.168.100.147   192.168.100.147   VMware Photon OS/Linux   4.19.132-1.ph3   containerd://1.3.4
 k8s-cluster-101-md-0-577b7dc766-552hn   Ready      <none>   2d20h   v1.18.6+vmware.1   192.168.100.148   192.168.100.148   VMware Photon OS/Linux   4.19.132-1.ph3   containerd://1.3.4
@@ -62,7 +64,11 @@ Clone the repository.
 
 ```shell
 $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+```
+```shell
 $ cd weblogic-kubernetes-operator
+```
+```shell
 $ git checkout v3.1.0
 ```
 
@@ -89,10 +95,14 @@ Create a namespace and service account for the operator.
 
 ```shell
 $ kubectl create namespace sample-weblogic-operator-ns
+```
+```
 namespace/sample-weblogic-operator-ns created
-
-
+```
+```shell
 $ kubectl create serviceaccount -n sample-weblogic-operator-ns sample-weblogic-operator-sa
+```
+```
 serviceaccount/sample-weblogic-operator-sa created
 ```
 
@@ -106,7 +116,8 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
   --set "domainNamespaceLabelSelector=weblogic-operator\=enabled" \
   --wait
-
+```
+```
 NAME: weblogic-operator
 LAST DEPLOYED: Tue Nov 17 09:33:58 2020
 NAMESPACE: sample-weblogic-operator-ns
@@ -119,18 +130,21 @@ Verify the operator with the following commands; the status will be running.
 
 ```shell
 $ helm list -A
+```
+```
 NAME                        NAMESPACE                     REVISION   UPDATED                                 STATUS       CHART                   APP VERSION
 sample-weblogic-operator    sample-weblogic-operator-ns   1          2020-11-17 09:33:58.584239273 -0700 PDT deployed     weblogic-operator-3.1
-
-
+```
+```shell
 $ kubectl get pods -n sample-weblogic-operator-ns
+```
+```
 NAME                                 READY   STATUS    RESTARTS   AGE
 weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 
 #### Create an image
-
 
   - [Image creation prerequisites](#image-creation-prerequisites)
   - [Image creation - Introduction](#image-creation---introduction)
@@ -145,6 +159,8 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 
 ```shell
 $ mkdir /tmp/mii-sample
+```
+```shell
 $ cp -r /root/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
 ```
 
@@ -155,10 +171,12 @@ Download the latest WebLogic Deploying Tooling (WDT) and WebLogic Image Tool (WI
 
 ```shell
 $ cd /tmp/mii-sample/model-images
-
+```
+```shell
 $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
   -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-
+```
+```shell
 $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
   -o /tmp/mii-sample/model-images/imagetool.zip
 ```
@@ -167,9 +185,11 @@ $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/
 To set up the WebLogic Image Tool, run the following commands:
 ```shell
 $ cd /tmp/mii-sample/model-images
-
+```
+```shell
 $ unzip imagetool.zip
-
+```
+```shell
 $ ./imagetool/bin/imagetool.sh cache addInstaller \
   --type wdt \
   --version latest \
@@ -210,14 +230,22 @@ When you create the image, you will use the files in the staging directory, `/tm
 
 Run the following commands to create your application archive ZIP file and put it in the expected directory:
 
-```shell
+```
 # Delete existing archive.zip in case we have an old leftover version
+```
+```shell
 $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
-
+```
+```
 # Move to the directory which contains the source files for our archive
+```
+```shell
 $ cd /tmp/mii-sample/archives/archive-v1
-
+```
+```
 # Zip the archive to the location will later use when we run the WebLogic Image Tool
+```
+```shell
 $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
 ```
 
@@ -266,8 +294,6 @@ appDeployments:
             Target: 'cluster-1'
 ```
 
-
-
 The model files:
 
 - Define a WebLogic domain with:
@@ -303,6 +329,8 @@ Run the following commands to create the model image and verify that it worked:
 
 ```shell
 $ cd /tmp/mii-sample/model-images
+```
+```shell
 $ ./imagetool/bin/imagetool.sh update \
   --tag model-in-image:WLS-v1 \
   --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \
@@ -355,8 +383,11 @@ Create a namespace that can host one or more domains:
 
 ```shell
 $ kubectl create namespace sample-domain1-ns
-
+```
+```
 ## label the domain namespace so that the operator can autodetect and create WebLogic Server pods.
+```
+```shell
 $ kubectl label namespace sample-domain1-ns weblogic-operator=enabled
 ```
 
@@ -370,13 +401,18 @@ Run the following `kubectl` commands to deploy the required secrets:
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-weblogic-credentials \
    --from-literal=username=weblogic --from-literal=password=welcome1
+```
+```shell
 $ kubectl -n sample-domain1-ns label  secret \
   sample-domain1-weblogic-credentials \
   weblogic.domainUID=sample-domain1
-
+```
+```shell
 $ kubectl -n sample-domain1-ns create secret generic \
   sample-domain1-runtime-encryption-secret \
    --from-literal=password=my_runtime_password
+```
+```shell
 $ kubectl -n sample-domain1-ns label  secret \
   sample-domain1-runtime-encryption-secret \
   weblogic.domainUID=sample-domain1
@@ -545,6 +581,8 @@ Verify the WebLogic Server pods are all running:
 
 ```shell
 $ kubectl get all -n sample-domain1-ns
+```
+```
 NAME                                 READY   STATUS    RESTARTS   AGE
 pod/sample-domain1-admin-server      1/1     Running   0          41m
 pod/sample-domain1-managed-server1   1/1     Running   0          40m
@@ -556,7 +594,6 @@ service/sample-domain1-cluster-cluster-1   ClusterIP   100.66.99.27   <none>    
 service/sample-domain1-managed-server1     ClusterIP   None           <none>        8001/TCP   40m
 service/sample-domain1-managed-server2     ClusterIP   None           <none>        8001/TCP   40m
 
-
 ```
 
 #### Invoke the web application
@@ -567,17 +604,28 @@ Tanzu supports the MetalLB load balancer and NGINX ingress for routing.
 
 Install the MetalLB load balancer by running following commands:
 
-```shell
+```
 ## create namespace metallb-system
+```
+```shell
 $ kubectl create ns metallb-system
-
+```
+```
 ## deploy MetalLB load balancer
+```
+```shell
 $ kubectl apply -f https://raw.githubusercontent.com/google/metallb/v0.9.2/manifests/metallb.yaml -n metallb-system
-
+```
+```
 ## create secret
+```
+```shell
 $ kubectl create secret generic -n metallb-system memberlist --from-literal=secretkey="$(openssl rand -base64 128)"
-
+```
+```shell
 $ cat metallb-configmap.yaml
+```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -590,11 +638,17 @@ data:
       protocol: layer2
       addresses:
       - 192.168.100.50-192.168.100.65
-
+```
+```shell
 $ kubectl apply -f metallb-configmap.yaml
+```
+```
 configmap/config created
-
+```
+```shell
 $ kubectl get all -n metallb-system
+```
+```
 NAME                              READY   STATUS    RESTARTS   AGE
 pod/controller-684f5d9b49-jkzfk   1/1     Running   0          2m14s
 pod/speaker-b457r                 1/1     Running   0          2m14s
@@ -612,12 +666,12 @@ NAME                                    DESIRED   CURRENT   READY   AGE
 replicaset.apps/controller-684f5d9b49   1         1         1       2m14s
 ```
 
-
 Install NGINX.
 
 ```shell
-$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-$ helm repo update
+$ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx --force-update
+```
+```shell
 $ helm install ingress-nginx ingress-nginx/ingress-nginx
 ```
 
@@ -626,7 +680,8 @@ Create ingress for accessing the application deployed in the cluster and to acce
 
 ```shell
 $ cat ingress.yaml
-
+```
+```yaml
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
@@ -647,15 +702,17 @@ spec:
         backend:
           serviceName: sample-domain1-admin-server
           servicePort: 7001
-
+```
+```shell
 $ kubectl apply -f ingress.yaml
-
 ```
 
 Verify ingress is running.
 
 ```shell
 $ kubectl get ingresses -n sample-domain1-ns
+```
+```
 NAME                               CLASS    HOSTS   ADDRESS          PORTS   AGE
 sample-nginx-ingress-pathrouting   <none>   *       192.168.100.50   80      7m18s
 ```
@@ -664,11 +721,13 @@ Access the Administration Console using the load balancer IP address, `http://19
 
 Access the sample application.
 
-```shell
+```
 # Access the sample application using the load balancer IP (192.168.100.50)
+```
+```shell
 $ curl http://192.168.100.50/myapp_war/index.jsp
-
-
+```
+```html
 <html><body><pre>
 *****************************************************************
 
@@ -686,13 +745,11 @@ Found 0 local data sources:
 
 *****************************************************************
 </pre></body></html>
-
+```
+```shell
 $ curl http://192.168.100.50/myapp_war/index.jsp
-
-
-
-
-
+```
+```html
 <html><body><pre>
 *****************************************************************
 

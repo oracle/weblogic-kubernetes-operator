@@ -21,6 +21,8 @@ weight: 1
 
    ```shell
    $ cd /tmp
+   ```
+   ```shell
    $ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
@@ -33,6 +35,8 @@ weight: 1
 
    ```shell
    $ mkdir /tmp/mii-sample
+   ```
+   ```shell
    $ cp -r /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-weblogic-domain/model-in-image/* /tmp/mii-sample
    ```
 
@@ -141,10 +145,12 @@ weight: 1
 
    ```shell
    $ cd /tmp/mii-sample/model-images
-
+   ```
+   ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip \
      -o /tmp/mii-sample/model-images/weblogic-deploy.zip
-
+   ```
+   ```shell
    $ curl -m 120 -fL https://github.com/oracle/weblogic-image-tool/releases/latest/download/imagetool.zip \
      -o /tmp/mii-sample/model-images/imagetool.zip
    ```
@@ -153,11 +159,14 @@ weight: 1
 
    ```shell
    $ cd /tmp/mii-sample/model-images
-
+   ```
+   ```shell
    $ unzip imagetool.zip
-
+   ```
+   ```shell
    $ ./imagetool/bin/imagetool.sh cache deleteEntry --key wdt_latest
-
+   ```
+   ```shell
    $ ./imagetool/bin/imagetool.sh cache addInstaller \
      --type wdt \
      --version latest \
@@ -222,6 +231,8 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      ```shell
      $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
+     ```
+     ```shell
      $ start-db-service.sh
      ```
 
@@ -240,7 +251,11 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
    ```shell
    $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-rcu-schema
+   ```
+   ```shell
    $ ./create-rcu-schema.sh -s FMW1 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
+   ```
+   ```shell
    $ ./create-rcu-schema.sh -s FMW2 -i container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
    ```
 
@@ -297,6 +312,8 @@ Alternatively, you can save the file using the sample's wallet utility:
 
 ```shell
   $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12
+```
+```
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 
@@ -309,6 +326,8 @@ To reuse the wallet file in subsequent redeployments or to share the domain's OP
 ```shell
   $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
      --from-file=walletFile=./ewallet.p12
+```
+```shell
   $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret \
      weblogic.domainUID=`sample-domain1`
 ```
@@ -316,6 +335,8 @@ To reuse the wallet file in subsequent redeployments or to share the domain's OP
 Alternatively, use the sample's wallet utility:
 ```shell
   $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
+```
+```
   # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
 ```
 

@@ -53,6 +53,8 @@ If you have issues with clusters not forming, then you should check that
 
 ```shell
 $ rpm -qa | grep conntrack
+```
+```
 libnetfilter_conntrack-1.0.6-1.el7_3.x86_64
 conntrack-tools-1.4.4-4.el7.x86_64
 ```
@@ -69,6 +71,8 @@ following command:
 
 ```shell
 $ iptables -t nat -v  -L POST_public_allow -n
+```
+```
 Chain POST_public_allow (1 references)
 pkts bytes target     prot opt in     out     source               destination
 164K   11M MASQUERADE  all  --  *      !lo     0.0.0.0/0            0.0.0.0/0
@@ -105,7 +109,11 @@ environment:
   
 ```shell
 $ echo 'Set up systemd service to fix iptables nat chain at each reboot (so Coherence will work)...'
+```
+```shell
 $ mkdir -p /etc/systemd/system/
+```
+```shell
 $ cat > /etc/systemd/system/fix-iptables.service << EOF
 [Unit]
 Description=Fix iptables
@@ -139,5 +147,7 @@ EOF
 
 ```shell
 $ echo 'Start the systemd service to fix iptables nat chain...'
+```
+```shell
 $ systemctl enable --now fix-iptables
 ```
