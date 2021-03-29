@@ -192,6 +192,7 @@ class ItMonitoringExporter {
   private static String domain5Namespace = null;
   private static String domain6Namespace = null;
   private static String domain7Namespace = null;
+  private static String domain8Namespace = null;
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
@@ -199,6 +200,7 @@ class ItMonitoringExporter {
   private static String domain5Uid = "monexp-domain-5";
   private static String domain6Uid = "monexp-domain-6";
   private static String domain7Uid = "monexp-domain-7";
+  private static String domain8Uid = "monexp-domain-8";
   private static HelmParams nginxHelmParams = null;
   private static int nodeportshttp = 0;
   private static int nodeportshttps = 0;
@@ -247,7 +249,7 @@ class ItMonitoringExporter {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(11) List<String> namespaces) {
+  public static void initAll(@Namespaces(12) List<String> namespaces) {
 
     logger = getLogger();
     // create standard, reusable retry/backoff policy
@@ -299,9 +301,13 @@ class ItMonitoringExporter {
     assertNotNull(namespaces.get(10), "Namespace list is null");
     domain7Namespace = namespaces.get(10);
 
+    logger.info("Get a unique namespace for domain8");
+    assertNotNull(namespaces.get(11), "Namespace list is null");
+    domain8Namespace = namespaces.get(11);
+
     logger.info("install and verify operator");
     installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace,domain3Namespace,
-        domain4Namespace,domain5Namespace, domain6Namespace, domain7Namespace);
+        domain4Namespace,domain5Namespace, domain6Namespace, domain7Namespace, domain8Namespace);
 
     logger.info("install monitoring exporter");
     installMonitoringExporter();
@@ -312,7 +318,7 @@ class ItMonitoringExporter {
     //buildMonitoringExporterImage("phx.ocir.io/weblogick8s/exporter:beta");
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
-    miiImage = createAndVerifyMiiImage(monitoringExporterAppDir);
+    miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE);
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
@@ -408,7 +414,7 @@ class ItMonitoringExporter {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(SESSMIGR_APP_NAME, MODEL_DIR + "/model.sessmigr.yaml");
+    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
     String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
     createAndVerifyDomain(miiImage1, domain7Uid, domain7Namespace, "FromModel", 2, false, yaml);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
@@ -497,7 +503,7 @@ class ItMonitoringExporter {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(SESSMIGR_APP_NAME, MODEL_DIR + "/model.sessmigr.2clusters.yaml");
+    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.2clusters.yaml");
     String yaml = RESOURCE_DIR + "/exporter/rest_jvm.yaml";
     createAndVerifyDomain(miiImage1, domain5Uid, domain5Namespace, "FromModel", 2, true, yaml);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
@@ -526,7 +532,7 @@ class ItMonitoringExporter {
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
     String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-    String  miiImage1 = createAndVerifyMiiImage(SESSMIGR_APP_NAME,MODEL_DIR + "/model.ssl.yaml");
+    String  miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.ssl.yaml");
     createAndVerifyDomain(miiImage1, domain6Uid, domain6Namespace, "FromModel", 2, false, yaml);
     installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
         domain6Namespace,
@@ -606,6 +612,39 @@ class ItMonitoringExporter {
     replaceMetricsNoRestPortConfiguration();
   }
 
+
+  /**
+   * Test covers scenario when admin port enabled .
+   * Create Model in Image with admin port and ssl enabled.
+   * Check generated monitoring exporter WebLogic metrics via https request.
+   */
+  //commented out untill Issue (see oracle/weblogic-monitoring-exporter#138) will be fixed
+  //@Test
+  @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
+  public void testAdminPortEnabled() throws Exception {
+
+    // create and verify one cluster mii domain with admin port enabled
+    logger.info("Create domain and verify that it's running");
+    String  miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/model-adminportenabled.yaml");
+    createAndVerifyDomain(miiImage1, domain8Uid, domain8Namespace, "FromModel", 2, false);
+    logger.info("checking access to wls metrics via https connection");
+
+    assertTrue(verifyMonExpAppAccess("wls-exporter",
+        "type: WebAppComponentRuntime",
+        domain8Uid,
+        domain8Namespace,
+        true, null),
+        "monitoring exporter dashboard page can't be accessed via https");
+
+    assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+        "wls_servlet_invocation_total_count",
+        domain8Uid,
+        domain8Namespace,
+        true, null),
+        "monitoring exporter metrics page can't be accessed via https");
+
+  }
+
   /**
    * Verify access to monitoring exporter WebLogic metrics via https.
    */
@@ -617,7 +656,8 @@ class ItMonitoringExporter {
     try {
       logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
 
-      miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport");
+      miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport",
+          MODEL_DIR + "/" + MONEXP_MODEL_FILE);
 
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
@@ -1509,14 +1549,14 @@ class ItMonitoringExporter {
 
 
   /**
-   * Create mii image.
+   * Create mii image with SESSMIGR application.
    */
-  private static String createAndVerifyMiiImage(String appName, String modelFile) {
+  private static String createAndVerifyMiiImage(String modelFile) {
     // create image with model files
     logger.info("Create image with model file and verify");
 
     List<String> appList = new ArrayList();
-    appList.add(appName);
+    appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(modelFile);
@@ -1532,7 +1572,7 @@ class ItMonitoringExporter {
   /**
    * Create mii image with monitoring exporter webapp.
    */
-  private static String createAndVerifyMiiImage(String monexpAppDir) {
+  private static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath) {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
     String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
@@ -1541,7 +1581,7 @@ class ItMonitoringExporter {
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + MONEXP_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(modelFilePath);
     String myImage =
             createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
 
@@ -1815,13 +1855,17 @@ class ItMonitoringExporter {
       protocol = "https";
       port = "8100";
     }
+    String podName = domainUid + "-" + clusterName + "-managed-server1";
+    if (clusterName == null) {
+      podName = domainUid + "-managed-server1";
+    }
     // access metrics
     final String command = String.format(
-        "kubectl exec -n " + domainNS + "  " + domainUid + "-" + clusterName + "-managed-server1 -- curl -k %s://"
+        "kubectl exec -n " + domainNS + "  " + podName + " -- curl -k %s://"
             + ADMIN_USERNAME_DEFAULT
             + ":"
             + ADMIN_PASSWORD_DEFAULT
-            + "@" + domainUid + "-" + clusterName + "-managed-server1:%s/%s", protocol, port, uri);
+            + "@" + podName + ":%s/%s", protocol, port, uri);
     logger.info("accessing managed server exporter via " + command);
 
     boolean isFound = false;

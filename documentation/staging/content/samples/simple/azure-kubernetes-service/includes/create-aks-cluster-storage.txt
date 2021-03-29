@@ -1,0 +1,182 @@
+#### Create storage and set up file share
+
+Our usage pattern for the operator involves creating Kubernetes "persistent volumes" to allow the WebLogic Server to persist its configuration and data separately from the Kubernetes Pods that run WebLogic Server workloads.
+
+We will create an external data volume to access and persist data. There are several options for data sharing as described in [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/azure/aks/concepts-storage).
+
+We will use Azure Files as a Kubernetes volume. For details about this full featured cloud storage solution, see the [Azure Files Documentation](https://docs.microsoft.com/azure/aks/azure-files-volume).
+
+##### Create an Azure Storage account
+
+Create a storage account using the Azure CLI. Note that the storage account name can contain only lowercase letters and numbers, and must be between 3 and 24 characters in length:
+
+```shell
+# Change the value as needed for your own environment
+$ export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
+
+$ az storage account create \
+   -n $AKS_PERS_STORAGE_ACCOUNT_NAME \
+   -g $AKS_PERS_RESOURCE_GROUP \
+   -l $AKS_PERS_LOCATION \
+   --sku Standard_LRS
+```
+
+Successful output will be a JSON object with the entry `"type": "Microsoft.Storage/storageAccounts"`.
+
+Now we need to create a file share. To create the file share, you need a storage connection string. Run the `show-connection-string` command to get connection string, then create the share with `az storage share create`, as shown here.
+
+```shell
+# Change value as needed for your own environment
+$ export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
+# Get connection string
+$ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
+# Create file share
+$ az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
+```
+
+Successful output will be exactly the following:
+
+```shell
+{
+  "created": true
+}
+```
+
+The operator uses Kubernetes Secrets.  We need a storage key for the secret. These commands query the storage account to obtain the key, and then stores the storage account key as a Kubernetes secret.
+
+```shell
+$ export STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
+```
+
+Verify the successful output by examining the `STORAGE_KEY` environment variable.  It must not be empty.  It must be a long ASCII string.
+
+We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, naming the secret with value `${NAME_PREFIX}azure-secret`. Please run:
+
+```shell
+# Please change persistentVolumeClaimNameSuffix if you changed pre-defined value "regcred" before generating the configuration files.
+$ export SECRET_NAME_AZURE_FILE="${NAME_PREFIX}azure-secret"
+
+#cd kubernetes/samples/scripts/create-kuberetes-secrets
+$ ./create-azure-storage-credentials-secret.sh -s $SECRET_NAME_AZURE_FILE -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
+```
+
+You will see the following output:
+
+```text
+secret/wlsazure-secret created
+The secret wlsazure-secret has been successfully created in the default namespace.
+```
+
+##### Create PV and PVC
+
+This sample uses Kubernetes Persistent Volume Claims (PVC) as storage resource.  These features are passed to Kubernetes using YAML files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
+
+To generate YAML files to create PV and PVC in the AKS cluster, the following values must be substituted in your copy of the input file.
+
+| Name in YAML file | Example value | Notes |
+|-------------------|---------------|-------|
+| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal. |
+| `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal. |
+| `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal.|
+| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
+| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
+| `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
+| `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. Make sure the value matches the value of `${NAME_PREFIX}` to keep names in step-by-step commands the same with those in configuration files. |
+
+Use the following command to generate configuration files, assuming the output directory is `~/azure`.  The script will overwrite any files generated by a previous invocation.
+
+```shell
+#cd kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service
+$ cp create-domain-on-aks-inputs.yaml my-create-domain-on-aks-inputs.yaml
+$ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -u ${TIMESTAMP}
+```
+
+After running the command, all needed configuration files are generated and output to `~/azure/weblogic-on-aks`:
+
+```shell
+The following files were generated:
+  /home/username/azure/weblogic-on-aks/pv.yaml
+  /home/username/azure/weblogic-on-aks/pvc.yaml
+  /home/username/azure/weblogic-on-aks/admin-lb.yaml
+  /home/username/azure/weblogic-on-aks/cluster-lb.yaml
+  /home/username/azure/weblogic-on-aks/domain1.yaml
+  /home/username/azure/weblogic-on-aks/cluster-admin-role.yaml
+
+Completed
+```
+
+**Note:** Beyond the required and default configurations generated by the command, you can modify the generated YAML files to further customize your deployment. For further information about customizing your deployment, consult the operator documentation, [AKS documentation](https://docs.microsoft.com/en-us/azure/aks/), and Kubernetes references.
+
+##### Apply generated configuration files
+
+In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it in your output directory. The following content is an example that uses the value `wls-weblogic` as "shareName", `wlsazure-secret` as "secretName", and the persistent volume name is `wls-azurefile`.
+
+We will use the storage class `azurefile`. If you want to create a new class, follow this document [Create a storage class](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class). For more information, see the page [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes).
+
+```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: wls-azurefile
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile
+  azureFile:
+    secretName: wlsazure-secret
+    shareName: wls-weblogic-1597391432
+    readOnly: false
+  mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - uid=1000
+  - gid=1000
+  - mfsymlinks
+  - nobrl
+```
+
+We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  Both `pv.yaml` and `pvc.yaml` have exactly the same content for `storageClassName` attributes. This is required. We set the same value to the `metadata` property in both files. The following content is an example that uses the persistent volume claim name `wls-azurefile`.
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wls-azurefile
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+Use the `kubectl` command to create the persistent volume and persistent volume claim to the `default` namespace.
+
+```shell
+$ kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
+persistentvolume/wls-azurefile created
+$ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
+persistentvolumeclaim/wls-azurefile created
+```
+
+Use the following command to verify:
+
+```shell
+$ kubectl get pv,pvc
+```
+
+Example output:
+
+```shell
+$ kubectl get pv,pvc
+NAME                                          CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                STORAGECLASS   REASON   AGE
+persistentvolume/wls-azurefile   5Gi        RWX            Retain           Bound    default/wls-azurefile   azurefile               16m
+
+NAME                                               STATUS   VOLUME                       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+persistentvolumeclaim/wls-azurefile   Bound    wls-azurefile   5Gi        RWX            azurefile      16m
+```
+
+**Note**: Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.
