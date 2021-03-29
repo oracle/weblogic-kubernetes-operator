@@ -22,9 +22,6 @@ serverStartPolicy: IF_NEEDED
 # Cluster name
 clusterName: cluster-1
 
-# Number of managed servers to generate for the domain
-configuredManagedServerCount: 5
-
 # Number of managed servers to initially start for the domain
 initialManagedServerReplicas: 2
 
