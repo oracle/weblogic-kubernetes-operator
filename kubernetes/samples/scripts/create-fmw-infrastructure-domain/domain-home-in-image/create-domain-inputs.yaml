@@ -162,12 +162,19 @@ serverPodCpuRequest: "500m"
 # serverPodCpuLimit: "1000m"
 
 #
-# RCU configuration details
+# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
+fmwDomainType: JRF
+
+
+# RCU configuration details (required if fmwDomainType is 'JRF')
 #
 
 # The schema prefix to use in the database, for example `SOA1`.  You may wish to make this
 # the same as the domainUID in order to simplify matching domains to their RCU schemas.
 rcuSchemaPrefix: domain1
+
+# Password for the RCU schema
+rcuSchemaPassword: 
 
 # The database URL
 rcuDatabaseURL: database:1521/service
@@ -175,7 +182,4 @@ rcuDatabaseURL: database:1521/service
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: domain1-rcu-credentials
 
-rcuSchemaPassword: 
 
-# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
-fmwDomainType: JRF
