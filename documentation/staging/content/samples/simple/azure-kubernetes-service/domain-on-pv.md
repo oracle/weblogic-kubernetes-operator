@@ -105,7 +105,7 @@ secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 ```
 
-We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+We will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
 ```shell
 # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
@@ -114,7 +114,7 @@ We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-dock
 $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 ```
 ```
-# cd kubernetes/samples/scripts/create-kuberetes-secrets
+# cd kubernetes/samples/scripts/create-kubernetes-secrets
 ```
 ```sehll
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
