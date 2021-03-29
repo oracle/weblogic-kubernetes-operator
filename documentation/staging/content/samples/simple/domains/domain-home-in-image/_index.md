@@ -21,6 +21,8 @@ The following prerequisites must be met prior to running the create domain scrip
 
 ```shell
 $ cd ./kubernetes/samples/scripts/create-weblogic-domain-credentials
+```
+```shell
 $ create-weblogic-credentials.sh
    -u <username>
    -p <password>
@@ -79,7 +81,6 @@ The script will perform the following steps:
   For more information, see
   [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
-  
 * Create a tag that refers to the generated image.
 * Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```shell
@@ -94,6 +95,8 @@ The usage of the create script is as follows:
 
 ```shell
 $ sh create-domain.sh -h
+```
+```
 usage: create-domain.sh -o dir -i file -u username -p password [-e] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
@@ -280,6 +283,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl describe domain domain1
+```
+```
 Name:         domain1
 Namespace:    default
 Labels:       weblogic.domainUID=domain1
@@ -415,6 +420,8 @@ Here is an example of the output of this command:
 
 ```shell
 $ kubectl get pods
+```
+```
 NAME                                         READY     STATUS    RESTARTS   AGE
 domain1-admin-server                         1/1       Running   0          30m
 domain1-managed-server1                      1/1       Running   0          29m
@@ -432,6 +439,8 @@ $ kubectl get services -n NAMESPACE
 Here is an example of the output of this command:
 ```shell
 $ kubectl get services
+```
+```
 NAME                                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)           AGE
 domain1-admin-server                        ClusterIP   None             <none>        7001/TCP          32m
 domain1-cluster-cluster-1                   ClusterIP   10.99.151.142    <none>        8001/TCP          31m
