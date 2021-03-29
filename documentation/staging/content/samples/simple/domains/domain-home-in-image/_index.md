@@ -46,7 +46,8 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 ```
 
 Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values,
-and run the create script, pointing it at your inputs file and an output directory:
+and run the create script, pointing it at your inputs file and an output directory,
+along with username and password for the WebLogic administrator:
 
 ```shell
 $ ./create-domain.sh \
@@ -69,9 +70,12 @@ The script will perform the following steps:
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
   
-* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to create a new WebLogic Server domain using the WebLogic image specified in the `domainHomeImageBase` parameter from the `create-domain-inputs.yaml` file, 
-  the model defined in `wdt_model_dynamic.yaml` and the WDT variables in `domain.properties`.
-  The generated image is tagged with the `image` parameter in the `create-domain-inputs.yaml` file. 
+* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to create a 
+  new WebLogic Server domain using the WebLogic image specified in the `domainHomeImageBase` parameter 
+  from your inputs file, the model defined in `wdt_model_dynamic.yaml` 
+  and the WDT variables in `domain.properties`.
+  The generated image is tagged with the `image` parameter provided in your inputs file. 
+
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
   in the registry (for example, Oracle Cloud Infrastructure Registry, GitHub Container Registry, and such) because
@@ -175,7 +179,7 @@ The following parameters can be provided in the inputs file.
 | `witVersion` | Version of the WebLogic Image Tool (WIT) to be installed by the script. This can be a specifiv version, such as 1.9,10, or `LATEST`.  | `LATEST` |
 | `toolsDir` | The directory where WebLogic Deploy Tool (WDT) and WebLogic Image Tool (WIT) are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
 
-Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-domain-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
+Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the inputs yaml file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.
 
