@@ -350,7 +350,7 @@ function createFileShare {
 
     # Create a Kubernetes secret
     echo Creating kubectl secret for Azure File Share ${azureFileShareSecretName}.
-    bash $dirKuberetesSecrets/create-azure-storage-credentials-secret.sh \
+    bash $dirKubernetesSecrets/create-azure-storage-credentials-secret.sh \
       -s ${azureFileShareSecretName} \
       -a $storageAccountName \
       -k $azureStorageKey
@@ -377,7 +377,7 @@ function createWebLogicDomain {
     -p ${weblogicAccountPassword} -d ${domainUID}
 
     # Create Container Registry Credentials.
-    bash $dirKuberetesSecrets/create-docker-credentials-secret.sh \
+    bash $dirKubernetesSecrets/create-docker-credentials-secret.sh \
       -e ${docker-email} \
       -p ${dockerPassword} \
       -u ${dockerUserName} \
@@ -489,7 +489,7 @@ cd ..
 export dirSampleScripts=`pwd`
 export dirCreateDomain="${dirSampleScripts}/create-weblogic-domain/domain-home-on-pv"
 export dirCreateDomainCredentials="${dirSampleScripts}/create-weblogic-domain-credentials"
-export dirKuberetesSecrets="${dirSampleScripts}/create-kuberetes-secrets"
+export dirKubernetesSecrets="${dirSampleScripts}/create-kubernetes-secrets"
 export selectorAdminServerName="serverName"
 export selectorClusterServerName="clusterName"
 
