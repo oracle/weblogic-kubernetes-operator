@@ -485,13 +485,13 @@ $ kubectl -n sample-domain1-ns label  secret \
 
 Deploy a corresponding Kubernetes `docker secret` to the same namespace to access the image during domain creation.
 
-Use `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` to create the secret.  Please invoke the script with the `-h` option to see the available switches and usage.
+Use `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` to create the secret.  Please invoke the script with the `-h` option to see the available switches and usage.
 
 ```shell
 $ cd weblogic-kubernetes-operator
 ```
 ```shell
-$ cd kubernetes/samples/scripts/create-kuberetes-secrets
+$ cd kubernetes/samples/scripts/create-kubernetes-secrets
 ```
 ```shell
 $ ./create-docker-credentials-secret.sh -h
@@ -525,7 +525,7 @@ $ export AKS_PERS_ACR_PASSWORD=<the-password-from-your-output>
 Use the `create-docker-credentials-secret.sh` script to store the ACR credentials as a Kubernetes secret.
 
 ```
-# cd kubernetes/samples/scripts/create-kuberetes-secrets
+# cd kubernetes/samples/scripts/create-kubernetes-secrets
 ```
 ```shell
 $ export SECRET_NAME_DOCKER="regsecret"
