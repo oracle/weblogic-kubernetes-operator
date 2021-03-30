@@ -15,7 +15,7 @@ public class ServerService extends KubernetesResource {
 
   @SerializedName("precreateService")
   @Description(
-      "If true, the operator will create Services even for Managed Server instances without running Pods.")
+      "If true, the operator will create ClusterIP Services even for WebLogic Server instances without running Pods.")
   private Boolean isPrecreateService;
 
   void fillInFrom(ServerService serverService1) {
