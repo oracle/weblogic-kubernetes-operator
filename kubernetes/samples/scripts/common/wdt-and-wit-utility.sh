@@ -47,25 +47,25 @@
 #                  default:  /shared/wdt
 #
 #   WDT_VERSION    WDT version to download.
-#                  default:  1.9.10
+#                  default:  LATEST
 #
 #   WDT_INSTALL_ZIP_FILE  Filename of WDT install zip.
 #                  default:  weblogic-deploy.zip
 #
 #   WDT_INSTALL_ZIP_URL   URL for downloading WDT install zip
-#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/$WDT_INSTALL_ZIP_FILE
 #
 #   WIT_DIR        Target location to install WIT
 #                  default: /shared/imagetool
 #
 #   WIT_VERSION    WIT version to download.
-#                  default:  1.9.10
+#                  default:  LATEST
 #
 #   WIT_INSTALL_ZIP_FILE  Filename of WIT install zip.
 #                  default:  imagetool.zip
 #
 #   WIT_INSTALL_ZIP_URL   URL for downloading WIT install zip
-#                  default:  https://github.com/oracle/weblogic-image-tool/releases/download/release-$WIT_VERSION/$WIT_INSTALL_ZIP_FILE
+#                  default:  https://github.com/oracle/weblogic-image-tool/releases/latest/download/$WIT_INSTALL_ZIP_FILE
 #
 
 
@@ -78,10 +78,10 @@ WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.9.10}
+WDT_VERSION=${WDT_VERSION:-LATEST}
 
 WIT_DIR=${WIT_DIR:-/shared/imagetool}
-WIT_VERSION=${WIT_VERSION:-1.9.10}
+WIT_VERSION=${WIT_VERSION:-LATEST}
 
 DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
@@ -177,15 +177,19 @@ function run_wdt {
   local save_dir=`pwd`
   cd $WDT_DIR || return 1
 
-  echo @@ "Info:  WDT $wdt_domain_script output will be in $out_file and $wdt_log_dir"
+  cmd="
+  $wdt_domain_script
+     -oracle_home $oracle_home
+     -domain_type $domain_type
+     -domain_home $domain_home_dir
+     -model_file $model_final
+     -variable_file $inputs_final
+  "
 
-  $wdt_domain_script \
-     -oracle_home $oracle_home \
-     -domain_type $domain_type \
-     -domain_home $domain_home_dir \
-     -model_file $model_final \
-     -variable_file $inputs_final > $out_file 2>&1
-
+  echo @@ "Info: About to run the following WDT command:"
+  echo "${cmd}"
+  echo @@ "Info: WDT output will be in $out_file and $wdt_log_dir"
+  eval $cmd > $out_file 2>&1
   local wdt_res=$?
 
   cd $save_dir
@@ -206,15 +210,18 @@ function run_wdt {
 
   cd $WDT_DIR || return 1
 
-  echo @@ "Info:  WDT extractDomainResource.sh output will be in extract${action}.out and $wdt_log_dir"
-
-  $wdt_bin_dir/extractDomainResource.sh \
-     -oracle_home $oracle_home \
-     -domain_resource_file domain${action}.yaml \
-     -domain_home $domain_home_dir \
-     -model_file $model_final \
-     -variable_file $inputs_final > extract${action}.out 2>&1
-
+  cmd="
+  $wdt_bin_dir/extractDomainResource.sh
+     -oracle_home $oracle_home
+     -domain_resource_file domain${action}.yaml
+     -domain_home $domain_home_dir
+     -model_file $model_final
+     -variable_file $inputs_final
+  "
+  echo @@ "Info: About to run the following WDT command:"
+  echo "${cmd}"
+  echo @@ "Info: WDT output will be in extract${action}.out and $wdt_log_dir"
+  eval $cmd > extract${action}.out 2>&1
   local wdt_res=$?
 
   cd $save_dir
@@ -245,10 +252,13 @@ function setup_wdt_shared_dir {
 #
 function install_wdt {
 
-  [ "$WDT_VERSION" = "LATEST" ] && WDT_VERSION=$(curl -s https://github.com/oracle/weblogic-deploy-tooling/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
-
   WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-  WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+
+  if [ "$WDT_VERSION" == "LATEST" ]; then
+    WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/$WDT_INSTALL_ZIP_FILE"}
+  else
+    WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
+  fi
 
   local save_dir=`pwd`
   cd $WDT_DIR || return 1
@@ -291,10 +301,14 @@ function install_wdt {
 #
 function install_wit {
 
-  [ "$WIT_VERSION" = "LATEST" ] && WIT_VERSION=$(curl -s https://github.com/oracle/weblogic-image-tool/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
-
   WIT_INSTALL_ZIP_FILE="${WIT_INSTALL_ZIP_FILE:-imagetool.zip}"
-  WIT_INSTALL_ZIP_URL=${WIT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/download/release-$WIT_VERSION/$WIT_INSTALL_ZIP_FILE"}
+
+  if [ "$WIT_VERSION" == "LATEST" ]; then
+    WIT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/latest/download/$WIT_INSTALL_ZIP_FILE"}
+  else
+    WIT_INSTALL_ZIP_URL=${WIT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-image-tool/releases/download/release-$WIT_VERSION/$WIT_INSTALL_ZIP_FILE"}
+  fi
+
 
 
   local save_dir=`pwd`
@@ -335,8 +349,6 @@ function install_wit {
 #
 function install_wit_if_needed {
 
-  [ "$WDT_VERSION" = "LATEST" ] && WDT_VERSION=$(curl -s https://github.com/oracle/weblogic-deploy-tooling/releases/latest  | sed 's/.*release-\(.*\)".*>/\1/')
-
   local save_dir=`pwd`
 
   mkdir -p $WIT_DIR || return 1
@@ -355,7 +367,13 @@ function install_wit_if_needed {
   # - if there is already an entry, and the WDT installer file specified in the cache entry exists, skip WDT installation
   # - if file in cache entry doesn't exist, delete cache entry, install WDT, and add WDT installer to cache
   # - if entry does not exist, install WDT, and add WDT installer to cache
-  local listItems=$( ${imagetoolBinDir}/imagetool.sh cache listItems | grep "wdt_${WDT_VERSION}" )
+  if [ "$WDT_VERSION" == "LATEST" ]; then
+    wdtCacheVersion="latest"
+  else
+    wdtCacheVersion=$WDT_VERSION
+  fi
+
+  local listItems=$( ${imagetoolBinDir}/imagetool.sh cache listItems | grep "wdt_${wdtCacheVersion}" )
 
   if [ ! -z "$listItems" ]; then
     local wdt_file_path_in_cache=$(echo $listItems | sed 's/.*=\(.*\)/\1/')
@@ -364,12 +382,12 @@ function install_wit_if_needed {
     else
       echo @@ "Info: imageTool cache contains an entry for WDT zip at $wdt_file_path_in_cache which does not exist. Removing from cache entry."
       ${imagetoolBinDir}/imagetool.sh cache deleteEntry \
-         --key wdt_${WDT_VERSION}
+         --key wdt_${wdtCacheVersion}
     fi
   fi
 
   if [ -z "$skip_wdt_install" ]; then
-    echo @@ "Info: imageTool cache does not contain a valid entry for wdt_${WDT_VERSION}. Installing WDT"
+    echo @@ "Info: imageTool cache does not contain a valid entry for wdt_${wdtCacheVersion}. Installing WDT"
     setup_wdt_shared_dir || return 1
     install_wdt || return 1
     ${imagetoolBinDir}/imagetool.sh cache addInstaller \
