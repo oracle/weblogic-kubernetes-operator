@@ -35,9 +35,10 @@ Infrastructure domains and WebLogic Server domains.
 
 FMW Infrastructure domains are supported using the Domain in PV,
 Domain in Image, or Model in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
-If you plan to experiment with upper stack products (which are not officially supported
-by the operator yet), we strongly recommend using the domain on a persistent
+If you plan to experiment with upper stack products, we strongly recommend using the domain on a persistent
 volume approach.
+
+For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
 #### Limitations
 
