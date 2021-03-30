@@ -34,7 +34,7 @@ The following prerequisites must be met prior to running the create domain scrip
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
-* Unless you are creating a Restricted-JRF domain, you would also need to:  
+* Unless you are creating a Restricted-JRF domain, you also need to:  
   * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
   
@@ -149,7 +149,7 @@ The following parameters can be provided in the inputs file.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
 value of some of the properties specified in the `create-inputs.yaml` file. Those properties include
-the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any
+the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any
 characters that are invalid in a Kubernetes Service name, those characters are converted to
 valid values in the generated YAML files. For example, an uppercase letter is converted to a
 lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.

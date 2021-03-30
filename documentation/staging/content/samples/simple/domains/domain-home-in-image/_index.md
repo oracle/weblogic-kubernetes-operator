@@ -13,7 +13,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be met prior to running the create domain script:
 
-* The WebLogic Image Tool (WIT) requires that `JAVA_HOME` is set to a Java JDK version 8 or later.
+* The WebLogic Image Tool requires that `JAVA_HOME` is set to a Java JDK version 8 or later.
 * The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
@@ -47,7 +47,7 @@ $ cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image
 
 Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values,
 and run the create script, pointing it at your inputs file and an output directory,
-along with username and password for the WebLogic administrator:
+along with user name and password for the WebLogic administrator:
 
 ```shell
 $ ./create-domain.sh \
@@ -61,16 +61,16 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
-* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images. 
+* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images. 
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
-* Set up the WebLogic Image Tool to the `/tmp/dhii-sample/tools/imagetool` directory. Set the
+* Set up the WebLogic Image Tool in the `/tmp/dhii-sample/tools/imagetool` directory. Set the
   WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory and
-  put a `wdt_<WDT_VERSION>` entry in the tool's cache which points to the path of the WDT ZIP file installer.
+  put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
   
-* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to create a 
+* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a 
   new WebLogic Server domain using the WebLogic image specified in the `domainHomeImageBase` parameter 
   from your inputs file, the model defined in `wdt_model_dynamic.yaml` 
   and the WDT variables in `domain.properties`.
@@ -175,11 +175,11 @@ The following parameters can be provided in the inputs file.
 | `t3PublicAddress` | Public address for the T3 channel.  This should be set to the public address of the Kubernetes cluster.  This would typically be a load balancer address. <p/>For development environments only, in a single server (all-in-one) Kubernetes Deployment, this may be set to the address of the master, or at the very least, it must be set to the address of one of the worker nodes. |  If not provided, the script will attempt to set it to the IP address of the Kubernetes cluster. |
 | `weblogicCredentialsSecretName` | Name of the Kubernetes Secret for the Administration Server user name and password. | `domain1-weblogic-credentials` |
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
-| `toolsDir` | The directory where WebLogic Deploy Tool (WDT) and WebLogic Image Tool (WIT) are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
-| `wdtVersion` | Version of the WebLogic Deploy Tool (WDT) to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
-| `witVersion` | Version of the WebLogic Image Tool (WIT) to be installed by the script. This can be a specifiv version, such as 1.9,10, or `LATEST`.  | `LATEST` |
+| `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
+| `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
+| `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9,10, or `LATEST`.  | `LATEST` |
 
-Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the inputs yaml file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
+Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the inputs YAML file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.
 
@@ -457,3 +457,24 @@ The generated YAML file in the `/<path to output-directory>/weblogic-domains/<do
 ```shell
 $ kubectl delete -f domain.yaml
 ```
+
+#### Delete the generated image
+
+The generated image can be deleted by using `docker rmi` command when the image is no longer needed. 
+Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
+
+```shell
+$ docker rmi domain-home-in-image:12.2.1.4
+```
+
+#### Delete the tools directory
+
+Clean up the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed to by the `create-domain.sh` script if they are no longer needed.
+
+```shell
+$ rm -rf /tmp/dhii-sample/tools/
+```
+
+
+
+

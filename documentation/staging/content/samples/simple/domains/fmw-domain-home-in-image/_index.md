@@ -27,7 +27,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
-* Unless you are creating a Restricted-JRF domain, you would also need to:
+* Unless you are creating a Restricted-JRF domain, you also need to:
   * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
@@ -41,7 +41,7 @@ $ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-
 Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values. 
 If `fwmDomainType` is `JRF`, also update the input files with configurations for accessing the RCU database schema,
 including `rcuSchemaPrefix`, `rcuSchemaPassword`, `rcuDatabaseURL`, and `rcuCredentialSecrets`.
-Run the create script, pointing it at your inputs file and an output directory, along with username and password for the WebLogic administrator::
+Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator::
 
 ```shell
 $ ./create-domain.sh \
@@ -57,16 +57,16 @@ The script will perform the following steps:
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample FMW Infrastructure domain.
-* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images.
+* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images.
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
-* Set up the WebLogic Image Tool to the `/tmp/dhii-sample/tools/imagetool` directory. Set the
+* Set up the WebLogic Image Tool in the `/tmp/dhii-sample/tools/imagetool` directory. Set the
   WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory and
-  put a `wdt_<WDT_VERSION>` entry in the tool's cache which points to the path of the WDT ZIP file installer.
+  put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
-* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to create a new 
+* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a new 
   FWM Infrastructure domain using the FMW Infrastructure image specified in the `domainHomeImageBase` 
   parameter from your inputs file, the WDT variables in `domain.properties` file, and the model 
   defined in `wdt_model_configured.yaml` or `wdt_model_restricted_jrf_configured.yaml` depending on 
@@ -166,13 +166,13 @@ The following parameters can be provided in the inputs file.
 | `rcuDatabaseURL` | The database URL. | `database:1521/service` |
 | `rcuSchemaPassword` | Password for the RCU database schema. | Must be provided for `JRF` FMW domain type |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `domain1` |
-| `toolsDir` | The directory where WebLogic Deploy Tool (WDT) and WebLogic Image Tool (WIT) are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
-| `wdtVersion` | Version of the WebLogic Deploy Tool (WDT) to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
-| `witVersion` | Version of the WebLogic Image Tool (WIT) to be installed by the script. This can be a specifiv version, such as 1.9,10, or `LATEST`.  | `LATEST` |
+| `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
+| `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
+| `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9,10, or `LATEST`.  | `LATEST` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
-value of some of the properties specified in the inputs yaml file. Those properties include
-the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any
+value of some of the properties specified in the inputs YAML file. Those properties include
+the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any
 characters that are invalid in a Kubernetes Service name, those characters are converted to
 valid values in the generated YAML files. For example, an uppercase letter is converted to a
 lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
@@ -472,4 +472,29 @@ fmwdomain-admin-server-ext          NodePort    10.101.26.42     <none>        7
 fmwdomain-cluster-cluster-1         ClusterIP   10.107.55.188    <none>        8001/TCP          15h
 fmwdomain-managed-server1           ClusterIP   None             <none>        8001/TCP          15h
 fmwdomain-managed-server2           ClusterIP   None             <none>        8001/TCP          15h
+```
+
+#### Delete the domain
+
+The generated YAML file in the `/<path to output-directory>/weblogic-domains/<domainUID>` directory can be used to delete the Kubernetes resource. Use the following command to delete the domain:
+
+```shell
+$ kubectl delete -f domain.yaml
+```
+
+#### Delete the generated image
+
+The generated image can be deleted by using `docker rmi` command when the image is no longer needed.
+Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
+
+```shell
+$ docker rmi domain-home-in-image:12.2.1.4
+```
+
+#### Delete the tools directory
+
+Clean up the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed to by the `create-domain.sh` script if they are no longer needed.
+
+```shell
+$ rm -rf /tmp/dhii-sample/tools/
 ```
