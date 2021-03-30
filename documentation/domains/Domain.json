@@ -51,7 +51,7 @@
           }
         },
         "annotations": {
-          "description": "Annotations to associate with the Administration Server\u0027s Service NodePort Service, if it is created.",
+          "description": "Annotations to associate with the Administration Server\u0027s NodePort Service, if it is created.",
           "additionalProperties": {
             "type": "string"
           },

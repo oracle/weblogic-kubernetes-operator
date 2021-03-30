@@ -28,7 +28,7 @@ public class AdminService implements ServiceConfigurator {
   @Description("Labels to associate with the Administration Server's NodePort Service, if it is created.")
   private final Map<String, String> labels = new HashMap<>();
 
-  @Description("Annotations to associate with the Administration Server's Service NodePort Service, if it is created.")
+  @Description("Annotations to associate with the Administration Server's NodePort Service, if it is created.")
   private final Map<String, String> annotations = new HashMap<>();
 
   /**

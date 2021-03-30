@@ -193,7 +193,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `annotations` | Map | Annotations to associate with the Administration Server's Service NodePort Service, if it is created. |
+| `annotations` | Map | Annotations to associate with the Administration Server's NodePort Service, if it is created. |
 | `channels` | array of [Channel](#channel) | Specifies which of the Administration Server's WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server's NodePort Service will not be created. |
 | `labels` | Map | Labels to associate with the Administration Server's NodePort Service, if it is created. |
 
