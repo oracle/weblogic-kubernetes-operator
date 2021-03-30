@@ -1,0 +1,118 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain resource.
+#
+apiVersion: "weblogic.oracle/v8"
+kind: Domain
+metadata:
+  name: domain1
+  namespace: miidomain300-ns
+  labels:
+    weblogic.domainUID: domain1
+
+spec:
+  # Set to 'FromModel' to indicate 'Model in Image'.
+  domainHomeSourceType: FromModel
+
+  # The WebLogic Domain Home, this must be a location within
+  # the image for 'Model in Image' domains.
+  domainHome: /u01/domains/domain1
+
+  # The WebLogic Server image that the Operator uses to start the domain
+  image: "model-in-image:12.2.1.4"
+
+  # Defaults to "Always" if image tag (version) is ':latest'
+  imagePullPolicy: "IfNotPresent"
+
+  # Identify which Secret contains the credentials for pulling an image
+  imagePullSecrets:
+  - name: ocir-secret
+  
+  # Identify which Secret contains the WebLogic Admin credentials,
+  # the secret must contain 'username' and 'password' fields.
+  webLogicCredentialsSecret: 
+    name: weblogic-credentials
+
+  # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+  includeServerOutInPodLog: true
+  
+  # Set which WebLogic Servers the Operator will start
+  # - "NEVER" will not start any server in the domain
+  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+  # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+  serverStartPolicy: "IF_NEEDED"
+
+  # Settings for all server pods in the domain including the introspector job pod
+  serverPod:
+    # Optional new or overridden environment variables for the domain's pods
+    # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
+    #   to set the Weblogic domain name
+    env:
+    - name: CUSTOM_DOMAIN_NAME
+      value: "domain1"
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
+    resources:
+      requests:
+        cpu: "250m"
+        memory: "768Mi"
+
+  # The desired behavior for starting the domain's administration server.
+  adminServer:
+    # The serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    serverStartState: "RUNNING"
+    # Setup a Kubernetes node port for the administration server default channel
+    adminService:
+      channels:
+      - channelName: default
+        nodePort: 0
+      - channelName: T3Channel
+   
+  # The number of managed servers to start for unlisted clusters
+  replicas: 1
+
+  # The desired behavior for starting a specific cluster's member servers
+  clusters:
+  - clusterName: cluster-1
+    serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
+    # The number of managed servers to start for this cluster
+    replicas: 2
+
+  # Change the restartVersion to force the introspector job to rerun
+  # and apply any new model configuration, to also force a subsequent
+  # roll of your domain's WebLogic Server pods.
+  restartVersion: '1'
+
+  # Changes to this field cause the operator to repeat its introspection of the
+  #  WebLogic domain configuration.
+  introspectVersion: '1'
+
+  configuration:
+
+    # Settings for domainHomeSourceType 'FromModel'
+    model:
+      # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
+      domainType: "WLS"
+
+      # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+      runtimeEncryptionSecret: domain1-runtime-encryption-secret
