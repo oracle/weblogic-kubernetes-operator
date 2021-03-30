@@ -299,6 +299,11 @@ public class PodHelper {
     }
 
     @Override
+    Integer getOldMetricsPort() {
+      return getAsPort();
+    }
+
+    @Override
     String getServerName() {
       return getAsName();
     }
@@ -444,6 +449,11 @@ public class PodHelper {
     @Override
     Integer getLocalAdminProtocolChannelPort() {
       return scan.getLocalAdminProtocolChannelPort();
+    }
+
+    @Override
+    Integer getOldMetricsPort() {
+      return getListenPort();
     }
 
     @Override
