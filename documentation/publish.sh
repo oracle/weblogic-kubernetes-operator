@@ -11,13 +11,13 @@ script="${BASH_SOURCE[0]}"
 function usage {
   echo "usage: ${script} [-o <directory>] [-h]"
   echo "  -o Output directory (optional) "
-  echo "      (default: \${WORKSPACE}/documentation, if \${WORKSPACE} defined, else /tmp/documentation) "
+  echo "      (default: \${WORKSPACE}/documentation, if \${WORKSPACE} defined, else /tmp/weblogic-kubernetes-operator) "
   echo "  -h Help"
   exit $1
 }
 
 if [[ -z "${WORKSPACE}" ]]; then
-  outdir="/tmp/documentation"
+  outdir="/tmp/weblogic-kubernetes-operator"
 else
   outdir="${WORKSPACE}/documentation"
 fi
