@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -107,6 +108,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -252,7 +254,7 @@ class ItMiiUpdateDomainConfig {
    * The test looks for the string RUNNING in server log
    */
   @Test
-  @Order(1)
+  @Order(20)
   @DisplayName("Check the server logs are written to PersistentVolume")
   public void testMiiServerLogsAreOnPV() {
 
@@ -261,11 +263,43 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a WebLogic domain with a defined configmap in configuration/model 
+   * Check HTTP server logs are written on logHome.
+   * The test looks for the string sample-war/index.jsp in HTTP access
+   * logs
+   */
+  @Test
+  @Order(1)
+  @DisplayName("Check the HTTP server logs are written to PersistentVolume")
+  public void testMiiHttpServerLogsAreOnPV() {
+    String[] podNames = {domainUid + "-" + managedServerPrefix + "1", domainUid + "-" + managedServerPrefix + "2"};
+    for (String pod : podNames) {
+      String curlCmd = "curl -v"
+          + "http://" + pod + ":8001/sample-war/index.jsp";
+      logger.info("Command to send HTTP request and get HTTP response {0} ", curlCmd);
+      ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
+          "/bin/sh", "-c", curlCmd));
+      if (execResult.exitValue() == 0) {
+        logger.info("\n HTTP response is \n " + execResult.toString());
+        assertAll("Check that the HTTP response is 200",
+            () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
+        );
+      } else {
+        fail("Failed to access sample application " + execResult.stderr());
+      }
+    }
+    String[] servers = {managedServerPrefix + "1", managedServerPrefix + "2"};
+    for (String server : servers) {
+      logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
+      checkLogsOnPV("grep sample-war/index.jsp /shared/logs/" + server + "_access.log", adminServerPodName);
+    }
+  }
+
+  /**
+   * Create a WebLogic domain with a defined configmap in configuration/model
    * section of the domain resource.
-   * The configmap has multiple sparse WDT model files that define 
+   * The configmap has multiple sparse WDT model files that define
    * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
-   * Verify all the SystemResource configurations using the rest API call 
+   * Verify all the SystemResource configurations using the rest API call
    * using the public nodeport of the administration server.
    */
   @Test
@@ -343,7 +377,7 @@ class ItMiiUpdateDomainConfig {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-    
+
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
                 "Rolling restart failed");
 
@@ -409,7 +443,7 @@ class ItMiiUpdateDomainConfig {
 
     String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-    
+
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
          "Rolling restart failed");
 
@@ -440,7 +474,7 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are not in running state, because 
+   * Verify servers from new cluster are not in running state, because
    * the spec level replica count to zero(default).
    */
   @Test
@@ -649,7 +683,7 @@ class ItMiiUpdateDomainConfig {
    * Start a WebLogic domain with model-in-imge.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
-   * Make sure all the server pods are re-started in a rolling fashion. 
+   * Make sure all the server pods are re-started in a rolling fashion.
    * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
@@ -709,16 +743,16 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain with a dynamic cluster with the following 
+   * Start a WebLogic domain with a dynamic cluster with the following
    * attributes MaxDynamicClusterSize(5) and MinDynamicClusterSize(1)
    * Set allowReplicasBelowMinDynClusterSize to false.
    * Make sure that the cluster can be scaled up to 5 servers and
-   * scaled down to 1 server. 
-   * Create a configmap with a sparse model file with following attributes for 
+   * scaled down to 1 server.
+   * Create a configmap with a sparse model file with following attributes for
    * Cluster/cluster-1/DynamicServers
    *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
    * Patch the domain resource with the configmap and update restartVersion.
-   * Make sure a rolling restart is triggered.  
+   * Make sure a rolling restart is triggered.
    * Now with the modified value
    * Make sure that the cluster can be scaled up to 4 servers.
    * Make sure JMS Connections and messages are distributed across 4 servers.
@@ -774,8 +808,8 @@ class ItMiiUpdateDomainConfig {
       pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
     }
 
-    // Update the Dynamic ClusterSize and add distributed destination 
-    // to verify JMS connection and message distribution after the 
+    // Update the Dynamic ClusterSize and add distributed destination
+    // to verify JMS connection and message distribution after the
     // WebLogic cluster is scaled.
     String configMapName = "dynamic-cluster-size-cm";
     createClusterConfigMap(configMapName, "model.cluster.size.yaml");
@@ -810,7 +844,7 @@ class ItMiiUpdateDomainConfig {
         String.format("Scaling the cluster cluster-1 of domain %s in namespace %s failed", domainUid, domainNamespace));
     assertTrue(p1Success,
         String.format("replica patching to 3 failed for domain %s in namespace %s", domainUid, domainNamespace));
-    
+
     //  Make sure the 3rd Managed server comes up
     checkServiceExists(managedServerPrefix + "3", domainNamespace);
     checkServiceExists(managedServerPrefix + "4", domainNamespace);
@@ -842,11 +876,11 @@ class ItMiiUpdateDomainConfig {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(runJmsClient(new String(javapCmd)));
-    
-    // Since the MinDynamicClusterSize is set to 2 in the configmap 
+
+    // Since the MinDynamicClusterSize is set to 2 in the configmap
     // and allowReplicasBelowMinDynClusterSize is set false, the replica
-    // count can not go below 2. So during the following scale down operation 
-    // only managed-server3 and managed-server4 pod should be removed.  
+    // count can not go below 2. So during the following scale down operation
+    // only managed-server3 and managed-server4 pod should be removed.
     logger.info("[After Patching] updating the replica count to 1");
     boolean p4Success = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
@@ -907,7 +941,7 @@ class ItMiiUpdateDomainConfig {
 
 
   private static void createDatabaseSecret(
-        String secretName, String username, String password, 
+        String secretName, String username, String password,
         String dburl, String domNamespace) throws ApiException {
     Map<String, String> secretMap = new HashMap();
     secretMap.put("username", username);
@@ -937,7 +971,7 @@ class ItMiiUpdateDomainConfig {
 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
-      String repoSecretName, String encryptionSecretName, 
+      String repoSecretName, String encryptionSecretName,
       int replicaCount, String configmapName, String dbSecretName) {
     List<String> securityList = new ArrayList<>();
     securityList.add(dbSecretName);
