@@ -22,7 +22,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
-source ${scriptDir}/../../common/wdt-utility.sh
+source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
@@ -183,28 +183,34 @@ function createDomainHome {
 
     echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
-    $WIT_DIR/imagetool/bin/imagetool.sh update \
-      --fromImage "$domainHomeImageBase" \
-      --tag "${BUILD_IMAGE_TAG}" \
-      --wdtModel ${scriptDir}/wdt_model_dynamic.yaml \
-      --wdtVariables "${domainPropertiesOutput}" \
-      --wdtOperation CREATE \
-      --wdtVersion ${WDT_VERSION} \
-      --wdtDomainHome $domainHome --chown=oracle:root
+    cmd="
+    $WIT_DIR/imagetool/bin/imagetool.sh update
+      --fromImage \"$domainHomeImageBase\"
+      --tag \"${BUILD_IMAGE_TAG}\"
+      --wdtModel \"${scriptDir}/wdt_model_dynamic.yaml\"
+      --wdtVariables \"${domainPropertiesOutput}\"
+      --wdtOperation CREATE
+      --wdtVersion ${wdtVersion}
+      --wdtDomainHome \"${domainHome}\" --chown=oracle:root
+    "
+    echo @@ "Info: About to run the following WIT command:"
+    echo "$cmd"
+    echo
+    eval $cmd
 
-  if [ "$?" != "0" ]; then
-    fail "Create domain ${domainName} failed."
-  fi
+    if [ "$?" != "0" ]; then
+      fail "Create domain ${domainName} failed."
+    fi
 
-  # clean up the generated domain.properties file
-  rm ${domainPropertiesOutput}
+    # clean up the generated domain.properties file
+    rm ${domainPropertiesOutput}
 
-  echo ""
-  echo "Create domain ${domainName} successfully."
+    echo ""
+    echo "Create domain ${domainName} successfully."
 
- else 
-  echo ""
-  echo "Skipping domain image build "
+  else
+    echo ""
+    echo "Skipping domain image build "
  fi 
 
 }

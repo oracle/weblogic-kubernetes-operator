@@ -71,7 +71,7 @@ export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
-source ${SCRIPTPATH}/wdt-utility.sh
+source ${SCRIPTPATH}/wdt-and-wit-utility.sh
 
 # Run
 
