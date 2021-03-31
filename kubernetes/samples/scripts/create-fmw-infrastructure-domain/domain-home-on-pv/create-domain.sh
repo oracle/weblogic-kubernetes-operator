@@ -165,7 +165,7 @@ function createDomainConfigmap {
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
   if [ -d "${scriptDir}/../../common" ]; then
-    cp ${scriptDir}/../../common/wdt-utility.sh ${externalFilesTmpDir}/
+    cp ${scriptDir}/../../common/wdt-and-wit-utility.sh ${externalFilesTmpDir}/
   fi
 
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
