@@ -358,19 +358,50 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
-  // Returns the YAML for a 3.1 domain-in-image pod with only theplain port enabled.
-  abstract String getReferencePlainPortPodYaml();
+  // Returns the YAML for a 3.0 domain-in-image pod with only the plain port enabled.
+  abstract String getReferencePlainPortPodYaml_3_0();
+
+  // Returns the YAML for a 3.1 domain-in-image pod with only the plain port enabled.
+  abstract String getReferencePlainPortPodYaml_3_1();
+
+  // Returns the YAML for a 3.0 domain-in-image pod with the SSL port enabled.
+  abstract String getReferenceSslPortPodYaml_3_0();
 
   // Returns the YAML for a 3.1 domain-in-image pod with the SSL port enabled.
-  abstract String getReferenceSslPortPodYaml();
+  abstract String getReferenceSslPortPodYaml_3_1();
 
   // Returns the YAML for a 3.1 Mii Pod.
   abstract String getReferenceMiiPodYaml();
 
   @Test
+  public void afterUpgradingPlainPortPodFrom30_patchIt() {
+    useProductionHash();
+    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
   public void afterUpgradingPlainPortPodFrom31_patchIt() {
     useProductionHash();
-    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml()));
+    initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_1()));
+
+    verifyPodPatched();
+
+    V1Pod patchedPod = domainPresenceInfo.getServerPod(getServerName());
+    assertThat(patchedPod.getMetadata().getLabels().get(OPERATOR_VERSION), equalTo(TEST_PRODUCT_VERSION));
+    assertThat(AnnotationHelper.getHash(patchedPod), equalTo(AnnotationHelper.getHash(createPodModel())));
+  }
+
+  @Test
+  public void afterUpgradingSslPortPodFrom30_patchIt() {
+    useProductionHash();
+    getServerTopology().setSslListenPort(7002);
+    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_0()));
 
     verifyPodPatched();
 
@@ -383,7 +414,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   public void afterUpgradingSslPortPodFrom31_patchIt() {
     useProductionHash();
     getServerTopology().setSslListenPort(7002);
-    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml()));
+    initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_1()));
 
     verifyPodPatched();
 
