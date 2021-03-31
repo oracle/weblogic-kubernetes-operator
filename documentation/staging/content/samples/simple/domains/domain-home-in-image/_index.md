@@ -64,8 +64,9 @@ The script will perform the following steps:
 * Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images. 
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
-* Set up the WebLogic Image Tool in the `/tmp/dhii-sample/tools/imagetool` directory. Set the
-  WIT cache store location to the `/tmp/dhii-sample/tools/imagetool-cache` directory and
+* Set up the WebLogic Image Tool in the `<toolsDir>/imagetool` directory, where `<toolsDir>` is the 
+  directory specified in the `toolsDir` parameter in the inputs YAML file. Set the
+  WIT cache store location to the `<tools>/imagetool-cache` directory and
   put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
@@ -470,6 +471,7 @@ $ docker rmi domain-home-in-image:12.2.1.4
 #### Delete the tools directory
 
 Clean up the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed to by the `create-domain.sh` script if they are no longer needed.
+By default, they are installed under the `/tmp/dhii-sample/tools` directory.
 
 ```shell
 $ rm -rf /tmp/dhii-sample/tools/
