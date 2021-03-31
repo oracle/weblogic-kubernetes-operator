@@ -199,6 +199,7 @@ function createDomainHome {
       --wdtVersion ${WDT_VERSION} 
       --wdtDomainType ${wdtDomainType} 
       --wdtDomainHome \"${domainHome}\"
+      --additionalBuildCommands additional-build-commands
       --chown=oracle:oracle
   "
   echo @@ "Info: About to run the following WIT command:"

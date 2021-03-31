@@ -1,0 +1,9 @@
+[final-build-commands]
+USER root
+RUN mkdir -p /u01/oracle/user_projects/domains/applications/
+RUN chmod g+w /u01/oracle/user_projects/domains/applications
+ 
+USER oracle
+COPY --from=wdt_build --chown=oracle:oracle /u01/oracle/user_projects/domains/applications /u01/oracle/user_projects/domains/applications/
+
+
