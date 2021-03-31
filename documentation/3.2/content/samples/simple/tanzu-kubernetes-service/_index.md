@@ -63,15 +63,11 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 Clone the repository.
 
 ```shell
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.0 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 ```shell
 $ cd weblogic-kubernetes-operator
 ```
-```shell
-$ git checkout v3.1.0
-```
-
 Grant the Helm service account the cluster-admin role.
 
 ```shell
