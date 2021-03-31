@@ -1289,12 +1289,22 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Override
-  String getReferencePlainPortPodYaml() {
+  String getReferencePlainPortPodYaml_3_0() {
+    return ReferenceObjects.MANAGED_PLAINPORT_POD_3_0;
+  }
+
+  @Override
+  String getReferencePlainPortPodYaml_3_1() {
     return ReferenceObjects.MANAGED_PLAINPORT_POD_3_1;
   }
 
   @Override
-  String getReferenceSslPortPodYaml() {
+  String getReferenceSslPortPodYaml_3_0() {
+    return ReferenceObjects.MANAGED_SSLPORT_POD_3_0;
+  }
+
+  @Override
+  String getReferenceSslPortPodYaml_3_1() {
     return ReferenceObjects.MANAGED_SSLPORT_POD_3_1;
   }
 
