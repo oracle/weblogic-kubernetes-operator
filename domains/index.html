@@ -973,10 +973,16 @@ window.onload = function() {
         },
         "annotations": {
           "description": "Annotations to associate with the Administration Server\u0027s Service(s).",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "Labels to associate with the Administration Server\u0027s Service(s).",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }
@@ -1018,7 +1024,7 @@ window.onload = function() {
           "minimum": 1.0
         },
         "replicas": {
-          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to 0.",
+          "description": "The number of cluster member Managed Server instances to start for this WebLogic cluster. The operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as \"managed-server10\" come after \"managed-server9\". The operator will then start Managed Server instances from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Server instances will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their related entries under `managedServers`, then this cluster may have more cluster members running than its `replicas` count. Defaults to `spec.replicas`, which defaults 0.",
           "type": "number",
           "minimum": 0.0
         },
@@ -1151,11 +1157,12 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Progressing, Available, and Failed.",
+          "description": "The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
             "Progressing",
             "Available",
+            "ConfigChangesPendingRestart",
             "Failed"
           ]
         },
@@ -1181,6 +1188,10 @@ window.onload = function() {
       "description": "The specification of the operation of the WebLogic domain. Required.",
       "type": "object",
       "properties": {
+        "monitoringExporter": {
+          "description": "Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.",
+          "$ref": "#/definitions/MonitoringExporterSpecification"
+        },
         "configuration": {
           "description": "Models and overrides affecting the WebLogic domain configuration.",
           "$ref": "#/definitions/Configuration"
@@ -1299,6 +1310,10 @@ window.onload = function() {
             "ADMIN_ONLY"
           ]
         },
+        "livenessProbeCustomScript": {
+          "description": "Full path of an optional liveness probe custom script for WebLogic Server instance pods. The existing liveness probe script `livenessProbe.sh` will invoke this custom script after the existing script performs its own checks. This element is optional and is for advanced usage only. Its value is not set by default. If the custom script fails with non-zero exit status, then pod will fail the liveness probe and Kubernetes will restart the container. If the script specified by this element value is not found, then it is ignored.",
+          "type": "string"
+        },
         "restartVersion": {
           "description": "Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers.",
           "type": "string"
@@ -1404,10 +1419,16 @@ window.onload = function() {
       "properties": {
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }
@@ -1454,9 +1475,6 @@ window.onload = function() {
       ]
     },
     "Map": {
-      "additionalProperties": {
-        "type": "string"
-      },
       "type": "object"
     },
     "Model": {
@@ -1479,9 +1497,56 @@ window.onload = function() {
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
         },
+        "onlineUpdate": {
+          "description": "Online update option for Model In Image dynamic update.",
+          "$ref": "#/definitions/OnlineUpdate"
+        },
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
+        }
+      }
+    },
+    "MonitoringExporterSpecification": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "configuration": {
+          "x-kubernetes-preserve-unknown-fields": "true",
+          "description": "The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter",
+          "$ref": "#/definitions/Map"
+        }
+      }
+    },
+    "OnlineUpdate": {
+      "type": "object",
+      "properties": {
+        "onNonDynamicChanges": {
+          "description": "Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are \u0027CommitUpdateOnly\u0027 (default), and \u0027CommitUpdateAndRoll\u0027. \n\n If set to \u0027CommitUpdateOnly\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. \n\n If set to \u0027CommitUpdateAndRoll\u0027 and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. \n\n For more information, see the runtime update section of the Model in Image user guide.",
+          "type": "string",
+          "enum": [
+            "CommitUpdateAndRoll",
+            "CommitUpdateOnly"
+          ]
+        },
+        "enabled": {
+          "description": "Enable online update. Default is \u0027false\u0027.",
+          "type": "boolean"
+        },
+        "wdtTimeouts": {
+          "$ref": "#/definitions/WDTTimeouts"
         }
       }
     },
@@ -1578,6 +1643,9 @@ window.onload = function() {
         },
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "env": {
@@ -1593,6 +1661,9 @@ window.onload = function() {
         },
         "nodeSelector": {
           "description": "Selector which must match a Node\u0027s labels for the Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "volumeMounts": {
@@ -1604,6 +1675,9 @@ window.onload = function() {
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "runtimeClassName": {
@@ -1662,10 +1736,16 @@ window.onload = function() {
         },
         "annotations": {
           "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         },
         "labels": {
           "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
           "$ref": "#/definitions/Map"
         }
       }
@@ -1737,6 +1817,43 @@ window.onload = function() {
         "subsystemName": {
           "description": "Name of subsystem providing symptom information.",
           "type": "string"
+        }
+      }
+    },
+    "WDTTimeouts": {
+      "type": "object",
+      "properties": {
+        "setServerGroupsTimeoutMillis": {
+          "description": "WDT set server groups timeout for extending a JRF domain configured cluster in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "connectTimeoutMillis": {
+          "description": "WDT connect to WebLogic admin server timeout in milliseconds. Default: 120000.",
+          "type": "number"
+        },
+        "undeployTimeoutMillis": {
+          "description": "WDT application or library undeployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "deployTimeoutMillis": {
+          "description": "WDT application or library deployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "startApplicationTimeoutMillis": {
+          "description": "WDT application start timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "activateTimeoutMillis": {
+          "description": "WDT activate WebLogic configuration changes timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "stopApplicationTimeoutMillis": {
+          "description": "WDT application stop timeout in milliseconds. Default: 180000.",
+          "type": "number"
+        },
+        "redeployTimeoutMillis": {
+          "description": "WDT application or library redeployment timeout in milliseconds. Default: 180000.",
+          "type": "number"
         }
       }
     }
