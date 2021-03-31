@@ -189,62 +189,21 @@ function createDomainHome {
     wdtDomainType=JRF
   fi
 
-
-  $WIT_DIR/imagetool/bin/imagetool.sh update \
-      --fromImage $domainHomeImageBase \
-      --tag "${BUILD_IMAGE_TAG}" \
-      --wdtModel ${scriptDir}/${wdtModelFile} \
-      --wdtVariables ${domainPropertiesOutput} \
-      --wdtOperation CREATE \
-      --wdtVersion ${WDT_VERSION} \
-      --wdtDomainType ${wdtDomainType} \
-      --wdtDomainHome ${domainHome} #--chown=oracle:root
-
-      #--wdtRunRCU \
-  return
-
-  cp ${domainPropertiesOutput} ${dockerPropsDir}
-
-  # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="${dockerPropsDir}/domain_security.properties"
-  passwordFile="${dockerPropsDir}/domain_security.properties"
-
-  rcuPropFile="${dockerPropsDir}/rcu.properties"
-  rcuSecurityPropFile="${dockerPropsDir}/rcu_security.properties"
- 
-  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
-  if [ ! -f $usernameFile ]; then
-    usernameFile="${dockerPropsDir}/adminuser.properties"
-    passwordFile="${dockerPropsDir}/adminpass.properties"
-  fi
-  
-  sed -i -e "s|myusername|${username}|g" $usernameFile
-  sed -i -e "s|welcome1|${password}|g" $passwordFile
-
-  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
-  sed -i -e "s|InfraDB:1521/InfraPDB1.us.oracle.com|${rcuDatabaseURL}|g" $rcuPropFile
-
-  cp -f ${scriptDir}/common/Dockerfile ${dockerDir}/Dockerfile
-  cp -f ${scriptDir}/common/createFMWDomain.sh ${dockerDir}/container-scripts
-
-  if [ ! -z $domainHomeImageBase ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
-  fi
-
-  cp ${domainPropertiesOutput} ${dockerPropsDir}
-  sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg EXPOSE_T3_CHANNEL ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg FMW_DOMAIN_TYPE ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg T3_CHANNEL_PORT ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg T3_PUBLIC_ADDRESS ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-
-  cp -f ${scriptDir}/common/createFMWDomain.py \
-        ${dockerDir}/container-scripts/createFMWDomain.py
-
-  # Set WDT_VERSION in case dockerDir references a WDT sample
-  # (wdtVersion comes from the inputs file)
-  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
-  bash ${dockerDir}/build.sh
+  cmd="
+    $WIT_DIR/imagetool/bin/imagetool.sh update
+      --fromImage \"$domainHomeImageBase\"
+      --tag \"${BUILD_IMAGE_TAG}\"
+      --wdtModel \"${scriptDir}/${wdtModelFile}\" 
+      --wdtVariables \"${domainPropertiesOutput}\"
+      --wdtOperation CREATE
+      --wdtVersion ${WDT_VERSION} 
+      --wdtDomainType ${wdtDomainType} 
+      --wdtDomainHome \"${domainHome}\"
+  "
+  echo @@ "Info: About to run the following WIT command:"
+  echo "$cmd"
+  echo
+  eval $cmd
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
