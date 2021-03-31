@@ -190,7 +190,7 @@ function createDomainHome {
       --wdtModel \"${scriptDir}/wdt_model_dynamic.yaml\"
       --wdtVariables \"${domainPropertiesOutput}\"
       --wdtOperation CREATE
-      --wdtVersion ${wdtVersion}
+      --wdtVersion ${WDT_VERSION}
       --wdtDomainHome \"${domainHome}\" --chown=oracle:root
     "
     echo @@ "Info: About to run the following WIT command:"
