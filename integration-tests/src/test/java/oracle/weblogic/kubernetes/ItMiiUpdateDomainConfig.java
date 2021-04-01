@@ -271,10 +271,10 @@ class ItMiiUpdateDomainConfig {
   @Order(1)
   @DisplayName("Check the HTTP server logs are written to PersistentVolume")
   public void testMiiHttpServerLogsAreOnPV() {
-    String[] podNames = {domainUid + "-" + managedServerPrefix + "1", domainUid + "-" + managedServerPrefix + "2"};
+    String[] podNames = {managedServerPrefix + "1", managedServerPrefix + "2"};
     for (String pod : podNames) {
-      String curlCmd = "curl -v"
-          + "http://" + pod + ":8001/sample-war/index.jsp";
+      String curlCmd = "for i in {1..100}; do curl -v "
+          + "http://" + pod + ":8001/sample-war/index.jsp; done";
       logger.info("Command to send HTTP request and get HTTP response {0} ", curlCmd);
       ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
           "/bin/sh", "-c", curlCmd));
@@ -287,7 +287,7 @@ class ItMiiUpdateDomainConfig {
         fail("Failed to access sample application " + execResult.stderr());
       }
     }
-    String[] servers = {managedServerPrefix + "1", managedServerPrefix + "2"};
+    String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
       logger.info("Checking HTTP server logs are written on PV and look for string sample-war/index.jsp in log");
       checkLogsOnPV("grep sample-war/index.jsp /shared/logs/" + server + "_access.log", adminServerPodName);
