@@ -254,7 +254,7 @@ class ItMiiUpdateDomainConfig {
    * The test looks for the string RUNNING in server log
    */
   @Test
-  @Order(20)
+  @Order(1)
   @DisplayName("Check the server logs are written to PersistentVolume")
   public void testMiiServerLogsAreOnPV() {
 
@@ -268,7 +268,7 @@ class ItMiiUpdateDomainConfig {
    * logs
    */
   @Test
-  @Order(1)
+  @Order(2)
   @DisplayName("Check the HTTP server logs are written to PersistentVolume")
   public void testMiiHttpServerLogsAreOnPV() {
     String[] podNames = {managedServerPrefix + "1", managedServerPrefix + "2"};
@@ -303,7 +303,7 @@ class ItMiiUpdateDomainConfig {
    * using the public nodeport of the administration server.
    */
   @Test
-  @Order(2)
+  @Order(3)
   @DisplayName("Verify the pre-configured SystemResources in the domain")
   public void testMiiCheckSystemResources() {
 
@@ -343,7 +343,7 @@ class ItMiiUpdateDomainConfig {
    * Verify SystemResources are deleted from the domain.
    */
   @Test
-  @Order(3)
+  @Order(4)
   @DisplayName("Delete SystemResources from the domain")
   public void testMiiDeleteSystemResources() {
 
@@ -408,7 +408,7 @@ class ItMiiUpdateDomainConfig {
    * Verify JMS Server logs are written on PV.
    */
   @Test
-  @Order(4)
+  @Order(5)
   @DisplayName("Add new JDBC/JMS SystemResources to the domain")
   public void testMiiAddSystemResources() {
 
@@ -478,7 +478,7 @@ class ItMiiUpdateDomainConfig {
    * the spec level replica count to zero(default).
    */
   @Test
-  @Order(5)
+  @Order(6)
   @DisplayName("Add a dynamic cluster to the domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
@@ -538,7 +538,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(6)
+  @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
@@ -615,7 +615,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from new cluster are in running state.
    */
   @Test
-  @Order(7)
+  @Order(8)
   @DisplayName("Add a configured cluster to the domain")
   public void testMiiAddConfiguredCluster() {
 
@@ -687,7 +687,7 @@ class ItMiiUpdateDomainConfig {
    * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
-  @Order(8)
+  @Order(9)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   public void testMiiUpdateWebLogicCredential() {
     final boolean VALID = true;
@@ -759,7 +759,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure that the cluster can be scaled down below 2 servers.
    */
   @Test
-  @Order(9)
+  @Order(10)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   public void testMiiUpdateDynamicClusterSize() {
 
