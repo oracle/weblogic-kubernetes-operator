@@ -127,6 +127,8 @@ function initialize {
   validateCommonInputs
 
   initOutputDir
+
+  domain_type="WLS"
 }
 
 # create domain configmap using what is in the createDomainFilesDir

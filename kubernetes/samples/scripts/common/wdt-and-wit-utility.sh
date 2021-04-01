@@ -141,7 +141,6 @@ function run_wdt {
     local domain_home_dir=$domain_dir/$domain_uid
   fi 
 
-  echo domain_home_dir = $domain_home_dir
   mkdir -p $domain_home_dir
 
   # Output files and directories.

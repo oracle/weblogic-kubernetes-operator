@@ -145,7 +145,7 @@ function initialize {
     cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
          ${scriptDir}/common/createFMWDomain.py
   fi
-  
+  domain_type=${fmwDomainType}
 }
 
 # create domain configmap using what is in the createDomainFilesDir

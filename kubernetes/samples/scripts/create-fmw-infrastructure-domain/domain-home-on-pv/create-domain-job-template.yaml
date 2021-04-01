@@ -76,6 +76,8 @@ spec:
               value: "%EXPOSE_T3_CHANNEL_PREFIX%"
             - name: https_proxy
               value: "%HTTPS_PROXY%"
+            - name: DOMAIN_TYPE
+              value: "%DOMAIN_TYPE%"
       volumes:
         - name: create-fmw-infra-sample-domain-job-cm-volume
           configMap:

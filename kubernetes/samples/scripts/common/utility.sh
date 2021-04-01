@@ -519,6 +519,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
     sed -i -e "s|%HTTPS_PROXY%|${https_proxy}|g" ${createJobOutput}
+    sed -i -e "s|%DOMAIN_TYPE%|${domain_type}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
