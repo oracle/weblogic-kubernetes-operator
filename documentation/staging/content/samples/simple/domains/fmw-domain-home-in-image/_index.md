@@ -169,7 +169,7 @@ The following parameters can be provided in the inputs file.
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `domain1` |
 | `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
 | `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
-| `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9,10, or `LATEST`.  | `LATEST` |
+| `witVersion` | Version of the WebLogic Image Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
 value of some of the properties specified in the inputs YAML file. Those properties include
@@ -483,19 +483,19 @@ The generated YAML file in the `/<path to output-directory>/weblogic-domains/<do
 $ kubectl delete -f domain.yaml
 ```
 
-#### Delete the generated image
+#### Delete the generated image.
 
-The generated image can be deleted by using `docker rmi` command when the image is no longer needed.
+When no longer needed, delete the generated image by using the`docker rmi` command.
 Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
 
 ```shell
 $ docker rmi domain-home-in-image:12.2.1.4
 ```
 
-#### Delete the tools directory
+#### Delete the tools directory.
 
-Clean up the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed to by the `create-domain.sh` script if they are no longer needed.
-By default, they are installed under the `/tmp/dhii-sample/tools` directory.
+When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
+By default, they are installed under `/tmp/dhii-sample/tools` directory.
 
 ```shell
 $ rm -rf /tmp/dhii-sample/tools/

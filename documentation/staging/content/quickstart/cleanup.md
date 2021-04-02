@@ -74,18 +74,18 @@ weight: 7
     $ kubectl delete namespace traefik
     ```
 
-#### Delete the generated image
+#### Delete the generated image.
 
-1.  The generated image can be deleted by using `docker rmi` command when the image is no longer needed.
+1.  When no longer needed, delete the generated image by using the `docker rmi` command.
     Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
 
     ```shell
     $ docker rmi domain-home-in-image:12.2.1.4
     ```
 
-#### Delete the tools directory
+#### Delete the tools directory.
 
-1.  Clean up the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed to by the `create-domain.sh` script if they are no longer needed.
+1.  When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
 
     ```shell
     $ rm -rf /tmp/dhii-sample/tools/
