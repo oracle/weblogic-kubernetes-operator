@@ -144,7 +144,7 @@ function initialize {
 
   failIfValidationErrors
 
-  validateCommonInputs
+  validateCommonInputs "fmw-domain-home-in-image"
 
   validateBooleanInputParamsSpecified logHomeOnPV
   failIfValidationErrors
