@@ -924,4 +924,4 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
      directory.
    - Or see the more advanced `introspectDomain.sh` and `rollDomain.sh` among
-     the [Domain life-cycle sample scripts]({{< relref "/samples/simple/domains/lifecycle/_index.md">}}).
+     the [Domain lifecycle sample scripts]({{< relref "/samples/simple/domains/lifecycle/_index.md">}}).
