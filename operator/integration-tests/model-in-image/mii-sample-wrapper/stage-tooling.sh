@@ -68,7 +68,7 @@ download_zip() {
     local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
     echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $tempfile' to find location of latest version."
     curl $curl_parms -fL $LOCATION -o $tempfile
-    LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
+    LOCATION=https://github.com/$(cat $tempfile | grep "releases/download/.*/$ZIPFILE" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
     rm -f $tempfile
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
     echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
