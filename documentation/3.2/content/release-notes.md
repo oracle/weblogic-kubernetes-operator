@@ -38,7 +38,7 @@ draft: false
 
 ### Change log
 
-#### Operator 3.2.0
+#### Operator 3.2.1
 
 Updated several dependencies, including the Oracle Linux base for the container image.
 
