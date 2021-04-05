@@ -85,6 +85,8 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 
 ### Introspection use cases
 
+The following sections describe typical use cases for rerunning the introspector.
+
 #### Adding clusters or Managed Servers to a Domain in PV configuration
 
 When you have an existing WebLogic domain home on a persistent volume (Domain in PV) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.
