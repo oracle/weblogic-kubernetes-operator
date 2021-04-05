@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| April 5, 2021 | v3.2.1 | no | Updated several dependencies, including the Oracle Linux base for the container image. |
 | March 31, 2021 | v3.2.0 | no | Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes. |
 | March 1, 2021 | v3.1.4 | no | Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies. |
 | February 12, 2021 | v3.1.3 | no | Resolved a pair of issues related to the operator running well in very large Kubernetes clusters. |
@@ -36,6 +37,10 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.2.1
+
+Updated several dependencies, including the Oracle Linux base for the container image.
 
 #### Operator 3.2.0
 

@@ -7,7 +7,7 @@ An operator is an application-specific controller that extends Kubernetes to cre
 #### Clone the operator repository to a Cloud Shell instance ####
 First, clone the operator git repository to OCI Cloud Shell.
 ```shell
-$ git clone --branch v3.2.0 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.1 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 The output should be similar to the following:
 ```shell
@@ -65,7 +65,7 @@ Note the arguments and values:
 - The name of the Helm release.
 - The relative path to the Helm chart.
 - **namespace**: The namespace where the operator is to be deployed.
-- **image**: The prebuilt operator 3.2.0 image, available on the public GitHub Container Registry.
+- **image**: The prebuilt operator image, available on the public GitHub Container Registry.
 - **serviceAccount**: The service account required to run the operator.
 - **enableClusterRoleBinding**: Grants the operator privileges in all cluster namespaces.
 - **domainNamespaceSelectionStrategy**: Chooses how the operator will select namespaces it manages.
@@ -78,7 +78,7 @@ Execute the following `helm install`:
 $ helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0" \
+  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.2.1" \
   --set "serviceAccount=sample-weblogic-operator-sa" \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \

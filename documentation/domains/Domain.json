@@ -590,7 +590,7 @@
       "type": "object",
       "properties": {
         "image": {
-          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0",
+          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.1",
           "type": "string"
         },
         "imagePullPolicy": {
