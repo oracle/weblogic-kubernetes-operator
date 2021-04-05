@@ -6,7 +6,7 @@ package oracle.kubernetes.operator;
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
-  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0";
+  String DEFAULT_EXPORTER_IMAGE = "ghcr.io/oracle/weblogic-monitoring-exporter:2.0.1";
   String EXPORTER_CONTAINER_NAME = "monitoring-exporter";
   String ALWAYS_IMAGEPULLPOLICY = ImagePullPolicy.Always.name();
   String IFNOTPRESENT_IMAGEPULLPOLICY = ImagePullPolicy.IfNotPresent.name();

@@ -10,7 +10,7 @@ weight: 3
 1. Pull the operator image:
 
     ```shell
-    $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0
+    $ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.1
     ```
 
 1. Pull the Traefik ingress controller image:
