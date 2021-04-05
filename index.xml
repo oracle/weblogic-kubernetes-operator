@@ -389,7 +389,7 @@ The Oracle Database images are only supported for non-production use. For more d
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.0   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.1   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -837,7 +837,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     March 31, 2021 v3.2.0 no Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes.   March 1, 2021 v3.1.4 no Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     April 5, 2021 v3.2.1 no Updated several dependencies, including the Oracle Linux base for the container image.   March 31, 2021 v3.2.0 no Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes.   March 1, 2021 v3.1.4 no Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies.</description>
     </item>
     
   </channel>
