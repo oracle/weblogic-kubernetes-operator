@@ -756,7 +756,7 @@ _Here are some of the expected WebLogic pod labels after an online update succes
      * Each WebLogic Server pod's `weblogic.introspectVersion` label will match `domain.spec.introspectVersion` after it is rolled.
      * The domain status `Available` condition will have a `Status` of `True` after the roll completes.
    * Actions required:
-     * None. All changes will complete once the operator initiated domain roll completes.
+     * None. All changes will complete after the operator initiated domain roll completes.
      * See [Online update handling of non-dynamic WebLogic configuration changes](#online-update-handling-of-non-dynamic-weblogic-configuration-changes).
 
 1. _Changing any of the domain resource [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}) in addition to `domain.spec.introspectVersion`, `spec.configuration.secrets`, `spec.configuration.model.onlineUpdate`, or `spec.configuration.model.configMap`._
@@ -923,5 +923,5 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
    - See `patch-restart-version.sh` and `patch-introspect-version.sh` in
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
      directory.
-   - Or see the more advanced `introspectDomain.sh` and `rollDomain.sh` among
+   - Or, see the more advanced `introspectDomain.sh` and `rollDomain.sh` among
      the [Domain lifecycle sample scripts]({{< relref "/samples/simple/domains/lifecycle/_index.md">}}).
