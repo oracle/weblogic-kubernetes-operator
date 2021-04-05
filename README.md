@@ -17,8 +17,8 @@ Oracle is finding ways for organizations using WebLogic Server to run important 
 The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
 ***
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.2.0.
-This release was published on March 26, 2021.
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.2.1.
+This release was published on April 5, 2021.
 ***
 
 # Documentation
