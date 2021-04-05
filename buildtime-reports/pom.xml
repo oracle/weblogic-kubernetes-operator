@@ -8,7 +8,7 @@
     <parent>
         <artifactId>operator-parent</artifactId>
         <groupId>oracle.kubernetes</groupId>
-        <version>3.3.0</version>
+        <version>3.2.1</version>
     </parent>
 
     <artifactId>buildtime-reports</artifactId>
