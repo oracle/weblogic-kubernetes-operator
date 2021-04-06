@@ -12,20 +12,20 @@
     <title>Domain introspection :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1617645395" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1617719402" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1617719402"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1617645395"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1617645395"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1617719402"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1617719402"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1617645395"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1617719402"></script>
 
     
   </div>
@@ -3276,6 +3276,15 @@
         
 
 
+<h4 id="contents">Contents</h4>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#when-introspection-occurs-automatically">When introspection occurs automatically</a></li>
+<li><a href="#initiating-introspection">Initiating introspection</a></li>
+<li><a href="#failed-introspection">Failed introspection</a></li>
+<li><a href="#introspection-use-cases">Introspection use cases</a></li>
+</ul>
+<h4 id="overview">Overview</h4>
 <p>This document describes domain introspection, when it occurs automatically, and how and when to initiate additional introspections of the domain configuration in the Oracle WebLogic Server in Kubernetes environment.</p>
 <p>In order to manage the operation of WebLogic domains in Kubernetes, the Oracle WebLogic Kubernetes Operator analyzes the WebLogic
 domain configuration using an &ldquo;introspection&rdquo; job. This Job will be named <code>DOMAIN_UID-introspector</code>, will be run in the same namespace as the Domain, and must successfully complete before the operator will begin to start WebLogic Server instances. Because each of the
@@ -3326,8 +3335,9 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 </div>
 
 <h3 id="introspection-use-cases">Introspection use cases</h3>
-<h4 id="adding-clusters-or-managed-servers-to-the-weblogic-domain-configuration">Adding clusters or Managed Servers to the WebLogic domain configuration</h4>
-<p>When you have an existing WebLogic domain home on a persistent volume (&ldquo;Domain in PV&rdquo;) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.</p>
+<p>The following sections describe typical use cases for rerunning the introspector.</p>
+<h4 id="adding-clusters-or-managed-servers-to-a-domain-in-pv-configuration">Adding clusters or Managed Servers to a Domain in PV configuration</h4>
+<p>When you have an existing WebLogic domain home on a persistent volume (Domain in PV) and you currently have WebLogic Server instances running, it is now possible to define new WebLogic clusters or Managed Servers in the domain configuration and start these new instances without affecting the life cycle of any WebLogic Server instances that are already running.</p>
 <p>Prior to operator 3.0.0, this was not possible because there was no mechanism to initiate introspection other than a full domain shut down and restart and so the operator was unaware of the new clusters or Managed Servers. Now, after updating the domain configuration, you can initiate introspection by changing the <code>introspectVersion</code>.</p>
 <p>For instance, if you had a domain configuration with a single cluster named &ldquo;cluster-1&rdquo; then your Domain YAML file may have content like this:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
@@ -3357,6 +3367,8 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
 <div class="notices note" ><p>Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is &ldquo;dynamic&rdquo;. For instance, the Data Source &ldquo;passwordEncrypted&rdquo; attribute is dynamic while the &ldquo;Url&rdquo; attribute is non-dynamic.</p>
 </div>
 
+<h4 id="distributing-changes-to-running-model-in-image-domains">Distributing changes to running Model in Image domains</h4>
+<p>The operator supports rerunning the introspector in order to propagate <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">model updates</a> to a running Model in Image domain.</p>
 
 
 <footer class="footline">
@@ -5450,19 +5462,19 @@ when <code>spec.logHome</code> is configured and <code>spec.logHomeEnabled</code
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1617719402"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1617719402"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1617645395"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1617719402"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

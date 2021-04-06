@@ -12,20 +12,20 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1617645395" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1617645395" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1617719402" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1617719402" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1617719402"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1617645395"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1617645395"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1617719402"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1617719402"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1617645395"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1617719402"></script>
 
     
   </div>
@@ -4089,7 +4089,7 @@ successful online model update.</li>
 </li>
 <li>Actions required:
 <ul>
-<li>If you want the non-dynamic changes to take effect, then restart the pod(s) with the <code>weblogic.configChangesPendingRestart=true</code> label (such as by initiating a domain roll).</li>
+<li>None. All changes will complete after the operator initiated domain roll completes.</li>
 <li>See <a href="#online-update-handling-of-non-dynamic-weblogic-configuration-changes">Online update handling of non-dynamic WebLogic configuration changes</a>.</li>
 </ul>
 </li>
@@ -4225,7 +4225,7 @@ apply offline configuration changes to a running domain is by altering the Domai
 the Domain <code>spec.introspectVersion</code>. Here are some common ways to alter either of these fields:</p>
 <ul>
 <li>
-<p>You can alter <code>restartVersion</code> interactively using <code>kubectl edit -n MY_NAMESPACE domain MY_DOMAINUID</code>.</p>
+<p>You can alter <code>restartVersion</code> or <code>introspectVersion</code> interactively using <code>kubectl edit -n MY_NAMESPACE domain MY_DOMAINUID</code>.</p>
 </li>
 <li>
 <p>If you have your domain&rsquo;s resource file, then you can alter this file and call <code>kubectl apply -f</code> on the file.</p>
@@ -4267,11 +4267,14 @@ currentIV<span style="color:#f92672">=</span><span style="color:#66d9ef">$(</spa
 </code></pre></div></li>
 <li>
 <p>You can use a WebLogic Server Kubernetes Operator sample script that invokes
-the same commands that are described in the previous bulleted item. See
-<code>patch-restart-version.sh</code> and <code>patch-introspect-version.sh</code> in
-the
-<code>kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/</code>
-Model in Image sample directory.</p>
+the same commands that are described in the previous bulleted item.</p>
+<ul>
+<li>See <code>patch-restart-version.sh</code> and <code>patch-introspect-version.sh</code> in
+the <code>kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/</code>
+directory.</li>
+<li>Or, see the more advanced <code>introspectDomain.sh</code> and <code>rollDomain.sh</code> among
+the <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">Domain lifecycle sample scripts</a>.</li>
+</ul>
 </li>
 </ul>
 
@@ -6367,19 +6370,19 @@ Model in Image sample directory.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1617719402"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1617645395"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1617645395"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1617719402"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1617719402"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1617645395"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1617719402"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
