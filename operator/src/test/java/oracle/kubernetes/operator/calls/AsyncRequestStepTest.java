@@ -159,9 +159,7 @@ public class AsyncRequestStepTest {
   @Test
   public void afterMultipleRetriesAndSuccessfulCallback_nextStepAppliedWithValue() {
     sendMultipleFailedCallbackWithSetTime(0, 2);
-
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
-
     assertThat(nextStep.result, equalTo(smallList));
   }
 
