@@ -203,12 +203,29 @@ class ItStickySession {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
+    final int maxRetry = 60;
 
     // create Voyager ingress resource
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    List<String>  hostNames =
-        installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+    List<String>  hostNames = null;
+
+    for (int i = 0; i < maxRetry; i++) {
+      hostNames =
+          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+      if (hostNames != null && !hostNames.isEmpty()) {
+        break;
+      }
+
+      try {
+        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
+        Thread.sleep(1000);
+      } catch (InterruptedException ignore) {
+        // ignore
+      }
+    }
 
     withStandardRetryPolicy
         .conditionEvaluationListener(
