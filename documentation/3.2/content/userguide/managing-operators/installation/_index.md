@@ -14,7 +14,7 @@ and uninstall the operator.
  - [Install the operator Helm chart](#install-the-operator-helm-chart)
  - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
  - [Upgrade the operator](#upgrade-the-operator)
- - [Remove the operator](#remove-the-operator)
+ - [Uninstall the operator](#uninstall-the-operator)
 
 #### Install the operator Helm chart
 
