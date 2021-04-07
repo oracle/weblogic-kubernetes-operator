@@ -366,8 +366,7 @@ public class ReadHealthStepTest {
 
     @Override
     public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      return new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
+      return new V1ServiceSpec().clusterIP("127.0.0.1");
     }
   }
 
@@ -380,8 +379,7 @@ public class ReadHealthStepTest {
 
     @Override
     public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
+      return new V1ServiceSpec().clusterIP("None");
     }
   }
 
