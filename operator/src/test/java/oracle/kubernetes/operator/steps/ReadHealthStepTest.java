@@ -84,12 +84,7 @@ public class ReadHealthStepTest {
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
   private final V1Service service = createStub(V1ServiceStub.class);
   private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
-  private final V1Service headlessMSServiceListenPortOnly = createStub(V1HeadlessMSServiceStubListenPortOnly.class);
-  private final V1Service headlessMSServiceListenAndSSLPort = createStub(V1HeadlessMSServiceStubListenAndSSLPort.class);
-  private final V1Service headlessMSServiceListenPortAndNAP = createStub(V1HeadlessMSServiceStubListenPortAndNAP.class);
-  private final V1Service headlessMSServiceSSLPortAndNAP = createStub(V1HeadlessMSServiceStubSSLPortAndNAP.class);
-  private final V1Service headlessMSServiceAdminNAPOnly = createStub(V1HeadlessMSServiceStubAdminNAPOnly.class);
-  private final V1Service headlessMSServiceNonAdminNAPOnly = createStub(V1HeadlessMSServiceStubNonAdminNAPOnly.class);
+  private final V1Service headlessMSService = createStub(V1HeadlessMSServiceStub.class);
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -157,7 +152,7 @@ public class ReadHealthStepTest {
   @Test
   public void whenReadAdminServerHealth_decrementRemainingServers() {
     selectServer(ADMIN_NAME);
-    defineResponse(200, "");
+    defineResponse(200, "", "http://127.0.0.1:3456");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -211,7 +206,7 @@ public class ReadHealthStepTest {
   public void whenServerRunning_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(200, OK_RESPONSE);
+    defineResponse(200, OK_RESPONSE, "http://127.0.0.1:8001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -230,7 +225,7 @@ public class ReadHealthStepTest {
   @Test
   public void whenAdminPodIPNull_verifyServerHealth() {
     selectServer(ADMIN_NAME, true);
-    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:7001");
+    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -240,7 +235,7 @@ public class ReadHealthStepTest {
   @Test
   public void whenAdminPodIPNull_requestSendWithCredentials() {
     selectServer(ADMIN_NAME, true);
-    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:7001");
+    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
     testSupport.runSteps(readHealthStep);
 
@@ -263,7 +258,7 @@ public class ReadHealthStepTest {
   public void whenServerOverloaded_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(500, "");
+    defineResponse(500, "", "http://127.0.0.1:8001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -287,7 +282,7 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortOnly_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenPortOnly);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     System.out.println("server = " + server);
     server.setListenPort(8001);
@@ -300,7 +295,7 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortAndSSLPort_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenAndSSLPort);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.setSslListenPort(7002);
@@ -313,7 +308,7 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortAndNAP_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenPortAndNAP);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
@@ -326,7 +321,7 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerSSLPortAndNAP_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceSSLPortAndNAP);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
@@ -339,7 +334,7 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithAdminNAPOnly_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceAdminNAPOnly);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("admin", "admin", 8888, 8888));
@@ -352,10 +347,10 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithNonAdminNAPOnly_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceNonAdminNAPOnly);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "http://dyn-managed-server2.Test:9001");
+    defineResponse(200, "", "http://dyn-managed-server2.Test:7001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -372,7 +367,6 @@ public class ReadHealthStepTest {
     @Override
     public V1ServiceSpec getSpec() {
       List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(7001).name("default"));
       return new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
     }
   }
@@ -387,7 +381,6 @@ public class ReadHealthStepTest {
     @Override
     public V1ServiceSpec getSpec() {
       List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(7001).name("default"));
       return new V1ServiceSpec().clusterIP("None").ports(ports);
     }
   }
@@ -397,70 +390,6 @@ public class ReadHealthStepTest {
     public V1ObjectMeta getMetadata() {
       return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER2).namespace("Test")
           .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubListenPortOnly extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(8001).name("default").protocol("t3"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubListenAndSSLPort extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(8001).name("default").protocol("t3"));
-      ports.add(new V1ServicePort().port(7002).name("https-secure").protocol("t3s"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubListenPortAndNAP extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(8001).name("default").protocol("t3"));
-      ports.add(new V1ServicePort().port(9001).name("nap1").protocol("t3"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubSSLPortAndNAP extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(9001).name("nap1").protocol("t3"));
-      ports.add(new V1ServicePort().port(7002).name("https-secure").protocol("t3s"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubAdminNAPOnly extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(8888).name("admin").protocol("admin"));
-      ports.add(new V1ServicePort().port(7002).name("default-secure").protocol("t3s"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStubNonAdminNAPOnly extends V1HeadlessMSServiceStub {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(9001).name("nap1").protocol("t3"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
     }
   }
 

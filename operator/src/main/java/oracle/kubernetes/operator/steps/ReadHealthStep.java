@@ -10,7 +10,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,8 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServicePort;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -120,55 +117,8 @@ public class ReadHealthStep extends Step {
     }
 
     protected PortDetails getPortDetails() {
-      Integer port = getPort();
-      return new PortDetails(port, getWlsServerConfig().isPortSecure(port));
-    }
-
-    private Integer getPort() {
-      return Optional.ofNullable(getService().getSpec())
-            .map(this::getServicePort)
-            .map(V1ServicePort::getPort)
-            .orElse(-1);
-    }
-
-    private V1ServicePort getServicePort(V1ServiceSpec spec) {
-      return getAdminProtocolPort(spec).orElse(getWlsServerListenPort(spec));
-
-    }
-
-    private V1ServicePort getWlsServerListenPort(V1ServiceSpec spec) {
-      return Optional.ofNullable(spec)
-          .map(V1ServiceSpec::getPorts)
-          .stream()
-          .flatMap(Collection::stream)
-          .filter(this::matchesListenPort)
-          .findFirst()
-          .orElse(getFirstPort(spec));
-    }
-
-    private boolean matchesListenPort(V1ServicePort port) {
-      return Optional.ofNullable(port)
-          .map(V1ServicePort::getPort)
-          .orElse(0)
-          .equals(getWlsServerConfig().getListenPort());
-    }
-
-    private Optional<V1ServicePort> getAdminProtocolPort(V1ServiceSpec spec) {
-      return Optional.ofNullable(spec.getPorts())
-            .stream()
-            .flatMap(Collection::stream)
-            .filter(this::isAdminProtocolPort)
-            .findFirst();
-    }
-
-    private boolean isAdminProtocolPort(V1ServicePort port) {
-      return Optional.ofNullable(getWlsServerAdminProtocolPort())
-          .map(p -> p.equals(port.getPort()))
-          .orElse(false);
-    }
-
-    private V1ServicePort getFirstPort(V1ServiceSpec spec) {
-      return Optional.ofNullable(spec).map(V1ServiceSpec::getPorts).map(l -> l.get(0)).orElse(null);
+      Integer port = getWlsServerAdminProtocolPort();
+      return new PortDetails(port, !port.equals(getWlsServerConfig().getListenPort()));
     }
 
     private Integer getWlsServerAdminProtocolPort() {
