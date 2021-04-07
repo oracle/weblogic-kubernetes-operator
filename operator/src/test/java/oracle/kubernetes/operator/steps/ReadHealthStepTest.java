@@ -18,7 +18,6 @@ import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
