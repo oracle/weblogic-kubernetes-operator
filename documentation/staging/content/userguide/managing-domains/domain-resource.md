@@ -112,6 +112,8 @@ If you are using Kubernetes 1.16 or later, you can access the description of any
 
 ```shell
 $ kubectl explain domain.spec.domainUID
+```
+```
 KIND:     Domain
 VERSION:  weblogic.oracle/v8
 
@@ -208,7 +210,7 @@ Elements related to specifying and overriding WebLogic domain configuration:
 Elements related to Kubernetes Pod and Service generation:
 
 * `serverPod`: Customization affecting the generation of Pods for WebLogic Server instances.
-* `serverService`: Customization affecting the generation of Kubernetes Services for WebLogic Server instances.
+* `serverService`: Customization affecting the generation of ClusterIP Services for WebLogic Server instances.
 
 Sub-sections related to the Administration Server, specific clusters, or specific Managed Servers:
 

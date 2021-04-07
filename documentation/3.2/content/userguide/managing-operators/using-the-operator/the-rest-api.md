@@ -51,8 +51,14 @@ commands to add the certificate to the trust store:
 
 ```shell
 $ sudo cp /tmp/operator.cert.pem /etc/pki/ca-trust/source/anchors/
+```
+```shell
 $ sudo update-ca-trust enable; sudo update-ca-trust extract
+```
+```shell
 $ openssl x509 -noout -hash -in /tmp/operator.cert.pem
+```
+```shell
 $ sudo ln -s /etc/pki/ca-trust/source/anchors/operator.cert.pem /etc/pki/tls/certs/e242d2da.0
 ```
 In the final command, the file name `e242d2da.0` should be the output of the previous command plus the suffix `.0`.
@@ -64,7 +70,7 @@ For other operating systems, consult your operating system's documentation (or G
 Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
 operator's REST services.  Please read the important caveats above before using this script:
 
-```shell
+```bash
 #!/bin/bash
 KUBERNETES_SERVER=$1
 URL_TAIL=$2

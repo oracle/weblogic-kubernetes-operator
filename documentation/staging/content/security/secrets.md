@@ -34,7 +34,8 @@ an example of creating a Kubernetes `generic secret` is as follows:
 ```shell
 $ kubectl -n domain1-ns create secret generic domain1-weblogic-credentials \
   --from-file=username --from-file=password
-
+```
+```shell
 $ kubectl -n domain1-ns label secret domain1-weblogic-credentials \
   weblogic.domainUID=domain1 weblogic.domainName=domain1
 ```
@@ -55,6 +56,8 @@ The operator's introspector job will expect the secret key names to be:
 For example, here is the result when describing the Kubernetes `Secret`:
 ```shell
 $ kubectl -n domain1-ns describe secret domain1-weblogic-credentials
+```
+```
 Name:         domain1-weblogic-credentials
 Namespace:    domain1-ns
 Labels:       weblogic.domainName=domain1

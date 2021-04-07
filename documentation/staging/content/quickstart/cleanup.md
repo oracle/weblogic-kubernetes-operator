@@ -14,7 +14,7 @@ weight: 7
     $ helm uninstall sample-domain1-ingress -n sample-domain1-ns
     ```
 
-1.	Remove the Kubernetes resources associated with the domain by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
+1.	Remove the Kubernetes resources associated with the domain by using the sample [`delete-weblogic-domain-resources`](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh) script:
 
     ```shell
     $ kubernetes/samples/scripts/delete-domain/delete-weblogic-domain-resources.sh -d sample-domain1
@@ -24,6 +24,8 @@ weight: 7
 
     ```shell
     $ kubectl get pods -n sample-domain1-ns
+    ```
+    ```shell
     $ kubectl get domains -n sample-domain1-ns
     ```
 

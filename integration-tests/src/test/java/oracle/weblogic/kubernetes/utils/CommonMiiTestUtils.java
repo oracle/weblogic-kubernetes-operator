@@ -278,7 +278,9 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
-    securityList.add(dbSecretName);
+    if (dbSecretName != null) {
+      securityList.add(dbSecretName);
+    }
 
     // create the domain CR
     Domain domain = new Domain()
@@ -305,7 +307,7 @@ public class CommonMiiTestUtils {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))

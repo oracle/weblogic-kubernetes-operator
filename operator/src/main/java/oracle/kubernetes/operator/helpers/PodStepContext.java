@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -185,7 +186,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology.getAdminServerName();
   }
 
-  private Integer getAsPort() {
+  Integer getAsPort() {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
@@ -288,6 +289,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return Optional.ofNullable(scan).map(WlsServerConfig::getAdminPort).orElse(null);
   }
 
+  abstract Integer getOldMetricsPort();
 
   abstract String getServerName();
 
@@ -466,9 +468,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean canUseCurrentPod(V1Pod currentPod) {
 
-    boolean useCurrent =
-        getRequiredHash(currentPod).equals(AnnotationHelper.getHash(currentPod))
-            && canUseNewDomainZip(currentPod);
+    boolean useCurrent = hasCorrectPodHash(currentPod) && canUseNewDomainZip(currentPod);
 
     if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
       LOGGER.fine(
@@ -480,11 +480,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     return useCurrent;
   }
 
-  private String getRequiredHash(V1Pod currentPod) {
-    if (isLegacyPod(currentPod)) {
-      return adjustedHash(currentPod);
+  private boolean hasCorrectPodHash(V1Pod currentPod) {
+    if (!isLegacyPod(currentPod)) {
+      return AnnotationHelper.getHash(getPodModel()).equals(AnnotationHelper.getHash(currentPod));
     } else {
-      return AnnotationHelper.getHash(getPodModel());
+      return canAdjustHashToMatch(currentPod, AnnotationHelper.getHash(currentPod));
     }
   }
 
@@ -492,13 +492,18 @@ public abstract class PodStepContext extends BasePodStepContext {
     return !hasLabel(currentPod, OPERATOR_VERSION);
   }
 
+  private boolean canAdjustHashToMatch(V1Pod currentPod, String requiredHash) {
+    return requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_0))
+          || requiredHash.equals(adjustedHash(currentPod, this::addLegacyPrometheusAnnotationsFrom_3_1));
+  }
+
   private boolean hasLabel(V1Pod pod, String key) {
     return pod.getMetadata().getLabels().containsKey(key);
   }
 
-  private String adjustedHash(V1Pod currentPod) {
+  private String adjustedHash(V1Pod currentPod, Consumer<V1Pod> prometheusAdjustment) {
     V1Pod recipe = createPodRecipe();
-    addLegacyPrometheusAnnotations(recipe);
+    prometheusAdjustment.accept(recipe);
 
     if (isLegacyMiiPod(currentPod)) {
       copyLabel(currentPod, recipe, MODEL_IN_IMAGE_DOMAINZIP_HASH);
@@ -507,7 +512,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     return AnnotationHelper.createHash(recipe);
   }
 
-  private void addLegacyPrometheusAnnotations(V1Pod pod) {
+  private void addLegacyPrometheusAnnotationsFrom_3_0(V1Pod pod) {
+    AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getOldMetricsPort());
+  }
+
+  private void addLegacyPrometheusAnnotationsFrom_3_1(V1Pod pod) {
     AnnotationHelper.annotateForPrometheus(pod.getMetadata(), "/wls-exporter", getMetricsPort());
   }
 

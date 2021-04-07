@@ -35,9 +35,10 @@ Infrastructure domains and WebLogic Server domains.
 
 FMW Infrastructure domains are supported using the Domain in PV,
 Domain in Image, or Model in Image [domain home source types]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
-If you plan to experiment with upper stack products (which are not officially supported
-by the operator yet), we strongly recommend using the domain on a persistent
+If you plan to experiment with upper stack products, we strongly recommend using the domain on a persistent
 volume approach.
+
+For more information about the deployment of Oracle Fusion Middleware products on Kubernetes, see https://oracle.github.io/fmw-kubernetes/.
 
 #### Limitations
 
@@ -107,6 +108,8 @@ or e-delivery, you create your image by running the provided script:
 
 ```shell
 $ cd docker-images/OracleFMWInfrastructure/dockerfiles
+```
+```shell
 $ ./buildDockerImage.sh -v 12.2.1.4 -s
 ```
 
@@ -121,6 +124,8 @@ by running the provided script:
 
 ```shell
 $ cd docker-images/OracleFMWInfrastructure/samples/12213-patch-fmw-for-k8s
+```
+```shell
 $ ./build.sh
 ```
 
@@ -399,7 +404,7 @@ You also need to create a Kubernetes Secret containing the credentials for the d
 When you create your domain using the sample provided below, it will obtain the RCU credentials
 from this secret.
 
-We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-rcu-credentials/README.md)
+We provide a [sample](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-rcu-credentials/README.md)
 that demonstrates how to create the secret.  The schema owner user name required will be the
 `schemaPrefix` value followed by an underscore and a component name, such as `FMW1_STB`.  The schema owner
 password will be the password you provided for regular schema users during RCU creation.

@@ -14,7 +14,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
@@ -31,7 +31,7 @@
           ]
         },
         "adminService": {
-          "description": "Customization affecting the generation of the Kubernetes Service for the Administration Server. These settings can also specify the creation of a second NodePort Service to expose specific channels or network access points outside the Kubernetes cluster.",
+          "description": "Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service.",
           "$ref": "#/definitions/AdminService"
         },
         "restartVersion": {
@@ -51,14 +51,14 @@
           }
         },
         "annotations": {
-          "description": "Annotations to associate with the Administration Server\u0027s Service(s).",
+          "description": "Annotations to associate with the Administration Server\u0027s NodePort Service, if it is created.",
           "additionalProperties": {
             "type": "string"
           },
           "$ref": "#/definitions/Map"
         },
         "labels": {
-          "description": "Labels to associate with the Administration Server\u0027s Service(s).",
+          "description": "Labels to associate with the Administration Server\u0027s NodePort Service, if it is created.",
           "additionalProperties": {
             "type": "string"
           },
@@ -94,7 +94,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "maxUnavailable": {
@@ -296,7 +296,7 @@
           "type": "string"
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
@@ -524,7 +524,7 @@
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "serverName": {
@@ -810,7 +810,7 @@
       "type": "object",
       "properties": {
         "precreateService": {
-          "description": "If true, the operator will create Services even for Managed Server instances without running Pods.",
+          "description": "If true, the operator will create ClusterIP Services even for WebLogic Server instances without running Pods.",
           "type": "boolean"
         },
         "annotations": {
