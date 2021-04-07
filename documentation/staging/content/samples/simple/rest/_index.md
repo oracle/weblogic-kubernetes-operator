@@ -46,12 +46,16 @@ certificate and private key:
 
 ```shell
 $ echo "externalRestEnabled: true" > my_values.yaml
+```
+```shell
 $ generate-external-rest-identity.sh \
   -a "DNS:${HOSTNAME},DNS:localhost,IP:127.0.0.1" \
   -n weblogic-operator-ns -s weblogic-operator-identity >> my_values.yaml
-#
+```
+```shell
 $ kubectl -n weblogic-operator-ns describe secret weblogic-operator-identity
-#
+```
+```shell
 $ helm install my_operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-ns --values my_values.yaml --wait
 ```

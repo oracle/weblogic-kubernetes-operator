@@ -41,9 +41,13 @@ Here are the steps:
 
    ```shell
    $ kubectl -n sample-domain1-ns delete configmap sample-domain1-wdt-config-map
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create configmap sample-domain1-wdt-config-map \
      --from-file=/tmp/mii-sample/model-configmaps/workmanager \
      --from-file=/tmp/mii-sample/model-configmaps/datasource
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label configmap sample-domain1-wdt-config-map \
      weblogic.domainUID=sample-domain1
    ```
@@ -59,12 +63,16 @@ Here are the steps:
 
    ```shell
    $ kubectl -n sample-domain1-ns delete secret sample-domain1-datasource-secret
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns create secret generic \
       sample-domain1-datasource-secret \
       --from-literal='user=sys as sysdba' \
       --from-literal='password=Oradoc_db1' \
       --from-literal='max-capacity=10' \
       --from-literal='url=jdbc:oracle:thin:@oracle-db.default.svc.cluster.local:1521/devpdb.k8s'
+   ```
+   ```shell
    $ kubectl -n sample-domain1-ns label  secret \
       sample-domain1-datasource-secret \
       weblogic.domainUID=sample-domain1
@@ -157,7 +165,8 @@ Here are the steps:
      {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
    ```shell
      $ ./wl-pod-wait.sh -?
-
+   ```
+   ```
      Usage:
 
        wl-pod-wait.sh [-n mynamespace] [-d mydomainuid] \
@@ -199,6 +208,8 @@ Here are the steps:
      {{%expand "Click here to view sample output from `wl-pod-wait.sh` that shows the introspector running and that shows each domain pod reach its new `introspectVersion`." %}}
    ```shell
    $ ./wl-pod-wait.sh -n sample-domain1-ns -d sample-domain1 -p 3
+   ```
+   ```
    @@ [2020-11-21T05:55:26][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
    @@ [2020-11-21T05:55:26][seconds=0] Info:   ready='true'
    @@ [2020-11-21T05:55:26][seconds=0] Info:   image='model-in-image:WLS-v2'

@@ -31,7 +31,7 @@ see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-stor
 
 #### Failure during domain creation with persistent volume sample
 
-The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
+The existing sample for [creation of a domain home on persistent volume](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv)
 uses a Kubernetes Job to create the domain. The sample uses an
 `initContainers` section to change the file ownership which will
 fail for OCI FSS created volumes used with an OKE cluster.
@@ -41,7 +41,8 @@ causing the Kubernetes Job to fail. The failure is seen in the
 description of the Kubernetes Job pod:
 ```shell
 $ kubectl describe -n domain1-ns pod domain1-create-weblogic-sample-domain-job-wdkvs
-...
+```
+```
 Init Containers:
   fix-pvc-owner:
     Container ID:  docker://7051b6abdc296c76e937246df03d157926f2f7477e63b6af3bf65f6ae1ceddee
@@ -61,11 +62,10 @@ Init Containers:
     Ready:          False
     Restart Count:  0
     Environment:    <none>
-...
 ```
 
 #### Updating the domain on persistent volume sample
-In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
+In the following snippet of the [create-domain-job-template.yaml](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-job-template.yaml),
 you can see the updated `command` for the init container:
 ```yaml
 apiVersion: batch/v1

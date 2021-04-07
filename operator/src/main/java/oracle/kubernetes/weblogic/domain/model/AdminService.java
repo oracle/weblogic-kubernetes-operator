@@ -25,10 +25,10 @@ public class AdminService implements ServiceConfigurator {
           + "not be created.")
   private final List<Channel> channels = new ArrayList<>();
 
-  @Description("Labels to associate with the Administration Server's Service(s).")
+  @Description("Labels to associate with the Administration Server's NodePort Service, if it is created.")
   private final Map<String, String> labels = new HashMap<>();
 
-  @Description("Annotations to associate with the Administration Server's Service(s).")
+  @Description("Annotations to associate with the Administration Server's NodePort Service, if it is created.")
   private final Map<String, String> annotations = new HashMap<>();
 
   /**

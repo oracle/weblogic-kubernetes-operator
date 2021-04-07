@@ -1,0 +1,22 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+topology:
+    Server:
+        "admin-server":
+            SSL:
+             Enabled: true
+             ListenPort: 7002
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: "cluster-1"
+            KeyStores: 'CustomIdentityAndCustomTrust'
+            CustomTrustKeyStorePassPhraseEncrypted: 'changeit'
+            CustomIdentityKeyStorePassPhraseEncrypted: 'changeit'
+            CustomIdentityKeyStoreFileName: '/shared/IdentityKeyStore.jks'
+            CustomTrustKeyStoreFileName: '/shared/TrustKeyStore.jks'
+            SSL:
+             Enabled: true
+             ListenPort: 8002
+             ServerPrivateKeyAlias: 'mykey'
+             ServerPrivateKeyPassPhraseEncrypted: 'changeit'
+             HostnameVerificationIgnored: true

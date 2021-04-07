@@ -50,13 +50,13 @@ $ export STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_R
 
 Verify the successful output by examining the `STORAGE_KEY` environment variable.  It must not be empty.  It must be a long ASCII string.
 
-We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, naming the secret with value `${NAME_PREFIX}azure-secret`. Please run:
+We will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, naming the secret with value `${NAME_PREFIX}azure-secret`. Please run:
 
 ```shell
 # Please change persistentVolumeClaimNameSuffix if you changed pre-defined value "regcred" before generating the configuration files.
 $ export SECRET_NAME_AZURE_FILE="${NAME_PREFIX}azure-secret"
 
-#cd kubernetes/samples/scripts/create-kuberetes-secrets
+#cd kubernetes/samples/scripts/create-kubernetes-secrets
 $ ./create-azure-storage-credentials-secret.sh -s $SECRET_NAME_AZURE_FILE -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
 ```
 

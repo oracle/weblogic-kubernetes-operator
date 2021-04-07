@@ -14,18 +14,16 @@ update to the documentation, follow this process:
     $ git clone https://github.com/oracle/weblogic-kubernetes-operator
     ```
 
-2. Create a new branch from master.
+2. Create a new branch.
    
     ```shell
-    $ git checkout master
-    $ git pull origin master
     $ git checkout -b your-branch
     ```
 
 3. Make your documentation updates by editing the source files in
-`docs-source/content`.
+`documentation/staging/content`.
 {{% notice note %}}
-Make sure you check in the changes from the `docs-source/content` area _only_;
+Make sure you check in the changes from the `documentation/staging/content` area _only_;
 do not build the site and check in the static files.
 {{% /notice %}}
 
@@ -33,11 +31,11 @@ do not build the site and check in the static files.
 these commands. The site will be available on the URL shown here:
 
     ```shell
-    $ cd docs-source
+    $ cd documentation/staging
     $ hugo server -b http://localhost:1313/weblogic-kubernetes-operator
     ```
 
 5. When you are ready to submit your changes, push your branch to `origin`
 and submit a pull request. Remember to follow the guidelines in the
-[CONTRIBUTING](https://github.com/oracle/weblogic-kubernetes-operator/blob/master/CONTRIBUTING.md)
+[CONTRIBUTING](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/CONTRIBUTING.md)
 document.

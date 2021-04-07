@@ -39,6 +39,8 @@ $ helm get values --all weblogic-operator
 List the Helm releases for a specified namespace or all namespaces:
 ```shell
 $ helm list --namespace <namespace>
+```
+```shell
 $ helm list --all-namespaces
 ```
 
@@ -296,7 +298,7 @@ dedicated: false
 In the `dedicated` mode, the operator does not require permissions to access the cluster-scoped Kubernetes resources, such as `CustomResourceDefinitions`, `PersistentVolumes`, and `Namespaces`. In those situations, the operator may skip some of its operations, such as verifying the WebLogic domain `CustomResoruceDefinition` `domains.weblogic.oracle` (and creating it when it is absent), watching namespace events, and cleaning up `PersistentVolumes` as part of deleting a domain.
 
 {{% notice note %}}
-It is the responsibility of the administrator to make sure that the required `CustomResourceDefinition (CRD)` `domains.weblogic.oracle` is deployed in the Kubernetes cluster before the operator is installed. The creation of the `CRD` requires the Kubernetes `cluster-admin` privileges. A YAML file for creating the `CRD` can be found at [domain-crd.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/develop/kubernetes/crd/domain-crd.yaml).
+It is the responsibility of the administrator to make sure that the required `CustomResourceDefinition (CRD)` `domains.weblogic.oracle` is deployed in the Kubernetes cluster before the operator is installed. The creation of the `CRD` requires the Kubernetes `cluster-admin` privileges. A YAML file for creating the `CRD` can be found at [domain-crd.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/crd/domain-crd.yaml).
 {{% /notice %}}
 
 ##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
@@ -527,6 +529,8 @@ externalDebugHttpPort:  30777
 A new `FAILED` Helm release is created.
 ```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
+```
+```
 Error: release op2 failed: secrets "weblogic-operator-secrets" already exists
 ```
 
@@ -544,6 +548,8 @@ See https://github.com/helm/helm/issues/2349
 A new `FAILED` Helm release is created.
 ```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
+```
+```
 Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-operator-rolebinding-namespace" already exists
 ```
 
@@ -569,6 +575,8 @@ For example, if you delete this release, then the first operator will end up wit
 A new `FAILED` Helm release is created.
 ```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
+```
+```
 Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 ```
 
@@ -582,6 +590,8 @@ To recover:
 The `helm upgrade` fails and moves the release to the `FAILED` state.
 ```shell
 $ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
+```
+```
 Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
 ```
 
@@ -618,6 +628,8 @@ To recover:
 A new `FAILED` Helm release is created.
 ```shell
 $ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
+```
+```
 Error: release op2 failed: namespaces "myuser-d2-ns" not found
 ```
 
@@ -632,6 +644,8 @@ To recover:
 The `helm upgrade` fails and moves the release to the `FAILED` state.
 ```shell
 $ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-hooks
+```
+```
 Error: UPGRADE FAILED: failed to create resource: namespaces "myuser-d2-ns" not found
 ```
 To recover:
