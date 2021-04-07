@@ -15,14 +15,14 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** Contains configuration of a WebLogic server. */
 public class WlsServerConfig {
-  String name;
-  Integer listenPort;
-  String listenAddress;
-  String clusterName;
-  Integer sslListenPort;
-  String machineName;
-  Integer adminPort;
-  List<NetworkAccessPoint> networkAccessPoints;
+  private String name;
+  private Integer listenPort;
+  private String listenAddress;
+  private String clusterName;
+  private Integer sslListenPort;
+  private String machineName;
+  private Integer adminPort;
+  private List<NetworkAccessPoint> networkAccessPoints;
 
   public WlsServerConfig() {
   }
@@ -140,7 +140,7 @@ public class WlsServerConfig {
    * @param serverMap Map containing parsed Json "servers" or "serverTemplates" element
    * @return Machine name contained in the Json element
    */
-  static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
+  private static String getMachineNameFromJsonMap(Map<String, Object> serverMap) {
     // serverMap contains a "machine" entry from the REST call which is in the form: "machine":
     // ["machines", "domain1-machine1"]
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -317,7 +317,7 @@ public class WlsServerConfig {
   }
 
   public String getClusterName() {
-    return this.clusterName;
+    return clusterName;
   }
 
   public boolean isAdminPortEnabled() {
@@ -405,8 +405,38 @@ public class WlsServerConfig {
         adminProtocolPortSecure = false;
       }
     }
-
     return adminProtocolPortSecure;
+  }
+
+  /**
+   * Whether the given port is on a secure channel.
+   *
+   * @return True if the port matches one of the secure channels configured on this server
+   */
+  public boolean isPortSecure(Integer port) {
+    boolean portSecure = false;
+    boolean found = false;
+    if (networkAccessPoints != null) {
+      for (NetworkAccessPoint nap : networkAccessPoints) {
+        if ((port.equals(nap.getListenPort()) || port.equals(nap.getPublicPort()))) {
+          if (nap.isAdminProtocol()) {
+            portSecure = true;
+          }
+          found = true;
+          break;
+        }
+      }
+    }
+    if (!found) {
+      if (port.equals(adminPort)) {
+        portSecure = true;
+      } else if (port.equals(sslListenPort)) {
+        portSecure = true;
+      } else if (port.equals(listenPort)) {
+        portSecure = false;
+      }
+    }
+    return portSecure;
   }
 
   /**

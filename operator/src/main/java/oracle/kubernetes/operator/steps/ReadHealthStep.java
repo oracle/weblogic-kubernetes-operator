@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
@@ -108,6 +109,7 @@ public class ReadHealthStep extends Step {
     }
 
     private HttpRequest createRequest() {
+      LOGGER.fine("Create REST request to service URL: " + getRequestUrl());
       return createRequestBuilder(getRequestUrl())
             .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
             .build();
@@ -119,7 +121,7 @@ public class ReadHealthStep extends Step {
 
     protected PortDetails getPortDetails() {
       Integer port = getPort();
-      return new PortDetails(port, !port.equals(getWlsServerConfig().getListenPort()));
+      return new PortDetails(port, getWlsServerConfig().isPortSecure(port));
     }
 
     private Integer getPort() {
@@ -130,7 +132,25 @@ public class ReadHealthStep extends Step {
     }
 
     private V1ServicePort getServicePort(V1ServiceSpec spec) {
-      return getAdminProtocolPort(spec).orElse(getFirstPort(spec));
+      return getAdminProtocolPort(spec).orElse(getWlsServerListenPort(spec));
+
+    }
+
+    private V1ServicePort getWlsServerListenPort(V1ServiceSpec spec) {
+      return Optional.ofNullable(spec)
+          .map(V1ServiceSpec::getPorts)
+          .stream()
+          .flatMap(Collection::stream)
+          .filter(this::matchesListenPort)
+          .findFirst()
+          .orElse(getFirstPort(spec));
+    }
+
+    private boolean matchesListenPort(V1ServicePort port) {
+      return Optional.ofNullable(port)
+          .map(V1ServicePort::getPort)
+          .orElse(0)
+          .equals(getWlsServerConfig().getListenPort());
     }
 
     private Optional<V1ServicePort> getAdminProtocolPort(V1ServiceSpec spec) {
@@ -142,17 +162,18 @@ public class ReadHealthStep extends Step {
     }
 
     private boolean isAdminProtocolPort(V1ServicePort port) {
-      return Optional.ofNullable(getAdminProtocolChannelName()).map(n -> n.equals(port.getName())).orElse(false);
+      return Optional.ofNullable(getWlsServerAdminProtocolPort())
+          .map(p -> p.equals(port.getPort()))
+          .orElse(false);
     }
 
     private V1ServicePort getFirstPort(V1ServiceSpec spec) {
       return Optional.ofNullable(spec).map(V1ServiceSpec::getPorts).map(l -> l.get(0)).orElse(null);
     }
 
-    private String getAdminProtocolChannelName() {
-      return getWlsServerConfig().getAdminProtocolChannelName();
+    private Integer getWlsServerAdminProtocolPort() {
+      return getWlsServerConfig().getLocalAdminProtocolChannelPort();
     }
-
 
     private WlsServerConfig getWlsServerConfig() {
       // standalone server that does not belong to any cluster
@@ -160,11 +181,19 @@ public class ReadHealthStep extends Step {
 
       if (serverConfig == null) {
         // dynamic or configured server in a cluster
-        String clusterName = getService().getMetadata().getLabels().get(CLUSTERNAME_LABEL);
+        String clusterName = getClusterNameFromServiceLabel();
         WlsClusterConfig cluster = getWlsDomainConfig().getClusterConfig(clusterName);
         serverConfig = findServerConfig(cluster);
       }
       return serverConfig;
+    }
+
+    private String getClusterNameFromServiceLabel() {
+      return Optional.of(getService())
+          .map(V1Service::getMetadata)
+          .map(V1ObjectMeta::getLabels)
+          .map(m -> m.get(CLUSTERNAME_LABEL))
+          .orElse(null);
     }
 
     private WlsServerConfig findServerConfig(WlsClusterConfig wlsClusterConfig) {
