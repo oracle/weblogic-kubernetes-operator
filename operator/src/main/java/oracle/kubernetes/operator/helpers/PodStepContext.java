@@ -811,10 +811,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
-
-    if (getDomainHomeSourceType() == DomainSourceType.FromModel) {
-      addEnvVar(vars, ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR, "false");
-    }
   }
 
   private String getDomainHome() {

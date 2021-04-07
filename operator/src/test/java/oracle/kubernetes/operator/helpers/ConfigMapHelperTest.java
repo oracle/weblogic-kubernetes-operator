@@ -69,7 +69,7 @@ public class ConfigMapHelperTest {
     "model-diff-v1.py",
     "modelInImage.sh",
     "model-wdt-create-filter.py",
-    "wdt_mii_filter.py",
+    "model_wdt_mii_filter.py",
     "model-filters.json",
     "model-encryption-util.py"
   };

@@ -37,7 +37,7 @@ WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
-WDT_MII_FILTER="/weblogic-operator/scripts/wdt_mii_filter.py"
+WDT_MII_FILTER="/weblogic-operator/scripts/model_wdt_mii_filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0

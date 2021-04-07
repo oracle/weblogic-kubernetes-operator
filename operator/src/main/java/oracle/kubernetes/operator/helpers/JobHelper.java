@@ -314,11 +314,6 @@ public class JobHelper {
             Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
       }
 
-
-      if (getDomainHomeSourceType() == FromModel) {
-        addEnvVar(vars, ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR, "false");
-      }
-
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);
