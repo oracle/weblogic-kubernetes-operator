@@ -430,8 +430,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         NextAction na = new NextAction();
         if (!retriesLeft()) {
           return null;
-        } else if (statusCode == 0) {
-          na.invoke(retryStep, packet);
         } else {
           LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
               requestParams.call, requestParams.namespace, requestParams.name);
