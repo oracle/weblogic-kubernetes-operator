@@ -24,6 +24,9 @@ topology:
         "cluster-1-template":
             Cluster: "cluster-1"
             ListenPort : 8001
+            WebServer:
+                WebServerLog:
+                    BufferSizeKb: 1
 
 appDeployments:
     Application:

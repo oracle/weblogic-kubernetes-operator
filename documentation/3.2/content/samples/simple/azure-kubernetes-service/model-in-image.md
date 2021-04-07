@@ -30,7 +30,7 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```shell
-$ git clone --branch v3.2.0 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.1 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 ```shell
 $ cd weblogic-kubernetes-operator
