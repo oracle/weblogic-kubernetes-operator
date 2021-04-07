@@ -80,23 +80,8 @@ public class ReadHealthStepTest {
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
-  private static final String DYNAMIC_MANAGED_SERVER3 = "dyn-managed-server3";
-  private static final String DYNAMIC_MANAGED_SERVER4 = "dyn-managed-server4";
-  private static final String DYNAMIC_MANAGED_SERVER5 = "dyn-managed-server5";
-  private static final String DYNAMIC_MANAGED_SERVER6 = "dyn-managed-server6";
-  private static final String DYNAMIC_MANAGED_SERVER7 = "dyn-managed-server7";
 
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
-  private static final WlsDomainConfigSupport configSupport =
-      new WlsDomainConfigSupport(DOMAIN_NAME)
-          .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
-          .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
-          .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
-          .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1, DYNAMIC_MANAGED_SERVER2,
-              DYNAMIC_MANAGED_SERVER3, DYNAMIC_MANAGED_SERVER4, DYNAMIC_MANAGED_SERVER5, DYNAMIC_MANAGED_SERVER6,
-              DYNAMIC_MANAGED_SERVER7
-          )
-          .withAdminServerName(ADMIN_NAME);
   private final V1Service service = createStub(V1ServiceStub.class);
   private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
   private final V1Service headlessMSServiceListenPortOnly = createStub(V1HeadlessMSServiceStubListenPortOnly.class);
@@ -115,10 +100,17 @@ public class ReadHealthStepTest {
   private final Map<String, String> serverStateMap = new HashMap<>();
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
-  private WlsDomainConfig wlsDomainConfig;
 
   @BeforeEach
   public void setup() throws NoSuchFieldException {
+    WlsDomainConfigSupport configSupport =
+        new WlsDomainConfigSupport(DOMAIN_NAME)
+            .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
+            .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
+            .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
+            .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1, DYNAMIC_MANAGED_SERVER2)
+            .withAdminServerName(ADMIN_NAME);
+
     mementos.add(TestUtils.silenceOperatorLogger()
         .collectLogMessages(logRecords, LOG_KEYS)
         .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
@@ -129,8 +121,7 @@ public class ReadHealthStepTest {
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(SERVER_HEALTH_MAP, serverHealthMap);
     testSupport.addToPacket(SERVER_STATE_MAP, serverStateMap);
-    wlsDomainConfig = configSupport.createDomainConfig();
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, wlsDomainConfig);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
     testSupport.addToPacket(REMAINING_SERVERS_HEALTH_TO_READ, new AtomicInteger(1));
 
     DomainProcessorTestSetup.defineSecretData(testSupport);
@@ -297,7 +288,8 @@ public class ReadHealthStepTest {
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortOnly_decrementRemainingServers() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenPortOnly);
-    WlsServerConfig server = getDynamicClusterServer(2);
+    WlsServerConfig server = getDynamicClusterServer2();
+    System.out.println("server = " + server);
     server.setListenPort(8001);
     defineResponse(200, "", "http://dyn-managed-server2.Test:8001");
 
@@ -308,11 +300,11 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortAndSSLPort_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER3, headlessMSServiceListenAndSSLPort);
-    WlsServerConfig server = getDynamicClusterServer(3);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenAndSSLPort);
+    WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.setSslListenPort(7002);
-    defineResponse(200, "", "https://dyn-managed-server3.Test:7002");
+    defineResponse(200, "", "https://dyn-managed-server2.Test:7002");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -321,11 +313,11 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerListenPortAndNAP_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER4, headlessMSServiceListenPortAndNAP);
-    WlsServerConfig server = getDynamicClusterServer(4);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenPortAndNAP);
+    WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "http://dyn-managed-server4.Test:8001");
+    defineResponse(200, "", "http://dyn-managed-server2.Test:8001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -334,11 +326,11 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithServerSSLPortAndNAP_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER5, headlessMSServiceSSLPortAndNAP);
-    WlsServerConfig server = getDynamicClusterServer(5);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceSSLPortAndNAP);
+    WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "https://dyn-managed-server5.Test:7002");
+    defineResponse(200, "", "https://dyn-managed-server2.Test:7002");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -347,11 +339,11 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithAdminNAPOnly_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER6, headlessMSServiceAdminNAPOnly);
-    WlsServerConfig server = getDynamicClusterServer(6);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceAdminNAPOnly);
+    WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("admin", "admin", 8888, 8888));
-    defineResponse(200, "", "https://dyn-managed-server6.Test:8888");
+    defineResponse(200, "", "https://dyn-managed-server2.Test:8888");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -360,18 +352,19 @@ public class ReadHealthStepTest {
 
   @Test
   public void whenReadDynamicManagedServerHealthWithNonAdminNAPOnly_decrementRemainingServers() {
-    selectServer(DYNAMIC_MANAGED_SERVER7, headlessMSServiceNonAdminNAPOnly);
-    WlsServerConfig server = getDynamicClusterServer(7);
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceNonAdminNAPOnly);
+    WlsServerConfig server = getDynamicClusterServer2();
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "http://dyn-managed-server7.Test:9001");
+    defineResponse(200, "", "http://dyn-managed-server2.Test:9001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getRemainingServersToRead(packet), equalTo(0));
   }
 
-  private WlsServerConfig getDynamicClusterServer(int num) {
-    return wlsDomainConfig.getClusterConfig(DYNAMIC_CLUSTER_NAME).getServerConfigs().get(num - 1);
+  private WlsServerConfig getDynamicClusterServer2() {
+    WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) testSupport.getPacket().get(DOMAIN_TOPOLOGY);
+    return wlsDomainConfig.getClusterConfig(DYNAMIC_CLUSTER_NAME).getServerConfigs().get(1);
   }
 
   public abstract static class V1ServiceStub extends V1Service {
@@ -399,12 +392,15 @@ public class ReadHealthStepTest {
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubListenPortOnly extends V1Service {
+  public abstract static class V1HeadlessMSServiceStub extends V1Service {
     @Override
     public V1ObjectMeta getMetadata() {
       return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER2).namespace("Test")
           .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
     }
+  }
+
+  public abstract static class V1HeadlessMSServiceStubListenPortOnly extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
@@ -414,12 +410,7 @@ public class ReadHealthStepTest {
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubListenAndSSLPort extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER3).namespace("Test")
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
+  public abstract static class V1HeadlessMSServiceStubListenAndSSLPort extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
@@ -430,12 +421,7 @@ public class ReadHealthStepTest {
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubListenPortAndNAP extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER4).namespace("Test")
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
+  public abstract static class V1HeadlessMSServiceStubListenPortAndNAP extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
@@ -446,28 +432,18 @@ public class ReadHealthStepTest {
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubSSLPortAndNAP extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER5).namespace("Test")
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
+  public abstract static class V1HeadlessMSServiceStubSSLPortAndNAP extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
       List<V1ServicePort> ports = new ArrayList<>();
       ports.add(new V1ServicePort().port(9001).name("nap1").protocol("t3"));
-      ports.add(new V1ServicePort().port(7002).name("default-secure").protocol("t3s"));
+      ports.add(new V1ServicePort().port(7002).name("https-secure").protocol("t3s"));
       return new V1ServiceSpec().clusterIP("None").ports(ports);
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubAdminNAPOnly extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER6).namespace("Test")
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
+  public abstract static class V1HeadlessMSServiceStubAdminNAPOnly extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
@@ -478,12 +454,7 @@ public class ReadHealthStepTest {
     }
   }
 
-  public abstract static class V1HeadlessMSServiceStubNonAdminNAPOnly extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER7).namespace("Test")
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
+  public abstract static class V1HeadlessMSServiceStubNonAdminNAPOnly extends V1HeadlessMSServiceStub {
 
     @Override
     public V1ServiceSpec getSpec() {
