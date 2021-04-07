@@ -181,6 +181,9 @@ function createDomainHome {
     echo "dumping output of ${domainPropertiesOutput}"
     cat ${domainPropertiesOutput}
 
+    encrypt_model wdt_model_dynamic.yaml
+    echo "dumping output of ${domainPropertiesOutput}"
+
     echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
     cmd="
@@ -191,7 +194,9 @@ function createDomainHome {
       --wdtVariables \"${domainPropertiesOutput}\"
       --wdtOperation CREATE
       --wdtVersion ${WDT_VERSION}
-      --wdtDomainHome \"${domainHome}\" --chown=oracle:root
+      --wdtDomainHome \"${domainHome}\"
+      --wdtEncryptionKey "abc"
+      --chown=oracle:root
     "
     echo @@ "Info: About to run the following WIT command:"
     echo "$cmd"

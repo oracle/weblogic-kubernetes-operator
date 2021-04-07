@@ -403,4 +403,35 @@ function install_wit_if_needed {
   return 0
 }
 
+function encrypt_model {
+
+  local oracle_home="$ORACLE_HOME"
+  local model_file=${1}
+
+  encryptKey=${encryptKey:-abc}
+  echo  -e "${encryptKey}\n${encryptKey}" > ${domainOutputDir}/key
+
+  cmd="
+    cat /shared/${domainOutputDir}/key |
+    /wdt/bin/encryptModel.sh \
+    -oracle_home ${oracle_home} \
+    -model_file /shared/${model_file} \
+    -variable_file /shared/${domainPropertiesOutput}
+  "
+  echo $cmd > ${domainOutputDir}/cmd.sh
+  chmod 755 ${domainOutputDir}/cmd.sh
+  echo @@ "Info: Encrypt Model: About to run the following command in docker container with image ${domainHomeImageBase}:"
+  cat ${scriptDir}/${domainOutputDir}/cmd.sh
+
+  chmod 766 ${domainPropertiesOutput}
+
+  docker run -it --rm -v ${scriptDir}:/shared -v ${WDT_DIR}/weblogic-deploy:/wdt ${domainHomeImageBase} /bin/bash -c /shared/${domainOutputDir}/cmd.sh || return 1
+
+  # clean up the generated files
+  rm ${domainOutputDir}/cmd.sh
+  rm ${domainOutputDir}/key
+
+  echo @@ "Info: encrypt_model Completed"
+}
+
 
