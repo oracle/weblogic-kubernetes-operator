@@ -992,23 +992,6 @@ public class JobHelperTest extends DomainValidationBaseTest {
     assertThat(job, notNullValue());
   }
 
-  @Test
-  public void whenDomainTypeIsFromModel_sitConfigOverrideDisabled() {
-    configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
-
-    assertThat(getMatchingContainerEnv(domainPresenceInfo, createJobSpec()),
-        hasEnvVar(ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR, "false")
-    );
-  }
-
-  @Test
-  public void whenDomainTypeIsDefaultImage_sitConfigOverrideEnabled() {
-    // Situational Config override defaults to true (enabled) if not specified
-    assertThat(getMatchingContainerEnv(domainPresenceInfo, createJobSpec()),
-        not(hasEnvVar(ServerEnvVars.FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR))
-    );
-  }
-
   private void runCreateJob() {
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
     testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));

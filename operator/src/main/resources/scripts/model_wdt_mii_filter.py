@@ -4,7 +4,8 @@
 # ------------
 # Description:
 # ------------
-#  This is a WDT filter for handling WLS configuration overrides.
+#  This is a model-in-image WDT filter for overriding WLS configuration, it
+#  replaces 'situational configuration overrides'.
 #
 
 import inspect
@@ -38,6 +39,9 @@ class OfflineWlstEnv(object):
 
     if model and 'topology' in model:
       self.DOMAIN_NAME = model['topology']['Name']
+      #if self.DOMAIN_NAME is None:
+      #  self.DOMAIN_NAME = self.getEnv("DOMAIN_NAME")
+      #  print "DOMAIN_NAME from env:  %s" % self.DOMAIN_NAME
 
   def getDomainName(self):
     return self.DOMAIN_NAME
@@ -149,10 +153,10 @@ def customizeServerTemplates(model):
      template = serverTemplates[template_name]
      cluster_name = getClusterNameOrNone(template)
      if cluster_name is not None:
-       customizeServerTemplate(topology, template_name, template)
+       customizeServerTemplate(topology, template)
 
 
-def customizeServerTemplate(topology, template_name, template):
+def customizeServerTemplate(topology, template):
   server_name_prefix = getServerNamePrefix(topology, template)
   domain_uid = env.getDomainUID()
   customizeLog(server_name_prefix + "${id}", template)
@@ -321,8 +325,6 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
   nap['TunnelingEnabled'] = 'false'
   nap['OutboundEnabled'] = 'true'
   nap['Enabled'] = 'true'
-  nap['TwoWaySSLEnabled'] = 'false'
-  nap['ClientCertificateEnforced'] = 'false'
 
 
 def customizeServerIstioNetworkAccessPoint(server, listen_address):

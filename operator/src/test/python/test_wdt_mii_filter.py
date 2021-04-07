@@ -2,7 +2,7 @@ import os
 import unittest
 import yaml
 
-import wdt_mii_filter
+import model_wdt_mii_filter
 
 
 class WdtUpdateFilterCase(unittest.TestCase):
@@ -55,7 +55,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     # Setup mock environment
     mock_env= MockOfflineWlstEnv()
     mock_env.open(model)
-    wdt_mii_filter.env = mock_env
+    model_wdt_mii_filter.env = mock_env
 
     return model
 
@@ -68,7 +68,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     # Setup mock environment
     mock_env= MockOfflineWlstEnv()
     mock_env.open(model)
-    wdt_mii_filter.env = mock_env
+    model_wdt_mii_filter.env = mock_env
 
     return model
 
@@ -84,7 +84,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
-    server_name_prefix = wdt_mii_filter.getServerNamePrefix(model['topology'], server_template)
+    server_name_prefix = model_wdt_mii_filter.getServerNamePrefix(model['topology'], server_template)
     self.assertEquals('managed-server', server_name_prefix, "Expected server name prefix to be \'managed-server\'")
 
 
@@ -93,7 +93,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     server_name = 'admin-server'
     server = model['topology']['Server'][server_name]
-    wdt_mii_filter.customizeServer(server, server_name)
+    model_wdt_mii_filter.customizeServer(server, server_name)
     listen_address = server['ListenAddress']
     self.assertEquals('sample-domain1-admin-server', listen_address, "Expected listen address to be \'sample-domain1-admin-server\'")
 
@@ -101,7 +101,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
-    wdt_mii_filter.customizeLog("managed-server${id}", server_template)
+    model_wdt_mii_filter.customizeLog("managed-server${id}", server_template)
     template_log_filename = server_template['Log']['FileName']
     self.assertEquals('/u01/logs/sample-domain1/managed-server${id}.log', template_log_filename, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
 
@@ -109,7 +109,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
-    wdt_mii_filter.customizeAccessLog("managed-server${id}", server_template)
+    model_wdt_mii_filter.customizeAccessLog("managed-server${id}", server_template)
     template_access_log = server_template['WebServer']['WebServerLog']['FileName']
     self.assertEquals('/u01/logs/sample-domain1/managed-server${id}_access.log', template_access_log, "Expected listen address to be \'/u01/logs/sample-domain1/managed-server${id}.log\'")
 
@@ -118,7 +118,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
-    wdt_mii_filter.customizeDefaultFileStore(server_template)
+    model_wdt_mii_filter.customizeDefaultFileStore(server_template)
     default_filestore = server_template['DefaultFileStore']['Directory']
     self.assertEquals('/u01/datahome', default_filestore, "Expected default file store directory to be \'/u01/datahome\'")
 
@@ -127,7 +127,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
 
     server_template = self.getServerTemplate(model)
-    wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
+    model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
     nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
     self.assertEquals('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
 
@@ -137,7 +137,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       model = self.getModel()
 
       server_template = self.getServerTemplate(model)
-      wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
+      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
       nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
       self.assertEquals('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
     finally:
@@ -151,7 +151,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
       template_name = 'cluster-1-template'
       server_template = self.getServerTemplate(model)
-      wdt_mii_filter.customizeManagedIstioNetworkAccessPoint(server_template, 'sample-domain1-managed-server${id}')
+      model_wdt_mii_filter.customizeManagedIstioNetworkAccessPoint(server_template, 'sample-domain1-managed-server${id}')
       naps = server_template.get('NetworkAccessPoint')
       self.assertGreater(len(naps), 1)
       names = naps.keys()
@@ -166,7 +166,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_customizeServerTemplates(self):
     model = self.getModel()
 
-    wdt_mii_filter.customizeServerTemplates(model)
+    model_wdt_mii_filter.customizeServerTemplates(model)
     listen_address = model['topology']['ServerTemplate']['cluster-1-template']['ListenAddress']
     self.assertEquals('sample-domain1-managed-server${id}', listen_address, "Expected listen address to be \'sample-domain1-managed-server${id}\'")
 
@@ -176,7 +176,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
     template_name = 'cluster-1-template'
 
     serverTemplate = topology['ServerTemplate'][template_name]
-    wdt_mii_filter.customizeServerTemplate(topology, template_name, serverTemplate)
+    model_wdt_mii_filter.customizeServerTemplate(topology, serverTemplate)
 
     # verify custom log in server template
     template_log_filename = serverTemplate['Log']['FileName']
@@ -192,43 +192,43 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
   def test_getClusterOrNone_returns_none(self):
     model = self.getModel()
-    cluster = wdt_mii_filter.getClusterOrNone(model, "cluster-2")
+    cluster = model_wdt_mii_filter.getClusterOrNone(model, "cluster-2")
     self.assertIsNone(cluster, "Did not expect to find cluster named \'cluster-2\'")
 
   def test_customize_node_manager_creds(self):
     model = self.getModel()
-    wdt_mii_filter.initSecretManager(wdt_mii_filter.getOfflineWlstEnv())
-    wdt_mii_filter.customizeNodeManagerCreds(model['topology'])
+    model_wdt_mii_filter.initSecretManager(model_wdt_mii_filter.getOfflineWlstEnv())
+    model_wdt_mii_filter.customizeNodeManagerCreds(model['topology'])
     self.assertEquals(MockOfflineWlstEnv.WLS_CRED_USERNAME, model['topology']['SecurityConfiguration']['NodeManagerUsername'], "Expected node manager username to be \'" + MockOfflineWlstEnv.WLS_CRED_USERNAME + "\'")
     self.assertEquals(MockOfflineWlstEnv.WLS_CRED_PASSWORD, model['topology']['SecurityConfiguration']['NodeManagerPasswordEncrypted'], "Expected node manager password to be \'" + MockOfflineWlstEnv.WLS_CRED_PASSWORD + "\'")
 
   def test_customizeDomainLogPath(self):
     model = self.getModel()
-    wdt_mii_filter.customizeDomainLogPath(model['topology'])
+    model_wdt_mii_filter.customizeDomainLogPath(model['topology'])
     self.assertEquals('/u01/logs/sample-domain1/sample-domain1.log', model['topology']['Log']['FileName'], "Expected domain log file name to be \'/u01/logs/sample-domain1/sample-domain1.log\'")
 
   def test_customizeLog_whenNoNameProvided(self):
     model = self.getModel()
-    wdt_mii_filter.customizeLog(None, model['topology'])
+    model_wdt_mii_filter.customizeLog(None, model['topology'])
     self.assertNotIn('Log', model['topology'], "Did not expect \'Log\' to be configured")
 
   def test_customizeCustomFileStores(self):
     model = self.getModel()
-    wdt_mii_filter.customizeCustomFileStores(model)
+    model_wdt_mii_filter.customizeCustomFileStores(model)
     self.assertEquals('/u01/datahome', model['resources']['FileStore']['FileStore-0']['Directory'], "Expected custom filestore directory \'/u01/datahome\'")
 
   def test_customizeServers(self):
     model = self.getModel()
-    wdt_mii_filter.customizeServers(model)
+    model_wdt_mii_filter.customizeServers(model)
 
 
-class MockOfflineWlstEnv(wdt_mii_filter.OfflineWlstEnv):
+class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
   WLS_CRED_USERNAME = 'weblogic'
   WLS_CRED_PASSWORD = 'password'
 
   def __init__(self):
-    wdt_mii_filter.OfflineWlstEnv.__init__(self)
+    model_wdt_mii_filter.OfflineWlstEnv.__init__(self)
 
   def encrypt(self, cleartext):
     return cleartext
