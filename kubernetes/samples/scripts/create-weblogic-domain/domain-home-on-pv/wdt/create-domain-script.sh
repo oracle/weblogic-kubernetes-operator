@@ -48,7 +48,7 @@
 #                  default:  https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-1.9.7/$WDT_INSTALL_ZIP_FILE
 #
 #   https_proxy    Proxy for downloading WDT_INSTALL_ZIP_URL.
-#                  default: "http://www-proxy-hqdc.us.oracle.com:80"
+#                  default: ""
 #                  (If set to empty the script will try with no proxy.)
 #
 #   https_proxy2   Alternate proxy for downloading WDT_INSTALL_ZIP_URL
@@ -82,7 +82,7 @@ WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-d
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
-https_proxy2=${https_proxy2-"http://www-proxy-hqdc.us.oracle.com:80"}
+https_proxy2=${https_proxy2-""}
 
 # Define functions
 
