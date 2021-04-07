@@ -54,8 +54,6 @@ alertmanagerFiles:
   alertmanager.yml:
     global:
       resolve_timeout: 5m
-      #http_config:
-       # proxy_url: 'http://www-proxy-hqdc.us.oracle.com:80'
 
     route:
       group_by: ['alertname']
