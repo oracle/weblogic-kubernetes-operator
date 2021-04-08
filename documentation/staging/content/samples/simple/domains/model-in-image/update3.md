@@ -102,11 +102,7 @@ Here are the steps for this use case:
 
      Run the following commands to create the model image and verify that it worked:
 
-     {{% notice note %}}
-     If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
-     {{% /notice %}}
-
-     ```shell
+      ```shell
      $ cd /tmp/mii-sample/model-images
      ```
      ```shell
