@@ -761,9 +761,9 @@ public class CommonMiiTestUtils {
         "introspector pod or metadata is null");
     try {
       String introspectorLog = getPodLog(introspectorPod.getMetadata().getName(), domainNamespace);
-      logger.info("Introspector pod log START***********************************");
+      logger.info("Introspector pod log START");
       logger.info(introspectorLog);
-      logger.info("Introspector pod log END***********************************");
+      logger.info("Introspector pod log END");
     } catch (Exception ex) {
       logger.info("Failed to get introspector pod log", ex);
     }
