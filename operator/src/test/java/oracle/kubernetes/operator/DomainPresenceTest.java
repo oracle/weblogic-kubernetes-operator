@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,7 +107,8 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .namespace(namespace)
                 .name(uid)
                 .resourceVersion("1")
-                .creationTimestamp(OffsetDateTime.now()));
+                .creationTimestamp(OffsetDateTime.now()))
+        .withStatus(new DomainStatus());
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {

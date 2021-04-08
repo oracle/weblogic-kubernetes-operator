@@ -777,7 +777,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * Modifies the factory to indicate that it should interrupt any current make-right thread.
      * @return the updated factory
      */
-    MakeRightDomainOperation interrupt() {
+    public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
     }
@@ -1091,6 +1091,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         };
 
+    LOGGER.fine("Starting fiber for domainUid -> " + domainUid + ", isWillInterrupt -> " + isWillInterrupt);
     if (isWillInterrupt) {
       gate.startFiber(domainUid, plan.step, plan.packet, cc);
     } else {
