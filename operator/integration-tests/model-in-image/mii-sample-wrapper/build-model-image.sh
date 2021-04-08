@@ -72,9 +72,7 @@ function output_dryrun() {
 MODEL_YAML_FILES="$(ls $WORKDIR/$MODEL_DIR/*.yaml | xargs | sed 's/ /,/g')"
 MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
 MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
-if [ "$WDT_DOMAIN_TYPE" = "WLS" ]; then
-  CHOWN_ROOT="--chown oracle:root"
-fi
+CHOWN_ROOT="--chown oracle:root"
 
 cat << EOF
 
