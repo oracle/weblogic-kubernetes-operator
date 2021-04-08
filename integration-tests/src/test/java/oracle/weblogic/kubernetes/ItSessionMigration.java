@@ -450,16 +450,18 @@ class ItSessionMigration {
     logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
         clusterAddress, curlUrlPath, headerOption);
 
-    StringBuffer curlCmd = new StringBuffer("curl --silent --show-error http://");
-    curlCmd.append(clusterAddress)
+    int waittime = 5;
+    return new StringBuilder()
+        .append("curl --silent --show-error")
+        .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
+        .append(" http://")
+        .append(clusterAddress)
         .append(":")
         .append(managedServerPort)
         .append("/")
         .append(curlUrlPath)
         .append(headerOption)
-        .append(httpHeaderFile);
-
-    return curlCmd.toString();
+        .append(httpHeaderFile).toString();
   }
 
   private static Map<String, String> processHttpRequest(String serverName,

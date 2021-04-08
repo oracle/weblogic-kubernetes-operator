@@ -39,7 +39,7 @@ public abstract class BaseConfiguration {
   private final ServerPod serverPod = new ServerPod();
 
   @Description(
-      "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.")
+      "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.")
   @SerializedName("serverService")
   @Expose
   private final ServerService serverService = new ServerService();

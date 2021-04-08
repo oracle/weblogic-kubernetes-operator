@@ -15,9 +15,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class AdminServer extends Server {
 
   @Description(
-      "Customization affecting the generation of the Kubernetes Service for the Administration Server. These settings "
-      + "can also specify the creation of a second NodePort Service to expose specific channels or network access "
-      + "points outside the Kubernetes cluster.")
+      "Customization affecting the generation of a NodePort Service for the Administration Server used to "
+          + "expose specific channels or network access points outside the Kubernetes cluster. "
+          + "See also `domains.spec.adminServer.serverService` for configuration affecting the generation of "
+          + "the ClusterIP Service.")
   private AdminService adminService;
 
   /**

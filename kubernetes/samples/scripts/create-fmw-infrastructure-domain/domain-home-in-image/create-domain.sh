@@ -177,6 +177,9 @@ function createDomainHome {
   echo "dumping output of ${domainPropertiesOutput}"
   cat ${domainPropertiesOutput}
 
+  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
+  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
+
   echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
   echo "fmwDomainType is [${fmwDomainType}]"

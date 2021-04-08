@@ -11,6 +11,8 @@ metadata:
   labels:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 spec:
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       weblogic.operatorName: {{ .Release.Namespace | quote }}

@@ -29,7 +29,7 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```shell
-$ git clone https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.1 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
@@ -105,7 +105,7 @@ secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 ```
 
-We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+We will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
 ```shell
 # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
@@ -114,7 +114,7 @@ We will use the `kubernetes/samples/scripts/create-kuberetes-secrets/create-dock
 $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 ```
 ```
-# cd kubernetes/samples/scripts/create-kuberetes-secrets
+# cd kubernetes/samples/scripts/create-kubernetes-secrets
 ```
 ```sehll
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
