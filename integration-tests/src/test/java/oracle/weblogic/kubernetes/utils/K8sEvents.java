@@ -45,25 +45,40 @@ public class K8sEvents {
       String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
     return () -> {
-      logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
-      try {
-        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-        for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason)
-              && (isEqualOrAfter(timestamp, event))) {
-            logger.info(Yaml.dump(event));
-            verifyOperatorDetails(event, opNamespace, domainUid);
-            //verify type
-            logger.info("Verifying domain event type {0}", type);
-            assertTrue(event.getType().equals(type));
-            return true;
-          }
-        }
-      } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
-      }
-      return false;
+      return domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
     };
+  }
+
+  /**
+   * Check if a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static boolean domainEventExists(
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp) {
+
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify type
+          logger.info("Verifying domain event type {0}", type);
+          assertTrue(event.getType().equals(type));
+          return true;
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return false;
   }
 
   /**
@@ -85,17 +100,14 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason)
-              && (isEqualOrAfter(timestamp, event))) {
+          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
-            assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
-                + "Count before is -> " + countBefore + " and count after is -> " + countAfter);
-            return true;
+            return (countAfter == countBefore + 1);
           }
         }
       } catch (ApiException ex) {

@@ -29,13 +29,16 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -49,6 +52,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -90,6 +95,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STAR
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -97,6 +103,7 @@ import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -117,6 +124,9 @@ public class ItKubernetesEvents {
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
+  private static String domainNamespace3 = null;
+  private static String domainNamespace4 = null;
+  private static String domainNamespace5 = null;
   private static String opServiceAccount = null;
   private static int externalRestHttpsPort = 0;
 
@@ -150,7 +160,7 @@ public class ItKubernetesEvents {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -160,6 +170,12 @@ public class ItKubernetesEvents {
     domainNamespace1 = namespaces.get(1);
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace2 = namespaces.get(2);
+    assertNotNull(namespaces.get(3), "Namespace is null");
+    domainNamespace3 = namespaces.get(3);
+    assertNotNull(namespaces.get(4), "Namespace is null");
+    domainNamespace4 = namespaces.get(4);
+    assertNotNull(namespaces.get(5), "Namespace is null");
+    domainNamespace5 = namespaces.get(5);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
@@ -392,25 +408,6 @@ public class ItKubernetesEvents {
     }
   }
 
-  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
-    OffsetDateTime timestamp = now();
-    logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
-    int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
-    V1Patch patch = new V1Patch("["
-            + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
-            "Failed to patch domain");
-    if (verify) {
-      logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
-      checkEventWithCount(
-          opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
-    }
-  }
-
-  private void scaleDomain(int replicaCount) {
-    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
-  }
-
   /**
    * Scale the cluster below minimum dynamic cluster size and verify the DomainValidationError
    * warning event is generated.
@@ -515,8 +512,8 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Operator logs a NamespaceWatchingStarted event in the respective domain name space
-   * when it starts watching a new domain namespace.
+   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy default to List.
    * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
    *<p>
    *<pre>{@literal
@@ -564,13 +561,215 @@ public class ItKubernetesEvents {
    */
   @Order(12)
   @Test
-  @Disabled("Bug - OWLS-87181")
   public void testK8SEventsStopWatchingNS() {
     OffsetDateTime timestamp = now();
     logger.info("Removing domain namespace in the operator watch list");
     upgradeAndVerifyOperator(opNamespace, domainNamespace1);
     logger.info("verify NamespaceWatchingStopped event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+  }
+
+  /**
+   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to LabelSelector.
+   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaceSelectionStrategy=LabelSelector"
+   * --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
+   * }
+   * </pre>
+   * </p>
+   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching another domain namespace
+   * with the label selector.
+   */
+  @Order(13)
+  @Test
+  public void testK8SEventsStartWatchingNSWithLabelSelector() {
+    OffsetDateTime timestamp = now();
+    logger.info("Adding a new domain namespace in the operator watch list");
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaceSelectionStrategy("LabelSelector")
+        .domainNamespaceLabelSelector("weblogic-operator=enabled");
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    // label domainNamespace3
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled"))
+        .execute();
+
+    logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace3);
+    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    // verify there is no event logged in domainNamespace4
+    logger.info("verify NamespaceWatchingStarted event is not logged in " + domainNamespace4);
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
+        + domainNamespace4 + ", expected no such event will be logged");
+  }
+
+  /**
+   * Operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * Operator helm parameter domainNamespaceSelectionStrategy is set to LabelSelector and
+   * domainNamespaceLabelSelector is set to weblogic-operator\=enabled
+   * set a different label of domainNamespace3 to remove domain namespace in the operator watch list.
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
+   */
+  @Order(14)
+  @Test
+  public void testK8SEventsStopWatchingNSWithLabelSelector() {
+    OffsetDateTime timestamp = now();
+    logger.info("Removing domain namespace in the operator watch list");
+
+    // label domainNamespace3 to weblogic-operator=disabled
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
+        .execute();
+
+    logger.info("verify NamespaceWatchingStopped event is logged");
+    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+  }
+
+  /**
+   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to RegExp.
+   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaceSelectionStrategy=RegExp"
+   * --set "domainNamespaceRegExp=abcd"
+   * }
+   * </pre>
+   * </p>
+   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching another domain namespace
+   * matching with the regular expression.
+   */
+  @Order(15)
+  @Test
+  public void testK8SEventsStartWatchingNSWithRegExp() {
+    OffsetDateTime timestamp = now();
+    logger.info("Adding a new domain namespace in the operator watch list");
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp(domainNamespace5.substring(3));
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace5);
+    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    // verify there is no event logged in domainNamespace4
+    logger.info("verify NamespaceWatchingStarted event is not logged in " + domainNamespace4);
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
+        + domainNamespace4 + ", expected no such event will be logged");
+  }
+
+  /**
+   * Operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * Operator helm parameter domainNamespaceSelectionStrategy is set to RegExp and
+   * domainNamespaceRegExp is set to nonexists
+   *
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
+   */
+  @Order(16)
+  @Test
+  public void testK8SEventsStopWatchingNSWithRegExp() {
+    OffsetDateTime timestamp = now();
+    logger.info("Removing domain namespace in the operator watch list");
+
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp(domainNamespace4.substring(3));
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStopped event is logged");
+    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
+    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+  }
+
+  /**
+   * Operator helm parameter domainNamespaceSelectionStrategy is set to Dedicated.
+   * Operator logs a NamespaceWatchingStopped in the operator domain namespace and
+   * NamespaceWatchingStopped event in the other domain namespaces when it stops watching a domain namespace.
+   *
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
+   */
+  @Order(17)
+  @Test
+  public void testK8SEventsStartStopWatchingNSWithDedicated() {
+    OffsetDateTime timestamp = now();
+
+    // Helm upgrade parameters
+    HelmParams opHelmParams = new HelmParams()
+        .releaseName(OPERATOR_RELEASE_NAME)
+        .namespace(opNamespace)
+        .chartDir(OPERATOR_CHART_DIR);
+
+    // operator chart values
+    OperatorParams opParams = new OperatorParams()
+        .helmParams(opHelmParams)
+        .domainNamespaceSelectionStrategy("Dedicated");
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in " + opNamespace);
+    checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    logger.info("verify NamespaceWatchingStopped event is logged in " + domainNamespace4);
+    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+  }
+
+  /**
+   * Cleanup the persistent volume and persistent volume claim used by the test.
+   */
+  @AfterAll
+  public static void tearDown() {
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      deletePersistentVolumeClaim(domainNamespace1, "sample-pvc");
+      deletePersistentVolume("sample-pv");
+    }
   }
 
   // Utility method to check event
@@ -702,7 +901,6 @@ public class ItKubernetesEvents {
           managedServerPodNamePrefix + i, domainNamespace1);
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
-
   }
 
   /**
@@ -807,13 +1005,23 @@ public class ItKubernetesEvents {
     }
   }
 
-  /**
-   * Cleanup the persistent volume and persistent volume claim used by the test.
-   */
-  @AfterAll
-  public static void tearDown() {
-    deletePersistentVolume("sample-pv");
-    deletePersistentVolumeClaim(domainNamespace1, "sample-pvc");
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
+    OffsetDateTime timestamp = now();
+    logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
+    int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal");
+    V1Patch patch = new V1Patch("["
+        + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+    if (verify) {
+      logger.info("Verify the DomainProcessingCompleted event is generated after " + testType);
+      checkEventWithCount(
+          opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp, countBefore);
+    }
+  }
+
+  private void scaleDomain(int replicaCount) {
+    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
   }
 
 }
