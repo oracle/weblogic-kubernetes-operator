@@ -730,6 +730,12 @@ public class DomainProcessorImpl implements DomainProcessor {
      */
     MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
       this.liveInfo = liveInfo;
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      if ((liveInfo.getDomain() != null) && (!isNewDomain(cachedInfo))
+              && (liveInfo.getDomain().getMetadata().getCreationTimestamp()
+              .isAfter(cachedInfo.getDomain().getMetadata().getCreationTimestamp()))) {
+        willInterrupt = true;
+      }
     }
 
     /**
