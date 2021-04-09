@@ -1219,7 +1219,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
 
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
-        "DomainUID", domainUID, "server", msName, "has no port to use for accepting REST calls.")));
+        "DomainUID", domainUID, "server", msName,
+        "does not have a port available for the operator to send REST calls.")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {
