@@ -26,7 +26,7 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-v] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the image for WebLogic domain in image."
@@ -34,6 +34,7 @@ function usage {
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -s Skip the domain image build, optional. "
+  echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
   echo "  -h Help"
   exit $1
 }
@@ -44,7 +45,7 @@ function usage {
 doValidation=false
 executeIt=false
 skipImageBuild=false
-while getopts "evhksi:o:u:p:" opt; do
+while getopts "evhsi:o:u:p:n:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -57,6 +58,8 @@ while getopts "evhksi:o:u:p:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
+    ;;
+    n) wdtEncryptKey="${OPTARG}"
     ;;
     s) skipImageBuild=true;
     ;;
@@ -178,11 +181,15 @@ function createDomainHome {
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
     domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
+    if [ -n "${wdtEncryptKey}" ]; then
+      echo "An encryption key is provided, encrypting passwords in WDT properties file"
+      wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
+      echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
+      encrypt_model wdt_model_dynamic.yaml "${wdtEncryptionKeyFile}"
+    fi
+
     echo "dumping output of ${domainPropertiesOutput}"
     cat ${domainPropertiesOutput}
-
-    encrypt_model wdt_model_dynamic.yaml
-    echo "dumping output of ${domainPropertiesOutput}"
 
     echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
@@ -195,9 +202,13 @@ function createDomainHome {
       --wdtOperation CREATE
       --wdtVersion ${WDT_VERSION}
       --wdtDomainHome \"${domainHome}\"
-      --wdtEncryptionKey "abc"
       --chown=oracle:root
     "
+    if [ -n "${wdtEncryptKey}" ]; then
+      cmd="$cmd
+       --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+      "
+    fi
     echo @@ "Info: About to run the following WIT command:"
     echo "$cmd"
     echo
@@ -209,6 +220,7 @@ function createDomainHome {
 
     # clean up the generated domain.properties file
     rm ${domainPropertiesOutput}
+    rm ${wdtEncryptionKeyFile}
 
     echo ""
     echo "Create domain ${domainName} successfully."

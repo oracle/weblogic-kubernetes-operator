@@ -404,15 +404,17 @@ function install_wit_if_needed {
 }
 
 function encrypt_model {
-
-  local oracle_home="$ORACLE_HOME"
+  #
+  # run encryptModel.sh from WDT to encrypt model and properties files
+  #
   local model_file=${1}
+  local encrypt_key_file=${2} # path to file containing encryption key relative to ${scriptDir}
+  local oracle_home="$ORACLE_HOME"
 
-  encryptKey=${encryptKey:-abc}
-  echo  -e "${encryptKey}\n${encryptKey}" > ${domainOutputDir}/key
+  echo @@ "Info: encrypt passwords in the variables file at ${domainPropertiesOutput} using encryption key from create-domain.sh argument written to file: ${encrypt_key_file}"
 
   cmd="
-    cat /shared/${domainOutputDir}/key |
+    cat /shared/${encrypt_key_file} /shared/${encrypt_key_file} |
     /wdt/bin/encryptModel.sh \
     -oracle_home ${oracle_home} \
     -model_file /shared/${model_file} \
@@ -429,7 +431,6 @@ function encrypt_model {
 
   # clean up the generated files
   rm ${domainOutputDir}/cmd.sh
-  rm ${domainOutputDir}/key
 
   echo @@ "Info: encrypt_model Completed"
 }
