@@ -38,8 +38,6 @@ function checkInputFiles {
        valuesInputFile=${temp[1]}
        valuesInputFile1=${temp[0]}
     fi
-  else
-    echo "Found only 1 input file"
   fi
 }
 
@@ -101,12 +99,6 @@ function parseCommonInputs {
     echo Unable to locate the parsed output of ${valuesInputFile}.
     fail 'The file ${exportValuesFile} could not be found.'
   fi
-
-  # Pass the https_proxy value to the job pod. We might need it to download WDT zip file
-  echo https_proxy = ${https_proxy}
-  proxyStr="https_proxy=${https_proxy}"
-  echo proxyStr=${proxyStr}
-  echo ${proxyStr} >> ${exportValuesFile}
 
   # Define the environment variables that will be used to fill in template values
   echo Input parameters being used
@@ -482,8 +474,6 @@ function createFiles {
     # Generate the yaml to create the kubernetes job that will create the weblogic domain
     echo Generating ${createJobOutput}
 
-    echo httpsProxy=${httpsProxy}
-
     cp ${createJobInput} ${createJobOutput}
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
     sed -i -e "s:%WEBLOGIC_CREDENTIALS_SECRET_NAME%:${weblogicCredentialsSecretName}:g" ${createJobOutput}
@@ -544,8 +534,6 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
-  echo Printing domainHomeSourceType
-  echo domainHomeSourceType is ${domainHomeSourceType}
   if [ "${domainHomeSourceType}" == "FromModel" ]; then
     echo domainHomeSourceType is FromModel
     # leave domainHomeSourceType to FromModel
@@ -556,7 +544,6 @@ function createFiles {
     fi
   elif [ "${domainHomeInImage}" == "true" ]; then
     domainHomeSourceType="Image"
-    echo domainHomeSourceType is Image
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
     else
@@ -564,7 +551,6 @@ function createFiles {
     fi
   else
     domainHomeSourceType="PersistentVolume"
-    echo domainHomeSourceType is PV
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
@@ -572,9 +558,6 @@ function createFiles {
   # Generate the yaml file for creating the domain resource
   # We want to use wdt's extractDomainResource.sh to get the domain resource
   # for domain on pv use case. For others, generate domain resource here
-  echo domainHomeSourceType is ${domainHomeSourceType}
-  echo wdtDomainType is ${wdtDomainType}
-  echo useWdt is ${useWdt}
 
   if [ "${domainHomeSourceType}" != "PersistentVolume" ] || [ "${wdtDomainType}" != "WLS" ] ||
          [ "${useWdt}" != true ]; then
