@@ -289,7 +289,6 @@ public class ReadHealthStepTest {
   public void whenReadDynamicManagedServerHealthWithServerListenPortOnly_decrementRemainingServers() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSServiceListenPortOnly);
     WlsServerConfig server = getDynamicClusterServer2();
-    System.out.println("server = " + server);
     server.setListenPort(8001);
     defineResponse(200, "", "http://dyn-managed-server2.Test:8001");
 
