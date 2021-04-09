@@ -259,7 +259,7 @@ public class CommonMiiTestUtils {
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
    * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
-   * @param usePvForDataHome whether to use PV for data home
+   * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithLogHome(
@@ -277,7 +277,7 @@ public class CommonMiiTestUtils {
       String dbSecretName,
       boolean allowReplicasBelowMinDynClusterSize,
       boolean onlineUpdateEnabled,
-      boolean usePvForDataHome) {
+      boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -333,7 +333,7 @@ public class CommonMiiTestUtils {
                     .enabled(onlineUpdateEnabled)))
             .introspectorJobActiveDeadlineSeconds(300L));
 
-    if (usePvForDataHome) {
+    if (setDataHome) {
       domainSpec.dataHome("/shared/data");
     }
     // create the domain CR

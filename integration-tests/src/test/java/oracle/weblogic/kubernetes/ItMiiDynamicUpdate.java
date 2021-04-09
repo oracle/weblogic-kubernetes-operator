@@ -203,9 +203,9 @@ class ItMiiDynamicUpdate {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
-    // setting usePvForDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
+    // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
     // because of bug https://jira.oraclecorp.com/jira/browse/OWLS-88679
-    // testMiiRemoveTarget should work fine after the bug is fixed with usePvForDataHome set to true
+    // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
