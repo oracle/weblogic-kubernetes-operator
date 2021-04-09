@@ -134,22 +134,6 @@ function parseCommonInputs {
   # We exclude javaOptions from the exportValuesFile
   grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
   source ${tmpFile}
-
-  echo PRINTING ${valuesInputFile}
-  echo ===========================
-  cat ${valuesInputFile}
-  echo
-  echo
-  echo PRINTING ${exportValuesFile}
-  echo ===========================
-  cat ${exportValuesFile}
-  echo
-  echo
-  echo PRINTING ${tmpFile}
-  echo ===========================
-  cat ${tmpFile}
-  echo
-  echo
   
   rm ${exportValuesFile} ${tmpFile}
 }

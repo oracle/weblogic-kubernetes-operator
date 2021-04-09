@@ -14,13 +14,6 @@ topology:
                 MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
                 ServerNamePrefix: '@@PROP:managedServerNameBase@@'
                 ServerTemplate: '@@PROP:clusterName@@-template'
-        '@@PROP:clusterName2@@':
-            DynamicServers:
-                CalculatedListenPorts: false
-                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
-                ServerNamePrefix: '@@PROP:managedServerNameBaseC2@@'
-                ServerTemplate: '@@PROP:clusterName2@@-template'
     Server:
         '@@PROP:adminServerName@@':
             NetworkAccessPoint:
@@ -34,8 +27,3 @@ topology:
             ListenPort: '@@PROP:managedServerPort@@'
             JTAMigratableTarget:
                 Cluster: '@@PROP:clusterName@@'
-        '@@PROP:clusterName2@@-template':
-            Cluster: '@@PROP:clusterName2@@'
-            ListenPort: '@@PROP:managedServerPort@@'
-            JTAMigratableTarget:
-                Cluster: '@@PROP:clusterName2@@'
