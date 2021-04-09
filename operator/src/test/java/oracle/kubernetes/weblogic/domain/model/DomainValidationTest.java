@@ -1090,7 +1090,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   public void whenDomainServerHasListenPort_dontReportError() {
     String domainUID = "TestDomainForRest";
-    String clusterName = "TestClusterForFRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
     String msNameBase = "TestServerForRest";
@@ -1117,7 +1116,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   public void whenDomainServerHasSSLListenPort_dontReportError() {
     String domainUID = "TestDomainForRest";
-    String clusterName = "TestClusterForFRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
     String msNameBase = "TestServerForRest";
@@ -1144,7 +1142,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   public void whenDomainServerHasAdminPort_dontReportError() {
     String domainUID = "TestDomainForRest";
-    String clusterName = "TestClusterForFRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
     String msNameBase = "TestServerForRest";
@@ -1171,7 +1168,6 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   public void whenDomainServerHasAdminNAP_dontReportError() {
     String domainUID = "TestDomainForRest";
-    String clusterName = "TestClusterForFRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
     String msNameBase = "TestServerForRest";
