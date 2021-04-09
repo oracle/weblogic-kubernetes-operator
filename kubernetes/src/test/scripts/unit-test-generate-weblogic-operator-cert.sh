@@ -14,7 +14,7 @@
 # used to actually run the operator.
 
 if [ ! $# -eq 1 ]; then
-  echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names, e.g. DNS:localhost,DNS:mymachine,DNS:mymachine.us.oracle.com,IP:127.0.0.1>"
+  echo "Syntax: ${BASH_SOURCE[0]} <subject alternative names, e.g. DNS:localhost,DNS:mymachine,IP:127.0.0.1>"
   exit 1
 fi
 
