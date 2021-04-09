@@ -50,8 +50,8 @@ def create_domain():
   st=create(template_name, 'ServerTemplate')
   print('Done creating server template: %s' % template_name)
   cd('/ServerTemplates/%s' % template_name)
-  print('Set managed server port in template')
-  cmo.setListenPort(int(managed_server_port))
+  print('(SKIP) Set managed server port in template')
+  #cmo.setListenPort(int(managed_server_port))
   cmo.setCluster(cl)
   cmo.setResolveDNSName(true)
 

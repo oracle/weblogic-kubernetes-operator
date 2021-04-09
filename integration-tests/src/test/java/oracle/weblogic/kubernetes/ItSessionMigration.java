@@ -95,7 +95,10 @@ class ItSessionMigration {
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static String finalPrimaryServerName = null;
-  private static int managedServerPort = 8001;
+  // Since the ServerTemplate section of the model file model.sessmigr.yaml
+  // does not explicitly specify ListenPort, the introspector/wdt generated 
+  // default ListenPort for each dynamic server is set to 7100
+  private static int managedServerPort = 7100;
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
