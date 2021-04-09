@@ -106,7 +106,7 @@ public class ReadHealthStep extends Step {
     }
 
     private HttpRequest createRequest() {
-      LOGGER.fine("Create REST request to service URL: " + getRequestUrl());
+      LOGGER.finer("Create REST request to service URL: " + getRequestUrl());
       return createRequestBuilder(getRequestUrl())
             .POST(HttpRequest.BodyPublishers.ofString(getRetrieveHealthSearchPayload()))
             .build();

@@ -1110,7 +1110,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withChannel("default");
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    System.out.println(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()));
+
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
@@ -1137,7 +1137,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withChannel("default");
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    System.out.println(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()));
+
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
@@ -1164,7 +1164,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withChannel("default");
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    System.out.println(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()));
+
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
@@ -1192,14 +1192,13 @@ public class DomainValidationTest extends DomainValidationBaseTest {
         .withChannel("default");
 
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
-    System.out.println(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()));
+
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
   }
 
   @Test
   public void whenDomainServerNoAvailablePortForREST_reportError() {
     String domainUID = "TestDomainForRest";
-    String clusterName = "TestClusterForFRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
     String msNameBase = "TestServerForRest";
