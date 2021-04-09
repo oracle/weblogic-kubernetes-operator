@@ -280,79 +280,113 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithServerListenPortOnly_decrementRemainingServers() {
+  public void whenServerConfiguredWithServerListenPortOnly_readHealthUsingServerListenPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
-    defineResponse(200, "", "http://dyn-managed-server2.Test:8001");
+    defineExpectedURLInResponse("http", 8001);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithServerListenPortAndSSLPort_decrementRemainingServers() {
+  public void whenServerConfiguredWithSSLPortOnly_readHealthUsingSSLPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setSslListenPort(7002);
+    defineExpectedURLInResponse("https", 7002);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerListenPortAndSSLPort_readHealthUsingSSLPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.setSslListenPort(7002);
-    defineResponse(200, "", "https://dyn-managed-server2.Test:7002");
+    defineExpectedURLInResponse("https", 7002);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithServerListenPortAndNAP_decrementRemainingServers() {
+  public void whenServerConfiguredWithServerListenPortAndNonAdminNAP_readHealthUsingServerListenPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "http://dyn-managed-server2.Test:8001");
+    defineExpectedURLInResponse("http", 8001);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithServerSSLPortAndNAP_decrementRemainingServers() {
+  public void whenServerConfiguredWithServerSSLPortAndNonAdminNAP_readHealthUsingSSLPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "https://dyn-managed-server2.Test:7002");
+    defineExpectedURLInResponse("https", 7002);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithAdminNAPOnly_decrementRemainingServers() {
+  public void whenServerConfiguredWithSSLPortAndAdminNAP_readHealthUsingAdminNAPPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
     server.addNetworkAccessPoint(new NetworkAccessPoint("admin", "admin", 8888, 8888));
-    defineResponse(200, "", "https://dyn-managed-server2.Test:8888");
+    defineExpectedURLInResponse("https", 8888);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
   }
 
   @Test
-  public void whenReadDynamicManagedServerHealthWithNonAdminNAPOnly_decrementRemainingServers() {
+  public void whenServerConfiguredWithServerListenPortAndAdminNAP_readHealthUsingAdminNAPPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
-    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
-    defineResponse(200, "", "http://dyn-managed-server2.Test:7001");
+    server.setListenPort(8001);
+    server.setListenPort(null);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "admin", 8888, 8888));
+    defineExpectedURLInResponse("https", 8888);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
-    assertThat(getRemainingServersToRead(packet), equalTo(0));
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithNonAdminNAPOnly_readHealthFailed() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
+    defineExpectedURLInResponse("http", 9001);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(false));
+  }
+
+  private void defineExpectedURLInResponse(String protocol, int port) {
+    defineResponse(200, "", protocol + "://dyn-managed-server2.Test:" + port);
+  }
+
+  private boolean readServerHealthSucceeded(Packet packet) {
+    return getRemainingServersToRead(packet) == 0;
   }
 
   private WlsServerConfig getDynamicClusterServer2() {
