@@ -102,6 +102,12 @@ function parseCommonInputs {
     fail 'The file ${exportValuesFile} could not be found.'
   fi
 
+  # Pass the https_proxy value to the job pod. We might need it to download WDT zip file
+  echo https_proxy = ${https_proxy}
+  proxyStr="https_proxy=${https_proxy}"
+  echo proxyStr=${proxyStr}
+  echo ${proxyStr} >> ${exportValuesFile}
+
   # Define the environment variables that will be used to fill in template values
   echo Input parameters being used
   cat ${exportValuesFile}
@@ -128,6 +134,23 @@ function parseCommonInputs {
   # We exclude javaOptions from the exportValuesFile
   grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
   source ${tmpFile}
+
+  echo PRINTING ${valuesInputFile}
+  echo ===========================
+  cat ${valuesInputFile}
+  echo
+  echo
+  echo PRINTING ${exportValuesFile}
+  echo ===========================
+  cat ${exportValuesFile}
+  echo
+  echo
+  echo PRINTING ${tmpFile}
+  echo ===========================
+  cat ${tmpFile}
+  echo
+  echo
+  
   rm ${exportValuesFile} ${tmpFile}
 }
 
@@ -448,6 +471,7 @@ function createFiles {
     # we're in the domain in PV case
 
     wdtVersion="${WDT_VERSION:-${wdtVersion}}"
+    httpsProxy="${https_proxy}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
@@ -473,6 +497,8 @@ function createFiles {
 
     # Generate the yaml to create the kubernetes job that will create the weblogic domain
     echo Generating ${createJobOutput}
+
+    echo httpsProxy=${httpsProxy}
 
     cp ${createJobInput} ${createJobOutput}
     sed -i -e "s:%NAMESPACE%:$namespace:g" ${createJobOutput}
@@ -515,6 +541,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
+    sed -i -e "s|%PROXY_VAL%|${httpsProxy}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}

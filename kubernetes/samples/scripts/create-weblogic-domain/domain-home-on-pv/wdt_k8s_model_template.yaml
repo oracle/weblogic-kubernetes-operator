@@ -53,6 +53,7 @@ kubernetes:
     # data storage directories are determined from the WebLogic domain home configuration.
     dataHome: "%DATA_HOME%"
 
+    replicas: 2
     # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
     # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
     # - "NEVER" will not start any server in the domain
@@ -89,6 +90,13 @@ kubernetes:
       %EXPOSE_ADMIN_PORT_PREFIX%       nodePort: %ADMIN_NODE_PORT%
       # Uncomment to export the T3Channel as a service
       %EXPOSE_T3_CHANNEL_PREFIX%     T3Channel:
+
+    # clusters is used to configure the desired behavior for starting member servers of a cluster.
+    # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
+    clusters:
+     '@@PROP:clusterName@@':
+       serverStartState: "RUNNING"
+       replicas: %INITIAL_MANAGED_SERVER_REPLICAS%
 
     # Istio service mesh support is experimental.
     %ISTIO_PREFIX%configuration:
