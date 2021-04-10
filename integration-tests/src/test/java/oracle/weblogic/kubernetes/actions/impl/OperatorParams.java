@@ -173,14 +173,21 @@ public class OperatorParams {
     values.put(DOMAIN_NAMESPACES, domainNamespaces);
     values.put(IMAGE, image);
     values.put(SERVICE_ACCOUNT, serviceAccount);
+
     values.put(EXTERNAL_REST_ENABLED, Boolean.valueOf(externalRestEnabled));
+    values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
+
     if (externalRestHttpsPort >= 0) {
       values.put(EXTERNAL_REST_HTTPS_PORT, Integer.valueOf(externalRestHttpsPort));
     }
-    values.put(EXTERNAL_REST_IDENTITY_SECRET, externalRestIdentitySecret);
+
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
-    values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
+
+    if (elkIntegrationEnabled) {
+      values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
+    }
+
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
 
     if (elasticSearchHost != null) {

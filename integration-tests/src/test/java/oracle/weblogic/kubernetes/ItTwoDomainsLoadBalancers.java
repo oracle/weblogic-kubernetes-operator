@@ -262,7 +262,8 @@ public class ItTwoDomainsLoadBalancers {
     nginxNamespace = namespaces.get(6);
 
     // install and verify operator
-    operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
+    operatorHelmParams =
+        installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace).getHelmParams();
     installAndVerifyOperator(opNamespaces.get(1), domainNamespaces.get(1));
 
     // initiate domainUid list for two domains
