@@ -67,6 +67,9 @@ The script will perform the following steps:
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
+* If the optional `-n` option is used and an encryption key is provided, invoke the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
+  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file to encrypt the password properties in `domain.properties` file.
+  
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a new 
   FWM Infrastructure domain using the FMW Infrastructure image specified in the `domainHomeImageBase` 
   parameter from your inputs file, the WDT variables in `domain.properties` file, and the model 
@@ -103,14 +106,15 @@ The usage of the create script is as follows:
 ```shell
 $ sh create-domain.sh -h
 ```
-```
-usage: create-domain.sh -o dir -i file [-e] [-v] [-h]
+```text
+usage: create-domain.sh -o dir -i file -u username -p password [-e] [-v] [-n] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -u User name used in building the image for WebLogic domain in image.
   -p Password used in building the image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
+  -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
   -h Help
 ```
 
@@ -140,14 +144,15 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `domainHome` | Home directory of the WebLogic domain. If not specified, the value is derived from the `domainUID` as `/shared/domains/<domainUID>`. | `/shared/domains/domain1` |
+| `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
-| `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
+| `image` | Oracle FMW Infrastructure Server image that the operator uses to start the domain. The create domain scripts generate a Oracle FMW Infrastructure Server image with a domain home in it. By default, the scripts tag the generated Oracle FMW Infrastructure Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | `domain-home-in-image:<tag from domainHomeImageBase>`|
+| `imagePullPolicy` | Oracle FMW Infrastructure Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
 | `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |

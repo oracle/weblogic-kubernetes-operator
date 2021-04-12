@@ -70,7 +70,10 @@ The script will perform the following steps:
   put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
-  
+
+* If the optional `-n` option is used and encryption key is provided, invoke the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
+  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file to encrypt the password properties in `domain.properties` file.
+
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a 
   new WebLogic Server domain using the WebLogic image specified in the `domainHomeImageBase` parameter 
   from your inputs file, the model defined in `wdt_model_dynamic.yaml` 
@@ -99,16 +102,16 @@ The usage of the create script is as follows:
 ```shell
 $ sh create-domain.sh -h
 ```
-```
-usage: create-domain.sh -o dir -i file -u username -p password [-e] [-h]
+```text
+usage: create-domain.sh -o dir -i file -u username -p password [-e] [-v] [-n] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
   -u User name used in building the image for WebLogic domain in image.
   -p Password used in building the image for WebLogic domain in image.
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
+  -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
   -h Help
-
 ```
 
 If you copy the sample scripts to a different location, make sure that you copy everything in the `<weblogic-kubernetes-operator-project>/kubernetes/samples/scripts` directory together into the target directory, maintaining the original directory hierarchy.
