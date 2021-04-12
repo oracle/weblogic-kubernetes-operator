@@ -217,7 +217,6 @@ function run_wdt {
   echo @@ "Info:  WDT createDomain.sh succeeded."
   return 0
 }
->>>>>>> main
 
 # Run
 
