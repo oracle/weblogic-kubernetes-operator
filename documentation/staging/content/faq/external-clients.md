@@ -70,11 +70,6 @@ the application and resource are in different Kubernetes namespaces, then:
     be `myuid-cluster-mycluster` and the full URL will be
     `t3://myuid-cluster-mycluster.myns.service.cluster.local:8001`.
 
-- If the applications run within a WebLogic
-  Server JVM, then the WebLogic Servers that host the target
-  EJB or JMS resources need to be configured to
-  [enable unknown host access](#enabling-unknown-host-access).
-
 - The applications should access their target WebLogic Server or cluster
   using [a WebLogic custom T3 or T3S channel](#adding-a-weblogic-custom-channel) 
   that is configured on the target with the following configuration:
@@ -94,6 +89,13 @@ the application and resource are in different Kubernetes namespaces, then:
   - There is no need to enable tunneling, and you can continue
     to use URLs that begin with `t3` or `t3s`.
   Application URLs must specify the channel's port.
+
+- If the applications run within a WebLogic
+  Server JVM, then the WebLogic Servers that host the target
+  EJB or JMS resources may need to be configured to
+  [enable unknown host access](#enabling-unknown-host-access).
+  This should not be needed when the public address on the
+  network channel is configured as directed in the previous bullet.
 
 If a WebLogic EJB or JMS resource is hosted inside a Kubernetes
 cluster, but an application that calls the resource
