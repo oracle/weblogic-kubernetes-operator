@@ -105,6 +105,7 @@ See [overrides distribution](#overrides-distribution) for a discussion of distri
 * Domain topology (cluster members)
 * Network channel listen address, port, and enabled configuration
 * Server and domain log locations
+* Default or custom file store directories when `domain.spec.dataHome` is set
 * Node Manager related configuration
 * Changing any existing MBean name
 * Adding or removing a module (for example, a JDBC module)
@@ -120,7 +121,8 @@ See [overrides distribution](#overrides-distribution) for a discussion of distri
   * Dynamic cluster size
   * Default, SSL, and Admin channel `Enabled`, listen address, and port
   * Network Access Point (custom channel), listen address, or port
-  * Server and domain log locations -- use the `logHome` domain setting instead
+  * Server and domain log locations -- use the `domain.spec.logHome` setting instead and ensure that `domain.spec.logHomeEnabled` is set to true
+  * Default or custom file store directories when `domain.spec.dataHome` is set
   * Node Manager access credentials
   * Any existing MBean name (for example, you cannot change the domain name)
 
