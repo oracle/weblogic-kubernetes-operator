@@ -102,7 +102,7 @@ Here are the steps for this use case:
 
      Run the following commands to create the model image and verify that it worked:
 
-      ```shell
+     ```shell
      $ cd /tmp/mii-sample/model-images
      ```
      ```shell
