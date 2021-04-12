@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 184901e2753d12d5468f58f1e072d45ee257655d557ec30a4cdd0554c36d804a
+    weblogic.sha256: de883bb3d965b09f91bc60c21481d6d61f441ac6ddf9952a9189f85eb887b507
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2943,7 +2943,8 @@ spec:
                 description: The directory in a server's container in which to store
                   the domain, Node Manager, server logs, server *.out, introspector
                   .out, and optionally HTTP access log files if `httpAccessLogInLogHome`
-                  is true. Ignored if `logHomeEnabled` is false.
+                  is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled`
+                  is false.
                 type: string
               includeServerOutInPodLog:
                 description: Specifies whether the server .out file will be included
