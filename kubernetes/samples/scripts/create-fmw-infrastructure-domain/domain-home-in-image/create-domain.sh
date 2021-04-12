@@ -14,8 +14,8 @@
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #    * The host directory that will be used as the persistent volume must already exist
 #      and have the appropriate file permissions set.
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume claim must already be created
 #
 
 # Initialize
@@ -26,13 +26,14 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-e] [-v] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the image for WebLogic domain in image."
   echo "  -p Password used in building the image for WebLogic domain in image."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
+  echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
   echo "  -h Help"
   exit $1
 }
@@ -42,7 +43,7 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "evhki:o:u:p:" opt; do
+while getopts "evhi:o:u:p:n:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -55,6 +56,8 @@ while getopts "evhki:o:u:p:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
+    ;;
+    n) wdtEncryptKey="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -174,14 +177,6 @@ function getDockerSample {
 #
 function createDomainHome {
 
-  echo "dumping output of ${domainPropertiesOutput}"
-  cat ${domainPropertiesOutput}
-
-  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
-  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
-
-  echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
-
   echo "fmwDomainType is [${fmwDomainType}]"
   # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
   if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
@@ -191,6 +186,21 @@ function createDomainHome {
     wdtModelFile=wdt_model_configured.yaml
     wdtDomainType=JRF
   fi
+
+  if [ -n "${wdtEncryptKey}" ]; then
+    echo "An encryption key is provided, encrypting passwords in WDT properties file"
+    wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
+    echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
+    encrypt_model ${wdtModelFile} "${wdtEncryptionKeyFile}"
+  fi
+
+  echo "dumping output of ${domainPropertiesOutput}"
+  cat ${domainPropertiesOutput}
+
+  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
+  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
+
+  echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
   cmd="
     $WIT_DIR/imagetool/bin/imagetool.sh update
@@ -205,6 +215,11 @@ function createDomainHome {
       --additionalBuildCommands additional-build-commands
       --chown=oracle:oracle
   "
+  if [ -n "${wdtEncryptKey}" ]; then
+    cmd="$cmd
+     --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+    "
+  fi
   echo @@ "Info: About to run the following WIT command:"
   echo "$cmd"
   echo
@@ -216,6 +231,7 @@ function createDomainHome {
 
   # clean up the generated domain.properties file
   rm ${domainPropertiesOutput}
+  rm ${wdtEncryptionKeyFile}
 
   echo ""
   echo "Create domain ${domainName} successfully."
