@@ -267,7 +267,6 @@ function run_wdt {
 
   return 0
 }
->>>>>>> main
 
 # Run
 
