@@ -224,7 +224,7 @@ For example, here is a snippet of a WebLogic domain `config.xml` file for channe
 </cluster>
 ```
 
-And, here is a snippet of offline WLST code that corresponds to the above `config.xml` file snippet:
+Here is a snippet of offline WLST code that corresponds to the above `config.xml` file snippet:
 
 ```javascript
   templateName = "cluster-1-template"
@@ -244,7 +244,7 @@ And, here is a snippet of offline WLST code that corresponds to the above `confi
   set('ClientCertificateEnforced', false)
 ```
 
-And, here is a snippet of WDT model YAML configuration that corresponds to the above snippets:
+Here is a snippet of WDT model YAML configuration that corresponds to the above snippets:
 
 ```yaml
 topology:
