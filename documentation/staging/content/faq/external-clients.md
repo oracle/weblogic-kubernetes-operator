@@ -3,7 +3,7 @@ title: "External WebLogic clients"
 date: 2019-11-21T21:23:03Z
 draft: false
 weight: 11
-description: "This FAQ describes approaches for giving external WebLogic clients or servers access to a Kubernetes hosted WebLogic cluster JMS or EJBs, for giving Kubernetes hosted clients or servers access to remotely hosted WebLogic JMS or EJBs. This includes between different Kubernetes namespaces within the same Kubernentes cluster, between different Kubernetes clusters, and from a non-Kubernetes location into Kubernetes."
+description: "This FAQ describes approaches for giving WebLogic clients or servers access to WebLogic JMS or EJB resources when either the clients or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernentes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes."
 ---
 
 #### Contents
