@@ -108,7 +108,6 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -278,14 +277,9 @@ class ItMiiUpdateDomainConfig {
       logger.info("Command to send HTTP request and get HTTP response {0} ", curlCmd);
       ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
           "/bin/sh", "-c", curlCmd));
-      if (execResult.exitValue() == 0) {
-        logger.info("\n HTTP response is \n " + execResult.toString());
-        assertAll("Check that the HTTP response is 200",
-            () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
-        );
-      } else {
-        fail("Failed to access sample application " + execResult.stderr());
-      }
+      assertFalse(execResult.exitValue() != 0 && execResult.stderr() != null && !execResult.stderr().isEmpty(),
+          String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+              curlCmd, execResult.exitValue(), execResult.stderr(), execResult.stdout()));
     }
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
