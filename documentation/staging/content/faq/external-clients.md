@@ -244,7 +244,7 @@ And, here is a snippet of offline WLST code that corresponds to the above `confi
   set('ClientCertificateEnforced', false)
 ```
 
-And, here is a snippet of WDT model YAML configuration that corresponds to the above `snippets`:
+And, here is a snippet of WDT model YAML configuration that corresponds to the above snippets:
 
 ```yaml
 topology:
