@@ -821,7 +821,7 @@ public class Domain implements KubernetesObject {
 
     private void checkServerPorts(WlsServerConfig wlsServerConfig) {
       if (noAvailablePort(wlsServerConfig)) {
-        failures.add(DomainValidationMessages.noAvaiablePortToUse(getDomainUid(), wlsServerConfig.getName()));
+        failures.add(DomainValidationMessages.noAvailablePortToUse(getDomainUid(), wlsServerConfig.getName()));
       }
     }
 
