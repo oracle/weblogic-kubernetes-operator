@@ -325,7 +325,7 @@
           "$ref": "#/definitions/AdminServer"
         },
         "logHome": {
-          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.",
+          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
