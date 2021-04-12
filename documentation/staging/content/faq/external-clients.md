@@ -74,7 +74,7 @@ the application and resource are in different Kubernetes namespaces, then:
   using [a WebLogic custom T3 or T3S channel](#adding-a-weblogic-custom-channel) 
   that is configured on the target with the following configuration:
   - Specify a public address that matches the same fully decorated
-    DNS address that the client will use.
+    DNS address that the applications will use.
     - For example,
       if the target resource is in WebLogic cluster `mycluster` that
       is part of domain with a domain UID `myuid` running in domain
