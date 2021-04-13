@@ -1492,6 +1492,15 @@ public class CommonTestUtils {
     return ingressHostList;
   }
 
+  /**
+   * Check Voyager pod is running in the specified namespace.
+   *
+   * @param podName pod name to check
+   * @param namespace the namespace in which the pod is running
+   */
+  public static Callable<Boolean> isVoyagerPodReady(String namespace, String podName) {
+    return isVoyagerReady(namespace, podName);
+  }
 
   /**
    * Execute command inside a pod and assert the execution.

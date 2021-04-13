@@ -38,8 +38,6 @@ function checkInputFiles {
        valuesInputFile=${temp[1]}
        valuesInputFile1=${temp[0]}
     fi
-  else
-    echo "Found only 1 input file"
   fi
 }
 
@@ -128,6 +126,7 @@ function parseCommonInputs {
   # We exclude javaOptions from the exportValuesFile
   grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
   source ${tmpFile}
+  
   rm ${exportValuesFile} ${tmpFile}
 }
 
@@ -451,6 +450,7 @@ function createFiles {
     # we're in the domain in PV case
 
     wdtVersion="${WDT_VERSION:-${wdtVersion}}"
+    httpsProxy="${https_proxy}"
 
     createJobOutput="${domainOutputDir}/create-domain-job.yaml"
     deleteJobOutput="${domainOutputDir}/delete-domain-job.yaml"
@@ -518,8 +518,8 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
-    sed -i -e "s|%HTTPS_PROXY%|${https_proxy}|g" ${createJobOutput}
     sed -i -e "s|%DOMAIN_TYPE%|${domain_type}|g" ${createJobOutput}
+    sed -i -e "s|%PROXY_VAL%|${httpsProxy}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
     echo Generating ${deleteJobOutput}
@@ -538,8 +538,6 @@ function createFiles {
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${deleteJobOutput}
   fi
 
-  echo Printing domainHomeSourceType
-  echo domainHomeSourceType is ${domainHomeSourceType}
   if [ "${domainHomeSourceType}" == "FromModel" ]; then
     echo domainHomeSourceType is FromModel
     # leave domainHomeSourceType to FromModel
@@ -550,7 +548,6 @@ function createFiles {
     fi
   elif [ "${domainHomeInImage}" == "true" ]; then
     domainHomeSourceType="Image"
-    echo domainHomeSourceType is Image
     if [ "${logHomeOnPV}" == "true" ]; then
       logHomeOnPVPrefix="${enabledPrefix}"
     else
@@ -558,7 +555,6 @@ function createFiles {
     fi
   else
     domainHomeSourceType="PersistentVolume"
-    echo domainHomeSourceType is PV
     logHomeOnPVPrefix="${enabledPrefix}"
     logHomeOnPV=true
   fi
@@ -566,9 +562,6 @@ function createFiles {
   # Generate the yaml file for creating the domain resource
   # We want to use wdt's extractDomainResource.sh to get the domain resource
   # for domain on pv use case. For others, generate domain resource here
-  echo domainHomeSourceType is ${domainHomeSourceType}
-  echo wdtDomainType is ${wdtDomainType}
-  echo useWdt is ${useWdt}
 
   if [ "${domainHomeSourceType}" != "PersistentVolume" ] || [ "${wdtDomainType}" != "WLS" ] ||
          [ "${useWdt}" != true ]; then

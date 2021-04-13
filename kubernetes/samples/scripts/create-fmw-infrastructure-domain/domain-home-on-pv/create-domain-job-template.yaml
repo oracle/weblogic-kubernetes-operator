@@ -74,8 +74,8 @@ spec:
               value: "%CUSTOM_CONNECTION_STRING%"
             - name: EXPOSE_T3_CHANNEL_PREFIX
               value: "%EXPOSE_T3_CHANNEL_PREFIX%"
-            - name: https_proxy
-              value: "%HTTPS_PROXY%"
+            - name: PROXY_VAL
+              value: "%PROXY_VAL%"
             - name: DOMAIN_TYPE
               value: "%DOMAIN_TYPE%"
       volumes:

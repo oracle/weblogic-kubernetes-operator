@@ -72,6 +72,10 @@ export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
+# using "-" instead of ":-" in case proxy vars are explicitly set to "".
+https_proxy=${PROXY_VAL-""}
+https_proxy2=${https_proxy2-""}
+
 source ${SCRIPTPATH}/wdt-and-wit-utility.sh
 
 # Run

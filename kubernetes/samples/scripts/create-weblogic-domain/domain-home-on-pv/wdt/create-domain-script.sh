@@ -71,6 +71,10 @@ export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
+# using "-" instead of ":-" in case proxy vars are explicitly set to "".
+https_proxy=${PROXY_VAL-""}
+https_proxy2=${https_proxy2-""}
+
 source ${SCRIPTPATH}/wdt-and-wit-utility.sh
 
 # Run
@@ -84,12 +88,15 @@ fi
 action=$1
 
 echo @@ "Info: action is $action"
+echo @@ "Info: https_proxy is $https_proxy"
 
 if [ "$action" = "create" ]; then
    setup_wdt_shared_dir || exit 1
 fi
 
-install_wdt || exit 1
+if [ "${action}" = "create" ]; then
+   install_wdt || exit 1
+fi
 
 if [ "${action}" = "update" ]; then
    run_wdt "update"|| exit 1

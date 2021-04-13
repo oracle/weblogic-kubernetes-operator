@@ -259,6 +259,7 @@ public class CommonMiiTestUtils {
    * @param dbSecretName name of the Secret for WebLogic configuration overrides
    * @param allowReplicasBelowMinDynClusterSize whether to allow scaling below min dynamic cluster size
    * @param onlineUpdateEnabled whether to enable onlineUpdate feature for mii dynamic update
+   * @param setDataHome whether to set data home at domain resource
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithLogHome(
@@ -275,7 +276,8 @@ public class CommonMiiTestUtils {
       String configMapName,
       String dbSecretName,
       boolean allowReplicasBelowMinDynClusterSize,
-      boolean onlineUpdateEnabled) {
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
     LoggingFacade logger = getLogger();
 
     List<String> securityList = new ArrayList<>();
@@ -283,6 +285,57 @@ public class CommonMiiTestUtils {
       securityList.add(dbSecretName);
     }
 
+    DomainSpec domainSpec = new DomainSpec()
+        .domainUid(domainResourceName)
+        .domainHomeSourceType("FromModel")
+        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
+        .image(imageName)
+        .addImagePullSecretsItem(new V1LocalObjectReference()
+            .name(repoSecretName))
+        .webLogicCredentialsSecret(new V1SecretReference()
+            .name(adminSecretName)
+            .namespace(domNamespace))
+        .includeServerOutInPodLog(true)
+        .logHomeEnabled(Boolean.TRUE)
+        .logHome("/shared/logs")
+        .serverStartPolicy("IF_NEEDED")
+        .serverPod(new ServerPod()
+            .addEnvItem(new V1EnvVar()
+                .name("JAVA_OPTIONS")
+                .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+            .addEnvItem(new V1EnvVar()
+                .name("USER_MEM_ARGS")
+                .value("-Djava.security.egd=file:/dev/./urandom "))
+            .addVolumesItem(new V1Volume()
+                .name(pvName)
+                .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                    .claimName(pvcName)))
+            .addVolumeMountsItem(new V1VolumeMount()
+                .mountPath("/shared")
+                .name(pvName)))
+        .adminServer(new AdminServer()
+            .serverStartState("RUNNING")
+            .adminService(new AdminService()
+                .addChannelsItem(new Channel()
+                    .channelName("default")
+                    .nodePort(0))))
+        .addClustersItem(new Cluster()
+            .clusterName(clusterName)
+            .replicas(replicaCount)
+            .serverStartState("RUNNING"))
+        .configuration(new Configuration()
+            .secrets(securityList)
+            .model(new Model()
+                .domainType("WLS")
+                .configMap(configMapName)
+                .runtimeEncryptionSecret(encryptionSecretName)
+                .onlineUpdate(new OnlineUpdate()
+                    .enabled(onlineUpdateEnabled)))
+            .introspectorJobActiveDeadlineSeconds(300L));
+
+    if (setDataHome) {
+      domainSpec.dataHome("/shared/data");
+    }
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -290,54 +343,7 @@ public class CommonMiiTestUtils {
         .metadata(new V1ObjectMeta()
             .name(domainResourceName)
             .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainResourceName)
-            .domainHomeSourceType("FromModel")
-            .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
-            .image(imageName)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .logHomeEnabled(Boolean.TRUE)
-            .logHome("/shared/logs")
-            .dataHome("/shared/data")
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .addVolumesItem(new V1Volume()
-                    .name(pvName)
-                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
-                        .claimName(pvcName)))
-                .addVolumeMountsItem(new V1VolumeMount()
-                    .mountPath("/shared")
-                    .name(pvName)))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .secrets(securityList)
-                .model(new Model()
-                    .domainType("WLS")
-                    .configMap(configMapName)
-                    .runtimeEncryptionSecret(encryptionSecretName)
-                    .onlineUpdate(new OnlineUpdate()
-                        .enabled(onlineUpdateEnabled)))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+        .spec(domainSpec);
 
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainResourceName, domNamespace);
