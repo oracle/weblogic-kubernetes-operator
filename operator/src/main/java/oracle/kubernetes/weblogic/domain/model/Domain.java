@@ -803,6 +803,32 @@ public class Domain implements KubernetesObject {
       }
     }
 
+
+    private void verifyServerPorts(WlsDomainConfig wlsDomainConfig) {
+      // domain level serverConfigs do not contain servers in dynamic clusters
+      wlsDomainConfig.getServerConfigs()
+          .values()
+          .stream()
+          .forEach(server -> checkServerPorts(server));
+      wlsDomainConfig.getClusterConfigs()
+          .values()
+          .iterator()
+          .forEachRemaining(wlsClusterConfig
+              // serverConfigs contains configured and dynamic servers in the cluster
+              -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
+                  -> this.checkServerPorts(wlsServerConfig)));
+    }
+
+    private void checkServerPorts(WlsServerConfig wlsServerConfig) {
+      if (noAvailablePort(wlsServerConfig)) {
+        failures.add(DomainValidationMessages.noAvailablePortToUse(getDomainUid(), wlsServerConfig.getName()));
+      }
+    }
+
+    private boolean noAvailablePort(WlsServerConfig wlsServerConfig) {
+      return wlsServerConfig.getAdminProtocolChannelName() == null;
+    }
+
     private void verifyGeneratedResourceNames(WlsDomainConfig wlsDomainConfig) {
       checkGeneratedServerServiceName(wlsDomainConfig.getAdminServerName(), -1);
       if (isExternalServiceConfigured(getSpec())) {
@@ -1033,7 +1059,9 @@ public class Domain implements KubernetesObject {
     }
 
     List<String> getAfterIntrospectValidationFailures(Packet packet) {
-      verifyGeneratedResourceNames((WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY));
+      WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
+      verifyGeneratedResourceNames(wlsDomainConfig);
+      verifyServerPorts(wlsDomainConfig);
       return failures;
     }
 
