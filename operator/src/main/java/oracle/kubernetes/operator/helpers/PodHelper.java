@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -568,21 +567,7 @@ public class PodHelper {
 
     abstract class ExporterContext {
       int getWebLogicRestPort() {
-        return selectPortByProtocolName().orElse(selectPortFromList());
-      }
-
-      private Optional<Integer> selectPortByProtocolName() {
-        return getContainerPorts().stream()
-              .filter(p -> Objects.equals(scan.getAdminProtocolChannelName(), p.getName()))
-              .findFirst()
-              .map(V1ContainerPort::getContainerPort);
-      }
-
-      private int selectPortFromList() {
-        return Stream.of(getAdminPort(), getListenPort(), getSslListenPort())
-              .filter(Objects::nonNull)
-              .findFirst()
-              .orElseThrow(() -> new RuntimeException("No ports defined for this server"));
+        return scan.getLocalAdminProtocolChannelPort();
       }
 
       boolean isWebLogicSecure() {
