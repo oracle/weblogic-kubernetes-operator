@@ -18,7 +18,6 @@ import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -26,6 +25,9 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -65,7 +67,7 @@ public class ReadHealthStepTest {
           + "}";
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-    WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
+      WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
   };
   private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin-server";
@@ -76,16 +78,12 @@ public class ReadHealthStepTest {
   private static final String CONFIGURED_MANAGED_SERVER1 = "conf-managed-server1";
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
+  private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
+
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
-  private static final WlsDomainConfigSupport configSupport =
-      new WlsDomainConfigSupport(DOMAIN_NAME)
-          .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
-          .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
-          .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
-          .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1)
-          .withAdminServerName(ADMIN_NAME);
   private final V1Service service = createStub(V1ServiceStub.class);
   private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
+  private final V1Service headlessMSService = createStub(V1HeadlessMSServiceStub.class);
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -99,10 +97,18 @@ public class ReadHealthStepTest {
 
   @BeforeEach
   public void setup() throws NoSuchFieldException {
+    WlsDomainConfigSupport configSupport =
+        new WlsDomainConfigSupport(DOMAIN_NAME)
+            .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
+            .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
+            .withWlsCluster(CONFIGURED_CLUSTER_NAME, CONFIGURED_MANAGED_SERVER1)
+            .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, DYNAMIC_MANAGED_SERVER1, DYNAMIC_MANAGED_SERVER2)
+            .withAdminServerName(ADMIN_NAME);
+
     mementos.add(TestUtils.silenceOperatorLogger()
-            .collectLogMessages(logRecords, LOG_KEYS)
-            .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
-            .withLogLevel(Level.FINE));
+        .collectLogMessages(logRecords, LOG_KEYS)
+        .ignoringLoggedExceptions(CLASSCAST_EXCEPTION)
+        .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
 
@@ -123,6 +129,11 @@ public class ReadHealthStepTest {
     selectServer(serverName, false);
   }
 
+  private void selectServer(String serverName, V1Service service) {
+    testSupport.addToPacket(SERVER_NAME, serverName);
+    info.setServerService(serverName, service);
+  }
+
   private void selectServer(String serverName, boolean headless) {
     testSupport.addToPacket(SERVER_NAME, serverName);
     if (headless) {
@@ -136,11 +147,11 @@ public class ReadHealthStepTest {
   public void tearDown() {
     mementos.forEach(Memento::revert);
   }
-  
+
   @Test
   public void whenReadAdminServerHealth_decrementRemainingServers() {
     selectServer(ADMIN_NAME);
-    defineResponse(200, "");
+    defineResponse(200, "", "http://127.0.0.1:3456");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -153,15 +164,15 @@ public class ReadHealthStepTest {
 
   private void defineResponse(int status, String body, String url) {
     httpSupport.defineResponse(
-        createExpectedRequest(Objects.requireNonNullElse(url, "127.0.0.1:7001")),
+        createExpectedRequest(Objects.requireNonNullElse(url, "http://127.0.0.1:7001")),
         createStub(HttpResponseStub.class, status, body));
   }
 
   private HttpRequest createExpectedRequest(String url) {
     return HttpRequest.newBuilder()
-          .uri(URI.create("https://" + url + "/management/weblogic/latest/serverRuntime/search"))
-          .POST(HttpRequest.BodyPublishers.noBody())
-          .build();
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/search"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
   }
 
 
@@ -194,7 +205,7 @@ public class ReadHealthStepTest {
   public void whenServerRunning_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(200, OK_RESPONSE);
+    defineResponse(200, OK_RESPONSE, "http://127.0.0.1:8001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -213,7 +224,7 @@ public class ReadHealthStepTest {
   @Test
   public void whenAdminPodIPNull_verifyServerHealth() {
     selectServer(ADMIN_NAME, true);
-    defineResponse(200, OK_RESPONSE, "admin-server.Test:7001");
+    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -223,7 +234,7 @@ public class ReadHealthStepTest {
   @Test
   public void whenAdminPodIPNull_requestSendWithCredentials() {
     selectServer(ADMIN_NAME, true);
-    defineResponse(200, OK_RESPONSE, "admin-server.Test:7001");
+    defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
     testSupport.runSteps(readHealthStep);
 
@@ -246,12 +257,12 @@ public class ReadHealthStepTest {
   public void whenServerOverloaded_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(500, "");
+    defineResponse(500, "", "http://127.0.0.1:8001");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getServerHealthMap(packet).get(MANAGED_SERVER1).getOverallHealth(),
-               equalTo(OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
+        equalTo(OVERALL_HEALTH_FOR_SERVER_OVERLOADED));
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
@@ -264,17 +275,130 @@ public class ReadHealthStepTest {
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getServerHealthMap(packet).get(MANAGED_SERVER1).getOverallHealth(),
-               equalTo(OVERALL_HEALTH_NOT_AVAILABLE));
+        equalTo(OVERALL_HEALTH_NOT_AVAILABLE));
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerListenPortOnly_readHealthUsingServerListenPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setListenPort(8001);
+    defineExpectedURLInResponse("http", 8001);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithSSLPortOnly_readHealthUsingSSLPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setSslListenPort(7002);
+    defineExpectedURLInResponse("https", 7002);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerListenPortAndSSLPort_readHealthUsingSSLPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setListenPort(8001);
+    server.setSslListenPort(7002);
+    defineExpectedURLInResponse("https", 7002);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerListenPortAndNonAdminNAP_readHealthUsingServerListenPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setListenPort(8001);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
+    defineExpectedURLInResponse("http", 8001);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerSSLPortAndNonAdminNAP_readHealthUsingSSLPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setSslListenPort(7002);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
+    defineExpectedURLInResponse("https", 7002);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithSSLPortAndAdminNAP_readHealthUsingAdminNAPPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setSslListenPort(7002);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("admin", "admin", 8888, 8888));
+    defineExpectedURLInResponse("https", 8888);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithServerListenPortAndAdminNAP_readHealthUsingAdminNAPPort() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.setListenPort(8001);
+    server.setListenPort(null);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "admin", 8888, 8888));
+    defineExpectedURLInResponse("https", 8888);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(true));
+  }
+
+  @Test
+  public void whenServerConfiguredWithNonAdminNAPOnly_readHealthFailed() {
+    selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
+    WlsServerConfig server = getDynamicClusterServer2();
+    server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
+    defineExpectedURLInResponse("http", 9001);
+
+    Packet packet = testSupport.runSteps(readHealthStep);
+
+    assertThat(readServerHealthSucceeded(packet), equalTo(false));
+  }
+
+  private void defineExpectedURLInResponse(String protocol, int port) {
+    defineResponse(200, "", protocol + "://dyn-managed-server2.Test:" + port);
+  }
+
+  private boolean readServerHealthSucceeded(Packet packet) {
+    return getRemainingServersToRead(packet) == 0;
+  }
+
+  private WlsServerConfig getDynamicClusterServer2() {
+    WlsDomainConfig wlsDomainConfig = (WlsDomainConfig) testSupport.getPacket().get(DOMAIN_TOPOLOGY);
+    return wlsDomainConfig.getClusterConfig(DYNAMIC_CLUSTER_NAME).getServerConfigs().get(1);
   }
 
   public abstract static class V1ServiceStub extends V1Service {
 
     @Override
     public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(7001).name("default"));
-      return new V1ServiceSpec().clusterIP("127.0.0.1").ports(ports);
+      return new V1ServiceSpec().clusterIP("127.0.0.1");
     }
   }
 
@@ -287,9 +411,15 @@ public class ReadHealthStepTest {
 
     @Override
     public V1ServiceSpec getSpec() {
-      List<V1ServicePort> ports = new ArrayList<>();
-      ports.add(new V1ServicePort().port(7001).name("default"));
-      return new V1ServiceSpec().clusterIP("None").ports(ports);
+      return new V1ServiceSpec().clusterIP("None");
+    }
+  }
+
+  public abstract static class V1HeadlessMSServiceStub extends V1Service {
+    @Override
+    public V1ObjectMeta getMetadata() {
+      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER2).namespace("Test")
+          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
     }
   }
 

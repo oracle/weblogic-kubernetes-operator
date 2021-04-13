@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
+  private static final Integer DEFAULT_LISTEN_PORT = 7001;
   private final String domain;
   private String adminServerName;
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
@@ -62,7 +63,7 @@ public class WlsDomainConfigSupport {
    * @param serverName the name of the server.
    */
   public void addWlsServer(String serverName) {
-    addWlsServer(serverName, null);
+    addWlsServer(serverName, DEFAULT_LISTEN_PORT);
   }
 
   /**
@@ -118,7 +119,7 @@ public class WlsDomainConfigSupport {
    * @param serverNames the names of the servers
    */
   public void addWlsCluster(String clusterName, String... serverNames) {
-    addWlsCluster(clusterName, null, serverNames);
+    addWlsCluster(clusterName, DEFAULT_LISTEN_PORT, serverNames);
   }
 
   /**
@@ -209,7 +210,7 @@ public class WlsDomainConfigSupport {
     }
 
     void addServer(String serverName) {
-      addServer(serverName, null);
+      addServer(serverName, DEFAULT_LISTEN_PORT);
     }
 
     void addServer(String serverName, Integer listenPort) {
