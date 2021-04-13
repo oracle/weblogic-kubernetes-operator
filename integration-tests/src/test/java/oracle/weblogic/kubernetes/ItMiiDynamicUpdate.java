@@ -204,7 +204,7 @@ class ItMiiDynamicUpdate {
 
     // create the domain CR with a pre-defined configmap
     // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
-    // because of bug https://jira.oraclecorp.com/jira/browse/OWLS-88679
+    // because of bug OWLS-88679
     // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -461,7 +461,7 @@ class ItMiiDynamicUpdate {
     }
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
             pathToAddClusterYaml.toString()), withStandardRetryPolicy);
@@ -523,7 +523,7 @@ class ItMiiDynamicUpdate {
     LinkedHashMap<String, OffsetDateTime> pods = addDataSourceAndVerify(false);
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
@@ -614,7 +614,7 @@ class ItMiiDynamicUpdate {
     assertDoesNotThrow(() -> Files.write(pathToUndeployAppYaml, yamlToUndeployApp.getBytes()));
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.update2.yaml", pathToUndeployAppYaml.toString()), withStandardRetryPolicy);
@@ -1503,7 +1503,7 @@ class ItMiiDynamicUpdate {
     }
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
