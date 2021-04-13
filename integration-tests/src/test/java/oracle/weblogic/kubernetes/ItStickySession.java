@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isVoyagerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -202,12 +203,41 @@ class ItStickySession {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
+    final int maxRetry = 60;
 
     // create Voyager ingress resource
     Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(clusterName, managedServerPort);
-    List<String>  hostNames =
-        installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+    List<String>  hostNames = null;
+
+    for (int i = 0; i < maxRetry; i++) {
+      hostNames =
+          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+      if (hostNames != null && !hostNames.isEmpty()) {
+        break;
+      }
+
+      try {
+        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
+        Thread.sleep(1000);
+      } catch (InterruptedException ignore) {
+        // ignore
+      }
+    }
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                ingressServiceName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isVoyagerPodReady(domainNamespace, ingressServiceName),
+            String.format("podExists failed with ApiException for pod %s in namespace %s",
+                ingressServiceName, domainNamespace)));
 
     // get Voyager ingress service Nodeport
     int ingressServiceNodePort =
