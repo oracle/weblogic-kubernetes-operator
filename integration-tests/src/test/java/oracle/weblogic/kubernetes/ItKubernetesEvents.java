@@ -532,8 +532,14 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsStartWatchingNS() {
     OffsetDateTime timestamp = now();
+
     logger.info("Adding a new domain namespace in the operator watch list");
-    upgradeAndVerifyOperator(opNamespace, domainNamespace1, domainNamespace2);
+    List<String> domainNamespaces = new ArrayList<>();
+    domainNamespaces.add(domainNamespace1);
+    domainNamespaces.add(domainNamespace2);
+    opParams = opParams.domainNamespaces(domainNamespaces);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
     logger.info("verify NamespaceWatchingStarted event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
   }
@@ -561,8 +567,14 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsStopWatchingNS() {
     OffsetDateTime timestamp = now();
+
     logger.info("Removing domain namespace in the operator watch list");
-    upgradeAndVerifyOperator(opNamespace, domainNamespace1);
+    List<String> domainNamespaces = new ArrayList<>();
+    domainNamespaces.add(domainNamespace1);
+    opParams = opParams.domainNamespaces(domainNamespaces)
+                .enableClusterRoleBinding(true);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
     logger.info("verify NamespaceWatchingStopped event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
   }
@@ -588,6 +600,7 @@ public class ItKubernetesEvents {
   @Test
   public void testK8SEventsStartWatchingNSWithLabelSelector() {
     OffsetDateTime timestamp = now();
+
     logger.info("Adding a new domain namespace in the operator watch list");
     // Helm upgrade parameters
     opParams = opParams
@@ -717,7 +730,8 @@ public class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     // Helm upgrade parameters
-    opParams = opParams.domainNamespaceSelectionStrategy("Dedicated");
+    opParams = opParams.domainNamespaceSelectionStrategy("Dedicated")
+                .enableClusterRoleBinding(false);
 
     upgradeAndVerifyOperator(opNamespace, opParams);
 
