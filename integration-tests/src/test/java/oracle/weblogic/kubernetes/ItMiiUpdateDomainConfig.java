@@ -277,7 +277,7 @@ class ItMiiUpdateDomainConfig {
       logger.info("Command to send HTTP request and get HTTP response {0} ", curlCmd);
       ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
           "/bin/sh", "-c", curlCmd));
-      assertFalse(execResult.exitValue() != 0 && execResult.stderr() != null && !execResult.stderr().isEmpty(),
+      assertTrue(execResult.exitValue() == 0 || execResult.stderr() == null || execResult.stderr().isEmpty(),
           String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
               curlCmd, execResult.exitValue(), execResult.stderr(), execResult.stdout()));
     }
