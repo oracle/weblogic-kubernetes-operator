@@ -131,4 +131,8 @@ class DomainValidationMessages {
       String domainUid, String adminServerName, String result, int limit) {
     return getMessage(MessageKeys.ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH, domainUid, adminServerName, result, limit);
   }
+
+  public static String noAvailablePortToUse(String domainUid, String serverName) {
+    return getMessage(MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, serverName);
+  }
 }

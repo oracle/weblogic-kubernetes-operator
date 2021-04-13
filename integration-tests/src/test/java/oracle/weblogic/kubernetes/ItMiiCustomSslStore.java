@@ -144,7 +144,8 @@ class ItMiiCustomSslStore {
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName, null, false, false);
+        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        null, false, false, false);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
