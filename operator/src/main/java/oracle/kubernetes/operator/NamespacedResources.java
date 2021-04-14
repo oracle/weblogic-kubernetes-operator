@@ -47,6 +47,7 @@ class NamespacedResources {
 
   Step createListSteps() {
     return Step.chain(
+          new BeginStep(),
           getConfigMapListSteps(),
           getPodEventListSteps(),
           getOperatorEventListSteps(),
@@ -118,6 +119,13 @@ class NamespacedResources {
      */
     Consumer<DomainList> getDomainListProcessing() {
       return null;
+    }
+
+    /**
+     * Do any pre-processing of intermediate results.
+     * @param packet the packet in the fiber
+     */
+    void beginProcessing(Packet packet) {
     }
 
     /**
@@ -217,6 +225,14 @@ class NamespacedResources {
     return list.isEmpty() ? Optional.empty() : Optional.of(list);
   }
 
+
+  class BeginStep extends Step {
+    @Override
+    public NextAction apply(Packet packet) {
+      processors.forEach(p -> p.beginProcessing(packet));
+      return doNext(packet);
+    }
+  }
 
   class CompletionStep extends Step {
     @Override
