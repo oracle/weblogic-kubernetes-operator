@@ -18,6 +18,8 @@ import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
+import oracle.kubernetes.operator.helpers.EventHelper;
+import oracle.kubernetes.operator.helpers.EventRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -35,10 +37,12 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.helpers.HelmAccess.OPERATOR_DOMAIN_NAMESPACES;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.CREATING_EVENT_FORBIDDEN;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -50,8 +54,6 @@ public class NamespaceTest {
 
   private static final String ADDITIONAL_NS1 = "EXTRA_NS1";
   private static final String ADDITIONAL_NS2 = "EXTRA_NS2";
-  private static final String TEST_NAMESPACE_1 = "TEST_NAMESPACE_1";
-  private static final String TEST_NAMESPACE_2 = "TEST_NAMESPACE_2";
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -61,7 +63,7 @@ public class NamespaceTest {
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-
+  private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -188,28 +190,54 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenStartNamespaceBeforeStepRun_with403OnEventCreation_isNamespaceStartingFlagIsCleared() {
-    defineNamespaces(TEST_NAMESPACE_1);
-    specifyDomainNamespaces(TEST_NAMESPACE_1);
+  public void whenStartNamespaceBeforeStepRunHit403OnEventCreation_namespaceStartingFlagCleared() {
+    String namespace = "TEST_NAMESPACE_1";
+    defineNamespaces(namespace);
+    specifyDomainNamespaces(namespace);
 
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
-    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, TEST_NAMESPACE_1, HTTP_FORBIDDEN);
-    testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(TEST_NAMESPACE_1));
+    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, namespace, HTTP_FORBIDDEN);
+    testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
 
     MatcherAssert.assertThat(logRecords,
-        containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STARTED_EVENT, TEST_NAMESPACE_1));
-    assertThat(domainNamespaces.isStarting(TEST_NAMESPACE_1), is(false));
+        containsWarning(getMessage(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STARTED_EVENT, namespace)));
+    assertThat(domainNamespaces.isStarting(namespace), is(false));
   }
 
   @Test
-  public void whenStartNamespaceBeforeStepRunSucceeds_isNamespaceStartingFlagIsNotCleared() {
-    defineNamespaces(TEST_NAMESPACE_2);
-    specifyDomainNamespaces(TEST_NAMESPACE_2);
+  public void whenStartNamespaceBeforeStepRunSucceeds_namespaceStartingFlagIsNotCleared() {
+    String namespace = "TEST_NAMESPACE_2";
+    defineNamespaces(namespace);
+    specifyDomainNamespaces(namespace);
 
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
-    testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(TEST_NAMESPACE_2));
+    testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
     assertThat(logRecords.isEmpty(), is(true));
-    assertThat(domainNamespaces.isStarting(TEST_NAMESPACE_2), is(true));
+    assertThat(domainNamespaces.isStarting(namespace), is(true));
+  }
+
+  @Test
+  public void whenStartNamespaceBeforeStepRun403OnEventCreation_thenSucceed_namespaceStartingFlagSet() {
+    String namespace = "TEST_NAMESPACE_3";
+    testSupport.addRetryStrategy(retryStrategy);
+    defineNamespaces(namespace);
+    specifyDomainNamespaces(namespace);
+
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
+    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, namespace, HTTP_FORBIDDEN);
+    testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
+    testSupport.cancelFailures();
+    testSupport.runSteps(createEventStep(delegate.domainNamespaces,
+        new EventHelper.EventData(NAMESPACE_WATCHING_STARTED)
+            .namespace(namespace)
+            .resourceName(namespace), null));
+    MatcherAssert.assertThat(logRecords,
+        containsWarning(getMessage(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STARTED_EVENT, namespace)));
+    assertThat(domainNamespaces.isStarting(namespace), is(true));
+  }
+
+  private String getMessage(String pattern, String event, String ns) {
+    return String.format(pattern, event, ns);
   }
 
   private void addDomainNamespace(String namespace) {

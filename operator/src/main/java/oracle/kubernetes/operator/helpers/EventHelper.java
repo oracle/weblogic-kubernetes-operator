@@ -185,7 +185,9 @@ public class EventHelper {
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
         if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
+          domainNamespaces.shouldStartNamespace(eventData.getNamespace());
         }
+
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
@@ -199,10 +201,12 @@ public class EventHelper {
           return doNext(packet);
         }
 
-        if (domainNamespaces != null && isForbiddenForNamespaceWatchingStartedEvent(callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getNamespace());
-          domainNamespaces.clearIsNamespaceStartingFlag(eventData.getNamespace());
+        if (domainNamespaces != null && NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
+          if (isForbidden(callResponse)) {
+            LOGGER.warning(MessageKeys.CREATING_EVENT_FORBIDDEN,
+                eventData.eventItem.getReason(), eventData.getNamespace());
+          }
+          domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
           return super.onFailure(packet, callResponse);
         }
 
@@ -211,10 +215,6 @@ public class EventHelper {
 
       private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
         return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
-      }
-
-      private boolean isForbiddenForNamespaceWatchingStartedEvent(CallResponse<CoreV1Event> callResponse) {
-        return isForbidden(callResponse) && NAMESPACE_WATCHING_STARTED == eventData.eventItem;
       }
     }
 
