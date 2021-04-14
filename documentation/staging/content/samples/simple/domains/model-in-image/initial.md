@@ -336,13 +336,11 @@ Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` tha
 
 Run the following commands to create the model image and verify that it worked:
 
-{{% notice note %}}
-If you are taking the `JRF` path through the sample, then remove `--chown oracle:root` from the `imagetool.sh` command below.
-{{% /notice %}}
+
   ```shell
   $ cd /tmp/mii-sample/model-images
-    ```
-    ```shell
+  ```
+  ```shell
   $ ./imagetool/bin/imagetool.sh update \
     --tag model-in-image:WLS-v1 \
     --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 \

@@ -207,11 +207,9 @@ function updateDomainHome {
   sleep 30
   max=30
   count=0
-  kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
   kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
   while [ $? -eq 1 -a $count -lt $max ]; do
     sleep 5
-    #kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
     count=`expr $count + 1`
     kubectl exec $POD_NAME -c update-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domainupdate.yaml"
   done
