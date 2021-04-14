@@ -89,8 +89,8 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRY
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STOPPED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWatchingStopped;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
@@ -571,12 +571,11 @@ public class ItKubernetesEvents {
     logger.info("Removing domain namespace in the operator watch list");
     List<String> domainNamespaces = new ArrayList<>();
     domainNamespaces.add(domainNamespace1);
-    opParams = opParams.domainNamespaces(domainNamespaces)
-                .enableClusterRoleBinding(true);
+    opParams = opParams.domainNamespaces(domainNamespaces);
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp);
   }
 
   /**
@@ -602,18 +601,17 @@ public class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
 
     logger.info("Adding a new domain namespace in the operator watch list");
-    // Helm upgrade parameters
-    opParams = opParams
-        .domainNamespaceSelectionStrategy("LabelSelector")
-        .domainNamespaceLabelSelector("weblogic-operator=enabled");
-
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
     // label domainNamespace3
     new Command()
         .withParams(new CommandParams()
             .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled"))
         .execute();
+
+    // Helm upgrade parameters
+    opParams = opParams
+        .domainNamespaceSelectionStrategy("LabelSelector")
+        .domainNamespaceLabelSelector("weblogic-operator=enabled");
+    upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace3);
     checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
@@ -646,7 +644,7 @@ public class ItKubernetesEvents {
         .execute();
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp);
   }
 
   /**
@@ -710,11 +708,10 @@ public class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp);
 
     logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
     checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-
   }
 
   /**
@@ -740,7 +737,7 @@ public class ItKubernetesEvents {
 
     // TODO: there is a bug (OWLS-88697), enable the check once the bug is fixed
     //logger.info("verify NamespaceWatchingStopped event is logged in " + domainNamespace4);
-    //checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STOPPED, "Normal", timestamp);
+    //checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp);
   }
 
   /**
@@ -769,6 +766,19 @@ public class ItKubernetesEvents {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
+
+  private static void checkNamespaceWatchingStoppedEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String type, OffsetDateTime timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            logger.info("Waiting for domain event NamespaceWatchingStopped to be logged in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEventWatchingStopped(opNamespace, domainNamespace, domainUid, type, timestamp));
   }
 
   private static void checkEventWithCount(

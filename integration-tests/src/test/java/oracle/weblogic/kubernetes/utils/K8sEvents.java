@@ -21,6 +21,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -46,6 +48,36 @@ public class K8sEvents {
       String type, OffsetDateTime timestamp) {
     return () -> {
       return domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    };
+  }
+
+  /**
+   * Check if a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkDomainEventWatchingStopped(
+      String opNamespace, String domainNamespace, String domainUid,
+      String type, OffsetDateTime timestamp) {
+    return () -> {
+      if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
+        if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+          return true;
+        }
+      } else {
+        // check if there is a warning message in operator's log
+        String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
+        if (getPodLog(operatorPodName, opNamespace).contains("Forbidden, code: 403")) {
+          if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            return true;
+          }
+        }
+      }
+      return false;
     };
   }
 
@@ -252,6 +284,7 @@ public class K8sEvents {
   public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
+  public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
 
