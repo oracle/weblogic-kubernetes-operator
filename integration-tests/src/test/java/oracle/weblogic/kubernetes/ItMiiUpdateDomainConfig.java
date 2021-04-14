@@ -278,14 +278,14 @@ class ItMiiUpdateDomainConfig {
           + "done";
       withStandardRetryPolicy
           .conditionEvaluationListener(
-              condition -> logger.info("Sending HTTP requests to populate http access log "
+              condition -> logger.info("Sending HTTP requests to populate the http access log "
                   + "(elapsed time {0} ms, remaining time {1} ms)",
                   condition.getElapsedTimeInMS(),
                   condition.getRemainingTimeInMS()))
           .until((Callable<Boolean>) () -> {
             ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
                 "/bin/sh", "-c", curlCmd));
-            return execResult.exitValue() == 0 && execResult.toString().contains("HTTP/1.1 200 OK");
+            return execResult.toString().contains("HTTP/1.1 200 OK");
           });
     }
     String[] servers = {"managed-server1", "managed-server2"};
