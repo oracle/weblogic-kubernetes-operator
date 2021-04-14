@@ -270,7 +270,6 @@ class ItMiiUpdateDomainConfig {
   @Order(2)
   @DisplayName("Check the HTTP server logs are written to PersistentVolume")
   public void testMiiHttpServerLogsAreOnPV() {
-    final int MAX_RETRIES = 10;
     String[] podNames = {managedServerPrefix + "1", managedServerPrefix + "2"};
     for (String pod : podNames) {
       String curlCmd = "for i in {1..100}; "
@@ -286,7 +285,7 @@ class ItMiiUpdateDomainConfig {
           .until((Callable<Boolean>) () -> {
             ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
                 "/bin/sh", "-c", curlCmd));
-            return execResult.exitValue() == 0;
+            return execResult.exitValue() == 0 && execResult.toString().contains("HTTP/1.1 200 OK");
           });
     }
     String[] servers = {"managed-server1", "managed-server2"};
