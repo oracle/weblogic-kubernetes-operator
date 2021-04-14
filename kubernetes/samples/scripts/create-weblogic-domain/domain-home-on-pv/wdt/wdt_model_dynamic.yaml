@@ -10,7 +10,7 @@ topology:
         '@@PROP:clusterName@@':
             DynamicServers:
                 CalculatedListenPorts: false
-                DynamicClusterSize: '@@PROP:initialManagedServerReplicas@@'
+                DynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
                 MaxDynamicClusterSize: '@@PROP:configuredManagedServerCount@@'
                 ServerNamePrefix: '@@PROP:managedServerNameBase@@'
                 ServerTemplate: '@@PROP:clusterName@@-template'

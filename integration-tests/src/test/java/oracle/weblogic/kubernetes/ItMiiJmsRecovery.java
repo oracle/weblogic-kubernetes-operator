@@ -186,7 +186,8 @@ class ItMiiJmsRecovery {
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName, dbSecretName, false, false);
+        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        dbSecretName, false, false, true);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);

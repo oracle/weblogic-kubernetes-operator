@@ -162,6 +162,7 @@ public class MessageKeys {
   public static final String ILLEGAL_SERVER_SERVICE_NAME_LENGTH = "WLSDO-0018";
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
   public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
+  public static final String NO_AVAILABLE_PORT_TO_USE_FOR_REST = "WLSDO-0021";
 
   private MessageKeys() {
   }

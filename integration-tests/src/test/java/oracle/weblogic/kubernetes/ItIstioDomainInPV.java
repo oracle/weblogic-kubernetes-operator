@@ -340,7 +340,7 @@ public class ItIstioDomainInPV  {
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
 
-    // Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86407
+    // Refer JIRA OWLS-86407
     // Stop and Start the managed server in absense of administration server
     assertTrue(patchServerStartPolicy(domainUid, domainNamespace,
          "/spec/adminServer/serverStartPolicy", "NEVER"),

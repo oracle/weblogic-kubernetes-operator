@@ -100,6 +100,7 @@ public class DomainSpec extends BaseConfiguration {
       "The directory in a server's container in which to store the domain, Node Manager, server logs, "
           + "server *.out, introspector .out, and optionally HTTP access log files "
           + "if `httpAccessLogInLogHome` is true. "
+          + "Default is `/shared/logs/DOMAIN-UID`. "
           + "Ignored if `logHomeEnabled` is false.")
   private String logHome;
 
