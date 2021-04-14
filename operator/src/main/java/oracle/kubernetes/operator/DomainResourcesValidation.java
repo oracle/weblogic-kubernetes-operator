@@ -68,12 +68,6 @@ class DomainResourcesValidation {
       }
 
       @Override
-      void beginProcessing(Packet packet) {
-        DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        // HERE
-      }
-
-      @Override
       void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
         getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
@@ -161,11 +155,11 @@ class DomainResourcesValidation {
 
   private static void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
-    if (info.getDomain().getStatus() != null) {
-      dp.createMakeRightOperation(info).withExplicitRecheck().execute();
-    } else {
-      dp.createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+    MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
+    if (info.getDomain().getStatus() == null) {
+      makeRight = makeRight.interrupt();
     }
+    makeRight.execute();
   }
 
 }

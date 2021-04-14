@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -739,11 +740,26 @@ public class DomainProcessorImpl implements DomainProcessor {
     MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
       this.liveInfo = liveInfo;
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      if ((liveInfo.getDomain() != null) && (!isNewDomain(cachedInfo))
-              && (liveInfo.getDomain().getMetadata().getCreationTimestamp()
-              .isAfter(cachedInfo.getDomain().getMetadata().getCreationTimestamp()))) {
+      if (liveInfo.getDomain() != null
+          && !isNewDomain(cachedInfo)
+          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
         willInterrupt = true;
       }
+    }
+
+    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
+      return Optional.ofNullable(dpi.getDomain())
+          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+    }
+
+    private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
+      if (two == null) {
+        return true;
+      }
+      if (one == null) {
+        return false;
+      }
+      return one.isAfter(two);
     }
 
     /**
