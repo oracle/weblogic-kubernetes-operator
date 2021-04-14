@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -276,25 +275,19 @@ class ItMiiUpdateDomainConfig {
     for (String pod : podNames) {
       String curlCmd = "for i in {1..100}; "
           + "do "
-          + "curl -v http://" + pod + ":8001/sample-war/index.jsp;  "
-          + "echo exit-code $?; "
+          + "curl -v http://" + pod + ":8001/sample-war/index.jsp;"
           + "done";
-      boolean success = false;
-      for (int i = 0; i < MAX_RETRIES; i++) {
-        //wait for 1 second before sending in the http request
-        assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
-        logger.info("Executing curl command {0} to send http request", curlCmd);
-        ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
-            "/bin/sh", "-c", curlCmd));
-        if (execResult.exitValue() == 0) {
-          success = true;
-          break;
-        } else {
-          logger.warning(String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-              curlCmd, execResult.exitValue(), execResult.stderr(), execResult.stdout()));
-        }
-      }
-      assertTrue(success, "HTTP requests didn't succeed");
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Sending HTTP requests to populate http access log "
+                  + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until((Callable<Boolean>) () -> {
+            ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
+                "/bin/sh", "-c", curlCmd));
+            return execResult.exitValue() == 0;
+          });
     }
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
