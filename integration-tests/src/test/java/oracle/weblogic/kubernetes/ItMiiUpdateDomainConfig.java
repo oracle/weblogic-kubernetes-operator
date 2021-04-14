@@ -108,7 +108,6 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
-import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -273,19 +272,21 @@ class ItMiiUpdateDomainConfig {
   public void testMiiHttpServerLogsAreOnPV() {
     String[] podNames = {managedServerPrefix + "1", managedServerPrefix + "2"};
     for (String pod : podNames) {
-      String curlCmd = "for i in {1..100}; do curl -v "
-          + "http://" + pod + ":8001/sample-war/index.jsp; done";
-      logger.info("Command to send HTTP request and get HTTP response {0} ", curlCmd);
-      ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
-          "/bin/sh", "-c", curlCmd));
-      if (execResult.exitValue() == 0) {
-        logger.info("\n HTTP response is \n " + execResult.toString());
-        assertAll("Check that the HTTP response is 200",
-            () -> assertTrue(execResult.toString().contains("HTTP/1.1 200 OK"))
-        );
-      } else {
-        fail("Failed to access sample application " + execResult.stderr());
-      }
+      String curlCmd = "for i in {1..100}; "
+          + "do "
+          + "curl -v http://" + pod + ":8001/sample-war/index.jsp;"
+          + "done";
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Sending HTTP requests to populate the http access log "
+                  + "(elapsed time {0} ms, remaining time {1} ms)",
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until((Callable<Boolean>) () -> {
+            ExecResult execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, pod, null, true,
+                "/bin/sh", "-c", curlCmd));
+            return execResult.toString().contains("HTTP/1.1 200 OK");
+          });
     }
     String[] servers = {"managed-server1", "managed-server2"};
     for (String server : servers) {
