@@ -183,6 +183,10 @@ public class DomainNamespaces {
     return getNamespaceStatus(ns).shouldStartNamespace();
   }
 
+  public void clearIsNamespaceStartingFlag(String ns) {
+    getNamespaceStatus(ns).clearIsNamespaceStartingFlag();
+  }
+
   interface WatcherFactory<T, W extends Watcher<T>> {
     W create(
           ThreadFactory threadFactory,

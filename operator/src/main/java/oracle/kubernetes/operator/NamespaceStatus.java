@@ -33,4 +33,8 @@ public class NamespaceStatus {
   boolean shouldStartNamespace() {
     return !isNamespaceStarting.getAndSet(true);
   }
+
+  public void clearIsNamespaceStartingFlag() {
+    isNamespaceStarting.set(false);
+  }
 }
