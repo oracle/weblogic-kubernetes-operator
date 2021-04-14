@@ -71,6 +71,7 @@ public class K8sEvents {
       } else {
         // check if there is a warning message in operator's log
         String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
+        logger.info("operator log: {0}", getPodLog(operatorPodName, opNamespace));
         if (getPodLog(operatorPodName, opNamespace).contains("Forbidden, code: 403")) {
           if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
             return true;
