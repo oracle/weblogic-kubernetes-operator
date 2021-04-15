@@ -290,6 +290,17 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
   }
 
+  /**
+   * delete resources.
+   * @param resources resources.
+   * @param <T> type
+   */
+  public final <T> void deleteResources(T... resources) {
+    for (T resource : resources) {
+      getDataRepository(resource).deleteResourceInNamespace(resource);
+    }
+  }
+
   public void definePodLog(String name, String namespace, Object contents) {
     repositories.get(PODLOG).createResourceInNamespace(name, namespace, contents);
   }
@@ -660,14 +671,36 @@ public class KubernetesTestSupport extends FiberTestSupport {
     T createResource(String namespace, T resource) {
       String name = getName(resource);
       if (name != null) {
-        if (hasElementWithName(getName(resource))) {
+        if (hasElementWithName(name)) {
           throw new RuntimeException("element exists");
         }
-        data.put(getName(resource), resource);
+        data.put(name, resource);
       }
 
       onCreateActions.forEach(a -> a.accept(resource));
       return resource;
+    }
+
+    void deleteResourceInNamespace(T resource) {
+      deleteResource(getMetadata(resource).getNamespace(), resource);
+    }
+
+    void deleteResource(String namespace, T resource) {
+      String name = getName(resource);
+      if (name != null) {
+        if (!hasElementWithName(getName(resource))) {
+          throw new RuntimeException("element doesn't exist");
+        }
+        data.remove(name);
+      }
+    }
+
+    T deleteResource(String name, String namespace, String call) {
+      if (!hasElementWithName(name)) {
+        throw new NotFoundException(getResourceName(), name, namespace);
+      }
+      data.remove(name);
+      return getDeleteResult(name, namespace, call);
     }
 
     Object listResources(String namespace, Integer limit, String cont, String fieldSelector, String... labelSelectors) {
@@ -804,14 +837,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       } catch (NullPointerException | IllegalAccessException | InvocationTargetException e) {
         throw new RuntimeException("Status subresource not defined");
       }
-    }
-
-    T deleteResource(String name, String namespace, String call) {
-      if (!hasElementWithName(name)) {
-        throw new NotFoundException(getResourceName(), name, namespace);
-      }
-      data.remove(name);
-      return getDeleteResult(name, namespace, call);
     }
 
     @SuppressWarnings("unchecked")
@@ -970,6 +995,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return inNamespace(namespace).createResource(namespace, resource);
     }
 
+    @Override
+    void deleteResource(String namespace, T resource) {
+      inNamespace(namespace).deleteResource(namespace, resource);
+    }
+
+    @Override
+    T deleteResource(String name, String namespace, String call) {
+      return inNamespace(namespace).deleteResource(name, namespace, call);
+    }
+
     private DataRepository<T> inNamespace(String namespace) {
       return repositories.computeIfAbsent(namespace, n -> new DataRepository<>(resourceType, this));
     }
@@ -982,11 +1017,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
     @Override
     T replaceResourceStatus(String name, T resource) {
       return inNamespace(getMetadata(resource).getNamespace()).replaceResourceStatus(name, resource);
-    }
-
-    @Override
-    T deleteResource(String name, String namespace, String call) {
-      return inNamespace(namespace).deleteResource(name, namespace, call);
     }
 
     @Override
