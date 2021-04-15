@@ -43,6 +43,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -529,19 +531,34 @@ public class ItKubernetesEvents {
    * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
   @Order(11)
-  @Test
-  public void testK8SEventsStartWatchingNS() {
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
+    logger.info("testing testK8SEventsStartStopWatchingNS with enableClusterRoleBinding={0}",
+        enableClusterRoleBinding);
     OffsetDateTime timestamp = now();
 
     logger.info("Adding a new domain namespace in the operator watch list");
     List<String> domainNamespaces = new ArrayList<>();
     domainNamespaces.add(domainNamespace1);
     domainNamespaces.add(domainNamespace2);
-    opParams = opParams.domainNamespaces(domainNamespaces);
+    opParams = opParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged");
     checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    timestamp = now();
+
+    logger.info("Removing domain namespace in the operator watch list");
+    domainNamespaces.clear();
+    domainNamespaces.add(domainNamespace1);
+    opParams = opParams.domainNamespaces(domainNamespaces);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStopped event is logged");
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
+        enableClusterRoleBinding);
   }
 
   /**
@@ -564,7 +581,7 @@ public class ItKubernetesEvents {
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
   @Order(12)
-  @Test
+  //@Test
   public void testK8SEventsStopWatchingNS() {
     OffsetDateTime timestamp = now();
 
@@ -575,7 +592,7 @@ public class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp, false);
   }
 
   /**
@@ -596,21 +613,25 @@ public class ItKubernetesEvents {
    * with the label selector.
    */
   @Order(13)
-  @Test
-  public void testK8SEventsStartWatchingNSWithLabelSelector() {
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
+    logger.info("testing testK8SEventsStartStopWatchingNSWithLabelSelector with enableClusterRoleBinding={0}",
+        enableClusterRoleBinding);
     OffsetDateTime timestamp = now();
 
     logger.info("Adding a new domain namespace in the operator watch list");
     // label domainNamespace3
     new Command()
         .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled"))
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
         .execute();
 
     // Helm upgrade parameters
     opParams = opParams
         .domainNamespaceSelectionStrategy("LabelSelector")
-        .domainNamespaceLabelSelector("weblogic-operator=enabled");
+        .domainNamespaceLabelSelector("weblogic-operator=enabled")
+        .enableClusterRoleBinding(enableClusterRoleBinding);
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace3);
@@ -621,6 +642,19 @@ public class ItKubernetesEvents {
     assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
         "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
         + domainNamespace4 + ", expected no such event will be logged");
+
+    timestamp = now();
+    logger.info("Removing domain namespace in the operator watch list");
+
+    // label domainNamespace3 to weblogic-operator=disabled
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
+        .execute();
+
+    logger.info("verify NamespaceWatchingStopped event is logged");
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
+        enableClusterRoleBinding);
   }
 
   /**
@@ -632,7 +666,7 @@ public class ItKubernetesEvents {
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
   @Order(14)
-  @Test
+  //@Test
   public void testK8SEventsStopWatchingNSWithLabelSelector() {
     OffsetDateTime timestamp = now();
     logger.info("Removing domain namespace in the operator watch list");
@@ -644,7 +678,7 @@ public class ItKubernetesEvents {
         .execute();
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp, false);
   }
 
   /**
@@ -665,14 +699,16 @@ public class ItKubernetesEvents {
    * matching with the regular expression.
    */
   @Order(15)
-  @Test
-  public void testK8SEventsStartWatchingNSWithRegExp() {
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
     OffsetDateTime timestamp = now();
     logger.info("Adding a new domain namespace in the operator watch list");
     // Helm upgrade parameters
     opParams = opParams
         .domainNamespaceSelectionStrategy("RegExp")
-        .domainNamespaceRegExp(domainNamespace5.substring(3));
+        .domainNamespaceRegExp(domainNamespace5.substring(3))
+        .enableClusterRoleBinding(enableClusterRoleBinding);
 
     upgradeAndVerifyOperator(opNamespace, opParams);
 
@@ -684,6 +720,23 @@ public class ItKubernetesEvents {
     assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
         "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
         + domainNamespace4 + ", expected no such event will be logged");
+
+    timestamp = now();
+    logger.info("Removing domain namespace in the operator watch list");
+
+    // Helm upgrade parameters
+    opParams = opParams
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp(domainNamespace4.substring(3));
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStopped event is logged");
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
+        enableClusterRoleBinding);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
+    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
   }
 
   /**
@@ -695,7 +748,7 @@ public class ItKubernetesEvents {
    * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
    */
   @Order(16)
-  @Test
+  //@Test
   public void testK8SEventsStopWatchingNSWithRegExp() {
     OffsetDateTime timestamp = now();
     logger.info("Removing domain namespace in the operator watch list");
@@ -708,7 +761,7 @@ public class ItKubernetesEvents {
     upgradeAndVerifyOperator(opNamespace, opParams);
 
     logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp, false);
 
     logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
     checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
@@ -737,7 +790,7 @@ public class ItKubernetesEvents {
 
     // TODO: there is a bug (OWLS-88697), enable the check once the bug is fixed
     //logger.info("verify NamespaceWatchingStopped event is logged in " + domainNamespace4);
-    //checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp);
+    //checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
   }
 
   /**
@@ -770,7 +823,7 @@ public class ItKubernetesEvents {
 
   private static void checkNamespaceWatchingStoppedEvent(
       String opNamespace, String domainNamespace, String domainUid,
-      String type, OffsetDateTime timestamp) {
+      String type, OffsetDateTime timestamp, boolean enableClusterRoleBinding) {
     withStandardRetryPolicy
         .conditionEvaluationListener(condition ->
             logger.info("Waiting for domain event NamespaceWatchingStopped to be logged in namespace {0} "
@@ -778,7 +831,8 @@ public class ItKubernetesEvents {
                 domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(checkDomainEventWatchingStopped(opNamespace, domainNamespace, domainUid, type, timestamp));
+        .until(checkDomainEventWatchingStopped(opNamespace, domainNamespace, domainUid, type, timestamp,
+            enableClusterRoleBinding));
   }
 
   private static void checkEventWithCount(

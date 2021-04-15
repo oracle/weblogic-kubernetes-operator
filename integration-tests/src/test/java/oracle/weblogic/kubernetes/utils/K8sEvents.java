@@ -62,19 +62,45 @@ public class K8sEvents {
    */
   public static Callable<Boolean> checkDomainEventWatchingStopped(
       String opNamespace, String domainNamespace, String domainUid,
-      String type, OffsetDateTime timestamp) {
+      String type, OffsetDateTime timestamp, boolean enableClusterRoleBinding) {
     return () -> {
-      if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
-        if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
-          return true;
+      if (enableClusterRoleBinding) {
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
+          logger.info("Got the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
+          if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
+            return true;
+          } else {
+            logger.info("Did not get the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
+          }
+        } else {
+          logger.info("Did not get the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
         }
       } else {
-        // check if there is a warning message in operator's log
-        String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
-        logger.info("operator log: {0}", getPodLog(operatorPodName, opNamespace));
-        if (getPodLog(operatorPodName, opNamespace).contains("Forbidden, code: 403")) {
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
+          logger.info("Got the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
           if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
             return true;
+          }
+        } else {
+          logger.info("Did not get the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
+
+          // check if there is a warning message in operator's log
+          String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
+          String expectedErrorMsg = String.format(
+              "Cannot create NamespaceWatchingStopped event in namespace %s due to an authorization error",
+              domainNamespace);
+          String operatorLog = getPodLog(operatorPodName, opNamespace);
+          if (operatorLog.contains(expectedErrorMsg)) {
+            logger.info("Got the expected error msg {0} in operator log", expectedErrorMsg);
+            if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+              logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
+              return true;
+            }
+          } else {
+            logger.info("Did not get the expected error msg {0} in operator log", expectedErrorMsg);
+            logger.info("Operator log: {0}", operatorLog);
           }
         }
       }
