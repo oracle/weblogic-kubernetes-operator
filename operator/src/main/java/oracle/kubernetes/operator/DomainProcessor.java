@@ -3,6 +3,9 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Set;
+import java.util.stream.Stream;
+
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -64,5 +67,17 @@ public interface DomainProcessor {
   /**
    * If the logging level is high enough, reports on any fibers which may currently be suspended.
    */
-  void reportSuspendedFibers();
+  default void reportSuspendedFibers() {
+    // no-op
+  }
+
+  /**
+   * Finds stranded cached domain presence infos that are not identified by the key set.
+   * @param namespace namespace
+   * @param domainUids domain UID key set
+   * @return stream of cached domain presence infos.
+   */
+  default Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+    return Stream.empty();
+  }
 }

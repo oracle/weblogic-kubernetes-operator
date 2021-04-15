@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,12 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -344,6 +347,12 @@ public class DomainProcessorImpl implements DomainProcessor {
       makeRightFiberGates.forEach(consumer);
       statusFiberGates.forEach(consumer);
     }
+  }
+
+  @Override
+  public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+    return Optional.ofNullable(DOMAINS.get(namespace)).orElse(Collections.emptyMap())
+        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
   }
 
   private String getDomainUid(Fiber fiber) {
@@ -731,11 +740,26 @@ public class DomainProcessorImpl implements DomainProcessor {
     MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
       this.liveInfo = liveInfo;
       DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
-      if ((liveInfo.getDomain() != null) && (!isNewDomain(cachedInfo))
-              && (liveInfo.getDomain().getMetadata().getCreationTimestamp()
-              .isAfter(cachedInfo.getDomain().getMetadata().getCreationTimestamp()))) {
+      if (liveInfo.getDomain() != null
+          && !isNewDomain(cachedInfo)
+          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
         willInterrupt = true;
       }
+    }
+
+    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
+      return Optional.ofNullable(dpi.getDomain())
+          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+    }
+
+    private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
+      if (two == null) {
+        return true;
+      }
+      if (one == null) {
+        return false;
+      }
+      return one.isAfter(two);
     }
 
     /**
