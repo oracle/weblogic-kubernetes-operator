@@ -63,4 +63,11 @@ public abstract class Pool<T> {
    * @return Created instance
    */
   protected abstract T create();
+
+  /**
+   * Discards the object instance. This method will cause {@link #take()
+   * take} to return a different object from pool.
+   *
+   */
+  protected abstract void discard(T client);
 }
