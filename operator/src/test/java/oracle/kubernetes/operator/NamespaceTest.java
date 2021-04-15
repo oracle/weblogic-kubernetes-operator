@@ -223,7 +223,7 @@ public class NamespaceTest {
     defineNamespaces(namespace);
     specifyDomainNamespaces(namespace);
 
-    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
+    loggerControl.collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, namespace, HTTP_FORBIDDEN);
     testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
     testSupport.cancelFailures();

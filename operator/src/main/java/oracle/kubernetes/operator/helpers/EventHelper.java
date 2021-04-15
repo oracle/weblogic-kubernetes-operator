@@ -201,12 +201,17 @@ public class EventHelper {
           return doNext(packet);
         }
 
-        if (domainNamespaces != null && NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
+        if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
+          if (domainNamespaces != null) {
+            domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
+          }
           if (isForbidden(callResponse)) {
             LOGGER.warning(MessageKeys.CREATING_EVENT_FORBIDDEN,
                 eventData.eventItem.getReason(), eventData.getNamespace());
+            return doNext(createEventStep(
+                new EventData(EventItem.START_MANAGING_NAMESPACE_FAILED)
+                    .namespace(getOperatorNamespace()).resourceName(eventData.getNamespace())), packet);
           }
-          domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
           return super.onFailure(packet, callResponse);
         }
 
@@ -498,6 +503,37 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByOperatorLabel(metadata);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createOperatorEventInvolvedObject();
+      }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
+    },
+    START_MANAGING_NAMESPACE_FAILED {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.START_MANAGING_NAMESPACE_FAILED_PATTERN;
       }
 
       @Override
