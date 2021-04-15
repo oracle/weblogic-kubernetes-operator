@@ -212,7 +212,7 @@ public class ItTwoDomainsLoadBalancers {
   // domain constants
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 8001;
+  private static final int MANAGED_SERVER_PORT = 7100;
   private static final int ADMIN_SERVER_PORT = 7001;
 
   private int t3ChannelPort = 0;
