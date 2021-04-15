@@ -64,6 +64,12 @@ public class ClientPool extends Pool<ApiClient> {
     return instance.updateAndGet(prev -> prev != null ? prev : getApiClient());
   }
 
+  @Override
+  public void discard(ApiClient client) {
+    client = null;
+    instance.updateAndGet(newClient -> getApiClient());
+  }
+
   private ApiClient getApiClient() {
     LOGGER.entering();
 

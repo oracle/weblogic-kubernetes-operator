@@ -47,7 +47,7 @@ public class NamespaceTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
   private final DomainNamespaces domainNamespaces = new DomainNamespaces();
-  private final DomainProcessorStub dp = Stub.createStub(DomainProcessorStub.class);
+  private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
 
   @BeforeEach
@@ -186,9 +186,6 @@ public class NamespaceTest {
   }
 
   abstract static class DomainProcessorStub implements DomainProcessor {
-    @Override
-    public void reportSuspendedFibers() {
-    }
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
