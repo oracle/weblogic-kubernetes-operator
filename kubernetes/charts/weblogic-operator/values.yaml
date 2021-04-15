@@ -122,7 +122,7 @@ elasticSearchPort: 9200
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
 javaLoggingLevel: "INFO"
 
-# javaLoggingFileSizeLimit specifies the maximum size in bytes of the Java logging files in the operator container's
+# javaLoggingFileSizeLimit specifies the maximum size in bytes for an individual Java logging file in the operator container's
 # /logs/ directory.
 javaLoggingFileSizeLimit: 20000000
 
