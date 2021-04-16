@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 
 public class ClientPoolTest {
@@ -44,5 +45,13 @@ public class ClientPoolTest {
     ClientPool.getInstance().recycle(apiClient);
 
     assertThat(ClientPool.getInstance().take(), sameInstance(apiClient));
+  }
+
+  @Test
+  public void afterDiscard_takeReturnsDifferentClient() {
+    ApiClient apiClient = ClientPool.getInstance().take();
+    ClientPool.getInstance().discard(apiClient);
+
+    assertThat(ClientPool.getInstance().take(), not(sameInstance(apiClient)));
   }
 }

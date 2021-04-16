@@ -5,10 +5,9 @@ package oracle.kubernetes.operator;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
@@ -71,7 +70,7 @@ class DomainResourcesValidation {
       @Override
       void completeProcessing(Packet packet) {
         DomainProcessor dp = Optional.ofNullable(packet.getSpi(DomainProcessor.class)).orElse(processor);
-        getStrandedDomainPresenceInfos().forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
+        getStrandedDomainPresenceInfos(dp).forEach(info -> removeStrandedDomainPresenceInfo(dp, info));
         getActiveDomainPresenceInfos().forEach(info -> activateDomain(dp, info));
       }
     };
@@ -131,8 +130,9 @@ class DomainResourcesValidation {
     getDomainPresenceInfo(domain.getDomainUid()).setDomain(domain);
   }
 
-  private Set<DomainPresenceInfo> getStrandedDomainPresenceInfos() {
-    return domainPresenceInfoMap.values().stream().filter(this::isStranded).collect(Collectors.toSet());
+  private Stream<DomainPresenceInfo> getStrandedDomainPresenceInfos(DomainProcessor dp) {
+    return Stream.concat(domainPresenceInfoMap.values().stream().filter(this::isStranded),
+        dp.findStrandedDomainPresenceInfos(namespace, domainPresenceInfoMap.keySet()));
   }
 
   private boolean isStranded(DomainPresenceInfo dpi) {
@@ -145,8 +145,8 @@ class DomainResourcesValidation {
     dp.createMakeRightOperation(info).withExplicitRecheck().forDeletion().execute();
   }
 
-  private Set<DomainPresenceInfo> getActiveDomainPresenceInfos() {
-    return domainPresenceInfoMap.values().stream().filter(this::isActive).collect(Collectors.toSet());
+  private Stream<DomainPresenceInfo> getActiveDomainPresenceInfos() {
+    return domainPresenceInfoMap.values().stream().filter(this::isActive);
   }
 
   private boolean isActive(DomainPresenceInfo dpi) {
@@ -155,7 +155,11 @@ class DomainResourcesValidation {
 
   private static void activateDomain(DomainProcessor dp, DomainPresenceInfo info) {
     info.setPopulated(true);
-    dp.createMakeRightOperation(info).withExplicitRecheck().execute();
+    MakeRightDomainOperation makeRight = dp.createMakeRightOperation(info).withExplicitRecheck();
+    if (info.getDomain().getStatus() == null) {
+      makeRight = makeRight.interrupt();
+    }
+    makeRight.execute();
   }
 
 }
