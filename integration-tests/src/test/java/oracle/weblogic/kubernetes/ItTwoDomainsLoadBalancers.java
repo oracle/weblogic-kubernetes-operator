@@ -425,7 +425,7 @@ public class ItTwoDomainsLoadBalancers {
 
     // install and verify Apache for default sample
     apacheHelmParams1 = assertDoesNotThrow(
-        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
+        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid));
 
     // install and verify Apache for custom sample
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
@@ -434,7 +434,7 @@ public class ItTwoDomainsLoadBalancers {
     }
     createPVPVCForApacheCustomConfiguration(defaultNamespace);
     apacheHelmParams2 = assertDoesNotThrow(
-        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
+        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid,
             apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
   }
 
