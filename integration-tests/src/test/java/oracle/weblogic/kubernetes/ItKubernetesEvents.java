@@ -512,23 +512,22 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy default to List.
-   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy default to List and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * The test upgrades the operator instance through helm to add or remove another domain namespace
+   * in the operator watch list.
+   * This is a parameterized test with enableClusterRoleBinding set to either true or false.
    *<p>
    *<pre>{@literal
    * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
    * --namespace ns-ipqy
    * --reuse-values
    * --set "domainNamespaces={ns-xghr,ns-idir}"
-   * --set "externalRestEnabled=false"
-   * --set "elkIntegrationEnabled=false"
-   * --set "enableClusterRoleBinding=false"
-   * --set "externalRestHttpsPort=0">
    * }
    * </pre>
    * </p>
-   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching an another domain namespace.
    */
   @Order(11)
   @ParameterizedTest
@@ -562,43 +561,12 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Operator logs a NamespaceWatchingStopped event in the respective domain name space
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to LabelSelector and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
    * when it stops watching a domain namespace.
-   * The test upgrades the operator instance through helm to remove domain namespace in the operator watch list.
-   *<p>
-   *<pre>{@literal
-   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
-   * --namespace ns-ipqy
-   * --reuse-values
-   * --set "domainNamespaces={ns-xghr}"
-   * --set "externalRestEnabled=false"
-   * --set "elkIntegrationEnabled=false"
-   * --set "enableClusterRoleBinding=false"
-   * --set "externalRestHttpsPort=0">
-   * }
-   * </pre>
-   * </p>
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
-   */
-  @Order(12)
-  //@Test
-  public void testK8SEventsStopWatchingNS() {
-    OffsetDateTime timestamp = now();
-
-    logger.info("Removing domain namespace in the operator watch list");
-    List<String> domainNamespaces = new ArrayList<>();
-    domainNamespaces.add(domainNamespace1);
-    opParams = opParams.domainNamespaces(domainNamespaces);
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp, false);
-  }
-
-  /**
-   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to LabelSelector.
-   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   * The test upgrades the operator instance through helm to add or removew another domain namespace
+   * in the operator watch list.
    *<p>
    *<pre>{@literal
    * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
@@ -609,8 +577,6 @@ public class ItKubernetesEvents {
    * }
    * </pre>
    * </p>
-   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching another domain namespace
-   * with the label selector.
    */
   @Order(13)
   @ParameterizedTest
@@ -658,33 +624,12 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to RegExp and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
    * when it stops watching a domain namespace.
-   * Operator helm parameter domainNamespaceSelectionStrategy is set to LabelSelector and
-   * domainNamespaceLabelSelector is set to weblogic-operator\=enabled
-   * set a different label of domainNamespace3 to remove domain namespace in the operator watch list.
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
-   */
-  @Order(14)
-  //@Test
-  public void testK8SEventsStopWatchingNSWithLabelSelector() {
-    OffsetDateTime timestamp = now();
-    logger.info("Removing domain namespace in the operator watch list");
-
-    // label domainNamespace3 to weblogic-operator=disabled
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
-        .execute();
-
-    logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp, false);
-  }
-
-  /**
-   * Operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to RegExp.
-   * The test upgrades the operator instance through helm to add another domain namespace in the operator watch list.
+   * The test upgrades the operator instance through helm to add or remove another domain namespace
+   * in the operator watch list.
    *<p>
    *<pre>{@literal
    * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
@@ -695,8 +640,6 @@ public class ItKubernetesEvents {
    * }
    * </pre>
    * </p>
-   * Test verifies NamespaceWatchingStarted event is logged when operator starts watching another domain namespace
-   * matching with the regular expression.
    */
   @Order(15)
   @ParameterizedTest
@@ -734,34 +677,6 @@ public class ItKubernetesEvents {
     logger.info("verify NamespaceWatchingStopped event is logged");
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
         enableClusterRoleBinding);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
-    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-  }
-
-  /**
-   * Operator logs a NamespaceWatchingStopped event in the respective domain namespace
-   * when it stops watching a domain namespace.
-   * Operator helm parameter domainNamespaceSelectionStrategy is set to RegExp and
-   * domainNamespaceRegExp is set to nonexists
-   *
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
-   */
-  @Order(16)
-  //@Test
-  public void testK8SEventsStopWatchingNSWithRegExp() {
-    OffsetDateTime timestamp = now();
-    logger.info("Removing domain namespace in the operator watch list");
-
-    // Helm upgrade parameters
-    opParams = opParams
-        .domainNamespaceSelectionStrategy("RegExp")
-        .domainNamespaceRegExp(domainNamespace4.substring(3));
-
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStopped event is logged");
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp, false);
 
     logger.info("verify NamespaceWatchingStarted event is logged in " + domainNamespace4);
     checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);

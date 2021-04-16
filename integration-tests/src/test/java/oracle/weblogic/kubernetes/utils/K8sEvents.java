@@ -65,26 +65,24 @@ public class K8sEvents {
       String type, OffsetDateTime timestamp, boolean enableClusterRoleBinding) {
     return () -> {
       if (enableClusterRoleBinding) {
-        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
-          logger.info("Got the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
-          if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
-            logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
-            return true;
-          } else {
-            logger.info("Did not get the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
-          }
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+          logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+          return true;
         } else {
-          logger.info("Did not get the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
+          logger.info("Did not get the {0} event in namespace {1} or {2} event in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
         }
       } else {
-        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)) {
-          logger.info("Got the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
-          if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
-            logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
-            return true;
-          }
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+          logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+          return true;
         } else {
-          logger.info("Did not get the {0} event in namespace {1}", NAMESPACE_WATCHING_STOPPED, domainNamespace);
+          logger.info("Did not get the {0} event in namespace {1} or {2} event in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
 
           // check if there is a warning message in operator's log
           String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
@@ -92,12 +90,11 @@ public class K8sEvents {
               "Cannot create NamespaceWatchingStopped event in namespace %s due to an authorization error",
               domainNamespace);
           String operatorLog = getPodLog(operatorPodName, opNamespace);
-          if (operatorLog.contains(expectedErrorMsg)) {
-            logger.info("Got the expected error msg {0} in operator log", expectedErrorMsg);
-            if (domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
-              logger.info("Got the {0} event in namespace {1}", STOP_MANAGING_NAMESPACE, opNamespace);
-              return true;
-            }
+          if (operatorLog.contains(expectedErrorMsg)
+              && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            logger.info("Got expected error msg \"{0}\" in operator log and event {1} is logged in namespace {2}",
+                expectedErrorMsg, STOP_MANAGING_NAMESPACE, opNamespace);
+            return true;
           } else {
             logger.info("Did not get the expected error msg {0} in operator log", expectedErrorMsg);
             logger.info("Operator log: {0}", operatorLog);
