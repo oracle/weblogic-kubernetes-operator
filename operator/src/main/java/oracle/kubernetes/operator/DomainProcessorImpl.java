@@ -49,6 +49,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -98,6 +99,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
+  private final SemanticVersion productVersion;
 
   // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -108,7 +110,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
+    this(delegate, null);
+  }
+
+  public DomainProcessorImpl(DomainProcessorDelegate delegate, SemanticVersion productVersion) {
     this.delegate = delegate;
+    this.productVersion = productVersion;
   }
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
@@ -279,12 +286,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
+  private static Step domainIntrospectionSteps(SemanticVersion productVersion, DomainPresenceInfo info) {
     return Step.chain(
           ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
           new IntrospectionRequestStep(info),
           JobHelper.deleteDomainIntrospectorJobStep(null),
-          JobHelper.createDomainIntrospectorJobStep(null));
+          JobHelper.createDomainIntrospectorJobStep(productVersion, null));
   }
 
   private static class IntrospectionRequestStep extends Step {
@@ -530,7 +537,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case "DELETED":
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                    c.getMetadata().getNamespace()));
+                    c.getMetadata().getNamespace(), productVersion));
           break;
 
         case "ERROR":
@@ -1138,7 +1145,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            domainIntrospectionSteps(info),
+            domainIntrospectionSteps(productVersion, info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),

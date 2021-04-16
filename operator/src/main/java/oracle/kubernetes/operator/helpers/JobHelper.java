@@ -74,12 +74,13 @@ public class JobHelper {
    *  ProcessingConstants.DOMAIN_INPUTS_HASH
    *  ProcessingConstants.DOMAIN_INTROSPECT_VERSION - the introspect version from the old domain spec
    *
+   * @param productVersion Operator version
    * @param next Next processing step
    * @return Step for creating job
    */
-  public static Step createDomainIntrospectorJobStep(Step next) {
+  public static Step createDomainIntrospectorJobStep(SemanticVersion productVersion, Step next) {
 
-    return new DomainIntrospectorJobStep(next);
+    return new DomainIntrospectorJobStep(productVersion, next);
   }
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
@@ -352,9 +353,11 @@ public class JobHelper {
   }
 
   static class DomainIntrospectorJobStep extends Step {
+    private final SemanticVersion productVersion;
 
-    DomainIntrospectorJobStep(Step next) {
+    DomainIntrospectorJobStep(SemanticVersion productVersion, Step next) {
       super(next);
+      this.productVersion = productVersion;
     }
 
     @Override
@@ -373,7 +376,7 @@ public class JobHelper {
                 context.createNewJob(null),
                 readDomainIntrospectorPodLogStep(null),
                 deleteDomainIntrospectorJobStep(null),
-                ConfigMapHelper.createIntrospectorConfigMapStep(getNext())),
+                ConfigMapHelper.createIntrospectorConfigMapStep(productVersion, getNext())),
               packet);
       }
 

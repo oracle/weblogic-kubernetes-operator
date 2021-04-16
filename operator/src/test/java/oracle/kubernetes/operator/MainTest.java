@@ -144,7 +144,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final String ns = "nsrand" + new Random().nextInt(10000);
-  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final Main main = new Main(delegate);
 

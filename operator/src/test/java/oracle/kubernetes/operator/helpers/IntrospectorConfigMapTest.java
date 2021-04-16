@@ -126,7 +126,7 @@ public class IntrospectorConfigMapTest {
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -137,7 +137,7 @@ public class IntrospectorConfigMapTest {
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapValue(SECRETS_MD_5), equalTo(MD5_SECRETS));
   }
@@ -149,7 +149,7 @@ public class IntrospectorConfigMapTest {
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectionVersion(), equalTo(domain.getIntrospectVersion()));
   }
@@ -175,7 +175,7 @@ public class IntrospectorConfigMapTest {
     introspectResult.defineFile(TOPOLOGY_YAML,
           "domainValid: false", "validationErrors: [first problem, second problem]").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getDomain(), hasStatus("BadTopology", perLine("first problem", "second problem")));
   }
@@ -197,7 +197,7 @@ public class IntrospectorConfigMapTest {
   public void whenTopologyNotValid_abortProcessing() {
     introspectResult.defineFile(TOPOLOGY_YAML, "domainValid: false", "validationErrors: []").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(false));
   }
@@ -207,7 +207,7 @@ public class IntrospectorConfigMapTest {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(terminalStep.wasRun(), is(true));
   }
@@ -217,7 +217,7 @@ public class IntrospectorConfigMapTest {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"").addToPacket();
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.get(DOMAIN_TOPOLOGY), instanceOf(WlsDomainConfig.class));
   }
@@ -229,7 +229,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(DOMAINZIP_HASH, DOMAIN_HASH_VALUE)
           .addToPacket();
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.get(DOMAINZIP_HASH), equalTo(DOMAIN_HASH_VALUE));
   }
@@ -241,7 +241,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(DOMAINZIP_HASH, DOMAIN_HASH_VALUE)
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapData(), hasEntry(DOMAINZIP_HASH, DOMAIN_HASH_VALUE));
   }
@@ -287,7 +287,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(SECRETS_MD_5, MD5_SECRETS)
           .addToPacket();
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.get(SECRETS_MD_5), equalTo(MD5_SECRETS));
   }
@@ -299,7 +299,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(SECRETS_MD_5, MD5_SECRETS)
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapData(), hasEntry(SECRETS_MD_5, MD5_SECRETS));
   }
@@ -311,7 +311,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapData(), hasEntry(NUM_CONFIG_MAPS, NUM_MAPS_STRING));
   }
@@ -323,7 +323,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
           .addToPacket();
 
-    final Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    final Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.getValue(NUM_CONFIG_MAPS), equalTo(NUM_MAPS_STRING));
   }
@@ -335,7 +335,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectionConfigMaps(), hasSize(NUM_MAPS_TO_CREATE));
   }
@@ -347,7 +347,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .addToPacket();
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION), equalTo(RESTART_VERSION));
   }
@@ -363,7 +363,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .addToPacket();
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(packet.get(DOMAIN_INPUTS_HASH), notNullValue());
   }
@@ -377,7 +377,7 @@ public class IntrospectorConfigMapTest {
           .defineFile("primordial_domainzip.secure", "hijklmno")
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapValue("domainzip.secure.range"), nullValue());
     assertThat(getIntrospectorConfigMapValue("primordial_domainzip.secure.range"), nullValue());
@@ -436,7 +436,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapData(), allOf(hasEntry("oldEntry1", "value1"), hasEntry("oldEntry2", "value2")));
   }
@@ -451,7 +451,7 @@ public class IntrospectorConfigMapTest {
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapData(), allOf(not(hasKey("Sit-Cfg-1")), not(hasKey("Sit-Cfg-2"))));
   }
@@ -462,7 +462,7 @@ public class IntrospectorConfigMapTest {
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, "Sit-Cfg-1", "value1")));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
 
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(null, terminalStep));
 
     assertThat(getIntrospectorConfigMapValue("Sit-Cfg-1"), equalTo("value1"));
   }

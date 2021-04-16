@@ -146,7 +146,7 @@ public class ConfigMapHelperTest {
   public void whenUnableToReadConfigMap_reportFailure() {
     testSupport.failOnResource(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
-    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS);
+    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null);
     testSupport.runSteps(scriptConfigMapStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -154,7 +154,7 @@ public class ConfigMapHelperTest {
 
   @Test
   public void whenNoConfigMap_createIt() {
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null));
 
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
     assertThat(logRecords, containsInfo(CM_CREATED));
@@ -165,7 +165,7 @@ public class ConfigMapHelperTest {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
-    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS);
+    Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null);
     testSupport.runSteps(scriptConfigMapStep);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
@@ -176,7 +176,7 @@ public class ConfigMapHelperTest {
   public void whenMatchingConfigMapExists_addToPacket() {
     testSupport.defineResources(defaultConfigMap);
 
-    Packet packet = testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
+    Packet packet = testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null));
 
     assertThat(logRecords, containsFine(CM_EXISTS));
     assertThat(packet, hasEntry(SCRIPT_CONFIG_MAP, defaultConfigMap));
@@ -186,7 +186,7 @@ public class ConfigMapHelperTest {
   public void whenExistingConfigMapIsMissingData_replaceIt() {
     testSupport.defineResources(defineConfigMap(PARTIAL_SCRIPT_NAMES));
 
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
     assertThat(getScriptConfigKeys(), containsInAnyOrder(COMBINED_SCRIPT_NAMES));
@@ -216,7 +216,7 @@ public class ConfigMapHelperTest {
   public void whenExistingConfigMapHasExtraData_dontRemoveIt() {
     testSupport.defineResources(defineConfigMap(PARTIAL_SCRIPT_NAMES));
 
-    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS));
+    testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null));
 
     assertThat(logRecords, containsInfo(CM_REPLACED));
     assertThat(getScriptConfigKeys(), hasItem(ADDITIONAL_NAME));

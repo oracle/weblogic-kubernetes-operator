@@ -134,7 +134,7 @@ public class Main {
     private final KubernetesVersion kubernetesVersion;
     private final Engine engine;
     private final DomainProcessor domainProcessor;
-    private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+    private final DomainNamespaces domainNamespaces;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
@@ -145,7 +145,9 @@ public class Main {
       kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
 
       engine = new Engine(scheduledExecutorService);
-      domainProcessor = new DomainProcessorImpl(this);
+      domainProcessor = new DomainProcessorImpl(this, productVersion);
+
+      domainNamespaces = new DomainNamespaces(productVersion);
 
       PodHelper.setProductVersion(productVersion.toString());
     }

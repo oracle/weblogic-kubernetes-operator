@@ -80,10 +80,11 @@ public class ConfigMapHelper {
    * Factory for {@link Step} that creates config map containing scripts.
    *
    * @param domainNamespace the domain's namespace
+   * @param productVersion Operator version
    * @return Step for creating config map containing scripts
    */
-  public static Step createScriptConfigMapStep(String domainNamespace) {
-    return new ScriptConfigMapStep(domainNamespace);
+  public static Step createScriptConfigMapStep(String domainNamespace, SemanticVersion productVersion) {
+    return new ScriptConfigMapStep(domainNamespace, productVersion);
   }
 
   static FileGroupReader getScriptReader() {
@@ -177,8 +178,8 @@ public class ConfigMapHelper {
   static class ScriptConfigMapStep extends Step {
     final ConfigMapContext context;
 
-    ScriptConfigMapStep(String domainNamespace) {
-      context = new ScriptConfigMapContext(this, domainNamespace);
+    ScriptConfigMapStep(String domainNamespace, SemanticVersion productVersion) {
+      context = new ScriptConfigMapContext(this, domainNamespace, productVersion);
     }
 
     @Override
@@ -189,8 +190,9 @@ public class ConfigMapHelper {
 
   static class ScriptConfigMapContext extends ConfigMapContext {
 
-    ScriptConfigMapContext(Step conflictStep, String domainNamespace) {
-      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace), null);
+    ScriptConfigMapContext(Step conflictStep, String domainNamespace, SemanticVersion productVersion) {
+      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace,
+          loadScriptsFromClasspath(domainNamespace), null, productVersion);
 
       addLabel(LabelConstants.OPERATORNAME_LABEL, getOperatorNamespace());
     }
@@ -216,14 +218,16 @@ public class ConfigMapHelper {
     private final String namespace;
     private V1ConfigMap model;
     private final Map<String, String> labels = new HashMap<>();
+    private final SemanticVersion productVersion;
 
     ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
-                     DomainPresenceInfo info) {
+                     DomainPresenceInfo info, SemanticVersion productVersion) {
       super(info);
       this.conflictStep = conflictStep;
       this.name = name;
       this.namespace = namespace;
       this.contents = contents;
+      this.productVersion = productVersion;
 
       addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
@@ -460,25 +464,28 @@ public class ConfigMapHelper {
    *   DOMAIN_RESTART_VERSION             a field from the domain to force rolling when changed
    *   DOMAIN_INPUTS_HASH                 a hash of the image used in the domain
    *
+   * @param productVersion Operator version
    * @param next Next step
    * @return Step for creating config map containing introspection results
    */
-  public static Step createIntrospectorConfigMapStep(Step next) {
-    return new IntrospectionConfigMapStep(next);
+  public static Step createIntrospectorConfigMapStep(SemanticVersion productVersion, Step next) {
+    return new IntrospectionConfigMapStep(productVersion, next);
   }
 
   /**
    * The first in a chain of steps to create the introspector config map from introspection results.
    */
   static class IntrospectionConfigMapStep extends Step {
+    private final SemanticVersion productVersion;
 
-    IntrospectionConfigMapStep(Step next) {
+    IntrospectionConfigMapStep(SemanticVersion productVersion, Step next) {
       super(next);
+      this.productVersion = productVersion;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      IntrospectionLoader loader = new IntrospectionLoader(packet, this);
+      IntrospectionLoader loader = new IntrospectionLoader(packet, this, productVersion);
       if (loader.isTopologyNotValid()) {
         return doNext(reportTopologyErrorsAndStop(), packet);
       } else if (loader.getDomainConfig() == null)  {
@@ -504,11 +511,13 @@ public class ConfigMapHelper {
     private Map<String, String> data;
     private WlsDomainConfig wlsDomainConfig;
     private final String nonDynamicChangesFileKey = "non_dynamic_changes.file";
+    private final SemanticVersion productVersion;
 
-    IntrospectionLoader(Packet packet, Step conflictStep) {
+    IntrospectionLoader(Packet packet, Step conflictStep, SemanticVersion productVersion) {
       this.packet = packet;
       this.info = packet.getSpi(DomainPresenceInfo.class);
       this.conflictStep = conflictStep;
+      this.productVersion = productVersion;
       parseIntrospectorResult();
     }
 
@@ -596,8 +605,9 @@ public class ConfigMapHelper {
       return createIntrospectorConfigMapContext(data, 0);
     }
 
-    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Map<String, String> data, int index) {
-      return new IntrospectorConfigMapContext(conflictStep, info, data, index);
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(
+        Map<String, String> data, int index) {
+      return new IntrospectorConfigMapContext(conflictStep, info, data, index, productVersion);
     }
 
     private String getModelInImageSpecHash() {
@@ -666,8 +676,9 @@ public class ConfigMapHelper {
 
     private boolean patchOnly;
 
-    IntrospectorConfigMapContext(Step conflictStep, DomainPresenceInfo info, Map<String, String> data, int index) {
-      super(conflictStep, getConfigMapName(info, index), info.getNamespace(), data, info);
+    IntrospectorConfigMapContext(Step conflictStep, DomainPresenceInfo info,
+                                 Map<String, String> data, int index, SemanticVersion productVersion) {
+      super(conflictStep, getConfigMapName(info, index), info.getNamespace(), data, info, productVersion);
 
       addLabel(LabelConstants.DOMAINUID_LABEL, info.getDomainUid());
     }

@@ -215,7 +215,7 @@ public class DomainIntrospectorJobTest {
         .withCluster(clusterConfig);
   }
 
-  private FiberTestSupport.StepFactory getStepFactory() {
+  private FiberTestSupport.StepFactoryWithProductVersion getStepFactory() {
     return JobHelper::createDomainIntrospectorJobStep;
   }
 
