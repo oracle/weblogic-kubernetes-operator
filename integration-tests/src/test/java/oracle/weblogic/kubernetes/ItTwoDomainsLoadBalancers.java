@@ -540,7 +540,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(9)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
-  public void testTraefikHostHttpsRoutingAcrossDomains() {
+  public void testTraefikHttpsHostRoutingAcrossDomains() {
 
     logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
