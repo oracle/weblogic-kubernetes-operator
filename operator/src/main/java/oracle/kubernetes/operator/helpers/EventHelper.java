@@ -202,20 +202,27 @@ public class EventHelper {
         }
 
         if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
-          if (domainNamespaces != null) {
-            domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
-          }
+          clearNamespaceStartingFlag();
           if (isForbidden(callResponse)) {
             LOGGER.warning(MessageKeys.CREATING_EVENT_FORBIDDEN,
                 eventData.eventItem.getReason(), eventData.getNamespace());
-            return doNext(createEventStep(
-                new EventData(EventItem.START_MANAGING_NAMESPACE_FAILED)
-                    .namespace(getOperatorNamespace()).resourceName(eventData.getNamespace())), packet);
+            return doNext(createStartManagingNSFailedEventStep(), packet);
           }
-          return super.onFailure(packet, callResponse);
         }
 
         return super.onFailure(packet, callResponse);
+      }
+
+      private Step createStartManagingNSFailedEventStep() {
+        return createEventStep(
+            new EventData(EventItem.START_MANAGING_NAMESPACE_FAILED)
+                .namespace(getOperatorNamespace()).resourceName(eventData.getNamespace()));
+      }
+
+      private void clearNamespaceStartingFlag() {
+        if (domainNamespaces != null) {
+          domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
+        }
       }
 
       private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
