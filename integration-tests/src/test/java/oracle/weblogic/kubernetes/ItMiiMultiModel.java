@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -41,6 +42,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -52,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAn
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
@@ -77,6 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
+@Tag("okdenv")
 class ItMiiMultiModel {
 
   private static String domainNamespace = null;
@@ -111,6 +115,7 @@ class ItMiiMultiModel {
   private static final String dsName3 = "TestDataSource3";
 
   private static LoggingFacade logger = null;
+  private static String ingressHost = null;
 
   /**
    * Perform initialization for all the tests in this class.
@@ -217,6 +222,11 @@ class ItMiiMultiModel {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         configMapName);
 
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD) {
+      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+    }
+
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
     assertEquals(expectedMaxCapacity, maxCapacityValue, 
@@ -266,6 +276,12 @@ class ItMiiMultiModel {
         managedServerPrefix, 
         miiImageMultiModel,
         null);
+
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD) {
+      createRouteForOKD(serviceName, domainNamespace);
+    }
+
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -336,6 +352,11 @@ class ItMiiMultiModel {
         managedServerPrefix, 
         miiImageMultiModel,
         configMapName);
+
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD) {
+      createRouteForOKD(serviceName, domainNamespace);
+    }
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -498,9 +519,12 @@ class ItMiiMultiModel {
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
+    //String hostAndPort = (OKD) ? adminServerPodName + "-ext-" + namespace
+    String hostAndPort = (OKD) ? adminServerPodName + "-ext-"
+        : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/wls/latest/datasources/id/" + dsName)
         .append(" --noproxy '*'")
         .append(" --silent --show-error ")
@@ -526,9 +550,12 @@ class ItMiiMultiModel {
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
+    //String hostAndPort = (OKD) ? adminServerPodName + "-ext-" + namespace
+    String hostAndPort = (OKD) ? adminServerPodName + "-ext"
+        : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/wls/latest/datasources")
         .append("/id/" + dsName)
         .append(" --noproxy '*'")

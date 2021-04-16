@@ -58,7 +58,11 @@ function curl_timeout_parms() {
 
 function get_curl_command() {
   # $1 is service name
-  echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
+  if [ "$OKD" = "true" ]; then
+    echo "curl -s -S $(curl_timeout_parms) -H 'host: $1'"
+  else
+    echo "curl -s -S $(curl_timeout_parms) -H 'host: $(get_sample_host $1)'"
+  fi
 }
 
 # testapp
@@ -112,6 +116,9 @@ EOF
         fi
       fi
       local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://$(get_kube_address):${traefik_nodeport}/myapp_war/index.jsp"
+
+    elif [ "$1" = "OKD" ]; then
+      local command="$(get_curl_command ${DOMAIN_UID:-sample-domain1}-cluster-$2) http://${DOMAIN_UID:-sample-domain1}-cluster-$2/myapp_war/index.jsp"
 
     else
       echo "@@ Error: Unexpected value for '$1' - must be 'traefik' or 'internal'"

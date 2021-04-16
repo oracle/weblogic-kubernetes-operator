@@ -33,6 +33,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -118,6 +119,7 @@ public class ItMiiSample {
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
     envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    envMap.put("OKD", "" +  OKD);
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
