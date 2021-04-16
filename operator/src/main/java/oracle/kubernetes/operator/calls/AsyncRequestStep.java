@@ -197,7 +197,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
           logFailure(ae, statusCode, responseHeaders);
         }
 
-        helper.recycle(client);
+        if (ae.getCause() instanceof java.net.ProtocolException) {
+          helper.discard(client);
+        } else {
+          helper.recycle(client);
+        }
+
         addResponseComponent(Component.createFor(
               RetryStrategy.class, retryStrategy,
               createFailure(requestParams, ae, statusCode).withResponseHeaders(responseHeaders)));

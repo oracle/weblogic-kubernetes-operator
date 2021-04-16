@@ -12,6 +12,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
@@ -71,7 +72,8 @@ public class DomainProcessorTestSetup {
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
         .withMetadata(withTimestamps(new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID)))
-        .withSpec(ds);
+        .withSpec(ds)
+        .withStatus(new DomainStatus());
   }
 
   /**

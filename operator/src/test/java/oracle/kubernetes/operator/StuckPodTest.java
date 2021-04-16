@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -221,6 +223,11 @@ public class StuckPodTest {
       public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo info) {
         Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).ifPresent(delegateStub.invocations::add);
         return createStrictStub(MakeRightDomainOperationStub.class);
+      }
+
+      @Override
+      public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+        return Stream.empty();
       }
     }
 
