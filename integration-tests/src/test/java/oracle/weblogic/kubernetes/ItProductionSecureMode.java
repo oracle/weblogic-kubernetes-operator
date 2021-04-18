@@ -216,7 +216,7 @@ class ItProductionSecureMode {
     logger.info("Found the administration service nodePort {0}", defaultAdminPort);
 
     // Here the SSL port is explicitly set to 7002 (on-prem default) in
-    // in ServerTemplate section on toplogy file. Here the generated 
+    // in ServerTemplate section on topology file. Here the generated 
     // config.xml has no SSL port assigned, but the default-secure service i
     // must be active with port 7002 
     int defaultClusterSecurePort = assertDoesNotThrow(()

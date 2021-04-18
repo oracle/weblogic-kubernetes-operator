@@ -51,6 +51,7 @@ def create_domain():
   print('Done creating server template: %s' % template_name)
   cd('/ServerTemplates/%s' % template_name)
   print('(SKIP) Set managed server port in template')
+  # If no explicit listenport is set, operator infra will pick 7100
   #cmo.setListenPort(int(managed_server_port))
   cmo.setCluster(cl)
   cmo.setResolveDNSName(true)
