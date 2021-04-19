@@ -236,7 +236,6 @@ LAST SEEN   TYPE      REASON                      OBJECT                        
 114s        Normal    Started                     pod/sample-domain1-introspector-ght6p   Started container sample-domain1-introspector
 114s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
 98s         Normal    Completed                   job/sample-domain1-introspector         Job completed
-98s         Warning   DNSConfigForming            pod/sample-domain1-introspector-ght6p   Search Line limits were exceeded, some search paths have been omitted, the applied search line is: sample-domain1-ns.svc.cluster.local svc.cluster.local cluster.local subnet1ad3phx.devweblogicphx.oraclevcn.com us.oracle.com oracle.com
 97s         Normal    Killing                     pod/sample-domain1-introspector-ght6p   Stopping container sample-domain1-introspector
 96s         Normal    Scheduled                   pod/sample-domain1-admin-server         Successfully assigned sample-domain1-ns/sample-domain1-admin-server to doxiao-1
 96s         Normal    DomainProcessingStarting    domain/sample-domain1                   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1

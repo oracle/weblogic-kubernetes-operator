@@ -60,27 +60,28 @@ download_zip() {
     return
   fi
 
-  echo "@@ Info: Downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
+  echo "@@ Info: Downloading $ZIPFILE from '$LOCATION' to '$WORKDIR/$ZIPFILE'."
 
   local iurl="$LOCATION"
   if [ "`echo $iurl | grep -c 'https://github.com.*/latest$'`" = "1" ]; then
     echo "@@ Info: The location URL matches regex 'https://github.com.*/latest$'. About to convert to direct location."
-    local tempfile="$(mktemp -u).$(basename $0).$SECONDS.$PPID.$RANDOM"
-    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $tempfile' to find location of latest version."
-    curl $curl_parms -fL $LOCATION -o $tempfile
-    LOCATION=https://github.com/$(cat $tempfile | grep "releases/download" | awk '{ split($0,a,/href="/); print a[2]}' | cut -d\" -f 1)
-    rm -f $tempfile
+    if [ "$DOWNLOAD_VAR_NAME" == "DOWNLOAD_WDT" ]; then
+      LOCATION=https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/
+    fi
+    if [ "$DOWNLOAD_VAR_NAME" == "DOWNLOAD_WIT" ]; then
+      LOCATION=https://github.com/oracle/weblogic-image-tool/releases/latest/download/
+    fi
     echo "@@ Info: The location URL matched regex 'https://github.com.*/latest$' so it was converted to '$LOCATION'"
     echo "@@ Info: Now downloading '$LOCATION' to '$WORKDIR/$ZIPFILE'."
   fi
 
   if [ ! "$dry_run" = "true" ]; then
     rm -f $ZIPFILE
-    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION -o $ZIPFILE'"
-    curl $curl_parms -fL $LOCATION -o $ZIPFILE
+    echo "@@ Info: Calling 'curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE'"
+    curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE
   else
     echo "dryrun:rm -f $ZIPFILE"
-    echo "dryrun:curl $curl_parms -fL $LOCATION -o $ZIPFILE"
+    echo "dryrun:curl $curl_parms -fL $LOCATION/$ZIPFILE -o $ZIPFILE"
   fi
 }
 
