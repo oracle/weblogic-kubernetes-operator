@@ -212,7 +212,7 @@ public class ItTwoDomainsLoadBalancers {
   // domain constants
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
-  private static final int MANAGED_SERVER_PORT = 8001;
+  private static final int MANAGED_SERVER_PORT = 7100;
   private static final int ADMIN_SERVER_PORT = 7001;
 
   private int t3ChannelPort = 0;
@@ -425,7 +425,7 @@ public class ItTwoDomainsLoadBalancers {
 
     // install and verify Apache for default sample
     apacheHelmParams1 = assertDoesNotThrow(
-        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, domain1Uid));
+        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid));
 
     // install and verify Apache for custom sample
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
@@ -434,7 +434,7 @@ public class ItTwoDomainsLoadBalancers {
     }
     createPVPVCForApacheCustomConfiguration(defaultNamespace);
     apacheHelmParams2 = assertDoesNotThrow(
-        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, domain1Uid,
+        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid,
             apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
   }
 
@@ -540,7 +540,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(9)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
-  public void testTraefikHostHttpsRoutingAcrossDomains() {
+  public void testTraefikHttpsHostRoutingAcrossDomains() {
 
     logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {

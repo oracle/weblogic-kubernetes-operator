@@ -16,7 +16,6 @@ topology:
             CustomTrustKeyStoreFileName: '/shared/TrustKeyStore.jks'
             SSL:
              Enabled: true
-             ListenPort: 8002
              ServerPrivateKeyAlias: 'mykey'
              ServerPrivateKeyPassPhraseEncrypted: 'changeit'
              HostnameVerificationIgnored: true
