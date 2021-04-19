@@ -185,8 +185,10 @@ public interface TestConstants {
       .orElse("v1.3.3-debian-elasticsearch-1.3");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
+  public static final int DEFAULT_LISTEN_PORT = 7100;
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
   public static final int ELASTICSEARCH_HTTPS_PORT = 9300;
+  public static final int DEFAULT_SSL_LISTEN_PORT = 8100;
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
   public static final String FLUENTD_INDEX_KEY = "fluentd";
