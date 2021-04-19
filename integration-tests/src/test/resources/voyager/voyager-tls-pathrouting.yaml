@@ -34,7 +34,7 @@ spec:
       - path: /domain1
         backend:
           serviceName: @domain1uid@-cluster-cluster-1
-          servicePort: '8001'
+          servicePort: '7100'
       - path: /domain2console
         backend:
           serviceName: @domain2uid@-admin-server
@@ -42,4 +42,4 @@ spec:
       - path: /domain2
         backend:
           serviceName: @domain2uid@-cluster-cluster-1
-          servicePort: '8001'
+          servicePort: '7100'

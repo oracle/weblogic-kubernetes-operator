@@ -22,6 +22,7 @@ public class ApacheParams {
   private static final String PVC_NAME = "persistentVolumeClaimName";
   private static final String HTTP_NODEPORT = "httpNodePort";
   private static final String HTTPS_NODEPORT = "httpsNodePort";
+  private static final String MANAGED_SERVER_PORT = "managedServerPort";
   private static final String VIRTUAL_HOSTNAME = "virtualHostName";
   private static final String CUSTOM_CERT = "customCert";
   private static final String CUSTOM_KEY = "customKey";
@@ -33,6 +34,7 @@ public class ApacheParams {
   private String pvcName = null;
   private int httpNodePort = 0;
   private int httpsNodePort = 0;
+  private int managedServerPort = 0;
   private String virtualHostName = null;
   private String customCert = null;
   private String customKey = null;
@@ -66,6 +68,11 @@ public class ApacheParams {
 
   public ApacheParams httpsNodePort(int httpsNodePort) {
     this.httpsNodePort = httpsNodePort;
+    return this;
+  }
+
+  public ApacheParams managedServerPort(int managedServerPort) {
+    this.managedServerPort = managedServerPort;
     return this;
   }
 
@@ -116,6 +123,9 @@ public class ApacheParams {
     }
     if (httpsNodePort >= 0) {
       values.put(HTTPS_NODEPORT, httpsNodePort);
+    }
+    if (managedServerPort >= 0) {
+      values.put(MANAGED_SERVER_PORT, managedServerPort);
     }
 
     values.put(VIRTUAL_HOSTNAME, virtualHostName);

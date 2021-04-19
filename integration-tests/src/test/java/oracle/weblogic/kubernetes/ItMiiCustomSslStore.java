@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies usage of CustomIdentityCustomTrust on PV.
  * Create a MII domain with an attached persistent volume.
  * Configure custom identity and custom trust on server template
- * Enable SSL on server template with port 8002 (default 7002 does not work) 
+ * Donot set the SSL port on server template. The default will be set to 8100.
  * Put the IdentityKeyStore.jks  and TrustKeyStore.jks on /shared directory 
  *  after administration server pod is started so that it can be accessible 
  *  from all managed server pods
@@ -224,6 +224,6 @@ class ItMiiCustomSslStore {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(runClientInsidePod(adminServerPodName, domainNamespace,
-            "/u01", extOpts.toString() + " SslTestClient", "t3s://" + domainUid + "-cluster-cluster-1:8002"));
+            "/u01", extOpts.toString() + " SslTestClient", "t3s://" + domainUid + "-cluster-cluster-1:8100"));
   }
 }
