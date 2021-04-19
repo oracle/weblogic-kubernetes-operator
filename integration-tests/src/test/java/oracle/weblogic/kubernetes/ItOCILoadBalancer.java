@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -155,14 +156,12 @@ class ItOCILoadBalancer {
   }
 
   /**
-   * Test covers basic functionality for MonitoringExporter SideCar .
-   * Create Prometheus, Grafana.
-   * Create Model in Image with monitoring exporter.
-   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
-   * Check basic functionality of monitoring exporter.
+   * Test covers basic functionality for OCI LoadBalancer .
+   * Create operator and domain with OCI LB.
+   * Check that application is accebale via OCI LB access
    */
   @Test
-  @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar.")
+  @DisplayName("Test Basic Functionality of usage of  OCI Load Balancer.")
   public void testOCILB() throws Exception {
 
     // create and verify one cluster mii domain
@@ -175,13 +174,27 @@ class ItOCILoadBalancer {
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
     nodeportserver = getNextFreePort(32400, 32600);
     V1Service lbService = installAndVerifyOciLoadBalancer(domain1Namespace, nodeportserver, cluster1Name, domain1Uid);
-    loadBalancerIP = lbService.getSpec().getLoadBalancerIP();
+    loadBalancerIP = getLoadBalancerIP(lbService);
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, nodeportserver);
   }
 
-
+  /** Retreive external IP from OCI LoadBalancer.
+   *
+   */
+  private static String getLoadBalancerIP(V1Service svc) {
+    List<V1LoadBalancerIngress> ingress = svc.getStatus().getLoadBalancer().getIngress();
+    logger.info("LoadBalancer Ingress " + ingress.toString());
+    V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
+        ! c.getIp().equals("Pending")
+    ).findAny().orElse(null);
+    if (lbIng != null) {
+      logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
+      return lbIng.getIp();
+    }
+    return null;
+  }
 
   /**
    * Create mii image with SESSMIGR application.

@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -528,7 +529,7 @@ public class Kubernetes {
       throws ApiException {
     LoggingFacade logger = getLogger();
     V1Service service = getService(serviceName, label, namespace);
-    if (service != null && service.getSpec().getType().equals("LoadBalancer")) {
+    if (service != null && service.getStatus().getLoadBalancer() != null) {
       /*
       List<String> ipsList = service.getSpec().getExternalIPs();
       for(String ip: ipsList) {
@@ -538,10 +539,17 @@ public class Kubernetes {
       }
 
        */
-      String ip = service.getSpec().getLoadBalancerIP();
-      logger.info("LoadBalancer IP " + ip);
-      if (!ip.contains("Pending")) {
+      logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
+      List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
+      logger.info("LoadBalancer Ingress " + ingress.toString());
+      V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
+          ! c.getIp().equals("Pending")
+      ).findAny().orElse(null);
+      if (lbIng != null) {
+        logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
         return true;
+      } else {
+        logger.info("LoadBalancer does not have assigned External IP");
       }
     }
     return false;
