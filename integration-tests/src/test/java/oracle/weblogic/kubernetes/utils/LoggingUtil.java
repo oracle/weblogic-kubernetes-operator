@@ -347,7 +347,7 @@ public class LoggingUtil {
             .containers(Arrays.asList(
                 new V1Container()
                     .name("pv-container")
-                    .image("oraclelinux:7")
+                    .image("ghcr.io/oracle/oraclelinux:7")
                     .imagePullPolicy("IfNotPresent")
                     .volumeMounts(Arrays.asList(
                         new V1VolumeMount()

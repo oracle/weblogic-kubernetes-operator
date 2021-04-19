@@ -23,7 +23,6 @@ topology:
     ServerTemplate:
         "cluster-1-template":
             Cluster: "cluster-1"
-            ListenPort : 8001
 
 appDeployments:
     Application:
