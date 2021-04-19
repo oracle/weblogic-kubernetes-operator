@@ -20,7 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+// import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -111,18 +111,18 @@ class ItMiiCustomSslStore {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // create secret for admin credentials
+    // create secret for admin credential with special characters
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
+            ADMIN_USERNAME_DEFAULT, "W##%*}!`''1~3x", domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
-    // create encryption secret
+    // create encryption secret with special characters
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-            "weblogicenc", domainNamespace),
+            "W##%*}!`''1~3x", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "mii-ssl-configmap";
@@ -183,7 +183,7 @@ class ItMiiCustomSslStore {
 
   /**
    * Verify a standalone java client can access JNDI Context inside a pod.
-   * The client uses t3s cluster URL with custom SSL TrustStore on commandline  
+   * The client uses t3s cluster URL with custom SSL TrustStore on commandline
    */
   @Test
   @Order(1)
