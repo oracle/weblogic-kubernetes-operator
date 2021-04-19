@@ -11,6 +11,7 @@ import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
@@ -52,10 +53,12 @@ import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPON
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodName;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorPodUID;
+import static oracle.kubernetes.operator.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
 
 /** A Helper Class for the operator to create Kubernetes Events at the key points in the operator's workflow. */
 public class EventHelper {
@@ -84,24 +87,38 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
+   * @param domainNamespaces DomainSpaces instance
+   * @param eventData event item
+   * @param next next step
+   * @return Step for creating an event
+   */
+  public static Step createEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
+    return new CreateEventStep(domainNamespaces, eventData, next);
+  }
+
+  /**
+   * Factory for {@link Step} that asynchronously create an event.
+   *
    * @param eventData event item
    * @param next next step
    * @return Step for creating an event
    */
   public static Step createEventStep(EventData eventData, Step next) {
-    return new CreateEventStep(eventData, next);
+    return new CreateEventStep(null, eventData, next);
   }
 
   public static class CreateEventStep extends Step {
     private final EventData eventData;
+    private final DomainNamespaces domainNamespaces;
 
     CreateEventStep(EventData eventData) {
-      this(eventData, null);
+      this(null, eventData, null);
     }
 
-    CreateEventStep(EventData eventData, Step next) {
+    CreateEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
       super(next);
       this.eventData = eventData;
+      this.domainNamespaces = domainNamespaces;
     }
 
     @Override
@@ -166,6 +183,11 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
+        if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
+          LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
+          domainNamespaces.shouldStartNamespace(eventData.getNamespace());
+        }
+
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
             .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
         return doNext(packet);
@@ -178,7 +200,29 @@ public class EventHelper {
               eventData.eventItem.getReason(), eventData.getNamespace());
           return doNext(packet);
         }
+
+        if (NAMESPACE_WATCHING_STARTED == eventData.eventItem) {
+          clearNamespaceStartingFlag();
+          if (isForbidden(callResponse)) {
+            LOGGER.warning(MessageKeys.CREATING_EVENT_FORBIDDEN,
+                eventData.eventItem.getReason(), eventData.getNamespace());
+            return doNext(createStartManagingNSFailedEventStep(), packet);
+          }
+        }
+
         return super.onFailure(packet, callResponse);
+      }
+
+      private Step createStartManagingNSFailedEventStep() {
+        return createEventStep(
+            new EventData(EventItem.START_MANAGING_NAMESPACE_FAILED)
+                .namespace(getOperatorNamespace()).resourceName(eventData.getNamespace()));
+      }
+
+      private void clearNamespaceStartingFlag() {
+        if (domainNamespaces != null) {
+          domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
+        }
       }
 
       private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
@@ -466,6 +510,37 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return EventConstants.START_MANAGING_NAMESPACE_PATTERN;
+      }
+
+      @Override
+      public void addLabels(V1ObjectMeta metadata, EventData eventData) {
+        addCreatedByOperatorLabel(metadata);
+      }
+
+      @Override
+      public V1ObjectReference createInvolvedObject(EventData eventData) {
+        return createOperatorEventInvolvedObject();
+      }
+
+      @Override
+      protected String generateEventName(EventData eventData) {
+        return generateOperatorNSEventName(eventData);
+      }
+    },
+    START_MANAGING_NAMESPACE_FAILED {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
+      }
+
+      @Override
+      public String getReason() {
+        return EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.START_MANAGING_NAMESPACE_FAILED_PATTERN;
       }
 
       @Override

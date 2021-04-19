@@ -45,4 +45,6 @@ public interface EventConstants {
   String START_MANAGING_NAMESPACE_PATTERN = "Start managing namespace %s";
   String STOP_MANAGING_NAMESPACE_EVENT = "StopManagingNamespace";
   String STOP_MANAGING_NAMESPACE_PATTERN = "Stop managing namespace %s";
+  String START_MANAGING_NAMESPACE_FAILED_EVENT = "StartManagingNamespaceFailed";
+  String START_MANAGING_NAMESPACE_FAILED_PATTERN = "Start managing namespace %s failed due to an authorization error";
 }
