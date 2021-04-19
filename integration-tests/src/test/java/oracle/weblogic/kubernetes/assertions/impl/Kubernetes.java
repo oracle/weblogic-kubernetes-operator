@@ -514,6 +514,39 @@ public class Kubernetes {
     return exist;
   }
 
+
+  /**
+   * Checks if a Kubernetes service object exists in a given namespace.
+   * @param serviceName name of the service to check for
+   * @param label the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return true if the service External IP is found otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean doesServiceLoadBalancerExternalIPGenerated(
+      String serviceName, Map<String, String> label, String namespace)
+      throws ApiException {
+    LoggingFacade logger = getLogger();
+    V1Service service = getService(serviceName, label, namespace);
+    if (service != null && service.getSpec().getType().equals("LoadBalancer")) {
+      /*
+      List<String> ipsList = service.getSpec().getExternalIPs();
+      for(String ip: ipsList) {
+        if (!ip.contains("Pending")) {
+          return true;
+        }
+      }
+
+       */
+      String ip = service.getSpec().getLoadBalancerIP();
+      logger.info("LoadBalancer IP " + ip);
+      if (!ip.contains("Pending")) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Get V1Service object for the given service name, label and namespace.
    * @param serviceName name of the service to look for

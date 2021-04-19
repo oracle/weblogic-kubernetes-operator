@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import com.google.gson.JsonObject;
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
@@ -56,8 +57,11 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
@@ -168,6 +172,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
@@ -215,6 +220,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.loadBalancerExternalIPGenerated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -668,6 +674,55 @@ public class CommonTestUtils {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     return true;
+  }
+
+
+  /**
+   * Install OCI Load Balancer and wait up to five minutes until the External IP is ready.
+   *
+   * @param namespace the namespace in which the NGINX will be installed
+   * @param nodeportshttp the http nodeport of oci load balancer
+   * @param clusterName name of WLS cluster
+   * @param domainUID domain UID
+   * @return the NGINX Helm installation parameters
+   */
+  public static V1Service installAndVerifyOciLoadBalancer(String namespace,
+                                                                   int nodeportshttp,
+                                                                   String clusterName,
+                                                          String domainUID) throws ApiException {
+    Map<String, String> annotations = new HashMap<>();
+    annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.clusterName", clusterName);
+    labels.put("weblogic.domainUID",domainUID);
+    V1Service service = new V1Service()
+        .metadata(new V1ObjectMeta()
+            .name("ocilb")
+            .namespace(namespace)
+            .annotations(annotations))
+        .spec(new V1ServiceSpec()
+            .ports(Arrays.asList(
+                new V1ServicePort()
+                    .port(nodeportshttp)
+                    .targetPort(new IntOrString(nodeportshttp))
+                    .protocol("TCP")))
+            .selector(labels)
+            .sessionAffinity("None")
+            .type("LoadBalancer"));
+
+    assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
+    checkServiceExists("ocilb",namespace);
+    LoggingFacade logger = getLogger();
+    // wait until the external IP is generated.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for external IP to be generated  (elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> loadBalancerExternalIPGenerated(
+            "ocilb", labels, namespace), "isOCILBIsReady failed with ApiException"));
+    return service;
   }
 
   /**
