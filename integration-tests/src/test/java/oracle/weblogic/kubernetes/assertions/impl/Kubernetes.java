@@ -519,38 +519,39 @@ public class Kubernetes {
   /**
    * Checks if a Kubernetes service object exists in a given namespace.
    * @param serviceName name of the service to check for
-   * @param label the key value pair with which the service is decorated with
+   * @param labels the key value pair with which the service is decorated with
    * @param namespace the namespace in which to check for the service
    * @return true if the service External IP is found otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
   public static boolean doesServiceLoadBalancerExternalIPGenerated(
-      String serviceName, Map<String, String> label, String namespace)
+      String serviceName, Map<String, String> labels, String namespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
-    V1Service service = getService(serviceName, label, namespace);
-    if (service != null && service.getStatus().getLoadBalancer() != null) {
-      /*
-      List<String> ipsList = service.getSpec().getExternalIPs();
-      for(String ip: ipsList) {
-        if (!ip.contains("Pending")) {
-          return true;
+    String labelSelector = String.format("%s in (%s)", "loadbalancer", "ocilb");
+    listServices(namespace, labelSelector);
+    V1Service service = getService(serviceName, labels, namespace);
+    if (service != null) {
+      logger.info("Found service with name {0} in {1} namespace ", serviceName, namespace);
+
+      if (service.getStatus().getLoadBalancer() != null) {
+        logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
+        List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
+        if (ingress != null) {
+          logger.info("LoadBalancer Ingress " + ingress.toString());
+          V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
+              !c.getIp().equals("pending")
+          ).findAny().orElse(null);
+          if (lbIng != null) {
+            logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
+            return true;
+          }
+        } else {
+          logger.info("LoadBalancer does not have assigned External IP");
         }
       }
-
-       */
-      logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
-      List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
-      logger.info("LoadBalancer Ingress " + ingress.toString());
-      V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
-          ! c.getIp().equals("pending")
-      ).findAny().orElse(null);
-      if (lbIng != null) {
-        logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
-        return true;
-      } else {
-        logger.info("LoadBalancer does not have assigned External IP");
-      }
+    } else {
+      logger.info("Can't find service with name " + serviceName + " in  namespace " + namespace);
     }
     return false;
   }

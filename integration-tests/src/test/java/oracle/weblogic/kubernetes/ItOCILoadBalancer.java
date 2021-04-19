@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -177,7 +178,8 @@ class ItOCILoadBalancer {
     loadBalancerIP = getLoadBalancerIP(lbService);
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
-    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, nodeportserver);
+    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2,
+        getServiceNodePort(domain1Namespace, lbService.getMetadata().getName()));
   }
 
   /** Retreive external IP from OCI LoadBalancer.

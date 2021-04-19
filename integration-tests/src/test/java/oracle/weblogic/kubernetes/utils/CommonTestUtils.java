@@ -692,13 +692,16 @@ public class CommonTestUtils {
                                                           String domainUID) throws ApiException {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
+    Map<String, String> selectors = new HashMap<>();
     Map<String, String> labels = new HashMap<>();
-    labels.put("weblogic.clusterName", clusterName);
-    labels.put("weblogic.domainUID",domainUID);
+    labels.put("loadbalancer", "ocilb");
+    selectors.put("weblogic.clusterName", clusterName);
+    selectors.put("weblogic.domainUID",domainUID);
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
             .name("ocilb")
             .namespace(namespace)
+            .labels(labels)
             .annotations(annotations))
         .spec(new V1ServiceSpec()
             .ports(Arrays.asList(
@@ -706,13 +709,17 @@ public class CommonTestUtils {
                     .port(nodeportshttp)
                     .targetPort(new IntOrString(nodeportshttp))
                     .protocol("TCP")))
-            .selector(labels)
+            .selector(selectors)
             .sessionAffinity("None")
             .type("LoadBalancer"));
-
-    assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
-    checkServiceExists("ocilb",namespace);
     LoggingFacade logger = getLogger();
+    logger.info("Checking service object not null");
+    assertNotNull(service, "Can't create ocilb service, returns null");
+    logger.info("Call to create service object " + service.getMetadata().getName());
+    assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
+    logger.info("Check if  service exists " + service.getMetadata().getName());
+    checkServiceExists(service.getMetadata().getName(),service.getMetadata().getNamespace());
+
     // wait until the external IP is generated.
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -722,7 +729,8 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> loadBalancerExternalIPGenerated(
-            "ocilb", labels, namespace), "isOCILBIsReady failed with ApiException"));
+            service.getMetadata().getName(),
+            labels, service.getMetadata().getNamespace()), "isOCILBIsReady failed with ApiException"));
     return service;
   }
 
