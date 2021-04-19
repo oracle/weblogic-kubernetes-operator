@@ -185,15 +185,17 @@ class ItOCILoadBalancer {
   /** Retreive external IP from OCI LoadBalancer.
    *
    */
-  private static String getLoadBalancerIP(V1Service svc) {
-    List<V1LoadBalancerIngress> ingress = svc.getStatus().getLoadBalancer().getIngress();
-    logger.info("LoadBalancer Ingress " + ingress.toString());
-    V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
-        ! c.getIp().equals("Pending")
-    ).findAny().orElse(null);
-    if (lbIng != null) {
-      logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
-      return lbIng.getIp();
+  private static String getLoadBalancerIP(V1Service service) {
+    List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
+    if (ingress != null) {
+      logger.info("LoadBalancer Ingress " + ingress.toString());
+      V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
+          !c.getIp().equals("pending")
+      ).findAny().orElse(null);
+      if (lbIng != null) {
+        logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
+        return lbIng.getIp();
+      }
     }
     return null;
   }
