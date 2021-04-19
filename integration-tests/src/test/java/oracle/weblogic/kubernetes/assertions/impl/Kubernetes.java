@@ -543,7 +543,7 @@ public class Kubernetes {
       List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
       logger.info("LoadBalancer Ingress " + ingress.toString());
       V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
-          ! c.getIp().equals("Pending")
+          ! c.getIp().equals("pending")
       ).findAny().orElse(null);
       if (lbIng != null) {
         logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());

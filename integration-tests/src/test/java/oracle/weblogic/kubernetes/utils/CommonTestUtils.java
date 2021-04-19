@@ -717,7 +717,8 @@ public class CommonTestUtils {
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info(
-                "Waiting for external IP to be generated  (elapsed time {0}ms, remaining time {1}ms)",
+                "Waiting for external IP to be generated in {0} (elapsed time {1}ms, remaining time {2}ms)",
+                namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> loadBalancerExternalIPGenerated(
