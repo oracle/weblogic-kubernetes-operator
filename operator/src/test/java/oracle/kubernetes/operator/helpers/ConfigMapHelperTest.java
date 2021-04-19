@@ -10,7 +10,6 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
-import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
@@ -76,7 +75,6 @@ public class ConfigMapHelperTest {
             .collectLogMessages(logRecords, CM_CREATED, CM_EXISTS, CM_REPLACED)
             .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
-    mementos.add(TestComparator.install());
   }
 
   @AfterEach
@@ -140,18 +138,6 @@ public class ConfigMapHelperTest {
     testSupport.defineResources(defineConfigMap(PRODUCT_VERSION_FUTURE));
 
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));
-  }
-
-  // An implementation of the comparator that tests only the keys in the maps
-  static class TestComparator extends ConfigMapHelper.ConfigMapComparator {
-    static Memento install() throws NoSuchFieldException {
-      return StaticStubSupport.install(ConfigMapHelper.class, "COMPARATOR", new TestComparator());
-    }
-
-    @Override
-    boolean containsAllData(Map<String, String> actual, Map<String, String> expected) {
-      return actual.keySet().containsAll(expected.keySet());
-    }
   }
 
 }

@@ -286,12 +286,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     return bringAdminServerUpSteps(info, podAwaiterStepFactory);
   }
 
-  private static Step domainIntrospectionSteps(SemanticVersion productVersion, DomainPresenceInfo info) {
+  private static Step domainIntrospectionSteps(DomainPresenceInfo info) {
     return Step.chain(
           ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
           new IntrospectionRequestStep(info),
           JobHelper.deleteDomainIntrospectorJobStep(null),
-          JobHelper.createDomainIntrospectorJobStep(productVersion, null));
+          JobHelper.createDomainIntrospectorJobStep(null));
   }
 
   private static class IntrospectionRequestStep extends Step {
@@ -1145,7 +1145,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     Step domainUpStrategy =
         Step.chain(
-            domainIntrospectionSteps(productVersion, info),
+            domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
