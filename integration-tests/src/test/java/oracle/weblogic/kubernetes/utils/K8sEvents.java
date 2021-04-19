@@ -52,13 +52,14 @@ public class K8sEvents {
   }
 
   /**
-   * Check if a given event is logged by the operator.
+   * Check if NamespaceWatchingStopped event is logged by the operator.
    *
    * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
    * @param domainUid UID of the domain
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
+   * @param enableClusterRoleBinding whether the enableClusterRoleBinding is set to true of false
    */
   public static Callable<Boolean> checkDomainEventWatchingStopped(
       String opNamespace, String domainNamespace, String domainUid,
@@ -106,13 +107,13 @@ public class K8sEvents {
   }
 
   /**
-   * Check if a given event is logged by the operator.
+   * Check if a given event is logged by the operator in the given namespace.
    *
    * @param opNamespace namespace in which the operator is running
-   * @param domainNamespace namespace in which the domain exists
+   * @param domainNamespace namespace in which the event is logged
    * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
-   * @param type type of event, Normal of Warning
+   * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
    */
   public static boolean domainEventExists(

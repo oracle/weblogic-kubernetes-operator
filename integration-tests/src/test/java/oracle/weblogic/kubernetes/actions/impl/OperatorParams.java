@@ -183,11 +183,7 @@ public class OperatorParams {
 
     values.put(IMAGE_PULL_POLICY, imagePullPolicy);
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
-
-    if (elkIntegrationEnabled) {
-      values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
-    }
-
+    values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
 
     if (elasticSearchHost != null) {
