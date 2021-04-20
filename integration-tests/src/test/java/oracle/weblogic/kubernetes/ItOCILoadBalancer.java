@@ -47,7 +47,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -173,8 +172,9 @@ class ItOCILoadBalancer {
     logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
     createOcirRepoSecret(domain1Namespace);
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
-    int clusterSvcNodePort = Kubernetes.getServiceNodePort(domain1Namespace,
-        domain1Uid + "-cluster-" + cluster1Name);
+    int clusterSvcNodePort = 30012;
+    //Kubernetes.getServiceNodePort(domain1Namespace,
+    //domain1Uid + "-cluster-" + cluster1Name);
 
     assertDoesNotThrow(() -> installAndVerifyOciLoadBalancer(domain1Namespace,
         clusterSvcNodePort, cluster1Name, domain1Uid),
@@ -182,8 +182,8 @@ class ItOCILoadBalancer {
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
-    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2,
-        getServiceNodePort(domain1Namespace, "ocilb"));
+    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, 30012);
+    //getServiceNodePort(domain1Namespace, "ocilb"));
   }
 
   /** Retreive external IP from OCI LoadBalancer.
