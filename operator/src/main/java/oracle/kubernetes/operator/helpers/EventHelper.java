@@ -173,20 +173,11 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        if (isForbiddenForNamespaceWatchingStoppedEvent(this, callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getNamespace());
+        if (hasLoggedForbiddenNSWatchEvent(this, callResponse)) {
           return doNext(packet);
         }
         return super.onFailure(packet, callResponse);
       }
-
-
-    }
-
-    private boolean isForbiddenForNamespaceWatchingStoppedEvent(
-        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
-      return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
     }
 
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
@@ -209,9 +200,8 @@ public class EventHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
         restoreExistingEvent();
-        if (isForbiddenForNamespaceWatchingStoppedEvent(this, callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getNamespace());
+        if (hasLoggedForbiddenNSWatchEvent(this, callResponse)) {
+          return doNext(packet);
         }
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
@@ -239,6 +229,20 @@ public class EventHelper {
             event.getMetadata().getNamespace(),
             new ReadEventResponseStep(getNext()));
       }
+    }
+
+    private boolean isForbiddenForNSWatchStoppedEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+    }
+
+    private boolean hasLoggedForbiddenNSWatchEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
+        LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
+        return true;
+      }
+      return false;
     }
 
     private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
