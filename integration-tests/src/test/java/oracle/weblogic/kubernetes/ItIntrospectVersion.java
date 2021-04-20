@@ -227,7 +227,7 @@ public class ItIntrospectVersion {
 
     final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int managedServerPort = 8001;
+    final int managedServerPort = 7100;
 
     int replicaCount = 2;
 

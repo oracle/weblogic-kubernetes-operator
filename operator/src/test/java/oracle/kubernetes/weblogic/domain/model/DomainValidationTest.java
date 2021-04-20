@@ -13,6 +13,7 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -1084,6 +1085,137 @@ public class DomainValidationTest extends DomainValidationBaseTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
     assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
         "DomainUID ", domainUID, "cluster name", clusterName, "exceeds maximum allowed length")));
+  }
+
+  @Test
+  public void whenDomainServerHasListenPort_dontReportError() {
+    String domainUID = "TestDomainForRest";
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "TestServerForRest";
+    String msName = msNameBase + 1;
+    WlsServerConfig server = new WlsServerConfig(msName, domainUID + "-" + msName, 8001);
+    server.setSslListenPort(null);
+    server.setAdminPort(null);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("test-nap", "t3", 9001, 9001));
+    domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainServerHasSSLListenPort_dontReportError() {
+    String domainUID = "TestDomainForRest";
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "TestServerForRest";
+    String msName = msNameBase + 1;
+    WlsServerConfig server = new WlsServerConfig(msName, domainUID + "-" + msName, 0);
+    server.setListenPort(null);
+    server.setSslListenPort(9001);
+    server.setAdminPort(null);
+    domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainServerHasAdminPort_dontReportError() {
+    String domainUID = "TestDomainForRest";
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "TestServerForRest";
+    String msName = msNameBase + 1;
+    WlsServerConfig server = new WlsServerConfig(msName, domainUID + "-" + msName, 0);
+    server.setListenPort(null);
+    server.setSslListenPort(null);
+    server.setAdminPort(8800);
+    domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainServerHasAdminNAP_dontReportError() {
+    String domainUID = "TestDomainForRest";
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "TestServerForRest";
+    String msName = msNameBase + 1;
+    WlsServerConfig server = new WlsServerConfig(msName, domainUID + "-" + msName, 8001);
+    server.setListenPort(null);
+    server.setSslListenPort(null);
+    server.setAdminPort(null);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("test-nap", "admin", 9001, 9001));
+    domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS")
+        .configureAdminServer()
+        .configureAdminService()
+        .withChannel("default");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  empty());
+  }
+
+  @Test
+  public void whenDomainServerNoAvailablePortForREST_reportError() {
+    String domainUID = "TestDomainForRest";
+    WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
+    Domain myDomain = createTestDomain(domainUID);
+    String msNameBase = "TestServerForRest";
+    String msName = msNameBase + 1;
+    WlsServerConfig server = new WlsServerConfig(msName, domainUID + "-" + msName, 8001);
+    server.setListenPort(null);
+    server.setSslListenPort(null);
+    server.setAdminPort(null);
+    server.addNetworkAccessPoint(new NetworkAccessPoint("test-nap", "t3", 9001, 9001));
+    domainConfigWithCluster.getClusterConfig("TestClusterForRest").addServerConfig(server);
+
+    configureDomain(myDomain)
+        .withDomainHomeSourceType(Image)
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withDomainType("WLS");
+
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfigWithCluster);
+
+    assertThat(myDomain.getAfterIntrospectValidationFailures(testSupport.getPacket()),  contains(stringContainsInOrder(
+        "DomainUID", domainUID, "server", msName,
+        "does not have a port available for the operator to send REST calls.")));
   }
 
   private DomainConfigurator configureDomain(Domain domain) {

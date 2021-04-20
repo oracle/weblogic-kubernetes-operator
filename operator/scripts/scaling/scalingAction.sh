@@ -178,10 +178,10 @@ for i in json.load(sys.stdin)["items"]:
   for index, cs in enumerate(j):
     if j[index]["clusterName"] == "$wls_cluster_name":
       outer_loop_must_break = True
-      print True
+      print (True)
       break
 if outer_loop_must_break == False:
-  print False
+  print (False)
 INPUT
 in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -204,7 +204,7 @@ for i in json.load(sys.stdin)["items"]:
   j = i["spec"]["clusters"]
   for index, cs in enumerate(j):
     if j[index]["clusterName"] == "$wls_cluster_name":
-      print j[index]["replicas"]
+      print (j[index]["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -228,7 +228,7 @@ function get_num_ms_domain_scope() {
 cat > cmds-$$.py << INPUT
 import sys, json
 for i in json.load(sys.stdin)["items"]:
-  print i["spec"]["replicas"]
+  print (i["spec"]["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -264,7 +264,7 @@ for i in json.load(sys.stdin)["items"]:
   j = i["status"]["clusters"]
   for index, cs in enumerate(j):
     if j[index]["clusterName"] == "$clusterName":
-      print j[index]["minimumReplicas"]
+      print (j[index]["minimumReplicas"])
 INPUT
   minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -291,7 +291,7 @@ function get_replica_count() {
   fi
 
   get_min_replicas "${DOMAIN}" "${wls_cluster_name}" minReplicas
-  if [ "${num_ms}" -lt "${minReplicas}" ]; then
+  if [[ "${num_ms}" -lt "${minReplicas}" ]]; then
     # Reset managed server count to minimum replicas
     num_ms=${minReplicas}
   fi
