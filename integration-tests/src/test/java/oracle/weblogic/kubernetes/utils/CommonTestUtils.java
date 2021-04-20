@@ -680,13 +680,12 @@ public class CommonTestUtils {
   /**
    * Install OCI Load Balancer and wait up to five minutes until the External IP is ready.
    *
-   * @param namespace the namespace in which the NGINX will be installed
+   * @param namespace the namespace in which the Noci Load Balancer will be installed
    * @param nodeportshttp the http nodeport of oci load balancer
    * @param clusterName name of WLS cluster
    * @param domainUID domain UID
-   * @return the NGINX Helm installation parameters
    */
-  public static V1Service installAndVerifyOciLoadBalancer(String namespace,
+  public static void installAndVerifyOciLoadBalancer(String namespace,
                                                                    int nodeportshttp,
                                                                    String clusterName,
                                                           String domainUID) throws ApiException {
@@ -731,7 +730,6 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> loadBalancerExternalIPGenerated(
             service.getMetadata().getName(),
             labels, service.getMetadata().getNamespace()), "isOCILBIsReady failed with ApiException"));
-    return service;
   }
 
   /**

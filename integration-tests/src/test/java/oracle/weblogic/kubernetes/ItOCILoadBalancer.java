@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -174,18 +175,21 @@ class ItOCILoadBalancer {
     createOcirRepoSecret(domain1Namespace);
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
     nodeportserver = getNextFreePort(32400, 32600);
-    V1Service lbService = installAndVerifyOciLoadBalancer(domain1Namespace, nodeportserver, cluster1Name, domain1Uid);
-    loadBalancerIP = getLoadBalancerIP(lbService);
+    assertDoesNotThrow(() -> installAndVerifyOciLoadBalancer(domain1Namespace,
+        nodeportserver, cluster1Name, domain1Uid),
+        "Installation of OCI Load Balancer failed");
+    loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILB(loadBalancerIP, 2,
-        getServiceNodePort(domain1Namespace, lbService.getMetadata().getName()));
+        getServiceNodePort(domain1Namespace, "ocilb"));
   }
 
   /** Retreive external IP from OCI LoadBalancer.
    *
    */
-  private static String getLoadBalancerIP(V1Service service) {
+  private static String getLoadBalancerIP(String namespace, String lbName) throws Exception {
+    V1Service service = getService(namespace, null, lbName);
     List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
     if (ingress != null) {
       logger.info("LoadBalancer Ingress " + ingress.toString());
