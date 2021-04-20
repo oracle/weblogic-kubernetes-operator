@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -84,10 +83,6 @@ public class ConfigMapHelper {
    */
   public static Step createScriptConfigMapStep(String domainNamespace, SemanticVersion productVersion) {
     return new ScriptConfigMapStep(domainNamespace, productVersion);
-  }
-
-  static FileGroupReader getScriptReader() {
-    return scriptReader;
   }
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
@@ -173,14 +168,6 @@ public class ConfigMapHelper {
       }
 
       return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
-    }
-
-    private Map<String,String> getData(V1ConfigMap map) {
-      return Optional.ofNullable(map).map(V1ConfigMap::getData).orElse(Collections.emptyMap());
-    }
-
-    boolean containsAllData(Map<String, String> actual, Map<String, String> expected) {
-      return actual.entrySet().containsAll(expected.entrySet());
     }
   }
 
@@ -669,8 +656,6 @@ public class ConfigMapHelper {
   }
 
   public static class IntrospectorConfigMapContext extends ConfigMapContext implements SplitterTarget {
-
-    private static final Pattern ENCODED_ZIP_PATTERN = Pattern.compile("([A-Za-z_]+)\\.secure");
 
     private boolean patchOnly;
 
