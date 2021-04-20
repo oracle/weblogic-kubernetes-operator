@@ -8,7 +8,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
-abstract class EventRetryStrategyStub implements RetryStrategy {
+public abstract class EventRetryStrategyStub implements RetryStrategy {
   @Override
   public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
     NextAction na = new NextAction();

@@ -875,6 +875,7 @@ public class CommonTestUtils {
    * @param image the image name of Apache webtier
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
+   * @param managedServerPort the listenport of each managed server in cluster
    * @param domainUid the uid of the domain to which Apache will route the services
    * @return the Apache Helm installation parameters
    */
@@ -882,8 +883,9 @@ public class CommonTestUtils {
                                                   String image,
                                                   int httpNodePort,
                                                   int httpsNodePort,
+                                                  int managedServerPort,
                                                   String domainUid) throws IOException {
-    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
+    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, managedServerPort, domainUid,
         null, null, 0, null);
   }
 
@@ -894,6 +896,7 @@ public class CommonTestUtils {
    * @param image the image name of Apache webtier
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
+   * @param managedServerPort the listenport of each managed server in cluster
    * @param domainUid the uid of the domain to which Apache will route the services
    * @param pvcName name of the Persistent Volume Claim which contains your own custom_mod_wl_apache.conf file
    * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
@@ -905,6 +908,7 @@ public class CommonTestUtils {
                                                   String image,
                                                   int httpNodePort,
                                                   int httpsNodePort,
+                                                  int managedServerPort,
                                                   String domainUid,
                                                   String pvcName,
                                                   String virtualHostName,
@@ -943,6 +947,9 @@ public class CommonTestUtils {
       apacheParams
           .httpNodePort(httpNodePort)
           .httpsNodePort(httpsNodePort);
+    }
+    if (managedServerPort >= 0) {
+      apacheParams.managedServerPort(managedServerPort);
     }
 
     if (pvcName != null && clusterNamePortMap != null) {
