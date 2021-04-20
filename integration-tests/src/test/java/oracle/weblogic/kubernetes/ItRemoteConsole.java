@@ -39,7 +39,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.shutdownWlsRemoteConsole;
@@ -47,7 +46,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test remote console can connect to WLS mii domain")
+@DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 class ItRemoteConsole {
 
@@ -92,7 +91,6 @@ class ItRemoteConsole {
 
   /**
    * Verify WLS Remote Console installation is successful.
-   *
    */
   @Test
   @DisplayName("Verify WLS Remote Console installation is successful")
@@ -109,6 +107,7 @@ class ItRemoteConsole {
   public void tearDownAll() {
 
     assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
+
   }
 
   /**
