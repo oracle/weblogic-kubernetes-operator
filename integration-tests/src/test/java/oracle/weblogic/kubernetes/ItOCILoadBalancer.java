@@ -60,7 +60,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -174,9 +173,11 @@ class ItOCILoadBalancer {
     logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
     createOcirRepoSecret(domain1Namespace);
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
-    nodeportserver = getNextFreePort(32400, 32600);
+    int clusterSvcNodePort = Kubernetes.getServiceNodePort(domain1Namespace,
+        domain1Uid + "-cluster-" + cluster1Name);
+
     assertDoesNotThrow(() -> installAndVerifyOciLoadBalancer(domain1Namespace,
-        nodeportserver, cluster1Name, domain1Uid),
+        clusterSvcNodePort, cluster1Name, domain1Uid),
         "Installation of OCI Load Balancer failed");
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
