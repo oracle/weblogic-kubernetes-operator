@@ -189,7 +189,11 @@ class ItOCILoadBalancer {
    *
    */
   private static String getLoadBalancerIP(String namespace, String lbName) throws Exception {
-    V1Service service = getService(namespace, null, lbName);
+    Map<String, String> labels = new HashMap<>();
+    labels.put("loadbalancer", lbName);
+    V1Service service = getService(namespace, labels, lbName);
+    assertNotNull(service, "Can't find service with name " + lbName);
+    logger.info("Found service with name {0} in {1} namespace ", lbName, namespace);
     List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
     if (ingress != null) {
       logger.info("LoadBalancer Ingress " + ingress.toString());
