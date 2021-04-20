@@ -129,6 +129,7 @@ class ItMiiDynamicUpdate {
   private final String workManagerName = "newWM";
   private static Path pathToChangeTargetYaml = null;
   private static Path pathToAddClusterYaml = null;
+  private static Path pathToChangReadsYaml = null;
   private static LoggingFacade logger = null;
 
   /**
@@ -202,10 +203,14 @@ class ItMiiDynamicUpdate {
     createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
 
     // create the domain CR with a pre-defined configmap
+    // setting setDataHome to false, testMiiRemoveTarget fails when data home is set at domain resource level
+    // because of bug OWLS-88679
+    // testMiiRemoveTarget should work fine after the bug is fixed with setDataHome set to true
     createDomainResourceWithLogHome(domainUid, domainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         adminSecretName, OCIR_SECRET_NAME, encryptionSecretName,
-        replicaCount, pvName, pvcName, "cluster-1", configMapName, dbSecretName, false, true);
+        replicaCount, pvName, pvcName, "cluster-1", configMapName,
+        dbSecretName, false, true, false);
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
@@ -246,6 +251,14 @@ class ItMiiDynamicUpdate {
         + "            ListenPort : 8001";
 
     assertDoesNotThrow(() -> Files.write(pathToAddClusterYaml, yamlToAddCluster.getBytes()));
+
+    // write sparse yaml to change ScatteredReadsEnabled for adminserver
+    pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
+    String yamlToChangeReads = "topology:\n"
+        + "    Server:\n"
+        + "        \"admin-server\":\n"
+        + "            ScatteredReadsEnabled: true";
+    assertDoesNotThrow(() -> Files.write(pathToChangReadsYaml, yamlToChangeReads.getBytes()));
   }
 
   /**
@@ -448,7 +461,7 @@ class ItMiiDynamicUpdate {
     }
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml",
             pathToAddClusterYaml.toString()), withStandardRetryPolicy);
@@ -510,7 +523,7 @@ class ItMiiDynamicUpdate {
     LinkedHashMap<String, OffsetDateTime> pods = addDataSourceAndVerify(false);
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
@@ -601,7 +614,7 @@ class ItMiiDynamicUpdate {
     assertDoesNotThrow(() -> Files.write(pathToUndeployAppYaml, yamlToUndeployApp.getBytes()));
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.update2.yaml", pathToUndeployAppYaml.toString()), withStandardRetryPolicy);
@@ -910,14 +923,6 @@ class ItMiiDynamicUpdate {
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, OffsetDateTime> pods = addDataSourceAndVerify(false);
 
-    // write sparse yaml to change ScatteredReadsEnabled for adminserver
-    Path pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
-    String yamlToChangeReads = "topology:\n"
-        + "    Server:\n"
-        + "        \"admin-server\":\n"
-        + "            ScatteredReadsEnabled: true";
-    assertDoesNotThrow(() -> Files.write(pathToChangReadsYaml, yamlToChangeReads.getBytes()));
-
     // make two non-dynamic changes, add  datasource JDBC driver params and change scatteredreadenabled
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
@@ -1052,7 +1057,8 @@ class ItMiiDynamicUpdate {
     // after the cluster is scaled.
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.cluster.size.yaml"), withStandardRetryPolicy);
+            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString(),
+            MODEL_DIR + "/model.cluster.size.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
     String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
@@ -1158,7 +1164,8 @@ class ItMiiDynamicUpdate {
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
-            MODEL_DIR + "/model.jdbc2.yaml", MODEL_DIR + "/model.cluster.size.yaml",
+            MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml",
+            pathToChangReadsYaml.toString(), MODEL_DIR + "/model.cluster.size.yaml",
             pathToRemoveTargetYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
@@ -1496,7 +1503,7 @@ class ItMiiDynamicUpdate {
     }
 
     // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, https://jira.oraclecorp.com/jira/browse/WDT-535
+    // there are issues with removing them, WDT-535
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml", pathToAddClusterYaml.toString(),
             MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);

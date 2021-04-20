@@ -38,6 +38,7 @@ The operator also generates these event types in the operator's namespace, which
 
 *  `StartManagingNamespace`: The operator has started managing domains in a namespace.
 *  `StopManagingNamespace`: The operator has stopped managing domains in a namespace. 
+*  `StartManagingNamespaceFailed`: The operator failed to start managing domains in a namespace because it does not have the required privileges.
 
 #### Operator-generated event details
 

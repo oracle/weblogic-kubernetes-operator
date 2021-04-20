@@ -207,6 +207,11 @@ public class CallBuilderTest {
           client.setBasePath(basePath);
           return client;
         }
+
+        @Override
+        protected void discard(ApiClient client) {
+
+        }
       };
     }
   }

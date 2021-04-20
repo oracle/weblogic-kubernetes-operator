@@ -213,11 +213,9 @@ function createDomainHome {
     sleep 30
     max=30
     count=0
-    kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
     kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
     while [ $? -eq 1 -a $count -lt $max ]; do
       sleep 5
-      kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
       count=`expr $count + 1`
       kubectl exec $POD_NAME -c create-weblogic-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
     done

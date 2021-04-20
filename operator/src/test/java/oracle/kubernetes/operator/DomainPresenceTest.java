@@ -5,12 +5,14 @@ package oracle.kubernetes.operator;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -31,6 +33,7 @@ import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +44,10 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.CALL_REQUEST_LIMIT;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -49,7 +55,9 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
-  private static final String UID = "UID1";
+  private static final String UID1 = "UID1";
+  private static final String UID2 = "UID2";
+  private static final String UID3 = "UID3";
   private static final int LAST_DOMAIN_NUM = 2 * CALL_REQUEST_LIMIT - 1;
 
   private final List<Memento> mementos = new ArrayList<>();
@@ -85,13 +93,33 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
-    Domain domain = createDomain(UID, NS);
+    Domain domain = createDomain(UID1, NS);
     testSupport.defineResources(domain);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID).getDomain(), equalTo(domain));
+    assertThat(getDomainPresenceInfo(dp, UID1).getDomain(), equalTo(domain));
+  }
+
+  @Test
+  public void whenDomainsDeletedButAlreadyInPresence_deleteFromPresenceMap() {
+    Domain domain1 = createDomain(UID1, NS);
+    Domain domain2 = createDomain(UID2, NS);
+    Domain domain3 = createDomain(UID3, NS);
+    testSupport.defineResources(domain1, domain2, domain3);
+
+    testSupport.addComponent("DP", DomainProcessor.class, dp);
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(3));
+
+    testSupport.deleteResources(domain2);
+
+    testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
+
+    assertThat(getDomainPresenceInfoMap(dp).keySet(), hasSize(2));
+    assertThat(getDomainPresenceInfoMap(dp), not(hasKey(UID2)));
   }
 
   private void addDomainResource(String uid, String namespace) {
@@ -106,7 +134,12 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .namespace(namespace)
                 .name(uid)
                 .resourceVersion("1")
-                .creationTimestamp(OffsetDateTime.now()));
+                .creationTimestamp(OffsetDateTime.now()))
+        .withStatus(new DomainStatus());
+  }
+
+  private Map<String, DomainPresenceInfo> getDomainPresenceInfoMap(DomainProcessorStub dp) {
+    return dp.getDomainPresenceInfos();
   }
 
   private DomainPresenceInfo getDomainPresenceInfo(DomainProcessorStub dp, String uid) {
@@ -147,26 +180,26 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenK8sHasOneDomain_recordAdminServerService() {
-    addDomainResource(UID, NS);
-    V1Service service = createServerService(UID, NS, "admin");
+    addDomainResource(UID1, NS);
+    V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID).getServerService("admin"), equalTo(service));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerService("admin"), equalTo(service));
   }
 
   @Test
   public void whenK8sHasOneDomainWithPod_recordPodPresence() {
-    addDomainResource(UID, NS);
-    V1Pod pod = createPodResource(UID, NS, "admin");
+    addDomainResource(UID1, NS);
+    V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID).getServerPod("admin"), equalTo(pod));
+    assertThat(getDomainPresenceInfo(dp, UID1).getServerPod("admin"), equalTo(pod));
   }
 
   private V1Pod createPodResource(String uid, String namespace, String serverName) {
@@ -179,14 +212,14 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() {
-    addDomainResource(UID, NS);
-    addPodResource(UID, NS, "admin");
-    addEventResource(UID, "admin", "ignore this event");
+    addDomainResource(UID1, NS);
+    addPodResource(UID1, NS, "admin");
+    addEventResource(UID1, "admin", "ignore this event");
 
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(getDomainPresenceInfo(dp, UID).getLastKnownServerStatus("admin"), nullValue());
+    assertThat(getDomainPresenceInfo(dp, UID1).getLastKnownServerStatus("admin"), nullValue());
   }
 
   private void addEventResource(String uid, String serverName, String message) {
@@ -202,16 +235,16 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
   @Test
   public void whenStrandedResourcesExist_removeThem() {
-    V1Service service1 = createServerService(UID, NS, "admin");
-    V1Service service2 = createServerService(UID, NS, "ms1");
-    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(UID, "volume1"));
+    V1Service service1 = createServerService(UID1, NS, "admin");
+    V1Service service2 = createServerService(UID1, NS, "ms1");
+    V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(UID1, "volume1"));
     V1PersistentVolumeClaim claim =
-        new V1PersistentVolumeClaim().metadata(createMetadata(UID, NS, "claim1"));
+        new V1PersistentVolumeClaim().metadata(createMetadata(UID1, NS, "claim1"));
     testSupport.defineResources(service1, service2, volume, claim);
 
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
-    assertThat(dp.isDeletingStrandedResources(UID), is(true));
+    assertThat(dp.isDeletingStrandedResources(UID1), is(true));
   }
 
   @Test
@@ -236,7 +269,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   public abstract static class DomainProcessorStub implements DomainProcessor {
-    private final Map<String, DomainPresenceInfo> dpis = new HashMap<>();
+    private final Map<String, DomainPresenceInfo> dpis = new ConcurrentHashMap<>();
     private final List<MakeRightDomainOperationStub> operationStubs = new ArrayList<>();
 
     Map<String, DomainPresenceInfo> getDomainPresenceInfos() {
@@ -247,6 +280,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
       return Optional.ofNullable(getMakeRightOperations(uid))
             .map(MakeRightDomainOperationStub::isDeletingStrandedResources)
             .orElse(false);
+    }
+
+    @Override
+    public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+      return dpis.entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
     }
 
     private MakeRightDomainOperationStub getMakeRightOperations(String uid) {
@@ -304,7 +342,11 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
 
       @Override
       public void execute() {
-        dpis.put(info.getDomainUid(), info);
+        if (deleting) {
+          dpis.remove(info.getDomainUid());
+        } else {
+          dpis.put(info.getDomainUid(), info);
+        }
       }
     }
   }

@@ -909,7 +909,7 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
+   * Refer JIRA OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
    * server from scratch if it has never been started earlier with 
    * administration server. Once the administration server is stopped, 
@@ -991,7 +991,7 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Refer JIRA https://jira.oraclecorp.com/jira/browse/OWLS-86251
+   * Refer JIRA OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
    * server from scratch if it has never been started earlier with
    * administration Server. Once the administration server is stopped, the 
