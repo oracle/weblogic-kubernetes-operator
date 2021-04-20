@@ -179,8 +179,12 @@ public class DomainNamespaces {
     return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
   }
 
-  boolean shouldStartNamespace(String ns) {
+  public boolean shouldStartNamespace(String ns) {
     return getNamespaceStatus(ns).shouldStartNamespace();
+  }
+
+  public void clearNamespaceStartingFlag(String ns) {
+    getNamespaceStatus(ns).clearNamespaceStartingFlag();
   }
 
   interface WatcherFactory<T, W extends Watcher<T>> {

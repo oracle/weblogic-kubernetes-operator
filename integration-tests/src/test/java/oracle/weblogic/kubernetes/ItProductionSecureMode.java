@@ -53,6 +53,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWeblogicMBean;
@@ -72,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillRe
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -151,9 +153,10 @@ class ItProductionSecureMode {
         + "         SecureModeEnabled: true \n"
         + "  ServerTemplate: \n" 
         + "    \"cluster-1-template\": \n"
+        + "       ListenPort: '7001' \n"
         + "       SSL: \n"
         + "         Enabled: true \n"
-        + "         ListenPort: '7003' \n";
+        + "         ListenPort: '7002' \n";
 
     assertDoesNotThrow(() -> Files.write(pathToEnableSSLYaml, yamlString.getBytes()));
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Arrays.asList(pathToEnableSSLYaml.toString()));
@@ -200,20 +203,37 @@ class ItProductionSecureMode {
    * Verify WebLogic console is accessible through the `default-admin` service.
    * Verify no NodePort service is available thru default channel since 
    * clear text default port (7001) is disabled.
+   * Check the `default-secure` and `default-admin` port on cluster service.
    */
   @Test
   @Order(1)
   @DisplayName("Verify the secure service through administration port")
   public void testVerifyProductionSecureMode() {
-    int sslNodePort = getServiceNodePort(
+    int defaultAdminPort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
-    assertTrue(sslNodePort != -1,
+    assertTrue(defaultAdminPort != -1,
           "Could not get the default-admin external service node port");    
-    logger.info("Found the administration service nodePort {0}", sslNodePort);
+    logger.info("Found the administration service nodePort {0}", defaultAdminPort);
+
+    // Here the SSL port is explicitly set to 7002 (on-prem default) in
+    // in ServerTemplate section on topology file. Here the generated 
+    // config.xml has no SSL port assigned, but the default-secure service i
+    // must be active with port 7002 
+    int defaultClusterSecurePort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, 
+              domainUid + "-cluster-cluster-1", "default-secure"),
+              "Getting Default Secure Cluster Service port failed");
+    assertEquals(7002, defaultClusterSecurePort, "Default Secure Cluster port is not set to 7002");
+
+    int defaultAdminSecurePort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, 
+              domainUid + "-cluster-cluster-1", "default-admin"),
+              "Getting Default Admin Cluster Service port failed");
+    assertEquals(9002, defaultAdminSecurePort, "Default Admin Cluster port is not set to 9002");
 
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + " https://" + K8S_NODEPORT_HOST + ":" + defaultAdminPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} " 
           + " -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
