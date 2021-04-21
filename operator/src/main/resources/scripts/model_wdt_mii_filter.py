@@ -34,14 +34,25 @@ class OfflineWlstEnv(object):
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
 
     # initialize globals
-    self.INTROSPECT_HOME          = '/tmp/introspect/' + self.DOMAIN_UID
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
+    self.TOPOLOGY_YAML_PATH = '/weblogic-operator/introspectormii/topology.yaml'
 
     if model and 'topology' in model:
       self.DOMAIN_NAME = model['topology']['Name']
-      #if self.DOMAIN_NAME is None:
-      #  self.DOMAIN_NAME = self.getEnv("DOMAIN_NAME")
-      #  print "DOMAIN_NAME from env:  %s" % self.DOMAIN_NAME
+
+    if self.DOMAIN_NAME is None and os.path.exists(self.TOPOLOGY_YAML_PATH):
+      self.readDomainNameFromTopologyYaml(self.TOPOLOGY_YAML_PATH)
+
+  def readDomainNameFromTopologyYaml(self, path):
+    file = open(path, 'r')
+    content = file.readlines()
+    # access line containing domain name and strip leading and trailing spaces
+    line = content[2].strip()
+    # create key-value pair (e.g. name="sample-domain1")
+    (key, val) = line.split()
+    if key == 'name:':
+      # strip leading and trailing double quotes from value
+      self.DOMAIN_NAME = val.strip('"')
 
   def getDomainName(self):
     return self.DOMAIN_NAME

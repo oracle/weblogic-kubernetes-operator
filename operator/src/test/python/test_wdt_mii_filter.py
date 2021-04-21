@@ -221,6 +221,11 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model = self.getModel()
     model_wdt_mii_filter.customizeServers(model)
 
+  def test_readDomainNameFromTopologyYaml(self):
+    model = self.getModel()
+    model_wdt_mii_filter.env.readDomainNameFromTopologyYaml('../resources/topology.yaml')
+    domain_name = model_wdt_mii_filter.env.getDomainName()
+    self.assertEquals('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
