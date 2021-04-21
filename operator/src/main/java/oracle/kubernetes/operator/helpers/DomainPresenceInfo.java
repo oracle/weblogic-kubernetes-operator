@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -14,6 +15,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -25,9 +28,11 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -56,7 +61,9 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
-  private final AtomicReference<V1Secret> webLogicCredentialsSecret = new AtomicReference<>(null);
+  private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
+  private V1Secret webLogicCredentialsSecret;
+  private OffsetDateTime webLogicCredentialsSecretLastSet;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private EventItem lastEventItem;
@@ -456,12 +463,41 @@ public class DomainPresenceInfo {
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
   }
 
+  /**
+   * Retrieve the WebLogic credentials secret, if cached. This cached value will be automatically cleared
+   * after a configured time period.
+   * @return Cached secret value
+   */
   public V1Secret getWebLogicCredentialsSecret() {
-    return webLogicCredentialsSecret.get();
+    webLogicCredentialsSecretLock.readLock().lock();
+    try {
+      if (webLogicCredentialsSecretLastSet == null
+          || webLogicCredentialsSecretLastSet.isAfter(
+              SystemClock.now().minusSeconds(
+                  TuningParameters.getInstance().getMainTuning().weblogicCredentialsSecretRereadIntervalSeconds))) {
+        return webLogicCredentialsSecret;
+      }
+    } finally {
+      webLogicCredentialsSecretLock.readLock().unlock();
+    }
+
+    // time to clear
+    setWebLogicCredentialsSecret(null);
+    return null;
   }
 
+  /**
+   * Cache the WebLogic credentials secret.
+   * @param webLogicCredentialsSecret Secret value
+   */
   public void setWebLogicCredentialsSecret(V1Secret webLogicCredentialsSecret) {
-    this.webLogicCredentialsSecret.set(webLogicCredentialsSecret);
+    webLogicCredentialsSecretLock.writeLock().lock();
+    try {
+      webLogicCredentialsSecretLastSet = (webLogicCredentialsSecret != null) ? SystemClock.now() : null;
+      this.webLogicCredentialsSecret = webLogicCredentialsSecret;
+    } finally {
+      webLogicCredentialsSecretLock.writeLock().unlock();
+    }
   }
 
   private V1Service getNewerService(V1Service first, V1Service second) {

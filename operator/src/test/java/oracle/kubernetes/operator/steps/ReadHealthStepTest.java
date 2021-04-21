@@ -22,6 +22,7 @@ import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -31,6 +32,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
@@ -113,6 +115,8 @@ public class ReadHealthStepTest {
         .withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
+    mementos.add(SystemClockTestSupport.installClock());
+    mementos.add(TuningParametersStub.install());
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.addToPacket(SERVER_HEALTH_MAP, serverHealthMap);
@@ -392,6 +396,21 @@ public class ReadHealthStepTest {
     testSupport.runSteps(readHealthStep);
 
     assertThat(info.getWebLogicCredentialsSecret(), is(notNullValue()));
+  }
+
+  @Test
+  public void whenAuthorizedToReadHealthAndThenWait_verifySecretCleared() {
+    selectServer(MANAGED_SERVER1);
+
+    defineResponse(200, "", "http://127.0.0.1:8001");
+
+    testSupport.runSteps(readHealthStep);
+
+    assertThat(info.getWebLogicCredentialsSecret(), is(notNullValue()));
+
+    SystemClockTestSupport.increment(180);
+
+    assertThat(info.getWebLogicCredentialsSecret(), is(nullValue()));
   }
 
   @Test

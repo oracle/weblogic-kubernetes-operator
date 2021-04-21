@@ -59,6 +59,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -325,7 +326,7 @@ public class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
@@ -341,7 +342,7 @@ public class DomainProcessorTest {
     assertThat(minAvailableMatches(getRunningPDBs(), 2), is(true));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat(minAvailableMatches(getRunningPDBs(), 1), is(true));
@@ -475,7 +476,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).execute();
 
     // Run the make right flow again with explicit recheck and no domain updates
-    OffsetDateTime timestamp = OffsetDateTime.now();
+    OffsetDateTime timestamp = SystemClock.now();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_STARTED",
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
@@ -496,7 +497,7 @@ public class DomainProcessorTest {
     processor.createMakeRightOperation(info).execute();
 
     // Run the make right flow again with explicit recheck and no domain updates
-    OffsetDateTime timestamp = OffsetDateTime.now();
+    OffsetDateTime timestamp = SystemClock.now();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_STARTED",
             doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
@@ -521,8 +522,8 @@ public class DomainProcessorTest {
 
     // Scale up the cluster and execute the make right flow again with explicit recheck
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(OffsetDateTime.now());
-    OffsetDateTime timestamp = OffsetDateTime.now();
+    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
+    OffsetDateTime timestamp = SystemClock.now();
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
             .withExplicitRecheck().execute();
     assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",

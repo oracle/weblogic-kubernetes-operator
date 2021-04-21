@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -558,7 +559,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_same_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     V1ObjectMeta domain2Meta = createMetadata(creationDatetime);
@@ -568,7 +569,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_newer_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     OffsetDateTime deleteDatetime = creationDatetime.plusMinutes(1);
@@ -579,7 +580,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_doNotDelete_with_older_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     OffsetDateTime deleteDatetime = creationDatetime.minusMinutes(1);
