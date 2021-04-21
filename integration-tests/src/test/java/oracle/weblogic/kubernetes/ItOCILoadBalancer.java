@@ -232,7 +232,7 @@ class ItOCILoadBalancer {
   }
 
   /**
-   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
+   * Verify the sample-war app can be accessed from all managed servers in the domain through OCI Load Balancer.
    */
   private void verifyWebAppAccessThroughOCILB(String lbIp, int replicaCount, int nodeportserver) {
 
@@ -243,13 +243,13 @@ class ItOCILoadBalancer {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war",
+        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war/index.jsp",
             lbIp,
             nodeportserver);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify OCI LB can access the sessmigr app "
+        .as("Verify OCI LB can access the sample-war app "
             + "from all managed servers in the domain via http")
-        .withFailMessage("OCI LB can not access the the sessmigr app "
+        .withFailMessage("OCI LB can not access the the sample-war app "
             + "from one or more of the managed servers via http")
         .isTrue();
   }
