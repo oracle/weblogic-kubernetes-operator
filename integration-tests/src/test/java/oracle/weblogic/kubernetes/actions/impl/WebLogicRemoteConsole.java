@@ -3,18 +3,18 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+//import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+//import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+//import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallRemoteconsoleParams;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -52,16 +52,13 @@ public class WebLogicRemoteConsole {
    */
   public static boolean shutdownWlsRemoteConsole() {
 
-    Path shutdownRemoteconsolePath =
-        Paths.get(RESOURCE_DIR, "bash-scripts", "shutdown-remoteconsole.sh");
-    String shutdownScript = shutdownRemoteconsolePath.toString();
-    String command = "sh " + shutdownScript;
-    logger.info("Remote console shutdown command {0}", command);
-    return  Command.withParams(
-        defaultCommandParams()
-            .command(command)
-            .redirect(false))
-        .execute();
+    String command = "kill -9 `jps | grep console.jar | awk '{print $1}'`";
+    logger.info("Command to shutdown the remote console: {0}", command);
+    ExecResult result = assertDoesNotThrow(() -> exec(command, true));
+    logger.info("Shutdown command returned {0}", result.toString());
+    logger.info(" Shutdown command returned EXIT value {0}", result.exitValue());
+
+    return (result.exitValue() == 0);
 
   }
 
