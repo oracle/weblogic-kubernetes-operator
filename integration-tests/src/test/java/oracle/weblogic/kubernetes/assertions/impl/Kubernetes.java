@@ -529,7 +529,7 @@ public class Kubernetes {
       String serviceName, Map<String, String> labels, String namespace)
       throws ApiException {
     if (!OKE_CLUSTER) {
-      throw new ApiException ("Can't create OCI Load Balancer in non OKE enviroment");
+      throw new ApiException("Can't create OCI Load Balancer in non OKE enviroment");
     }
     LoggingFacade logger = getLogger();
     V1Service service = getService(serviceName, labels, namespace);
