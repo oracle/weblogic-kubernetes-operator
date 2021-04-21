@@ -45,9 +45,9 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -98,7 +98,7 @@ class ItOCILoadBalancer {
   // constants for creating domain image using model in image
 
   private static final String IMAGE_NAME = "ocilb-image";
-  private static final String SESSMIGR_APP_NAME = "sessmigr-app";
+  private static final String SAMPLE_APP_NAME = "sample-app";
 
   private static String cluster1Name = "cluster-1";
   private static String cluster2Name = "cluster-2";
@@ -167,23 +167,24 @@ class ItOCILoadBalancer {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
+    //String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
+    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
     createOcirRepoSecret(domain1Namespace);
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
-    int clusterSvcNodePort = 30012;
+    int clusterPort = 8001;
     //Kubernetes.getServiceNodePort(domain1Namespace,
     //domain1Uid + "-cluster-" + cluster1Name);
 
     assertDoesNotThrow(() -> installAndVerifyOciLoadBalancer(domain1Namespace,
-        clusterSvcNodePort, cluster1Name, domain1Uid),
+        clusterPort, cluster1Name, domain1Uid),
         "Installation of OCI Load Balancer failed");
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
-    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, getServiceNodePort(domain1Namespace, "ocilb"));
+    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterPort);
   }
 
   /** Retreive external IP from OCI LoadBalancer.
@@ -217,7 +218,7 @@ class ItOCILoadBalancer {
     logger.info("Create image with model file and verify");
 
     List<String> appList = new ArrayList();
-    appList.add(SESSMIGR_APP_NAME);
+    appList.add(SAMPLE_APP_NAME);
 
     // build the model file list
     final List<String> modelList = Collections.singletonList(modelFile);
@@ -242,13 +243,13 @@ class ItOCILoadBalancer {
 
     // check that NGINX can access the sample apps from all managed servers in the domain
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sessmigr-app/?getCounter",
+        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war",
             lbIp,
             nodeportserver);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify OCI LB can access the sessmigr app "
             + "from all managed servers in the domain via http")
-        .withFailMessage("OCI LB can not access the monitoring exporter metrics "
+        .withFailMessage("OCI LB can not access the the sessmigr app "
             + "from one or more of the managed servers via http")
         .isTrue();
   }
