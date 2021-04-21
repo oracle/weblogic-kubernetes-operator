@@ -88,7 +88,7 @@ public class K8sEvents {
           // check if there is a warning message in operator's log
           String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
           String expectedErrorMsg = String.format(
-              "Cannot create NamespaceWatchingStopped event in namespace %s due to an authorization error",
+              "Cannot create or replace NamespaceWatchingStopped event in namespace %s due to an authorization error",
               domainNamespace);
           String operatorLog = getPodLog(operatorPodName, opNamespace);
           if (operatorLog.contains(expectedErrorMsg)
