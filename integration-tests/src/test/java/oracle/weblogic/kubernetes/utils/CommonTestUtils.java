@@ -157,6 +157,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
@@ -215,12 +216,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPod
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOCILoadBalancerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.loadBalancerExternalIPGenerated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
@@ -681,43 +682,61 @@ public class CommonTestUtils {
    * Install OCI Load Balancer and wait up to five minutes until the External IP is ready.
    *
    * @param namespace the namespace in which the Noci Load Balancer will be installed
-   * @param nodeportshttp the http nodeport of oci load balancer
+   * @param portshttp the http port of oci load balancer
+   * @param portshttps the https port of oci load balancer or 0 if no ssl
    * @param clusterName name of WLS cluster
    * @param domainUID domain UID
+   * @param loadBalancerName service name for OCI Load Balancer
    */
-  public static void installAndVerifyOciLoadBalancer(String namespace,
-                                                                   int nodeportshttp,
-                                                                   String clusterName,
-                                                          String domainUID) throws ApiException {
+  public static void installAndVerifyOCILoadBalancer(
+      String namespace,
+      int portshttp,
+      int portshttps,
+      String clusterName,
+      String domainUID,
+      String loadBalancerName) throws ApiException {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
+    if (portshttps != 0) {
+      annotations.put("service.beta.kubernetes.io/oci-load-balancer-ssl-ports", String.valueOf(portshttps));
+      annotations.put("service.beta.kubernetes.io/oci-load-balancer-tls-secret","ssl-certificate-secret");
+    }
     Map<String, String> selectors = new HashMap<>();
     Map<String, String> labels = new HashMap<>();
-    labels.put("loadbalancer", "ocilb");
+    labels.put("loadbalancer", loadBalancerName);
     selectors.put("weblogic.clusterName", clusterName);
     selectors.put("weblogic.domainUID",domainUID);
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort()
+        .name("http")
+        .port(portshttp)
+        .targetPort(new IntOrString(portshttp))
+        .protocol("TCP"));
+    if (portshttps != 0) {
+      ports.add(new V1ServicePort()
+          .name("https")
+          .port(portshttps)
+          .targetPort(new IntOrString(portshttp))
+          .protocol("TCP"));
+    }
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
-            .name("ocilb")
+            .name(loadBalancerName)
             .namespace(namespace)
             .labels(labels)
             .annotations(annotations))
         .spec(new V1ServiceSpec()
-            .ports(Arrays.asList(
-                new V1ServicePort()
-                    .port(nodeportshttp)
-                    .targetPort(new IntOrString(nodeportshttp))
-                    .protocol("TCP")))
+            .ports(ports)
             .selector(selectors)
             .sessionAffinity("None")
             .type("LoadBalancer"));
     LoggingFacade logger = getLogger();
     logger.info("Checking service object not null");
     assertNotNull(service, "Can't create ocilb service, returns null");
-    logger.info("Call to create service object " + service.getMetadata().getName());
+    logger.info("Call to create service object " + loadBalancerName);
     assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
-    logger.info("Check if  service exists " + service.getMetadata().getName());
-    checkServiceExists(service.getMetadata().getName(),service.getMetadata().getNamespace());
+    logger.info("Check if  service exists " + loadBalancerName);
+    checkServiceExists(loadBalancerName,namespace);
 
     // wait until the external IP is generated.
     withStandardRetryPolicy
@@ -727,9 +746,9 @@ public class CommonTestUtils {
                 namespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> loadBalancerExternalIPGenerated(
-            service.getMetadata().getName(),
-            labels, service.getMetadata().getNamespace()), "isOCILBIsReady failed with ApiException"));
+        .until(assertDoesNotThrow(() -> isOCILoadBalancerReady(
+            loadBalancerName,
+            labels, namespace), "isOCILoadBalancerReady failed with ApiException"));
   }
 
   /**
@@ -3853,4 +3872,38 @@ public class CommonTestUtils {
     });
   }
 
+  /** Create and display SSL certificate and key using openSSL with SAN extension.
+   * @param cn - hostname or IP
+   * @param domainNamespace namespace for tls secret
+   * @param tlsKeyFile - path to tlsKey
+   * @param tlsCertFile - path to tlsCertFile
+   **/
+  public static void createCertKeyFiles(String cn, String domainNamespace, Path tlsKeyFile, Path tlsCertFile) {
+
+    final LoggingFacade logger = getLogger();
+    Map<String, String> sanConfigTemplateMap  = new HashMap();
+    sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+
+    Path srcFile = Paths.get(RESOURCE_DIR,
+        "tunneling", "san.config.template.txt");
+    Path targetFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcFile.toString(),
+            "san.config.txt", sanConfigTemplateMap));
+    logger.info("Generated SAN config file {0}", targetFile);
+
+    tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
+    tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
+    String opcmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
+        + "-keyout " + tlsKeyFile + " -out " + tlsCertFile
+        + " -subj \"/CN=" + cn + "\" -extensions san"
+        + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
+    assertTrue(
+        new Command().withParams(new CommandParams()
+            .command(opcmd)).execute(), "openssl req command fails");
+
+    String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
+    assertTrue(
+        new Command().withParams(new CommandParams()
+            .command(opcmd2)).execute(), "openssl list command fails");
+  }
 }

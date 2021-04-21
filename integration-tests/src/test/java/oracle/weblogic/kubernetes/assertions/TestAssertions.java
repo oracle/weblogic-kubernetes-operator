@@ -345,12 +345,12 @@ public class TestAssertions {
    * @param namespace   in which the service is running
    * @return true if the service Load Balancer External IP is generated otherwise false
    */
-  public static Callable<Boolean> loadBalancerExternalIPGenerated(
+  public static Callable<Boolean> isOCILoadBalancerReady(
       String serviceName,
       Map<String, String> label,
       String namespace) {
     return () -> {
-      return Kubernetes.doesServiceLoadBalancerExternalIPGenerated(serviceName, label, namespace);
+      return Kubernetes.isOCILoadBalancerReady(serviceName, label, namespace);
     };
   }
 

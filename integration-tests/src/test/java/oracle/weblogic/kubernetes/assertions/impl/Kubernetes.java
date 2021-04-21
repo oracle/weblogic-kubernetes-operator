@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
@@ -524,12 +525,13 @@ public class Kubernetes {
    * @return true if the service External IP is found otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean doesServiceLoadBalancerExternalIPGenerated(
+  public static boolean isOCILoadBalancerReady(
       String serviceName, Map<String, String> labels, String namespace)
       throws ApiException {
+    if (!OKE_CLUSTER) {
+      throw new ApiException ("Can't create OCI Load Balancer in non OKE enviroment");
+    }
     LoggingFacade logger = getLogger();
-    String labelSelector = String.format("%s in (%s)", "loadbalancer", "ocilb");
-    listServices(namespace, labelSelector);
     V1Service service = getService(serviceName, labels, namespace);
     if (service != null) {
       logger.info("Found service with name {0} in {1} namespace ", serviceName, namespace);
