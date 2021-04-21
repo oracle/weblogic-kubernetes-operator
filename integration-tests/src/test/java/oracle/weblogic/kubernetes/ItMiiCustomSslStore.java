@@ -122,7 +122,7 @@ class ItMiiCustomSslStore {
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-            "W##%*}!`''1~3x", domainNamespace),
+            "#%*!`${ls}'${DOMAIN_UID}1~3x", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "mii-ssl-configmap";
