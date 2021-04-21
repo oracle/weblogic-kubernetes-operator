@@ -138,7 +138,7 @@ weight: 1
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the above licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
      {{% notice info %}}
-   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
+   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md" >}}).
      {{% /notice %}}
 
 1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
