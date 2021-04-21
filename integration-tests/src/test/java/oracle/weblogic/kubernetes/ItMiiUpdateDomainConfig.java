@@ -191,7 +191,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Create database secret");
     final String dbSecretName = domainUid  + "-db-secret";
     assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
-            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+            "##W%*}!\"'\"`']\\\\//1$$~x", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
     String configMapName = "jdbc-jms-wldf-configmap";
 
