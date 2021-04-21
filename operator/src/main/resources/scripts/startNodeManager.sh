@@ -322,7 +322,6 @@ logFileRotate ${nodemgr_out_file} ${NODEMGR_LOG_FILE_MAX:-11}
 
 ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
-wait_count=0
 start_secs=$SECONDS
 max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
@@ -340,7 +339,6 @@ while [ 1 -eq 1 ]; do
     trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
     exit 1
   fi
-  wait_count=$((wait_count + 1))
 done
 
 trace "Nodemanager started in $((SECONDS - start_secs)) seconds."
