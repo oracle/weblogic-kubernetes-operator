@@ -22,6 +22,7 @@ import javax.annotation.Nullable;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.WebLogicConstants;
@@ -55,6 +56,7 @@ public class DomainPresenceInfo {
   private final ConcurrentMap<String, ServerKubernetesObjects> servers = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1Service> clusters = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, V1beta1PodDisruptionBudget> podDisruptionBudgets = new ConcurrentHashMap<>();
+  private final AtomicReference<V1Secret> webLogicCredentialsSecret = new AtomicReference<>(null);
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private EventItem lastEventItem;
@@ -452,6 +454,14 @@ public class DomainPresenceInfo {
         clusters,
         clusterName,
         s -> !KubernetesUtils.isFirstNewer(getMetadata(s), getMetadata(event)));
+  }
+
+  public V1Secret getWebLogicCredentialsSecret() {
+    return webLogicCredentialsSecret.get();
+  }
+
+  public void setWebLogicCredentialsSecret(V1Secret webLogicCredentialsSecret) {
+    this.webLogicCredentialsSecret.set(webLogicCredentialsSecret);
   }
 
   private V1Service getNewerService(V1Service first, V1Service second) {

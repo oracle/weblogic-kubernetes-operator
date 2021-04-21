@@ -49,6 +49,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAI
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_NOT_AVAILABLE;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -379,6 +381,28 @@ public class ReadHealthStepTest {
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(readServerHealthSucceeded(packet), equalTo(false));
+  }
+
+  @Test
+  public void whenAuthorizedToReadHealth_verifySecretSet() {
+    selectServer(MANAGED_SERVER1);
+
+    defineResponse(200, "", "http://127.0.0.1:8001");
+
+    testSupport.runSteps(readHealthStep);
+
+    assertThat(info.getWebLogicCredentialsSecret(), is(notNullValue()));
+  }
+
+  @Test
+  public void whenNotAuthorizedToReadHealth_verifySecretCleared() {
+    selectServer(MANAGED_SERVER1);
+
+    defineResponse(403, "", "http://127.0.0.1:8001");
+
+    testSupport.runSteps(readHealthStep);
+
+    assertThat(info.getWebLogicCredentialsSecret(), is(nullValue()));
   }
 
   private void defineExpectedURLInResponse(String protocol, int port) {

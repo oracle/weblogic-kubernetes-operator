@@ -173,7 +173,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationUpdateStep()));
 
     assertThat(httpSupport.getLastRequestContents(),
@@ -204,7 +204,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
 
 
@@ -240,7 +240,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
 
     assertThat(httpSupport.getLastRequest().method(), equalTo("GET"));
