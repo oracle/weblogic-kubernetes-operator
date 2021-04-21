@@ -111,10 +111,11 @@ class ItMiiCustomSslStore {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create secret for admin credential with special characters
+    // the resultant password is W##%*}!""`'']\\//1$$~x
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
-            ADMIN_USERNAME_DEFAULT, "W##%*}!`''1~3x", domainNamespace),
+            ADMIN_USERNAME_DEFAULT, "W##%*}!\"\"`'']\\\\//1$$~x", domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret with special characters
