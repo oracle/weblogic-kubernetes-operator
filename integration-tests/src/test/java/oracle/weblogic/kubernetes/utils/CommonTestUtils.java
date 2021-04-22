@@ -157,7 +157,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
@@ -683,7 +682,6 @@ public class CommonTestUtils {
    *
    * @param namespace the namespace in which the Noci Load Balancer will be installed
    * @param portshttp the http port of oci load balancer
-   * @param portshttps the https port of oci load balancer or 0 if no ssl
    * @param clusterName name of WLS cluster
    * @param domainUID domain UID
    * @param loadBalancerName service name for OCI Load Balancer
@@ -691,16 +689,11 @@ public class CommonTestUtils {
   public static void installAndVerifyOCILoadBalancer(
       String namespace,
       int portshttp,
-      int portshttps,
       String clusterName,
       String domainUID,
       String loadBalancerName) throws ApiException {
     Map<String, String> annotations = new HashMap<>();
     annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
-    if (portshttps != 0) {
-      annotations.put("service.beta.kubernetes.io/oci-load-balancer-ssl-ports", String.valueOf(portshttps));
-      annotations.put("service.beta.kubernetes.io/oci-load-balancer-tls-secret","ssl-certificate-secret");
-    }
     Map<String, String> selectors = new HashMap<>();
     Map<String, String> labels = new HashMap<>();
     labels.put("loadbalancer", loadBalancerName);
@@ -712,13 +705,7 @@ public class CommonTestUtils {
         .port(portshttp)
         .targetPort(new IntOrString(portshttp))
         .protocol("TCP"));
-    if (portshttps != 0) {
-      ports.add(new V1ServicePort()
-          .name("https")
-          .port(portshttps)
-          .targetPort(new IntOrString(portshttp))
-          .protocol("TCP"));
-    }
+
     V1Service service = new V1Service()
         .metadata(new V1ObjectMeta()
             .name(loadBalancerName)
@@ -3870,40 +3857,5 @@ public class CommonTestUtils {
       logger.info("java returned EXIT value {0}", result.exitValue());
       return ((result.exitValue() == 0));
     });
-  }
-
-  /** Create and display SSL certificate and key using openSSL with SAN extension.
-   * @param cn - hostname or IP
-   * @param domainNamespace namespace for tls secret
-   * @param tlsKeyFile - path to tlsKey
-   * @param tlsCertFile - path to tlsCertFile
-   **/
-  public static void createCertKeyFiles(String cn, String domainNamespace, Path tlsKeyFile, Path tlsCertFile) {
-
-    final LoggingFacade logger = getLogger();
-    Map<String, String> sanConfigTemplateMap  = new HashMap();
-    sanConfigTemplateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-
-    Path srcFile = Paths.get(RESOURCE_DIR,
-        "tunneling", "san.config.template.txt");
-    Path targetFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcFile.toString(),
-            "san.config.txt", sanConfigTemplateMap));
-    logger.info("Generated SAN config file {0}", targetFile);
-
-    tlsKeyFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.key");
-    tlsCertFile = Paths.get(RESULTS_ROOT, domainNamespace + "-tls.cert");
-    String opcmd = "openssl req -x509 -nodes -days 365 -newkey rsa:2048 "
-        + "-keyout " + tlsKeyFile + " -out " + tlsCertFile
-        + " -subj \"/CN=" + cn + "\" -extensions san"
-        + " -config " + Paths.get(RESULTS_ROOT, "san.config.txt");
-    assertTrue(
-        new Command().withParams(new CommandParams()
-            .command(opcmd)).execute(), "openssl req command fails");
-
-    String opcmd2 = "openssl x509 -in " + tlsCertFile + " -noout -text ";
-    assertTrue(
-        new Command().withParams(new CommandParams()
-            .command(opcmd2)).execute(), "openssl list command fails");
   }
 }
