@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -64,12 +64,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 
 /**
- * Verify Prometheus, Grafana, Webhook, Coordinator are installed and running
- * Verify the monitoring exporter installed in model in image domain can generate the WebLogic metrics.
- * Verify WebLogic metrics can be accessed via NGINX ingress controller.
- * Verify WebLogic metrics can be accessed via Prometheus
+ * Verify OCI Load Balancer is installed and running.
+ * Verify sample-war web application be accessed via OCI LoadBalancer.
+ * Verify Load Balancing between two managed servers in the cluster
  */
-@DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
+@DisplayName("Verify the sample-app app can be accessed from "
+    + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
 class ItOCILoadBalancer {
 
@@ -78,45 +78,28 @@ class ItOCILoadBalancer {
   private static final int replicaCount = 2;
   private static int managedServersCount = 2;
   private static String domain1Namespace = null;
-  private static String domain2Namespace = null;
-
   private static String domain1Uid = "lboci-domain-1";
-  private static String domain2Uid = "lboci-domain-2";
-
-
-  private static int nodeportshttp = 0;
-
-
-
   private static ConditionFactory withStandardRetryPolicy = null;
 
   // constants for creating domain image using model in image
 
   private static final String IMAGE_NAME = "ocilb-image";
   private static final String SAMPLE_APP_NAME = "sample-app";
-
   private static String cluster1Name = "cluster-1";
-  private static String cluster2Name = "cluster-2";
-  private static String miiImage = null;
 
-  private static int managedServerPort = 8001;
-  private static int nodeportserver;
-
-  private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
-  private static List<String> clusterNames = new ArrayList<>();
   private static String loadBalancerIP = null;
+  private static final String OCI_LB_NAME = "ocilb";
 
   /**
-   * Install operator and NGINX. Create model in image domain with multiple clusters.
-   * Create ingress for the domain.
+   * Install operator and OCI Load Balancer. Create model in image domain with sample-app web application.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
     // create standard, reusable retry/backoff policy
@@ -132,37 +115,27 @@ class ItOCILoadBalancer {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domain1Namespace = namespaces.get(1);
 
-    logger.info("Get a unique namespace for WebLogic domain2");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    domain2Namespace = namespaces.get(2);
-
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace,domain2Namespace);
-
-    clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(cluster1Name, managedServerPort);
-    clusterNameMsPortMap.put(cluster2Name, managedServerPort);
-    clusterNames.add(cluster1Name);
-    clusterNames.add(cluster2Name);
+    installAndVerifyOperator(opNamespace, domain1Namespace);
   }
 
   @AfterAll
   public void tearDownAll() {
-    Kubernetes.deleteService("ocilb", domain1Namespace);
+    Kubernetes.deleteService(OCI_LB_NAME, domain1Namespace);
   }
 
   /**
    * Test covers basic functionality for OCI LoadBalancer .
-   * Create operator and domain with OCI LB.
-   * Check that application is accebale via OCI LB access
+   * Create omain and  OCI LoadBalancer.
+   * Check that application is accessabale via OCI LoadBalancer
    */
   @Test
-  @DisplayName("Test Basic Functionality of usage of  OCI Load Balancer.")
+  @DisplayName("Test the sample-app app can be accessed"
+      + " from all managed servers in the domain through OCI Load Balancer.")
   public void testOCILB() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    //String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
     String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model-singleclusterdomain-sampleapp-wls.yaml");
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -172,9 +145,9 @@ class ItOCILoadBalancer {
     int clusterHttpPort = 8001;
 
     assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domain1Namespace,
-        clusterHttpPort, cluster1Name, domain1Uid, "ocilb"),
+        clusterHttpPort, cluster1Name, domain1Uid, OCI_LB_NAME),
         "Installation of OCI Load Balancer failed");
-    loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
+    loadBalancerIP = getLoadBalancerIP(domain1Namespace,OCI_LB_NAME);
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterHttpPort);
@@ -204,7 +177,7 @@ class ItOCILoadBalancer {
   }
 
   /**
-   * Create mii image with SESSMIGR application.
+   * Create mii image with sample-app application.
    */
   private static String createAndVerifyMiiImage(String modelFile) {
     // create image with model files
@@ -225,7 +198,7 @@ class ItOCILoadBalancer {
   }
 
   /**
-   * Verify the sample-war app can be accessed from all managed servers in the domain through OCI Load Balancer.
+   * Verify the sample-app app can be accessed from all managed servers in the domain through OCI Load Balancer.
    */
   private void verifyWebAppAccessThroughOCILB(String lbIp, int replicaCount, int httpport) {
 
