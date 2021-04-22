@@ -165,6 +165,11 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 # Default is /tmp/dhii-sample/tools
 # toolsDir: /tmp/dhii-sample/tools
 
+# WLST script that the create domain script uses to create a WebLogic domain
+# when using wlst mode.
+# This value is ignored when WDT is used in creating a WebLogic domain.
+createDomainWlstScript: wlst/create-wls-domain.py
+
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
 # These are optional. 
