@@ -61,8 +61,6 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-
-
 /**
  * Verify OCI Load Balancer is installed and running.
  * Verify sample-war web application be accessed via OCI LoadBalancer.
@@ -72,8 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
     + "all managed servers in the domain through OCI Load Balancer")
 @IntegrationTest
 class ItOCILoadBalancer {
-
-
   // domain constants
   private static final int replicaCount = 2;
   private static int managedServersCount = 2;
@@ -82,11 +78,9 @@ class ItOCILoadBalancer {
   private static ConditionFactory withStandardRetryPolicy = null;
 
   // constants for creating domain image using model in image
-
   private static final String IMAGE_NAME = "ocilb-image";
   private static final String SAMPLE_APP_NAME = "sample-app";
   private static String cluster1Name = "cluster-1";
-
   private static LoggingFacade logger = null;
   private static String loadBalancerIP = null;
   private static final String OCI_LB_NAME = "ocilb";
@@ -98,7 +92,6 @@ class ItOCILoadBalancer {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-
   public static void initAll(@Namespaces(2) List<String> namespaces) {
 
     logger = getLogger();
@@ -121,12 +114,16 @@ class ItOCILoadBalancer {
 
   @AfterAll
   public void tearDownAll() {
-    Kubernetes.deleteService(OCI_LB_NAME, domain1Namespace);
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      Kubernetes.deleteService(OCI_LB_NAME, domain1Namespace);
+    }
   }
 
   /**
    * Test covers basic functionality for OCI LoadBalancer .
-   * Create omain and  OCI LoadBalancer.
+   * Create domain and  OCI LoadBalancer.
    * Check that application is accessabale via OCI LoadBalancer
    */
   @Test
@@ -148,13 +145,13 @@ class ItOCILoadBalancer {
         clusterHttpPort, cluster1Name, domain1Uid, OCI_LB_NAME),
         "Installation of OCI Load Balancer failed");
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,OCI_LB_NAME);
-    assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
-    logger.info(" LoadBalancer IP is " + loadBalancerIP);
+    assertNotNull(loadBalancerIP, "External IP for Load Balancer is undefined");
+    logger.info("LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterHttpPort);
   }
 
-  /** Retreive external IP from OCI LoadBalancer.
-   *
+  /**
+   * Retreive external IP from OCI LoadBalancer.
    */
   private static String getLoadBalancerIP(String namespace, String lbName) throws Exception {
     Map<String, String> labels = new HashMap<>();
