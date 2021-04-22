@@ -195,9 +195,7 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getNamespace());
+        if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
 
@@ -250,6 +248,9 @@ public class EventHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
         restoreExistingEvent();
+        if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
+          return doNext(packet);
+        }
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
@@ -276,6 +277,20 @@ public class EventHelper {
             event.getMetadata().getNamespace(),
             new ReadEventResponseStep(getNext()));
       }
+    }
+
+    private boolean isForbiddenForNSWatchStoppedEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+    }
+
+    private boolean hasLoggedForbiddenNSWatchStoppedEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
+        LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
+        return true;
+      }
+      return false;
     }
 
     private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
