@@ -52,6 +52,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
@@ -105,7 +107,7 @@ public class ItFmwDomainInPVUsingWDT {
   private final String rcuSecretName = domainUid + "-rcu-credentials";
   private static final int replicaCount = 2;
 
-  private final String wdtCreateDomainScript = "wdt-create-fmwdomain-onpv.sh";
+  private final String wdtCreateDomainScript = "setup_wdt.sh";
   private final String fmwModelFilePrefix = "model-fmwdomain-onpv-wdt";
   private final String fmwModelFile = fmwModelFilePrefix + ".yaml";
 
@@ -178,8 +180,8 @@ public class ItFmwDomainInPVUsingWDT {
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
     // create persistent volume and persistent volume claim for domain
-    CommonTestUtils.createPV(pvName, domainUid, this.getClass().getSimpleName());
-    CommonTestUtils.createPVC(pvName, pvcName, domainUid, domainNamespace);
+    createPV(pvName, domainUid, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create a model property file
     File fmwModelPropFile = createWdtPropertyFile(t3ChannelPort);
@@ -307,7 +309,10 @@ public class ItFmwDomainInPVUsingWDT {
             .value(System.getenv("http_proxy")))
         .addEnvItem(new V1EnvVar()
             .name("https_proxy")
-            .value(System.getenv("http_proxy")));
+            .value(System.getenv("http_proxy")))
+        .addEnvItem(new V1EnvVar()
+            .name("DOMAIN_TYPE")
+            .value("JRF"));
 
     logger.info("Running a Kubernetes job to create the domain");
     CommonTestUtils.createDomainJob(FMWINFRA_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,

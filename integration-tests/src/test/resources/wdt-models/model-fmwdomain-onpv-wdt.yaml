@@ -15,12 +15,6 @@ topology:
     Name: "fmw-domaininimage-inpv"
     Log:
         FileName: domain1.log
-    NMProperties:
-        JavaHome: /usr/java/jdk1.8.0_211
-        LogFile: "/u01/oracle/user_projects/domains/fmw-domaininimage-inpv/nodemanager/nodemanager.log"
-        DomainsFile: "/u01/oracle/user_projects/domains/fmw-domaininimage-inpv/nodemanager/nodemanager.domains"
-        NodeManagerHome: "/u01/oracle/user_projects/domains/fmw-domaininimage-inpv/nodemanager"
-        weblogic.StartScriptName: startWebLogic.sh
     Cluster:
         "cluster-1":
             FrontendHost: "fmw-domaininimage-inpv-cluster-cluster-1"

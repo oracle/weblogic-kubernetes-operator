@@ -62,7 +62,9 @@
 #   WDT_VERSION    WDT version to download.
 #                  default:  latest
 #
-#   DOMAIN_HOME_DIR  Target location for generated domain. 
+#   DOMAIN_HOME_DIR  Target location for generated domain.
+#
+#   DOMAIN_TYPE    Domain type. It can be WLS, JRF or RestrictedJRF. Default is WLS
 #
 
 # Initialize globals
@@ -102,9 +104,10 @@ else
 WDT_BASE_URL="https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION"
 fi
 
-
 WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"$WDT_BASE_URL/$WDT_INSTALL_ZIP_FILE"}
+
+DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
 # Define functions
 
@@ -198,7 +201,9 @@ function run_wdt {
   local out_file=$WDT_DIR/createDomain.sh.out
   local wdt_log_dir="$WDT_DIR/weblogic-deploy/logs"
 
-  echo @@ "Info:  About to run WDT createDomain.sh"
+  local domain_type="$DOMAIN_TYPE"
+
+  echo @@ "Info:  About to run WDT createDomain.sh to create a $domain_type Domain"
 
   for directory in wdt_bin_dir SCRIPTPATH WDT_DIR oracle_home; do
     if [ ! -d "${!directory}" ]; then
@@ -224,7 +229,7 @@ function run_wdt {
 
   $wdt_createDomain_script \
      -oracle_home $oracle_home \
-     -domain_type JRF \
+     -domain_type $domain_type \
      -domain_home $domain_home_dir \
      -model_file $model_final \
      -variable_file $inputs_final > $out_file 2>&1
