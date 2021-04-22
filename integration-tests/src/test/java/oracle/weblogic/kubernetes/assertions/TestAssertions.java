@@ -338,7 +338,7 @@ public class TestAssertions {
 
 
   /**
-   * Check is a service Load Balancer External IP is generated.
+   * Check if a service Load Balancer External IP is generated.
    *
    * @param serviceName the name of the service to check for
    * @param label       a Map of key value pairs the service is decorated with
