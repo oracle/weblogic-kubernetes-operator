@@ -82,12 +82,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (d) Make sure all 100 messages got recovered once the 
  *     JMS Service@managed-server2 is migrated to managed-server1 
  * Above steps are repeated for both FileStore and JDBCStore based Distributed Queue.
+ * This test class verifies the JTA Service Migration with shutdown-recovery
+ * migration policy by verifying the JTA Recovery Service runtime MBean
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test JMS service migration on cluster scale down")
+@DisplayName("Test JMS/JTA service migration on cluster scale down")
 @IntegrationTest
-class ItMiiJmsRecovery {
+class ItMiiServiceMigration {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -175,7 +177,7 @@ class ItMiiJmsRecovery {
     createSecretForBaseImages(domainNamespace);
 
     // create PV, PVC for logs/data
-    createPV(pvName, domainUid, ItMiiJmsRecovery.class.getSimpleName());
+    createPV(pvName, domainUid, ItMiiServiceMigration.class.getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     // create job to change permissions on PV hostPath
@@ -289,6 +291,50 @@ class ItMiiJmsRecovery {
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
   }
 
+  /**
+   * Verify JTA Recovery Service is migrated to an available active server.
+   * when a server is shutdown ( cluster is scaled down )
+   * The MigrationPolicy on the ServerTemplate is set to 'shutdown-recovery'
+   * so that the JTA recovery service is migrated to an active server in the
+   * cluster when a server is shutdown. This can be checked by verifying the 
+   * JTARecoveryService runtime MBean for the stopped server in an active 
+   * server. E.g. say manged server ms2 is down, make sure that the JTA i
+   * recovery service for  ms2 is active on the running managed server ms1
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Verify JTA Recovery Service migration to an active server")
+  public void testMiiJtaServiceMigration() {
+
+    // Restart the managed server(2) if shutdown by previous test method 
+    // Make sure that JTA Recovery service is active on managed-server2  
+    restartManagedServer("managed-server2");
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"), 
+         "JTARecoveryService@managed-server2 is not on managed-server2 before migration");
+
+    // Stop the server managed-server2 by patching the cluster
+    boolean psuccess = assertDoesNotThrow(() ->
+            scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
+        String.format("replica patching to 1 failed for domain %s in namespace %s", domainUid, domainNamespace));
+    assertTrue(psuccess,
+        String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
+    checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
+
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "true"), 
+           "JTA RecoveryService@managed-server2 is not migrated to managed-server1");
+    logger.info("JTA RecoveryService@managed-server2 is migrated to managed-server1");
+
+    // Restart the managed server(2) to make sure the JTA Recovery Service is
+    // migrated back to original hosting server 
+    restartManagedServer("managed-server2");
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"), 
+         "JTARecoveryService@managed-server2 is not on managed-server2 after restart");
+    logger.info("JTA RecoveryService@managed-server2 is migrated back to managed-server1");
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "false"), 
+         "JTARecoveryService@managed-server2 is not deactivated on managed-server1 after restart");
+    logger.info("JTA RecoveryService@managed-server2 is deactivated on managed-server1 after restart");
+  }
+
   private void restartManagedServer(String serverName) {
 
     String commonParameters = " -d " + domainUid + " -n " + domainNamespace;
@@ -346,6 +392,42 @@ class ItMiiJmsRecovery {
         .until(assertDoesNotThrow(() -> {
           return () -> {
             return exec(new String(curlString), true).stdout().contains("200");
+          };
+        }));
+    return true;
+  }
+
+  /*
+   * Verify the JTA Recovery Service Runtime through rest API.
+   * Get the JTA Recovery Service Runtime for a server on a 
+   * specified managed server.
+   * @param managedServer name of server to look for RecoveyServerRuntime
+   * @param recoveryService name of RecoveyServerRuntime (managed server) 
+   * @param active is the recovery active (true or false )
+   * @returns true if MBEAN is found otherwise false
+   **/
+  private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
+    ExecResult result = null;
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
+          .append(managedServer)
+          .append("/JTARuntime/recoveryRuntimeMBeans/")
+          .append(recoveryService)
+          .append("?fields=active&links=none\"")
+          .append(" --show-error ");
+    logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for JTA Recovery Service to migrate "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("{\"active\": " + active + "}");
           };
         }));
     return true;
