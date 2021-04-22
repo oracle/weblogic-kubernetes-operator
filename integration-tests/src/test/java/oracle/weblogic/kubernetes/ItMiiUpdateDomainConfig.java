@@ -250,11 +250,11 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Check the environment variable with special character.
+   * Check the environment variable with special characters.
    */
   @Test
   @Order(0)
-  @DisplayName("Check environment variable with special character")
+  @DisplayName("Check environment variable with special characters")
   public void testMiiSpecialEnv() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -276,7 +276,7 @@ class ItMiiUpdateDomainConfig {
 
   /**
    * Check server logs are written on PersistentVolume(PV).
-   * The test looks for the string RUNNING in server log
+   * The test looks for the string RUNNING in the server log
    */
   @Test
   @Order(1)
@@ -321,12 +321,12 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a WebLogic domain with a defined configmap in configuration/model
-   * section of the domain resource.
+   * Create a WebLogic domain with a defined configmap in the 
+   * configuration/model section of the domain resource.
    * The configmap has multiple sparse WDT model files that define
    * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
    * Verify all the SystemResource configurations using the rest API call
-   * using the public nodeport of the administration server.
+   * using the public node port of the administration server.
    */
   @Test
   @Order(3)
@@ -500,7 +500,7 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are not in running state, because
+   * Verify servers from the new cluster are not in running state, because
    * the spec level replica count to zero(default).
    */
   @Test
@@ -508,7 +508,7 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Add a dynamic cluster to the domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "noreplicaconfigmap";
@@ -543,8 +543,8 @@ class ItMiiUpdateDomainConfig {
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    // The ServerNamePrefix for the new configured cluster is config-server
-    // Make sure the managed server from new cluster is not running
+    // The ServerNamePrefix for the newly configured cluster is config-server
+    // Make sure the managed server from the new cluster is not running
 
     String newServerPodName = domainUid + "-config-server1";
     checkPodNotCreated(newServerPodName, domainUid, domainNamespace);
@@ -561,14 +561,14 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are in running state.
+   * Verify servers from the new cluster are running.
    */
   @Test
   @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "dynamicclusterconfigmap";
@@ -638,14 +638,14 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are in running state.
+   * Verify servers from the new cluster are running.
    */
   @Test
   @Order(8)
   @DisplayName("Add a configured cluster to the domain")
   public void testMiiAddConfiguredCluster() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "configclusterconfigmap";
@@ -706,7 +706,7 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain with model-in-imge.
+   * Start a WebLogic domain with model-in-image.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
    * Make sure all the server pods are re-started in a rolling fashion.
@@ -774,10 +774,10 @@ class ItMiiUpdateDomainConfig {
    * Set allowReplicasBelowMinDynClusterSize to false.
    * Make sure that the cluster can be scaled up to 5 servers and
    * scaled down to 1 server.
-   * Create a configmap with a sparse model file with following attributes for
+   * Create a configmap with a sparse model file with the following attributes 
    * Cluster/cluster-1/DynamicServers
    *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
-   * Patch the domain resource with the configmap and update restartVersion.
+   * Patch the domain resource with the configmap and update the restartVersion.
    * Make sure a rolling restart is triggered.
    * Now with the modified value
    * Make sure that the cluster can be scaled up to 4 servers.
