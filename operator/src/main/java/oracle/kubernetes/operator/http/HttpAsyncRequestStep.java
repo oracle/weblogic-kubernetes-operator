@@ -8,9 +8,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -20,6 +23,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
+import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
 
 /**
  * An asynchronous step to handle http requests.
@@ -110,12 +114,16 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void resume(AsyncFiber fiber, HttpResponse<String> response, Throwable throwable) {
-      if (throwable instanceof HttpTimeoutException) {
-        LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
-      } else if (response != null) {
-        recordResponse(response);
-      } else if (throwable != null) {
-        recordThrowableResponse(throwable);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      try (LoggingContext ignored =
+               setThreadContext().namespace(getNamespaceFromInfo(info)).domainUid(getDomainUIDFromInfo(info))) {
+        if (throwable instanceof HttpTimeoutException) {
+          LOGGER.fine(MessageKeys.HTTP_REQUEST_TIMED_OUT, throwable.getMessage());
+        } else if (response != null) {
+          recordResponse(response);
+        } else if (throwable != null) {
+          recordThrowableResponse(throwable);
+        }
       }
 
       fiber.resume(packet);
@@ -132,6 +140,14 @@ public class HttpAsyncRequestStep extends Step {
       LOGGER.warning(MessageKeys.HTTP_REQUEST_GOT_THROWABLE, request.method(), request.uri(), throwable.getMessage());
       HttpResponseStep.addToPacket(packet, throwable);
     }
+  }
+
+  private String getDomainUIDFromInfo(DomainPresenceInfo info) {
+    return Optional.ofNullable(info).map(DomainPresenceInfo::getDomainUid).orElse(null);
+  }
+
+  private String getNamespaceFromInfo(DomainPresenceInfo info) {
+    return Optional.ofNullable(info).map(DomainPresenceInfo::getNamespace).orElse(null);
   }
 
   private static CompletableFuture<HttpResponse<String>> createFuture(HttpRequest request) {

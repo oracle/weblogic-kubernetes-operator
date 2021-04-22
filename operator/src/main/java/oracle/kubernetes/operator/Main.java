@@ -544,7 +544,7 @@ public class Main {
     }
   }
 
-  private static Packet createPacketWithLoggingContext(String ns) {
+  static Packet createPacketWithLoggingContext(String ns) {
     Packet packet = new Packet();
     packet.getComponents().put(
         LoggingContext.LOGGING_CONTEXT_KEY,

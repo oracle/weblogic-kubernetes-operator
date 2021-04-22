@@ -196,6 +196,19 @@ public class FiberTestSupport {
   }
 
   /**
+   * Starts a unit-test fiber with the specified packet and step.
+   *
+   * @param packet the packet to use
+   * @param step the first step to run
+   */
+  public Packet runSteps(Packet packet, Step step) {
+    fiber = engine.createFiber();
+    fiber.start(step, packet, completionCallback);
+
+    return packet;
+  }
+
+  /**
    * Starts a unit-test fiber with the specified step.
    *
    * @param nextStep the first step to run
