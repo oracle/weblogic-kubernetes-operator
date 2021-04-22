@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,16 +40,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOCILoadBalancer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
@@ -129,16 +127,16 @@ class ItOCILoadBalancer {
   @Test
   @DisplayName("Test the sample-app app can be accessed"
       + " from all managed servers in the domain through OCI Load Balancer.")
-  public void testOCILB() throws Exception {
+  public void testOCILoadBalancer() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model-singleclusterdomain-sampleapp-wls.yaml");
+
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
     createOcirRepoSecret(domain1Namespace);
-    createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
+    createAndVerifyDomain(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, domain1Namespace, domain1Uid);
     int clusterHttpPort = 8001;
 
     assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domain1Namespace,
@@ -147,7 +145,7 @@ class ItOCILoadBalancer {
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,OCI_LB_NAME);
     assertNotNull(loadBalancerIP, "External IP for Load Balancer is undefined");
     logger.info("LoadBalancer IP is " + loadBalancerIP);
-    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterHttpPort);
+    verifyWebAppAccessThroughOCILoadBalancer(loadBalancerIP, 2, clusterHttpPort);
   }
 
   /**
@@ -174,30 +172,9 @@ class ItOCILoadBalancer {
   }
 
   /**
-   * Create mii image with sample-app application.
-   */
-  private static String createAndVerifyMiiImage(String modelFile) {
-    // create image with model files
-    logger.info("Create image with model file and verify");
-
-    List<String> appList = new ArrayList();
-    appList.add(SAMPLE_APP_NAME);
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(modelFile);
-    String myImage =
-        createMiiImageAndVerify(IMAGE_NAME, modelList, appList);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
-
-    return myImage;
-  }
-
-  /**
    * Verify the sample-app app can be accessed from all managed servers in the domain through OCI Load Balancer.
    */
-  private void verifyWebAppAccessThroughOCILB(String lbIp, int replicaCount, int httpport) {
+  private void verifyWebAppAccessThroughOCILoadBalancer(String lbIp, int replicaCount, int httpport) {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
