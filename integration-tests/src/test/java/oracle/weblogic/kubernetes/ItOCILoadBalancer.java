@@ -3,20 +3,16 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.weblogic.domain.AdminServer;
@@ -28,8 +24,6 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -46,19 +40,15 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createCertKeyFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOCILoadBalancer;
@@ -173,31 +163,21 @@ class ItOCILoadBalancer {
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
     //String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model-singleclusterdomain-sampleapp-ssl-wls.yaml");
+    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model-singleclusterdomain-sampleapp-wls.yaml");
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
     createOcirRepoSecret(domain1Namespace);
     createAndVerifyDomain(miiImage1, domain1Namespace, domain1Uid);
     int clusterHttpPort = 8001;
-    int clusterHttpsPort = 8100;
-    //Kubernetes.getServiceNodePort(domain1Namespace,
-    //domain1Uid + "-cluster-" + cluster1Name);
-    // Create SSL certificate and key using openSSL with SAN extension
-    Path tlsKeyFile = Paths.get(RESULTS_ROOT, domain1Namespace + "-tls.key");
-    Path tlsCertFile = Paths.get(RESULTS_ROOT, domain1Namespace + "-tls.cert");
-    String tlsSecretName = "ssl-certificate-secret";
-    createCertKeyFiles(K8S_NODEPORT_HOST, domain1Namespace,tlsKeyFile,tlsCertFile);
-    // Create kubernates secret using genereated certificate and key
-    createSecretWithTLSCertKey(tlsSecretName,domain1Namespace,tlsKeyFile,tlsCertFile);
 
     assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domain1Namespace,
-        clusterHttpPort, clusterHttpsPort, cluster1Name, domain1Uid, "ocilb"),
+        clusterHttpPort, cluster1Name, domain1Uid, "ocilb"),
         "Installation of OCI Load Balancer failed");
     loadBalancerIP = getLoadBalancerIP(domain1Namespace,"ocilb");
     assertNotNull(loadBalancerIP, " External IP for Load Balancer is undefined");
     logger.info(" LoadBalancer IP is " + loadBalancerIP);
-    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterHttpPort, clusterHttpsPort);
+    verifyWebAppAccessThroughOCILB(loadBalancerIP, 2, clusterHttpPort);
   }
 
   /** Retreive external IP from OCI LoadBalancer.
@@ -247,7 +227,7 @@ class ItOCILoadBalancer {
   /**
    * Verify the sample-war app can be accessed from all managed servers in the domain through OCI Load Balancer.
    */
-  private void verifyWebAppAccessThroughOCILB(String lbIp, int replicaCount, int httpport, int httpsport) {
+  private void verifyWebAppAccessThroughOCILB(String lbIp, int replicaCount, int httpport) {
 
     List<String> managedServerNames = new ArrayList<>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -259,16 +239,6 @@ class ItOCILoadBalancer {
         String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/sample-war/index.jsp",
             lbIp,
             httpport);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify OCI LB can access the sample-war app "
-            + "from all managed servers in the domain via http")
-        .withFailMessage("OCI LB can not access the the sample-war app "
-            + "from one or more of the managed servers via http")
-        .isTrue();
-    curlCmd =
-        String.format("curl -k --silent --show-error --noproxy '*'  https://%s:%s/sample-war/index.jsp",
-            lbIp,
-            httpsport);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify OCI LB can access the sample-war app "
             + "from all managed servers in the domain via http")
@@ -375,45 +345,4 @@ class ItOCILoadBalancer {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
   }
-
-  /**
-   * Check output of the command against expected output.
-   *
-   * @param cmd command
-   * @param searchKey expected response from the command
-   * @return true if the command succeeds
-   */
-  public static boolean execCommandCheckResponse(String cmd, String searchKey) {
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(cmd)
-        .saveResults(true)
-        .redirect(false)
-        .verbose(true);
-    return Command.withParams(params).executeAndVerify(searchKey);
-  }
-
-  /**
-   * Check if executed command contains expected output.
-   *
-   * @param cmd   command to execute
-   * @param searchKey expected output
-   * @return true if the output matches searchKey otherwise false
-   */
-  private static Callable<Boolean> searchForKey(String cmd, String searchKey) {
-    return () -> execCommandCheckResponse(cmd, searchKey);
-  }
-
-  /**
-   * Check if executed command contains expected output.
-   *
-   * @param pod   V1Pod object
-   * @param searchKey expected string in the log
-   * @return true if the output matches searchKey otherwise false
-   */
-  private static Callable<Boolean> searchPodLogForKey(V1Pod pod, String searchKey) {
-    return () -> Kubernetes.getPodLog(pod.getMetadata().getName(),
-        pod.getMetadata().getNamespace()).contains(searchKey);
-  }
-
 }
