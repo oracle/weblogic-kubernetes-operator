@@ -159,12 +159,12 @@ including keys and credentials that are used to access external resources
 #### Apply patched images to a running domain
 
 When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image,
-the operator applies the update in a Zero Downtime (ZDT) fashion. The procedure for the operator
-to update the running domain differs depending on the [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). A
+the operator applies the update in a zero downtime fashion. The procedure for the operator
+to update the running domain differs depending on the [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). One
 difference between the domain home source types is the location of the domain home:
 
 * Domain in PV: The container image contains the JDK and WebLogic Server binaries. The domain home is located in a Persistent Volume (PV).
-* Model in Image: The container image contains the JDK, WebLogic Server binaries, and a WebLogic Deployment Tooling (WDT) model file and application archive file.
+* Model in Image: The container image contains the JDK, WebLogic Server binaries, and a [WebLogic Deployment Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) installation, WDT model file, and application archive file.
 * Domain in Image: The container image contains the JDK, WebLogic Server binaries, and domain home.   
 
 For Domain in PV, the operator can apply the update to the running domain without modifying the patched container image. For Model in Image (MII) and Domain in Image,
@@ -180,16 +180,18 @@ For a broader description of managing the evolution and mutation of container im
 ##### Domain in PV
 
 Edit the Domain Resource image reference with the new image name/tag (for example, `oracle/weblogic:12.2.1.4-patched`).
-Then, the operator performs a rolling restart of the WebLogic domain to update the Oracle Home of the servers.
+Then, the operator performs a [rolling restart]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
+of the WebLogic domain to update the Oracle Home of the servers.
 For information on server restarts, see [Restarting]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md" >}}).
 
 ##### Model in Image
 Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command
 to update the Oracle Home for an existing image with the model and archive files in the image using the patched Oracle Home from a
-patched container image. Then, the operator performs a rolling update of the domain, updating the Oracle Home of each server pod.
+patched container image. Then, the operator performs a [rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
+of the domain, updating the Oracle Home of each server pod.
 
 
-Example: WIT will copy a WDT model and WDT archive from the source image, `mydomain:v1`, 
+Example: WIT copies a WDT model and WDT archive from the source image, `mydomain:v1`, 
 to a new image, `mydomain:v2`, based on a target image named `oracle/weblogic:generic-12.2.1.4.0-patched`. 
 
 **Note**: Oracle Home and the JDK must be installed in the same directories on each image.
@@ -203,8 +205,9 @@ Then, edit the Domain Resource image reference with the new image name/tag (`myd
 
 ##### Domain in Image
 Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command to update the Oracle Home
-for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a rolling update
-of the domain, updating the Oracle Home of each server pod.
+for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a
+[rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}) of the domain,
+updating the Oracle Home of each server pod.
 
 Example: WIT copies the domain from the source image, `mydomain:v1`, to a new image, `mydomain:v2`, based on a target
 image named `oracle/weblogic:12.2.1.4-patched`.
