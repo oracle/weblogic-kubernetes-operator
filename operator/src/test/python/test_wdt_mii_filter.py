@@ -1,6 +1,7 @@
+import ast
 import os
 import unittest
-import yaml
+#import yaml
 
 import model_wdt_mii_filter
 
@@ -47,10 +48,24 @@ class WdtUpdateFilterCase(unittest.TestCase):
     nap['TwoWaySslEnabled'] = 'false'
     nap['ClientCertificateEnforced'] = 'false'
 
+  #def getModelFromYaml(self):
+  #  # Load model as dictionary
+  #  file = open(r'../resources/model.dynamic_cluster.yaml')
+  #  model = yaml.load(file)
+  #
+  #  # Setup mock environment
+  #  mock_env= MockOfflineWlstEnv()
+  #  mock_env.open(model)
+  #  model_wdt_mii_filter.env = mock_env
+  #
+  #  return model
+
   def getModel(self):
     # Load model as dictionary
-    file = open(r'../resources/model.dynamic_cluster.yaml')
-    model = yaml.load(file)
+    file = open(r'../resources/model.dynamic_cluster_dict.txt')
+    contents = file.read()
+    model = ast.literal_eval(contents)
+    file.close()
 
     # Setup mock environment
     mock_env= MockOfflineWlstEnv()
@@ -59,11 +74,25 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     return model
 
+
+  #def getStaticModelFromYaml(self):
+  #  # Load model as dictionary
+  #  file = open(r'../resources/model.static_cluster.yaml')
+  #  model = yaml.load(file)
+  #
+  #  # Setup mock environment
+  #  mock_env= MockOfflineWlstEnv()
+  #  mock_env.open(model)
+  #  model_wdt_mii_filter.env = mock_env
+  #
+  #  return model
 
   def getStaticModel(self):
     # Load model as dictionary
-    file = open(r'../resources/model.static_cluster.yaml')
-    model = yaml.load(file)
+    file = open(r'../resources/model.static_cluster_dict.txt')
+    contents = file.read()
+    model = ast.literal_eval(contents)
+    file.close()
 
     # Setup mock environment
     mock_env= MockOfflineWlstEnv()
@@ -72,6 +101,10 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     return model
 
+  def writeModelAsDict(self, model, file_path):
+    f = open(file_path,"w")
+    f.write( str(model) )
+    f.close()
 
   def getServerTemplate(self, model):
     template_name = 'cluster-1-template'

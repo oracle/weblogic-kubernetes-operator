@@ -36,6 +36,7 @@ class OfflineWlstEnv(object):
     # initialize globals
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
     self.TOPOLOGY_YAML_PATH = '/weblogic-operator/introspectormii/topology.yaml'
+    self.DOMAIN_NAME = None
 
     if model and 'topology' in model:
       self.DOMAIN_NAME = model['topology']['Name']
