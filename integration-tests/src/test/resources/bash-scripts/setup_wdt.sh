@@ -71,7 +71,7 @@
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
 https_proxy=${https_proxy-""}
-https_proxy2=${https_proxy2-"http://www-proxy-hqdc.us.oracle.com:80"}
+https_proxy2=${https_proxy2-""}
 
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
