@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -249,6 +250,31 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
+   * Check the environment variable with special character.
+   */
+  @Test
+  @Order(0)
+  @DisplayName("Check environment variable with special character")
+  public void testMiiSpecialEnv() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
+
+    boolean found = false;
+    for (int i = 0; i < envList.size(); i++) {
+      logger.info("The name is: {0}, value is: {1}", envList.get(i).getName(), envList.get(i).getValue());
+      if (envList.get(i).getName().equalsIgnoreCase("SPECIAL_ENV")) {
+        assertTrue(
+            envList.get(i).getValue().equalsIgnoreCase("${DOMAIN_UID}~##!'%*$(ls)"),
+            "Expected value for SPECIAL_ENV variable does not mtach");
+        found = true;
+      }
+    }
+    assertTrue(found, "Couldn't find SPECIAL_ENV variable in domain resource");
+  }
+
+  /**
    * Check server logs are written on PersistentVolume(PV).
    * The test looks for the string RUNNING in server log
    */
@@ -256,7 +282,6 @@ class ItMiiUpdateDomainConfig {
   @Order(1)
   @DisplayName("Check the server logs are written to PersistentVolume")
   public void testMiiServerLogsAreOnPV() {
-
     // check server logs are written on PV and look for string RUNNING in log
     checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
   }
@@ -970,6 +995,8 @@ class ItMiiUpdateDomainConfig {
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
   }
 
+  // Add an environmental variable with special character
+  // Make sure the variable is available in domain resource with right value 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
@@ -1004,6 +1031,9 @@ class ItMiiUpdateDomainConfig {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom "))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("SPECIAL_ENV")
+                                    .value("${DOMAIN_UID}~##!'%*$(ls)"))
                             .addVolumesItem(new V1Volume()
                                     .name(pvName)
                                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
