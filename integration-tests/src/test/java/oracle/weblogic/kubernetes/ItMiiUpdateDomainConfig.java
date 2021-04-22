@@ -255,7 +255,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(0)
   @DisplayName("Check environment variable with special characters")
-  public void testMiiSpecialEnv() {
+  public void testMiiCustomEnv() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -264,14 +264,37 @@ class ItMiiUpdateDomainConfig {
     boolean found = false;
     for (int i = 0; i < envList.size(); i++) {
       logger.info("The name is: {0}, value is: {1}", envList.get(i).getName(), envList.get(i).getValue());
-      if (envList.get(i).getName().equalsIgnoreCase("SPECIAL_ENV")) {
+      if (envList.get(i).getName().equalsIgnoreCase("CUSTOM_ENV")) {
         assertTrue(
             envList.get(i).getValue().equalsIgnoreCase("${DOMAIN_UID}~##!'%*$(ls)"),
-            "Expected value for SPECIAL_ENV variable does not mtach");
+            "Expected value for CUSTOM_ENV variable does not mtach");
         found = true;
       }
     }
-    assertTrue(found, "Couldn't find SPECIAL_ENV variable in domain resource");
+    assertTrue(found, "Couldn't find CUSTOM_ENV variable in domain resource");
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/JMSServers/TestClusterJmsServer")
+          .append("?fields=notes&links=none\"")
+          .append(" --silent ");
+    logger.info("checkJmsServerConfig: curl command {0}", new String(curlString));
+    ExecResult result = null;
+    try {
+      result = exec(new String(curlString), true);
+      getLogger().info("The command returned exit value: "
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
+      assertTrue((result.exitValue() == 0), 
+             "curl command returned non zero value");
+      assertTrue((result.stdout().contains("${DOMAIN_UID}~##!'%*$(ls)")), 
+             "Custom environment variable is not reflected in domin config");
+    } catch (Exception e) {
+      getLogger().info("Got exception, command failed with errors " + e.getMessage());
+    }
   }
 
   /**
@@ -1032,7 +1055,7 @@ class ItMiiUpdateDomainConfig {
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom "))
                             .addEnvItem(new V1EnvVar()
-                                    .name("SPECIAL_ENV")
+                                    .name("CUSTOM_ENV")
                                     .value("${DOMAIN_UID}~##!'%*$(ls)"))
                             .addVolumesItem(new V1Volume()
                                     .name(pvName)
