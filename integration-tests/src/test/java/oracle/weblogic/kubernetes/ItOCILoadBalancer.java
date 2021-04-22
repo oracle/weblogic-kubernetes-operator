@@ -92,7 +92,7 @@ class ItOCILoadBalancer {
   private static final String OCI_LB_NAME = "ocilb";
 
   /**
-   * Install operator and OCI Load Balancer. Create model in image domain with sample-app web application.
+   * Install and verify operator.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
