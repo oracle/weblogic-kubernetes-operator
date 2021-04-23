@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -69,7 +68,7 @@ public class ConfigMapHelper {
 
   private static final String SCRIPT_LOCATION = "/scripts";
   private static final String UPDATEDOMAINRESULT = "UPDATEDOMAINRESULT";
-  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparatorImpl();
+  private static final ConfigMapComparator COMPARATOR = new ConfigMapComparator();
 
   private static final FileGroupReader scriptReader = new FileGroupReader(SCRIPT_LOCATION);
 
@@ -82,12 +81,8 @@ public class ConfigMapHelper {
    * @param domainNamespace the domain's namespace
    * @return Step for creating config map containing scripts
    */
-  public static Step createScriptConfigMapStep(String domainNamespace) {
-    return new ScriptConfigMapStep(domainNamespace);
-  }
-
-  static FileGroupReader getScriptReader() {
-    return scriptReader;
+  public static Step createScriptConfigMapStep(String domainNamespace, SemanticVersion productVersion) {
+    return new ScriptConfigMapStep(domainNamespace, productVersion);
   }
 
   static Map<String, String> parseIntrospectorResult(String text, String domainUid) {
@@ -162,23 +157,25 @@ public class ConfigMapHelper {
     return IntrospectorConfigMapConstants.getIntrospectorConfigMapName(domainUid, 0);
   }
 
-  abstract static class ConfigMapComparator {
-    boolean containsAll(V1ConfigMap actual, V1ConfigMap expected) {
-      return containsAllData(getData(actual), getData(expected));
-    }
+  static class ConfigMapComparator {
+    boolean isOutdated(SemanticVersion productVersion, V1ConfigMap actual, V1ConfigMap expected) {
+      // Check product version label
+      if (productVersion != null) {
+        SemanticVersion currentVersion = KubernetesUtils.getProductVersionFromMetadata(actual.getMetadata());
+        if (currentVersion == null || productVersion.compareTo(currentVersion) > 0) {
+          return true;
+        }
+      }
 
-    private Map<String,String> getData(V1ConfigMap map) {
-      return Optional.ofNullable(map).map(V1ConfigMap::getData).orElse(Collections.emptyMap());
+      return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
     }
-
-    abstract boolean containsAllData(Map<String, String> actual, Map<String, String> expected);
   }
 
   static class ScriptConfigMapStep extends Step {
     final ConfigMapContext context;
 
-    ScriptConfigMapStep(String domainNamespace) {
-      context = new ScriptConfigMapContext(this, domainNamespace);
+    ScriptConfigMapStep(String domainNamespace, SemanticVersion productVersion) {
+      context = new ScriptConfigMapContext(this, domainNamespace, productVersion);
     }
 
     @Override
@@ -188,25 +185,23 @@ public class ConfigMapHelper {
   }
 
   static class ScriptConfigMapContext extends ConfigMapContext {
-
-    ScriptConfigMapContext(Step conflictStep, String domainNamespace) {
-      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace, loadScriptsFromClasspath(domainNamespace), null);
+    ScriptConfigMapContext(Step conflictStep, String domainNamespace, SemanticVersion productVersion) {
+      super(conflictStep, SCRIPT_CONFIG_MAP_NAME, domainNamespace,
+          loadScriptsFromClasspath(domainNamespace), null, productVersion);
 
       addLabel(LabelConstants.OPERATORNAME_LABEL, getOperatorNamespace());
-    }
-
-    private static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
-      Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-      LOGGER.fine(MessageKeys.SCRIPT_LOADED, domainNamespace);
-      return scripts;
     }
 
     @Override
     void recordCurrentMap(Packet packet, V1ConfigMap configMap) {
       packet.put(ProcessingConstants.SCRIPT_CONFIG_MAP, configMap);
     }
+  }
 
-
+  static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
+    Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
+    LOGGER.fine(MessageKeys.SCRIPT_LOADED, domainNamespace);
+    return scripts;
   }
 
   abstract static class ConfigMapContext extends StepContextBase {
@@ -216,14 +211,21 @@ public class ConfigMapHelper {
     private final String namespace;
     private V1ConfigMap model;
     private final Map<String, String> labels = new HashMap<>();
+    protected final SemanticVersion productVersion;
 
     ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
                      DomainPresenceInfo info) {
+      this(conflictStep, name, namespace, contents, info, null);
+    }
+
+    ConfigMapContext(Step conflictStep, String name, String namespace, Map<String, String> contents,
+                     DomainPresenceInfo info, SemanticVersion productVersion) {
       super(info);
       this.conflictStep = conflictStep;
       this.name = name;
       this.namespace = namespace;
       this.contents = contents;
+      this.productVersion = productVersion;
 
       addLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
@@ -253,15 +255,22 @@ public class ConfigMapHelper {
     }
 
     protected final V1ConfigMap createModel(Map<String, String> data) {
-      return new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data);
+      return AnnotationHelper.withSha256Hash(
+          new V1ConfigMap().kind("ConfigMap").apiVersion("v1").metadata(createMetadata()).data(data), data);
     }
 
     private V1ObjectMeta createMetadata() {
-      return updateForOwnerReference(
+      V1ObjectMeta metadata = updateForOwnerReference(
           new V1ObjectMeta()
           .name(name)
           .namespace(namespace)
           .labels(labels));
+
+      if (productVersion != null) {
+        metadata.putLabelsItem(LabelConstants.OPERATOR_VERSION, productVersion.toString());
+      }
+
+      return metadata;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -283,8 +292,8 @@ public class ConfigMapHelper {
       return new CallBuilder().readConfigMapAsync(getName(), namespace, null, new ReadResponseStep(next));
     }
 
-    boolean isIncompatibleMap(V1ConfigMap existingMap) {
-      return !COMPARATOR.containsAll(existingMap, getModel());
+    boolean isOutdated(V1ConfigMap existingMap) {
+      return COMPARATOR.isOutdated(productVersion, existingMap, getModel());
     }
 
     V1ConfigMap withoutTransientData(V1ConfigMap originalMap) {
@@ -315,8 +324,8 @@ public class ConfigMapHelper {
         V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
-        } else if (isIncompatibleMap(existingMap)) {
-          return doNext(updateConfigMap(getNext(), existingMap), packet);
+        } else if (isOutdated(existingMap)) {
+          return doNext(replaceConfigMap(getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
           return doNext(patchCurrentMap(existingMap, getNext()), packet);
         } else {
@@ -335,9 +344,9 @@ public class ConfigMapHelper {
         LOGGER.fine(MessageKeys.CM_EXISTS, getName(), namespace);
       }
 
-      private Step updateConfigMap(Step next, V1ConfigMap existingConfigMap) {
+      private Step replaceConfigMap(Step next) {
         return new CallBuilder().replaceConfigMapAsync(name, namespace,
-                                        createModel(getCombinedData(existingConfigMap)),
+                                        model,
                                         createReplaceResponseStep(next));
       }
 
@@ -368,12 +377,6 @@ public class ConfigMapHelper {
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
         return Objects.requireNonNull(currentMap.getMetadata()).getLabels() == null;
       }
-    }
-
-    private Map<String, String> getCombinedData(V1ConfigMap existingConfigMap) {
-      Map<String, String> updated = Objects.requireNonNull(existingConfigMap.getData());
-      updated.putAll(contents);
-      return updated;
     }
 
     private ResponseStep<V1ConfigMap> createCreateResponseStep(Step next) {
@@ -438,15 +441,6 @@ public class ConfigMapHelper {
       }
     }
 
-  }
-
-  /** Returns true if the actual map contains all of the entries from the expected map. */
-  static class ConfigMapComparatorImpl extends ConfigMapComparator {
-
-    @Override
-    boolean containsAllData(Map<String, String> actual, Map<String, String> expected) {
-      return actual.entrySet().containsAll(expected.entrySet());
-    }
   }
 
   /**
@@ -596,7 +590,8 @@ public class ConfigMapHelper {
       return createIntrospectorConfigMapContext(data, 0);
     }
 
-    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(Map<String, String> data, int index) {
+    private IntrospectorConfigMapContext createIntrospectorConfigMapContext(
+        Map<String, String> data, int index) {
       return new IntrospectorConfigMapContext(conflictStep, info, data, index);
     }
 
@@ -662,11 +657,10 @@ public class ConfigMapHelper {
 
   public static class IntrospectorConfigMapContext extends ConfigMapContext implements SplitterTarget {
 
-    private static final Pattern ENCODED_ZIP_PATTERN = Pattern.compile("([A-Za-z_]+)\\.secure");
-
     private boolean patchOnly;
 
-    IntrospectorConfigMapContext(Step conflictStep, DomainPresenceInfo info, Map<String, String> data, int index) {
+    IntrospectorConfigMapContext(Step conflictStep, DomainPresenceInfo info,
+                                 Map<String, String> data, int index) {
       super(conflictStep, getConfigMapName(info, index), info.getNamespace(), data, info);
 
       addLabel(LabelConstants.DOMAINUID_LABEL, info.getDomainUid());
@@ -687,8 +681,8 @@ public class ConfigMapHelper {
     }
 
     @Override
-    boolean isIncompatibleMap(V1ConfigMap existingMap) {
-      return !patchOnly && super.isIncompatibleMap(existingMap);
+    boolean isOutdated(V1ConfigMap existingMap) {
+      return !patchOnly && super.isOutdated(existingMap);
     }
 
     @Override
