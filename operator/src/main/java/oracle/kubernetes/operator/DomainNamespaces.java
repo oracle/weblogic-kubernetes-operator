@@ -28,6 +28,7 @@ import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
@@ -64,6 +65,8 @@ public class DomainNamespaces {
   private final WatcherControl<V1beta1PodDisruptionBudget, PodDisruptionBudgetWatcher> podDisruptionBudgetWatchers
           = new WatcherControl<>(PodDisruptionBudgetWatcher::create, d -> d::dispatchPodDisruptionBudgetWatch);
 
+  private final SemanticVersion productVersion;
+
   AtomicBoolean isStopping(String ns) {
     return namespaceStoppingMap.computeIfAbsent(ns, (key) -> new AtomicBoolean(false));
   }
@@ -78,9 +81,10 @@ public class DomainNamespaces {
   /**
    * Constructs a DomainNamespace object.
    */
-  DomainNamespaces() {
+  DomainNamespaces(SemanticVersion productVersion) {
     namespaceStatuses.clear();
     namespaceStoppingMap.clear();
+    this.productVersion = productVersion;
   }
 
   /**
@@ -176,7 +180,7 @@ public class DomainNamespaces {
     NamespacedResources resources = new NamespacedResources(ns, null);
     resources.addProcessing(new DomainResourcesValidation(ns, processor).getProcessors());
     resources.addProcessing(createWatcherStartupProcessing(ns, processor));
-    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns), resources.createListSteps());
+    return Step.chain(ConfigMapHelper.createScriptConfigMapStep(ns, productVersion), resources.createListSteps());
   }
 
   public boolean shouldStartNamespace(String ns) {
