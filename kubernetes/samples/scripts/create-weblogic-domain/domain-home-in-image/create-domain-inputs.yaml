@@ -22,6 +22,11 @@ adminServerName: admin-server
 # in a Kubernetes cluster.
 domainUID: domain1
 
+# Path of the WebLogic domain to be created in the generatd WebLogic Server image
+# If not specified, the value is derived from the domainUID as /u01/oracle/user_projects/domains/<domainUID>
+domainHome: /u01/oracle/user_projects/domains/domain1
+
+
 # Determines which WebLogic Servers the operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
@@ -169,6 +174,11 @@ domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 # when using wlst mode.
 # This value is ignored when WDT is used in creating a WebLogic domain.
 createDomainWlstScript: wlst/create-wls-domain.py
+
+# WDT model YAML file that the create domain script uses to create a 
+# WebLogic domain when using wdt mode.
+# This value is ignored when WLST script is used in creating a WebLogic domain.
+#createDomainWdtModel: wdt/wdt_model_dynamic.yaml
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.

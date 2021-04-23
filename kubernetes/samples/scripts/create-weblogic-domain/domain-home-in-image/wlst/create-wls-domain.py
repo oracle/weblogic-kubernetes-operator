@@ -7,22 +7,10 @@
 # Adopted from https://github.com/oracle/docker-images/blob/main/OracleWebLogic/samples/12213-domain-home-in-image/container-scripts/create-wls-domain.py
 # ==============================================
 
-import os
-
-def getEnvVar(var):
-  val=os.environ.get(var)
-  if val==None:
-    print "ERROR: Env var ",var, " not set."
-    sys.exit(1)
-  return val
-
-# This python script is used to create a WebLogic domain
-
-#domain_uid                   = DOMAIN_UID
 ssl_enabled                   = SSL_ENABLED
 server_port                   = int(MANAGED_SERVER_PORT)
 managed_server_ssl_port       = int(MANAGED_SERVER_SSL_PORT)
-domain_path                   = os.environ.get("DOMAIN_HOME")
+domain_path                   = DOMAIN_HOME
 cluster_name                  = CLUSTER_NAME
 admin_server_name             = ADMIN_NAME
 admin_port                    = int(ADMIN_PORT)
@@ -149,54 +137,6 @@ else:
   set('CalculatedListenPorts', false)
 
   print('Done setting attributes for Dynamic Cluster: %s' % cluster_name);
-
-# Create a Data Source
-# ======================
-#cd('/')
-#print('Configuring a Data Source: %s' % dsname);
-#create(dsname, 'JDBCSystemResource')
-#cd('/JDBCSystemResource/' + dsname + '/JdbcResource/' + dsname)
-#cmo.setName(dsname)
-
-#cd('/JDBCSystemResource/' + dsname + '/JdbcResource/' + dsname)
-#create('myJdbcDataSourceParams','JDBCDataSourceParams')
-#cd('JDBCDataSourceParams/NO_NAME_0')
-#set('JNDIName', java.lang.String(dsjndiname))
-#set('GlobalTransactionsProtocol', java.lang.String('None'))
-
-#cd('/JDBCSystemResource/' + dsname + '/JdbcResource/' + dsname)
-#create('myJdbcDriverParams','JDBCDriverParams')
-#cd('JDBCDriverParams/NO_NAME_0')
-#set('DriverName', dsdriver)
-#set('URL', dsurl)
-#set('PasswordEncrypted', dspassword)
-#set('UseXADataSourceInterface', 'false')
-
-#print 'create JDBCDriverParams Properties'
-#create('myProperties','Properties')
-#cd('Properties/NO_NAME_0')
-#create('user','Property')
-#cd('Property/user')
-#set('Value', dsusername)
-
-#cd('../../')
-#create('databaseName','Property')
-#cd('Property/databaseName')
-#set('Value', dsdbname)
-
-#print 'create JDBCConnectionPoolParams'
-#cd('/JDBCSystemResource/' + dsname + '/JdbcResource/' + dsname)
-#create('myJdbcConnectionPoolParams','JDBCConnectionPoolParams')
-#cd('JDBCConnectionPoolParams/NO_NAME_0')
-#set('TestTableName','SQL SELECT 1 FROM DUAL')
-#set('InitialCapacity',int(dsinitalcapacity))
-
-#print('Done setting attributes for Data Source: %s' % dsname);
-
-# Assign
-# ======
-# Uncomment to target and enable the data source for the cluster
-# assign('JDBCSystemResource', dsname, 'Target', cluster_name)
 
 # Write Domain
 # ============

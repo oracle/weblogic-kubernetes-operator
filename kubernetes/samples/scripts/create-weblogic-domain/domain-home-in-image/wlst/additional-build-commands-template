@@ -12,8 +12,7 @@ COPY --chown=oracle:root files/* /u01/oracle/
 # ---------------------------
 ENV ORACLE_HOME=/u01/oracle \
     PROPERTIES_FILE_DIR="/u01/oracle/properties" \
-    DOMAIN_HOME="/u01/oracle/user_projects/domains/%DOMAIN_NAME%" \
-    DEBUG_PORT="8453" \
+    DOMAIN_HOME="%DOMAIN_HOME%" \
     PATH=$PATH:/u01/oracle/oracle_common/common/bin:/u01/oracle/wlserver/common/bin:${DOMAIN_HOME}:${DOMAIN_HOME}/bin:/u01/oracle
 
 
@@ -29,18 +28,10 @@ RUN chmod +xw /u01/oracle/*.sh && \
 
 
 # Configuration of WLS Domain
+# remove properties files when done since they contain admin user password
 USER oracle
 RUN /u01/oracle/createWLSDomain.sh && \
     chmod -R g+w $DOMAIN_HOME && \
-    echo ". $DOMAIN_HOME/bin/setDomainEnv.sh" >> /u01/oracle/.bashrc && \
-    rm ${PROPERTIES_FILE_DIR}/*.properties
-
-# Expose ports for admin, managed server, and debug
-EXPOSE $ADMIN_PORT $ADMIN_SERVER_SSL_PORT $MANAGED_SERVER_PORT $MANAGED_SERVER_SSL_PORT $DEBUG_PORT
-
-WORKDIR $DOMAIN_HOME
-
-# Define default command to start bash.
-CMD ["startAdminServer.sh"]
-
+    echo ". \$DOMAIN_HOME/bin/setDomainEnv.sh" >> /u01/oracle/.bashrc && \
+    rm -f ${PROPERTIES_FILE_DIR}/*.properties
 

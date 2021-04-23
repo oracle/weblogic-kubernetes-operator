@@ -405,13 +405,14 @@ function createFiles {
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-    domainHome="/u01/oracle/user_projects/domains/${domainName}"
+    domainHome="${domainHome:-/u01/oracle/user_projects/domains/${domainName}}"
 
     # Generate the properties file that will be used when creating the weblogic domain
     echo Generating ${domainPropertiesOutput} from ${domainPropertiesInput}
 
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_SSL_PORT%:${adminServerSSLPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}

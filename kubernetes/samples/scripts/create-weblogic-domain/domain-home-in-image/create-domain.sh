@@ -165,8 +165,14 @@ function initialize {
 
   validateCommonInputs
 
+  createDomainWlstScript="${createDomainWlstScript:-wlst/create-wls-domain.py}"
   if [ "${mode}" == "wlst" ] && [ ! -f ${createDomainWlstScript} ]; then
     validationError "The create domain WLST script file ${createDomainWlstScript} was not found"
+  fi
+
+  createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_dynamic.yaml}"
+  if [ "${mode}" == "wdt" ] && [ ! -f ${createDomainWdtModel} ]; then
+    validationError "The create domain WDT model file ${createDomainWdtModel} was not found"
   fi
 
   validateBooleanInputParamsSpecified logHomeOnPV
@@ -195,13 +201,12 @@ function createDomainHome {
     echo "WIT_DIR is ${WIT_DIR}"
 
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-    domainHome="/u01/oracle/user_projects/domains/${domainName}"
 
     if [ "${mode}" == "wdt" ] && [ -n "${wdtEncryptKey}" ]; then
       echo "An encryption key is provided, encrypting passwords in WDT properties file"
       wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
       echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
-      encrypt_model wdt/wdt_model_dynamic.yaml "${wdtEncryptionKeyFile}"
+      encrypt_model ${createDomainWdtModel} "${wdtEncryptionKeyFile}" || exit 1
     fi
 
     echo "dumping output of ${domainPropertiesOutput}"
@@ -216,8 +221,11 @@ function createDomainHome {
       # Generate the additional-build-commands file that will be used when creating the weblogic domain
       echo "Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
 
-      cp ${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput}
-      sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${additionalBuildCommandsOutput}
+      cp ${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
+      sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
+
+      createDomainWlstScriptCopy="${domainOutputDir}/create-wls-domain.py"
+      cp ${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
 
       cmd="
         $WIT_DIR/imagetool/bin/imagetool.sh update
@@ -227,7 +235,7 @@ function createDomainHome {
           --wdtVersion ${WDT_VERSION}
           --wdtDomainHome \"${domainHome}\"
           --additionalBuildCommands ${additionalBuildCommandsOutput}
-          --additionalBuildFiles \"wlst/createWLSDomain.sh,${createDomainWlstScript},wlst/startAdminServer.sh,${domainPropertiesOutput}\"
+          --additionalBuildFiles \"wlst/createWLSDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
           --chown=oracle:root
         "
     else
@@ -235,7 +243,7 @@ function createDomainHome {
       $WIT_DIR/imagetool/bin/imagetool.sh update
         --fromImage \"$domainHomeImageBase\"
         --tag \"${BUILD_IMAGE_TAG}\"
-        --wdtModel \"${scriptDir}/wdt/wdt_model_dynamic.yaml\"
+        --wdtModel \"${createDomainWdtModel}\"
         --wdtVariables \"${domainPropertiesOutput}\"
         --wdtOperation CREATE
         --wdtVersion ${WDT_VERSION}
@@ -258,14 +266,8 @@ function createDomainHome {
       fail "Create domain ${domainName} failed."
     fi
 
-    # clean up the generated domain.properties file
-    rm ${domainPropertiesOutput}
-    if [ -n "${wdtEncryptionKeyFile}" ]; then
-      rm ${wdtEncryptionKeyFile}
-    fi
-    if [ -n "${additionalBuildCommandsOutput}" ]; then
-      rm ${additionalBuildCommandsOutput}
-    fi
+    # clean up the generated files in $domainOutputDir
+    rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
 
     echo ""
     echo "Create domain ${domainName} successfully."
