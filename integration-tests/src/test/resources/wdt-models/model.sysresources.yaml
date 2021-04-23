@@ -12,6 +12,7 @@ resources:
             PersistentStore: 'TestClusterFileStore'
             InsertionPausedAtStartup: false
             MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
+            Notes: '@@ENV:CUSTOM_ENV@@'
 
     JMSSystemResource:
         TestClusterJmsModule:
