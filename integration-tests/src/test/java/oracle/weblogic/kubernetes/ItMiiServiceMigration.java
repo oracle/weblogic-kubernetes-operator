@@ -71,7 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * a stopped pod/managed server to a live pod/managed server.
  * Configuration : 
  *   MII cluster domain with 2 managed servers
- *   Two set of JMS Resources with FileStore and JDBC Store
+ *   Two sets of JMS Resources with FileStore and JDBC Store
  *   All resources are targeted to cluster with enabled JMS service migration
  *   Two Distributed Queue(s) one with FileStore and the other with JDBC Store
  *   Separate ORACLE Datasource for cluster leasing
@@ -298,8 +298,10 @@ class ItMiiServiceMigration {
    * so that the JTA recovery service is migrated to an active server in the
    * cluster when a server is shutdown. This can be checked by verifying the 
    * JTARecoveryService runtime MBean for the stopped server in an active 
-   * server. E.g. say manged server ms2 is down, make sure that the JTA i
-   * recovery service for  ms2 is active on the running managed server ms1
+   * server. For example say managed server ms2 is down, make sure that the JTA 
+   * recovery service for ms2 is active on the running managed server ms1
+   * Also make sure that the JTA Recovery service (ms2) is migrated back to 
+   * server ms2 when the server ms2 is re-started. 
    */
   @Test
   @Order(3)
@@ -366,7 +368,7 @@ class ItMiiServiceMigration {
    * Verify the JMS Server Runtime through rest API.
    * Get the JMSServer Runtime ClusterJmsServer@managed-server2 found on 
    * specified managed server.
-   * @param managedServer name of managed server to look for JMSServerRuntime
+   * @param managedServer name of the managed server to look for JMSServerRuntime
    * @returns true if MBEAN is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String managedServer) {
@@ -401,7 +403,7 @@ class ItMiiServiceMigration {
    * Verify the JTA Recovery Service Runtime through rest API.
    * Get the JTA Recovery Service Runtime for a server on a 
    * specified managed server.
-   * @param managedServer name of server to look for RecoveyServerRuntime
+   * @param managedServer name of the server to look for RecoveyServerRuntime
    * @param recoveryService name of RecoveyServerRuntime (managed server) 
    * @param active is the recovery active (true or false )
    * @returns true if MBEAN is found otherwise false
