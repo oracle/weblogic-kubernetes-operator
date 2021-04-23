@@ -36,7 +36,7 @@ public class SslTestClient {
 
       props.put("java.naming.factory.initial",
           "weblogic.jndi.WLInitialContextFactory" );
-      props.put("java.naming.security.principal","weblogic");
+      props.put("java.naming.security.principal","wlsadmin");
       props.put("java.naming.security.credentials","##W%*}!\"'\"`']\\\\//1$$~x");
       try {
         jndiContext = new InitialContext(props);

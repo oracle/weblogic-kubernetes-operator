@@ -241,6 +241,7 @@ public class ItSystemResOverrides {
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     assertTrue(response.body().contains("ExpirationPolicy:Discard"), "Didn't get ExpirationPolicy:Discard");
     assertTrue(response.body().contains("RedeliveryLimit:20"), "Didn't get RedeliveryLimit:20");
+    assertTrue(response.body().contains("Notes:mysitconfigdomain"), "Didn't get Correct Notes description");
   }
 
   private void verifyWLDFResourceOverride() {
@@ -373,6 +374,9 @@ public class ItSystemResOverrides {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addEnvItem(new V1EnvVar()
+                    .name("CUSTOM_ENV")
+                    .value("##~`!^${ls}"))
                 .addVolumesItem(new V1Volume()
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()

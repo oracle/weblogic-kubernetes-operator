@@ -20,7 +20,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+// import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -113,10 +113,11 @@ class ItMiiCustomSslStore {
 
     // create secret for admin credential with special characters
     // the resultant password is ##W%*}!"'"`']\\\\//1$$~x 
+    // let the user name be something other than weblogic say wlsadmin
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
-            ADMIN_USERNAME_DEFAULT, "##W%*}!\"'\"`']\\\\//1$$~x", domainNamespace),
+            "wlsadmin", "##W%*}!\"'\"`']\\\\//1$$~x", domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret with special characters
