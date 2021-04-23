@@ -110,6 +110,7 @@ public class SitconfigServlet extends HttpServlet {
 
     out.println("ExpirationPolicy:" + uniformDistributedTopic.getDeliveryFailureParams().getExpirationPolicy());
     out.println("RedeliveryLimit:" + uniformDistributedTopic.getDeliveryFailureParams().getRedeliveryLimit());
+    out.println("Notes:" + uniformDistributedTopic.getNotes());
   }
 
   /**
