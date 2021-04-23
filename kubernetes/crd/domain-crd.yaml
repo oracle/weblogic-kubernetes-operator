@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: de883bb3d965b09f91bc60c21481d6d61f441ac6ddf9952a9189f85eb887b507
+    weblogic.sha256: 53b4a36ee1c80226f895af3a154d3bada46ef1ec9e2adec52a74a439b81cd731
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -107,6 +107,10 @@ spec:
                       configMap:
                         description: Name of a ConfigMap containing the WebLogic Deploy
                           Tooling model.
+                        type: string
+                      wdtBinaryHome:
+                        description: Location of the WebLogic Deploy Tooling installation
+                          binary. Defaults to /u01/wdt/weblogic-deploy.
                         type: string
                       onlineUpdate:
                         description: Online update option for Model In Image dynamic
@@ -1188,6 +1192,54 @@ spec:
                           required:
                           - name
                         type: array
+                      commonMount:
+                        description: The common mount with the containers hosting
+                          files to be copied to the common volume.
+                        properties:
+                          sizeLimit:
+                            description: The emptyDir volume size limit. Defaults
+                              to unset.
+                            type: string
+                          mountPath:
+                            description: The common mount path. Defaults to /common.
+                            type: string
+                          targetPath:
+                            description: The target mount path. Defaults to '/tmpCommonMount'.
+                            type: string
+                          containers:
+                            description: The common mount containers.
+                            items:
+                              type: object
+                              properties:
+                                image:
+                                  description: The common mount container image name.
+                                  type: string
+                                imagePullPolicy:
+                                  description: The image pull policy for the common
+                                    mount container image. Legal values are Always,
+                                    Never, and IfNotPresent. Defaults to Always if
+                                    image ends in :latest; IfNotPresent, otherwise.
+                                  type: string
+                                  enum:
+                                  - Always
+                                  - Never
+                                  - IfNotPresent
+                                name:
+                                  description: The name for the operator created init
+                                    container. Set to 'operator-common-container-${CONTAINER_NUM}'.
+                                  type: string
+                                command:
+                                  description: The init container command. Defaults
+                                    to 'cp -R $COMMON_DIR/* $TARGET_DIR'.
+                                  type: string
+                            type: array
+                          medium:
+                            description: The emptyDir volume medium. Defaults to unset.
+                            type: string
+                          emptyDirVolumeName:
+                            description: The emptyDir volume name. Set to 'operator-common-volume'.
+                            type: string
+                        type: object
                       resources:
                         description: Memory and CPU minimum requirements and limits
                           for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
@@ -3887,6 +3939,56 @@ spec:
                                 - path
                             required:
                             - name
+                        commonMount:
+                          description: The common mount with the containers hosting
+                            files to be copied to the common volume.
+                          type: object
+                          properties:
+                            sizeLimit:
+                              description: The emptyDir volume size limit. Defaults
+                                to unset.
+                              type: string
+                            mountPath:
+                              description: The common mount path. Defaults to /common.
+                              type: string
+                            targetPath:
+                              description: The target mount path. Defaults to '/tmpCommonMount'.
+                              type: string
+                            containers:
+                              description: The common mount containers.
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  image:
+                                    description: The common mount container image
+                                      name.
+                                    type: string
+                                  imagePullPolicy:
+                                    description: The image pull policy for the common
+                                      mount container image. Legal values are Always,
+                                      Never, and IfNotPresent. Defaults to Always
+                                      if image ends in :latest; IfNotPresent, otherwise.
+                                    type: string
+                                    enum:
+                                    - Always
+                                    - Never
+                                    - IfNotPresent
+                                  name:
+                                    description: The name for the operator created
+                                      init container. Set to 'operator-common-container-${CONTAINER_NUM}'.
+                                    type: string
+                                  command:
+                                    description: The init container command. Defaults
+                                      to 'cp -R $COMMON_DIR/* $TARGET_DIR'.
+                                    type: string
+                            medium:
+                              description: The emptyDir volume medium. Defaults to
+                                unset.
+                              type: string
+                            emptyDirVolumeName:
+                              description: The emptyDir volume name. Set to 'operator-common-volume'.
+                              type: string
                         resources:
                           description: Memory and CPU minimum requirements and limits
                             for the WebLogic Server instance. See `kubectl explain
@@ -6600,6 +6702,53 @@ spec:
                       required:
                       - name
                     type: array
+                  commonMount:
+                    description: The common mount with the containers hosting files
+                      to be copied to the common volume.
+                    properties:
+                      sizeLimit:
+                        description: The emptyDir volume size limit. Defaults to unset.
+                        type: string
+                      mountPath:
+                        description: The common mount path. Defaults to /common.
+                        type: string
+                      targetPath:
+                        description: The target mount path. Defaults to '/tmpCommonMount'.
+                        type: string
+                      containers:
+                        description: The common mount containers.
+                        items:
+                          type: object
+                          properties:
+                            image:
+                              description: The common mount container image name.
+                              type: string
+                            imagePullPolicy:
+                              description: The image pull policy for the common mount
+                                container image. Legal values are Always, Never, and
+                                IfNotPresent. Defaults to Always if image ends in
+                                :latest; IfNotPresent, otherwise.
+                              type: string
+                              enum:
+                              - Always
+                              - Never
+                              - IfNotPresent
+                            name:
+                              description: The name for the operator created init
+                                container. Set to 'operator-common-container-${CONTAINER_NUM}'.
+                              type: string
+                            command:
+                              description: The init container command. Defaults to
+                                'cp -R $COMMON_DIR/* $TARGET_DIR'.
+                              type: string
+                        type: array
+                      medium:
+                        description: The emptyDir volume medium. Defaults to unset.
+                        type: string
+                      emptyDirVolumeName:
+                        description: The emptyDir volume name. Set to 'operator-common-volume'.
+                        type: string
+                    type: object
                   resources:
                     description: Memory and CPU minimum requirements and limits for
                       the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.
@@ -9183,6 +9332,56 @@ spec:
                                 - path
                             required:
                             - name
+                        commonMount:
+                          description: The common mount with the containers hosting
+                            files to be copied to the common volume.
+                          type: object
+                          properties:
+                            sizeLimit:
+                              description: The emptyDir volume size limit. Defaults
+                                to unset.
+                              type: string
+                            mountPath:
+                              description: The common mount path. Defaults to /common.
+                              type: string
+                            targetPath:
+                              description: The target mount path. Defaults to '/tmpCommonMount'.
+                              type: string
+                            containers:
+                              description: The common mount containers.
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  image:
+                                    description: The common mount container image
+                                      name.
+                                    type: string
+                                  imagePullPolicy:
+                                    description: The image pull policy for the common
+                                      mount container image. Legal values are Always,
+                                      Never, and IfNotPresent. Defaults to Always
+                                      if image ends in :latest; IfNotPresent, otherwise.
+                                    type: string
+                                    enum:
+                                    - Always
+                                    - Never
+                                    - IfNotPresent
+                                  name:
+                                    description: The name for the operator created
+                                      init container. Set to 'operator-common-container-${CONTAINER_NUM}'.
+                                    type: string
+                                  command:
+                                    description: The init container command. Defaults
+                                      to 'cp -R $COMMON_DIR/* $TARGET_DIR'.
+                                    type: string
+                            medium:
+                              description: The emptyDir volume medium. Defaults to
+                                unset.
+                              type: string
+                            emptyDirVolumeName:
+                              description: The emptyDir volume name. Set to 'operator-common-volume'.
+                              type: string
                         resources:
                           description: Memory and CPU minimum requirements and limits
                             for the WebLogic Server instance. See `kubectl explain

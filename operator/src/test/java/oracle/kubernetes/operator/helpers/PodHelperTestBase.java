@@ -17,11 +17,13 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -70,10 +72,13 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -106,6 +111,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpect
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
@@ -124,6 +130,11 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.Container.DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -162,6 +173,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final String TEST_PRODUCT_VERSION = "unit-test";
+  public static final String CUSTOM_COMMAND_SCRIPT = "customScript.sh";
+  public static final String CUSTOM_MOUNT_PATH = "/custom-common";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -215,6 +228,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             "-Djava.security.egd=file:/dev/./urandom"));
     envVars.add(createEnvVar("ADMIN_USERNAME", null));
     envVars.add(createEnvVar("ADMIN_PASSWORD", null));
+    return envVars;
+  }
+
+  static List<V1EnvVar> getCommonMountEnvVariables() {
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(createEnvVar(ServerEnvVars.COMMON_MOUNT_PATH, COMMON_MOUNT_PATH));
+    envVars.add(createEnvVar(ServerEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH));
     return envVars;
   }
 
@@ -506,6 +526,100 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
+  }
+
+  @Test
+  public void whenDomainHasCommonMount_createPodsWithCommonMountInitContainerAndEmptyDirVolumeAndVolumeMounts() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().container(getContainer("wdt-image:v1")));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
+                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(COMMON_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(getCommonMountContainers()).mountPath(CUSTOM_MOUNT_PATH));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(
+                    getCommonMountContainers()).mountPath(CUSTOM_MOUNT_PATH).medium("Memory"));
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(getCommonMountContainers())
+                    .mountPath(CUSTOM_MOUNT_PATH).sizeLimit("100G"));
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(Arrays.asList(getContainer("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS"))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
+                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(Arrays.asList(getContainer("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
+                    "/bin/sh", "-c", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountWithMultipleContainers_createPodsWithCommonMountInitContainers() {
+    getConfigurator()
+            .withCommonMount(new CommonMount().containers(
+                    getCommonMountContainers("wdt-image1:v1", "wdt-image2:v1")));
+
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1", "IfNotPresent",
+                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1", "IfNotPresent",
+                            "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  @NotNull
+  private List<Container> getCommonMountContainers(String...images) {
+    List<Container> containerList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> containerList.add(new Container().image(image)));
+    return containerList;
+  }
+
+  @NotNull
+  public static Container getContainer(String image) {
+    return new Container().image(image);
   }
 
   @Test

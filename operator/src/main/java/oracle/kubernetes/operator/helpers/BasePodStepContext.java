@@ -3,22 +3,34 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.Container;
+import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 public abstract class BasePodStepContext extends StepContextBase {
+
+  public static final String SHELL = "/bin/sh";
 
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
@@ -47,6 +59,37 @@ public abstract class BasePodStepContext extends StepContextBase {
         .env(getEnvironmentVariables(tuningParameters))
         .resources(getServerSpec().getResources())
         .securityContext(getServerSpec().getContainerSecurityContext());
+  }
+
+  protected V1Volume createEmptyDirVolume(CommonMount cm) {
+    V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
+    Optional.ofNullable(cm.getMedium()).ifPresent(medium -> emptyDirVolumeSource.medium(medium));
+    Optional.ofNullable(cm.getSizeLimit())
+            .ifPresent(sizeLimit -> emptyDirVolumeSource.sizeLimit(Quantity.fromString(sizeLimit)));
+    return new V1Volume().name(cm.getEmptyDirVolumeName()).emptyDir(emptyDirVolumeSource);
+  }
+
+  protected V1Container createInitContainerForCommonMount(Container container, int index, CommonMount cm) {
+    return new V1Container().name(getName(container, index))
+        .image(container.getImage())
+            .imagePullPolicy(container.getImagePullPolicy())
+            .command(Collections.singletonList(SHELL))
+            .env(createEnv(cm))
+            .args(Arrays.asList("-c", container.getCommand()))
+            .volumeMounts(Collections.singletonList(
+                    new V1VolumeMount().name(cm.getEmptyDirVolumeName())
+                            .mountPath(cm.getTargetPath())));
+  }
+
+  private String getName(Container container, int index) {
+    return container.getName() + (index + 1);
+  }
+
+  protected List<V1EnvVar> createEnv(CommonMount cm) {
+    List<V1EnvVar> vars = new ArrayList<>();
+    addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, ServerEnvVars.COMMON_TARGET_PATH, cm.getTargetPath());
+    return vars;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {

@@ -720,6 +720,24 @@ public class Domain implements KubernetesObject {
     return spec.getModelHome();
   }
 
+  /**
+   * Returns the WDT binary home directory of the domain.
+   *
+   * @return WDT binary home directory
+   */
+  public String getWdtBinaryHome() {
+    return spec.getWdtBinaryHome();
+  }
+
+  /**
+   * Returns the common mount specs for the domain.
+   *
+   * @return common mount specs
+   */
+  public CommonMount getCommonMount() {
+    return spec.getCommonMount();
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)

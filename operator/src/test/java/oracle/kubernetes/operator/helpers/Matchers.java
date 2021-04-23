@@ -28,6 +28,8 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -41,6 +43,11 @@ public class Matchers {
   public static Matcher<Iterable<? super V1Container>> hasInitContainer(
           String name, String image, String serverName, String... command) {
     return hasItem(createInitContainer(name, image, serverName, command));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasCommonMountInitContainer(
+          String name, String image, String imagePullPolicy, String command, String... args) {
+    return hasItem(createCommonMountInitContainer(name, image, imagePullPolicy, command, args));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -94,6 +101,14 @@ public class Matchers {
 
   private static V1Container createContainer(String name, String image, String... command) {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
+  }
+
+  private static V1Container createCommonMountInitContainer(String name, String image, String imagePullPolicy,
+                                                            String command, String... args) {
+    return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
+            .command(Arrays.asList(command)).args(Arrays.asList(args)).volumeMounts(Arrays.asList(
+                    new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(COMMON_TARGET_PATH)))
+            .env(PodHelperTestBase.getCommonMountEnvVariables());
   }
 
   private static V1Container createInitContainer(String name, String image, String serverName, String... command) {

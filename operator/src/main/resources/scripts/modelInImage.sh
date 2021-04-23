@@ -32,7 +32,7 @@ IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_ROOT="${WDT_BINARY_HOME:-/u01/wdt/weblogic-deploy}"
 WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
@@ -321,7 +321,6 @@ function createWLDomain() {
   # copy the filter related files to the wdt lib
 
   cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json
-  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
 
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again

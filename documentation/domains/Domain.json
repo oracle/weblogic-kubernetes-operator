@@ -184,6 +184,38 @@
         }
       }
     },
+    "CommonMount": {
+      "type": "object",
+      "properties": {
+        "sizeLimit": {
+          "description": "The emptyDir volume size limit. Defaults to unset.",
+          "type": "string"
+        },
+        "mountPath": {
+          "description": "The common mount path. Defaults to /common.",
+          "type": "string"
+        },
+        "targetPath": {
+          "description": "The target mount path. Defaults to \u0027/tmpCommonMount\u0027.",
+          "type": "string"
+        },
+        "containers": {
+          "description": "The common mount containers.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Container"
+          }
+        },
+        "medium": {
+          "description": "The emptyDir volume medium. Defaults to unset.",
+          "type": "string"
+        },
+        "emptyDirVolumeName": {
+          "description": "The emptyDir volume name. Set to \u0027operator-common-volume\u0027.",
+          "type": "string"
+        }
+      }
+    },
     "Configuration": {
       "type": "object",
       "properties": {
@@ -221,6 +253,32 @@
         "introspectorJobActiveDeadlineSeconds": {
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
           "type": "number"
+        }
+      }
+    },
+    "Container": {
+      "type": "object",
+      "properties": {
+        "image": {
+          "description": "The common mount container image name.",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "name": {
+          "description": "The name for the operator created init container. Set to \u0027operator-common-container-${CONTAINER_NUM}\u0027.",
+          "type": "string"
+        },
+        "command": {
+          "description": "The init container command. Defaults to \u0027cp -R $COMMON_DIR/* $TARGET_DIR\u0027.",
+          "type": "string"
         }
       }
     },
@@ -576,6 +634,10 @@
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
         },
+        "wdtBinaryHome": {
+          "description": "Location of the WebLogic Deploy Tooling installation binary. Defaults to /u01/wdt/weblogic-deploy.",
+          "type": "string"
+        },
         "onlineUpdate": {
           "description": "Online update option for Model In Image dynamic update.",
           "$ref": "#/definitions/OnlineUpdate"
@@ -715,6 +777,10 @@
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
+        },
+        "commonMount": {
+          "description": "The common mount with the containers hosting files to be copied to the common volume.",
+          "$ref": "#/definitions/CommonMount"
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",

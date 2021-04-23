@@ -126,6 +126,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
 | `annotations` | Map | The annotations to be added to generated resources. |
+| `commonMount` | [Common Mount](#common-mount) | The common mount with the containers hosting files to be copied to the common volume. |
 | `containers` | array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
 | `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
 | `env` | array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
@@ -220,6 +221,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
 | `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
+| `wdtBinaryHome` | string | Location of the WebLogic Deploy Tooling installation binary. Defaults to /u01/wdt/weblogic-deploy. |
 
 ### Opss
 
@@ -227,6 +229,17 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
+
+### Common Mount
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `containers` | array of [Container](#container) | The common mount containers. |
+| `emptyDirVolumeName` | string | The emptyDir volume name. Set to 'operator-common-volume'. |
+| `medium` | string | The emptyDir volume medium. Defaults to unset. |
+| `mountPath` | string | The common mount path. Defaults to /common. |
+| `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
+| `targetPath` | string | The target mount path. Defaults to '/tmpCommonMount'. |
 
 ### Probe Tuning
 
@@ -266,6 +279,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `enabled` | Boolean | Enable online update. Default is 'false'. |
 | `onNonDynamicChanges` | string | Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are 'CommitUpdateOnly' (default), and 'CommitUpdateAndRoll'. <br/><br/> If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. <br/><br/> If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. <br/><br/> For more information, see the runtime update section of the Model in Image user guide. |
 | `wdtTimeouts` | [WDT Timeouts](#wdt-timeouts) |  |
+
+### Container
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `command` | string | The init container command. Defaults to 'cp -R $COMMON_DIR/* $TARGET_DIR'. |
+| `image` | string | The common mount container image name. |
+| `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `name` | string | The name for the operator created init container. Set to 'operator-common-container-${CONTAINER_NUM}'. |
 
 ### Subsystem Health
 

@@ -1,6 +1,6 @@
 {
     "create": [
-      { "name": "primordial_filter", "path": "/u01/wdt/weblogic-deploy/lib/model-wdt-create-filter.py" }
+      { "name": "primordial_filter", "path": "/weblogic-operator/scripts/model-wdt-create-filter.py" }
     ],
     "deploy": [
     ],

@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -59,6 +60,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -714,13 +717,29 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected V1PodSpec createSpec(TuningParameters tuningParameters) {
     V1PodSpec podSpec = createPodSpec(tuningParameters)
         .readinessGates(getReadinessGates())
-        .initContainers(getServerSpec().getInitContainers().stream()
-                .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+        .initContainers(getInitContainers(tuningParameters));
 
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
+    Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
+            podSpec.addVolumesItem(createEmptyDirVolume(cm)));
     return podSpec;
+  }
+
+  private List<V1Container> getInitContainers(TuningParameters tuningParameters) {
+    List<V1Container> initContainers = getServerSpec().getInitContainers().stream()
+            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList());
+    Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
+            getCommonMountInitContainers(cm, initContainers));
+    return initContainers;
+  }
+
+  protected void getCommonMountInitContainers(CommonMount cm, List<V1Container> initContainers) {
+    List<Container> containerList = cm.getContainers();
+    IntStream.range(0, containerList.size()).forEach(idx ->
+            initContainers.add(createInitContainerForCommonMount(containerList.get(idx), idx,
+                    cm)));
   }
 
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
@@ -761,6 +780,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
+    Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
+            v1Container.addVolumeMountsItem(
+                    new V1VolumeMount().name(cm.getEmptyDirVolumeName()).mountPath(cm.getMountPath())));
     return v1Container;
   }
 
@@ -819,11 +841,17 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    Optional.ofNullable(getDomain().getCommonMount()).ifPresent(c -> addEnvVar(vars,
+            ServerEnvVars.WDT_BINARY_HOME, getWdtBinaryHome()));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
   }
 
   private String getDomainHome() {
     return getDomain().getDomainHome();
+  }
+
+  private String getWdtBinaryHome() {
+    return getDomain().getWdtBinaryHome();
   }
 
   private boolean distributeOverridesDynamically() {

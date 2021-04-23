@@ -57,6 +57,11 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public void withCommonMount(CommonMount cm) {
+    getDomainSpec().setCommonMount(cm);
+  }
+
+  @Override
   public void withDefaultLivenessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
     getDomainSpec().setLivenessProbe(initialDelay, timeout, period);

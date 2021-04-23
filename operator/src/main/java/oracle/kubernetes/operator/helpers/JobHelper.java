@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -347,7 +348,19 @@ public class JobHelper {
       if (modelHome != null && !modelHome.isEmpty()) {
         addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
       }
+
+      String wdtBinaryHome = getWdtBinaryHome();
+      if (wdtBinaryHome != null && !wdtBinaryHome.isEmpty()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.WDT_BINARY_HOME, wdtBinaryHome);
+      }
+
+      Optional.ofNullable(getCommonMount()).ifPresent(cm -> addCommonMountEnvVars(cm, vars));
       return vars;
+    }
+
+    private void addCommonMountEnvVars(CommonMount cm, List<V1EnvVar> vars) {
+      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_TARGET_PATH, cm.getTargetPath());
     }
   }
 

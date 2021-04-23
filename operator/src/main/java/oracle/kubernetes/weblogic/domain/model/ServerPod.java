@@ -213,6 +213,13 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
+  /**
+   * The common mount.
+   *
+   */
+  @Description("The common mount with the containers hosting files to be copied to the common volume.")
+  private CommonMount commonMount;
+
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -394,6 +401,14 @@ class ServerPod extends KubernetesResource {
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
+  }
+
+  CommonMount getCommonMount() {
+    return this.commonMount;
+  }
+
+  void setCommonMount(CommonMount cm) {
+    this.commonMount = cm;
   }
 
   ProbeTuning getLivenessProbeTuning() {
@@ -752,6 +767,7 @@ class ServerPod extends KubernetesResource {
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
         .append("serviceAccountName", serviceAccountName)
+        .append("commonMount", commonMount)
         .toString();
   }
 
@@ -796,6 +812,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
         .append(serviceAccountName, that.serviceAccountName)
+        .append(commonMount, that.commonMount)
         .isEquals();
   }
 
@@ -824,6 +841,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName)
         .append(tolerations)
         .append(serviceAccountName)
+        .append(commonMount)
         .toHashCode();
   }
 }

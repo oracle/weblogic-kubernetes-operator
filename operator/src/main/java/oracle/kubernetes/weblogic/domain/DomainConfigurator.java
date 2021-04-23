@@ -16,6 +16,7 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -222,6 +223,12 @@ public abstract class DomainConfigurator {
    */
   public abstract void withDefaultReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period);
+
+  /**
+   * Add common mount for the domain resource.
+   *
+   */
+  public abstract void withCommonMount(CommonMount cm);
 
   /**
    * Sets the default settings for the liveness probe. Any settings left null will default to the
