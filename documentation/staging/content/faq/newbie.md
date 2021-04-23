@@ -7,7 +7,7 @@ description: "Answers to commonly asked newcomer questions."
 ---
 #### What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation?
 
-It's all [here](https://oracle.github.io/weblogic-kubernetes-operator/).
+It's all [here]({{< relref "/_index.md" >}}).
 
 #### How much does it cost?
 
@@ -47,11 +47,21 @@ The operator does not specify how a WebLogic domain home configuration is create
 
 #### Communications
 
-**Q:** How is location transparency achieved and the communication between WLS instances handled? T3s?
+**Q:** How is location transparency achieved and the communication between WLS instances handled?
 
-**A:** Inside the Kubernetes cluster, we use the cluster IP (acts as a DNS name) and ingress controller, which allows for the pods with WebLogic Servers to move to different nodes in the Kubernetes cluster and continue communicating with other servers.  
+**A:** Inside the Kubernetes cluster, the operator generates a Kubernetes ClusterIP service for each WebLogic Server pod called `DOMAINUID-WEBLOGICSERVERNAME` and for each WebLogic cluster called `DOMAINUID-cluster-CLUSTERNAME`. The operator also overrides your WebLogic network listen address configuration to reflect the service names so that you don't need to do this. The services act as DNS names, and allow the pods with WebLogic Servers to move to different nodes in the Kubernetes cluster and continue communicating with other servers.  
 
-For T3 communication outside the Kubernetes cluster, we use NodePort and configure a WebLogic channel for T3 RMI.  See the blog, [T3 RMI Communication for WebLogic Server Running on Kubernetes](https://blogs.oracle.com/weblogicserver/t3-rmi-communication-for-weblogic-server-running-on-kubernetes), which explains RMI T3 communication in detail. All QoS are supported for T3 and HTTP communication (SSL, administration port).
+**Q:** How is communication from outside the Kubernetes cluster handled?
+
+**A:** HTTP communication to your applications from locations outside the cluster is typically accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you). For example, see the Quick Start, [Install the operator and ingress controller]({{< relref "/quickstart/install.md" >}}).
+
+RMI communication with locations outside of the Kubernetes cluster is typically accomplished by deploying a load balancer or using Kubernetes Node Ports. See [External WebLogic clients]({{< relref "/faq/external-clients.md" >}}).
+
+* Access to arbitrary HTTP applications through a load balancer.  See [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+* Access the WebLogic Server Administration Console through a load balancer.  See the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+* Access the WebLogic Server Administration Console through a Kubernetes NodePort service.  Run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
+* WebLogic Server Remote Console communication is accomplished by using a load balancer. See [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
+
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
 
@@ -85,7 +95,7 @@ For T3 communication outside the Kubernetes cluster, we use NodePort and configu
 
 **Q:** How to deal with grow and shrink? Cluster and non-cluster mode.
 
-**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See the blog, [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2).
+**A:** You can scale and shrink a configured WebLogic cluster (a set of preconfigured Managed Servers) or a dynamic WebLogic cluster (a cluster that uses templated Managed Servers) using different methods. See [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}).
 * Manually, using Kubernetes command-line interface, `kubectl`.
 * WLDF rules and policies; when the rule is met the Administration Server sends a REST call to the operator which calls the Kubernetes API to start a new pod/container/server.
 * We have developed and made open source the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) which exports WebLogic metrics to Prometheus and Grafana.  In Prometheus, you can set rules similar to WLDF and when these rules are met, a REST call is made to the operator which invokes a Kubernetes API to start a new pod.
