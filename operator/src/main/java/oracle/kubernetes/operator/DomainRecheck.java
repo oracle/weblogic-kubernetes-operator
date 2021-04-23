@@ -56,7 +56,7 @@ class DomainRecheck {
     this(domainProcessor, domainNamespaces, false);
   }
 
-  private DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
+  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
     this.domainProcessor = domainProcessor;
     this.domainNamespaces = domainNamespaces;
     this.fullRecheck = fullRecheck;

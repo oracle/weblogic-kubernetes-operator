@@ -24,7 +24,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
-import static oracle.kubernetes.operator.helpers.SecretHelper.getAuthorizationHeaderFactory;
+import static oracle.kubernetes.operator.helpers.SecretHelper.getAuthorizationSource;
 import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_DATA_NOT_FOUND;
 import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_NOT_FOUND;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
@@ -67,7 +67,7 @@ public class SecretHelperTest {
   }
 
   private Packet runSteps() {
-    return testSupport.runSteps(SecretHelper.createAuthorizationHeaderFactoryStep());
+    return testSupport.runSteps(SecretHelper.createAuthorizationSourceStep());
   }
 
   @Test
@@ -93,7 +93,7 @@ public class SecretHelperTest {
   }
 
   @Test
-  void afterStepsRun_packetContainsAuthorizationHeaderFactoryWithCredentials() {
+  void afterStepsRun_packetContainsAuthorizationSourceWithCredentials() {
     testSupport.defineResources(new V1Secret()
                       .metadata(new V1ObjectMeta().namespace(NS).name(SECRET_NAME))
                       .data(Map.of(
@@ -102,7 +102,7 @@ public class SecretHelperTest {
 
     Packet packet = runSteps();
 
-    assertThat(getAuthorizationHeaderFactory(packet).createBasicAuthorizationString(),
+    assertThat(getAuthorizationSource(packet).createBasicAuthorizationString(),
           equalTo(createExpectedBasicAuthorizationString()));
   }
 

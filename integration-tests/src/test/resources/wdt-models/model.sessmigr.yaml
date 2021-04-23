@@ -22,6 +22,11 @@ topology:
             ListenPort: 7001
     ServerTemplate:
         "cluster-1-template":
+            NetworkAccessPoint:
+                T3Channel:
+                    PublicPort: 30012
+                    ListenPort: 30012
+                    PublicAddress: kubernetes
             Cluster: "cluster-1"
 
 appDeployments:

@@ -336,6 +336,24 @@ public class TestAssertions {
     return Service.serviceExists(serviceName, label, namespace);
   }
 
+
+  /**
+   * Check if a service Load Balancer External IP is generated.
+   *
+   * @param serviceName the name of the service to check for
+   * @param label       a Map of key value pairs the service is decorated with
+   * @param namespace   in which the service is running
+   * @return true if the service Load Balancer External IP is generated otherwise false
+   */
+  public static Callable<Boolean> isOCILoadBalancerReady(
+      String serviceName,
+      Map<String, String> label,
+      String namespace) {
+    return () -> {
+      return Kubernetes.isOCILoadBalancerReady(serviceName, label, namespace);
+    };
+  }
+
   /**
    * Check a service does not exist in the specified namespace.
    *

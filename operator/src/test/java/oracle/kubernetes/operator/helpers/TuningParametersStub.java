@@ -65,7 +65,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public MainTuning getMainTuning() {
-    return new MainTuning(5, 2, 2, 2, 2, 2, 2, 30, 2L, 2L);
+    return new MainTuning(5, 2, 2, 2, 2, 2, 2, 30, 2L, 2L, 120);
   }
 
   @Override
