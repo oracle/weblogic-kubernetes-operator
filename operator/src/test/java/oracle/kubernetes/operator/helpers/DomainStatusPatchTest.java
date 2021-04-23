@@ -19,6 +19,7 @@ import jakarta.json.JsonObject;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
@@ -314,7 +315,7 @@ public class DomainStatusPatchTest {
   private OffsetDateTime now() {
     // Truncate to seconds because we intermittently see a different number of trailing decimals
     // that can cause the string comparison to fail
-    return OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
+    return SystemClock.now().truncatedTo(ChronoUnit.SECONDS);
   }
 
   @Test
