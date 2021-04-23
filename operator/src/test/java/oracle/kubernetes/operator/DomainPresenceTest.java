@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +29,7 @@ import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.OperatorServiceType;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -134,7 +134,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
                 .namespace(namespace)
                 .name(uid)
                 .resourceVersion("1")
-                .creationTimestamp(OffsetDateTime.now()))
+                .creationTimestamp(SystemClock.now()))
         .withStatus(new DomainStatus());
   }
 

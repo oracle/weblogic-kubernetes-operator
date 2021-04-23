@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,6 +43,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
@@ -545,7 +545,7 @@ public class ConfigMapHelper {
 
     private void updatePacket() {
       ScanCache.INSTANCE.registerScan(
-            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, OffsetDateTime.now()));
+            info.getNamespace(), info.getDomainUid(), new Scan(wlsDomainConfig, SystemClock.now()));
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, wlsDomainConfig);
 
       copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
@@ -861,7 +861,7 @@ public class ConfigMapHelper {
       ScanCache.INSTANCE.registerScan(
           info.getNamespace(),
           info.getDomainUid(),
-          new Scan(domainTopology.getDomain(), OffsetDateTime.now()));
+          new Scan(domainTopology.getDomain(), SystemClock.now()));
 
       packet.put(ProcessingConstants.DOMAIN_TOPOLOGY, domainTopology.getDomain());
     }

@@ -21,6 +21,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
-  private OffsetDateTime clock = OffsetDateTime.now();
+  private OffsetDateTime clock = SystemClock.now();
   private final V1Job cachedJob = createJob();
 
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
