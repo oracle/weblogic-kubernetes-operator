@@ -4,27 +4,26 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Base64;
-import javax.annotation.Nonnull;
 
-public class AuthorizationHeaderFactory {
-  private final byte[] encodedUsername;
-  private final byte[] encodedPassword;
+public interface AuthorizationSource {
 
-  public AuthorizationHeaderFactory(@Nonnull byte[] userName, @Nonnull byte[] password) {
-    encodedUsername = encode(userName);
-    encodedPassword = encode(password);
+  byte[] getUserName();
+
+  byte[] getPassword();
+
+  /**
+   * Create an HTTP basic authorization header using the credentials.
+   * @return Basic authorization header
+   */
+  default String createBasicAuthorizationString() {
+    return "Basic " + createEncodedBasicCredentials(getUserName(), getPassword());
   }
 
-  private byte[] encode(byte[] source) {
-    return Base64.getEncoder().encode(source);
-  }
-
-  public String createBasicAuthorizationString() {
-    return "Basic " + createEncodedBasicCredentials(decode(encodedUsername), decode(encodedPassword));
-  }
-
-  private byte[] decode(byte[] source) {
-    return Base64.getDecoder().decode(source);
+  /**
+   * Notification that the credentials, when used, resulted in an authentication or authorization failure.
+   */
+  default void onFailure() {
+    // no-op
   }
 
   // Create encoded credentials from username and password.
@@ -34,11 +33,5 @@ public class AuthorizationHeaderFactory {
     usernameAndPassword[username.length] = (byte) ':';
     System.arraycopy(password, 0, usernameAndPassword, username.length + 1, password.length);
     return Base64.getEncoder().encodeToString(usernameAndPassword);
-  }
-
-  public static class SecretDataMissingException extends RuntimeException {
-
-    SecretDataMissingException() {
-    }
   }
 }

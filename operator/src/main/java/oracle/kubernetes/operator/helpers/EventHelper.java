@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
@@ -647,7 +648,7 @@ public class EventHelper {
     }
 
     OffsetDateTime getCurrentTimestamp() {
-      return OffsetDateTime.now();
+      return SystemClock.now();
     }
 
     void addLabels(V1ObjectMeta metadata, EventData eventData) {

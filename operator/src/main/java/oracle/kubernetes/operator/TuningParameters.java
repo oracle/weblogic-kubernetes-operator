@@ -40,6 +40,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int stuckPodRecheckSeconds;
     public final long initialShortDelay;
     public final long eventualLongDelay;
+    public final int weblogicCredentialsSecretRereadIntervalSeconds;
 
     /**
      * create main tuning.
@@ -53,6 +54,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param stuckPodRecheckSeconds time between checks for stuck pods
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
+     * @param weblogicCredentialsSecretRereadIntervalSeconds credentials secret reread interval
      */
     public MainTuning(
           int initializationRetryDelaySeconds,
@@ -64,7 +66,8 @@ public interface TuningParameters extends Map<String, String> {
           int unchangedCountToDelayStatusRecheck,
           int stuckPodRecheckSeconds,
           long initialShortDelay,
-          long eventualLongDelay) {
+          long eventualLongDelay,
+          int weblogicCredentialsSecretRereadIntervalSeconds) {
       this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
@@ -75,6 +78,7 @@ public interface TuningParameters extends Map<String, String> {
       this.stuckPodRecheckSeconds = stuckPodRecheckSeconds;
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
+      this.weblogicCredentialsSecretRereadIntervalSeconds = weblogicCredentialsSecretRereadIntervalSeconds;
     }
 
     @Override
@@ -88,6 +92,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("unchangedCountToDelayStatusRecheck", unchangedCountToDelayStatusRecheck)
           .append("initialShortDelay", initialShortDelay)
           .append("eventualLongDelay", eventualLongDelay)
+          .append("weblogicCredentialsSecretRereadIntervalSeconds", weblogicCredentialsSecretRereadIntervalSeconds)
           .toString();
     }
 
@@ -102,6 +107,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay)
           .append(eventualLongDelay)
+          .append(weblogicCredentialsSecretRereadIntervalSeconds)
           .toHashCode();
     }
 
@@ -123,6 +129,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(unchangedCountToDelayStatusRecheck, mt.unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay, mt.initialShortDelay)
           .append(eventualLongDelay, mt.eventualLongDelay)
+          .append(weblogicCredentialsSecretRereadIntervalSeconds, mt.weblogicCredentialsSecretRereadIntervalSeconds)
           .isEquals();
     }
   }
