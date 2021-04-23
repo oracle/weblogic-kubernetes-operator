@@ -12,13 +12,14 @@ on:
   schedule:
     - cron: '15 3 * * 1'
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   publish:
     name: Publish
     runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: true
 
     steps:
       - name: Checkout main
@@ -29,7 +30,6 @@ jobs:
           path: main
 
       - name: Verify changes to documentation present
-        uses: actions/checkout@v2.3.4
         run: |
           cd main
           X=`git diff HEAD~1 --name-only | grep "^documentation" | wc -l`
@@ -42,22 +42,25 @@ jobs:
         run: |
           curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.82.0/hugo_0.82.0_Linux-64bit.tar.gz"
           tar -xf hugo.tar.gz
+          export PATH="$PWD:$PATH"
           rm -rf /tmp/WORK
           mkdir -p $/tmp/WORK
           cd main/code/documentation
           ./publish.sh -o /tmp/WORK
 
-      - name: Checkout and publish to gh-pages
+      - name: Checkout gh-pages
         uses: actions/checkout@v2.3.4
         with:
           ref: gh-pages
           path: gh-pages
+
+      - name: Publish gh-pages
         run: |
           cd gh-pages
           rm -Rf *
           cp -R /tmp/WORK/* .
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Documentation update"
+          git commit -m "Documentation update from publish GitHub Action"
           git push origin gh-pages
