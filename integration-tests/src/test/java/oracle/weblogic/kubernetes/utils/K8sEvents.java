@@ -21,6 +21,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,25 +47,95 @@ public class K8sEvents {
       String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
     return () -> {
-      logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
-      try {
-        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
-        for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason)
-              && (isEqualOrAfter(timestamp, event))) {
-            logger.info(Yaml.dump(event));
-            verifyOperatorDetails(event, opNamespace, domainUid);
-            //verify type
-            logger.info("Verifying domain event type {0}", type);
-            assertTrue(event.getType().equals(type));
+      return domainEventExists(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    };
+  }
+
+  /**
+   * Check if NamespaceWatchingStopped event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param enableClusterRoleBinding whether the enableClusterRoleBinding is set to true of false
+   */
+  public static Callable<Boolean> checkDomainEventWatchingStopped(
+      String opNamespace, String domainNamespace, String domainUid,
+      String type, OffsetDateTime timestamp, boolean enableClusterRoleBinding) {
+    return () -> {
+      if (enableClusterRoleBinding) {
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+          logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+          return true;
+        } else {
+          logger.info("Did not get the {0} event in namespace {1} or {2} event in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+        }
+      } else {
+        if (domainEventExists(opNamespace, domainNamespace, domainUid, NAMESPACE_WATCHING_STOPPED, type, timestamp)
+            && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+          logger.info("Got event {0} in namespace {1} and event {2} in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+          return true;
+        } else {
+          logger.info("Did not get the {0} event in namespace {1} or {2} event in namespace {3}",
+              NAMESPACE_WATCHING_STOPPED, domainNamespace, STOP_MANAGING_NAMESPACE, opNamespace);
+
+          // check if there is a warning message in operator's log
+          String operatorPodName = getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace);
+          String expectedErrorMsg = String.format(
+              "Cannot create or replace NamespaceWatchingStopped event in namespace %s due to an authorization error",
+              domainNamespace);
+          String operatorLog = getPodLog(operatorPodName, opNamespace);
+          if (operatorLog.contains(expectedErrorMsg)
+              && domainEventExists(opNamespace, opNamespace, null, STOP_MANAGING_NAMESPACE, type, timestamp)) {
+            logger.info("Got expected error msg \"{0}\" in operator log and event {1} is logged in namespace {2}",
+                expectedErrorMsg, STOP_MANAGING_NAMESPACE, opNamespace);
             return true;
+          } else {
+            logger.info("Did not get the expected error msg {0} in operator log", expectedErrorMsg);
+            logger.info("Operator log: {0}", operatorLog);
           }
         }
-      } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
       return false;
     };
+  }
+
+  /**
+   * Check if a given event is logged by the operator in the given namespace.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static boolean domainEventExists(
+      String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp) {
+
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify type
+          logger.info("Verifying domain event type {0}", type);
+          assertTrue(event.getType().equals(type));
+          return true;
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return false;
   }
 
   /**
@@ -85,17 +157,14 @@ public class K8sEvents {
       try {
         List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
-          if (event.getReason().equals(reason)
-              && (isEqualOrAfter(timestamp, event))) {
+          if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
             verifyOperatorDetails(event, opNamespace, domainUid);
             //verify type
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
-            assertTrue(countAfter == countBefore + 1, "Event count doesn't match expected event count, "
-                + "Count before is -> " + countBefore + " and count after is -> " + countAfter);
-            return true;
+            return (countAfter == countBefore + 1);
           }
         }
       } catch (ApiException ex) {
@@ -240,6 +309,7 @@ public class K8sEvents {
   public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
+  public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
 
