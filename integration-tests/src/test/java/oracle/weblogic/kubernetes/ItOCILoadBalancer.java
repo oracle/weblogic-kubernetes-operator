@@ -8,21 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Service;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -35,23 +22,15 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getService;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOCILoadBalancer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,14 +50,13 @@ class ItOCILoadBalancer {
   // domain constants
   private static final int replicaCount = 2;
   private static int managedServersCount = 2;
-  private static String domain1Namespace = null;
-  private static String domain1Uid = "lboci-domain-1";
+  private static String domainNamespace = null;
+  private static String domainUid = "lboci-domain";
   private static ConditionFactory withStandardRetryPolicy = null;
 
   // constants for creating domain image using model in image
-  private static final String IMAGE_NAME = "ocilb-image";
   private static final String SAMPLE_APP_NAME = "sample-app";
-  private static String cluster1Name = "cluster-1";
+  private static String clusterName = "cluster-1";
   private static LoggingFacade logger = null;
   private static String loadBalancerIP = null;
   private static final String OCI_LB_NAME = "ocilb";
@@ -104,10 +82,10 @@ class ItOCILoadBalancer {
 
     logger.info("Get a unique namespace for WebLogic domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    domain1Namespace = namespaces.get(1);
+    domainNamespace = namespaces.get(1);
 
     logger.info("install and verify operator");
-    installAndVerifyOperator(opNamespace, domain1Namespace);
+    installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
   @AfterAll
@@ -115,7 +93,7 @@ class ItOCILoadBalancer {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      Kubernetes.deleteService(OCI_LB_NAME, domain1Namespace);
+      Kubernetes.deleteService(OCI_LB_NAME, domainNamespace);
     }
   }
 
@@ -134,15 +112,20 @@ class ItOCILoadBalancer {
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
-    logger.info("Create docker registry secret in namespace {0}", domain1Namespace);
-    createOcirRepoSecret(domain1Namespace);
-    createAndVerifyDomain(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, domain1Namespace, domain1Uid);
+    logger.info("Create docker registry secret in namespace {0}", domainNamespace);
+    createOcirRepoSecret(domainNamespace);
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
+    createMiiDomainAndVerify(domainNamespace,domainUid,
+        MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, adminServerPodName,
+        managedServerPrefix,replicaCount);
+    
     int clusterHttpPort = 8001;
 
-    assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domain1Namespace,
-        clusterHttpPort, cluster1Name, domain1Uid, OCI_LB_NAME),
+    assertDoesNotThrow(() -> installAndVerifyOCILoadBalancer(domainNamespace,
+        clusterHttpPort, clusterName, domainUid, OCI_LB_NAME),
         "Installation of OCI Load Balancer failed");
-    loadBalancerIP = getLoadBalancerIP(domain1Namespace,OCI_LB_NAME);
+    loadBalancerIP = getLoadBalancerIP(domainNamespace,OCI_LB_NAME);
     assertNotNull(loadBalancerIP, "External IP for Load Balancer is undefined");
     logger.info("LoadBalancer IP is " + loadBalancerIP);
     verifyWebAppAccessThroughOCILoadBalancer(loadBalancerIP, 2, clusterHttpPort);
@@ -192,104 +175,5 @@ class ItOCILoadBalancer {
         .withFailMessage("OCI LB can not access the the sample-war app "
             + "from one or more of the managed servers via http")
         .isTrue();
-  }
-
-  private static void createAndVerifyDomain(String miiImage, String domainNamespace, String domainUid) {
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        String.format("create secret for admin credentials failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc"),
-        String.format("create encryption secret failed for %s", encryptionSecretName));
-
-    // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, miiImage, domainNamespace, domainUid);
-
-    // check that admin server pod exists in the domain namespace
-    logger.info("Checking that admin server pod {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check that admin server pod is ready and admin service exists in the domain namespace
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check for managed server pods existence in the domain namespace
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-
-      // check that the managed server pod is ready and the service exists in the domain namespace
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
-    }
-  }
-
-  private static void createDomainCrAndVerify(String adminSecretName,
-                                              String repoSecretName,
-                                              String encryptionSecretName,
-                                              String miiImage,
-                                              String domainNamespace,
-                                              String domainUid) {
-
-
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(cluster1Name)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-    setPodAntiAffinity(domain);
-    // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
   }
 }

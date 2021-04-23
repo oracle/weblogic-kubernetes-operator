@@ -718,11 +718,8 @@ public class CommonTestUtils {
             .sessionAffinity("None")
             .type("LoadBalancer"));
     LoggingFacade logger = getLogger();
-    logger.info("Checking service object not null");
     assertNotNull(service, "Can't create ocilb service, returns null");
-    logger.info("Call to create service object " + loadBalancerName);
     assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
-    logger.info("Check if  service exists " + loadBalancerName);
     checkServiceExists(loadBalancerName,namespace);
 
     // wait until the external IP is generated.
