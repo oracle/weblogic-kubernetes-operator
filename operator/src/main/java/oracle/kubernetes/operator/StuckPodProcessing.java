@@ -116,7 +116,8 @@ public class StuckPodProcessing {
 
     @Nonnull
     private Step readExistingNamespaces() {
-      return mainDelegate.getDomainNamespaces().readExistingResources(namespace, mainDelegate.getDomainProcessor());
+      return mainDelegate.getDomainNamespaces().readExistingResources(
+          namespace, mainDelegate.getDomainProcessor());
     }
 
     private Step createForcedDeletePodStep(V1Pod pod) {

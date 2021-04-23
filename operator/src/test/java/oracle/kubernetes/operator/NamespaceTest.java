@@ -58,7 +58,7 @@ public class NamespaceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final Set<String> currentNamespaces = new HashSet<>();
-  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
