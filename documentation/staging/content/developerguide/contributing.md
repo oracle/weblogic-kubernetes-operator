@@ -1,5 +1,5 @@
 ---
-title: "Contributing to the operator"
+title: "Contribute to the operator"
 date: 2019-02-23T17:19:19-05:00
 draft: false
 weight: 1

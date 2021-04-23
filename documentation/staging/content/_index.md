@@ -1,6 +1,6 @@
 ### Oracle WebLogic Server Kubernetes Operator
 
-The WebLogic Server Kubernetes Operator (the “operator”) supports running any of your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
+The WebLogic Server Kubernetes Operator (the “operator”) supports running your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
 
 Furthermore, the operator is well suited to CI/CD processes. You can easily inject changes when moving between environments, such as from test to production. For example, you can externally inject database URLs and credentials during deployment or you can inject arbitrary changes to most WebLogic configurations.
 
@@ -8,22 +8,21 @@ The operator uses a common set of Kubernetes APIs to provide support for operati
 
 You can:
 * Supply WebLogic domain configuration using:
-  * _Domain in PV_: Locates WebLogic domain homes in a Kubernetes Persistent Volume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
+  * _Domain in PV_: Locates WebLogic domain homes in a Kubernetes PersistentVolume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
   * _Domain in Image_: Includes a WebLogic domain home in a container image.
-  * _Model in Image_: Includes WebLogic Deploy Tooling models and archives in a container image.
+  * _Model in Image_: Includes [WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) models and archives in a container image.
 * Configure deployment of WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 * Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
 * Start and stop servers and clusters in the domain based on declarative startup parameters and desired states.
-* Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
+* Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on the WebLogic Diagnostics Framework (WLDF), Prometheus, Grafana, or other rules.
 * Expose the WebLogic Server Administration Console outside the Kubernetes cluster, if desired.
 * Expose T3 channels outside the Kubernetes domain, if desired.
 * Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and automatically update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
 
-__TBD RM: The tutorial following may be out of date. Doc and runtime (someone should verify that the image references are still good etc.). We should also make clear that the difference is between it and 'quick start'.__
 {{% notice tip %}}
-The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/_index.md" >}}).
-You can also step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/hands-on-lab/README.md)
+The fastest way to experience the operator is to follow the [Quick Start guide]({{< relref "/quickstart/_index.md" >}}), or you can peruse our [documentation]({{< relref "/userguide/_index.md" >}}), read our [blogs](https://blogs.oracle.com/weblogicserver/how-to-weblogic-server-on-kubernetes), or try out the [samples]({{< relref "/samples/simple/_index.md" >}}).
+Also, you can step through the [Tutorial](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/hands-on-lab/README.md)
 using the operator to deploy and run a WebLogic domain container-packaged web application on an Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE) cluster.
 {{% /notice %}}
 
@@ -59,7 +58,7 @@ please consult this table of contents:
 * The [Quick Start guide]({{< relref "/quickstart/_index.md" >}}) explains how to quickly get the operator running, using the defaults, nothing special.
 * The [User guide]({{< relref "/userguide/_index.md" >}}) contains detailed usage information, including how to install and configure the operator,
   and how to use it to create and manage WebLogic domains.  
-* The [Samples]({{< relref "/samples/_index.md" >}}) provide detailed example code and instructions that show you how to perform
+* The [Samples]({{< relref "/samples/simple/_index.md" >}}) provide detailed example code and instructions that show you how to perform
   various tasks related to the operator.
 * The [Developer guide]({{< relref "/developerguide/_index.md" >}}) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to [contribute]({{< relref "/developerguide/contributing.md" >}}) to the operator code will find useful information here.
 * [Reference]({{< relref "/reference/_index.md" >}}) describes domain resource attributes and the operator REST API.
