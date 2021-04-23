@@ -7,6 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
+import oracle.kubernetes.operator.helpers.AuthorizationSource;
+import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -28,7 +30,7 @@ public abstract class HttpResponseStep extends Step {
 
   private NextAction handlePossibleThrowableOrContinue(Packet packet) {
     return Optional.ofNullable(getThrowableResponse(packet))
-        .map(t -> onFailure(packet, null))
+        .map(t -> wrapOnFailure(packet, null))
         .orElse(doNext(packet));
   }
 
@@ -37,7 +39,14 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction doApply(Packet packet, HttpResponse<String> response) {
-    return isSuccess(response) ? onSuccess(packet, response) : onFailure(packet, response);
+    return isSuccess(response) ? onSuccess(packet, response) : wrapOnFailure(packet, response);
+  }
+
+  private NextAction wrapOnFailure(Packet packet, HttpResponse<String> response) {
+    if (response != null && (response.statusCode() == 403 || response.statusCode() == 401)) {
+      Optional.ofNullable(SecretHelper.getAuthorizationSource(packet)).ifPresent(AuthorizationSource::onFailure);
+    }
+    return onFailure(packet, response);
   }
 
   private boolean isSuccess(HttpResponse<String> response) {

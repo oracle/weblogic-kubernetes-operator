@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -698,7 +697,7 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        SemanticVersion currentCrdVersion = getProductVersionFromMetadata(actual.getMetadata());
+        SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(actual.getMetadata());
         if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
           return false;
         }
@@ -721,21 +720,13 @@ public class CrdHelper {
 
       // Check product version label
       if (productVersion != null) {
-        SemanticVersion currentCrdVersion = getProductVersionFromMetadata(actual.getMetadata());
+        SemanticVersion currentCrdVersion = KubernetesUtils.getProductVersionFromMetadata(actual.getMetadata());
         if (currentCrdVersion == null || productVersion.compareTo(currentCrdVersion) < 0) {
           return false;
         }
       }
 
       return !AnnotationHelper.getHash(expected).equals(AnnotationHelper.getHash(actual));
-    }
-
-    private SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
-      return Optional.ofNullable(metadata)
-          .map(V1ObjectMeta::getLabels)
-          .map(labels -> labels.get(LabelConstants.OPERATOR_VERSION))
-          .map(SemanticVersion::new)
-          .orElse(null);
     }
 
     // true, if version is later than base

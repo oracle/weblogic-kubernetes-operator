@@ -17,6 +17,7 @@ import javax.annotation.Nullable;
 
 import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.logging.LoggingContext;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -200,6 +201,17 @@ public class FiberTestSupport {
    *
    * @param nextStep the first step to run
    */
+  public Packet runSteps(StepFactoryWithProductVersion factory, Step nextStep) {
+    fiber = engine.createFiber();
+    fiber.start(factory.createStepList(null, nextStep), packet, completionCallback);
+    return packet;
+  }
+
+  /**
+   * Starts a unit-test fiber with the specified step.
+   *
+   * @param nextStep the first step to run
+   */
   public Packet runSteps(StepFactory factory, Step nextStep) {
     fiber = engine.createFiber();
     fiber.start(factory.createStepList(nextStep), packet, completionCallback);
@@ -231,6 +243,10 @@ public class FiberTestSupport {
   @FunctionalInterface
   public interface StepFactory {
     Step createStepList(Step next);
+  }
+
+  public interface StepFactoryWithProductVersion {
+    Step createStepList(SemanticVersion productVersion, Step next);
   }
 
   abstract static class ScheduledExecutorStub implements ScheduledExecutorService {

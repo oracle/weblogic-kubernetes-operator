@@ -263,7 +263,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
     HelmParams opHelmParams =
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
@@ -282,7 +282,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     int domainPresenceFailureRetryMaxCount,
                                                     int domainPresenceFailureRetrySeconds,
                                                     String... domainNamespace) {
@@ -303,7 +303,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
+  public static OperatorParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
         0, opHelmParams, domainNamespace);
@@ -319,7 +319,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -343,7 +343,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -369,7 +369,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -391,7 +391,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -417,7 +417,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -448,7 +448,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -584,7 +584,7 @@ public class CommonTestUtils {
           .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
               "operator external service is not running"));
     }
-    return opHelmParams;
+    return opParams;
   }
 
   /**
@@ -599,7 +599,7 @@ public class CommonTestUtils {
    *                        (only in case of List selector)
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opReleaseName, String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opReleaseName, String opNamespace,
                                                      String domainNamespaceSelectionStrategy,
                                                      String domainNamespaceSelector,
                                                      boolean enableClusterRoleBinding,
