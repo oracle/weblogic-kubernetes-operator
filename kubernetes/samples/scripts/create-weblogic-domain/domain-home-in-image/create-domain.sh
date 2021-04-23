@@ -34,7 +34,7 @@ function usage {
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -s Skip the domain image build, optional. "
-  echo "  -m mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
+  echo "  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
   echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
   echo "  -h Help"
   exit $1
