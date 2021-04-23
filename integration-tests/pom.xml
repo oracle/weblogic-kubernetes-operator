@@ -295,6 +295,7 @@
                   **/ItOperatorUpgrade,
                   **/ItOperatorRestart,
                   **/ItPodsShutdownOption,
+                  **/ItOCILoadBalancer,
                   **/ItManageNameSpace
                </includes-failsafe>
             </properties>
