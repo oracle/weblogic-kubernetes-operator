@@ -63,7 +63,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorStub dp = createStub(DomainProcessorStub.class);
-  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
 
   @BeforeEach
   public void setUp() throws Exception {
