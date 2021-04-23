@@ -20,8 +20,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -53,9 +51,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies usage of CustomIdentityCustomTrust on PV.
- * Create a MII domain with an attached persistent volume.
+ * Create an MII domain with an attached persistent volume.
  * Configure custom identity and custom trust on server template
- * Donot set the SSL port on server template. The default will be set to 8100.
+ * Don't explicitly set the SSL port on the server template. 
+ * The default will be set to 8100.
  * Put the IdentityKeyStore.jks  and TrustKeyStore.jks on /shared directory 
  *  after administration server pod is started so that it can be accessible 
  *  from all managed server pods
@@ -111,18 +110,20 @@ class ItMiiCustomSslStore {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // create secret for admin credentials
+    // create secret for admin credential with special characters
+    // the resultant password is ##W%*}!"'"`']\\\\//1$$~x 
+    // let the user name be something other than weblogic say wlsadmin
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
+            "wlsadmin", "##W%*}!\"'\"`']\\\\//1$$~x", domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
-    // create encryption secret
+    // create encryption secret with special characters
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-            "weblogicenc", domainNamespace),
+            "#%*!`${ls}'${DOMAIN_UID}1~3x", domainNamespace),
              String.format("createSecret failed for %s", encryptionSecretName));
 
     String configMapName = "mii-ssl-configmap";
@@ -183,7 +184,7 @@ class ItMiiCustomSslStore {
 
   /**
    * Verify a standalone java client can access JNDI Context inside a pod.
-   * The client uses t3s cluster URL with custom SSL TrustStore on commandline  
+   * The client uses t3s cluster URL with custom SSL TrustStore on the command line
    */
   @Test
   @Order(1)

@@ -125,7 +125,7 @@ class ItInitContainers {
 
     opHelmParams = installAndVerifyOperator(opNamespace,
         domain1Namespace, domain2Namespace,
-        domain3Namespace, domain4Namespace);
+        domain3Namespace, domain4Namespace).getHelmParams();
 
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()

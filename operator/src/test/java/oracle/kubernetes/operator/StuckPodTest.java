@@ -186,7 +186,7 @@ public class StuckPodTest {
   abstract static class MainDelegateStub implements MainDelegate {
     private final List<Domain> invocations = new ArrayList<>();
     private final DomainProcessorStub domainProcessor = createStrictStub(DomainProcessorStub.class, this);
-    private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+    private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
     private final KubernetesTestSupport testSupport;
 
     MainDelegateStub(KubernetesTestSupport testSupport) {

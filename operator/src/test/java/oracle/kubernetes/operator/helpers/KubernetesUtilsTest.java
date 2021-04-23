@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.time.OffsetDateTime;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.kubernetes.utils.SystemClock;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.is;
@@ -14,7 +15,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class KubernetesUtilsTest {
 
-  private static final OffsetDateTime startTime = OffsetDateTime.now();
+  private static final OffsetDateTime startTime = SystemClock.now();
   private static final OffsetDateTime time1 = startTime.plusSeconds(1);
   private static final OffsetDateTime time2 = startTime.plusSeconds(2);
 
@@ -47,7 +48,7 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenHaveLargeResourceVersionsAndSameTime_succeedIsFirstNewer() {
-    OffsetDateTime now = OffsetDateTime.now();
+    OffsetDateTime now = SystemClock.now();
 
     // This needs to be a value bigger than 2147483647
     String resVersion = "2733280673";
@@ -61,7 +62,7 @@ public class KubernetesUtilsTest {
 
   @Test
   public void whenHaveNonParsableResourceVersionsAndSameTime_succeedIsFirstNewer() {
-    OffsetDateTime now = OffsetDateTime.now();
+    OffsetDateTime now = SystemClock.now();
 
     String resVersion = "ThisIsNotANumber";
     String differentResVersion = "SomeOtherValueAlsoNotANumber";
