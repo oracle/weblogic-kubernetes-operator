@@ -365,17 +365,18 @@ class ItMiiServiceMigration {
   }
 
   /*
-   * Verify the JMS Server Runtime through rest API.
+   * Verify the JMS Server Runtime through REST API.
    * Get the JMSServer Runtime ClusterJmsServer@managed-server2 found on 
    * specified managed server.
    * @param managedServer name of the managed server to look for JMSServerRuntime
-   * @returns true if MBEAN is found otherwise false
+   * @returns true if MBean is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String managedServer) {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    StringBuffer curlString = new StringBuffer("status=$(curl --user " 
+           + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
@@ -400,19 +401,20 @@ class ItMiiServiceMigration {
   }
 
   /*
-   * Verify the JTA Recovery Service Runtime through rest API.
+   * Verify the JTA Recovery Service Runtime through REST API.
    * Get the JTA Recovery Service Runtime for a server on a 
    * specified managed server.
    * @param managedServer name of the server to look for RecoveyServerRuntime
    * @param recoveryService name of RecoveyServerRuntime (managed server) 
    * @param active is the recovery active (true or false )
-   * @returns true if MBEAN is found otherwise false
+   * @returns true if MBean is found otherwise false
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    StringBuffer curlString = new StringBuffer("curl --user " 
+           + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
