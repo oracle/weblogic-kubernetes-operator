@@ -53,14 +53,12 @@ The operator does not specify how a WebLogic domain home configuration is create
 
 **Q:** How is communication from outside the Kubernetes cluster handled?
 
-**A:** HTTP communication to your applications from locations outside the cluster is typically accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you). For example, see the Quick Start, [Install the operator and ingress controller]({{< relref "/quickstart/install.md" >}}).
-
-RMI communication with locations outside of the Kubernetes cluster is typically accomplished by deploying a load balancer or using Kubernetes Node Ports. See [External WebLogic clients]({{< relref "/faq/external-clients.md" >}}).
-
-* Access to arbitrary HTTP applications through a load balancer.  See [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
-* Access the WebLogic Server Administration Console through a load balancer.  See the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
-* Access the WebLogic Server Administration Console through a Kubernetes NodePort service.  Run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
-* WebLogic Server Remote Console communication is accomplished by using a load balancer. See [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
+**A:**
+* _HTTP communication to your applications from locations outside the cluster:_  Typically, this is accomplished by deploying a load balancer that redirects traffic to your domain's Kubernetes services (the operator automatically deploys these services for you).  See [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}).
+For an example, see the Quick Start, [Install the operator and ingress controller]({{< relref "/quickstart/install.md" >}}).
+* _JMS, EJB, and other types of RMI communication with locations outside of the Kubernetes cluster:_  This is typically accomplished by tunneling the RMI traffic over HTTP through a load balancer or, less commonly accomplished by using T3 or T3S directly with Kubernetes NodePorts. See [External WebLogic clients]({{< relref "/faq/external-clients.md" >}}).
+* _Access the WebLogic Server Administration Console_:  This can be done through a load balancer, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service, run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
+* _Access the WebLogic Server Remote Console_: This can be done using a load balancer or Kubernetes NodePort service. See [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
