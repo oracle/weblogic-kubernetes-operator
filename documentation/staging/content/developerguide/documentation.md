@@ -9,13 +9,13 @@ This documentation is produced using [Hugo](http://gohugo.io).  To make an
 update to the documentation, follow this process:
 
 1. If you have not already done so, clone the repository.
-   
+
     ```shell
     $ git clone https://github.com/oracle/weblogic-kubernetes-operator
     ```
 
 2. Create a new branch.
-   
+
     ```shell
     $ git checkout -b your-branch
     ```
@@ -37,5 +37,5 @@ these commands. The site will be available on the URL shown here:
 
 5. When you are ready to submit your changes, push your branch to `origin`
 and submit a pull request. Remember to follow the guidelines in the
-[CONTRIBUTING](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/CONTRIBUTING.md)
+[Contribute to the operator]({{< relref "/developerguide/contributing.md" >}})
 document.
