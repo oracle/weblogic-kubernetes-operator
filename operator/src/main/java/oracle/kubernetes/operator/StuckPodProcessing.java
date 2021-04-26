@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
@@ -25,6 +26,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 
+import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
 import static oracle.kubernetes.operator.logging.MessageKeys.POD_FORCE_DELETED;
 
 /**
@@ -44,7 +46,7 @@ public class StuckPodProcessing {
     Step step = new CallBuilder()
           .withLabelSelectors(LabelConstants.getCreatedByOperatorSelector())
           .listPodAsync(namespace, new PodListProcessing(namespace, SystemClock.now()));
-    mainDelegate.runSteps(step);
+    mainDelegate.runSteps(Main.createPacketWithLoggingContext(namespace), step, null);
   }
 
   @SuppressWarnings("unchecked")
@@ -124,7 +126,7 @@ public class StuckPodProcessing {
       return new CallBuilder()
             .withGracePeriodSeconds(0)
             .deletePodAsync(getName(pod), getNamespace(pod), getDomainUid(pod), null,
-                  new ForcedDeleteResponseStep(getName(pod), getNamespace(pod)));
+                  new ForcedDeleteResponseStep(getName(pod), getNamespace(pod), getDomainUid(pod)));
     }
 
     private String getName(V1Pod pod) {
@@ -144,15 +146,20 @@ public class StuckPodProcessing {
 
     private final String name;
     private final String namespace;
+    private final String domainUID;
 
-    public ForcedDeleteResponseStep(String name, String namespace) {
+    public ForcedDeleteResponseStep(String name, String namespace, String domainUID) {
       this.name = name;
       this.namespace = namespace;
+      this.domainUID = domainUID;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<Object> callResponse) {
-      LOGGER.info(POD_FORCE_DELETED, name, namespace);
+      try (LoggingContext ignored =
+               setThreadContext().namespace(namespace).domainUid(domainUID)) {
+        LOGGER.info(POD_FORCE_DELETED, name, namespace);
+      }
       return super.onSuccess(packet, callResponse);
     }
   }
