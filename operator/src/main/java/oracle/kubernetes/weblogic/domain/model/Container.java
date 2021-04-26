@@ -64,7 +64,7 @@ public class Container {
   }
 
   public String getName() {
-    return name;
+    return Optional.ofNullable(name).orElse(INIT_CONTAINER_NAME_PREFIX);
   }
 
   public Container name(String name) {
