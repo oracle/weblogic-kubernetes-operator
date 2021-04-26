@@ -198,7 +198,7 @@ public class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.2.0 to latest.
+   * Operator upgrade from 3.2.1 to latest.
    */
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.1 to develop")
