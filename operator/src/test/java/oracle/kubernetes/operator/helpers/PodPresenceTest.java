@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.hamcrest.junit.MatcherAssert;
@@ -66,7 +67,7 @@ public class PodPresenceTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
-  private OffsetDateTime clock = OffsetDateTime.now();
+  private OffsetDateTime clock = SystemClock.now();
   private final Packet packet = new Packet();
   private final V1Pod pod =
       new V1Pod()

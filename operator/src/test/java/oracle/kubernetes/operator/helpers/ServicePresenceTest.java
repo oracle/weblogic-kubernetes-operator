@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -59,7 +60,7 @@ public class ServicePresenceTest {
   private final DomainProcessorImpl processor =
       new DomainProcessorImpl(createStrictStub(DomainProcessorDelegate.class));
   private final Packet packet = new Packet();
-  private OffsetDateTime clock = OffsetDateTime.now();
+  private OffsetDateTime clock = SystemClock.now();
 
   @BeforeEach
   public void setUp() throws Exception {

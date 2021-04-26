@@ -38,7 +38,7 @@ public class SystemClockTestSupport {
   }
 
   static class TestSystemClock extends SystemClock {
-    private final OffsetDateTime testStartTime = OffsetDateTime.now();
+    private final OffsetDateTime testStartTime = SystemClock.now();
     private OffsetDateTime currentTime = testStartTime;
 
     @Override

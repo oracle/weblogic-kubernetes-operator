@@ -3,13 +3,13 @@
 
 package oracle.kubernetes.operator;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -44,7 +44,7 @@ public class DomainProcessorTestSetup {
    * @return the original metadata object, updated
    */
   private static V1ObjectMeta withTimestamps(V1ObjectMeta meta) {
-    return meta.creationTimestamp(OffsetDateTime.now()).resourceVersion("1");
+    return meta.creationTimestamp(SystemClock.now()).resourceVersion("1");
   }
 
   /**

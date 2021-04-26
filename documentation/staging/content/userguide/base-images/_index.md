@@ -1,19 +1,21 @@
 ---
-title: "Base images"
+title: "WebLogic Server images"
 date: 2019-02-23T16:45:55-05:00
-weight: 1
-description: "Creating or obtaining WebLogic Server images."
+weight: 4
+description: "Create or obtain WebLogic Server images."
 ---
 
 #### Contents
 
-* [Creating or obtaining WebLogic Server images](#creating-or-obtaining-weblogic-server-images)
-* [Setting up secrets to access the Oracle Container Registry](#setting-up-secrets-to-access-the-oracle-container-registry)
-* [Obtaining standard images from the Oracle Container Registry](#obtaining-standard-images-from-the-oracle-container-registry)
-* [Creating a custom image with patches applied](#creating-a-custom-image-with-patches-applied)
-* [Creating a custom image with your domain inside the image](#creating-a-custom-image-with-your-domain-inside-the-image)
+* [Create or obtain WebLogic Server images](#create-or-obtain-weblogic-server-images)
+* [Set up secrets to access the Oracle Container Registry](#set-up-secrets-to-access-the-oracle-container-registry)
+* [Obtain standard images from the Oracle Container Registry](#obtain-standard-images-from-the-oracle-container-registry)
+* [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
+* [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
+* [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain)
 
-#### Creating or obtaining WebLogic Server images
+
+#### Create or obtain WebLogic Server images
 
 You will need container images to run your WebLogic domains in Kubernetes.
 There are two main options available:
@@ -24,15 +26,15 @@ There are two main options available:
   and the domain directory.
 
 If you want to use the first option, then you will need to obtain the standard
-WebLogic Server image from the Oracle Container Registry; see [Obtaining standard images from the Oracle Container Registry](#obtaining-standard-images-from-the-oracle-container-registry).
-This image already contains the mandatory patches applied, as described in [Creating a custom image with patches applied](#creating-a-custom-image-with-patches-applied).
+WebLogic Server image from the Oracle Container Registry; see [Obtain standard images from the Oracle Container Registry](#obtain-standard-images-from-the-oracle-container-registry).
+This image already contains the mandatory patches applied, as described in [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied).
 If you want to use additional patches, you can customize that process to include additional patches.
 
 If you want to use the second option, which includes the domain directory
 inside the image, then you will need to build your own images,
-as described in [Creating a custom image with your domain inside the image](#creating-a-custom-image-with-your-domain-inside-the-image).
+as described in [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image).
 
-#### Setting up secrets to access the Oracle Container Registry
+#### Set up secrets to access the Oracle Container Registry
 
 {{% notice note %}}
 This version of the operator requires WebLogic Server 12.2.1.3.0 plus patch 29135930; the standard image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, already includes this patch pre-applied. Images for WebLogic Server 12.2.1.4.0 do not require any patches.
@@ -54,7 +56,7 @@ In this command, replace the uppercase items with the appropriate values. The `S
 It may be preferable to manually pull the image in advance, on each Kubernetes worker node, as described in the next section.
 If you choose this approach, you do not require the Kubernetes Secret.
 
-#### Obtaining standard images from the Oracle Container Registry
+#### Obtain standard images from the Oracle Container Registry
 
 The Oracle Container Registry contains images for licensed commercial Oracle software products that you may use in your enterprise. To access the Oracle Registry Server, you must have an Oracle Single Sign-On (SSO) account. The Oracle Container Registry provides a web interface that allows an administrator to authenticate and then to select the images for the software that your organization wishes to use. Oracle Standard Terms and Restrictions terms must be agreed to using the web interface. After the Oracle Standard Terms and Restrictions have been accepted, you can pull images of the software from the Oracle Container Registry using the standard `docker pull` command.
 
@@ -83,10 +85,9 @@ If desired, you can:
 
 * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.4 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`
 
-Additional information about using this image is available on the
-Oracle Container Registry.
+Additional information about using this image is available in the Oracle Container Registry.
 
-#### Creating a custom image with patches applied
+#### Create a custom image with patches applied
 
 The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
 This patch has some prerequisite patches that will also need to be applied. The WebLogic Server 12.2.1.4.0 image does not require any patches. To create and customize the WebLogic Server image,
@@ -131,24 +132,90 @@ to build the image and apply the patches.
     ```shell
     $ docker images
     ```
-
-
-#### Creating a custom image with your domain inside the image
+#### Create a custom image with your domain inside the image
 
 You can also create an image with the WebLogic domain inside the image.
 [Samples]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}})
 are provided that demonstrate how to create the image using either:
 
 * WLST to define the domain, or
-* [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
-  to define the domain.
+* [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) to define the domain.
 
 In these samples, you will see a reference to a "base" or `FROM` image.  You should use an image
 with the mandatory patches installed as this base image.  This image could be either
 the standard `container-registry.oracle.com/middleware/weblogic:12.2.1.3` pre-patched image or an image you created using the instructions above.
 WebLogic Server 12.2.1.4.0 images do not require patches.
 
-{{% notice note %}}
-Oracle recommends that images containing WebLogic domains
-be kept in a private repository.
+{{% notice warning %}}
+Oracle strongly recommends storing a domain image as private in the registry.
+A container image that contains a WebLogic domain home has sensitive information
+including keys and credentials that are used to access external resources
+(for example, the data source password). For more information, see
+[WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
 {{% /notice %}}
+
+
+
+#### Apply patched images to a running domain
+
+When updating the WebLogic binaries of a running domain in Kubernetes with a patched container image,
+the operator applies the update in a zero downtime fashion. The procedure for the operator
+to update the running domain differs depending on the [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). One
+difference between the domain home source types is the location of the domain home:
+
+* Domain in PV: The container image contains the JDK and WebLogic Server binaries. The domain home is located in a Persistent Volume (PV).
+* Model in Image: The container image contains the JDK, WebLogic Server binaries, and a [WebLogic Deployment Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) installation, WDT model file, and application archive file.
+* Domain in Image: The container image contains the JDK, WebLogic Server binaries, and domain home.   
+
+For Domain in PV, the operator can apply the update to the running domain without modifying the patched container image. For Model in Image (MII) and Domain in Image,
+before the operator can apply the update, the patched container images must be modified to add the domain home or a
+WDT model and archive. You use WebLogic Image Tool (WIT) [Rebase Image](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md)
+to update the Oracle Home of the original image using the patched Oracle Home from a patched container image.
+
+In all three domain home source types, you edit the [Domain Resource]({{< relref "/userguide/managing-domains/domain-resource#domain-resource-attribute-references" >}})
+to inform the operator of the name of the new patched image so that it can manage the update of the WebLogic domain.
+
+For a broader description of managing the evolution and mutation of container images to run WebLogic Server in Kubernetes, see [CI/CD]({{< relref "/userguide/cicd/_index.md" >}}).
+
+##### Domain in PV
+
+Edit the Domain Resource image reference with the new image name/tag (for example, `oracle/weblogic:12.2.1.4-patched`).
+Then, the operator performs a [rolling restart]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
+of the WebLogic domain to update the Oracle Home of the servers.
+For information on server restarts, see [Restarting]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md" >}}).
+
+##### Model in Image
+Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command
+to update the Oracle Home for an existing image with the model and archive files in the image using the patched Oracle Home from a
+patched container image. Then, the operator performs a [rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
+of the domain, updating the Oracle Home of each server pod.
+
+
+Example: WIT copies a WDT model and WDT archive from the source image, `mydomain:v1`, 
+to a new image, `mydomain:v2`, based on a target image named `oracle/weblogic:generic-12.2.1.4.0-patched`. 
+
+**Note**: Oracle Home and the JDK must be installed in the same directories on each image.
+
+
+```shell
+$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:generic-12.2.1.4.0-patched  --wdtModelOnly
+```
+
+Then, edit the Domain Resource image reference with the new image name/tag (`mydomain:2`).
+
+##### Domain in Image
+Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command to update the Oracle Home
+for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a
+[rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}) of the domain,
+updating the Oracle Home of each server pod.
+
+Example: WIT copies the domain from the source image, `mydomain:v1`, to a new image, `mydomain:v2`, based on a target
+image named `oracle/weblogic:12.2.1.4-patched`.
+
+**Note**: Oracle Home and the JDK must be installed in the same directories on each image.
+
+```shell
+$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:12.2.1.4-patched
+```
+
+Then, edit the Domain Resource image reference with the new image name/tag (`mydomain:2`).
