@@ -147,11 +147,11 @@ public class CommonMount {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(containers, rhs.containers)
-            .append(mountPath, rhs.getMountPath())
-            .append(emptyDirVolumeName, rhs.getEmptyDirVolumeName())
+            .append(mountPath, rhs.mountPath)
+            .append(emptyDirVolumeName, rhs.emptyDirVolumeName)
             .append(medium, rhs.medium)
             .append(sizeLimit, rhs.sizeLimit)
-            .append(targetPath, rhs.getTargetPath());
+            .append(targetPath, rhs.targetPath);
 
     return builder.isEquals();
   }

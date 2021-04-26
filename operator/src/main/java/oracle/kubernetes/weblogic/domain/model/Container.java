@@ -64,7 +64,7 @@ public class Container {
   }
 
   public String getName() {
-    return Optional.ofNullable(name).orElse(INIT_CONTAINER_NAME_PREFIX);
+    return name;
   }
 
   public Container name(String name) {
@@ -110,8 +110,8 @@ public class Container {
             new EqualsBuilder()
                     .append(image, rhs.image)
                     .append(imagePullPolicy, rhs.imagePullPolicy)
-                    .append(name, rhs.getName())
-                    .append(command, rhs.getCommand());
+                    .append(name, rhs.name)
+                    .append(command, rhs.command);
 
     return builder.isEquals();
   }
