@@ -838,6 +838,60 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
+  public void withNamespaceList_changeToDedicatedAfterReadExistingNSs_onRecheck_nsWatchStoppedEventCreated() {
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    recheckDomains();
+
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STOPPED, Collections.singletonList("NS1")), is(true));
+  }
+
+  @Test
+  public void withNamespaceList_changeToDedicatedAfterReadExistingNSs_onRecheck_nsWatchStartedEventCreatedInOpNS() {
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    recheckDomains();
+
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STARTED, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
+  public void withNamespaceList_changeToDedicatedAfterReadExistingNSs_onRecheck_StartManagingNSEventCreatedInOpNS() {
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    recheckDomains();
+
+    assertThat("Found START_MANAGING_NAMESPACE event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            START_MANAGING_NAMESPACE, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
   public void withNamespaceLabelSelector_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
@@ -1001,32 +1055,77 @@ public class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void withNamespaceDedicated_onCreateStartNamespacesStep_nsWatchStartedEventCreatedWithExpectedMessage() {
+  public void withNamespaceDedicated_onRecheckDomains_nsWatchStartedEventCreatedWithExpectedMessage() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
-    List<String> namespaces = Collections.singletonList(OP_NS);
-    testSupport.runSteps(
-        createDomainRecheck().createStartNamespacesStep(namespaces));
+    recheckDomains();
 
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
-            NAMESPACE_WATCHING_STARTED, namespaces), is(true));
+            NAMESPACE_WATCHING_STARTED, Collections.singletonList(OP_NS)), is(true));
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message for all namespaces",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
-            START_MANAGING_NAMESPACE, namespaces), is(true));
+            START_MANAGING_NAMESPACE, Collections.singletonList(OP_NS)), is(true));
   }
 
   @Test
-  public void withNamespaceDedicated_onCreateStartNamespacesStep_startManagingNSEventCreatedWithExpectedMessage() {
+  public void withNamespaceDedicated_onRecheckDomains_startManagingNSEventCreatedWithExpectedMessage() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
-    List<String> namespaces = Arrays.asList(OP_NS);
-    testSupport.runSteps(
-        createDomainRecheck().createStartNamespacesStep(namespaces));
+    recheckDomains();
 
     assertThat("Found START_MANAGING_NAMESPACE event with expected message for all namespaces",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
-            START_MANAGING_NAMESPACE, namespaces), is(true));
+            START_MANAGING_NAMESPACE, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
+  public void withNamespaceDedicated_changeToListAfterRecheck_onReadExistingNSs_nsWatchStoppedEventCreatedInOpNS() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    recheckDomains();
+
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STOPPED, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
+  public void withNamespaceDedicated_changeToListAfterRecheck_onReadingExistingNSs_nsWatchStartedEventCreated() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    recheckDomains();
+
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            NAMESPACE_WATCHING_STARTED, Collections.singletonList("NS1")), is(true));
+  }
+
+  @Test
+  public void withNamespaceDedicated_changeToListAfterRecheck_onReadingExistingNSs_StartManagingNSEventCreated() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    recheckDomains();
+
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    testSupport.runSteps(createDomainRecheck().readExistingNamespaces());
+
+    assertThat("Found START_MANAGING_NAMESPACE event with expected message",
+        containsEventWithMessageForNamespaces(getEvents(testSupport),
+            START_MANAGING_NAMESPACE, Collections.singletonList("NS1")), is(true));
   }
 
   abstract static class MainDelegateStub implements MainDelegate {
