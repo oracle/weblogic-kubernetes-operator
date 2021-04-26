@@ -198,28 +198,25 @@ function initialize {
 function createDomainHome {
 
   if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then
-    echo "WIT_DIR is ${WIT_DIR}"
+    echo @@ "Info: WIT_DIR is ${WIT_DIR}"
 
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
 
     if [ "${mode}" == "wdt" ] && [ -n "${wdtEncryptKey}" ]; then
-      echo "An encryption key is provided, encrypting passwords in WDT properties file"
+      echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
       wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
       echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
       encrypt_model ${createDomainWdtModel} "${wdtEncryptionKeyFile}" || exit 1
     fi
 
-    echo "dumping output of ${domainPropertiesOutput}"
-    cat ${domainPropertiesOutput}
-
-    echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
+    echo @@ "Info: Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
     if [ "${mode}" == "wlst" ]; then
       additionalBuildCommandsOutput="${domainOutputDir}/additional-build-commands"
       additionalBuildCommandsTemplate="wlst/additional-build-commands-template"
 
       # Generate the additional-build-commands file that will be used when creating the weblogic domain
-      echo "Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
+      echo @@ "Info: Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
 
       cp ${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
       sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
@@ -239,6 +236,9 @@ function createDomainHome {
           --chown=oracle:root
         "
     else
+      echo @@ "Info: dumping output of ${domainPropertiesOutput}"
+      sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g' ${domainPropertiesOutput}
+
       cmd="
       $WIT_DIR/imagetool/bin/imagetool.sh update
         --fromImage \"$domainHomeImageBase\"
