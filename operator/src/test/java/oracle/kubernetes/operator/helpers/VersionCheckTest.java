@@ -54,9 +54,9 @@ public class VersionCheckTest {
           Arguments.of(LOG_MSG_TEST, "1", "12", "2", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
           Arguments.of(LOG_MSG_TEST, "1", "14", "8", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
           Arguments.of(LOG_MSG_TEST, "1", "15", "7", containsWarning(K8S_VERSION_TOO_LOW), noIgnores()),
-          Arguments.of(VERSION_TEST, "1", "16", "1", returnsVersion(1, 16), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(VERSION_TEST, "1", "17", "2", returnsVersion(1, 17), ignoring(K8S_VERSION_CHECK)),
-          Arguments.of(VERSION_TEST, "1", "18", "0", returnsVersion(1, 18), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "16", "15", returnsVersion(1, 16), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "17", "13", returnsVersion(1, 17), ignoring(K8S_VERSION_CHECK)),
+          Arguments.of(VERSION_TEST, "1", "18", "10", returnsVersion(1, 18), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(VERSION_TEST, "2", "7", "", returnsVersion(2, 7), ignoring(K8S_VERSION_CHECK)),
           Arguments.of(LOG_MSG_TEST, "2", "", "", containsInfo(K8S_VERSION_CHECK), noIgnores())
         );
