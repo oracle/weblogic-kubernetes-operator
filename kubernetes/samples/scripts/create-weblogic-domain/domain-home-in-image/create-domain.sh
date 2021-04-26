@@ -26,15 +26,15 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-v] [-n] [-m] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-m wdt\|wlst] [-s] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the image for WebLogic domain in image."
   echo "  -p Password used in building the image for WebLogic domain in image."
+  echo "  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -s Skip the domain image build, optional. "
-  echo "  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
   echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
   echo "  -h Help"
   exit $1
