@@ -93,7 +93,7 @@ public class ReadHealthStep extends Step {
     } else {
       return doNext(
             Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 new ReadHealthWithHttpStep(service, info.getServerPod(serverName), getNext())),
             packet);
     }

@@ -262,7 +262,8 @@ public class ItTwoDomainsLoadBalancers {
     nginxNamespace = namespaces.get(6);
 
     // install and verify operator
-    operatorHelmParams = installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace);
+    operatorHelmParams =
+        installAndVerifyOperator(opNamespaces.get(0), domainNamespaces.get(0), defaultNamespace).getHelmParams();
     installAndVerifyOperator(opNamespaces.get(1), domainNamespaces.get(1));
 
     // initiate domainUid list for two domains
@@ -783,141 +784,145 @@ public class ItTwoDomainsLoadBalancers {
    */
   @AfterAll
   public void tearDownAll() {
-    // uninstall Traefik loadbalancer
-    if (traefikHelmParams != null) {
-      assertThat(uninstallTraefik(traefikHelmParams))
-          .as("Test uninstallTraefik returns true")
-          .withFailMessage("uninstallTraefik() did not return true")
-          .isTrue();
-    }
-
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
-    }
-
-    // uninstall Apache
-    if (apacheHelmParams1 != null) {
-      assertThat(uninstallApache(apacheHelmParams1))
-          .as("Test whether uninstallApache in domain1Namespace returns true")
-          .withFailMessage("uninstallApache() in domain1Namespace did not return true")
-          .isTrue();
-    }
-
-    if (apacheHelmParams2 != null) {
-      assertThat(uninstallApache(apacheHelmParams2))
-          .as("Test whether uninstallApache in default namespace returns true")
-          .withFailMessage("uninstallApache() in default namespace did not return true")
-          .isTrue();
-    }
-
-    // uninstall NGINX
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
-
-    // uninstall operator which manages default namespace
-    logger.info("uninstalling operator which manages default namespace");
-    if (operatorHelmParams != null) {
-      assertThat(uninstallOperator(operatorHelmParams))
-          .as("Test uninstallOperator returns true")
-          .withFailMessage("uninstallOperator() did not return true")
-          .isTrue();
-    }
-
-    for (int i = 1; i <= numberOfDomains; i++) {
-      String domainUid = domainUids.get(i - 1);
-      // delete domain
-      logger.info("deleting domain custom resource {0}", domainUid);
-      assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
-
-      // wait until domain was deleted
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                      + "(elapsed time {2}ms, remaining time {3}ms)",
-                  domainUid,
-                  defaultNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
-
-      // delete configMap in default namespace
-      logger.info("deleting configMap {0}", "create-domain" + i + "-scripts-cm");
-      assertTrue(deleteConfigMap("create-domain" + i + "-scripts-cm", defaultNamespace));
-    }
-
-    // delete configMap weblogic-scripts-cm in default namespace
-    logger.info("deleting configMap weblogic-scripts-cm");
-    assertTrue(deleteConfigMap("weblogic-scripts-cm", defaultNamespace));
-
-    // Delete jobs
-    try {
-      for (var item :listJobs(defaultNamespace).getItems()) {
-        if (item.getMetadata() != null) {
-          deleteJob(item.getMetadata().getName(), defaultNamespace);
-        }
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      // uninstall Traefik loadbalancer
+      if (traefikHelmParams != null) {
+        assertThat(uninstallTraefik(traefikHelmParams))
+            .as("Test uninstallTraefik returns true")
+            .withFailMessage("uninstallTraefik() did not return true")
+            .isTrue();
       }
 
-      for (var item : listPods(defaultNamespace, null).getItems()) {
-        if (item.getMetadata() != null) {
-          deletePod(item.getMetadata().getName(), defaultNamespace);
-        }
+      // uninstall Voyager
+      if (voyagerHelmParams != null) {
+        assertThat(uninstallVoyager(voyagerHelmParams))
+            .as("Test uninstallVoyager returns true")
+            .withFailMessage("uninstallVoyager() did not return true")
+            .isTrue();
       }
-    } catch (ApiException ex) {
-      logger.warning(ex.getMessage());
-      logger.warning("Failed to delete jobs");
-    }
 
-    // delete pv and pvc in default namespace
-    logger.info("deleting pvc {0}", defaultSharingPvcName);
-    assertTrue(deletePersistentVolumeClaim(defaultSharingPvcName, defaultNamespace));
-    logger.info("deleting pv {0}", defaultSharingPvName);
-    assertTrue(deletePersistentVolume(defaultSharingPvName));
-    logger.info("deleting pvc {0}", apachePvcName);
-    assertTrue(deletePersistentVolumeClaim(apachePvcName, defaultNamespace));
-    logger.info("deleting pv {0}", apachePvName);
-    assertTrue(deletePersistentVolume(apachePvName));
+      // uninstall Apache
+      if (apacheHelmParams1 != null) {
+        assertThat(uninstallApache(apacheHelmParams1))
+            .as("Test whether uninstallApache in domain1Namespace returns true")
+            .withFailMessage("uninstallApache() in domain1Namespace did not return true")
+            .isTrue();
+      }
 
-    // delete ingressroute in namespace
-    if (dstFile != null) {
-      String command = "kubectl delete" + " -f " + dstFile;
+      if (apacheHelmParams2 != null) {
+        assertThat(uninstallApache(apacheHelmParams2))
+            .as("Test whether uninstallApache in default namespace returns true")
+            .withFailMessage("uninstallApache() in default namespace did not return true")
+            .isTrue();
+      }
 
-      logger.info("Running {0}", command);
+      // uninstall NGINX
+      if (nginxHelmParams != null) {
+        assertThat(uninstallNginx(nginxHelmParams))
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
+      }
+
+      // uninstall operator which manages default namespace
+      logger.info("uninstalling operator which manages default namespace");
+      if (operatorHelmParams != null) {
+        assertThat(uninstallOperator(operatorHelmParams))
+            .as("Test uninstallOperator returns true")
+            .withFailMessage("uninstallOperator() did not return true")
+            .isTrue();
+      }
+
+      for (int i = 1; i <= numberOfDomains; i++) {
+        String domainUid = domainUids.get(i - 1);
+        // delete domain
+        logger.info("deleting domain custom resource {0}", domainUid);
+        assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
+
+        // wait until domain was deleted
+        withStandardRetryPolicy
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                        + "(elapsed time {2}ms, remaining time {3}ms)",
+                    domainUid,
+                    defaultNamespace,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
+
+        // delete configMap in default namespace
+        logger.info("deleting configMap {0}", "create-domain" + i + "-scripts-cm");
+        assertTrue(deleteConfigMap("create-domain" + i + "-scripts-cm", defaultNamespace));
+      }
+
+      // delete configMap weblogic-scripts-cm in default namespace
+      logger.info("deleting configMap weblogic-scripts-cm");
+      assertTrue(deleteConfigMap("weblogic-scripts-cm", defaultNamespace));
+
+      // Delete jobs
       try {
-        ExecResult result = ExecCommand.exec(command, true);
-        String response = result.stdout().trim();
-        logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
-            result.exitValue(), response, result.stderr());
-        assertEquals(0, result.exitValue(), "Command didn't succeed");
-      } catch (IOException | InterruptedException ex) {
-        logger.severe(ex.getMessage());
-      }
-    }
+        for (var item : listJobs(defaultNamespace).getItems()) {
+          if (item.getMetadata() != null) {
+            deleteJob(item.getMetadata().getName(), defaultNamespace);
+          }
+        }
 
-    // delete ingress in default namespace
-    try {
-      for (String ingressname : listIngresses(defaultNamespace)) {
-        logger.info("deleting ingress {0}", ingressname);
-        deleteIngress(ingressname, defaultNamespace);
+        for (var item : listPods(defaultNamespace, null).getItems()) {
+          if (item.getMetadata() != null) {
+            deletePod(item.getMetadata().getName(), defaultNamespace);
+          }
+        }
+      } catch (ApiException ex) {
+        logger.warning(ex.getMessage());
+        logger.warning("Failed to delete jobs");
       }
-    } catch (ApiException apiEx) {
-      logger.severe(apiEx.getResponseBody());
-    }
 
-    // delete secret in default namespace
-    for (V1Secret secret : listSecrets(defaultNamespace).getItems()) {
-      if (secret.getMetadata() != null) {
-        String secretName = secret.getMetadata().getName();
-        if (secretName != null && !secretName.startsWith("default")) {
-          logger.info("deleting secret {0}", secretName);
-          assertTrue(deleteSecret(secretName, defaultNamespace));
+      // delete pv and pvc in default namespace
+      logger.info("deleting pvc {0}", defaultSharingPvcName);
+      assertTrue(deletePersistentVolumeClaim(defaultSharingPvcName, defaultNamespace));
+      logger.info("deleting pv {0}", defaultSharingPvName);
+      assertTrue(deletePersistentVolume(defaultSharingPvName));
+      logger.info("deleting pvc {0}", apachePvcName);
+      assertTrue(deletePersistentVolumeClaim(apachePvcName, defaultNamespace));
+      logger.info("deleting pv {0}", apachePvName);
+      assertTrue(deletePersistentVolume(apachePvName));
+
+      // delete ingressroute in namespace
+      if (dstFile != null) {
+        String command = "kubectl delete" + " -f " + dstFile;
+
+        logger.info("Running {0}", command);
+        try {
+          ExecResult result = ExecCommand.exec(command, true);
+          String response = result.stdout().trim();
+          logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+              result.exitValue(), response, result.stderr());
+          assertEquals(0, result.exitValue(), "Command didn't succeed");
+        } catch (IOException | InterruptedException ex) {
+          logger.severe(ex.getMessage());
+        }
+      }
+
+      // delete ingress in default namespace
+      try {
+        for (String ingressname : listIngresses(defaultNamespace)) {
+          logger.info("deleting ingress {0}", ingressname);
+          deleteIngress(ingressname, defaultNamespace);
+        }
+      } catch (ApiException apiEx) {
+        logger.severe(apiEx.getResponseBody());
+      }
+
+      // delete secret in default namespace
+      for (V1Secret secret : listSecrets(defaultNamespace).getItems()) {
+        if (secret.getMetadata() != null) {
+          String secretName = secret.getMetadata().getName();
+          if (secretName != null && !secretName.startsWith("default")) {
+            logger.info("deleting secret {0}", secretName);
+            assertTrue(deleteSecret(secretName, defaultNamespace));
+          }
         }
       }
     }

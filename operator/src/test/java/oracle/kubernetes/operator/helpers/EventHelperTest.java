@@ -668,6 +668,34 @@ public class EventHelperTest {
   }
 
   @Test
+  public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
+
+    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    dispatchAddedEventWatches();
+    testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
+
+    assertThat("Found 1 NAMESPACE_WATCHING_STOPPED event with expected count 1",
+        containsOneEventWithCount(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_foundExpectedLogMessage() {
+    loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
+
+    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
+    dispatchAddedEventWatches();
+    testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_FORBIDDEN);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
+
+    assertThat(logRecords, containsInfo(CREATING_EVENT_FORBIDDEN, NAMESPACE_WATCHING_STOPPED_EVENT, NS));
+  }
+
+  @Test
   public void whenCreateEventStepCalledForNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",

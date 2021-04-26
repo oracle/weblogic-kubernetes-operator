@@ -63,7 +63,7 @@ public class MonitorExporterSteps {
           return getNext();
         } else {
           return Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 RunInParallel.perServer(serverNames, ConfigurationVerificationStartStep::new));
         }
       }

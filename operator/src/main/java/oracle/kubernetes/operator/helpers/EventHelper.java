@@ -24,6 +24,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
@@ -195,9 +196,7 @@ public class EventHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        if (isForbiddenForNamespaceWatchingStoppedEvent(callResponse)) {
-          LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN,
-              eventData.eventItem.getReason(), eventData.getNamespace());
+        if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
 
@@ -250,6 +249,9 @@ public class EventHelper {
       @Override
       public NextAction onFailure(Packet packet, CallResponse<CoreV1Event> callResponse) {
         restoreExistingEvent();
+        if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
+          return doNext(packet);
+        }
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
@@ -276,6 +278,20 @@ public class EventHelper {
             event.getMetadata().getNamespace(),
             new ReadEventResponseStep(getNext()));
       }
+    }
+
+    private boolean isForbiddenForNSWatchStoppedEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
+    }
+
+    private boolean hasLoggedForbiddenNSWatchStoppedEvent(
+        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+      if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
+        LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
+        return true;
+      }
+      return false;
     }
 
     private static class ReadEventResponseStep extends ResponseStep<CoreV1Event> {
@@ -632,7 +648,7 @@ public class EventHelper {
     }
 
     OffsetDateTime getCurrentTimestamp() {
-      return OffsetDateTime.now();
+      return SystemClock.now();
     }
 
     void addLabels(V1ObjectMeta metadata, EventData eventData) {

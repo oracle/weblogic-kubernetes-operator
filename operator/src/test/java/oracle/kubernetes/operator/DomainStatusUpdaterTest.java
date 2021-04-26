@@ -76,7 +76,7 @@ public class DomainStatusUpdaterTest {
   private final RuntimeException failure = new RuntimeException(message);
   private final String validationWarning = generator.getUniqueString();
   private final DomainProcessorImpl processor =
-      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+      new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport), null);
 
   @BeforeEach
   public void setUp() throws NoSuchFieldException {
