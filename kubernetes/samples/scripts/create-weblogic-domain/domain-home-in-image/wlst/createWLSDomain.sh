@@ -5,35 +5,49 @@
 #
 #Adopted from https://github.com/oracle/docker-images/blob/main/OracleWebLogic/samples/12213-domain-home-in-image/container-scripts/createWLSDomain.sh
 #Define DOMAIN_HOME
-echo "Domain Home is: " $DOMAIN_HOME
+echo "Info: Domain Home is: " $DOMAIN_HOME
 
-ADD_DOMAIN=1
-if [  -f ${DOMAIN_HOME}/servers/${ADMIN_NAME}/logs/${ADMIN_NAME}.log ]; then
-    exit
+if [ -z "${DOMAIN_HOME}" ]; then
+   echo "Error: DOMAIN_HOME not set."
+   exit 1
+fi
+
+if ! touch $DOMAIN_HOME/test-file ; then
+  echo "Error: No permission to create a file in domain home '$DOMAIN_HOME'. id=$(id). Parent dir contents:"
+  ls -l $(dirname $DOMAIN_HOME)
+  exit 1
+fi
+rm -f $DOMAIN_HOME/test-file
+
+dfiles="$(ls -A $DOMAIN_HOME 2>&1)"
+if [ ! -z $dfiles ]; then
+  echo "Error: Domain home '$DOMAIN_HOME' must be empty before we run the domain home creation script."
+  echo "$dfiles"
+  exit 1
 fi
 
 # Create Domain only if 1st execution
 DOMAIN_PROPERTIES_FILE=${PROPERTIES_FILE_DIR}/domain.properties
 if [ ! -e "${DOMAIN_PROPERTIES_FILE}" ]; then
-   echo "A properties file with the username and password needs to be supplied."
-   exit
+   echo "Error: Property file '${DOMAIN_PROPERTIES_FILE}' not found. A property file with the username and password needs to be supplied."
+   exit 1
 fi
 
 # Get Username
 USER=`awk '{print $1}' ${DOMAIN_PROPERTIES_FILE} | grep ADMIN_USER_NAME | cut -d "=" -f2`
 if [ -z "${USER}" ]; then
-   echo "The domain username is blank.  The Admin username must be set in the properties file."
-   exit
+   echo "Error: The domain username is blank.  The Admin username must be set in the properties file."
+   exit 1
 fi
 # Get Password
 PASS=`awk '{print $1}' ${DOMAIN_PROPERTIES_FILE} | grep ADMIN_USER_PASS | cut -d "=" -f2`
 if [ -z "${PASS}" ]; then
-   echo "The domain password is blank.  The Admin password must be set in the properties file."
-   exit
+   echo "Error: The domain password is blank.  The Admin password must be set in the properties file."
+   exit 1
 fi
 
-echo "Content of ${DOMAIN_PROPERTIES_FILE}:"
-cat ${DOMAIN_PROPERTIES_FILE}
+echo "Info: Content of ${DOMAIN_PROPERTIES_FILE}:"
+sed 's/ADMIN_USER_PASS=.*/ADMIN_USER_PASS=********/g' ${DOMAIN_PROPERTIES_FILE}
 
 # Create domain
 wlst.sh -skipWLSModuleScanning -loadProperties ${DOMAIN_PROPERTIES_FILE} /u01/oracle/create-wls-domain.py
