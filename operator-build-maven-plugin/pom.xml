@@ -7,7 +7,7 @@
     <parent>
         <artifactId>operator-parent</artifactId>
         <groupId>oracle.kubernetes</groupId>
-        <version>3.2.1</version>
+        <version>3.2.2</version>
     </parent>
 
     <artifactId>operator-build-maven-plugin</artifactId>
