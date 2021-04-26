@@ -71,14 +71,6 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 ***
 
-#### Transactions
-
-**Q:** Are XA transactions and recovery also supported?
-
-**A:** Yes, XA transactions are supported with the following prerequisite: XA transactions are certified when all WebLogic Servers scope to the same Kubernetes namespace.
-
-***
-
 **Q:** For binding EJBs (presentation/business-tier), are unique and/or dynamic domain-names used?
 
 **A:** We do not enforce unique domain names. If you deploy two domains that must interoperate using RMI/EJB/JMS/JTA/and such, or that share RMI/EJB/JMS/JTA/and such clients, which concurrently communicate with both domains, then, as usual, the domain names must be configured to be different (even if they have different `domain-uids`).
@@ -122,7 +114,7 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **Q:** Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.
 
-**A:** For relevant information, see [Apply patched images to a running domain]({{< relref "/userguide/managing-domains/base-images/_index#apply-patched-images-to-a-running-domain" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** For relevant information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/#apply-patched-images-to-a-running-domain" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ***
 
