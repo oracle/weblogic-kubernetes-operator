@@ -8,10 +8,7 @@ description: "The operator provides several ways to initiate scaling of WebLogic
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by defining each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/clust/dynamic_clusters.html#GUID-DA7F7FAD-49AA-4F3D-8A05-0D9921B96971).
 
-The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:
-
-* [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
-* [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
+For more in-depth information on support for scaling WebLogic clusters in Kubernetes, see [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
@@ -42,6 +39,7 @@ spec:
   replicas: 1
   ...
 ```
+In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
 
 #### Calling the operator's REST scale API
 
