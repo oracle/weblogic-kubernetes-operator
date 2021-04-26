@@ -180,10 +180,10 @@ function createDomainHome {
   echo "fmwDomainType is [${fmwDomainType}]"
   # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
   if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
-    wdtModelFile=wdt_model_restricted_jrf_configured.yaml
+    wdtModelFile=wdt/wdt_model_restricted_jrf_configured.yaml
     wdtDomainType=RestrictedJRF
   else
-    wdtModelFile=wdt_model_configured.yaml
+    wdtModelFile=wdt/wdt_model_configured.yaml
     wdtDomainType=JRF
   fi
 
@@ -191,7 +191,7 @@ function createDomainHome {
     echo "An encryption key is provided, encrypting passwords in WDT properties file"
     wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
     echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
-    encrypt_model ${wdtModelFile} "${wdtEncryptionKeyFile}"
+    encrypt_model ${wdtModelFile} "${wdtEncryptionKeyFile}" || exit 1
   fi
 
   echo "dumping output of ${domainPropertiesOutput}"
