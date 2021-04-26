@@ -24,6 +24,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -135,6 +136,7 @@ public class ItOperatorUpgrade {
    * Operator upgrade from 2.6.0 to latest.
    */
   @Test
+  @Disabled("Disable the upgrade usecases from Release 2.6.0")
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
   public void testOperatorWlsUpgradeFrom260ToDevelop() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -193,6 +195,17 @@ public class ItOperatorUpgrade {
   public void testOperatorWlsUpgradeFrom314ToDevelop(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.2.0 to latest.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.2.0 to develop")
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom320ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom320ToDevelop with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
