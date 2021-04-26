@@ -216,7 +216,7 @@ class DomainRecheck {
 
   private Step startNamespaceSteps(String ns) {
     try (LoggingContext ignored =
-             setThreadContext().namespace(ns).domainUid("")) {
+             setThreadContext().namespace(ns)) {
       return Step.chain(
           createNamespaceReview(ns),
           new StartNamespaceBeforeStep(ns),
