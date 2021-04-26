@@ -21,7 +21,7 @@ weight: 3
 
 1. Obtain the WebLogic Server image from the [Oracle Container Registry](https://container-registry.oracle.com).
 
-    a. First time users, follow these [directions]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#obtaining-standard-images-from-the-oracle-container-registry" >}}).
+    a. First time users, follow these [directions]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
 
     b. Find and then pull the WebLogic 12.2.1.4 install image:
 
