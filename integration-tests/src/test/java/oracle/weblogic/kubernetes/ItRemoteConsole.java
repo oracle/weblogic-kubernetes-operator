@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -108,8 +109,9 @@ class ItRemoteConsole {
     assertTrue(nodePort != -1,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
     String curlCmd1 = "curl -s -L -v --user weblogic:welcome1 --show-error --noproxy '*' "
-        + " http://localhost"  + ":" + nodePort
+        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
         + "/management/weblogic --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 10), "Calling web app failed");
