@@ -3,18 +3,12 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
-//import java.nio.file.Path;
-//import java.nio.file.Paths;
-
-//import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-//import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallRemoteconsoleParams;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
@@ -96,7 +90,7 @@ public class WebLogicRemoteConsole {
         + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing curl command {0}", curlCmd);
 
-    return callWebAppAndWaitTillReady(curlCmd, 5);
+    return callWebAppAndWaitTillReady(curlCmd, 10);
 
   }
 

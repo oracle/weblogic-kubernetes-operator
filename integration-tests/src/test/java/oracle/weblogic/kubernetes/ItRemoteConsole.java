@@ -13,6 +13,8 @@ import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -34,14 +36,18 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.shutdownWlsRemoteConsole;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -79,24 +85,35 @@ class ItRemoteConsole {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    /* Later we are going to verify connecting K8S WebLogic domain through remote console.
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // create a basic model in image domain
     createAndVerifyMiiDomain();
-    */
 
   }
 
   /**
    * Verify WLS Remote Console installation is successful.
+   * Verify k8s WebLogic domain is accessible through remote console.
    */
   @Test
   @DisplayName("Verify WLS Remote Console installation is successful")
   public void testWlsRemoteConsoleInstallation() {
 
     assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
+
+    int nodePort = getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertTrue(nodePort != -1,
+        "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    String curlCmd1 = "curl -s -L -v --user weblogic:welcome1 --show-error --noproxy '*' "
+        + " http://localhost"  + ":" + nodePort
+        + "/management/weblogic --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd1);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 10), "Calling web app failed");
+    logger.info("WebLogic domain is accessible through remote console");
 
   }
 
@@ -167,7 +184,11 @@ class ItRemoteConsole {
                 .podSecurityContext(new V1PodSecurityContext()
                     .runAsUser(0L)))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
