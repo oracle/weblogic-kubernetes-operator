@@ -24,7 +24,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -80,15 +79,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Create a domain using Domain-In-Image or Model-In-Image model with a dynamic cluster.
  * Deploy an application to the cluster in domain and verify the application 
  * can be accessed while the operator is upgraded and after the upgrade.
- * Upgrade operator with latest Operator image from develop branch.
- * Verify CRD version and image are updated.
+ * Upgrade operator with latest Operator image build from main branch.
+ * Verify Domain resource version and image are updated.
  * Scale the cluster in upgraded environment.
  * Restart the entire domain in upgraded environment.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
-public class ItOperatorUpgrade {
+public class ItOperatorWlsUpgrade {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
@@ -134,9 +133,10 @@ public class ItOperatorUpgrade {
 
   /**
    * Operator upgrade from 2.6.0 to latest.
+   * Delete Operator and install latest Operator 
+   * Verify Domain resource version is updated while domain is in running state.
    */
   @Test
-  @Disabled("Disable the upgrade usecases from Release 2.6.0")
   @DisplayName("Upgrade Operator from 2.6.0 to develop")
   public void testOperatorWlsUpgradeFrom260ToDevelop() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -162,17 +162,6 @@ public class ItOperatorUpgrade {
   public void testOperatorWlsUpgradeFrom304ToDevelop(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.1.2 to latest.
-   */
-  @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.2 to develop")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom312ToDevelop(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom312ToDevelop with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -206,6 +195,17 @@ public class ItOperatorUpgrade {
   public void testOperatorWlsUpgradeFrom320ToDevelop(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom320ToDevelop with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.2.0 to latest.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.2.1 to develop")
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  public void testOperatorWlsUpgradeFrom321ToDevelop(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom321ToDevelop with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.2.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**

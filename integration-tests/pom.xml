@@ -292,7 +292,7 @@
                   **/ItPodsRestart,
                   **/ItUsabilityOperatorHelmChart,
                   **/ItInitContainers,
-                  **/ItOperatorUpgrade,
+                  **/ItOperatorWlsUpgrade,
                   **/ItOperatorRestart,
                   **/ItPodsShutdownOption,
                   **/ItOCILoadBalancer,
