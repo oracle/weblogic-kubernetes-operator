@@ -50,4 +50,4 @@ echo "Info: Content of ${DOMAIN_PROPERTIES_FILE}:"
 sed 's/ADMIN_USER_PASS=.*/ADMIN_USER_PASS=********/g' ${DOMAIN_PROPERTIES_FILE}
 
 # Create domain
-wlst.sh -skipWLSModuleScanning -loadProperties ${DOMAIN_PROPERTIES_FILE} /u01/oracle/create-wls-domain.py
+wlst.sh -skipWLSModuleScanning -loadProperties ${DOMAIN_PROPERTIES_FILE} /u01/oracle/create-wls-domain.py || exit 1
