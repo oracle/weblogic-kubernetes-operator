@@ -1,0 +1,47 @@
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: 'weblogic'
+    AdminPassword: 'welcome1'
+    ServerStartMode: 'dev'
+
+topology:
+    Name: 'sample-domain1'
+    AdminServerName: 'admin-server'
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerTemplate:  'cluster-1-template'
+                ServerNamePrefix: 'managed-server'
+                DynamicClusterSize: '5'
+                MaxDynamicClusterSize: '5'
+                MinDynamicClusterSize: '0'
+                CalculatedListenPorts: false
+    Server:
+        'admin-server':
+            ListenPort: 7001
+
+    ServerTemplate:
+        'cluster-1-template':
+            Cluster: 'cluster-1'
+            ListenPort: 8001
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: 8003
+                    ListenAddress: 'admin-server-service'
+                    PublicAddress: 'admin-server-public-service'
+                    PublicPort: 9003
+
+resources:
+    FileStore:
+        'FileStore-0':
+            Directory: '/u01/oracle/customFileStore/'
+            Target: 'cluster-1'
+
+appDeployments:
+    Application:
+        myapp:
+            SourcePath: 'wlsdeploy/applications/myapp-v1'
+            ModuleType: ear
+            Target: 'cluster-1'
