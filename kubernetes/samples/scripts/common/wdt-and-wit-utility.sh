@@ -407,30 +407,31 @@ function encrypt_model {
   #
   # run encryptModel.sh from WDT to encrypt model and properties files
   #
-  local model_file=${1}
-  local encrypt_key_file=${2} # path to file containing encryption key relative to ${scriptDir}
+  local domainOutputDirFullPath=${1} # full path to directory where the model, encrypt file, and domain properties files are
+  local model_file=${2} # path to file containing encryption key relative to ${domainOutputDirFullPath}
+  local encrypt_key_file=${3} # path to file containing encryption key relative to ${domainOutputDirFullPath}
+  local domain_properties_file=${4} # path to domain properties file relative to ${domainOutputDirFullPath}
   local oracle_home="$ORACLE_HOME"
 
-  echo @@ "Info: encrypt passwords in the variables file at ${domainPropertiesOutput} using encryption key from create-domain.sh argument written to file: ${encrypt_key_file}"
+  echo @@ "Info: encrypt passwords in the variables file at ${domainOutputDirFullPath}/${domain_properties_file} using encryption key from create-domain.sh argument written to file: ${encrypt_key_file}"
 
   cmd="
     cat /shared/${encrypt_key_file} /shared/${encrypt_key_file} |
     /wdt/bin/encryptModel.sh \
     -oracle_home ${oracle_home} \
     -model_file /shared/${model_file} \
-    -variable_file /shared/${domainPropertiesOutput}
+    -variable_file /shared/${domain_properties_file}
   "
-  echo $cmd > ${domainOutputDir}/cmd.sh
-  chmod 755 ${domainOutputDir}/cmd.sh
+  echo $cmd > ${domainOutputDirFullPath}/cmd.sh
+  chmod 755 ${domainOutputDirFullPath}/cmd.sh
   echo @@ "Info: Encrypt Model: About to run the following command in docker container with image ${domainHomeImageBase}:"
-  cat ${scriptDir}/${domainOutputDir}/cmd.sh
+  cat ${domainOutputDirFullPath}/cmd.sh
 
-  chmod 766 ${domainPropertiesOutput}
-
-  docker run -it --rm -v ${scriptDir}:/shared -v ${WDT_DIR}/weblogic-deploy:/wdt ${domainHomeImageBase} /bin/bash -c /shared/${domainOutputDir}/cmd.sh || return 1
+  chmod 766 ${domainOutputDirFullPath}/${domain_properties_file}
+  docker run -it --rm -v ${domainOutputDirFullPath}:/shared -v ${WDT_DIR}/weblogic-deploy:/wdt ${domainHomeImageBase} /bin/bash -c /shared/cmd.sh || return 1
 
   # clean up the generated files
-  rm ${domainOutputDir}/cmd.sh
+  rm ${domainOutputDirFullPath}/cmd.sh
 
   echo @@ "Info: encrypt_model Completed"
 }

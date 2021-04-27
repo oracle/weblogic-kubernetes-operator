@@ -166,12 +166,12 @@ function initialize {
   validateCommonInputs
 
   createDomainWlstScript="${createDomainWlstScript:-wlst/create-wls-domain.py}"
-  if [ "${mode}" == "wlst" ] && [ ! -f ${createDomainWlstScript} ]; then
+  if [ "${mode}" == "wlst" ] && [ ! -f ${scriptDir}/${createDomainWlstScript} ]; then
     validationError "The create domain WLST script file ${createDomainWlstScript} was not found"
   fi
 
   createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_dynamic.yaml}"
-  if [ "${mode}" == "wdt" ] && [ ! -f ${createDomainWdtModel} ]; then
+  if [ "${mode}" == "wdt" ] && [ ! -f ${scriptDir}/${createDomainWdtModel} ]; then
     validationError "The create domain WDT model file ${createDomainWdtModel} was not found"
   fi
 
@@ -202,13 +202,6 @@ function createDomainHome {
 
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
 
-    if [ "${mode}" == "wdt" ] && [ -n "${wdtEncryptKey}" ]; then
-      echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
-      wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
-      echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
-      encrypt_model ${createDomainWdtModel} "${wdtEncryptionKeyFile}" || exit 1
-    fi
-
     echo @@ "Info: Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
 
     if [ "${mode}" == "wlst" ]; then
@@ -218,11 +211,11 @@ function createDomainHome {
       # Generate the additional-build-commands file that will be used when creating the weblogic domain
       echo @@ "Info: Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
 
-      cp ${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
+      cp ${scriptDir}/${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
       sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
 
       createDomainWlstScriptCopy="${domainOutputDir}/create-wls-domain.py"
-      cp ${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
+      cp ${scriptDir}/${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
 
       cmd="
         $WIT_DIR/imagetool/bin/imagetool.sh update
@@ -232,10 +225,21 @@ function createDomainHome {
           --wdtVersion ${WDT_VERSION}
           --wdtDomainHome \"${domainHome}\"
           --additionalBuildCommands ${additionalBuildCommandsOutput}
-          --additionalBuildFiles \"wlst/createWLSDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
+          --additionalBuildFiles \"${scriptDir}/wlst/createWLSDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
           --chown=oracle:root
         "
-    else
+    else # wdt
+      createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
+      cp ${scriptDir}/${createDomainWdtModel} ${createDomainWdtModelCopy} || exit 1
+
+      if [ -n "${wdtEncryptKey}" ]; then
+        echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
+        wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
+        echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
+        domainOutputDirFullPath="$( cd "$( dirname "${domainPropertiesOutput}" )" && pwd)"
+        encrypt_model ${domainOutputDirFullPath} wdt_model.yaml wdt_encrypt_key domain.properties || exit 1
+      fi
+
       echo @@ "Info: dumping output of ${domainPropertiesOutput}"
       sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g' ${domainPropertiesOutput}
 
@@ -243,7 +247,7 @@ function createDomainHome {
       $WIT_DIR/imagetool/bin/imagetool.sh update
         --fromImage \"$domainHomeImageBase\"
         --tag \"${BUILD_IMAGE_TAG}\"
-        --wdtModel \"${createDomainWdtModel}\"
+        --wdtModel \"${createDomainWdtModelCopy}\"
         --wdtVariables \"${domainPropertiesOutput}\"
         --wdtOperation CREATE
         --wdtVersion ${WDT_VERSION}
@@ -267,7 +271,7 @@ function createDomainHome {
     fi
 
     # clean up the generated files in $domainOutputDir
-    rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
+    rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${createDomainWdtModelCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
 
     echo ""
     echo "Create domain ${domainName} successfully."
@@ -302,6 +306,8 @@ function printSummary {
   echo ""
   echo "Completed"
 }
+
+echo "---debug scriptDir is ${scriptDir}"
 
 # Perform the sequence of steps to create a domain
 createDomain true
