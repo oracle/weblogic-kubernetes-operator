@@ -5,13 +5,13 @@ draft: false
 weight: 1
 description: "Answers to commonly asked newcomer questions."
 ---
-#### What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation?
+#### What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?
 
 It's all [here]({{< relref "/_index.md" >}}).
 
 #### How much does it cost?
 
-The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.
+The WebLogic Kubernetes Operator (the “operator”) is open source and free.
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 

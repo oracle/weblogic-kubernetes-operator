@@ -21,7 +21,7 @@ The following types of server restarts are supported by the operator:
 
 * Rolling restarts - a coordinated and controlled shut down of all of the servers in a domain or cluster while ensuring that service to the end user is not interrupted.
 
-   * Operator initiated - where the WebLogic Server Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of pods in a domain or cluster.
+   * Operator initiated - where the WebLogic Kubernetes Operator can detect some types of changes and will automatically initiate rolling restarts of pods in a domain or cluster.
 
    * Manually initiated - required when certain changes in the Oracle WebLogic Server in Kubernetes environment cannot be detected by the operator, so a rolling restart must be manually initiated.
 
@@ -51,8 +51,8 @@ Changes to the WebLogic domain configuration may require either a rolling or ful
 
 For Domain in Image, you may only perform a rolling restart if both the WebLogic configuration changes between the present image and a new image are dynamic and you have [followed the CI/CD guidelines]({{< relref "/userguide/cicd/mutate-the-domain-layer">}}) to create an image with compatible encryption keys.
 
-Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart. 
- 
+Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart.
+
 * If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-image-field-on-a-domain).
 * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 
@@ -96,7 +96,7 @@ Changes to configuration overrides include:
 * Changing the Domain YAML file's `configuration.secrets` to point to a different list of Secrets
 * Changing the contents of the ConfigMap referenced by `configuration.overridesConfigMap`
 * Changing the contents to any of the Secrets referenced by `configuration.secrets`
-  
+
 The changes to the above fields or contents of related resources are not processed automatically. Instead, these fields are processed only when you [initiate operator introspection]({{< relref "/userguide/managing-domains/domain-lifecycle/introspection.md" >}}). The operator then will apply the new configuration overrides dynamically or only apply the overrides when WebLogic Server instances restart, depending on the strategy that you select.
 
 {{% notice note %}} Changes to configuration overrides distributed to running WebLogic Server instances can only take effect if the corresponding WebLogic configuration MBean attribute is "dynamic". For instance, the Data Source "passwordEncrypted" attribute is dynamic while the "Url" attribute is non-dynamic.
