@@ -162,9 +162,11 @@ WebLogic Server images with quarterly Patch Set Updates (PSUs), which include se
 
 Use either the WIT [`create`](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md) or
 [`update`](https://github.com/oracle/weblogic-image-tool/blob/master/site/update-image.md) command, however,
-patching using the `create` command results in a smaller WebLogic Server image size.
+patching using the `create` command results in a smaller WebLogic Server image size. Note that you will need to
+download the WebLogic Server 12.2.1.4.0 installer and JDK installer prior to running the `create` command. For details, see
+the WIT [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md) guide.
 
-Example: Create an image named `sample:wls` with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, latest Oracle 7-slim,
+Example: Create an image named `sample:wls` with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, a slim version of the Oracle Linux 7 container image,
 and latest PSU and recommended CPU and SPU patches applied.
 
 ```shell
