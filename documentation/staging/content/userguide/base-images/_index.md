@@ -12,6 +12,7 @@ description: "Create or obtain WebLogic Server images."
 * [Obtain standard images from the Oracle Container Registry](#obtain-standard-images-from-the-oracle-container-registry)
 * [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
 * [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
+* [Patch WebLogic Server images](#patch-weblogic-server-images)
 * [Apply patched images to a running domain](#apply-patched-images-to-a-running-domain)
 
 
@@ -154,7 +155,23 @@ including keys and credentials that are used to access external resources
 [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
 {{% /notice %}}
 
+#### Patch WebLogic Server images
 
+Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to patch
+WebLogic Server images with quarterly Patch Set Updates (PSUs), which include security fixes, or with one-off patches.
+
+Use either the WIT [`create`](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md) or
+[`update`](https://github.com/oracle/weblogic-image-tool/blob/master/site/update-image.md) command, however,
+patching using the `create` command results in a smaller WebLogic Server image size. Note that you will need to
+download the WebLogic Server 12.2.1.4.0 installer and JDK installer prior to running the `create` command. For details, see
+the WIT [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md) guide.
+
+Example: Create an image named `sample:wls` with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, a slim version of the Oracle Linux 7 container image,
+and latest PSU and recommended CPU and SPU patches applied.
+
+```shell
+$ imagetool create --tag sample:wls --type=wlsslim --recommendedPatches --pull --user testuser@xyz.com --password hello --version=12.2.1.4.0 --jdkVersion=8u291
+```
 
 #### Apply patched images to a running domain
 
