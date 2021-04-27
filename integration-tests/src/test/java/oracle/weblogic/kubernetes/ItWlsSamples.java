@@ -126,17 +126,19 @@ public class ItWlsSamples {
   }
 
   /**
-   * Test domain in image samples using domains created by image tool.
+   * Test domain in image samples using domains created by image tool using wlst and wdt.
    *
    */
   @Order(1)
-  @Test
+  @ParameterizedTest
+  @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
-  public void testSampleDomainInImage() {
-    String domainName = "domain1";
+  public void testSampleDomainInImage(String model) {
+    String domainName = model.split(":")[1];
+    String script = model.split(":")[0];
     String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + ":" + diiImageTag
-            : diiImageNameBase + ":" + diiImageTag);
+            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
+            : diiImageNameBase + "_" + script + ":" + diiImageTag);
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -163,6 +165,10 @@ public class ItWlsSamples {
             + ADMIN_USERNAME_DEFAULT
             + " -p "
             + ADMIN_PASSWORD_DEFAULT;
+
+    if (script.equals("wlst")) {
+      additonalOptions += " -m wlst";
+    }
 
     String[] additonalStr = {additonalOptions, imageName};
 
