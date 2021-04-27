@@ -754,7 +754,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2);
 
-    List<String> namespaces = Arrays.asList(NS_WEBLOGIC1);
+    List<String> namespaces = Collections.singletonList(NS_WEBLOGIC1);
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
@@ -892,6 +892,25 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
             START_MANAGING_NAMESPACE, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
+  public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_nsEventMapIsEmpty() {
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    runCreateReadNamespacesStep();
+
+    assertThat("Confirmed that the event maps for the namespace are empty before changing strategy",
+        eventMapsEmpty("NS1"), is(false));
+
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+
+    runCreateReadNamespacesStep();
+
+    assertThat("Confirmed that the event maps for the namespace are empty", eventMapsEmpty("NS1"), is(true));
   }
 
   @Test
@@ -1093,6 +1112,36 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED, Collections.singletonList(OP_NS)), is(true));
+  }
+
+  @Test
+  public void withNamespaceDedicated_changeToList_onCreateReadNamespaces_opNSEventMapIsEmpty() {
+    defineSelectionStrategy(SelectionStrategy.Dedicated);
+    runCreateReadNamespacesStep();
+
+    assertThat("Confirm that the event maps for the namespace are not empty before change the strategy",
+        eventMapsEmpty(OP_NS), is(false));
+
+    defineSelectionStrategy(SelectionStrategy.List);
+    String namespaceString = "NS1";
+    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
+    createNamespaces(4);
+
+    runCreateReadNamespacesStep();
+    assertThat("Confirm that the event maps for the namespace are empty",
+        eventMapsEmpty(OP_NS), is(true));
+  }
+
+  private boolean eventMapsEmpty(String ns) {
+    return isNSEventMapEmpty(ns) && isDomainEventMapEmpty(ns);
+  }
+
+  private boolean isNSEventMapEmpty(String ns) {
+    return nsEventObjects.get(ns) == null || nsEventObjects.get(ns).size() == 0;
+  }
+
+  private boolean isDomainEventMapEmpty(String ns) {
+    return domainEventObjects.get(ns) == null || domainEventObjects.get(ns).size() == 0;
   }
 
   @Test

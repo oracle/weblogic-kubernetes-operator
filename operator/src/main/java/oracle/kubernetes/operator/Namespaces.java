@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
@@ -63,7 +64,7 @@ public class Namespaces {
   /**
    * Returns a (possibly empty) collection of strings which designate namespaces for the operator to manage.
    */
-  static @Nullable Collection<String> getFoundDomainNamespaces(Packet packet) {
+  static @NotNull Collection<String> getFoundDomainNamespaces(Packet packet) {
     return getSelectionStrategy().getFoundDomainNamespaces(packet);
   }
 
