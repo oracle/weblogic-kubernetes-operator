@@ -37,7 +37,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -48,7 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.shutdownWlsRemoteConsole;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -99,8 +99,8 @@ class ItRemoteConsole {
    * Verify k8s WebLogic domain is accessible through remote console.
    */
   @Test
-  @DisplayName("Verify WLS Remote Console installation is successful")
-  public void testWlsRemoteConsoleInstallation() {
+  @DisplayName("Verify Connecting to Mii domain through WLS Remote Console is successful")
+  public void testWlsRemoteConsoleConnection() {
 
     assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
 
@@ -110,11 +110,12 @@ class ItRemoteConsole {
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    String curlCmd1 = "curl -s -L -v --user weblogic:welcome1 --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/management/weblogic --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd1);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 10), "Calling web app failed");
+    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
+        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
+        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
 
   }

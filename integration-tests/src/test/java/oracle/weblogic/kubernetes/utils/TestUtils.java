@@ -240,6 +240,58 @@ public class TestUtils {
   }
 
   /**
+   * Call a web app and wait for the specified HTTP status code.
+   * @param curlCmd curl command to call the web app
+   * @param maxIterations max iterations to call the curl command
+   * @param httpStatusCode HTTP status code
+   * @return true if specified HTTP status code is returned, false otherwise
+   */
+  public static boolean callWebAppAndWaitTillReturnedCode(String curlCmd, String httpStatusCode, int maxIterations)  {
+    LoggingFacade logger = getLogger();
+    ExecResult result = null;
+    String responseCode = "";
+
+    for (int i = 0; i < maxIterations; i++) {
+      try {
+        result = ExecCommand.exec(curlCmd);
+        responseCode = result.stdout().trim();
+
+        if (result.exitValue() != 0 || !responseCode.equals(httpStatusCode)) {
+          logger.info("callWebApp did not return {0} response code, got {1}, iteration {2} of {3}",
+              httpStatusCode, responseCode, i, maxIterations);
+
+          try {
+            Thread.sleep(1000);
+          } catch (InterruptedException ignore) {
+            // ignore
+          }
+        } else if (responseCode.equals(httpStatusCode)) {
+          logger.info("callWebApp returned {0} response code, iteration {1}", httpStatusCode, i);
+          return true;
+        }
+      } catch (Exception e) {
+        logger.info("Got exception while running command: {0}", curlCmd);
+        logger.info(e.toString());
+        if (result != null) {
+          logger.info("result.stdout: \n{0}", result.stdout());
+          logger.info("result.stderr: \n{0}", result.stderr());
+          logger.info("result.exitValue: \n{0}", result.exitValue());
+        }
+        return false;
+      }
+    }
+
+    logger.info("FAILURE: callWebApp did not return {0} response code, got {1}", httpStatusCode, responseCode);
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+      logger.info("result.exitValue: \n{0}", result.exitValue());
+    }
+
+    return false;
+  }
+
+  /**
    * Check if the given port number is free.
    *
    * @param port port number to check
