@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,12 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -46,6 +49,7 @@ import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
 import oracle.kubernetes.operator.helpers.PodDisruptionBudgetHelper;
 import oracle.kubernetes.operator.helpers.PodHelper;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -95,6 +99,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, Map<String, DomainPresenceInfo>> DOMAINS = new ConcurrentHashMap<>();
   private static final Map<String, Map<String, ScheduledFuture<?>>> statusUpdaters = new ConcurrentHashMap<>();
   private final DomainProcessorDelegate delegate;
+  private final SemanticVersion productVersion;
 
   // Map namespace to map of domainUID to KubernetesEventObjects; tests may replace this value.
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
@@ -105,7 +110,12 @@ public class DomainProcessorImpl implements DomainProcessor {
   private static Map<String, KubernetesEventObjects> namespaceEventK8SObjects = new ConcurrentHashMap<>();
 
   public DomainProcessorImpl(DomainProcessorDelegate delegate) {
+    this(delegate, null);
+  }
+
+  public DomainProcessorImpl(DomainProcessorDelegate delegate, SemanticVersion productVersion) {
     this.delegate = delegate;
+    this.productVersion = productVersion;
   }
 
   private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
@@ -346,6 +356,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
+  @Override
+  public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+    return Optional.ofNullable(DOMAINS.get(namespace)).orElse(Collections.emptyMap())
+        .entrySet().stream().filter(e -> !domainUids.contains(e.getKey())).map(Map.Entry::getValue);
+  }
+
   private String getDomainUid(Fiber fiber) {
     return Optional.ofNullable(fiber)
           .map(Fiber::getPacket)
@@ -521,7 +537,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         case "DELETED":
           delegate.runSteps(
               ConfigMapHelper.createScriptConfigMapStep(
-                    c.getMetadata().getNamespace()));
+                    c.getMetadata().getNamespace(), productVersion));
           break;
 
         case "ERROR":
@@ -730,6 +746,26 @@ public class DomainProcessorImpl implements DomainProcessor {
      */
     MakeRightDomainOperationImpl(DomainPresenceInfo liveInfo) {
       this.liveInfo = liveInfo;
+      DomainPresenceInfo cachedInfo = getExistingDomainPresenceInfo(getNamespace(), getDomainUid());
+      if (!isNewDomain(cachedInfo)
+          && isAfter(getCreationTimestamp(liveInfo), getCreationTimestamp(cachedInfo))) {
+        willInterrupt = true;
+      }
+    }
+
+    private OffsetDateTime getCreationTimestamp(DomainPresenceInfo dpi) {
+      return Optional.ofNullable(dpi.getDomain())
+          .map(Domain::getMetadata).map(V1ObjectMeta::getCreationTimestamp).orElse(null);
+    }
+
+    private boolean isAfter(OffsetDateTime one, OffsetDateTime two) {
+      if (two == null) {
+        return true;
+      }
+      if (one == null) {
+        return false;
+      }
+      return one.isAfter(two);
     }
 
     /**
@@ -777,7 +813,7 @@ public class DomainProcessorImpl implements DomainProcessor {
      * Modifies the factory to indicate that it should interrupt any current make-right thread.
      * @return the updated factory
      */
-    MakeRightDomainOperation interrupt() {
+    public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
       return this;
     }
@@ -881,7 +917,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
-      return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+      return explicitRecheck || isGenerationChanged(liveInfo, cachedInfo);
     }
 
     private boolean isFatalIntrospectorError() {
@@ -963,17 +999,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static boolean isSpecChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    // TODO, RJE: now that we are switching to updating domain status using the separate
-    // status-specific endpoint, Kubernetes guarantees that changes to the main endpoint
-    // will only be for metadata and spec, so we can know that we have an important
-    // change just by looking at metadata.generation.
-    return Optional.ofNullable(liveInfo.getDomain())
-          .map(Domain::getSpec)
-          .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
-          .orElse(true);
+  private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    return getGeneration(liveInfo)
+        .map(gen -> (gen.compareTo(getGeneration(cachedInfo).orElse(0L)) > 0))
+        .orElse(true);
   }
 
+  private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
+    return Optional.ofNullable(dpi)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getMetadata)
+        .map(V1ObjectMeta::getGeneration);
+  }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
@@ -1091,6 +1128,7 @@ public class DomainProcessorImpl implements DomainProcessor {
           }
         };
 
+    LOGGER.fine("Starting fiber for domainUid -> " + domainUid + ", isWillInterrupt -> " + isWillInterrupt);
     if (isWillInterrupt) {
       gate.startFiber(domainUid, plan.step, plan.packet, cc);
     } else {

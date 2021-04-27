@@ -427,21 +427,6 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenOrdinaryEntriesMissingFromIntrospectionResult_doNotRemoveFromConfigMap() {
-    testSupport.defineResources(createIntrospectorConfigMap(0, Map.of(
-          TOPOLOGY_YAML, TOPOLOGY_VALUE,
-          "oldEntry1", "value1",
-          "oldEntry2", "value2")));
-    introspectResult
-          .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
-          .addToPacket();
-
-    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
-
-    assertThat(getIntrospectorConfigMapData(), allOf(hasEntry("oldEntry1", "value1"), hasEntry("oldEntry2", "value2")));
-  }
-
-  @Test
   public void whenSitConfigEntriesMissingFromIntrospectionResult_removeFromConfigMap() {
     testSupport.defineResources(createIntrospectorConfigMap(0, Map.of(
           TOPOLOGY_YAML, TOPOLOGY_VALUE,

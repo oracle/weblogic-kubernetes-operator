@@ -104,7 +104,7 @@ public class AsyncRequestStepTest {
   public void afterTimeout_newRequestSent() {
     callFactory.clearRequest();
 
-    testSupport.setTime(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+    testSupport.setTime(TIMEOUT_SECONDS + 1, TimeUnit.SECONDS);
 
     assertTrue(callFactory.invokedWith(requestParams));
   }
@@ -158,22 +158,14 @@ public class AsyncRequestStepTest {
 
   @Test
   public void afterMultipleRetriesAndSuccessfulCallback_nextStepAppliedWithValue() {
-    sendMultipleFailedCallback(0, 2);
+    sendMultipleFailedCallbackWithSetTime(0, 2);
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
     assertThat(nextStep.result, equalTo(smallList));
   }
 
-  @SuppressWarnings("SameParameterValue")
-  private void sendMultipleFailedCallback(int statusCode, int maxRetries) {
-    for (int retryCount = 0; retryCount < maxRetries; retryCount++) {
-      testSupport.schedule(
-          () -> callFactory.sendFailedCallback(new ApiException("test failure"), statusCode));
-    }
-  }
-
   @Test
   public void afterRetriesExhausted_fiberTerminatesWithException() {
-    sendMultipleFailedCallback(0, 3);
+    sendMultipleFailedCallbackWithSetTime(0, 3);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }

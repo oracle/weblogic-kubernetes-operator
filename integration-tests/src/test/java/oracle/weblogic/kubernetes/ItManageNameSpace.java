@@ -344,7 +344,7 @@ class ItManageNameSpace {
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
-        "mytest4", false);
+        "mytest4", false).getHelmParams();
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest4", manageByLabelDomainUid);
     assertDoesNotThrow(() -> addLabelsToNamespace(manageByLabelDomainNS, labels));
@@ -408,7 +408,7 @@ class ItManageNameSpace {
     // domainNamespaces value expected to be ignored
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
-        selectorValue, true, domainNamespacesValue);
+        selectorValue, true, domainNamespacesValue).getHelmParams();
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
           createSecrets(domainNS);
@@ -474,7 +474,7 @@ class ItManageNameSpace {
     try {
       HelmParams opHelmParams2 = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
           opNamespaces[2], "List",
-          null, true, domainNamespace);
+          null, true, domainNamespace).getHelmParams();
       assertNull(opHelmParams2, "Operator helm chart sharing same NS with other operator did not fail");
     } catch (org.opentest4j.AssertionFailedError ex) {
       //expecting to fail

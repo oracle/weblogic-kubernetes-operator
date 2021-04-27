@@ -194,7 +194,7 @@ function createDomainHome {
   sed -i -e "s|welcome1|${password}|g" $passwordFile
 
   sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
-  sed -i -e "s|InfraDB:1521/InfraPDB1.us.oracle.com|${rcuDatabaseURL}|g" $rcuPropFile
+  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
 
   cp -f ${scriptDir}/common/Dockerfile ${dockerDir}/Dockerfile
   cp -f ${scriptDir}/common/createFMWDomain.sh ${dockerDir}/container-scripts

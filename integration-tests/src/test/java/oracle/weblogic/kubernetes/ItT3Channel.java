@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_LISTEN_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -52,6 +53,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -119,6 +121,8 @@ class ItT3Channel {
    * Test t3 channel access by deploying a app using WLST.
    * Test Creates a domain in persistent volume using WLST.
    * Verifies that the pods comes up and sample application deployment works.
+   * Verify the default service port is set to 7100 since ListenPort is not 
+   * explicitly set on WLST offline script to create the domain configuration.
    */
   @Test
   @DisplayName("Test admin server t3 channel access by deploying a application")
@@ -290,6 +294,28 @@ class ItT3Channel {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // Since the ListenPort is not set explicitly on ServerTemplate 
+    // in wlst offline script wlst-create-domain-onpv.py, the default 
+    // ListenPort on each manged server is set to 7100. This can be confirmed
+    // by intorospecting the corresponding cluster service port (default)
+    int servicePort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, 
+              domainUid + "-cluster-" + clusterName, "default"),
+              "Getting Cluster Service default port failed");
+    assertEquals(DEFAULT_LISTEN_PORT, servicePort, "Default Service Port is not set to 7100");
+    int napPort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, 
+              domainUid + "-cluster-" + clusterName, "ms-nap"),
+              "Getting Cluster Service nap port failed");
+    assertEquals(8011, napPort, "Nap Service Port is not set to 8011");
+
+    servicePort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, 
+              domainUid + "-managed-server1", "default"),
+              "Getting Managed Server Service default port failed");
+    assertEquals(DEFAULT_LISTEN_PORT, servicePort, "Default Managed Service Port is not 7100");
+
   }
 
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,

@@ -32,6 +32,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
+import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
 
 /**
@@ -197,7 +198,12 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
           logFailure(ae, statusCode, responseHeaders);
         }
 
-        helper.recycle(client);
+        if (ae.getCause() instanceof java.net.ProtocolException) {
+          helper.discard(client);
+        } else {
+          helper.recycle(client);
+        }
+
         addResponseComponent(Component.createFor(
               RetryStrategy.class, retryStrategy,
               createFailure(requestParams, ae, statusCode).withResponseHeaders(responseHeaders)));
@@ -207,7 +213,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
     // a callback within the timeout. So cancel the call and prepare to try again.
-    private void handleTimeout(RequestParams requestParams, AsyncFiber fiber, CancellableCall cc) {
+    private void handleTimeout(AsyncFiber fiber, CancellableCall cc) {
       if (firstTimeResumed()) {
         try {
           cc.cancel();
@@ -244,7 +250,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     // add a logging context to pass the namespace information to the LoggingFormatter
     if (requestParams.namespace != null 
         && packet.getSpi(DomainPresenceInfo.class) == null
-        && packet.getSpi(LoggingContext.class) == null) {
+        && packet.getSpi(LoggingContext.class) == null
+        && !requestParams.namespace.equals(getOperatorNamespace())) {
       packet.getComponents().put(
           LoggingContext.LOGGING_CONTEXT_KEY,
           Component.createFor(new LoggingContext()
@@ -279,7 +286,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         (fiber) -> {
           try {
             CancellableCall cc = processing.createCall(fiber);
-            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(requestParams, fiber, cc));
+            scheduleTimeoutCheck(fiber, timeoutSeconds, () -> processing.handleTimeout(fiber, cc));
           } catch (ApiException t) {
             logAsyncFailure(t, t.getResponseBody());
             processing.resumeAfterThrowable(fiber);
@@ -331,7 +338,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logTimeout() {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
@@ -353,7 +360,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
@@ -370,7 +377,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private void logFailure(ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
     // called from a code path where we don't have the necessary information for logging context
     // so we need to use the thread context to pass in the logging context
-    try (LoggingContext stack =
+    try (LoggingContext ignored =
              LoggingContext.setThreadContext()
                  .namespace(requestParams.namespace)
                  .domainUid(requestParams.domainUid)) {
@@ -430,8 +437,6 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
         NextAction na = new NextAction();
         if (!retriesLeft()) {
           return null;
-        } else if (statusCode == 0) {
-          na.invoke(retryStep, packet);
         } else {
           LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
               requestParams.call, requestParams.namespace, requestParams.name);

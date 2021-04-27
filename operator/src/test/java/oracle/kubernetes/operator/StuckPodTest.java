@@ -7,8 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Stream;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -16,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -184,7 +187,7 @@ public class StuckPodTest {
   abstract static class MainDelegateStub implements MainDelegate {
     private final List<Domain> invocations = new ArrayList<>();
     private final DomainProcessorStub domainProcessor = createStrictStub(DomainProcessorStub.class, this);
-    private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+    private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
     private final KubernetesTestSupport testSupport;
 
     MainDelegateStub(KubernetesTestSupport testSupport) {
@@ -198,6 +201,11 @@ public class StuckPodTest {
     @Override
     public void runSteps(Step firstStep) {
       testSupport.runSteps(firstStep);
+    }
+
+    @Override
+    public void runSteps(Packet packet, Step firstStep,  Runnable completionAction) {
+      testSupport.runSteps(packet, firstStep);
     }
 
     @Override
@@ -221,6 +229,11 @@ public class StuckPodTest {
       public MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo info) {
         Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).ifPresent(delegateStub.invocations::add);
         return createStrictStub(MakeRightDomainOperationStub.class);
+      }
+
+      @Override
+      public Stream<DomainPresenceInfo> findStrandedDomainPresenceInfos(String namespace, Set<String> domainUids) {
+        return Stream.empty();
       }
     }
 

@@ -8,10 +8,7 @@ description: "The operator provides several ways to initiate scaling of WebLogic
 
 WebLogic Server supports two types of clustering configurations, configured and dynamic. Configured clusters are created by defining each individual Managed Server instance. In dynamic clusters, the Managed Server configurations are generated from a single, shared template.  With dynamic clusters, when additional server capacity is needed, new server instances can be added to the cluster without having to configure them individually. Also, unlike configured clusters, scaling up of dynamic clusters is not restricted to the set of servers defined in the cluster but can be increased based on runtime demands. For more information on how to create, configure, and use dynamic clusters in WebLogic Server, see [Dynamic Clusters](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/clust/dynamic_clusters.html#GUID-DA7F7FAD-49AA-4F3D-8A05-0D9921B96971).
 
-The following blogs provide more in-depth information on support for scaling WebLogic clusters in Kubernetes:
-
-* [Automatic Scaling of WebLogic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/automatic-scaling-of-weblogic-clusters-on-kubernetes-v2)
-* [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes)
+For more in-depth information on support for scaling WebLogic clusters in Kubernetes, see [WebLogic Dynamic Clusters on Kubernetes](https://blogs.oracle.com/weblogicserver/weblogic-dynamic-clusters-on-kubernetes).
 
 The operator provides several ways to initiate scaling of WebLogic clusters, including:
 
@@ -42,6 +39,7 @@ spec:
   replicas: 1
   ...
 ```
+In addition, see the helper scripts in the [Domain lifecycle sample scripts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#domain-lifecycle-sample-scripts" >}}) section.
 
 #### Calling the operator's REST scale API
 
@@ -96,7 +94,7 @@ The example ClusterRole definition below grants `get`, `list`, `patch` and `upda
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -139,20 +137,20 @@ In response to a change to either `replicas` field, in the Domain, the operator 
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Server Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/src/scripts/scaling/scalingAction.sh),
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Server Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
 ##### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
 The following steps are provided as a guideline on how to configure a WLDF Policy and Script Action component for issuing scaling requests to the operator's REST endpoint:
 
-1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/src/scripts/scaling/scalingAction.sh) script to `$DOMAIN_HOME/bin/scripts` so that it's accessible within the Administration Server pod. For more information, see [Configuring Script Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
+1. Copy the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh) script to `$DOMAIN_HOME/bin/scripts` so that it's accessible within the Administration Server pod. For more information, see [Configuring Script Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_notifications.html#GUID-5CC52534-13CD-40D9-915D-3380C86580F1) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
 1. Configure a WLDF policy and action as part of a diagnostic module targeted to the Administration Server. For information about configuring the WLDF Policies and Actions component,
 see [Configuring Policies and Actions](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/wldfc/config_watch_notif.html#GUID-D3FA8301-AAF2-41CE-A6A5-AB4005849913) in _Configuring and Using the Diagnostics Framework for Oracle WebLogic Server_.
 
      a. Configure a WLDF policy with a rule expression for monitoring WebLogic Server metrics, such as memory, idle threads, and CPU load for example.
 
-     b. Configure a WLDF script action and associate the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/src/scripts/scaling/scalingAction.sh) script.
+     b. Configure a WLDF script action and associate the [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh) script.
 
 Important notes about the configuration properties for the Script Action:
 
@@ -220,7 +218,7 @@ In the example ClusterRoleBinding definition below, the WebLogic domain is deplo
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -235,7 +233,7 @@ rules:
 # creating role-bindings for cluster role
 #
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: domain-cluster-rolebinding
 subjects:
@@ -252,7 +250,7 @@ roleRef:
 # creating role-bindings
 #
 kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-operator-rolebinding
   namespace: weblogic-operator
@@ -275,7 +273,7 @@ details about [Using Prometheus to Automatically Scale WebLogic Clusters on Kube
 
 #### Helpful tips
 ##### Debugging scalingAction.sh
-The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/src/scripts/scaling/scalingAction.sh) script was designed to be executed within a container of the
+The [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh) script was designed to be executed within a container of the
 Administration Server Pod because the associated diagnostic module is targeted to the Administration Server.
 
 The easiest way to verify and debug the `scalingAction.sh` script is to open a shell on the running Administration Server pod and execute the script on the command line.
@@ -283,7 +281,7 @@ The easiest way to verify and debug the `scalingAction.sh` script is to open a s
 The following example illustrates how to open a bash shell on a running Administration Server pod named `domain1-admin-server` and execute the `scriptAction.sh` script.  It assumes that:
 
 * The domain home is in `/u01/oracle/user-projects/domains/domain1` (that is, the domain home is inside an image).
-* The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/src/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
+* The Dockerfile copied [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh) to `/u01/oracle/user-projects/domains/domain1/bin/scripts/scalingAction.sh`.
 
 ```shell
 $ kubectl exec -it domain1-admin-server /bin/bash

@@ -3,15 +3,16 @@
 
 package oracle.kubernetes.operator;
 
-import java.time.OffsetDateTime;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
@@ -43,7 +44,7 @@ public class DomainProcessorTestSetup {
    * @return the original metadata object, updated
    */
   private static V1ObjectMeta withTimestamps(V1ObjectMeta meta) {
-    return meta.creationTimestamp(OffsetDateTime.now()).resourceVersion("1");
+    return meta.creationTimestamp(SystemClock.now()).resourceVersion("1");
   }
 
   /**
@@ -56,6 +57,16 @@ public class DomainProcessorTestSetup {
   }
 
   /**
+   * Create a basic domain object that meets the needs of the domain processor with the default test domainUID.
+   *
+   * @param generation Generation value
+   * @return a domain
+   */
+  public static Domain createTestDomain(Long generation) {
+    return createTestDomain(UID, generation);
+  }
+
+  /**
    * Create a basic domain object that meets the needs of the domain processor with a custom domainUID.
    *
    * @param uid domainUid
@@ -63,6 +74,19 @@ public class DomainProcessorTestSetup {
 
    */
   public static Domain createTestDomain(String uid) {
+    return createTestDomain(uid, 1L);
+
+  }
+
+  /**
+   * Create a basic domain object that meets the needs of the domain processor with a custom domainUID.
+   *
+   * @param uid domainUid
+   * @param generation Generation value
+   * @return a domain
+
+   */
+  public static Domain createTestDomain(String uid, Long generation) {
     DomainSpec ds = new DomainSpec()
         .withDomainUid(uid)
         .withWebLogicCredentialsSecret(new V1SecretReference().name(SECRET_NAME).namespace(NS));
@@ -70,8 +94,10 @@ public class DomainProcessorTestSetup {
     return new Domain()
         .withApiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .withKind(KubernetesConstants.DOMAIN)
-        .withMetadata(withTimestamps(new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID)))
-        .withSpec(ds);
+        .withMetadata(withTimestamps(
+            new V1ObjectMeta().name(uid).namespace(NS).uid(KUBERNETES_UID).generation(generation)))
+        .withSpec(ds)
+        .withStatus(new DomainStatus());
   }
 
   /**

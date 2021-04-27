@@ -27,6 +27,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
+import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.Namespaces.SelectionStrategy;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
@@ -43,6 +44,7 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
@@ -98,6 +100,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MainTest extends ThreadFactoryTestBase {
+  public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
+  public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
+
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
 
@@ -144,7 +149,7 @@ public class MainTest extends ThreadFactoryTestBase {
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final String ns = "nsrand" + new Random().nextInt(10000);
-  private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+  private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, testSupport, domainNamespaces);
   private final Main main = new Main(delegate);
 
@@ -558,7 +563,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_same_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     V1ObjectMeta domain2Meta = createMetadata(creationDatetime);
@@ -568,7 +573,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_delete_with_newer_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     OffsetDateTime deleteDatetime = creationDatetime.plusMinutes(1);
@@ -579,7 +584,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void deleteDomainPresenceWithTimeCheck_doNotDelete_with_older_DateTime() {
-    OffsetDateTime creationDatetime = OffsetDateTime.now();
+    OffsetDateTime creationDatetime = SystemClock.now();
     V1ObjectMeta domainMeta = createMetadata(creationDatetime);
 
     OffsetDateTime deleteDatetime = creationDatetime.minusMinutes(1);
@@ -1056,7 +1061,7 @@ public class MainTest extends ThreadFactoryTestBase {
 
     @Override
     public KubernetesVersion getKubernetesVersion() {
-      return KubernetesVersion.TEST_VERSION;
+      return TEST_VERSION;
     }
 
     @Override
