@@ -119,7 +119,7 @@ class OfflineWlstEnv(object):
   def getEnv(self, name):
     val = os.getenv(name)
     if val is None or val == "null":
-      print "SEVERE: Env var %s not set." % name
+      print("SEVERE: Env var %s not set." % name)
       sys.exit(1)
     return val
 
