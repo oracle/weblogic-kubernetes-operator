@@ -135,7 +135,7 @@ public class DomainProcessorTest {
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final Domain newDomain = DomainProcessorTestSetup.createTestDomain();
+  private final Domain newDomain = DomainProcessorTestSetup.createTestDomain(2L);
   private final DomainConfigurator domainConfigurator = configureDomain(newDomain);
   private final MakeRightDomainOperation makeRightOperation
         = processor.createMakeRightOperation(new DomainPresenceInfo(newDomain));
@@ -193,13 +193,13 @@ public class DomainProcessorTest {
 
   @Test
   public void whenDomainSpecNotChanged_dontRunUpdateThread() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
 
     makeRightOperation.execute();
 
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
-    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, domain.getDomainUid());
-    assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(domain)));
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, newDomain.getDomainUid());
+    assertThat(getResourceVersion(updatedDomain), equalTo(getResourceVersion(newDomain)));
   }
 
   private String getResourceVersion(Domain domain) {

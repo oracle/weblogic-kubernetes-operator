@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
@@ -18,6 +19,9 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
+  public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
+  public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
+
   private final FiberTestSupport testSupport;
   private boolean waitedForIntrospection;
 
@@ -50,7 +54,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public KubernetesVersion getKubernetesVersion() {
-    return KubernetesVersion.TEST_VERSION;
+    return TEST_VERSION;
   }
 
   @Override
