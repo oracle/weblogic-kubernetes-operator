@@ -84,6 +84,7 @@ class OfflineWlstEnv(object):
   def readDomainNameFromTopologyYaml(self, path):
     file = open(path, 'r')
     content = file.readlines()
+    file.close()
     # access line containing domain name and strip leading and trailing spaces
     line = content[2].strip()
     # create key-value pair (e.g. name="sample-domain1")
