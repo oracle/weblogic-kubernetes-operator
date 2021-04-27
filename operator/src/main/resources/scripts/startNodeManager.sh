@@ -241,7 +241,7 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
-  if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
     # Domain source type is 'FromModel' (MII) then disable Situation config override for WebLogic.
     failBootOnErrorOption=""
   else

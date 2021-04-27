@@ -4,9 +4,46 @@
 # ------------
 # Description:
 # ------------
-#  This is a model-in-image WDT filter for overriding WLS configuration, it
-#  replaces 'situational configuration overrides'.
+#   This is a model-in-image WDT filter for overriding WLS configuration, it
+#   replaces 'situational configuration overrides'.
 #
+#   This code is used by the operator during introspection for MII to manipulate
+#   the domain model.  It generates domain configuration information that's
+#   useful for running the domain, setting up its networking, and for overriding
+#   specific parts of its configuration so that it can run in k8s.
+#
+#   For more details, see the Model Filters description in the WebLogic Deploy
+#   Tooling in Github.
+#
+# ---------------------
+# Prerequisites/Inputs:
+# ---------------------
+#
+#   A domain model as a Jython dictionary.
+#
+#   The following env vars are required:
+#     DOMAIN_UID         - completely unique id for this domain
+#     DOMAIN_HOME        - path for the domain configuration
+#     LOG_HOME           - path to override WebLogic server log locations
+#     CREDENTIALS_SECRET_NAME  - name of secret containing credentials
+#
+#   The following env vars are optional:
+#     ACCESS_LOG_IN_LOG_HOME - HTTP access log files will be written to
+#                              the logHome directory.
+#     DATA_HOME - in-pod location for data storage of default and custom file
+#                 stores.
+#     CREDENTIALS_SECRET_PATH - directory path to secret containing credentials
+#
+# ---------------------------------
+# Result
+# ---------------------------------
+#
+#   The configuration overrides are directly modified in the domain model and
+#   include listen addresses, log file locations, etc.  The WebLogic Deploy
+#   Tooling will then generate/update the domain with the appropriate
+#   configuration.
+#
+
 
 import inspect
 import os
@@ -162,10 +199,10 @@ def customizeServerTemplates(model):
   template_names = serverTemplates.keys()
   if template_names is not None:
     for template_name in template_names:
-     template = serverTemplates[template_name]
-     cluster_name = getClusterNameOrNone(template)
-     if cluster_name is not None:
-       customizeServerTemplate(topology, template)
+      template = serverTemplates[template_name]
+      cluster_name = getClusterNameOrNone(template)
+      if cluster_name is not None:
+        customizeServerTemplate(topology, template)
 
 
 def customizeServerTemplate(topology, template):

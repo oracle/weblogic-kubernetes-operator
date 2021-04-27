@@ -801,8 +801,7 @@ function generateMergedModel() {
 
   trace "About to call '${WDT_BINDIR}/validateModel.sh ${wdtArgs}'."
 
-  ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
+  ${WDT_BINDIR}/validateModel.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Model in Image: the WDT validate model tool detected an error with the fully merged model:"
@@ -934,8 +933,7 @@ function wdtUpdateModelDomain() {
 
   trace "About to call '${WDT_BINDIR}/updateDomain.sh ${wdtArgs}'."
 
-  ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
+  ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then

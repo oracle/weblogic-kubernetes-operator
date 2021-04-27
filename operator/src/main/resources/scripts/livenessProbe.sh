@@ -102,7 +102,7 @@ if [ $? != 0 ]; then
   exit $RETVAL
 fi
 
-if [ ! -f /weblogic-operator/introspector/domainzip.secure ]; then
+if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
   copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
   copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
