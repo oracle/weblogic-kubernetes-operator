@@ -307,8 +307,6 @@ function printSummary {
   echo "Completed"
 }
 
-echo "---debug scriptDir is ${scriptDir}"
-
 # Perform the sequence of steps to create a domain
 createDomain true
 
