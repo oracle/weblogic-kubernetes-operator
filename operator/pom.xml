@@ -237,7 +237,6 @@
           <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
           <arguments>
             <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
-            <argument>${project.basedir}/../kubernetes/crd/domain-v1beta1-crd.yaml</argument>
           </arguments>
         </configuration>
       </plugin>
