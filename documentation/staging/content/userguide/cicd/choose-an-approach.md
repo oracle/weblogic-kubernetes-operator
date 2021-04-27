@@ -64,7 +64,7 @@ various approaches.  We can start by asking ourselves questions like these:
 
   If you need to make an update in a lower layer, then you will need to rebuild that
   layer and all of the layers above it.  This means that you will need to rebuild the
-  domain layer.  In the case of Model in Image, you will need to determine if you need to
+  domain layer.  In the case of Domain in Image, you will need to determine if you need to
   keep the same domain encryption keys.
 
 The diagram below summarizes these concerns in a decision tree for the “domain-in-image” case:
