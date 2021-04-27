@@ -187,15 +187,19 @@ function createDomainHome {
     wdtDomainType=JRF
   fi
 
+  createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
+  cp ${scriptDir}/${wdtModelFile} ${createDomainWdtModelCopy} || exit 1
+
   if [ -n "${wdtEncryptKey}" ]; then
     echo "An encryption key is provided, encrypting passwords in WDT properties file"
     wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
     echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
-    encrypt_model ${wdtModelFile} "${wdtEncryptionKeyFile}" || exit 1
+    domainOutputDirFullPath="$( cd "$( dirname "${domainPropertiesOutput}" )" && pwd)"
+    encrypt_model ${domainOutputDirFullPath} wdt_model.yaml wdt_encrypt_key domain.properties || exit 1
   fi
 
-  echo "dumping output of ${domainPropertiesOutput}"
-  cat ${domainPropertiesOutput}
+    echo @@ "Info: dumping output of ${domainPropertiesOutput}"
+    sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g' ${domainPropertiesOutput}
 
   sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
   sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
@@ -206,7 +210,7 @@ function createDomainHome {
     $WIT_DIR/imagetool/bin/imagetool.sh update
       --fromImage \"$domainHomeImageBase\"
       --tag \"${BUILD_IMAGE_TAG}\"
-      --wdtModel \"${scriptDir}/${wdtModelFile}\" 
+      --wdtModel \"${createDomainWdtModelCopy}\"
       --wdtVariables \"${domainPropertiesOutput}\"
       --wdtOperation CREATE
       --wdtVersion ${WDT_VERSION} 
@@ -216,8 +220,7 @@ function createDomainHome {
       --chown=oracle:oracle
   "
   if [ -n "${wdtEncryptKey}" ]; then
-    cmd="$cmd
-     --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+    cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
     "
   fi
   echo @@ "Info: About to run the following WIT command:"
@@ -230,8 +233,7 @@ function createDomainHome {
   fi
 
   # clean up the generated domain.properties file
-  rm ${domainPropertiesOutput}
-  rm ${wdtEncryptionKeyFile}
+  rm -f ${domainPropertiesOutput} $createDomainWdtModelCopy} ${wdtEncryptionKeyFile}
 
   echo ""
   echo "Create domain ${domainName} successfully."
