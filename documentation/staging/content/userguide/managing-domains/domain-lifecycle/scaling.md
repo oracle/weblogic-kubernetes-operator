@@ -94,7 +94,7 @@ The example ClusterRole definition below grants `get`, `list`, `patch` and `upda
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -218,7 +218,7 @@ In the example ClusterRoleBinding definition below, the WebLogic domain is deplo
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -233,7 +233,7 @@ rules:
 # creating role-bindings for cluster role
 #
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: domain-cluster-rolebinding
 subjects:
@@ -250,7 +250,7 @@ roleRef:
 # creating role-bindings
 #
 kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-operator-rolebinding
   namespace: weblogic-operator
