@@ -178,33 +178,27 @@ public class ItFmwDomainInPVUsingWDT {
     // create configmap and domain in persistent volume
     createDomainJobOnPv(wdtScript, wdtModelFile, fmwModelPropFile.toPath(), pvName, pvcName);
 
-    // create domain and verify
-    createDomainCrAndVerify(pvName, pvcName, t3ChannelPort);
-
-    // verify that all servers are ready and EM console is accessible
-    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
-  }
-
-  private void createDomainCrAndVerify(String pvName,
-                                       String pvcName,
-                                       int t3ChannelPort) {
     // create a domain custom resource configuration object
     logger.info("Creating domain custom resource");
     Domain domain = createDomainResourceOnPv(domainUid,
-                             domainNamespace,
-                             wlSecretName,
-                             clusterName,
-                             pvName,
-                             pvcName,
-                             DOMAINHOMEPREFIX,
-                             "true",
-                             replicaCount,
-                             t3ChannelPort);
+                                             domainNamespace,
+                                             wlSecretName,
+                                             clusterName,
+                                             pvName,
+                                             pvcName,
+                                             DOMAINHOMEPREFIX,
+                                             "true",
+                                             replicaCount,
+                                             t3ChannelPort);
 
+    // Set the inter-pod anti-affinity for the domain custom resource
     setPodAntiAffinity(domain);
 
-    // verify the domain custom resource is created
+    // create a domain custom resource and verify domain is created
     createDomainAndVerify(domain, domainNamespace);
+
+    // verify that all servers are ready and EM console is accessible
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
   }
 
   private void createDomainJobOnPv(Path domainCreationScriptFile,
