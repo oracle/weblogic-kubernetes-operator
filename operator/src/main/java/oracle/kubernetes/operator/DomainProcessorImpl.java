@@ -917,7 +917,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
-      return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+      return explicitRecheck || isGenerationChanged(liveInfo, cachedInfo);
     }
 
     private boolean isFatalIntrospectorError() {
@@ -999,17 +999,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static boolean isSpecChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    // TODO, RJE: now that we are switching to updating domain status using the separate
-    // status-specific endpoint, Kubernetes guarantees that changes to the main endpoint
-    // will only be for metadata and spec, so we can know that we have an important
-    // change just by looking at metadata.generation.
-    return Optional.ofNullable(liveInfo.getDomain())
-          .map(Domain::getSpec)
-          .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
-          .orElse(true);
+  private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    return getGeneration(liveInfo)
+        .map(gen -> (gen.compareTo(getGeneration(cachedInfo).orElse(0L)) > 0))
+        .orElse(true);
   }
 
+  private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
+    return Optional.ofNullable(dpi)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getMetadata)
+        .map(V1ObjectMeta::getGeneration);
+  }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
