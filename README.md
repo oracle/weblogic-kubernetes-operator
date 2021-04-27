@@ -1,18 +1,26 @@
 # Oracle WebLogic Server Kubernetes Operator
 
-Oracle is finding ways for organizations using WebLogic Server to run important workloads, to move those workloads into the cloud. By certifying on industry standards, such as Docker and Kubernetes, WebLogic now runs in a cloud neutral infrastructure. In addition, we've provided an open-source Oracle WebLogic Server Kubernetes Operator (the “operator”) which has several key features to assist you with deploying and managing WebLogic domains in a Kubernetes environment. You can:
+The WebLogic Server Kubernetes Operator (the “operator”) supports running your WebLogic Server and Fusion Middleware Infrastructure domains on Kubernetes, an industry standard, cloud neutral deployment platform. It lets you encapsulate your entire WebLogic Server installation and layered applications into a portable set of cloud neutral images and simple resource description files. You can run them on any on-premises or public cloud that supports Kubernetes where you've deployed the operator.
 
-* Create WebLogic domains in a Kubernetes persistent volume. This persistent volume can reside in an NFS file system or other Kubernetes volume types.
-* Create a WebLogic domain in a container image.
-* Override certain aspects of the WebLogic domain configuration.
-* Define WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
-* Start servers based on declarative startup parameters and desired states.
-* Manage WebLogic configured or dynamic clusters.
+Furthermore, the operator is well suited to CI/CD processes. You can easily inject changes when moving between environments, such as from test to production. For example, you can externally inject database URLs and credentials during deployment or you can inject arbitrary changes to most WebLogic configurations.
+
+The operator takes advantage of the [Kubernetes operator pattern](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/), which means that it uses Kubernetes APIs to provide support for operations, such as: provisioning, lifecycle management, application versioning, product patching, scaling, and security. The operator also enables the use of tooling that is native to this infrastructure for monitoring, logging, tracing, and security.
+
+You can:
+* Deploy an operator that manages all WebLogic domains in all namespaces in a Kubernetes cluster, or that only manages domains in a specific subset of the namespaces, or that manages only domains that are located in the same namespace as the operator. At most, a namespace can be managed by one operator.
+* Supply WebLogic domain configuration using:
+  * _Domain in PV_: Locates WebLogic domain homes in a Kubernetes PersistentVolume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
+  * _Domain in Image_: Includes a WebLogic domain home in a container image.
+  * _Model in Image_: Includes [WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) models and archives in a container image.
+* Configure deployment of WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
+* Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
+* Start and stop servers and clusters in the domain based on declarative startup parameters and desired states.
+* Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on the WebLogic Diagnostics Framework (WLDF), Prometheus, Grafana, or other rules.
 * Expose the WebLogic Server Administration Console outside the Kubernetes cluster, if desired.
 * Expose T3 channels outside the Kubernetes domain, if desired.
-* Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing and update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
-* Scale WebLogic domains by starting and stopping Managed Servers on demand, or by integrating with a REST API to initiate scaling based on WLDF, Prometheus, Grafana, or other rules.
+* Expose HTTP paths on a WebLogic domain outside the Kubernetes domain with load balancing, and automatically update the load balancer when Managed Servers in the WebLogic domain are started or stopped.
 * Publish operator and WebLogic Server logs into Elasticsearch and interact with them in Kibana.
+
 
 The fastest way to experience the operator is to follow the [Quick Start guide](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/), or you can peruse our [documentation](https://oracle.github.io/weblogic-kubernetes-operator), read our [blogs](https://blogs.oracle.com/weblogicserver/updated-weblogic-kubernetes-support-with-operator-20), or try out the [samples](https://oracle.github.io/weblogic-kubernetes-operator/samples/).
 
@@ -84,4 +92,3 @@ Only pull requests from committers that can be verified as having signed the OCA
 ## Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
-
