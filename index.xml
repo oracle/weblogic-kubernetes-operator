@@ -8,13 +8,14 @@
     <language>en-us</language>
     <lastBuildDate>Mon, 30 Nov 2020 16:43:45 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Managing domain namespaces</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</link>
+      <title>Answers for newcomers</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</link>
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</guid>
-      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started. Those Kubernetes resources are created either as part of the installation of a release of the operator&amp;rsquo;s Helm chart, or created by the operator.
-This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</guid>
+      <description>What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
+How much does it cost? The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
     </item>
     
     <item>
@@ -55,6 +56,16 @@ The operator requires a restart in order to begin using the new or updated exter
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/</guid>
       <description>Prerequisites for all domain types   Choose the type of domain you&amp;rsquo;re going to use throughout the sample, WLS or JRF.
  The first time you try this sample, we recommend that you choose WLS even if you&amp;rsquo;re familiar with JRF. This is because WLS is simpler and will more easily familiarize you with Model in Image concepts. We recommend choosing JRF only if you are already familiar with JRF, you have already tried the WLS path through this sample, and you have a definite use case where you need to use JRF.</description>
+    </item>
+    
+    <item>
+      <title>Contribute to the operator</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/contributing/</link>
+      <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/contributing/</guid>
+      <description>Oracle welcomes contributions to this project from anyone. Contributions may be reporting an issue with the operator or submitting a pull request. Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.
+If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.</description>
     </item>
     
     <item>
@@ -138,6 +149,16 @@ All Kubernetes distributions and managed services have small differences. In par
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/</guid>
       <description>This sample demonstrates how to use the Oracle WebLogic Server Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 Contents  Prerequisites Create an AKS cluster Install WebLogic Server Kubernetes Operator Create WebLogic domain Automation Deploy sample application Access WebLogic Server logs Clean up resources Troubleshooting Useful links  Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
+      <title>Managing domain namespaces</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</guid>
+      <description>Each operator deployment manages a number of Kubernetes namespaces. For more information, see Operator Helm configuration values. A number of Kubernetes resources must be present in a namespace before any WebLogic Server instances can be successfully started. Those Kubernetes resources are created either as part of the installation of a release of the operator&amp;rsquo;s Helm chart, or created by the operator.
+This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running.</description>
     </item>
     
     <item>
@@ -389,7 +410,7 @@ The Oracle Database images are only supported for non-production use. For more d
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.1   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -703,15 +724,6 @@ After this, the operator starts watches for changes to Domains and any changes t
     </item>
     
     <item>
-      <title>Domain events</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-events/</link>
-      <pubDate>Mon, 30 Nov 2020 16:43:45 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-events/</guid>
-      <description>Contents  Overview Operator-generated event types Operator-generated event details How to access the events Examples of generated events  Overview This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.</description>
-    </item>
-    
-    <item>
       <title>Providing access to a PersistentVolumeClaim</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/volumes/</link>
       <pubDate>Tue, 07 Jan 2020 15:02:28 -0500</pubDate>
@@ -743,6 +755,15 @@ $ git checkout -b your-branch   Make your documentation updates by editing the s
     </item>
     
     <item>
+      <title>Domain events</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-events/</link>
+      <pubDate>Mon, 30 Nov 2020 16:43:45 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-events/</guid>
+      <description>Contents  Overview Operator-generated event types Operator-generated event details How to access the events Examples of generated events  Overview This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.</description>
+    </item>
+    
+    <item>
       <title>Overview</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/overview/</link>
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
@@ -768,7 +789,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
+      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
     </item>
     
     <item>
@@ -837,7 +858,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     April 5, 2021 v3.2.1 no Updated several dependencies, including the Oracle Linux base for the container image.   March 31, 2021 v3.2.0 no Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes.   March 1, 2021 v3.1.4 no Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     April 27, 2021 v3.2.2 no Resolved a set of issues with many related to reducing the operator&amp;rsquo;s network utilization.   April 5, 2021 v3.2.1 no Updated several dependencies, including the Oracle Linux base for the container image.   March 31, 2021 v3.2.0 no Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes.</description>
     </item>
     
   </channel>

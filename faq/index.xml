@@ -8,6 +8,17 @@
     <language>en-us</language>
     <lastBuildDate>Sat, 23 Feb 2019 08:14:59 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/faq/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Answers for newcomers</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</link>
+      <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</guid>
+      <description>What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
+How much does it cost? The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
+    </item>
+    
+    <item>
       <title>Managing domain namespaces</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</link>
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
@@ -114,7 +125,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview When WebLogic clients and servers are external to Kubernetes, and you want to give them access to Kubernetes hosted WebLogic cluster EJBs and JMS, there are two supported approaches:</description>
+      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
     </item>
     
     <item>
