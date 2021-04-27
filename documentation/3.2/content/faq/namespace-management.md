@@ -2,7 +2,7 @@
 title: "Managing domain namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
-weight: 1
+weight: 2
 description: "Considerations for managing namespaces while the operator is running."
 ---
 
@@ -45,7 +45,7 @@ elkIntegrationEnabled: false
 externalDebugHttpPort: 30999
 externalRestEnabled: false
 externalRestHttpsPort: 31001
-image: ghcr.io/oracle/weblogic-kubernetes-operator:3.2.1
+image: ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
 istioEnabled: false
@@ -118,7 +118,7 @@ For operators configured to select managed namespaces through the use of a label
 you simply need to create a namespace with the appropriate labels or with a name that matches the expression, respectively.
 
 If you did not choose to enable the value, `enableClusterRoleBinding`, then the operator will not have the necessary
-permissions to manage the namespace. You can do this by performing a `helm upgrade` with the values used when installing the 
+permissions to manage the namespace. You can do this by performing a `helm upgrade` with the values used when installing the
 Helm release:
 
 ```shell
