@@ -105,7 +105,7 @@ The usage of the create script is as follows:
 $ sh create-domain.sh -h
 ```
 ```text
-usage: create-domain.sh -o dir -i file -u username -p password [-m wdt|wlst]  [-e] [-v] [-n] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-m wdt|wlst] [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Ouput directory for the generated properties and YAML files, must be specified.
   -u User name used in building the image for WebLogic domain in image.
