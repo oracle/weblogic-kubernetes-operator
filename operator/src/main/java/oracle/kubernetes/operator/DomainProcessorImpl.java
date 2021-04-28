@@ -126,6 +126,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     DOMAINS.remove(namespace);
     domainEventK8SObjects.remove(namespace);
     namespaceEventK8SObjects.remove(namespace);
+    statusUpdaters.remove((namespace));
   }
 
   static void registerDomainPresenceInfo(DomainPresenceInfo info) {
