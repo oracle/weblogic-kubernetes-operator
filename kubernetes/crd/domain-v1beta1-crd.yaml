@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1aa7d4f29c19388890ba2d24bc4230a4cf45e74e547c541b16e7c934b4f69689
+    weblogic.sha256: fb610abe46e906374bc8a7d71c53045029c4b9d53d7a2c73d08ee6780b2a2aee
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1235,12 +1235,12 @@ spec:
                                   This is an advanced setting for customizing the
                                   container command for copying files from the container
                                   image to the common mount emptyDir volume. Use the
-                                  'COMMON_DIR' environment variable to reference the
-                                  value configured in 'commonMount.mountPath' (which
-                                  defaults to '/common'). Use 'TARGET_DIR' to refer
-                                  to the temporary directory created by the Operator
-                                  that resolves to the common mount's internal emptyDir
-                                  volume.
+                                  '$COMMON_MOUNT_PATH' environment variable to reference
+                                  the value configured in 'commonMount.mountPath'
+                                  (which defaults to '/common'). Use 'TARGET_MOUNT_PATH'
+                                  to refer to the temporary directory created by the
+                                  Operator that resolves to the common mount's internal
+                                  emptyDir volume.
                                 type: string
                           type: array
                         medium:
@@ -3986,9 +3986,9 @@ spec:
                                     This is an advanced setting for customizing the
                                     container command for copying files from the container
                                     image to the common mount emptyDir volume. Use
-                                    the 'COMMON_DIR' environment variable to reference
-                                    the value configured in 'commonMount.mountPath'
-                                    (which defaults to '/common'). Use 'TARGET_DIR'
+                                    the '$COMMON_MOUNT_PATH' environment variable
+                                    to reference the value configured in 'commonMount.mountPath'
+                                    (which defaults to '/common'). Use 'TARGET_MOUNT_PATH'
                                     to refer to the temporary directory created by
                                     the Operator that resolves to the common mount's
                                     internal emptyDir volume.
@@ -6749,10 +6749,10 @@ spec:
                               to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'.
                               This is an advanced setting for customizing the container
                               command for copying files from the container image to
-                              the common mount emptyDir volume. Use the 'COMMON_DIR'
+                              the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH'
                               environment variable to reference the value configured
                               in 'commonMount.mountPath' (which defaults to '/common').
-                              Use 'TARGET_DIR' to refer to the temporary directory
+                              Use 'TARGET_MOUNT_PATH' to refer to the temporary directory
                               created by the Operator that resolves to the common
                               mount's internal emptyDir volume.
                             type: string
@@ -9390,9 +9390,9 @@ spec:
                                     This is an advanced setting for customizing the
                                     container command for copying files from the container
                                     image to the common mount emptyDir volume. Use
-                                    the 'COMMON_DIR' environment variable to reference
-                                    the value configured in 'commonMount.mountPath'
-                                    (which defaults to '/common'). Use 'TARGET_DIR'
+                                    the '$COMMON_MOUNT_PATH' environment variable
+                                    to reference the value configured in 'commonMount.mountPath'
+                                    (which defaults to '/common'). Use 'TARGET_MOUNT_PATH'
                                     to refer to the temporary directory created by
                                     the Operator that resolves to the common mount's
                                     internal emptyDir volume.

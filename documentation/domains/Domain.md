@@ -282,7 +282,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the 'COMMON_DIR' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_DIR' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
+| `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
 | `image` | string | The name of an image with files located in directory 'commonMount.mountPath' (which defaults to '/common'). |
 | `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 
