@@ -3,12 +3,12 @@ title: "Use the Remote Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 2
-description: "Use the Oracle WebLogic Server Remote Console to manage a domain running in Kubernetes."
+description: "Use the WebLogic Remote Console to manage a domain running in Kubernetes."
 ---
 
-The Oracle WebLogic Server Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
-You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Server Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
-For detailed documentation, see the [Oracle WebLogic Server Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
+The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
+You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
+For detailed documentation, see the [WebLogic Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
 
 A major benefit of using the Remote Console is that it runs in your browser and can be used to connect to different WebLogic Server instances.
 You can use the Remote Console with WebLogic Server _slim_ installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)

@@ -146,5 +146,5 @@ For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pul
 
 For references to the relevant user documentation, see:
  - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
- - [Oracle WebLogic Server Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
- - [Oracle WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
+ - [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
+ - [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
