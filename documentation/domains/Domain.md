@@ -126,7 +126,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
 | `annotations` | Map | The annotations to be added to generated resources. |
-| `commonMount` | [Common Mount](#common-mount) | The common mount with the containers hosting files to be copied to the common volume. |
+| `commonMount` | [Common Mount](#common-mount) | Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `containers` | array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
 | `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
 | `env` | array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
@@ -221,7 +221,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
 | `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
-| `wdtBinaryHome` | string | Location of the WebLogic Deploy Tooling installation binary. Defaults to /u01/wdt/weblogic-deploy. |
+| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy. |
 
 ### Opss
 
@@ -235,11 +235,9 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `containers` | array of [Container](#container) | The common mount containers. |
-| `emptyDirVolumeName` | string | The emptyDir volume name. Set to 'operator-common-volume'. |
-| `medium` | string | The emptyDir volume medium. Defaults to unset. |
-| `mountPath` | string | The common mount path. Defaults to /common. |
+| `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
+| `mountPath` | string | The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in 'commonMount.containers'. Defaults to '/common'. |
 | `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
-| `targetPath` | string | The target mount path. Defaults to '/tmpCommonMount'. |
 
 ### Probe Tuning
 
@@ -284,10 +282,9 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `command` | string | The init container command. Defaults to 'cp -R $COMMON_DIR/* $TARGET_DIR'. |
-| `image` | string | The common mount container image name. |
+| `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the 'COMMON_DIR' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_DIR' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
+| `image` | string | The name of an image with files located in directory 'commonMount.mountPath' (which defaults to '/common'). |
 | `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `name` | string | The name for the operator created init container. Set to 'operator-common-container-${CONTAINER_NUM}'. |
 
 ### Subsystem Health
 

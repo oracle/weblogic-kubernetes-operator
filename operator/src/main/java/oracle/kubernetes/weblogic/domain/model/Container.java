@@ -17,11 +17,13 @@ public class Container {
 
   public static final String INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
   public static final String DEFAULT_INIT_CONTAINER_COMMAND = "cp -R $COMMON_MOUNT_PATH/* $COMMON_TARGET_PATH";
+  public static final String INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
 
   /**
    * The WDT resources container image.
    */
-  @Description("The common mount container image name.")
+  @Description("The name of an image with files located in directory 'commonMount.mountPath' "
+          + "(which defaults to '/common').")
   private String image;
 
   @Description(
@@ -31,10 +33,12 @@ public class Container {
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
-  @Description("The name for the operator created init container. Set to 'operator-common-container-${CONTAINER_NUM}'.")
-  private String name;
-
-  @Description("The init container command. Defaults to 'cp -R $COMMON_DIR/* $TARGET_DIR'.")
+  @Description("The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. "
+          + "This is an advanced setting for customizing the container command for copying files from the container "
+          + "image to the common mount emptyDir volume. Use the 'COMMON_DIR' environment variable to reference the "
+          + "value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_DIR' to refer to "
+          + "the temporary directory created by the Operator that resolves to the common mount's internal emptyDir "
+          + "volume.")
   private String command;
 
   public String getImage() {
@@ -63,17 +67,9 @@ public class Container {
     return this;
   }
 
-  public String getName() {
-    return Optional.ofNullable(name).orElse(INIT_CONTAINER_NAME_PREFIX);
-  }
-
-  public Container name(String name) {
-    this.name = name;
-    return this;
-  }
-
   public String getCommand() {
-    return Optional.ofNullable(command).orElse(DEFAULT_INIT_CONTAINER_COMMAND);
+    return Optional.ofNullable(command)
+            .orElse(DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
   public void setCommand(String command) {
@@ -91,7 +87,6 @@ public class Container {
             new ToStringBuilder(this)
                     .append("image", image)
                     .append("imagePullPolicy", imagePullPolicy)
-                    .append("name", name)
                     .append("command", command);
     return builder.toString();
   }
@@ -110,7 +105,6 @@ public class Container {
             new EqualsBuilder()
                     .append(image, rhs.image)
                     .append(imagePullPolicy, rhs.imagePullPolicy)
-                    .append(name, rhs.name)
                     .append(command, rhs.command);
 
     return builder.isEquals();
@@ -121,7 +115,6 @@ public class Container {
     HashCodeBuilder builder = new HashCodeBuilder()
             .append(image)
             .append(imagePullPolicy)
-            .append(name)
             .append(command);
     return builder.toHashCode();
   }

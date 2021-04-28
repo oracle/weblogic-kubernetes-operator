@@ -77,6 +77,7 @@ import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -782,7 +783,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
     Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
             v1Container.addVolumeMountsItem(
-                    new V1VolumeMount().name(cm.getEmptyDirVolumeName()).mountPath(cm.getMountPath())));
+                    new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(cm.getMountPath())));
     return v1Container;
   }
 
@@ -842,7 +843,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     Optional.ofNullable(getDomain().getCommonMount()).ifPresent(c -> addEnvVar(vars,
-            ServerEnvVars.WDT_BINARY_HOME, getWdtBinaryHome()));
+            ServerEnvVars.WDT_INSTALL_HOME, getWdtBinaryHome()));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
   }
 
@@ -851,7 +852,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private String getWdtBinaryHome() {
-    return getDomain().getWdtBinaryHome();
+    return getDomain().getWdtInstallHome();
   }
 
   private boolean distributeOverridesDynamically() {

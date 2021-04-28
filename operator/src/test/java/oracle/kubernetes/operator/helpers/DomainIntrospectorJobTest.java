@@ -344,7 +344,7 @@ public class DomainIntrospectorJobTest {
     assertThat(
             podTemplateInitContainers,
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
-                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                    DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -413,7 +413,7 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                    "wdt-image:v1", "ALWAYS", DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
@@ -425,7 +425,7 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", "/bin/sh", "-c", CUSTOM_COMMAND_SCRIPT)));
+                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
@@ -437,9 +437,9 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
-                    "IfNotPresent", "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND),
+                    "IfNotPresent", DEFAULT_INIT_CONTAINER_COMMAND),
                     hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1", "IfNotPresent",
-                            "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                            DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test

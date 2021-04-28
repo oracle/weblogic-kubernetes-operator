@@ -36,7 +36,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_BINARY_HOME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -874,13 +874,13 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Returns the WDT binary home directory of the domain.
+   * Returns the WDT install home directory of the domain.
    *
-   * @return WDT binary home directory
+   * @return WDT install home directory
    */
-  public String getWdtBinaryHome() {
+  public String getWdtInstallHome() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getWdtBinaryHome).orElse(DEFAULT_WDT_BINARY_HOME);
+            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(DEFAULT_WDT_INSTALL_HOME);
   }
 
   @Override

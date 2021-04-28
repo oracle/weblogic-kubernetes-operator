@@ -192,11 +192,7 @@
           "type": "string"
         },
         "mountPath": {
-          "description": "The common mount path. Defaults to /common.",
-          "type": "string"
-        },
-        "targetPath": {
-          "description": "The target mount path. Defaults to \u0027/tmpCommonMount\u0027.",
+          "description": "The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in \u0027commonMount.containers\u0027. Defaults to \u0027/common\u0027.",
           "type": "string"
         },
         "containers": {
@@ -207,11 +203,7 @@
           }
         },
         "medium": {
-          "description": "The emptyDir volume medium. Defaults to unset.",
-          "type": "string"
-        },
-        "emptyDirVolumeName": {
-          "description": "The emptyDir volume name. Set to \u0027operator-common-volume\u0027.",
+          "description": "The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
           "type": "string"
         }
       }
@@ -260,7 +252,7 @@
       "type": "object",
       "properties": {
         "image": {
-          "description": "The common mount container image name.",
+          "description": "The name of an image with files located in directory \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027).",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -272,12 +264,8 @@
             "IfNotPresent"
           ]
         },
-        "name": {
-          "description": "The name for the operator created init container. Set to \u0027operator-common-container-${CONTAINER_NUM}\u0027.",
-          "type": "string"
-        },
         "command": {
-          "description": "The init container command. Defaults to \u0027cp -R $COMMON_DIR/* $TARGET_DIR\u0027.",
+          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027COMMON_DIR\u0027 environment variable to reference the value configured in \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027TARGET_DIR\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
           "type": "string"
         }
       }
@@ -634,16 +622,16 @@
           "description": "Name of a ConfigMap containing the WebLogic Deploy Tooling model.",
           "type": "string"
         },
-        "wdtBinaryHome": {
-          "description": "Location of the WebLogic Deploy Tooling installation binary. Defaults to /u01/wdt/weblogic-deploy.",
-          "type": "string"
-        },
         "onlineUpdate": {
           "description": "Online update option for Model In Image dynamic update.",
           "$ref": "#/definitions/OnlineUpdate"
         },
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
+          "type": "string"
+        },
+        "wdtInstallHome": {
+          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.",
           "type": "string"
         }
       }
@@ -779,7 +767,7 @@
           }
         },
         "commonMount": {
-          "description": "The common mount with the containers hosting files to be copied to the common volume.",
+          "description": "Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
           "$ref": "#/definitions/CommonMount"
         },
         "resources": {

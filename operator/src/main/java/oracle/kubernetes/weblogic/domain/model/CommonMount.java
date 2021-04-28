@@ -21,20 +21,17 @@ public class CommonMount {
   @Description("The common mount containers.")
   private List<Container> containers;
 
-  @Description("The common mount path. Defaults to /common.")
+  @Description("The common mount path. The files in the path are populated from the same named directory in the images "
+          + "supplied by each container in 'commonMount.containers'. Defaults to '/common'.")
   private String mountPath;
 
-  @Description("The emptyDir volume name. Set to 'operator-common-volume'.")
-  private String emptyDirVolumeName;
-
-  @Description("The emptyDir volume medium. Defaults to unset.")
+  @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. "
+          + "Defaults to unset, which means the volume's files are stored on the local node's file system for "
+          + "the life of the pod.")
   private String medium;
 
   @Description("The emptyDir volume size limit. Defaults to unset.")
   private String sizeLimit;
-
-  @Description("The target mount path. Defaults to '/tmpCommonMount'.")
-  private String targetPath;
 
   public List<Container> getContainers() {
     return containers;
@@ -52,14 +49,6 @@ public class CommonMount {
   public CommonMount containers(List<Container> containers) {
     this.containers = containers;
     return this;
-  }
-
-  public String getEmptyDirVolumeName() {
-    return Optional.ofNullable(emptyDirVolumeName).orElse(COMMON_VOLUME_NAME);
-  }
-
-  public void setEmptyDirVolumeName(String emptyDirVolumeName) {
-    this.emptyDirVolumeName = emptyDirVolumeName;
   }
 
   public String getMountPath() {
@@ -101,24 +90,14 @@ public class CommonMount {
     return this;
   }
 
-  public String getTargetPath() {
-    return Optional.ofNullable(targetPath).orElse(COMMON_TARGET_PATH);
-  }
-
-  public void setTargetPath(String targetPath) {
-    this.targetPath = targetPath;
-  }
-
   @Override
   public String toString() {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("containers", containers)
             .append("commonDir", mountPath)
-            .append("emptyDirVolumeName", emptyDirVolumeName)
             .append("medium", medium)
-            .append("sizeLimit", sizeLimit)
-            .append("targetPath", targetPath);
+            .append("sizeLimit", sizeLimit);
     return builder.toString();
   }
 
@@ -127,10 +106,8 @@ public class CommonMount {
     HashCodeBuilder builder = new HashCodeBuilder()
         .append(containers)
         .append(mountPath)
-        .append(emptyDirVolumeName)
         .append(medium)
-        .append(sizeLimit)
-        .append(targetPath);
+        .append(sizeLimit);
     return builder.toHashCode();
   }
 
@@ -148,10 +125,8 @@ public class CommonMount {
         new EqualsBuilder()
             .append(containers, rhs.containers)
             .append(mountPath, rhs.mountPath)
-            .append(emptyDirVolumeName, rhs.emptyDirVolumeName)
             .append(medium, rhs.medium)
-            .append(sizeLimit, rhs.sizeLimit)
-            .append(targetPath, rhs.targetPath);
+            .append(sizeLimit, rhs.sizeLimit);
 
     return builder.isEquals();
   }

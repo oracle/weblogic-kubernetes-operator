@@ -15,7 +15,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
-  static final String DEFAULT_WDT_BINARY_HOME = "/u01/wdt/weblogic-deploy";
+  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -27,8 +27,8 @@ public class Model {
   @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
 
-  @Description("Location of the WebLogic Deploy Tooling installation binary. Defaults to /u01/wdt/weblogic-deploy.")
-  private String wdtBinaryHome;
+  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.")
+  private String wdtInstallHome;
 
   @Description("Online update option for Model In Image dynamic update.")
   private OnlineUpdate onlineUpdate;
@@ -94,16 +94,16 @@ public class Model {
   }
 
   @Nullable
-  String getWdtBinaryHome() {
-    return wdtBinaryHome;
+  String getWdtInstallHome() {
+    return wdtInstallHome;
   }
 
-  void setWdtBinaryHome(String wdtBinaryHome) {
-    this.wdtBinaryHome = wdtBinaryHome;
+  void setWdtInstallHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
   }
 
-  public Model withWdtBinaryHome(String wdtBinaryHome) {
-    this.wdtBinaryHome = wdtBinaryHome;
+  public Model withWdtBinaryHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
     return this;
   }
 
@@ -127,7 +127,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
-            .append("wdtBinaryHome", wdtBinaryHome)
+            .append("wdtBinaryHome", wdtInstallHome)
             .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
@@ -140,7 +140,7 @@ public class Model {
         .append(domainType)
         .append(configMap)
         .append(modelHome)
-        .append(wdtBinaryHome)
+        .append(wdtInstallHome)
         .append(onlineUpdate)
         .append(runtimeEncryptionSecret);
 
@@ -162,7 +162,7 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
-            .append(wdtBinaryHome,rhs.wdtBinaryHome)
+            .append(wdtInstallHome,rhs.wdtInstallHome)
             .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 

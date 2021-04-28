@@ -217,7 +217,11 @@ class ServerPod extends KubernetesResource {
    * The common mount.
    *
    */
-  @Description("The common mount with the containers hosting files to be copied to the common volume.")
+  @Description("Use a common mount to automatically include directory content from additional images. "
+          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+          + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+          + "the files from the additional images with the pod.")
   private CommonMount commonMount;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {

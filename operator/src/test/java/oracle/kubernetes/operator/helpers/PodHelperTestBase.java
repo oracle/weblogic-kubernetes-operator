@@ -135,6 +135,7 @@ import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.Container.DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_WRAPPER_SCRIPT;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -231,10 +232,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return envVars;
   }
 
-  static List<V1EnvVar> getCommonMountEnvVariables() {
+  static List<V1EnvVar> getCommonMountEnvVariables(String image, String command) {
     List<V1EnvVar> envVars = new ArrayList<>();
     envVars.add(createEnvVar(ServerEnvVars.COMMON_MOUNT_PATH, COMMON_MOUNT_PATH));
     envVars.add(createEnvVar(ServerEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH));
+    envVars.add(createEnvVar(ServerEnvVars.COMMON_MOUNT_COMMAND, command));
+    envVars.add(createEnvVar(ServerEnvVars.CONTAINER_IMAGE, image));
     return envVars;
   }
 
@@ -535,7 +538,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
-                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                    DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -582,7 +585,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
-                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                    DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
@@ -593,7 +596,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
-                    "/bin/sh", "-c", CUSTOM_COMMAND_SCRIPT)));
+                    CUSTOM_COMMAND_SCRIPT, INIT_CONTAINER_WRAPPER_SCRIPT)));
   }
 
   @Test
@@ -605,9 +608,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1", "IfNotPresent",
-                    "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND),
+                    DEFAULT_INIT_CONTAINER_COMMAND),
                     hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1", "IfNotPresent",
-                            "/bin/sh", "-c", DEFAULT_INIT_CONTAINER_COMMAND)));
+                            DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @NotNull

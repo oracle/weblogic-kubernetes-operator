@@ -19,15 +19,21 @@ public class ServerEnvVars {
   /** The path to the domain home, either in a PV or image. */
   public static final String DOMAIN_HOME = "DOMAIN_HOME";
 
-  /** The path to the WDT installation binary home. */
-  public static final String WDT_BINARY_HOME = "WDT_BINARY_HOME";
+  /** The path to the WDT installation home. */
+  public static final String WDT_INSTALL_HOME = "WDT_INSTALL_HOME";
 
   /** The common mount path. */
   public static final String COMMON_MOUNT_PATH = "COMMON_MOUNT_PATH";
 
   /** The common mount target path. */
   public static final String COMMON_TARGET_PATH = "COMMON_TARGET_PATH";
-  
+
+  /** The common mount command. */
+  public static final String COMMON_MOUNT_COMMAND = "COMMON_MOUNT_COMMAND";
+
+  /** The common mount container image. */
+  public static final String CONTAINER_IMAGE = "CONTAINER_IMAGE";
+
   /** The path to the node manager home, either in a PV or image. */
   public static final String NODEMGR_HOME = "NODEMGR_HOME";
 

@@ -721,12 +721,12 @@ public class Domain implements KubernetesObject {
   }
 
   /**
-   * Returns the WDT binary home directory of the domain.
+   * Returns the WDT install home directory of the domain.
    *
-   * @return WDT binary home directory
+   * @return WDT install home directory
    */
-  public String getWdtBinaryHome() {
-    return spec.getWdtBinaryHome();
+  public String getWdtInstallHome() {
+    return spec.getWdtInstallHome();
   }
 
   /**

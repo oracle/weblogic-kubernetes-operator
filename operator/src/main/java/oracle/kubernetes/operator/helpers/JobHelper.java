@@ -4,11 +4,15 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -17,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -50,8 +55,10 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
+import static oracle.kubernetes.operator.ProcessingConstants.INTRO_POD_INIT_CONTAINERS;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
 
 public class JobHelper {
 
@@ -349,9 +356,9 @@ public class JobHelper {
         addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
       }
 
-      String wdtBinaryHome = getWdtBinaryHome();
-      if (wdtBinaryHome != null && !wdtBinaryHome.isEmpty()) {
-        addEnvVar(vars, IntrospectorJobEnvVars.WDT_BINARY_HOME, wdtBinaryHome);
+      String wdtInstallHome = getWdtInstallHome();
+      if (wdtInstallHome != null && !wdtInstallHome.isEmpty()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
       }
 
       Optional.ofNullable(getCommonMount()).ifPresent(cm -> addCommonMountEnvVars(cm, vars));
@@ -360,7 +367,7 @@ public class JobHelper {
 
     private void addCommonMountEnvVars(CommonMount cm, List<V1EnvVar> vars) {
       addEnvVar(vars, IntrospectorJobEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
-      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_TARGET_PATH, cm.getTargetPath());
+      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
     }
   }
 
@@ -457,23 +464,34 @@ public class JobHelper {
       String namespace = info.getNamespace();
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-
-      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), getNext()), packet);
+      Set<String> initContainerNames = (Set<String>) packet.get(INTRO_POD_INIT_CONTAINERS);
+      Collection<StepAndPacket> startDetails = new ArrayList<>();
+      if ((initContainerNames != null) && (initContainerNames.size() > 0)) {
+        initContainerNames.forEach(c -> startDetails.add(new StepAndPacket(
+                readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), c, true, null),
+                packet)));
+      }
+      startDetails.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(),
+              null, false, null), packet));
+      return doForkJoin(getNext(), packet, startDetails);
     }
 
-    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
-      return new CallBuilder()
-            .readPodLogAsync(
-                  jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
+    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid,
+                                              String containerName, boolean isInitContainer, Step next) {
+      return new CallBuilder().withContainerName(containerName)
+            .readPodLogAsync(jobPodName, namespace, domainUid,
+                    new ReadDomainIntrospectorPodLogResponseStep(isInitContainer, next));
     }
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     private StringBuilder logMessage = new StringBuilder();
     private final List<String> severeStatuses = new ArrayList<>();
+    private final boolean isInitContainer;
 
-    ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
+    ReadDomainIntrospectorPodLogResponseStep(boolean isInitContainer, Step nextStep) {
       super(nextStep);
+      this.isInitContainer = isInitContainer;
     }
 
     @Override
@@ -488,6 +506,9 @@ public class JobHelper {
         }
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         MakeRightDomainOperation.recordInspection(packet);
+      }
+      if (isInitContainer) {
+        return doNext(getNext(), packet);
       }
 
       V1Job domainIntrospectorJob =
@@ -669,6 +690,14 @@ public class JobHelper {
             .findFirst()
             .ifPresent(name -> recordJobPodName(packet, name));
 
+      Optional.ofNullable(callResponse.getResult())
+              .map(V1PodList::getItems)
+              .orElseGet(Collections::emptyList)
+              .stream()
+              .filter(this::isJobPod)
+              .map(this::getInitContainers)
+              .forEach(initContainerList -> recordIntroInitContainerNames(packet, initContainerList));
+
       return doContinueListOrNext(callResponse, packet);
     }
 
@@ -676,12 +705,31 @@ public class JobHelper {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
     }
 
+    private List<V1Container> getInitContainers(V1Pod pod) {
+      return Optional.of(pod).map(V1Pod::getSpec).map(V1PodSpec::getInitContainers).orElse(Collections.emptyList());
+    }
+
     private boolean isJobPodName(String podName) {
       return podName.startsWith(createJobName(domainUid));
     }
 
+    private boolean isJobPod(V1Pod pod) {
+      return pod.getMetadata().getName().startsWith(createJobName(domainUid));
+    }
+
     private void recordJobPodName(Packet packet, String podName) {
       packet.put(ProcessingConstants.JOB_POD_NAME, podName);
+    }
+
+    private void recordIntroInitContainerNames(Packet packet, List<V1Container> containers) {
+      Set<String> containerList = (Set<String>)packet.get(INTRO_POD_INIT_CONTAINERS);
+      if (containerList == null) {
+        containerList = new LinkedHashSet<>();
+      }
+      for (V1Container c: containers) {
+        containerList.add(c.getName());
+      }
+      packet.put(INTRO_POD_INIT_CONTAINERS, containerList);
     }
   }
 }

@@ -42,6 +42,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -168,8 +169,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getModelHome();
   }
 
-  String getWdtBinaryHome() {
-    return getDomain().getWdtBinaryHome();
+  String getWdtInstallHome() {
+    return getDomain().getWdtInstallHome();
   }
 
   CommonMount getCommonMount() {
@@ -397,7 +398,7 @@ public abstract class JobStepContext extends BasePodStepContext {
 
     Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
             container.addVolumeMountsItem(
-                    new V1VolumeMount().name(cm.getEmptyDirVolumeName()).mountPath(cm.getMountPath())));
+                    new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(cm.getMountPath())));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
