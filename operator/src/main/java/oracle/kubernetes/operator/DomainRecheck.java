@@ -70,7 +70,7 @@ class DomainRecheck {
     return new NamespaceRulesReviewStep(namespace, true);
   }
 
-  public Step createReadNamespacesStep() {
+  Step createReadNamespacesStep() {
     return Namespaces.getSelection(new ReadNamespacesStepsVisitor());
   }
 
