@@ -31,10 +31,6 @@ jobs:
 
       - name: Verify changes to documentation present
         run: |
-          echo "TEST: trying to diagnose paths created by the checkout action"
-          pwd
-          ls
-          echo "end TEST"
           cd $GITHUB_WORKSPACE/main
           X=`git diff HEAD~1 --name-only | grep "^documentation" | wc -l`
           if [ $X == "0" ]; then
