@@ -30,7 +30,7 @@ clusterName: cluster-1
 initialManagedServerReplicas: 2
 
 # Number of managed servers to generate for the domain
-# This value is ignored if using WDT with a model that creates configured cluster
+# This value is ignored when using WDT with a model that creates configured cluster.
 configuredManagedServerCount: 5
 
 # Base string used to generate managed server names

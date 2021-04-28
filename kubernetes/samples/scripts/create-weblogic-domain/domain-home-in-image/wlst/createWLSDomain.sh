@@ -4,7 +4,7 @@
 #Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 #Adopted from https://github.com/oracle/docker-images/blob/main/OracleWebLogic/samples/12213-domain-home-in-image/container-scripts/createWLSDomain.sh
-#Define DOMAIN_HOME
+
 echo "Info: Domain Home is: " $DOMAIN_HOME
 
 if [ -z "${DOMAIN_HOME}" ]; then
@@ -26,7 +26,7 @@ if [ ! -z $dfiles ]; then
   exit 1
 fi
 
-# Create Domain only if 1st execution
+# Verify that the properties file exist
 DOMAIN_PROPERTIES_FILE=${PROPERTIES_FILE_DIR}/domain.properties
 if [ ! -e "${DOMAIN_PROPERTIES_FILE}" ]; then
    echo "Error: Property file '${DOMAIN_PROPERTIES_FILE}' not found. A property file with the username and password needs to be supplied."

@@ -214,6 +214,7 @@ function createDomainHome {
       cp ${scriptDir}/${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
       sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
 
+      echo @@ "Info: Using WLST script at ${createDomainWlstScript} to create a WebLogic domain home."
       createDomainWlstScriptCopy="${domainOutputDir}/create-wls-domain.py"
       cp ${scriptDir}/${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
 
@@ -231,6 +232,7 @@ function createDomainHome {
     else # wdt
       createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
       cp ${scriptDir}/${createDomainWdtModel} ${createDomainWdtModelCopy} || exit 1
+      echo @@ "Info: Using WDT model YAML file at ${createDomainWdtModel} to create a WebLogic domain home."
 
       if [ -n "${wdtEncryptKey}" ]; then
         echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
@@ -267,18 +269,18 @@ function createDomainHome {
     eval $cmd
 
     if [ "$?" != "0" ]; then
-      fail "Create domain ${domainName} failed."
+      fail "Error: Create domain ${domainName} failed."
     fi
 
     # clean up the generated files in $domainOutputDir
     rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${createDomainWdtModelCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
 
     echo ""
-    echo "Create domain ${domainName} successfully."
+    echo @@ "Info: Create domain ${domainName} successfully."
 
   else
     echo ""
-    echo "Skipping domain image build "
+    echo @@ "Info: Skipping domain image build "
  fi 
 
 }
@@ -292,19 +294,19 @@ function printSummary {
   getKubernetesClusterIP
 
   echo ""
-  echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
+  echo @@ "Info: Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
   if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
+    echo @@ "Info: Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
   fi
   if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
+    echo @@ "Info: T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
   fi
-  echo "The following files were generated:"
+  echo @@ "Info: The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${dcrOutput}"
   echo ""
-  echo "Completed"
+  echo @@ "Info: Completed"
 }
 
 # Perform the sequence of steps to create a domain
