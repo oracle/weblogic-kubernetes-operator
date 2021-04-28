@@ -48,18 +48,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
     nap['TwoWaySslEnabled'] = 'false'
     nap['ClientCertificateEnforced'] = 'false'
 
-  #def getModelFromYaml(self):
-  #  # Load model as dictionary
-  #  file = open(r'../resources/model.dynamic_cluster.yaml')
-  #  model = yaml.load(file)
-  #
-  #  # Setup mock environment
-  #  mock_env= MockOfflineWlstEnv()
-  #  mock_env.open(model)
-  #  model_wdt_mii_filter.env = mock_env
-  #
-  #  return model
-
   def getModel(self):
     # Load model as dictionary
     file = open(r'../resources/model.dynamic_cluster_dict.txt')
@@ -73,19 +61,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model_wdt_mii_filter.env = mock_env
 
     return model
-
-
-  #def getStaticModelFromYaml(self):
-  #  # Load model as dictionary
-  #  file = open(r'../resources/model.static_cluster.yaml')
-  #  model = yaml.load(file)
-  #
-  #  # Setup mock environment
-  #  mock_env= MockOfflineWlstEnv()
-  #  mock_env.open(model)
-  #  model_wdt_mii_filter.env = mock_env
-  #
-  #  return model
 
   def getStaticModel(self):
     # Load model as dictionary
@@ -253,6 +228,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_customizeServers(self):
     model = self.getModel()
     model_wdt_mii_filter.customizeServers(model)
+    self.assertEqual('sample-domain1-admin-server', model['topology']['Server']['admin-server']['ListenAddress'], "Expected server listen address to be  \'sample-domain1-admin-server\'")
 
   def test_readDomainNameFromTopologyYaml(self):
     model = self.getModel()
