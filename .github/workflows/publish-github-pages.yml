@@ -52,6 +52,7 @@ jobs:
         with:
           ref: gh-pages
           path: gh-pages
+          token: ${{ secrets.PUBLISH_SECRET }}
 
       - name: Publish gh-pages
         run: |
