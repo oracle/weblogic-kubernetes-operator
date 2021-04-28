@@ -424,7 +424,7 @@ function encrypt_model {
   "
   echo $cmd > ${domainOutputDirFullPath}/cmd.sh
   chmod 755 ${domainOutputDirFullPath}/cmd.sh
-  echo @@ "Info: Encrypt Model: About to run the following command in docker container with image ${domainHomeImageBase}:"
+  echo @@ "Info: Encrypt Model: About to run the following command in container with image ${domainHomeImageBase}:"
   cat ${domainOutputDirFullPath}/cmd.sh
 
   chmod 766 ${domainOutputDirFullPath}/${domain_properties_file}

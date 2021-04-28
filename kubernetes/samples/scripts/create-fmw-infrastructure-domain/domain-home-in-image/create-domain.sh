@@ -26,11 +26,12 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-e] [-v] [-n] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-m wdt\|wlst] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u Username used in building the image for WebLogic domain in image."
   echo "  -p Password used in building the image for WebLogic domain in image."
+  echo "  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
@@ -43,7 +44,8 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "evhi:o:u:p:n:" opt; do
+mode=wdt
+while getopts "evhi:o:u:p:n:m:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -58,6 +60,8 @@ while getopts "evhi:o:u:p:n:" opt; do
     p) password="${OPTARG}"
     ;;
     n) wdtEncryptKey="${OPTARG}"
+    ;;
+    m) mode="${OPTARG}";
     ;;
     h) usage 0
     ;;
@@ -84,6 +88,15 @@ fi
 if [ -z ${outputDir} ]; then
   echo "${script}: -o must be specified."
   missingRequiredOption="true"
+fi
+
+if [ ! "${mode}" == "wdt" ] && [ ! "${mode}" == "wlst" ]; then
+  echo "${script}: -m must be either wdt or wlst."
+  missingRequiredOption="true"
+fi
+
+if [ -n "${wdtEncryptKey}" ] && [ "${mode}" == "wlst" ]; then
+  echo "${script}: -n is ignored for wlst mode."
 fi
 
 if [ "${missingRequiredOption}" == "true" ]; then
@@ -149,6 +162,33 @@ function initialize {
 
   validateCommonInputs "fmw-domain-home-in-image"
 
+  if [ "${mode}" == "wlst" ]; then
+    if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
+      createDomainWlstScript="${createDomainWlstScript:-../../common/createFMWRestrictedJRFDomain.py}"
+    else
+      createDomainWlstScript="${createDomainWlstScript:-../../common/createFMWJRFDomain.py}"
+    fi
+    if [ ! -f ${scriptDir}/${createDomainWlstScript} ]; then
+      validationError "The create domain WLST script file ${createDomainWlstScript} was not found"
+    fi
+    echo @@ "Info: Using WLST script at ${createDomainWlstScript} to create a WebLogic domain home."
+  fi
+
+  if [ "${mode}" == "wdt" ]; then
+    # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
+    if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
+      createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_restricted_jrf_configured.yaml}"
+      wdtDomainType=RestrictedJRF
+    else
+      createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_configured.yaml}"
+      wdtDomainType=JRF
+    fi
+    if [ ! -f ${scriptDir}/${createDomainWdtModel} ]; then
+      validationError "The create domain WDT model file ${createDomainWdtModel} was not found"
+    fi
+    echo @@ "Info: Using WDT model YAML file at ${createDomainWdtModel} to create a WebLogic domain home."
+  fi
+
   validateBooleanInputParamsSpecified logHomeOnPV
   failIfValidationErrors
 
@@ -177,52 +217,70 @@ function getDockerSample {
 #
 function createDomainHome {
 
-  echo "fmwDomainType is [${fmwDomainType}]"
-  # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
-  if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
-    wdtModelFile=wdt/wdt_model_restricted_jrf_configured.yaml
-    wdtDomainType=RestrictedJRF
-  else
-    wdtModelFile=wdt/wdt_model_configured.yaml
-    wdtDomainType=JRF
-  fi
+  echo @@ "Info: WIT_DIR is ${WIT_DIR}"
 
-  createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
-  cp ${scriptDir}/${wdtModelFile} ${createDomainWdtModelCopy} || exit 1
+  domainPropertiesOutput="${domainOutputDir}/domain.properties"
 
-  if [ -n "${wdtEncryptKey}" ]; then
-    echo "An encryption key is provided, encrypting passwords in WDT properties file"
-    wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
-    echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
-    domainOutputDirFullPath="$( cd "$( dirname "${domainPropertiesOutput}" )" && pwd)"
-    encrypt_model ${domainOutputDirFullPath} wdt_model.yaml wdt_encrypt_key domain.properties || exit 1
-  fi
+  echo @@ "Info: Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
+
+  if [ "${mode}" == "wlst" ]; then
+      additionalBuildCommandsOutput="${domainOutputDir}/additional-build-commands"
+      additionalBuildCommandsTemplate="wlst/additional-build-commands-template"
+
+      # Generate the additional-build-commands file that will be used when creating the weblogic domain
+      echo @@ "Info: Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
+
+      cp ${scriptDir}/${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
+      sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
+
+      createDomainWlstScriptCopy="${domainOutputDir}/createFMWDomain.py"
+      cp ${scriptDir}/${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
+
+      cmd="
+        $WIT_DIR/imagetool/bin/imagetool.sh update
+          --fromImage \"$domainHomeImageBase\"
+          --tag \"${BUILD_IMAGE_TAG}\"
+          --wdtOperation CREATE
+          --wdtVersion ${WDT_VERSION}
+          --wdtDomainHome \"${domainHome}\"
+          --additionalBuildCommands ${additionalBuildCommandsOutput}
+          --additionalBuildFiles \"${scriptDir}/wlst/createFMWDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
+          --chown=oracle:oracle
+        "
+  else # wdt
+    createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
+    cp ${scriptDir}/${createDomainWdtModel} ${createDomainWdtModelCopy} || exit 1
+
+    if [ -n "${wdtEncryptKey}" ]; then
+      echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
+      wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
+      echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
+      domainOutputDirFullPath="$( cd "$( dirname "${domainPropertiesOutput}" )" && pwd)"
+      encrypt_model ${domainOutputDirFullPath} wdt_model.yaml wdt_encrypt_key domain.properties || exit 1
+    fi
 
     echo @@ "Info: dumping output of ${domainPropertiesOutput}"
     sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g' ${domainPropertiesOutput}
 
-  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
-  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
-
-  echo "Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
-
-  cmd="
-    $WIT_DIR/imagetool/bin/imagetool.sh update
-      --fromImage \"$domainHomeImageBase\"
-      --tag \"${BUILD_IMAGE_TAG}\"
-      --wdtModel \"${createDomainWdtModelCopy}\"
-      --wdtVariables \"${domainPropertiesOutput}\"
-      --wdtOperation CREATE
-      --wdtVersion ${WDT_VERSION} 
-      --wdtDomainType ${wdtDomainType} 
-      --wdtDomainHome \"${domainHome}\"
-      --additionalBuildCommands additional-build-commands
-      --chown=oracle:oracle
-  "
-  if [ -n "${wdtEncryptKey}" ]; then
-    cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+    cmd="
+      $WIT_DIR/imagetool/bin/imagetool.sh update
+        --fromImage \"$domainHomeImageBase\"
+        --tag \"${BUILD_IMAGE_TAG}\"
+        --wdtModel \"${createDomainWdtModelCopy}\"
+        --wdtVariables \"${domainPropertiesOutput}\"
+        --wdtOperation CREATE
+        --wdtVersion ${WDT_VERSION}
+        --wdtDomainType ${wdtDomainType}
+        --wdtDomainHome \"${domainHome}\"
+        --additionalBuildCommands ${scriptDir}/wdt/additional-build-commands
+        --chown=oracle:oracle
     "
+    if [ -n "${wdtEncryptKey}" ]; then
+      cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+      "
+    fi
   fi
+
   echo @@ "Info: About to run the following WIT command:"
   echo "$cmd"
   echo
@@ -233,10 +291,10 @@ function createDomainHome {
   fi
 
   # clean up the generated domain.properties file
-  rm -f ${domainPropertiesOutput} $createDomainWdtModelCopy} ${wdtEncryptionKeyFile}
+  rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${createDomainWdtModelCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
 
   echo ""
-  echo "Create domain ${domainName} successfully."
+  echo @@ "Info: Create domain ${domainName} successfully."
 }
 
 #
@@ -248,21 +306,20 @@ function printSummary {
   getKubernetesClusterIP
 
   echo ""
-  echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
+  echo @@ "Info: Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
   if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
+    echo @@ "Info: Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
   fi
   if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
+    echo @@ "Info: T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
   fi
-  echo "The following files were generated:"
+  echo @@ "Info: The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${dcrOutput}"
   echo ""
-  echo "Completed"
+  echo @@ "Info: Completed"
 }
 
 # Perform the sequence of steps to create a domain
 createDomain true
-

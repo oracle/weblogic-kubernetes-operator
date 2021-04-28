@@ -136,13 +136,13 @@ function initialize {
   if [ "${fmwDomainType}" == "JRF" -a "${createDomainFilesDir}" == "wlst" ]; 
   then
    rm -rf ${scriptDir}/common/createFMWDomain.py
-   cp -f ${scriptDir}/common/createFMWJRFDomain.py \
+   cp -f ${scriptDir}/../../common/createFMWJRFDomain.py \
          ${scriptDir}/common/createFMWDomain.py
   fi
   if [ "${fmwDomainType}" == "RestrictedJRF" -a "${createDomainFilesDir}" == "wlst" ]; 
   then
     rm -rf ${scriptDir}/common/createFMWDomain.py
-    cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
+    cp -f ${scriptDir}/../../common/createFMWRestrictedJRFDomain.py \
          ${scriptDir}/common/createFMWDomain.py
   fi
   domain_type=${fmwDomainType}
