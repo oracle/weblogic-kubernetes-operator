@@ -44,7 +44,7 @@ jobs:
           tar -xf hugo.tar.gz
           export PATH="$PWD:$PATH"
           mkdir $GITHUB_WORKSPACE/WORK
-          cd $GITHUB_WORKSPACE/main/code/documentation
+          cd $GITHUB_WORKSPACE/main/documentation
           ./publish.sh -o $GITHUB_WORKSPACE/WORK
 
       - name: Checkout gh-pages
