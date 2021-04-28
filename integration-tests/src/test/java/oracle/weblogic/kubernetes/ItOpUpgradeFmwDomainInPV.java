@@ -84,8 +84,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests to upgrade Operator with FMW domain in persistent volume using WLST.
+ * Install a released version of Operator from GitHub chart repository.
+ * Create a domain using Domain-In-PV model with a dynamic cluster.
+ * Upgrade operator with latest Operator image build from main branch.
+ * Verify Domain resource version and image are updated.
  */
-@DisplayName("Tests to upgrade Operator with FMW domain in persistent volume using WLST")
+@DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
 public class ItOpUpgradeFmwDomainInPV {
 
@@ -206,68 +210,79 @@ public class ItOpUpgradeFmwDomainInPV {
   }
 
   /**
-   * Operator upgrade from 2.6.0 to latest.
-   * Install 2.6.0 release Operator from GitHub chart repository and create a FMW domain.
-   * Delete Operator and install latest Operator and verify CRD version is updated.
+   * Operator upgrade from 2.6.0 to latest with a FMW Domain.
+   * Delete Operator and install latest Operator.
+   * Verify Domain resource version is updated while domain is in running state.
    */
   @Test
-  @DisplayName("Upgrade Operator from 2.6.0 to develop")
-  public void testOperatorFmwUpgradeFrom260ToDevelop() {
+  @DisplayName("Upgrade Operator from 2.6.0 to main")
+  public void testOperatorFmwUpgradeFrom260ToMain() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
   /**
-   * Operator upgrade from 3.0.3 to latest.
-   * Install 3.0.3 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   * Operator upgrade from 3.0.3 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.3 to develop")
-  public void testOperatorFmwUpgradeFrom303ToDevelop() {
+  @DisplayName("Upgrade Operator from 3.0.3 to main")
+  public void testOperatorFmwUpgradeFrom303ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.0.4 to latest.
-   * Install 3.0.4 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   * Operator upgrade from 3.0.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to develop")
-  public void testOperatorFmwUpgradeFrom304ToDevelop() {
+  @DisplayName("Upgrade Operator from 3.0.4 to main")
+  public void testOperatorFmwUpgradeFrom304ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.1.2 to latest.
-   * Install 3.1.2 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   * Operator upgrade from 3.1.3 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.2 to develop")
-  public void testOperatorFmwUpgradeFrom312ToDevelop() {
-    installAndUpgradeOperator("3.1.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.1.3 to main")
+  public void testOperatorFmwUpgradeFrom313ToMain() {
+    installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.1.3 to latest.
-   * Install 3.1.3 Operator from GitHub chart repository and create a domain.
-   * Deploy an application to the cluster in domain and verify the application can be
-   * accessed while the operator is upgraded and after the upgrade.
-   * Upgrade operator with latest Operator image and verify CRD version and image are updated.
+   * Operator upgrade from 3.1.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.3 to develop")
-  public void testOperatorFmwUpgradeFrom313ToDevelop() {
-    installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.1.4 to main")
+  public void testOperatorFmwUpgradeFrom314ToMain() {
+    installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.2.0 to latest with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.2.0 to main")
+  public void testOperatorFmwUpgradeFrom320ToMain() {
+    installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.2.1 to latest with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.2.1 to main")
+  public void testOperatorFmwUpgradeFrom321ToMain() {
+    installAndUpgradeOperator("3.2.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.2.2 to latest with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.2.2 to main")
+  public void testOperatorFmwUpgradeFrom322ToMain() {
+    installAndUpgradeOperator("3.2.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   private void installAndUpgradeOperator(String operatorVersion,
