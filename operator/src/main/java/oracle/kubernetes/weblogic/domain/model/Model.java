@@ -102,7 +102,7 @@ public class Model {
     this.wdtInstallHome = wdtInstallHome;
   }
 
-  public Model withWdtBinaryHome(String wdtInstallHome) {
+  public Model withWdtInstallHome(String wdtInstallHome) {
     this.wdtInstallHome = wdtInstallHome;
     return this;
   }
@@ -127,7 +127,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
-            .append("wdtBinaryHome", wdtInstallHome)
+            .append("wdtInstallHome", wdtInstallHome)
             .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 

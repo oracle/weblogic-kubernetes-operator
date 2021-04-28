@@ -35,8 +35,6 @@ import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_W
 
 public abstract class BasePodStepContext extends StepContextBase {
 
-  public static final String SHELL = "/bin/sh";
-
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
   }
