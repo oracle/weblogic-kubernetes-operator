@@ -62,7 +62,7 @@ public interface ActionConstants {
       "https://github.com/oracle/weblogic-remote-console/releases/latest";
   public static final String REMOTECONSOLE_DOWNLOAD_URL
       =  System.getProperty("remoteconsole.download.url", REMOTECONSOLE_DOWNLOAD_URL_DEFAULT);
-  public static final String REMOTECONSOLE_VERSION  = System.getProperty("remoteconsole.version", "1.0");
+  public static final String REMOTECONSOLE_VERSION  = System.getProperty("remoteconsole.version", "1.1.0");
   public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
   public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
 
