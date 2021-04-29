@@ -107,7 +107,9 @@ class ItRemoteConsole {
    */
   @AfterAll
   public void tearDownAll() {
-    if (System.getenv("SKIP_CLEANUP") == null) {
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false")))  {
       assertTrue(shutdownWlsRemoteConsole(), "Remote Console shutdown failed");
     }
   }
