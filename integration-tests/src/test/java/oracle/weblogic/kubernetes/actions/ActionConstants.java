@@ -55,6 +55,17 @@ public interface ActionConstants {
   public static final String WLE = "WLE";
   public static final String SNAKE = "SNAKE";
 
+  public static final String REMOTECONSOLE = "REMOTECONSOLE";
+  //remoteconsole jar file after unzipping
+  public static final String REMOTECONSOLE_FILE = WORK_DIR + "/console/console.jar";
+  public static final String REMOTECONSOLE_DOWNLOAD_URL_DEFAULT =
+      "https://github.com/oracle/weblogic-remote-console/releases/latest";
+  public static final String REMOTECONSOLE_DOWNLOAD_URL
+      =  System.getProperty("remoteconsole.download.url", REMOTECONSOLE_DOWNLOAD_URL_DEFAULT);
+  public static final String REMOTECONSOLE_VERSION  = System.getProperty("remoteconsole.version", "1.1.0");
+  public static final String REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT = "console.zip";
+  public static final String REMOTECONSOLE_ZIP_PATH = DOWNLOAD_DIR + "/" + REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+
   public static final String WLE_DOWNLOAD_URL_DEFAULT
       = "https://github.com/oracle/weblogic-logging-exporter/releases/latest";
   public static final String WLE_DOWNLOAD_URL
