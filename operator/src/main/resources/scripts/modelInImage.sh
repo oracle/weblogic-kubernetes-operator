@@ -47,7 +47,7 @@ MII_UPDATE_NO_CHANGES_TO_APPLY=false
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
-MODELS_SAME="false"
+MERGED_MODEL_ENVVARS_SAME="false"
 SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
 NOT_FOR_ONLINE_UPDATE=6
@@ -390,7 +390,7 @@ function createWLDomain() {
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
-    if [ "${MODELS_SAME}" == "false" ] ; then
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
       DOMAIN_CREATED=1
     fi
   else
@@ -529,7 +529,7 @@ function createModelDomain() {
   trace "Entering createModelDomain"
   createPrimordialDomain
 
-  if [ "${MODELS_SAME}" == "false" ] ; then
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
     # if there is a new primordial domain created then use newly created primordial domain otherwise
     # if the primordial domain already in the configmap, restore it
     #
@@ -632,15 +632,15 @@ function diff_model() {
         exitOrLoop
       else
         if [ ${SECRETS_AND_ENV_CHANGED} -eq 0 ] ; then
-          # Model is identical, tell introspectDomain.sh not to run python and short circuit
-          trace "Merged models and environment variables are the same, nothing to do further."
-          MODELS_SAME="true"
+          # Merged model and env vars are identical, tell introspectDomain.sh not to run python and short circuit
+          trace "Merged models and environment variables are identical, this introspection should be no-op."
+          MERGED_MODEL_ENVVARS_SAME="true"
         fi
       fi
     fi
   fi
 
-  if [ "${MODELS_SAME}" == "false" ] ; then
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
     # Generate diffed model update compatibility result
     local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
     local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
@@ -698,7 +698,7 @@ function createPrimordialDomain() {
       diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
     fi
 
-    if [ "${MODELS_SAME}" == "false" ] ; then
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
 
       diff_rc=$(cat /tmp/model_diff_rc)
       rm ${DECRYPTED_MERGED_MODEL}
