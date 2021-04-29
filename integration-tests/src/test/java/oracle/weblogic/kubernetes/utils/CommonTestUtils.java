@@ -1198,6 +1198,36 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully installed, false otherwise.
+   */
+  public static boolean installAndVerifyWlsRemoteConsole() {
+
+    assertThat(TestActions.installWlsRemoteConsole())
+        .as("WebLogic Remote Console installation succeeds")
+        .withFailMessage("WebLogic Remote Console installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Shutdown WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully shutdown, false otherwise.
+   */
+  public static boolean shutdownWlsRemoteConsole() {
+
+    assertThat(TestActions.shutdownWlsRemoteConsole())
+        .as("WebLogic Remote Console shutdown succeeds")
+        .withFailMessage("WebLogic Remote Console shutdown failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
