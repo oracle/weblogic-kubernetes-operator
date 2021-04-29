@@ -650,7 +650,7 @@ function diff_model() {
     ${JAVA_HOME}/bin/java -cp ${CP} \
       ${JAVA_PROPS} \
       org.python.util.jython \
-      ${SCRIPTPATH}/model-diff.py > ${WDT_OUTPUT} 2>&1
+      ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
     if [ $? -ne 0 ] ; then
       trace SEVERE "Failed to compare models. Error output:"
       cat ${WDT_OUTPUT}
