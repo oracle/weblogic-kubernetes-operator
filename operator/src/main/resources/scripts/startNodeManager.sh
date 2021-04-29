@@ -241,13 +241,20 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    # Domain source type is 'FromModel' (MII) then disable Situation config override for WebLogic.
+    failBootOnErrorOption=""
+  else
+    failBootOnErrorOption="-Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}"
+  fi
+
 cat <<EOF > ${wl_props_file}
 # Server startup properties
 AutoRestart=true
 RestartMax=2
 RestartInterval=3600
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} ${failBootOnErrorOption} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  

@@ -767,6 +767,10 @@ class TopologyGenerator(Generator):
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     if istio_enabled == 'true':
+      name = nap.getName()
+      if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') or name.startswith('https-'):
+        # skip istio ports already defined by WDT filtering for MII
+        return
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
       tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
@@ -1606,10 +1610,11 @@ class DomainIntrospector(SecretManager):
     tg = TopologyGenerator(self.env)
 
     if tg.validate():
-      SitConfigGenerator(self.env).generate()
+      DOMAIN_SOURCE_TYPE = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+      if DOMAIN_SOURCE_TYPE != "FromModel":
+        SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
-      DOMAIN_SOURCE_TYPE      = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
       if DOMAIN_SOURCE_TYPE == "FromModel":
         trace("cfgmap write primordial_domain")

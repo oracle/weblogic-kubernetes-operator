@@ -61,6 +61,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -631,6 +632,11 @@ public abstract class PodStepContext extends BasePodStepContext {
     updateEnvForShutdown(env);
     updateEnvForStartupMode(env);
     defineConfigOverride(env);
+    updateEnvWithDomainSourceType(env);
+  }
+
+  private void updateEnvWithDomainSourceType(List<V1EnvVar> env) {
+    addDefaultEnvVarIfMissing(env, IntrospectorJobEnvVars.DOMAIN_SOURCE_TYPE, getDomainHomeSourceType().toString());
   }
 
   private void updateEnvForShutdown(List<V1EnvVar> env) {
