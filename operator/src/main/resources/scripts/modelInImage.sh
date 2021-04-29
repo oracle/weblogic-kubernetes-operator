@@ -320,9 +320,9 @@ function createWLDomain() {
   fi
 
   # copy the filter related files to the wdt lib
-  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json || trace SEVERE "cp ${WDT_FILTER_JSON} failed" && exitOrLoop
-  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib || trace SEVERE "cp ${WDT_CREATE_FILTER} failed" && exitOrLoop
-  cp ${WDT_MII_FILTER} ${WDT_ROOT}/lib || trace SEVERE "cp ${WDT_MII_FILTER} failed" && exitOrLoop
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json || logSevereAndExit ${WDT_FILTER_JSON}
+  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_CREATE_FILTER}
+  cp ${WDT_MII_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_MII_FILTER}
 
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again
@@ -1285,4 +1285,9 @@ function stop_trap() {
 
 function cleanup_mii() {
   rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
+}
+
+function logSevereAndExit() {
+  trace SEVERE "cp '$1' failed"
+  exitOrLoop
 }
