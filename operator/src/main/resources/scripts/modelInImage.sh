@@ -37,6 +37,7 @@ WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
+WDT_MII_FILTER="/weblogic-operator/scripts/model_wdt_mii_filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
@@ -319,9 +320,9 @@ function createWLDomain() {
   fi
 
   # copy the filter related files to the wdt lib
-
-  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json
-  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json || logSevereAndExit ${WDT_FILTER_JSON}
+  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_CREATE_FILTER}
+  cp ${WDT_MII_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_MII_FILTER}
 
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again
@@ -793,8 +794,14 @@ function generateMergedModel() {
 
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
-  ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+
+  trace "About to call '${WDT_BINDIR}/validateModel.sh ${wdtArgs}'."
+
+  ${WDT_BINDIR}/validateModel.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Model in Image: the WDT validate model tool detected an error with the fully merged model:"
@@ -917,8 +924,16 @@ function wdtUpdateModelDomain() {
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  trace "About to call '${WDT_BINDIR}/updateDomain.sh ${wdtArgs}'."
+
+  ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then
@@ -1270,4 +1285,9 @@ function stop_trap() {
 
 function cleanup_mii() {
   rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
+}
+
+function logSevereAndExit() {
+  trace SEVERE "cp '$1' failed"
+  exitOrLoop
 }

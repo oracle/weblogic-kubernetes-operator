@@ -102,9 +102,11 @@ if [ $? != 0 ]; then
   exit $RETVAL
 fi
 
-copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
+  copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+  copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+  copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+  copySitCfgWhileRunning /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+fi
 
 exit 0
