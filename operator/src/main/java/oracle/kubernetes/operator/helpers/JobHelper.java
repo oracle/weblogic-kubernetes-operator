@@ -43,7 +43,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -58,7 +57,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingSt
 import static oracle.kubernetes.operator.ProcessingConstants.INTRO_POD_INIT_CONTAINERS;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
 
 public class JobHelper {
 
@@ -361,13 +359,7 @@ public class JobHelper {
         addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
       }
 
-      Optional.ofNullable(getCommonMount()).ifPresent(cm -> addCommonMountEnvVars(cm, vars));
       return vars;
-    }
-
-    private void addCommonMountEnvVars(CommonMount cm, List<V1EnvVar> vars) {
-      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
-      addEnvVar(vars, IntrospectorJobEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
     }
   }
 
@@ -466,11 +458,9 @@ public class JobHelper {
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
       Set<String> initContainerNames = (Set<String>) packet.get(INTRO_POD_INIT_CONTAINERS);
       Collection<StepAndPacket> startDetails = new ArrayList<>();
-      if ((initContainerNames != null) && (initContainerNames.size() > 0)) {
-        initContainerNames.forEach(c -> startDetails.add(new StepAndPacket(
-                readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), c, true, null),
-                packet)));
-      }
+      Optional.ofNullable(initContainerNames).ifPresent(i -> i.stream().forEach(c -> startDetails.add(new StepAndPacket(
+              readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), c, true, null),
+              packet))));
       startDetails.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(),
               null, false, null), packet));
       return doForkJoin(getNext(), packet, startDetails);

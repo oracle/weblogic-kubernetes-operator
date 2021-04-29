@@ -26,7 +26,7 @@ fi
 trace FINE "Common Mount: About to execute COMMON_MOUNT_COMMAND='$COMMON_MOUNT_COMMAND' ."
 results=$(eval $COMMON_MOUNT_COMMAND 2>&1)
 if [ $? -ne 0 ]; then
-  trace ERROR "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed. Error -> '$results' ."
+  trace ERROR "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$CONTAINER_IMAGE'. Error -> '$results' ."
 else
   trace FINE "Common Mount: Command '$COMMON_MOUNT_COMMAND' executed successfully. Output -> '$results'."
 fi

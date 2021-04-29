@@ -126,8 +126,6 @@ public class IntrospectorJobEnvVars {
   public static final String ISTIO_POD_NAMESPACE = "ISTIO_POD_NAMESPACE";
   public static final String WDT_MODEL_HOME = "WDT_MODEL_HOME";
   public static final String WDT_INSTALL_HOME = "WDT_INSTALL_HOME";
-  public static final String COMMON_MOUNT_PATH = "COMMON_MOUNT_PATH";
-  public static final String COMMON_TARGET_PATH = "COMMON_TARGET_PATH";
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with
