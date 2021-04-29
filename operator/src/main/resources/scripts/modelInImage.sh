@@ -349,15 +349,6 @@ function createWLDomain() {
     fi
   fi
 
-  # If No WDT artifacts changed but WLS version changed
-#  if [ -f ${INTROSPECTCM_WLS_VERSION} ] ; then
-#    previous_version=$(cat ${INTROSPECTCM_WLS_VERSION})
-#    if [ "${current_version}" != "${previous_version}" ]; then
-#      trace "version different: before: ${previous_version} current: ${current_version}"
-#      version_changed=1
-#    fi
-#  fi
-
   if [ -f ${INTROSPECTCM_JDK_PATH} ] ; then
     previous_jdkpath=$(cat ${INTROSPECTCM_JDK_PATH})
     if [ "${current_jdkpath}" != "${previous_jdkpath}" ]; then
@@ -980,11 +971,12 @@ function wdtHandleOnlineUpdate() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
   stop_trap
-  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] ; then
-    # no op for offline use case'
-    trace "Domain resource specified 'domain.spec.configuration.model.onlineUpdate=false' or not defined - no op"
-    trace "Exiting wdtHandleOnlineUpdate"
-    return
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] || [ ! -f /tmp/diffed_model.yaml ] ; then
+      # no op for offline use case or no change in model with new image
+      trace "Domain resource specified 'domain.spec.configuration.model.onlineUpdate=false' or not defined or no " \
+        " merged model is the same, no need for online update."
+      trace "Exiting wdtHandleOnlineUpdate"
+      return
   fi
 
   # We need to extract all the archives, WDT online checks for file existence
