@@ -245,7 +245,7 @@ function createDomainHome {
           --wdtDomainHome \"${domainHome}\"
           --additionalBuildCommands ${additionalBuildCommandsOutput}
           --additionalBuildFiles \"${scriptDir}/wlst/createFMWDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
-          --chown=oracle:oracle
+          --chown=oracle:root
         "
   else # wdt
     createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
@@ -273,7 +273,7 @@ function createDomainHome {
         --wdtDomainType ${wdtDomainType}
         --wdtDomainHome \"${domainHome}\"
         --additionalBuildCommands ${scriptDir}/wdt/additional-build-commands
-        --chown=oracle:oracle
+        --chown=oracle:root
     "
     if [ -n "${wdtEncryptKey}" ]; then
       cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"

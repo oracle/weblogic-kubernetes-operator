@@ -5,6 +5,6 @@ RUN chmod g+w /u01/oracle/user_projects/domains/applications
  
 USER oracle
 # copy EM console app
-COPY --from=wdt_build --chown=oracle:oracle /u01/oracle/user_projects/domains/applications /u01/oracle/user_projects/domains/applications/
+COPY --from=wdt_build --chown=oracle:root /u01/oracle/user_projects/domains/applications /u01/oracle/user_projects/domains/applications/
 
 

@@ -7,7 +7,7 @@
 USER oracle
 
 # Add files from addtionalBuildFiles required to build this image
-COPY --chown=oracle:oracle files/* /u01/oracle/
+COPY --chown=oracle:root files/* /u01/oracle/
 
 # WLS Configuration
 # ---------------------------
@@ -23,8 +23,8 @@ RUN chmod +xw /u01/oracle/*.sh && \
     chmod +xw /u01/oracle/*.py && \
     mkdir -p ${PROPERTIES_FILE_DIR} && \
     mkdir -p $DOMAIN_HOME && \
-    chown -R oracle:oracle $DOMAIN_HOME/.. && \
-    chown -R oracle:oracle ${PROPERTIES_FILE_DIR} && \
+    chown -R oracle:root $DOMAIN_HOME/.. && \
+    chown -R oracle:root ${PROPERTIES_FILE_DIR} && \
     mv /u01/oracle/*.properties ${PROPERTIES_FILE_DIR} 
 
 
