@@ -195,7 +195,6 @@ public class TestUtils {
    * @return true if 200 response code is returned, false otherwise
    */
   public static boolean callWebAppAndWaitTillReady(String curlCmd, int maxIterations)  {
-
     return callWebAppAndWaitTillReturnedCode(curlCmd, "200", maxIterations);
   }
 
