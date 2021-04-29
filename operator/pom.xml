@@ -231,14 +231,36 @@
               <goal>java</goal>
             </goals>
             <phase>package</phase>
+            <configuration>
+              <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
+              <arguments>
+                <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-python-scripts</id>
+            <phase>test</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <skip>${skip.unit.tests}</skip>
+              <executable>python</executable>
+              <workingDirectory>src/test/python</workingDirectory>
+              <environmentVariables>
+                <PYTHONPATH>${project.basedir}/src/main/resources/scripts</PYTHONPATH>
+                <DOMAIN_UID>sample-domain1</DOMAIN_UID>
+              </environmentVariables>
+              <arguments>
+                <arugument>-B</arugument>
+                <arugument>-m</arugument>
+                <argument>unittest</argument>
+                <argument>discover</argument>
+              </arguments>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
-          <arguments>
-            <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
-          </arguments>
-        </configuration>
       </plugin>
 
     </plugins>
