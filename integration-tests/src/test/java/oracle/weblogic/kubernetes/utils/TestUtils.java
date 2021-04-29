@@ -195,48 +195,8 @@ public class TestUtils {
    * @return true if 200 response code is returned, false otherwise
    */
   public static boolean callWebAppAndWaitTillReady(String curlCmd, int maxIterations)  {
-    LoggingFacade logger = getLogger();
-    ExecResult result = null;
-    String responseCode = "";
 
-    for (int i = 0; i < maxIterations; i++) {
-      try {
-        result = ExecCommand.exec(curlCmd);
-        responseCode = result.stdout().trim();
-
-        if (result.exitValue() != 0 || !responseCode.equals("200")) {
-          logger.info("callWebApp did not return 200 response code, got {0}, iteration {1} of {2}",
-              responseCode, i, maxIterations);
-
-          try {
-            Thread.sleep(1000);
-          } catch (InterruptedException ignore) {
-            // ignore
-          }
-        } else if (responseCode.equals("200")) {
-          logger.info("callWebApp returned 200 response code, iteration {0}", i);
-          return true;
-        }
-      } catch (Exception e) {
-        logger.info("Got exception while running command: {0}", curlCmd);
-        logger.info(e.toString());
-        if (result != null) {
-          logger.info("result.stdout: \n{0}", result.stdout());
-          logger.info("result.stderr: \n{0}", result.stderr());
-          logger.info("result.exitValue: \n{0}", result.exitValue());
-        }
-        return false;
-      }
-    }
-
-    logger.info("FAILURE: callWebApp did not return 200 response code, got {0}", responseCode);
-    if (result != null) {
-      logger.info("result.stdout: \n{0}", result.stdout());
-      logger.info("result.stderr: \n{0}", result.stderr());
-      logger.info("result.exitValue: \n{0}", result.exitValue());
-    }
-
-    return false;
+    return callWebAppAndWaitTillReturnedCode(curlCmd, "200", maxIterations);
   }
 
   /**
