@@ -889,3 +889,39 @@ function adjustPath() {
     fi
   fi
 }
+
+#
+# checkCommonMount
+#   purpose: If the COMMON_MOUNT_PATH directory exists, it echoes the contents of output files
+#            in ${COMMON_MOUNT_PATH}/common-mount-logs dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${COMMON_MOUNT_PATH}/commonMountLogs dirs.
+#            It also returns 1 if 'successfully' message is not found in the output files
+#            or if the COMMON_MOUNT_PATH directory is empty. Otherwise it returns 0 (success).
+#
+function checkCommonMount() {
+  # check commonMount results (if any)
+  if [ ! -z "$COMMON_MOUNT_PATH" ]; then
+    out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
+      || (trace SEVERE "err='$out_files' Inconceivable!" \
+      && return 1)
+    severe_found=false
+    for out_file in $out_files; do
+      if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
+        trace SEVERE "Error found in file '${out_file}' while initializing commonMount:"
+        severe_found=true
+      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+        trace SEVERE "Command was unsuccessful in file '${out_file}' while initializing commonMount:"
+        severe_found=true
+      else
+        trace "Contents of '${out_file}':"
+      fi
+      cat $out_file
+    done
+    [ "${severe_found}" = "true" ] && return 1
+    rm -fr $COMMON_MOUNT_PATH/commonMountLogs
+    [ -z "$(ls -A $COMMON_MOUNT_PATH)" ] \
+      && trace SEVERE "No files found in '$COMMON_MOUNT_PATH'. Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories?" \
+      && return 1
+  fi
+  return 0
+}

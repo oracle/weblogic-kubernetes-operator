@@ -34,6 +34,9 @@ public class ServerEnvVars {
   /** The common mount container image. */
   public static final String CONTAINER_IMAGE = "CONTAINER_IMAGE";
 
+  /** The common mount container number. */
+  public static final String CONTAINER_NUMBER = "CONTAINER_NUMBER";
+
   /** The path to the node manager home, either in a PV or image. */
   public static final String NODEMGR_HOME = "NODEMGR_HOME";
 

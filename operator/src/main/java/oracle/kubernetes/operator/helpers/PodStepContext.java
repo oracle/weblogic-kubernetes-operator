@@ -842,9 +842,13 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
-    Optional.ofNullable(getDomain().getCommonMount()).ifPresent(c -> addEnvVar(vars,
-            ServerEnvVars.WDT_INSTALL_HOME, getWdtInstallHome()));
+    Optional.ofNullable(getDomain().getCommonMount()).ifPresent(cm -> addCommonMountEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
+  }
+
+  protected void addCommonMountEnv(CommonMount cm, List<V1EnvVar> vars) {
+    addEnvVar(vars, ServerEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
+    addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
   }
 
   private String getDomainHome() {

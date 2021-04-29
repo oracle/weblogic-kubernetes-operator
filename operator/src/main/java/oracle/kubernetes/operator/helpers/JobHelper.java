@@ -359,9 +359,12 @@ public class JobHelper {
         addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
       }
 
+      Optional.ofNullable(getCommonMount()).ifPresent(cm ->
+              addEnvVar(vars, IntrospectorJobEnvVars.COMMON_MOUNT_PATH, cm.getMountPath()));
       return vars;
     }
   }
+
 
   static class DomainIntrospectorJobStep extends Step {
 

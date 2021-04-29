@@ -56,6 +56,8 @@ source ${SCRIPTPATH}/utils.sh
 
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 
+checkCommonMount || exit 1
+
 #
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
