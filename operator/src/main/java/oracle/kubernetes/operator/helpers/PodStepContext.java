@@ -60,6 +60,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.CommomEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -847,8 +848,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected void addCommonMountEnv(CommonMount cm, List<V1EnvVar> vars) {
-    addEnvVar(vars, ServerEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
-    addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, CommomEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
+    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
   }
 
   private String getDomainHome() {

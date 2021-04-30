@@ -23,9 +23,9 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.weblogic.domain.model.CommomEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
-import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
@@ -90,11 +90,11 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected List<V1EnvVar> createEnv(Container container, CommonMount cm, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
-    addEnvVar(vars, ServerEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
-    addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
-    addEnvVar(vars, ServerEnvVars.CONTAINER_IMAGE, container.getImage());
-    addEnvVar(vars, ServerEnvVars.CONTAINER_NAME, name);
+    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, CommomEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
+    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
+    addEnvVar(vars, CommomEnvVars.CONTAINER_IMAGE, container.getImage());
+    addEnvVar(vars, CommomEnvVars.CONTAINER_NAME, name);
     return vars;
   }
 
