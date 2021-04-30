@@ -7,6 +7,11 @@ import java.io.File;
 
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_DOWNLOAD_URL_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.REMOTECONSOLE_FILE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOAD_URL;
@@ -93,6 +98,20 @@ public class Installer {
   }
 
   /**
+   * Create an InstallParams with the default values for Remoteconsole.
+   * @return an InstallParams instance
+   */
+  public static InstallParams defaultInstallRemoteconsoleParams() {
+    return new InstallParams()
+        .defaults()
+        .type(REMOTECONSOLE)
+        .location(REMOTECONSOLE_DOWNLOAD_URL)
+        .verify(true)
+        .unzip(true);
+  }
+
+
+  /**
    * Set up the installer with given parameters.
    * 
    * @param params instance of {@link InstallParams} that contains parameters to download and install a tool
@@ -138,7 +157,7 @@ public class Installer {
     }
     if (params.unzip()) {
       // only unzip WIT once
-      if (!(doesFileExist(IMAGE_TOOL))) {
+      if (!(doesFileExist(IMAGE_TOOL)) || !(doesFileExist(REMOTECONSOLE_FILE))) {
         unzipSucceeded = unzip();
       }
     }
@@ -258,6 +277,8 @@ public class Installer {
         return WIT_DOWNLOAD_URL_DEFAULT.equals(location);
       case WLE:
         return WLE_DOWNLOAD_URL_DEFAULT.equals(location);
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_URL_DEFAULT.equals(location);
       default:
         return false;
     }
@@ -274,6 +295,8 @@ public class Installer {
         return WLE_DOWNLOAD_FILENAME_DEFAULT;
       case SNAKE:
         return SNAKE_DOWNLOADED_FILENAME;
+      case REMOTECONSOLE:
+        return REMOTECONSOLE_DOWNLOAD_FILENAME_DEFAULT;
       default:
         return "";
     }

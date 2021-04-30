@@ -102,8 +102,12 @@ function startWLS() {
 
   FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
   SERVER_OUT_MONITOR_INTERVAL=${SERVER_OUT_MONITOR_INTERVAL:-3}
-  if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
-    ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+  if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
+    # If Domain source type is not FromModel (MII) then monitor server logs for invalid
+    # Situational config override files.
+    if [ ${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} == 'true' ] ; then
+      ${SCRIPTPATH}/monitorLog.sh ${SERVER_OUT_FILE} ${SERVER_OUT_MONITOR_INTERVAL} &
+    fi
   fi
 }
 
@@ -174,7 +178,7 @@ traceDirs before DOMAIN_HOME LOG_HOME DATA_HOME
 
 traceTiming "POD '${SERVICE_NAME}' MII UNZIP START"
 
-if [ -f /weblogic-operator/introspector/domainzip.secure ]; then
+if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
   prepareMIIServer
   if [ $? -ne 0 ] ; then
     trace SEVERE  "Domain Source Type is FromModel, unable to start the server, check other error messages in the log"
@@ -281,10 +285,13 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
-copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
-copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
-copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
-copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
+  trace "Copying situational configuration files from operator cm to ${DOMAIN_HOME}/optconfig directory"
+  copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
+  copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
+  copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
+  copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
+fi
 
 #
 # Start WLS
