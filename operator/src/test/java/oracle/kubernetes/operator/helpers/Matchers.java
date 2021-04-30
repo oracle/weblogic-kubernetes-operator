@@ -49,8 +49,8 @@ public class Matchers {
   }
 
   public static Matcher<Iterable<? super V1Container>> hasCommonMountInitContainer(
-          String name, String image, String imagePullPolicy, String command, String number) {
-    return hasItem(createCommonMountInitContainer(name, image, imagePullPolicy, command, number));
+          String name, String image, String imagePullPolicy, String command) {
+    return hasItem(createCommonMountInitContainer(name, image, imagePullPolicy, command));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -107,12 +107,12 @@ public class Matchers {
   }
 
   private static V1Container createCommonMountInitContainer(String name, String image, String imagePullPolicy,
-                                                            String command, String number) {
+                                                            String command) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
             .command(Arrays.asList(INIT_CONTAINER_WRAPPER_SCRIPT)).args(null).volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(COMMON_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
-            .env(PodHelperTestBase.getCommonMountEnvVariables(image, command, number));
+            .env(PodHelperTestBase.getCommonMountEnvVariables(image, command, name));
   }
 
   private static V1Container createInitContainer(String name, String image, String serverName, String... command) {

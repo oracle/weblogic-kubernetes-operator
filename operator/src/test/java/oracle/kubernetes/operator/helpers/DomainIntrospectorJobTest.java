@@ -103,8 +103,6 @@ public class DomainIntrospectorJobTest {
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
   private static final String SEVERE_PROBLEM_1 = "really bad";
   private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
-  public static final String CONTAINER_NUMBER_1 = "1";
-  public static final String CONTAINER_NUMBER_2 = "2";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -346,7 +344,7 @@ public class DomainIntrospectorJobTest {
     assertThat(
             podTemplateInitContainers,
             allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
-                    DEFAULT_INIT_CONTAINER_COMMAND, CONTAINER_NUMBER_1)));
+                    DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -415,7 +413,7 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", DEFAULT_INIT_CONTAINER_COMMAND, CONTAINER_NUMBER_1)));
+                    "wdt-image:v1", "ALWAYS", DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
@@ -427,7 +425,7 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT, CONTAINER_NUMBER_1)));
+                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
@@ -439,9 +437,9 @@ public class DomainIntrospectorJobTest {
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
-                    "IfNotPresent", DEFAULT_INIT_CONTAINER_COMMAND, CONTAINER_NUMBER_1),
+                    "IfNotPresent", DEFAULT_INIT_CONTAINER_COMMAND),
                     hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1", "IfNotPresent",
-                            DEFAULT_INIT_CONTAINER_COMMAND, CONTAINER_NUMBER_2)));
+                            DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test

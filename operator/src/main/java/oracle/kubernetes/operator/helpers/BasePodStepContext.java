@@ -77,7 +77,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .image(container.getImage())
             .imagePullPolicy(container.getImagePullPolicy())
             .command(Collections.singletonList(INIT_CONTAINER_WRAPPER_SCRIPT))
-            .env(createEnv(container, cm, index))
+            .env(createEnv(container, cm, getName(index)))
             .volumeMounts(Arrays.asList(
                     new V1VolumeMount().name(COMMON_VOLUME_NAME)
                             .mountPath(COMMON_TARGET_PATH),
@@ -88,14 +88,13 @@ public abstract class BasePodStepContext extends StepContextBase {
     return INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(Container container, CommonMount cm, int index) {
-    String containerNumber = String.valueOf(index + 1);
+  protected List<V1EnvVar> createEnv(Container container, CommonMount cm, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
     addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
     addEnvVar(vars, ServerEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
     addEnvVar(vars, ServerEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
     addEnvVar(vars, ServerEnvVars.CONTAINER_IMAGE, container.getImage());
-    addEnvVar(vars, ServerEnvVars.CONTAINER_NUMBER, containerNumber);
+    addEnvVar(vars, ServerEnvVars.CONTAINER_NAME, name);
     return vars;
   }
 

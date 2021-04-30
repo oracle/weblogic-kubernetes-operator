@@ -53,5 +53,5 @@ function copyFiles() {
 copyFiles > /tmp/commonMount.out 2>&1
 cat /tmp/commonMount.out
 mkdir -p ${COMMON_TARGET_PATH}/commonMountLogs
-cp /tmp/commonMount.out ${COMMON_TARGET_PATH}/commonMountLogs/${CONTAINER_NUMBER}.out
+cp /tmp/commonMount.out ${COMMON_TARGET_PATH}/commonMountLogs/${CONTAINER_NAME}.out
 exit
