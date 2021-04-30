@@ -74,7 +74,6 @@ class ItDedicatedMode {
   private static String domain2Namespace = null;
 
   private static final String CRD_V16 = "domain-crd.yaml";
-  private static final String CRD_V15 = "domain-v1beta1-crd.yaml";
 
   // domain constants
   private final String domainUid = "dedicated-domain-1";
@@ -119,18 +118,6 @@ class ItDedicatedMode {
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR);
 
-    // get k8s version
-    CommandParams k8sVersionCommand = new CommandParams();
-    new Command()
-        .withParams(k8sVersionCommand
-            .saveResults(true)
-            .command("kubectl version"))
-        .execute();
-
-    String k8sVersion = k8sVersionCommand.stdout();
-    boolean k8sV15 = k8sVersion.contains("v1.15");
-    String installedK8sVersion = (k8sV15) ? CRD_V15 : CRD_V16;
-
     // delete existing CRD
     new Command()
         .withParams(new CommandParams()
@@ -138,7 +125,7 @@ class ItDedicatedMode {
         .execute();
 
     // install CRD
-    String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + installedK8sVersion;
+    String createCrdCommand = "kubectl create -f " + ITTESTS_DIR + "/../kubernetes/crd/" + CRD_V16;
     logger.info("Creating CRD with command {0}", createCrdCommand);
     new Command()
         .withParams(new CommandParams().command(createCrdCommand))
