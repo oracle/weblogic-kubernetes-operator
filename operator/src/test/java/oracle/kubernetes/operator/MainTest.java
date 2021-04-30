@@ -842,15 +842,9 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_nsWatchStoppedEventCreated() {
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
-
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
@@ -860,15 +854,9 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_nsWatchStartedEventCreatedInOpNS() {
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
-
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
@@ -876,17 +864,17 @@ public class MainTest extends ThreadFactoryTestBase {
             NAMESPACE_WATCHING_STARTED, Collections.singletonList(OP_NS)), is(true));
   }
 
-  @Test
-  public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_StartManagingEventCreatedInOpNS() {
+  private void setupDomainWithNamespaceListStrategy(String namespaceString) {
     defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
     HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
     createNamespaces(4);
+  }
 
+  @Test
+  public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_StartManagingEventCreatedInOpNS() {
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
-
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
     runCreateReadNamespacesStep();
 
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
@@ -896,18 +884,13 @@ public class MainTest extends ThreadFactoryTestBase {
 
   @Test
   public void withNamespaceList_changeToDedicated_onCreateReadNamespaces_nsEventMapIsEmpty() {
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
     assertThat("Confirmed that the event maps for the namespace are empty before changing strategy",
         eventMapsEmpty("NS1"), is(false));
 
     defineSelectionStrategy(SelectionStrategy.Dedicated);
-
     runCreateReadNamespacesStep();
 
     assertThat("Confirmed that the event maps for the namespace are empty", eventMapsEmpty("NS1"), is(true));
@@ -969,7 +952,6 @@ public class MainTest extends ThreadFactoryTestBase {
     domainNamespaces.isStopping("NS3");
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
@@ -987,7 +969,6 @@ public class MainTest extends ThreadFactoryTestBase {
     domainNamespaces.isStopping("NS3");
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
 
@@ -1001,10 +982,9 @@ public class MainTest extends ThreadFactoryTestBase {
     defineSelectionStrategy(SelectionStrategy.RegExp);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
-
     TuningParameters.getInstance().put("domainNamespaceRegExp", REGEXP);
-
     List<String> namespaces = Arrays.asList(NS_WEBLOGIC1, NS_WEBLOGIC2, NS_WEBLOGIC3);
+
     testSupport.runSteps(
         createDomainRecheck().createStartNamespacesStep(namespaces));
 
@@ -1102,13 +1082,9 @@ public class MainTest extends ThreadFactoryTestBase {
   public void withNamespaceDedicated_changeToList_onCreateReadNamespaces_nsWatchStoppedEventCreatedInOpNS() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
     runCreateReadNamespacesStep();
-
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
+
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected message",
         containsEventWithMessageForNamespaces(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED, Collections.singletonList(OP_NS)), is(true));
@@ -1122,12 +1098,9 @@ public class MainTest extends ThreadFactoryTestBase {
     assertThat("Confirm that the event maps for the namespace are not empty before change the strategy",
         eventMapsEmpty(OP_NS), is(false));
 
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
+
     assertThat("Confirm that the event maps for the namespace are empty",
         eventMapsEmpty(OP_NS), is(true));
   }
@@ -1148,12 +1121,7 @@ public class MainTest extends ThreadFactoryTestBase {
   public void withNamespaceDedicated_changeToList_onCreateReadNamespaces_nsWatchStartedEventCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
     runCreateReadNamespacesStep();
-
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
@@ -1165,12 +1133,7 @@ public class MainTest extends ThreadFactoryTestBase {
   public void withNamespaceDedicated_changeToList_onCreateReadNamespaces_StartManagingNSEventCreated() {
     defineSelectionStrategy(SelectionStrategy.Dedicated);
     runCreateReadNamespacesStep();
-
-    defineSelectionStrategy(SelectionStrategy.List);
-    String namespaceString = "NS1";
-    HelmAccessStub.defineVariable(HelmAccess.OPERATOR_DOMAIN_NAMESPACES, namespaceString);
-    createNamespaces(4);
-
+    setupDomainWithNamespaceListStrategy("NS1");
     runCreateReadNamespacesStep();
 
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
