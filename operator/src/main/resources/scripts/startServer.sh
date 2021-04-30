@@ -47,7 +47,7 @@ function copyIfChanged() {
   fi
 }
 
-checkCommonMount || exit 1
+checkCommonMount || exitOrLoop
 
 #
 # Define function to start WebLogic
