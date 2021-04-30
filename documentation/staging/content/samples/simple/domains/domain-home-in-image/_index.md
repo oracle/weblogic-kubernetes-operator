@@ -71,16 +71,25 @@ The script will perform the following steps:
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
 
-* If the optional `-n` option is used and encryption key is provided, invoke the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
-  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file to encrypt the password properties in `domain.properties` file.
+* If the optional `-n` option and an encryption key is provided, invoke the WDT 
+  [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
+  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file 
+  to encrypt the password properties in `domain.properties` file. Note that this password encryption
+  step is skipped if the `-m wlst` option is provided because the feature is provided by WDT, which 
+  is not used in `wlst` mode.
 
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a 
-  new WebLogic Server domain using the WebLogic image specified in the `domainHomeImageBase` parameter 
-  from your inputs file, the model specified in the `createDomainWdtModel` parameter 
-  and the WDT variables in `domain.properties`. If the `-m wlst` option of the create domain
-  script is provided, the WLST script specified in the `createDomainWlstScript` parameter
-  is run to create the new WebLogic Server domain.
-  The generated image is tagged with the `image` parameter provided in your inputs file. 
+  new WebLogic Server domain based on the WebLogic image specified in the `domainHomeImageBase` parameter 
+  from your inputs file.The new WebLogic Server domain is created using one of the
+  following options based on the `mode` option of the create domain script:
+  * By default, the WDT model specified in the `createDomainWdtModel` parameter
+    and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
+    the new WebLogic Server domain.
+  * Alternatively, when the `-m wlst` option of the create domain
+    script is provided, the offline WLST script specified in the`createDomainWlstScript` parameter
+    is run to create the new WebLogic Server domain.  the model specified in the `createDomainWdtModel` parameter
+  
+* The generated image is tagged with the `image` parameter provided in your inputs file. 
 
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
