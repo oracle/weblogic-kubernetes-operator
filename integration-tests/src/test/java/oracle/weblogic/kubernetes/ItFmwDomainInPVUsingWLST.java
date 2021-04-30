@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItFmwDomainInPV {
+public class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
