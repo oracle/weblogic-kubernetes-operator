@@ -897,31 +897,73 @@ function adjustPath() {
 #            is found in any of the output files in ${COMMON_MOUNT_PATH}/commonMountLogs dirs.
 #            It also returns 1 if 'successfully' message is not found in the output files
 #            or if the COMMON_MOUNT_PATH directory is empty. Otherwise it returns 0 (success).
+#            See also 'commonMount.sh'.
 #
 function checkCommonMount() {
   # check commonMount results (if any)
   if [ ! -z "$COMMON_MOUNT_PATH" ]; then
+    trace FINE "Common Mount: COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH'."
+    traceDirs $COMMON_MOUNT_PATH
+    touch ${COMMON_MOUNT_PATH}/testaccess.tmp
+    if [ $? -ne 0 ]; then
+      trace SEVERE "Common Mount: Cannot write to the COMMON_MOUNT_PATH '${COMMON_MOUNT_PATH}'" && return 1
+    fi
+
     out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
-      || (trace SEVERE "err='$out_files' Inconceivable!" \
+      || (trace SEVERE "Common Mount: Assertion failure. No files found in '$COMMON_MOUNT_PATH/commonMountLogs/*.out" \
       && return 1)
     severe_found=false
     for out_file in $out_files; do
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
-        trace SEVERE "Error found in file '${out_file}' while initializing commonMount."
+        trace SEVERE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
         severe_found=true
       elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-        trace SEVERE "Command execution was unsuccessful in file '${out_file}' while initializing commonMount."
+        trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount."
         severe_found=true
       else
-        trace "Contents of '${out_file}':"
+        trace "Common Mount: Contents of '${out_file}':"
+        trace "Common Mount: End of '${out_file}' contents"
       fi
       cat $out_file
     done
     [ "${severe_found}" = "true" ] && return 1
     rm -fr $COMMON_MOUNT_PATH/commonMountLogs
     [ -z "$(ls -A $COMMON_MOUNT_PATH)" ] \
-      && trace SEVERE "No files found in '$COMMON_MOUNT_PATH'. Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories?" \
+      && trace SEVERE "Common Mount: No files found in '$COMMON_MOUNT_PATH'. Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories?" \
       && return 1
   fi
   return 0
+}
+
+#
+# initCommonMount
+#   purpose: Execute the COMMON_MOUNT_COMMAND specified as part of the commom mount init container.
+#            If the specified COMMON_MOUNT_COMMAND is empty, it logs an error message and returns.
+#            If the COMMON_MOUNT_PATH directory doesn't exist or is empty, it logs error and returns.
+#            If the command execution fails, it logs errror message with failure details. Otherwise it
+#            logs a success message with details.
+#            See also 'commonMount.sh'.
+#
+function initCommonMount() {
+
+  if [ -z "${COMMON_MOUNT_COMMAND}" ]; then
+    trace ERROR "Common Mount: The 'serverPod.commonMount.container.mountCommand' is empty for the container image='$COMMON_MOUNT_CONTAINER_IMAGE'. Exiting"
+    return
+  fi
+
+  trace FINE "Common Mount: About to execute command '$COMMON_MOUNT_COMMAND' in container image='$COMMON_MOUNT_CONTAINER_IMAGE'. COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH' and COMMON_TARGET_PATH is '${COMMON_TARGET_PATH}'."
+  traceDirs $COMMON_MOUNT_PATH
+
+  if [ ! -d ${COMMON_MOUNT_PATH} ] ||  [ -z "$(ls -A ${COMMON_MOUNT_PATH})" ]; then
+    trace ERROR "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
+    return
+  fi
+
+  trace FINE "Common Mount: About to execute COMMON_MOUNT_COMMAND='$COMMON_MOUNT_COMMAND' ."
+  results=$(eval $COMMON_MOUNT_COMMAND 2>&1)
+  if [ $? -ne 0 ]; then
+    trace ERROR "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$COMMON_MOUNT_CONTAINER_IMAGE' with COMMON_MOUNT_PATH=$COMMON_MOUNT_PATH. Error -> '$results' ."
+  else
+    trace FINE "Common Mount: Command '$COMMON_MOUNT_COMMAND' executed successfully. Output -> '$results'."
+  fi
 }

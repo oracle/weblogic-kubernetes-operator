@@ -131,9 +131,9 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.DEFAULT_COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Container.DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
 import static org.hamcrest.Matchers.allOf;
@@ -234,11 +234,11 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   static List<V1EnvVar> getCommonMountEnvVariables(String image, String command, String name) {
     List<V1EnvVar> envVars = new ArrayList<>();
-    envVars.add(createEnvVar(CommomEnvVars.COMMON_MOUNT_PATH, COMMON_MOUNT_PATH));
+    envVars.add(createEnvVar(CommomEnvVars.COMMON_MOUNT_PATH, DEFAULT_COMMON_MOUNT_PATH));
     envVars.add(createEnvVar(CommomEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH));
     envVars.add(createEnvVar(CommomEnvVars.COMMON_MOUNT_COMMAND, command));
-    envVars.add(createEnvVar(CommomEnvVars.CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(CommomEnvVars.CONTAINER_NAME, name));
+    envVars.add(createEnvVar(CommomEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(CommomEnvVars.COMMON_MOUNT_CONTAINER_NAME, name));
     return envVars;
   }
 
@@ -544,7 +544,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   @Test

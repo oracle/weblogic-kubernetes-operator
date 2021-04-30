@@ -73,8 +73,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.DEFAULT_COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.Container.DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
@@ -349,7 +349,7 @@ public class DomainIntrospectorJobTest {
             hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {

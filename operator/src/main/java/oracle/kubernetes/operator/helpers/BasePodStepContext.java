@@ -93,8 +93,8 @@ public abstract class BasePodStepContext extends StepContextBase {
     addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
     addEnvVar(vars, CommomEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
     addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
-    addEnvVar(vars, CommomEnvVars.CONTAINER_IMAGE, container.getImage());
-    addEnvVar(vars, CommomEnvVars.CONTAINER_NAME, name);
+    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, container.getImage());
+    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
     return vars;
   }
 

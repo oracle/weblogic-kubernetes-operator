@@ -14,7 +14,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class CommonMount {
 
-  public static final String COMMON_MOUNT_PATH = "/common";
+  public static final String DEFAULT_COMMON_MOUNT_PATH = "/common";
   public static final String COMMON_TARGET_PATH = "/tmpCommonMount";
   public static final String COMMON_VOLUME_NAME = "operator-common-volume";
 
@@ -52,7 +52,7 @@ public class CommonMount {
   }
 
   public String getMountPath() {
-    return Optional.ofNullable(mountPath).orElse(COMMON_MOUNT_PATH);
+    return Optional.ofNullable(mountPath).orElse(DEFAULT_COMMON_MOUNT_PATH);
   }
 
   public void setMountPath(String mountPath) {

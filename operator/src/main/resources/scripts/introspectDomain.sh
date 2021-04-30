@@ -56,6 +56,9 @@ source ${SCRIPTPATH}/utils.sh
 
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 
+# 
+# if the common mount feature is active, verify the mount, and log mount information
+#
 checkCommonMount || exit 1
 
 #

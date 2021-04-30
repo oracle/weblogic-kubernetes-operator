@@ -18,9 +18,9 @@ public class CommomEnvVars {
   public static final String COMMON_MOUNT_COMMAND = "COMMON_MOUNT_COMMAND";
 
   /** The common mount container image. */
-  public static final String CONTAINER_IMAGE = "CONTAINER_IMAGE";
+  public static final String COMMON_MOUNT_CONTAINER_IMAGE = "COMMON_MOUNT_CONTAINER_IMAGE";
 
   /** The common mount container name. */
-  public static final String CONTAINER_NAME = "CONTAINER_NAME";
+  public static final String COMMON_MOUNT_CONTAINER_NAME = "COMMON_MOUNT_CONTAINER_NAME";
 
 }

@@ -47,6 +47,9 @@ function copyIfChanged() {
   fi
 }
 
+# 
+# if the common mount feature is active, verify the mount, and log mount information
+#
 checkCommonMount || exitOrLoop
 
 #
