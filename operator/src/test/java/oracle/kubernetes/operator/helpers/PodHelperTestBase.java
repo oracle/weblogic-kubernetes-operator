@@ -72,7 +72,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.CommomMountEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -234,11 +234,11 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   static List<V1EnvVar> getCommonMountEnvVariables(String image, String command, String name) {
     List<V1EnvVar> envVars = new ArrayList<>();
-    envVars.add(createEnvVar(CommomMountEnvVars.COMMON_MOUNT_PATH, DEFAULT_COMMON_MOUNT_PATH));
-    envVars.add(createEnvVar(CommomMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH));
-    envVars.add(createEnvVar(CommomMountEnvVars.COMMON_MOUNT_COMMAND, command));
-    envVars.add(createEnvVar(CommomMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(CommomMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_PATH, DEFAULT_COMMON_MOUNT_PATH));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_COMMAND, command));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name));
     return envVars;
   }
 

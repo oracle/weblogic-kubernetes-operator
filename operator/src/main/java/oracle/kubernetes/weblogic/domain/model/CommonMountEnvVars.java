@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-public class CommomMountEnvVars {
+public class CommonMountEnvVars {
 
   /** The common mount path. */
   public static final String COMMON_MOUNT_PATH = "COMMON_MOUNT_PATH";

@@ -43,7 +43,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.CommomMountEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -362,7 +362,7 @@ public class JobHelper {
       }
 
       Optional.ofNullable(getCommonMount()).ifPresent(cm ->
-              addCommonMountEnv(vars, CommomMountEnvVars.COMMON_MOUNT_PATH, cm));
+              addCommonMountEnv(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, cm));
       return vars;
     }
 

@@ -941,7 +941,7 @@ function checkCommonMount() {
 
 #
 # initCommonMount
-#   purpose: Execute the COMMON_MOUNT_COMMAND specified as part of the commom mount init container.
+#   purpose: Execute the COMMON_MOUNT_COMMAND specified as part of the common mount init container.
 #            If the specified COMMON_MOUNT_COMMAND is empty, it logs an error message and returns.
 #            If the COMMON_MOUNT_PATH directory doesn't exist or is empty, it logs error and returns.
 #            If the command execution fails, it logs errror message with failure details. Otherwise it

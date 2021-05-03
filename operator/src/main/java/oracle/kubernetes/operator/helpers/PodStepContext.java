@@ -60,7 +60,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.CommomMountEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -851,7 +851,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected void addCommonMountEnv(CommonMount cm, List<V1EnvVar> vars) {
     addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
     Optional.ofNullable(cm.getContainers()).ifPresent(containerList ->
-            addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_PATH, cm.getMountPath()));
+            addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, cm.getMountPath()));
   }
 
   private String getDomainHome() {
