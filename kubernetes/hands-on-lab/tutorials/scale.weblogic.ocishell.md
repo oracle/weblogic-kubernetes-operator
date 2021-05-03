@@ -1,4 +1,4 @@
-# Oracle WebLogic Server Kubernetes Operator Tutorial #
+# WebLogic Kubernetes Operator Tutorial #
 
 ### Scale the WebLogic cluster  ###
 

@@ -1,7 +1,7 @@
 # Apache webtier Helm chart
 
 This Helm chart bootstraps an Apache HTTP Server deployment on a [Kubernetes](http://kubernetes.io) cluster using the [Helm](https://helm.sh) package manager.
- 
+
 The chart depends on the Docker image for the Apache HTTP Server with Oracle WebLogic Server Proxy Plugin (supported versions 12.2.1.3.0 and 12.2.1.4.0). See the details in [Apache HTTP Server with Oracle WebLogic Server Proxy Plugin on Docker](https://github.com/oracle/docker-images/tree/master/OracleWebLogic/samples/12213-webtier-apache).
 
 ## Prerequisites
