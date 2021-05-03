@@ -86,7 +86,7 @@ The script will perform the following steps:
     parameter and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
     the new WebLogic Server domain.
   * If the value of the `mode` parameter is `wlst`, the offline WLST
-    script specified in the`createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
+    script specified in the `createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
   
 * The generated image is tagged with the `image` parameter provided in your inputs file. 
 
