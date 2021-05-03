@@ -308,7 +308,6 @@ function createWLDomain() {
        "but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
   if [ ! -f "${WDT_ROOT}/lib/weblogic-deploy-core.jar" ]; then
     trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
@@ -321,6 +320,7 @@ function createWLDomain() {
      exitOrLoop
   fi
 
+  # Check if modelHome (default /u01/wdt/models) and wdtInstallHome (default /u01/wdt/weblogic-deploy) exists
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
