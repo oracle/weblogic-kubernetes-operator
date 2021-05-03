@@ -613,7 +613,7 @@ function diff_model() {
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
-    cat /tmp/compare_model_stdout
+    cat ${WDT_ROOT}/logs/compareModel.log
     exitOrLoop
   fi
 
