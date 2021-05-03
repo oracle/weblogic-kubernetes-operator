@@ -151,7 +151,7 @@ function initialize {
 
   mode="${mode:-wdt}"
   if [ ! "${mode}" == "wdt" ] && [ ! "${mode}" == "wlst" ]; then
-    validationError "Mode must be either 'wdt' or 'wlst'."
+    validationError "mode must be either 'wdt' or 'wlst'."
   fi
 
   if [ "${mode}" == "wlst" ]; then
