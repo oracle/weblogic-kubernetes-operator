@@ -26,12 +26,11 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-m wdt\|wlst] [-s] [-e] [-v] [-n] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
-  echo "  -u Username used in building the image for WebLogic domain in image."
-  echo "  -p Password used in building the image for WebLogic domain in image."
-  echo "  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'."
+  echo "  -u WebLogic administrator user name for the WebLogic domain."
+  echo "  -p WebLogic administrator password for the WebLogic domain."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -s Skip the domain image build, optional. "
@@ -46,8 +45,7 @@ function usage {
 doValidation=false
 executeIt=false
 skipImageBuild=false
-mode=wdt
-while getopts "evhsi:o:u:p:n:m:" opt; do
+while getopts "evhsi:o:u:p:n:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -64,8 +62,6 @@ while getopts "evhsi:o:u:p:n:m:" opt; do
     n) wdtEncryptKey="${OPTARG}"
     ;;
     s) skipImageBuild=true;
-    ;;
-    m) mode="${OPTARG}";
     ;;
     h) usage 0
     ;;
@@ -92,15 +88,6 @@ fi
 if [ -z ${outputDir} ]; then
   echo "${script}: -o must be specified."
   missingRequiredOption="true"
-fi
-
-if [ ! "${mode}" == "wdt" ] && [ ! "${mode}" == "wlst" ]; then
-  echo "${script}: -m must be either wdt or wlst."
-  missingRequiredOption="true"
-fi
-
-if [ -n "${wdtEncryptKey}" ] && [ "${mode}" == "wlst" ]; then
-  echo "${script}: -n is ignored for wlst mode."
 fi
 
 if [ "${missingRequiredOption}" == "true" ]; then
@@ -165,6 +152,12 @@ function initialize {
 
   validateCommonInputs
 
+  mode="${mode:-wdt}"
+  if [ ! "${mode}" == "wdt" ] && [ ! "${mode}" == "wlst" ]; then
+    validationError "Mode must be either 'wdt' or 'wlst'."
+    missingRequiredOption="true"
+  fi
+
   createDomainWlstScript="${createDomainWlstScript:-wlst/create-wls-domain.py}"
   if [ "${mode}" == "wlst" ] && [ ! -f ${scriptDir}/${createDomainWlstScript} ]; then
     validationError "The create domain WLST script file ${createDomainWlstScript} was not found"
@@ -173,6 +166,10 @@ function initialize {
   createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_dynamic.yaml}"
   if [ "${mode}" == "wdt" ] && [ ! -f ${scriptDir}/${createDomainWdtModel} ]; then
     validationError "The create domain WDT model file ${createDomainWdtModel} was not found"
+  fi
+
+  if [ -n "${wdtEncryptKey}" ] && [ "${mode}" == "wlst" ]; then
+    echo @@ "Info: ${script}: -n is ignored for wlst mode."
   fi
 
   validateBooleanInputParamsSpecified logHomeOnPV

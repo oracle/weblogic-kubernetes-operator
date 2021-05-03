@@ -182,6 +182,13 @@ createDomainWlstScript: wlst/create-wls-domain.py
 # This value is ignored when WLST script is used in creating a WebLogic domain.
 createDomainWdtModel: wdt/wdt_model_dynamic.yaml
 
+# Whether to use the WDT model specified in createDomainWdtModel
+# or the offline WLST script specified in createDomainWlstScript
+# to create a WebLogic domain.
+# Legal values are "wdt" or "wlst"
+# Defaults to wdt if not specified.
+mode: wdt
+
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
 # These are optional. 

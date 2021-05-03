@@ -75,19 +75,18 @@ The script will perform the following steps:
   [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
   in a container running the image specified in `domainHomeImageBase` parameter in your inputs file 
   to encrypt the password properties in `domain.properties` file. Note that this password encryption
-  step is skipped if the `-m wlst` option is provided because the feature is provided by WDT, which 
-  is not used in `wlst` mode.
+  step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because 
+  the feature is provided by WDT.
 
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a 
   new WebLogic Server domain based on the WebLogic image specified in the `domainHomeImageBase` parameter 
-  from your inputs file.The new WebLogic Server domain is created using one of the
+  from your inputs file. The new WebLogic Server domain is created using one of the
   following options based on the `mode` option of the create domain script:
   * By default, the WDT model specified in the `createDomainWdtModel` parameter
     and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
     the new WebLogic Server domain.
-  * Alternatively, when the `-m wlst` option of the create domain
-    script is provided, the offline WLST script specified in the`createDomainWlstScript` parameter
-    is run to create the new WebLogic Server domain.  the model specified in the `createDomainWdtModel` parameter
+  * Alternatively, when the value of the `mode` parameter in the inputs YAML file is `wlst`, the offline WLST 
+    script specified in the`createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
   
 * The generated image is tagged with the `image` parameter provided in your inputs file. 
 
@@ -114,12 +113,11 @@ The usage of the create script is as follows:
 $ sh create-domain.sh -h
 ```
 ```text
-usage: create-domain.sh -o dir -i file -u username -p password [-m wdt|wlst] [-n encryption-key] [-e] [-v] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
-  -o Ouput directory for the generated properties and YAML files, must be specified.
-  -u User name used in building the image for WebLogic domain in image.
-  -p Password used in building the image for WebLogic domain in image.
-  -m WebLogic configuration mode. Either 'wdt' or 'wlst', optional. Defaults to 'wdt'.
+  -o Output directory for the generated properties and YAML files, must be specified.
+  -u WebLogic administrator user name for the WebLogic domain.
+  -p WebLogic administrator Password for the WebLogic domain.
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
@@ -186,6 +184,7 @@ The following parameters can be provided in the inputs file.
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
 | `managedServerPort` | Port number for each Managed Server. | `8001` |
 | `managedServerSSLPort` | SSL port number for each Managed Server. | `8002` |
+| `mode` | Whether to use the WDT model specified in `createDomainWdtModel` or the offline WLST script specified in `createDomainWlstScript` to create a WebLogic domain. Legal values are `wdt` or `wlst`. | `wdt` |
 | `namespace` | Kubernetes Namespace in which to create the domain. | `default` |
 | `persistentVolumeClaimName` | Name of the persistent volume claim. If not specified, the value is derived from the `domainUID` as `<domainUID>-weblogic-sample-pvc`. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `domain1-weblogic-sample-pvc` |
 | `productionModeEnabled` | Boolean indicating if production mode is enabled for the domain. | `true` |
