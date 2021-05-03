@@ -1,4 +1,4 @@
-# Oracle WebLogic Server Kubernetes Operator Tutorial #
+# WebLogic Kubernetes Operator Tutorial #
 
 ### Application lifecycle management ###
 
