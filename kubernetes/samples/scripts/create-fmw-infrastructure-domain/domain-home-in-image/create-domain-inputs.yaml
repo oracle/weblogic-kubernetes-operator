@@ -171,7 +171,7 @@ Uncomment to customize the WebLogic Image Tool (WIT) version.
 # or the offline WLST script specified in createDomainWlstScript
 # to create a WebLogic domain.
 # Legal values are "wdt" or "wlst"
-# Defaults to wdt if not specified.
+# Defaults to "wdt" if not specified.
 mode: wdt
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
