@@ -81,11 +81,11 @@ The script will perform the following steps:
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a 
   new WebLogic Server domain based on the WebLogic image specified in the `domainHomeImageBase` parameter 
   from your inputs file. The new WebLogic Server domain is created using one of the
-  following options based on the `mode` option of the create domain script:
-  * By default, the WDT model specified in the `createDomainWdtModel` parameter
-    and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
+  following options based on the value of the `mode` parameter in the inputs YAML file:
+  * If the value of the `mode` parameter is `wdt`, the WDT model specified in the `createDomainWdtModel`
+    parameter and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
     the new WebLogic Server domain.
-  * Alternatively, when the value of the `mode` parameter in the inputs YAML file is `wlst`, the offline WLST 
+  * If the value of the `mode` parameter is `wlst`, the offline WLST
     script specified in the`createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
   
 * The generated image is tagged with the `image` parameter provided in your inputs file. 
@@ -164,8 +164,8 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. | `5` |
-| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt mode. This value is ignored when WLST script is used in creating a WebLogic domain. | `wdt/wdt_model_dynamic.yaml` |
-| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst mode. This value is ignored when WDT is used in creating a WebLogic domain. | `wlst/create-wls-domain.py` |
+| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when WLST script is used in creating a WebLogic domain. | `wdt/wdt_model_dynamic.yaml` |
+| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when WDT is used in creating a WebLogic domain. | `wlst/create-wls-domain.py` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_proejcts/domains/<domainUID>` |
 | `domainHomeImageBase` | Base WebLogic binary image used to build the WebLogic domain image. The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md#creating-or-obtaining-weblogic-server-images" >}}). | `container-registry.oracle.com/middleware/weblogic:12.2.1.3` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. This parameter is required if `logHomeOnPV` is true. Otherwise, it is ignored. | `/shared` |

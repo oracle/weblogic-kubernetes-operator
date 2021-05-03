@@ -77,11 +77,11 @@ The script will perform the following steps:
 * Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a new 
   FWM Infrastructure domain based on the FMW Infrastructure image specified in the `domainHomeImageBase` 
   parameter from your inputs file. The new WebLogic Server domain is created using one of the 
-  following options based on the `mode` option of the create domain script:
-  * By default, the WDT model specified in the `createDomainWdtModel` parameter
-    and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
+  following options based on the value of the `mode` parameter in the inputs YAML file:
+  * If the value of the `mode` parameter is `wdt`, the WDT model specified in the `createDomainWdtModel` 
+    parameter and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
     the new WebLogic Server domain.
-  * Alternatively, when the value of the `mode` parameter in the inputs YAML file is `wlst`, the offline WLST 
+  * If the value of the `mode` parameter is `wlst`, the offline WLST 
     script specified in the`createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
   
 * The generated image is tagged with the `image` parameter provided in your inputs file.
@@ -153,8 +153,8 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. This value is ignored when using WDT with a model that creates configured cluster. | `5` |
-| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt mode. This value is ignored when WLST script is used in creating a WebLogic domain. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
-| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst mode. This value is ignored when WDT is used in creating a WebLogic domain. | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
+| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when WLST script is used in creating a WebLogic domain. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
+| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when WDT is used in creating a WebLogic domain. | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_proejcts/domains/<domainUID>` |
 | `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
