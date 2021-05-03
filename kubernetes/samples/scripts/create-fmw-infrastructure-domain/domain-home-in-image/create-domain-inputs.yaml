@@ -202,9 +202,6 @@ fmwDomainType: JRF
 # the same as the domainUID in order to simplify matching domains to their RCU schemas.
 rcuSchemaPrefix: domain1
 
-# Password for the RCU schema
-rcuSchemaPassword: 
-
 # The database URL
 rcuDatabaseURL: database:1521/service
 

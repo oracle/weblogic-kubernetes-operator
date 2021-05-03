@@ -26,11 +26,12 @@ source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-e] [-v] [-n] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-q rcuSchemaPassword] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
   echo "  -u WebLogic administrator user name for the WebLogic domain."
   echo "  -p WebLogic administrator password for the WebLogic domain."
+  echo "  -q Password for the RCU schema. Required for JRF FMW domain type."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
   echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
@@ -43,7 +44,7 @@ function usage {
 #
 doValidation=false
 executeIt=false
-while getopts "evhi:o:u:p:n:" opt; do
+while getopts "evhi:o:u:p:n:q:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -56,6 +57,8 @@ while getopts "evhi:o:u:p:n:" opt; do
     u) username="${OPTARG}"
     ;;
     p) password="${OPTARG}"
+    ;;
+    q) rcuSchemaPassword="${OPTARG}"
     ;;
     n) wdtEncryptKey="${OPTARG}"
     ;;
