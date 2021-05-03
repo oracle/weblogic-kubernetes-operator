@@ -42,7 +42,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -293,7 +293,11 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   protected V1PodSpec addCommonMountInitContainerAndVolume(V1PodSpec podSpec, CommonMount cm) {
-    List<Container> containerList = cm.getContainers();
+    Optional.ofNullable(cm.getContainers()).ifPresent(cl -> addInitContainerAndVolume(podSpec, cm, cl));
+    return podSpec;
+  }
+
+  private V1PodSpec addInitContainerAndVolume(V1PodSpec podSpec, CommonMount cm, List<Container> containerList) {
     IntStream.range(0, containerList.size()).forEach(idx ->
         podSpec.addInitContainersItem(createInitContainerForCommonMount(containerList.get(idx), idx,
                 cm)));
@@ -397,8 +401,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
-            container.addVolumeMountsItem(
-                    new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(cm.getMountPath())));
+            Optional.ofNullable(cm.getContainers()).ifPresent(cl -> container.addVolumeMountsItem(
+                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(cm.getMountPath()))));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {

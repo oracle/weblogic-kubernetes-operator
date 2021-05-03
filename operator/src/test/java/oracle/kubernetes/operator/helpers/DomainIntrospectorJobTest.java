@@ -73,11 +73,11 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.DEFAULT_COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
-import static oracle.kubernetes.weblogic.domain.model.Container.DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -343,13 +343,13 @@ public class DomainIntrospectorJobTest {
 
     assertThat(
             podTemplateInitContainers,
-            allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "IfNotPresent",
-                    DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
@@ -375,7 +375,7 @@ public class DomainIntrospectorJobTest {
 
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
   }
 
 
@@ -387,7 +387,7 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
 
@@ -400,7 +400,7 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
@@ -412,8 +412,8 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", DEFAULT_INIT_CONTAINER_COMMAND)));
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "ALWAYS", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
@@ -424,8 +424,8 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
@@ -436,10 +436,10 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
-                    "IfNotPresent", DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasCommonMountInitContainer(INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1", "IfNotPresent",
-                            DEFAULT_INIT_CONTAINER_COMMAND)));
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image1:v1", "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test

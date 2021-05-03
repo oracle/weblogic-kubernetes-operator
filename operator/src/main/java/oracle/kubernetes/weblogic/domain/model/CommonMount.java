@@ -15,8 +15,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class CommonMount {
 
   public static final String DEFAULT_COMMON_MOUNT_PATH = "/common";
-  public static final String COMMON_TARGET_PATH = "/tmpCommonMount";
-  public static final String COMMON_VOLUME_NAME = "operator-common-volume";
+  public static final String COMMON_MOUNT_TARGET_PATH = "/tmpCommonMount";
+  public static final String COMMON_MOUNT_VOLUME_NAME = "operator-common-volume";
 
   @Description("The common mount containers.")
   private List<Container> containers;

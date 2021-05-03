@@ -23,15 +23,15 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.weblogic.domain.model.CommomEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommomMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.Container.INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -69,32 +69,32 @@ public abstract class BasePodStepContext extends StepContextBase {
     Optional.ofNullable(cm.getMedium()).ifPresent(medium -> emptyDirVolumeSource.medium(medium));
     Optional.ofNullable(cm.getSizeLimit())
             .ifPresent(sizeLimit -> emptyDirVolumeSource.sizeLimit(Quantity.fromString(sizeLimit)));
-    return new V1Volume().name(COMMON_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
+    return new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
   }
 
   protected V1Container createInitContainerForCommonMount(Container container, int index, CommonMount cm) {
     return new V1Container().name(getName(index))
         .image(container.getImage())
             .imagePullPolicy(container.getImagePullPolicy())
-            .command(Collections.singletonList(INIT_CONTAINER_WRAPPER_SCRIPT))
+            .command(Collections.singletonList(COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT))
             .env(createEnv(container, cm, getName(index)))
             .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(COMMON_VOLUME_NAME)
-                            .mountPath(COMMON_TARGET_PATH),
+                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME)
+                            .mountPath(COMMON_MOUNT_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
   }
 
   private String getName(int index) {
-    return INIT_CONTAINER_NAME_PREFIX + (index + 1);
+    return COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
   protected List<V1EnvVar> createEnv(Container container, CommonMount cm, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
-    addEnvVar(vars, CommomEnvVars.COMMON_TARGET_PATH, COMMON_TARGET_PATH);
-    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
-    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, container.getImage());
-    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
+    addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH);
+    addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
+    addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, container.getImage());
+    addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
     return vars;
   }
 

@@ -163,6 +163,7 @@ function doIntrospect() {
   # log error if dir exists and attribute set
   DOMAIN_CREATED=0
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    checkEnv WDT_MODEL_HOME WDT_INSTALL_HOME || exit 1
     trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then

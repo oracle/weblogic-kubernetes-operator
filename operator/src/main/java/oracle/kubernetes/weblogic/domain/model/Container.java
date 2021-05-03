@@ -15,9 +15,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Container {
 
-  public static final String INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
-  public static final String DEFAULT_INIT_CONTAINER_COMMAND = "cp -R $COMMON_MOUNT_PATH/* $COMMON_TARGET_PATH";
-  public static final String INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
+  public static final String COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
+  public static final String COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND
+          = "cp -R $COMMON_MOUNT_PATH/* $COMMON_MOUNT_TARGET_PATH";
+  public static final String COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
 
   /**
    * The WDT resources container image.
@@ -69,7 +70,7 @@ public class Container {
 
   public String getCommand() {
     return Optional.ofNullable(command)
-            .orElse(DEFAULT_INIT_CONTAINER_COMMAND);
+            .orElse(COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
   public void setCommand(String command) {

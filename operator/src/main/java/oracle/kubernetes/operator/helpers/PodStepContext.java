@@ -60,11 +60,12 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.CommomEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommomMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
@@ -78,7 +79,7 @@ import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -739,9 +740,9 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void getCommonMountInitContainers(CommonMount cm, List<V1Container> initContainers) {
     List<Container> containerList = cm.getContainers();
-    IntStream.range(0, containerList.size()).forEach(idx ->
-            initContainers.add(createInitContainerForCommonMount(containerList.get(idx), idx,
-                    cm)));
+    Optional.ofNullable(containerList).ifPresent(cl -> IntStream.range(0, cl.size()).forEach(idx ->
+            initContainers.add(createInitContainerForCommonMount(cl.get(idx), idx,
+                    cm))));
   }
 
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
@@ -783,8 +784,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
     Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
-            v1Container.addVolumeMountsItem(
-                    new V1VolumeMount().name(COMMON_VOLUME_NAME).mountPath(cm.getMountPath())));
+            Optional.ofNullable(cm.getContainers()).ifPresent(cl -> v1Container.addVolumeMountsItem(
+                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(cm.getMountPath()))));
     return v1Container;
   }
 
@@ -848,8 +849,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected void addCommonMountEnv(CommonMount cm, List<V1EnvVar> vars) {
-    addEnvVar(vars, CommomEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
-    addEnvVar(vars, CommomEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
+    Optional.ofNullable(cm.getContainers()).ifPresent(containerList ->
+            addEnvVar(vars, CommomMountEnvVars.COMMON_MOUNT_PATH, cm.getMountPath()));
   }
 
   private String getDomainHome() {

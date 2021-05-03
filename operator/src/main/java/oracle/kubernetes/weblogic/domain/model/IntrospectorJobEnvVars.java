@@ -124,7 +124,12 @@ public class IntrospectorJobEnvVars {
    * Istio pod namespace.
    */
   public static final String ISTIO_POD_NAMESPACE = "ISTIO_POD_NAMESPACE";
+
+  /** The path to the WDT model home. */
   public static final String WDT_MODEL_HOME = "WDT_MODEL_HOME";
+
+  /** The path to the WDT installation home. */
+  public static final String WDT_INSTALL_HOME = "WDT_INSTALL_HOME";
 
   /**
    * Returns true if the specified environment variable name is reserved by the operator for communication with

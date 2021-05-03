@@ -27,8 +27,10 @@ if [ "${debug}" == "true" ]; then set -x; fi;
 source ${scriptDir}/utils.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils.sh" && exit 1
 
+checkEnv COMMON_MOUNT_TARGET_PATH COMMON_MOUNT_CONTAINER_NAME || exit 1
+
 initCommonMount > /tmp/commonMount.out 2>&1
 cat /tmp/commonMount.out
-mkdir -p ${COMMON_TARGET_PATH}/commonMountLogs
-cp /tmp/commonMount.out ${COMMON_TARGET_PATH}/commonMountLogs/${COMMON_MOUNT_CONTAINER_NAME}.out
+mkdir -p ${COMMON_MOUNT_TARGET_PATH}/commonMountLogs
+cp /tmp/commonMount.out ${COMMON_MOUNT_TARGET_PATH}/commonMountLogs/${COMMON_MOUNT_CONTAINER_NAME}.out
 exit

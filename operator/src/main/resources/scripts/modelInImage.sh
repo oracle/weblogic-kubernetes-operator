@@ -310,6 +310,17 @@ function createWLDomain() {
   fi
   # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
+  if [ ! -f "${WDT_ROOT}/lib/weblogic-deploy-core.jar" ]; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+         "is 'FromModel' " \
+         "and a WebLogic Deploy Tool (WDT) install is not located at " \
+         "'spec.configuration.model.wdtInstallHome' " \
+         "which is currently set to '${WDT_ROOT}'. A WDT install " \
+         "is normally created when you use the WebLogic Image Tool " \
+         "to create an image for Model in Image."
+     exitOrLoop
+  fi
+
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
