@@ -806,7 +806,6 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
-      verifyCommonMountContainers();
 
       return failures;
     }
@@ -822,12 +821,6 @@ public class Domain implements KubernetesObject {
       }
     }
 
-    private void verifyCommonMountContainers() {
-      // if the common mount is specified, verify that at least one container is defined.
-      if ((spec.getCommonMount() != null) && spec.getCommonMount().getContainers() == null) {
-        failures.add(DomainValidationMessages.noCommonMountContainerDefined(getDomainUid()));
-      }
-    }
 
     private void verifyServerPorts(WlsDomainConfig wlsDomainConfig) {
       // domain level serverConfigs do not contain servers in dynamic clusters
