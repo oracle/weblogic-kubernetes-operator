@@ -160,15 +160,20 @@ public class ItWlsSamples {
               "image: " + imageName);
     });
 
+    if (script.equals("wlst")) {
+      assertDoesNotThrow(() -> {
+        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+            "mode: wdt",
+            "mode: wlst");
+      });
+    }
+
     // build the command to run create-domain.sh
     String additonalOptions = " -u "
             + ADMIN_USERNAME_DEFAULT
             + " -p "
             + ADMIN_PASSWORD_DEFAULT;
 
-    if (script.equals("wlst")) {
-      additonalOptions += " -m wlst";
-    }
 
     String[] additonalStr = {additonalOptions, imageName};
 
