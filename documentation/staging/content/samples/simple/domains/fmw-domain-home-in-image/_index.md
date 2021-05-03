@@ -116,11 +116,12 @@ The usage of the create script is as follows:
 $ sh create-domain.sh -h
 ```
 ```text
-usage: create-domain.sh -o dir -i file -u username -p password [-n encryption-key] [-e] [-v] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -u WebLogic administrator user name for the WebLogic domain.
   -p WebLogic administrator Password for the WebLogic domain.
+  -q Password for the RCU schema. Required for JRF FMW domain type.
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
@@ -183,7 +184,6 @@ The following parameters can be provided in the inputs file.
 | `serverPodCpuRequest`, `serverPodMemoryRequest`, `serverPodCpuCLimit`, `serverPodMemoryLimit` |  The maximum amount of compute resources allowed, and minimum amount of compute resources required, for each server pod. Please refer to the Kubernetes documentation on `Managing Compute Resources for Containers` for details. | Resource requests and resource limits are not specified. |
 | `rcuCredentialsSecret` | The Kubernetes Secret containing the database credentials. | `domain1-rcu-credentials` |
 | `rcuDatabaseURL` | The database URL. | `database:1521/service` |
-| `rcuSchemaPassword` | Password for the RCU database schema. | Must be provided for `JRF` FMW domain type |
 | `rcuSchemaPrefix` | The schema prefix to use in the database, for example `SOA1`.  You may wish to make this the same as the domainUID in order to simplify matching domains to their RCU schemas. | `domain1` |
 | `toolsDir` | The directory where WebLogic Deploy Tool and WebLogic Image Tool are installed. The script will install these tools to this directory if they are not already installed. | `/tmp/dhii-sample/tools` |
 | `wdtVersion` | Version of the WebLogic Deploy Tool to be installed by the script. This can be a specific version, such as 1.9.10, or `LATEST`.  | `LATEST` |
