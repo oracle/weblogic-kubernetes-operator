@@ -10,7 +10,7 @@ This document describes what's needed to create and deploy a typical Model in Im
 
 ### Contents
 
-   - [WebLogic Server Kubernetes Operator](#weblogic-server-kubernetes-operator)
+   - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
    - [WebLogic Server image](#weblogic-server-image)
    - [Optional WDT model ConfigMap](#optional-wdt-model-configmap)
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
@@ -19,7 +19,7 @@ This document describes what's needed to create and deploy a typical Model in Im
    - [Always use external state](#always-use-external-state)
    - [Requirements for JRF domain types](#requirements-for-jrf-domain-types)
 
-### WebLogic Server Kubernetes Operator
+### WebLogic Kubernetes Operator
 
 Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See [Manage operators]({{< relref "/userguide/managing-operators/_index.md" >}}) and [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 

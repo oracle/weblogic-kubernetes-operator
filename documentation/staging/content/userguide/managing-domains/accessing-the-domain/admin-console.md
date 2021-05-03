@@ -3,14 +3,14 @@ title: "Use the Remote Console"
 date: 2019-02-23T17:39:15-05:00
 draft: false
 weight: 2
-description: "Use the Oracle WebLogic Server Remote Console to manage a domain running in Kubernetes."
+description: "Use the WebLogic Remote Console to manage a domain running in Kubernetes."
 ---
 
-The Oracle WebLogic Server Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
-You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Server Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
-For detailed documentation, see the [Oracle WebLogic Server Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
+The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
+You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
+For detailed documentation, see the [WebLogic Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
 
-A major benefit of using the Remote Console is that it runs in your browser and can be used to connect to different WebLogic Server instances.
+A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.
 You can use the Remote Console with WebLogic Server _slim_ installers, available on the [OTN](https://www.oracle.com/middleware/technologies/weblogic-server-installers-downloads.html)
 or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx;jsessionid=LchBX6sgzwv5MwSaamMxrIIk-etWJLb0IyCet9mcnqAYnINXvWzi!-1201085350).
 Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
@@ -18,7 +18,7 @@ For example, a WebLogic Server 12.2.1.4 slim installer download is approximately
 
 
 The Remote Console is deployed as a standalone Java program, which can connect to multiple WebLogic Server Administration Servers using REST APIs.
-You connect to the Remote Console using a web browser and, when prompted, supply the WebLogic Server login credentials
+You connect to the Remote Console and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server's administration port to which you want to connect.
 
 **Note**:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
