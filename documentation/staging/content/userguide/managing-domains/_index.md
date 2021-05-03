@@ -109,7 +109,7 @@ When a domain resource or WebLogic domain configuration violates the limits, the
 ### Creating and managing WebLogic domains
 
 You can locate a WebLogic domain either in a persistent volume (PV) or in an image.
-For examples of each, see the [WebLogic Server Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
+For examples of each, see the [WebLogic Kubernetes Operator samples]({{< relref "/samples/simple/domains/_index.md" >}}).
 
 If you want to create your own container images, for example, to choose a specific set of patches or to create a domain
 with a specific configuration or applications deployed, then you can create the domain custom resource

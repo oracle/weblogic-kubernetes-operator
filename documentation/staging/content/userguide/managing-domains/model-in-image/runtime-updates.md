@@ -30,7 +30,7 @@ description = "Updating a running Model in Image domain's images and model files
 
 If you want to make a WebLogic domain home configuration update to a running Model in Image domain,
 and you want the update to survive WebLogic Server pod restarts,
-then you must modify your existing model and instruct the WebLogic Server Kubernetes Operator to propagate the change.
+then you must modify your existing model and instruct the WebLogic Kubernetes Operator to propagate the change.
 
 If instead you make a direct runtime WebLogic configuration update of a Model in Image domain
 using the WebLogic Server Administration Console or WLST scripts,
@@ -918,7 +918,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
    fi
    ```
 
- - You can use a WebLogic Server Kubernetes Operator sample script that invokes
+ - You can use a WebLogic Kubernetes Operator sample script that invokes
    the same commands that are described in the previous bulleted item.
    - See `patch-restart-version.sh` and `patch-introspect-version.sh` in
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
