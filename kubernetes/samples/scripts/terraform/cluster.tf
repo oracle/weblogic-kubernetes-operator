@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 */
 variable "cluster_kubernetes_version" {
-  default = "v1.11.5"
+  default = "v1.17.9"
 }
 
 variable "cluster_name" {
@@ -35,7 +35,7 @@ variable "node_pool_initial_node_labels_value" {
 }
 
 variable "node_pool_kubernetes_version" {
-  default = "v1.11.5"
+  default = "v1.17.9"
 }
 
 variable "node_pool_name" {
