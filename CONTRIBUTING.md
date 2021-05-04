@@ -9,7 +9,7 @@ submit your pull request.
 If you have any questions about a possible submission, feel free to open
 an issue too.
 
-## Contributing to the Oracle WebLogic Server Kubernetes Operator repository
+## Contributing to the WebLogic Kubernetes Operator repository
 
 Pull requests can be made under
 [The Oracle Contributor Agreement](https://www.oracle.com/technetwork/community/oca-486395.html) (OCA).
