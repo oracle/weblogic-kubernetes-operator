@@ -1,8 +1,8 @@
-# Oracle WebLogic Server Kubernetes Operator Tutorial #
+# WebLogic Kubernetes Operator Tutorial #
 
-### Deploy a WebLogic domain (*Domain-home-in-image*) on Kubernetes using the Oracle WebLogic Server Kubernetes Operator  ###
+### Deploy a WebLogic domain (*Domain-home-in-image*) on Kubernetes using the WebLogic Kubernetes Operator  ###
 
-This lab shows you how to deploy and run a WebLogic domain container-packaged web application on a Kubernetes cluster using [Oracle WebLogic Server Kubernetes Operator 2.5](https://github.com/oracle/weblogic-kubernetes-operator) (the "operator").
+This lab shows you how to deploy and run a WebLogic domain container-packaged web application on a Kubernetes cluster using [WebLogic Kubernetes Operator 2.5](https://github.com/oracle/weblogic-kubernetes-operator) (the "operator").
 
 The sample web application is a simple JSP page which shows WebLogic Server domain MBean attributes to demonstrate operator features.
 
@@ -15,7 +15,7 @@ This tutorial uses the Docker image with the WebLogic domain inside the image de
 
 ![](images/wlsonk8s.domain-home-in-image.png)
 
-In a Kubernetes environment, the operator ensures that only one Administration Server and multiple Managed Servers will run in the domain. An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator simplifies the management and operation of WebLogic domains and deployments.
+In a Kubernetes environment, the operator ensures that only one Administration Server and multiple Managed Servers will run in the domain. An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The WebLogic Kubernetes Operator simplifies the management and operation of WebLogic domains and deployments.
 
 Helm is a framework that helps you manage Kubernetes applications, and helm charts help you define and install Helm applications in a Kubernetes cluster.
 
@@ -24,7 +24,7 @@ This tutorial has been tested on the Oracle Cloud Infrastructure Container Engin
 ### The topics to be covered in this hands-on session are: ###
 
 1. [Set up an Oracle Kubernetes Engine instance on the Oracle Cloud Infrastructure](tutorials/setup.oke.ocishell.md)
-2. [Install the WebLogic Server Kubernetes Operator](tutorials/install.operator.ocishell.md)
+2. [Install the WebLogic Kubernetes Operator](tutorials/install.operator.ocishell.md)
 3. [Install a Traefik software load balancer](tutorials/install.traefik.ocishell.md)
 4. [Deploy a WebLogic domain](tutorials/deploy.weblogic_short.ocishell.md)
 5. [Scale a WebLogic cluster](tutorials/scale.weblogic.ocishell.md)

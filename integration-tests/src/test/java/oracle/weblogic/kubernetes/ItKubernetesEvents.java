@@ -710,9 +710,8 @@ public class ItKubernetesEvents {
     logger.info("verify NamespaceWatchingStarted event is logged in {0}", opNamespace);
     checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
 
-    // TODO: enable the following check when https://jira.oraclecorp.com/jira/browse/OWLS-87181 is fixed
-    //logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
-    //checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
+    logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
   }
 
   /**
