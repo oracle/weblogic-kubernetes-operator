@@ -24,57 +24,67 @@ public class SecretHelper {
   // has 2 fields (username and password)
   public static final String USERNAME_KEY = "username";
   public static final String PASSWORD_KEY = "password";
-  private static final String AUTHORIZATION_HEADER_FACTORY = "AuthorizationHeaderFactory";
+  private static final String AUTHORIZATION_SOURCE = "AuthorizationSource";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   /**
    * Factory for a Step that adds a factory to create authorization headers, using the secret associated
    * with the current domain.
    * Expects packet to contain a domain presence info.
-   * Records an instance of AuthorizationHeaderFactory in the packet.
+   * Records an instance of AuthorizationSource in the packet.
    */
-  public static Step createAuthorizationHeaderFactoryStep() {
-    return new AuthorizationHeaderFactoryStep();
+  public static Step createAuthorizationSourceStep() {
+    return new AuthorizationSourceStep();
   }
 
   /**
    * Returns the authorization header factory stored in the specified packet, or null if it is absent.
    * @param packet the packet to read.
    */
-  public static AuthorizationHeaderFactory getAuthorizationHeaderFactory(Packet packet) {
-    return (AuthorizationHeaderFactory) packet.get(AUTHORIZATION_HEADER_FACTORY);
+  public static AuthorizationSource getAuthorizationSource(Packet packet) {
+    return (AuthorizationSource) packet.get(AUTHORIZATION_SOURCE);
   }
 
-
-  private static class AuthorizationHeaderFactoryStep extends Step {
+  private static class AuthorizationSourceStep extends Step {
 
     private String secretName;
     private String namespace;
 
     @Override
     public NextAction apply(Packet packet) {
-      secretName = packet.getSpi(DomainPresenceInfo.class).getDomain().getWebLogicCredentialsSecretName();
-      namespace = packet.getSpi(DomainPresenceInfo.class).getNamespace();
+      DomainPresenceInfo dpi = packet.getSpi(DomainPresenceInfo.class);
+      V1Secret secret = dpi.getWebLogicCredentialsSecret();
+      if (secret != null) {
+        insertAuthorizationSource(packet, secret);
+        return doNext(packet);
+      } else {
+        secretName = dpi.getDomain().getWebLogicCredentialsSecretName();
+        namespace = dpi.getNamespace();
 
-      LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-      Step read =
-          new CallBuilder()
-              .readSecretAsync(secretName, namespace, new SecretResponseStep(packet, getNext()));
+        LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
+        Step read = new CallBuilder().readSecretAsync(secretName, namespace, new SecretResponseStep(getNext()));
 
-      return doNext(read, packet);
+        return doNext(read, packet);
+      }
+    }
+
+    private void insertAuthorizationSource(Packet packet, V1Secret secret) {
+      packet.put(AUTHORIZATION_SOURCE,
+          new SecretContext(packet.getSpi(DomainPresenceInfo.class),
+              secret, packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY))
+              .createAuthorizationSource());
     }
 
     private class SecretResponseStep extends ResponseStep<V1Secret> {
-      private final LoggingFilter loggingFilter;
 
-      SecretResponseStep(Packet packet, Step next) {
+      SecretResponseStep(Step next) {
         super(next);
-        this.loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
       }
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
         if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+          LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
           LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WebLogicCredentials);
           return doNext(packet);
         }
@@ -83,24 +93,44 @@ public class SecretHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
-        packet.put(AUTHORIZATION_HEADER_FACTORY,
-              new SecretContext(callResponse.getResult(), loggingFilter).createAuthorizationHeaderFactory());
+        V1Secret secret = callResponse.getResult();
+        packet.getSpi(DomainPresenceInfo.class).setWebLogicCredentialsSecret(secret);
+        insertAuthorizationSource(packet, secret);
         return doNext(packet);
       }
-
     }
 
     static class SecretContext {
+      private final DomainPresenceInfo dpi;
       private final V1Secret secret;
       private final LoggingFilter loggingFilter;
 
-      SecretContext(V1Secret secret, LoggingFilter loggingFilter) {
+      SecretContext(DomainPresenceInfo dpi, V1Secret secret, LoggingFilter loggingFilter) {
+        this.dpi = dpi;
         this.secret = secret;
         this.loggingFilter = loggingFilter;
       }
 
-      AuthorizationHeaderFactory createAuthorizationHeaderFactory() {
-        return new AuthorizationHeaderFactory(getSecretItem(USERNAME_KEY), getSecretItem(PASSWORD_KEY));
+      AuthorizationSource createAuthorizationSource() {
+        // assign variables here so that log warnings, if needed, are generated early
+        byte[] username = getSecretItem(USERNAME_KEY);
+        byte[] password = getSecretItem(PASSWORD_KEY);
+        return new AuthorizationSource() {
+          @Override
+          public byte[] getUserName() {
+            return username;
+          }
+
+          @Override
+          public byte[] getPassword() {
+            return password;
+          }
+
+          @Override
+          public void onFailure() {
+            dpi.setWebLogicCredentialsSecret(null);
+          }
+        };
       }
 
       private byte[] getSecretItem(String key) {
@@ -111,7 +141,6 @@ public class SecretHelper {
         }
         return value;
       }
-
     }
   }
 }

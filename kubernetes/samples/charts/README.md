@@ -1,8 +1,8 @@
-# WebLogic Operator Load Balancer Samples
+# WebLogic Kubernetes Operator Load Balancer Samples
 
 ## Load balancer sample scripts
 
-The Oracle WebLogic Server Kubernetes Operator supports three load balancers: Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one. The samples are located in following folders:
+The WebLogic Kubernetes Operator supports three load balancers: Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one. The samples are located in following folders:
 
 * [traefik](traefik/README.md)
 * [voyager](voyager/README.md)

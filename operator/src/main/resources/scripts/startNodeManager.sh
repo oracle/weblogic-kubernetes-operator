@@ -241,13 +241,20 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    # Domain source type is 'FromModel' (MII) then disable Situation config override for WebLogic.
+    failBootOnErrorOption=""
+  else
+    failBootOnErrorOption="-Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}"
+  fi
+
 cat <<EOF > ${wl_props_file}
 # Server startup properties
 AutoRestart=true
 RestartMax=2
 RestartInterval=3600
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} ${failBootOnErrorOption} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
@@ -322,7 +329,6 @@ logFileRotate ${nodemgr_out_file} ${NODEMGR_LOG_FILE_MAX:-11}
 
 ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
-wait_count=0
 start_secs=$SECONDS
 max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
@@ -340,7 +346,6 @@ while [ 1 -eq 1 ]; do
     trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
     exit 1
   fi
-  wait_count=$((wait_count + 1))
 done
 
 trace "Nodemanager started in $((SECONDS - start_secs)) seconds."

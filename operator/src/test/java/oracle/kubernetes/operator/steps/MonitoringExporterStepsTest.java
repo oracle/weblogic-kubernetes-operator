@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -173,7 +173,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationUpdateStep()));
 
     assertThat(httpSupport.getLastRequestContents(),
@@ -204,7 +204,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
 
 
@@ -240,7 +240,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
+                SecretHelper.createAuthorizationSourceStep(),
                 MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
 
     assertThat(httpSupport.getLastRequest().method(), equalTo("GET"));
@@ -292,7 +292,7 @@ public class MonitoringExporterStepsTest {
   }
 
   private void setDeletingState(V1ObjectMeta meta) {
-    meta.setDeletionTimestamp(OffsetDateTime.now());
+    meta.setDeletionTimestamp(SystemClock.now());
   }
 
   @Test

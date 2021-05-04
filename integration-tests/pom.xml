@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.2.1</version>
+        <version>3.2.2</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -292,9 +292,10 @@
                   **/ItPodsRestart,
                   **/ItUsabilityOperatorHelmChart,
                   **/ItInitContainers,
-                  **/ItOperatorUpgrade,
+                  **/ItOperatorWlsUpgrade,
                   **/ItOperatorRestart,
                   **/ItPodsShutdownOption,
+                  **/ItOCILoadBalancer,
                   **/ItManageNameSpace
                </includes-failsafe>
             </properties>

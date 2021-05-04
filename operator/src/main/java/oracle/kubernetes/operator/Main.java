@@ -57,6 +57,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -74,7 +75,7 @@ public class Main {
   private static final ScheduledExecutorService wrappedExecutorService =
       Engine.wrappedExecutorService("operator", container);
   private static final AtomicReference<OffsetDateTime> lastFullRecheck =
-      new AtomicReference<>(OffsetDateTime.now());
+      new AtomicReference<>(SystemClock.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
 
@@ -134,7 +135,7 @@ public class Main {
     private final KubernetesVersion kubernetesVersion;
     private final Engine engine;
     private final DomainProcessor domainProcessor;
-    private final DomainNamespaces domainNamespaces = new DomainNamespaces();
+    private final DomainNamespaces domainNamespaces;
 
     public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
@@ -145,7 +146,9 @@ public class Main {
       kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
 
       engine = new Engine(scheduledExecutorService);
-      domainProcessor = new DomainProcessorImpl(this);
+      domainProcessor = new DomainProcessorImpl(this, productVersion);
+
+      domainNamespaces = new DomainNamespaces(productVersion);
 
       PodHelper.setProductVersion(productVersion.toString());
     }
@@ -544,7 +547,7 @@ public class Main {
     }
   }
 
-  private static Packet createPacketWithLoggingContext(String ns) {
+  static Packet createPacketWithLoggingContext(String ns) {
     Packet packet = new Packet();
     packet.getComponents().put(
         LoggingContext.LOGGING_CONTEXT_KEY,
