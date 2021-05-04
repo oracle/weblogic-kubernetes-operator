@@ -41,12 +41,14 @@ $ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-
 Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values. 
 If `fwmDomainType` is `JRF`, also update the input files with configurations for accessing the RCU database schema,
 including `rcuSchemaPrefix`, `rcuSchemaPassword`, `rcuDatabaseURL`, and `rcuCredentialSecrets`.
-Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator::
+Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator, 
+and if creating a JFR FMW domain, also provide the password for the RCU schema:
 
 ```shell
 $ ./create-domain.sh \
   -u <username> \
   -p <password> \
+  -q <RCU schema password> \
   -i create-domain-inputs.yaml \
   -o /<path to output-directory>
 ```
