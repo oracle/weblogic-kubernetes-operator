@@ -118,6 +118,8 @@ public class DomainNamespaces {
     podDisruptionBudgetWatchers.removeWatcher(ns);
     configMapWatchers.removeWatcher(ns);
     jobWatchers.removeWatcher(ns);
+
+    DomainProcessorImpl.cleanupNamespace(ns);
   }
 
   ConfigMapWatcher getConfigMapWatcher(String namespace) {
