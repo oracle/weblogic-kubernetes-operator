@@ -608,7 +608,7 @@ function diff_model() {
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
 
-  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 >  ${WDT_OUTPUT} 2>&1
+  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
