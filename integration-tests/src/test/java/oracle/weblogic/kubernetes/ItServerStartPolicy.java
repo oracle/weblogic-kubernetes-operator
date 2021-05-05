@@ -90,7 +90,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * managed server. The replica count is set to 1 and serverStartPolicy is set 
  * to IF_NEEDED at managed server level. 
  */
-
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
@@ -1148,43 +1147,26 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-" + configServerName;
     String dynamicServerPodName = domainUid + "-managed-server" + newReplicaCount;
 
-    // make sure the server-to-be-test doesn't exist
-    restoreEnv();
-    checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
+    // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
+    String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
+    regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
 
-    // use scaleCluster.sh to scale a configured cluster
-    logger.info("Scale configured cluster using the script scaleCluster.sh");
-    String result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2, " -r " + newReplicaCount, false),
-        String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
-
-    checkPodReadyAndServiceExists(configServerPodName, domainUid, domainNamespace);
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
-        domainUid, domainNamespace, newReplicaCount)));
-
+    // use scaleCluster.sh to scale a dynamic cluster and
     // use clusterStatus.sh to verify scaling results
-    result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2),
-        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
-
-    String regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)2(\\s+)2(\\s+)2";
-    assertTrue(verifyExecuteResult(result, regex),"The script should scale up the cluster: " + CLUSTER_2);
-    logger.info("Configured cluster " + CLUSTER_2 + " scaled successfully.");
+    regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)2(\\s+)2(\\s+)2";
+    scalingClusters(CLUSTER_2, configServerPodName, newReplicaCount, regex, true);
 
     // check managed server from other cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
     assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1,
         domainUid, domainNamespace, replicaCount)));
-
     checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
 
-    // restore test env
-    result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
-        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
-    checkPodDeleted(configServerPodName, domainUid, domainNamespace);
-    logger.info("managed server " + configServerPodName + " stopped successfully.");
+    // use clusterStatus.sh to restore test env
+    regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
   }
 
   /**
@@ -1202,29 +1184,16 @@ class ItServerStartPolicy {
     String dynamicServerPodName = domainUid + "-" + dynamicServerName;
     String configServerPodName = domainUid + "-config-cluster-server" + newReplicaCount;
 
-    // make sure the server-to-be-test doesn't exist
-    restoreEnv();
-    checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
-    checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
+    // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
+    String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
+    regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
 
-    // use scaleCluster.sh to scale a dynamic cluster
-    logger.info("Scale dynamic cluster using the script scaleCluster.sh");
-    String result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1, " -r " + newReplicaCount, false),
-        String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
-
-    checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1,
-        domainUid, domainNamespace, newReplicaCount)));
-
+    // use scaleCluster.sh to scale a dynamic cluster and
     // use clusterStatus.sh to verify scaling results
-    result =  assertDoesNotThrow(() ->
-        executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1),
-        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
-
-    String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
-    assertTrue(verifyExecuteResult(result, regex),"The script should scale up the cluster: " + CLUSTER_1);
-    logger.info("Dynamic cluster " + CLUSTER_1 + " scaled successfully.");
+    regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
+    scalingClusters(CLUSTER_1, dynamicServerPodName, newReplicaCount, regex, true);
 
     // check managed server from other cluster are not affected
     logger.info("Check configured managed server pods are not affected");
@@ -1232,32 +1201,36 @@ class ItServerStartPolicy {
         domainUid, domainNamespace, replicaCount)));
     checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
 
-    // restore test env
-    logger.info("Stop managed server using the script");
-    executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName);
-    checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
-    logger.info("managed server " + configServerPodName + " stopped successfully.");
+    // use clusterStatus.sh to restore test env
+    regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
   }
 
-  private void restoreEnv() {
-    int newReplicaCount = 2;
-    String configServerName = "config-cluster-server" + newReplicaCount;
-    String configServerPodName = domainUid + "-" + configServerName;
-    String dynamicServerName = "managed-server" + newReplicaCount;
-    String dynamicServerPodName = domainUid + "-" + dynamicServerName;
+  private void scalingClusters(String clusterName, String serverPodName, int replicaNum,
+                               String regex, boolean checkPodExist) {
+    // use scaleCluster.sh to scale a given cluster
+    logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
+    String result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
+        String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
 
-    // restore test env
-    assertDoesNotThrow(() ->
-        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
-        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
-    checkPodDeleted(configServerPodName, domainUid, domainNamespace);
-    logger.info("managed server " + configServerPodName + " stopped successfully.");
+    if (checkPodExist) {
+      checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
+    } else {
+      checkPodDoesNotExist(serverPodName, domainUid, domainNamespace);
+    }
 
-    assertDoesNotThrow(() ->
-        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
-        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
-    checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
-    logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
+    // verify that scaleCluster.sh does scale to a required replica number
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(clusterName,
+        domainUid, domainNamespace, replicaNum)));
+
+    // use clusterStatus.sh to verify scaling results
+    result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+        String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
+
+    assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
+    logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 
   private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
