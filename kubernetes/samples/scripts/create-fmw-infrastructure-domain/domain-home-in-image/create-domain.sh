@@ -258,7 +258,7 @@ function createDomainHome {
     fi
 
     echo @@ "Info: dumping output of ${domainPropertiesOutput}"
-    sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g' ${domainPropertiesOutput}
+    sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g;s/RCU_SCHEMA_PASSWORD=[^{].*/RCU_SCHEMA_PASSWORD=********/g' ${domainPropertiesOutput}
 
     cmd="
       $WIT_DIR/imagetool/bin/imagetool.sh update

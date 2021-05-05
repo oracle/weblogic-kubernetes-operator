@@ -69,7 +69,7 @@ if [ -z "$DB_SCHEMA_PASS" ]; then
 fi
 
 echo "Info: Content of ${DOMAIN_PROPERTIES_FILE}:"
-sed 's/ADMIN_USER_PASS=.*/ADMIN_USER_PASS=********/g' ${DOMAIN_PROPERTIES_FILE}
+sed 's/ADMIN_USER_PASS=.*/ADMIN_USER_PASS=********/g;s/RCU_SCHEMA_PASSWORD=.*/RCU_SCHMEA_PASSWORD=********/g' ${DOMAIN_PROPERTIES_FILE}
 
 parseProperties ${DOMAIN_PROPERTIES_FILE}
 
@@ -87,10 +87,10 @@ cmd="wlst.sh -skipWLSModuleScanning \
         -parent "${DOMAIN_HOME}/../" \
         -name ${DOMAIN_NAME} \
         -user ${ADMIN_USER_NAME} \
-        -password ${ADMIN_USER_PASS} \
+        -password %ADMIN_USER_PASS% \
         -rcuDb ${RCU_DB_CONN_STRING} \
         -rcuPrefix ${RCU_SCHEMA_PREFIX} \
-        -rcuSchemaPwd ${RCU_SCHEMA_PASSWORD} \
+        -rcuSchemaPwd %RCU_SCHEMA_PASSWORD% \
         -adminListenPort ${ADMIN_PORT} \
         -adminName ${ADMIN_NAME} \
         -managedNameBase ${MANAGED_SERVER_NAME_BASE} \
@@ -106,6 +106,8 @@ if [ -n "${T3_PUBLIC_ADDRESS}" ]; then
 fi
 
 echo @@ "Info: Calling WLST script with: "
-echo "$cmd"
+echo ${cmd} | sed 's:%ADMIN_USER_PASS%:********:g;s:%RCU_SCHEMA_PASSWORD%:********:g' 
 echo
+# put real passwords back to cmd
+cmd=$(echo ${cmd} | sed "s:%ADMIN_USER_PASS%:\"${ADMIN_USER_PASS}\":g;s:%RCU_SCHEMA_PASSWORD%:\"${RCU_SCHEMA_PASSWORD}\":g")
 eval $cmd || exit 1

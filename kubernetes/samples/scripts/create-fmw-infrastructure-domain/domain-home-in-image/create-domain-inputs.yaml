@@ -27,7 +27,7 @@ serverStartPolicy: IF_NEEDED
 clusterName: cluster-1
 
 # Number of managed servers to initially start for the domain
-initialManagedServerReplicas: 2
+initialManagedServerReplicas: 1
 
 # Number of managed servers to generate for the domain
 # This value is ignored when using WDT with a model that creates configured cluster.
@@ -144,7 +144,7 @@ domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure
 # "domainHomeImageBuildPath". Set to "LATEST" to use the latest version.
 # wdtVersion: LATEST
 
-Uncomment to customize the WebLogic Image Tool (WIT) version.
+# Uncomment to customize the WebLogic Image Tool (WIT) version.
 # Set to "LATEST" to use the latest version.
 # witVersion: LATEST
 
