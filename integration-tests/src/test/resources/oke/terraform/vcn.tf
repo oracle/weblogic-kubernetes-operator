@@ -4,10 +4,16 @@
 */
 
 // Compartment in which to create the cluster resources.
-variable "compartment_name" {}
-variable "compartment_ocid" {}
+variable "compartment_name" {
+}
 
-variable vcn_cidr_prefix { default = "10.0" }
+variable "compartment_ocid" {
+}
+
+variable "vcn_cidr_prefix" {
+  default = "10.0"
+}
+
 variable "vcn_cidr" {
   default = "10.0.0.0/16"
 }
@@ -20,9 +26,9 @@ variable "vcn_cidr" {
  * The creation of the vcn also creates the default route table, security list, and dhcp options.
  */
 resource "oci_core_virtual_network" "oke-vcn" {
-  cidr_block     = "${var.vcn_cidr}"
+  cidr_block     = var.vcn_cidr
   dns_label      = "${var.cluster_name}vcn"
-  compartment_id = "${var.compartment_ocid}"
+  compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}_vcn"
 }
 
@@ -30,9 +36,9 @@ resource "oci_core_virtual_network" "oke-vcn" {
  * An internet gateway is created in the relevant compartment attached to the created VCN. 
  */
 resource "oci_core_internet_gateway" "oke-igateway" {
-  compartment_id = "${var.compartment_ocid}"
+  compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}-igateway"
-  vcn_id         = "${oci_core_virtual_network.oke-vcn.id}"
+  vcn_id         = oci_core_virtual_network.oke-vcn.id
 }
 
 /*
@@ -41,12 +47,12 @@ resource "oci_core_internet_gateway" "oke-igateway" {
  */
 
 resource "oci_core_default_route_table" "oke-default-route-table" {
-  manage_default_resource_id = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
+  manage_default_resource_id = oci_core_virtual_network.oke-vcn.default_route_table_id
   display_name               = "${var.cluster_name}-default-route-table"
 
   route_rules {
     cidr_block        = "0.0.0.0/0"
-    network_entity_id = "${oci_core_internet_gateway.oke-igateway.id}"
+    network_entity_id = oci_core_internet_gateway.oke-igateway.id
   }
 }
 
@@ -54,7 +60,7 @@ resource "oci_core_default_route_table" "oke-default-route-table" {
  * Configures the default dhcp options object that was created along with the VCN.
  */
 resource "oci_core_default_dhcp_options" "oke-default-dhcp-options" {
-  manage_default_resource_id = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  manage_default_resource_id = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
   display_name               = "${var.cluster_name}-default-dhcp-options"
 
   # required
@@ -68,7 +74,7 @@ resource "oci_core_default_dhcp_options" "oke-default-dhcp-options" {
  * Configures the default security list.
  */
 resource "oci_core_default_security_list" "oke-default-security-list" {
-  manage_default_resource_id = "${oci_core_virtual_network.oke-vcn.default_security_list_id}"
+  manage_default_resource_id = oci_core_virtual_network.oke-vcn.default_security_list_id
   display_name               = "${var.cluster_name}-default-security-list"
 
   // allow outbound tcp traffic on all ports
@@ -79,13 +85,13 @@ resource "oci_core_default_security_list" "oke-default-security-list" {
 
   // allow inbound ssh traffic
   ingress_security_rules {
-    protocol  = "6"         // tcp
+    protocol  = "6" // tcp
     source    = "0.0.0.0/0"
     stateless = false
 
     tcp_options {
-      "min" = 22
-      "max" = 22
+      min = 22
+      max = 22
     }
   }
 
@@ -95,8 +101,8 @@ resource "oci_core_default_security_list" "oke-default-security-list" {
     source   = "0.0.0.0/0"
 
     icmp_options {
-      "type" = 3
-      "code" = 4
+      type = 3
+      code = 4
     }
   }
 }
@@ -110,190 +116,186 @@ resource "oci_core_default_security_list" "oke-default-security-list" {
  *  - Conatins two ingress rules to allow SSH traffic from OCI Cluster service.
  */
 resource "oci_core_security_list" "oke-worker-security-list" {
-  compartment_id = "${var.compartment_ocid}"
+  compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}-Workers-SecList"
-  vcn_id         = "${oci_core_virtual_network.oke-vcn.id}"
+  vcn_id         = oci_core_virtual_network.oke-vcn.id
 
-  egress_security_rules = [
-    {
-      destination = "0.0.0.0/0"
-      protocol    = "6"         // outbound TCP to the internet
-      stateless   = false
-    },
-    {
-      destination = "${var.vcn_cidr_prefix}.10.0/24"
-      protocol    = "all"
-      stateless   = true
-    },
-    {
-      destination = "${var.vcn_cidr_prefix}.11.0/24"
-      protocol    = "all"
-      stateless   = true
-    },
-    {
-      destination = "${var.vcn_cidr_prefix}.12.0/24"
-      protocol    = "all"
-      stateless   = true
-    },
-    {
-      protocol  = "6"            // tcp
-      destination   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+  egress_security_rules {
+    destination = "0.0.0.0/0"
+    protocol    = "6" // outbound TCP to the internet
+    stateless   = false
+  }
+  egress_security_rules {
+    destination = "${var.vcn_cidr_prefix}.10.0/24"
+    protocol    = "all"
+    stateless   = true
+  }
+  egress_security_rules {
+    destination = "${var.vcn_cidr_prefix}.11.0/24"
+    protocol    = "all"
+    stateless   = true
+  }
+  egress_security_rules {
+    destination = "${var.vcn_cidr_prefix}.12.0/24"
+    protocol    = "all"
+    stateless   = true
+  }
+  egress_security_rules {
+    protocol    = "6" // tcp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless   = true
 
-      tcp_options {
-	source_port_range {
-          "min" = 2048
-          "max" = 2050
-        }
+    tcp_options {
+      source_port_range {
+        min = 2048
+        max = 2050
       }
-    },
-    {
-      protocol  = "6"            // tcp
-      destination   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    }
+  }
+  egress_security_rules {
+    protocol    = "6" // tcp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless   = true
 
-      tcp_options {
-	source_port_range {
-          "min" = 111
-          "max" = 111
+    tcp_options {
+      source_port_range {
+        min = 111
+        max = 111
       }
-      }
-    },
-    {
-      protocol  = "17"            // udp
-      destination   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    }
+  }
+  egress_security_rules {
+    protocol    = "17" // udp
+    destination = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless   = true
 
-      udp_options {
-	source_port_range {
-          "min" = 111
-          "max" = 111
+    udp_options {
+      source_port_range {
+        min = 111
+        max = 111
       }
-      }
-    },
-  ]
+    }
+  }
 
-  ingress_security_rules = [
-    {
-      # Intra VCN traffic - this lets the 3 subnets in teh 3 ADs tak to each other without restriction.
-      # These are stateless, so they need to be accompanied by stateless egress rules.
-      stateless = true
+  ingress_security_rules {
+    # Intra VCN traffic - this lets the 3 subnets in teh 3 ADs tak to each other without restriction.
+    # These are stateless, so they need to be accompanied by stateless egress rules.
+    stateless = true
 
-      protocol = "all"
-      source   = "${var.vcn_cidr_prefix}.10.0/24"
-    },
-    {
-      stateless = true
-      protocol  = "all"
-      source    = "${var.vcn_cidr_prefix}.11.0/24"
-    },
-    {
-      stateless = true
-      protocol  = "all"
-      source    = "${var.vcn_cidr_prefix}.12.0/24"
-    },
-    {
-      # ICMP 
-      protocol = 1
-      source   = "0.0.0.0/0"
+    protocol = "all"
+    source   = "${var.vcn_cidr_prefix}.10.0/24"
+  }
+  ingress_security_rules {
+    stateless = true
+    protocol  = "all"
+    source    = "${var.vcn_cidr_prefix}.11.0/24"
+  }
+  ingress_security_rules {
+    stateless = true
+    protocol  = "all"
+    source    = "${var.vcn_cidr_prefix}.12.0/24"
+  }
+  ingress_security_rules {
+    # ICMP 
+    protocol = 1
+    source   = "0.0.0.0/0"
 
-      icmp_options {
-        "type" = 3
-        "code" = 4
-      }
-    },
-    {
-      # OCI Cluster service
-      protocol  = "6"             // tcp
-      source    = "130.35.0.0/16"
-      stateless = false
+    icmp_options {
+      type = 3
+      code = 4
+    }
+  }
+  ingress_security_rules {
+    # OCI Cluster service
+    protocol  = "6" // tcp
+    source    = "130.35.0.0/16"
+    stateless = false
 
-      tcp_options {
-        "min" = 22
-        "max" = 22
-      }
-    },
-    {
-      protocol  = "6"            // tcp
-      source    = "138.1.0.0/17"
-      stateless = false
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
+  ingress_security_rules {
+    protocol  = "6" // tcp
+    source    = "138.1.0.0/17"
+    stateless = false
 
-      tcp_options {
-        "min" = 22
-        "max" = 22
-      }
-    },
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
+  ingress_security_rules {
     # NodePort ingress rules
-    {
-      protocol  = "6"            // tcp
-      source   = "0.0.0.0/0"
-      stateless = true
+    protocol  = "6" // tcp
+    source    = "0.0.0.0/0"
+    stateless = true
 
-      tcp_options {
-        "min" = 30000
-        "max" = 32767
-      }
-    },
-    {
-      protocol  = "6"            // tcp
-      source   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    tcp_options {
+      min = 30000
+      max = 32767
+    }
+  }
+  ingress_security_rules {
+    protocol  = "6" // tcp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
 
-      tcp_options {
-	source_port_range {
-          "min" = 2048
-          "max" = 2050
+    tcp_options {
+      source_port_range {
+        min = 2048
+        max = 2050
       }
-      }
-    },
-    {
-      protocol  = "6"            // tcp
-      source   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    }
+  }
+  ingress_security_rules {
+    protocol  = "6" // tcp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
 
-      tcp_options {
-	source_port_range {
-          "min" = 111
-          "max" = 111
+    tcp_options {
+      source_port_range {
+        min = 111
+        max = 111
       }
-      }
-    },
-    {
-      protocol  = "17"            // udp
-      source   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    }
+  }
+  ingress_security_rules {
+    protocol  = "17" // udp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
 
-      udp_options {
-	source_port_range {
-          "min" = 111
-          "max" = 111
+    udp_options {
+      source_port_range {
+        min = 111
+        max = 111
       }
-      }
-    },
-    {
-      protocol  = "17"            // udp
-      source   = "${var.vcn_cidr_prefix}.0.0/16"
-      stateless = true
+    }
+  }
+  ingress_security_rules {
+    protocol  = "17" // udp
+    source    = "${var.vcn_cidr_prefix}.0.0/16"
+    stateless = true
 
-      udp_options {
-	source_port_range {
-          "min" = 2048
-          "max" = 2048
+    udp_options {
+      source_port_range {
+        min = 2048
+        max = 2048
       }
-      }
-    },
+    }
+  }
+  ingress_security_rules {
     # SSH Stateful ingress rules
-    {
-      protocol  = "6"            // tcp
-      source   = "0.0.0.0/0"
-      stateless = false
+    protocol  = "6" // tcp
+    source    = "0.0.0.0/0"
+    stateless = false
 
-      tcp_options {
-        "min" = 22
-        "max" = 22
-      }
-    },
-  ]
+    tcp_options {
+      min = 22
+      max = 22
+    }
+  }
 }
 
 /*
@@ -301,25 +303,21 @@ resource "oci_core_security_list" "oke-worker-security-list" {
  * - Allows all TCP traffic in/out.
  */
 resource "oci_core_security_list" "oke-lb-security-list" {
-  compartment_id = "${var.compartment_ocid}"
+  compartment_id = var.compartment_ocid
   display_name   = "${var.cluster_name}-LoadBalancers-SecList"
-  vcn_id         = "${oci_core_virtual_network.oke-vcn.id}"
+  vcn_id         = oci_core_virtual_network.oke-vcn.id
 
-  egress_security_rules = [
-    {
-      destination = "0.0.0.0/0"
-      protocol    = "6"
-      stateless   = true
-    },
-  ]
+  egress_security_rules {
+    destination = "0.0.0.0/0"
+    protocol    = "6"
+    stateless   = true
+  }
 
-  ingress_security_rules = [
-    {
-      protocol  = "6"
-      source    = "0.0.0.0/0"
-      stateless = true
-    },
-  ]
+  ingress_security_rules {
+    protocol  = "6"
+    source    = "0.0.0.0/0"
+    stateless = true
+  }
 }
 
 /*
@@ -347,63 +345,63 @@ resource "oci_core_security_list" "oke-lb-security-list" {
  */
 
 resource "oci_core_subnet" "oke-subnet-worker-1" {
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[0],"name")}"
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
   cidr_block          = "${var.vcn_cidr_prefix}.10.0/24"
   display_name        = "${var.cluster_name}-WorkerSubnet01"
   dns_label           = "workers01"
-  compartment_id       = "${var.compartment_ocid}"
-  vcn_id              = "${oci_core_virtual_network.oke-vcn.id}"
-  security_list_ids   = ["${oci_core_security_list.oke-worker-security-list.id}"]
-  route_table_id      = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
-  dhcp_options_id     = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  compartment_id      = var.compartment_ocid
+  vcn_id              = oci_core_virtual_network.oke-vcn.id
+  security_list_ids   = [oci_core_security_list.oke-worker-security-list.id]
+  route_table_id      = oci_core_virtual_network.oke-vcn.default_route_table_id
+  dhcp_options_id     = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
 }
 
 resource "oci_core_subnet" "oke-subnet-worker-2" {
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1],"name")}"
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[1]["name"]
   cidr_block          = "${var.vcn_cidr_prefix}.11.0/24"
   display_name        = "${var.cluster_name}-WorkerSubnet02"
   dns_label           = "workers02"
-  compartment_id       = "${var.compartment_ocid}"
-  vcn_id              = "${oci_core_virtual_network.oke-vcn.id}"
-  security_list_ids   = ["${oci_core_security_list.oke-worker-security-list.id}"]
-  route_table_id      = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
-  dhcp_options_id     = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  compartment_id      = var.compartment_ocid
+  vcn_id              = oci_core_virtual_network.oke-vcn.id
+  security_list_ids   = [oci_core_security_list.oke-worker-security-list.id]
+  route_table_id      = oci_core_virtual_network.oke-vcn.default_route_table_id
+  dhcp_options_id     = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
 }
 
 resource "oci_core_subnet" "oke-subnet-worker-3" {
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[2],"name")}"
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[2]["name"]
   cidr_block          = "${var.vcn_cidr_prefix}.12.0/24"
   display_name        = "${var.cluster_name}-WorkerSubnet03"
   dns_label           = "workers03"
-  compartment_id       = "${var.compartment_ocid}"
-  vcn_id              = "${oci_core_virtual_network.oke-vcn.id}"
-  security_list_ids   = ["${oci_core_security_list.oke-worker-security-list.id}"]
-  route_table_id      = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
-  dhcp_options_id     = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  compartment_id      = var.compartment_ocid
+  vcn_id              = oci_core_virtual_network.oke-vcn.id
+  security_list_ids   = [oci_core_security_list.oke-worker-security-list.id]
+  route_table_id      = oci_core_virtual_network.oke-vcn.default_route_table_id
+  dhcp_options_id     = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
 }
 
 resource "oci_core_subnet" "oke-subnet-loadbalancer-1" {
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[0],"name")}"
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[0]["name"]
   cidr_block          = "${var.vcn_cidr_prefix}.20.0/24"
   display_name        = "${var.cluster_name}-LB-Subnet01"
   dns_label           = "lb01"
-  compartment_id      = "${var.compartment_ocid}"
-  vcn_id              = "${oci_core_virtual_network.oke-vcn.id}"
-  security_list_ids   = ["${oci_core_security_list.oke-lb-security-list.id}"]
-  route_table_id      = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
-  dhcp_options_id     = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  compartment_id      = var.compartment_ocid
+  vcn_id              = oci_core_virtual_network.oke-vcn.id
+  security_list_ids   = [oci_core_security_list.oke-lb-security-list.id]
+  route_table_id      = oci_core_virtual_network.oke-vcn.default_route_table_id
+  dhcp_options_id     = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
 }
 
 resource "oci_core_subnet" "oke-subnet-loadbalancer-2" {
-  availability_domain = "${lookup(data.oci_identity_availability_domains.ADs.availability_domains[1],"name")}"
+  availability_domain = data.oci_identity_availability_domains.ADs.availability_domains[1]["name"]
   cidr_block          = "${var.vcn_cidr_prefix}.21.0/24"
   display_name        = "${var.cluster_name}-LB-Subnet02"
   dns_label           = "lb02"
-  compartment_id      = "${var.compartment_ocid}"
-  vcn_id              = "${oci_core_virtual_network.oke-vcn.id}"
-  security_list_ids   = ["${oci_core_security_list.oke-lb-security-list.id}"]
-  route_table_id      = "${oci_core_virtual_network.oke-vcn.default_route_table_id}"
-  dhcp_options_id     = "${oci_core_virtual_network.oke-vcn.default_dhcp_options_id}"
+  compartment_id      = var.compartment_ocid
+  vcn_id              = oci_core_virtual_network.oke-vcn.id
+  security_list_ids   = [oci_core_security_list.oke-lb-security-list.id]
+  route_table_id      = oci_core_virtual_network.oke-vcn.default_route_table_id
+  dhcp_options_id     = oci_core_virtual_network.oke-vcn.default_dhcp_options_id
 }
 
 /**
@@ -411,85 +409,86 @@ resource "oci_core_subnet" "oke-subnet-loadbalancer-2" {
  * Using any compartment id in this tennancy should also work just as well. 
  */
 data "oci_identity_availability_domains" "ADs" {
-  compartment_id = "${var.tenancy_ocid}"
+  compartment_id = var.tenancy_ocid
 }
 
 /*
  * Query the compartment we created (or re-used) 
  */
 data "oci_identity_compartments" "oke-compartment" {
-  compartment_id = "${var.compartment_ocid}"
+  compartment_id = var.compartment_ocid
 
   filter {
     name   = "name"
-    values = ["${var.compartment_name}"]
+    values = [var.compartment_name]
   }
 }
 
 data "oci_core_virtual_networks" "oke-vcns" {
   #Required
-  compartment_id = "${oci_core_virtual_network.oke-vcn.compartment_id}"
+  compartment_id = oci_core_virtual_network.oke-vcn.compartment_id
 
   #Filter
-  display_name = "${oci_core_virtual_network.oke-vcn.display_name}"
+  display_name = oci_core_virtual_network.oke-vcn.display_name
 }
 
 data "oci_core_internet_gateways" "oke-igateways" {
   #Required
-  compartment_id = "${oci_core_internet_gateway.oke-igateway.compartment_id}"
-  vcn_id         = "${oci_core_internet_gateway.oke-igateway.vcn_id}"
+  compartment_id = oci_core_internet_gateway.oke-igateway.compartment_id
+  vcn_id         = oci_core_internet_gateway.oke-igateway.vcn_id
 }
 
 data "oci_core_route_tables" "oke_route_tables" {
   #Required
-  compartment_id = "${oci_core_virtual_network.oke-vcn.compartment_id}"
-  vcn_id         = "${oci_core_virtual_network.oke-vcn.id}"
+  compartment_id = oci_core_virtual_network.oke-vcn.compartment_id
+  vcn_id         = oci_core_virtual_network.oke-vcn.id
 }
 
 data "oci_core_dhcp_options" "oke_dhcp_options" {
   #Required
-  compartment_id = "${oci_core_virtual_network.oke-vcn.compartment_id}"
-  vcn_id         = "${oci_core_virtual_network.oke-vcn.id}"
+  compartment_id = oci_core_virtual_network.oke-vcn.compartment_id
+  vcn_id         = oci_core_virtual_network.oke-vcn.id
 }
 
 data "oci_core_security_lists" "oke_security_lists" {
   #Required
-  compartment_id = "${oci_core_security_list.oke-worker-security-list.compartment_id}"
-  vcn_id         = "${oci_core_security_list.oke-worker-security-list.vcn_id}"
+  compartment_id = oci_core_security_list.oke-worker-security-list.compartment_id
+  vcn_id         = oci_core_security_list.oke-worker-security-list.vcn_id
 }
 
 data "oci_core_subnets" "oke_subnets" {
   #Required
-  compartment_id = "${oci_core_subnet.oke-subnet-worker-1.compartment_id}"
-  vcn_id         = "${oci_core_subnet.oke-subnet-worker-1.vcn_id}"
+  compartment_id = oci_core_subnet.oke-subnet-worker-1.compartment_id
+  vcn_id         = oci_core_subnet.oke-subnet-worker-1.vcn_id
 }
 
 # Print out the VCN objects that were created.
 
 output "Compartments" {
-  value = "${data.oci_identity_compartments.oke-compartment.compartments}"
+  value = data.oci_identity_compartments.oke-compartment.compartments
 }
 
 output "VCN" {
-  value = "${data.oci_core_virtual_networks.oke-vcns.virtual_networks}"
+  value = data.oci_core_virtual_networks.oke-vcns.virtual_networks
 }
 
 output "InternetGateway" {
-  value = "${data.oci_core_internet_gateways.oke-igateways.gateways}"
+  value = data.oci_core_internet_gateways.oke-igateways.gateways
 }
 
 output "RouteTables" {
-  value = "${data.oci_core_route_tables.oke_route_tables.route_tables}"
+  value = data.oci_core_route_tables.oke_route_tables.route_tables
 }
 
 output "DHCPOptions" {
-  value = "${data.oci_core_dhcp_options.oke_dhcp_options.options}"
+  value = data.oci_core_dhcp_options.oke_dhcp_options.options
 }
 
 output "SecurityLists" {
-  value = "${data.oci_core_security_lists.oke_security_lists.security_lists}"
+  value = data.oci_core_security_lists.oke_security_lists.security_lists
 }
 
 output "Subnets" {
-  value = "${data.oci_core_subnets.oke_subnets.subnets}"
+  value = data.oci_core_subnets.oke_subnets.subnets
 }
+
