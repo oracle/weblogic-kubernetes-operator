@@ -58,8 +58,11 @@ The script will perform the following steps:
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
+
 * Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample FMW Infrastructure domain.
-* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. Both WDT and WIT are required to create your Model in Image container images.
+
+* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. 
+  WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
 * Set up the WebLogic Image Tool in the `<toolsDir>/imagetool` directory, where `<toolsDir>` is the
@@ -156,8 +159,8 @@ The following parameters can be provided in the inputs file.
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
 | `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. This value is ignored when using WDT with a model that creates configured cluster. | `5` |
-| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when WLST script is used in creating a WebLogic domain. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
-| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when WDT is used in creating a WebLogic domain. | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
+| `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when the `mode` is set to `wlst`. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
+| `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when the `mode` is set to `wdt` (which is the default `mode`). | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_proejcts/domains/<domainUID>` |
 | `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
