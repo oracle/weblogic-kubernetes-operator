@@ -32,7 +32,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -73,6 +73,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinit
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -97,6 +99,7 @@ public class ItIstioCrossDomainTransaction {
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/istiocrossdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
   private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
+  private static final String WDT_MODEL_FILE_JMS2 = "model2-cdt-jms.yaml";
 
   private static String opNamespace = null;
   private static String domain1Namespace = null;
@@ -228,7 +231,7 @@ public class ItIstioCrossDomainTransaction {
   public void testIstioCrossDomainTransaction() {
 
     //build application archive - txforward
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+    Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
@@ -238,7 +241,7 @@ public class ItIstioCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive - cdttxservlet
-    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+    distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
@@ -247,6 +250,41 @@ public class ItIstioCrossDomainTransaction {
     String appSource1 = distDir.toString() + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
 
+    //build application archive for JMS Send/Receive 
+    distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "jmsservlet.war").toFile().exists(),
+        "Application archive is not available");
+    String appSource2 = distDir.toString() + "/jmsservlet.war";
+    logger.info("Application is in {0}", appSource2);
+
+    Path mdbSrcDir  = Paths.get(APP_DIR, "mdbtopic");
+    Path mdbDestDir = Paths.get(PROPS_TEMP_DIR, "mdbtopic");
+
+    assertDoesNotThrow(() -> copyFolder(
+         mdbSrcDir.toString(), mdbDestDir.toString()),
+        "Could not mdbtopic application directory");
+
+    Path template = Paths.get(PROPS_TEMP_DIR, 
+           "mdbtopic/src/application/MdbTopic.java");
+
+    // Add the domain2 namespace decorated URL to the providerURL of MDB
+    // so that it can communicate with remote destination on domain2
+    assertDoesNotThrow(() -> replaceStringInFile(
+        template.toString(), "domain2-namespace", domain2Namespace),
+        "Could not modify the domain2Namespace in MDB Template file");
+
+    //build application archive for MDB
+    distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "mdbtopic.jar").toFile().exists(),
+        "Application archive is not available");
+    String appSource3 = distDir.toString() + "/mdbtopic.jar";
+    logger.info("Application is in {0}", appSource3);
 
     // create admin credential secret for domain1
     logger.info("Create admin credential secret for domain1");
@@ -267,7 +305,7 @@ public class ItIstioCrossDomainTransaction {
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
 
-    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1, appSource2, appSource3);
 
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
@@ -280,6 +318,7 @@ public class ItIstioCrossDomainTransaction {
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
+        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS2,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
 
     final List<String> appSrcDirList2 = Collections.singletonList(appSource);
