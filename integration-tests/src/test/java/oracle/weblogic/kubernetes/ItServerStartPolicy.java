@@ -1148,13 +1148,22 @@ class ItServerStartPolicy {
     String dynamicServerPodName = domainUid + "-managed-server" + newReplicaCount;
 
     // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     1    5    1      1       1
     String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     0    2    1      1       1
     regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
 
     // use scaleCluster.sh to scale a dynamic cluster and
     // use clusterStatus.sh to verify scaling results
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     0    2    2       2      2
     regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)2(\\s+)2(\\s+)2";
     scalingClusters(CLUSTER_2, configServerPodName, newReplicaCount, regex, true);
 
@@ -1165,6 +1174,9 @@ class ItServerStartPolicy {
     checkPodDoesNotExist(dynamicServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     0    2    1      1       1
     regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
   }
@@ -1185,13 +1197,22 @@ class ItServerStartPolicy {
     String configServerPodName = domainUid + "-config-cluster-server" + newReplicaCount;
 
     // use clusterStatus.sh to make sure the server-to-be-test doesn't exist
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     1    5    1     1      1
     String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     0    2    1     1      1
     regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_2, configServerPodName, replicaCount, regex, false);
 
     // use scaleCluster.sh to scale a dynamic cluster and
     // use clusterStatus.sh to verify scaling results
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     1    5    2       2      2
     regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
     scalingClusters(CLUSTER_1, dynamicServerPodName, newReplicaCount, regex, true);
 
@@ -1202,6 +1223,9 @@ class ItServerStartPolicy {
     checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
 
     // use clusterStatus.sh to restore test env
+    // String regex matches below
+    // cluster        min  max  goal  current  ready
+    // clusterName     1    5    1     1      1
     regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
     scalingClusters(CLUSTER_1, dynamicServerPodName, replicaCount, regex, false);
   }
