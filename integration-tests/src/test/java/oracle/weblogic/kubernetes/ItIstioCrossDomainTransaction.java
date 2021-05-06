@@ -37,7 +37,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -105,18 +104,19 @@ public class ItIstioCrossDomainTransaction {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private String domainUid1 = "domain1";
-  private String domainUid2 = "domain2";
-  private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
+  private static String domainUid1 = "domain1";
+  private static String domainUid2 = "domain2";
+  private static String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
+  private static String domain2AdminServerPodName = domainUid2 + "-admin-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
-  private String clusterName = "cluster-1";
+  private static String clusterName = "cluster-1";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
-  int istioIngressPort;
+  static int istioIngressPort;
 
   /**
    * Install Operator.
@@ -173,6 +173,8 @@ public class ItIstioCrossDomainTransaction {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
 
+    buildApplicationsAndDomains();
+
   }
 
   private static void updatePropertyFile() {
@@ -214,23 +216,9 @@ public class ItIstioCrossDomainTransaction {
     out.close();
   }
 
-  /*
-   * This test verifies cross domain transaction is successful. domain in image using wdt is used
-   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
-   * is invoked which starts a transaction that spans both domains.
-   * The application consists of a servlet front-end and a remote object that defines a method to register
-   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
-   * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
-   * listen-addresses are resolvable between the transaction participants, then the transaction should
-   * complete successfully.
-   */
-  @Test
-  @Order(1)
-  @DisplayName("Check cross domain transaction with istio works")
-  public void testIstioCrossDomainTransaction() {
+  private static void buildApplicationsAndDomains() {
 
-    //build application archive - txforward
+    //build application archive
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
@@ -240,7 +228,7 @@ public class ItIstioCrossDomainTransaction {
     String appSource = distDir.toString() + "/txforward.ear";
     logger.info("Application is in {0}", appSource);
 
-    //build application archive - cdttxservlet
+    //build application archive
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
@@ -367,6 +355,24 @@ public class ItIstioCrossDomainTransaction {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
   
+  }
+
+
+  /*
+   * This test verifies cross domain transaction is successful. domain in image using wdt is used
+   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
+   * is invoked which starts a transaction that spans both domains.
+   * The application consists of a servlet front-end and a remote object that defines a method to register
+   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
+   * is started, and the specified list of server URLs is used to look up the remote object and register
+   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
+   * listen-addresses are resolvable between the transaction participants, then the transaction should
+   * complete successfully.
+   */
+  @Test
+  @DisplayName("Check cross domain transaction with istio works")
+  public void testIstioCrossDomainTransaction() {
+
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
@@ -399,7 +405,6 @@ public class ItIstioCrossDomainTransaction {
    */
 
   @Test
-  @Order(2)
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
   public void testIstioCrossDomainTransactionWithFailInjection() {
 
@@ -418,10 +423,76 @@ public class ItIstioCrossDomainTransaction {
       assertTrue(result.stdout().contains("Status=SUCCESS"),
           "crossDomainTransaction with TMAfterTLogBeforeCommitExit failed");
     }
-
   }
 
-  private void createDomain(String domainUid, String domainNamespace, String adminSecretName,
+  /*
+   * This test verifies a cross-domain MessageDrivenBean communication
+   * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
+   * on Domain D2. 
+   * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
+   * set to One-Copy-Per-Server. The OnMessage() routine sends a message to 
+   * local queue on receiving the message.
+   * An application servlet is deployed to Administration Server on D1 which
+   * send/receive message from a JMS destination based on a given URL.
+   * (a) app servlet send message to Distributed Topic on D2
+   * (b) mdb puts a message into local Queue for each received message
+   * (c) make sure local Queue gets 2X times messages sent to Distributed Topic 
+   * Since the MessagesDistributionMode is set to One-Copy-Per-Server and 
+   * targeted to a cluster of two servers, onMessage() will be triggered 
+   * for both instance of MDB for a message sent to Distributed Topic   
+   */
+  @Test
+  @DisplayName("Check cross domain transcated MDB communication ")
+  public void testIstioCrossDomainTranscatedMDB() {
+
+    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
+            + "\"http://%s:%s/jmsservlet/jmstest?"  
+            + "url=t3://domain2-cluster-cluster-1.%s:8001&"
+            + "cf=jms.ClusterConnectionFactory&"
+            + "action=send&"
+            + "dest=jms/testCdtUniformTopic\"",
+        K8S_NODEPORT_HOST, istioIngressPort, domain2Namespace);
+
+    ExecResult result = null;
+    logger.info("curl command {0}", curlRequest);
+    result = assertDoesNotThrow(
+        () -> exec(curlRequest, true));
+    if (result.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + result.stdout());
+      logger.info("curl command returned {0}", result.toString());
+      assertTrue(result.stdout().contains("Sent (10) message"),
+          "Can not send message to remote Distributed Topic");
+    }
+
+    assertTrue(checkLocalQueue(),
+         "Expected number of message not found in Accounting Queue");
+  }
+
+  private boolean checkLocalQueue() {
+    String curlString = String.format("curl -v --show-error --noproxy '*' "
+            + "-H 'host:domain1-" + domain1Namespace + ".org' "
+            + "\"http://%s:%s/jmsservlet/jmstest?"
+            + "url=t3://localhost:7001&"
+            + "action=receive&dest=jms.testAccountingQueue\"",
+        K8S_NODEPORT_HOST, istioIngressPort);
+
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for local queue to be updated "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("Drained (20) message");
+          };
+        }));
+    return true;
+  }
+
+
+  private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                             String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
@@ -473,7 +544,7 @@ public class ItIstioCrossDomainTransaction {
 
   }
 
-  private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+  private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount, String domainImage) {
     // create the domain CR
     Domain domain = new Domain()

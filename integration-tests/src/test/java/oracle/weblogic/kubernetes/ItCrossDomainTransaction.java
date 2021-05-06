@@ -37,7 +37,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -333,12 +332,11 @@ public class ItCrossDomainTransaction {
    * The application consists of a servlet front-end and a remote object that defines a method to register
    * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
    * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
+   * a Synchronization object on each server. Finally, the transaction is committed.  If the server
    * listen-addresses are resolvable between the transaction participants, then the transaction should
    * complete successfully
    */
   @Test
-  @Order(1)
   @DisplayName("Check cross domain transaction works")
   public void testCrossDomainTransaction() {
 
@@ -373,7 +371,6 @@ public class ItCrossDomainTransaction {
    *
    */
   @Test
-  @Order(2)
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   public void testCrossDomainTransactionWithFailInjection() {
 
@@ -410,7 +407,6 @@ public class ItCrossDomainTransaction {
    * for both instance of MDB for a message sent to Distributed Topic   
    */
   @Test
-  @Order(3)
   @DisplayName("Check cross domain transcated MDB communication ")
   public void testCrossDomainTranscatedMDB() {
 
