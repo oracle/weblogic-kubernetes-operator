@@ -91,9 +91,9 @@ import javax.management.ObjectName;
        cf=(ConnectionFactory)cxt.lookup("weblogic.jms.ConnectionFactory");
     Destination rq=(Destination)cxt.lookup("jms.testAccountingQueue");
     JMSContext context = cf.createContext();
-    tmsg = context.createTextMessage("MDB is activated on Server " + serverRuntime.getName());
+    tmsg = context.createTextMessage("(On Server) " + serverRuntime.getName());
     context.createProducer().send(rq,tmsg);
-    System.out.println("["+dateFormat.format(date)+"]<TMDB> Message Relayed to [@FWD_DEST_URL@]");
+    System.out.println("["+dateFormat.format(date)+"]<TMDB> message added to [@FWD_DEST_URL@]");
    } catch (Exception e) {
       e.printStackTrace ();
     }

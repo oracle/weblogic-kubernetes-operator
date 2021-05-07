@@ -45,7 +45,8 @@ public class JmsServlet extends HttpServlet {
      String url  = "t3://localhost:7001";
      String host  = "localhost";
      String port  = "7001";
-     int  mcount  = 10;
+     int  scount  = 10;
+     int  rcount  = 20;
 
      DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
      java.util.Date date = new java.util.Date();
@@ -77,8 +78,11 @@ public class JmsServlet extends HttpServlet {
 
       out.println("ConnectionFactory ["+cfactory+"]");
 
-      if (request.getParameter("mcount") != null )
-        mcount = Integer.parseInt(request.getParameter("mcount"));
+      if (request.getParameter("scount") != null )
+        scount = Integer.parseInt(request.getParameter("scount"));
+
+      if (request.getParameter("rcount") != null )
+        scount = Integer.parseInt(request.getParameter("rcount"));
 
       Hashtable h = new Hashtable();
       h.put(Context.INITIAL_CONTEXT_FACTORY,
@@ -97,23 +101,46 @@ public class JmsServlet extends HttpServlet {
       JMSContext context = qcf.createContext();
 
       if ( action.equals("send") ) {
-       out.println("Sending ("+mcount+") message to ["+destination+"]");
+       out.println("Sending ("+scount+") message to ["+destination+"]");
        String msg = "["+dateFormat.format(date)+"] Welcome to WebLogic Kubenates Operator";
-       for ( int i=0; i<mcount; i++)
+       for ( int i=0; i<scount; i++)
        context.createProducer().send(d,msg);
-       out.println("["+dateFormat.format(date)+"] Sent ("+mcount+") message to ["+destination+"]");
+       out.println("["+dateFormat.format(date)+"] Sent ("+scount+") message to ["+destination+"]");
       } else if ( action.equals("receive") ) {
        out.println("Receiving message from ["+destination+"]");
        Message msg=null;
        int count = 0;
+       int s1count=0;
+       int s2count=0;
        JMSConsumer consumer = (JMSConsumer) context.createConsumer(d);
        do { 
-         msg = consumer.receiveNoWait();
-         // out.println("Receiving message ["+msg.getBody()+"]");
-         if ( msg != null ) { count++; }
+         // msg = consumer.receiveNoWait();
+         msg = consumer.receive(5000);
+         if ( msg != null ) { 
+           // out.println("message content ["+msg.getBody(String.class)+"]");
+           if (msg.getBody(String.class).contains("managed-server1"))
+               s1count++;
+           if (msg.getBody(String.class).contains("managed-server2"))
+               s2count++;
+           count++; 
+         }
        } while( msg != null);
-      out.println("["+dateFormat.format(date)+"] Drained ("+count+") message from ["+destination+"]");
-     } 
+
+      out.println("Found ("+s1count+") message from [managed-server1]");
+      out.println("Found ("+s2count+") message from [managed-server2]");
+
+      if ( count == rcount ) {
+        out.println("Drained ("+count+") message from ["+destination+"]");
+
+        if ( s1count == s2count ) 
+         out.println("Messages are distributed across MDB instances");
+        else 
+         out.println("Messages are NOT distributed across MDB instances");
+
+      } else {
+        out.println("Found ("+count+") message on ["+destination+"] instead of ["+rcount+"]");
+     }
+    }
 
      } catch (Exception e) {
         out.println("Send/Receive FAILED with Unknown Exception " + e);

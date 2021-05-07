@@ -326,16 +326,20 @@ public class ItCrossDomainTransaction {
   }
 
   /*
-   * This test verifies a cross-domain transaction is successful. 
+   * This test verifies a cross-domain transaction in non-istio environment.
    * domain-in-image using wdt is used to create 2 domains in different 
    * namespaces. An app is deployed to both the domains and the servlet
    * is invoked which starts a transaction that spans both domains.
-   * The application consists of a servlet front-end and a remote object that defines a method to register
-   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
-   * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server. Finally, the transaction is committed.  If the server
-   * listen-addresses are resolvable between the transaction participants, then the transaction should
-   * complete successfully
+   * The application consists of 
+   *  (a) servlet 
+   *  (b) a remote object that defines a method to register a 
+   *      simple javax.transaction.Synchronization object. 
+   * When the servlet is invoked, a global transaction is started, and the 
+   * specified list of server URLs is used to look up the remote objects and 
+   * register a Synchronization object on each server. 
+   * Finally, the transaction is committed.  
+   * If the server listen-addresses are resolvable between the transaction 
+   * participants, then the transaction should complete successfully
    */
   @Order(1)
   @Test
@@ -360,10 +364,10 @@ public class ItCrossDomainTransaction {
   }
 
   /*
-   * This test verifies a cross-domain transaction is successful and 
-   * able to re-establish the connection when one domain is shutdown. 
-   * Domain in image with wdt is used to create 2 domains in different 
-   * namespaces. A servlet is deployed to the admin server of domain1. 
+   * This test verifies a cross-domain transaction with re-connection. 
+   * It makes sure the disitibuted transaction is completed successfully 
+   * when a coordinator server is re-started after writing to transcation log
+   * A servlet is deployed to the admin server of domain1. 
    * The servlet starts a transaction with TMAfterTLogBeforeCommitExit 
    * transaction property set. The servlet inserts data into an Oracle DB 
    * table and sends a message to a JMS queue as part of the same transaction. 
@@ -444,6 +448,8 @@ public class ItCrossDomainTransaction {
             + "action=receive&dest=jms.testAccountingQueue\"",
         K8S_NODEPORT_HOST, admin1ServiceNodePort);
 
+    logger.info("curl command {0}", curlString);
+
     withStandardRetryPolicy 
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for local queue to be updated "
@@ -452,7 +458,7 @@ public class ItCrossDomainTransaction {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> {
           return () -> {
-            return exec(new String(curlString), true).stdout().contains("Drained (20) message");
+            return exec(new String(curlString), true).stdout().contains("Messages are distributed");
           };
         }));
     return true;

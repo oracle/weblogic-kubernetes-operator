@@ -360,15 +360,20 @@ public class ItIstioCrossDomainTransaction {
 
 
   /*
-   * This test verifies cross domain transaction is successful. domain in image using wdt is used
-   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
+   * Test verifies a cross-domain transaction in a istio enabled environment.
+   * domain-in-image using wdt is used to create 2 domains in different 
+   * namespaces. An app is deployed to both the domains and the servlet
    * is invoked which starts a transaction that spans both domains.
-   * The application consists of a servlet front-end and a remote object that defines a method to register
-   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
-   * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
-   * listen-addresses are resolvable between the transaction participants, then the transaction should
-   * complete successfully.
+   * The application consists of 
+   *  (a) servlet 
+   *  (b) a remote object that defines a method to register a 
+   *      simple javax.transaction.Synchronization object. 
+   * When the servlet is invoked, a global transaction is started, and the 
+   * specified list of server URLs is used to look up the remote objects and 
+   * register a Synchronization object on each server. 
+   * Finally, the transaction is committed.  
+   * If the server listen-addresses are resolvable between the transaction 
+   * participants, then the transaction should complete successfully
    */
   @Order(1)
   @Test
@@ -397,15 +402,17 @@ public class ItIstioCrossDomainTransaction {
   }
 
   /*
-   * This test verifies cross domain transaction with Istio is successful and able to re-establish connection when
-   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
-   * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
-   * TMAfterTLogBeforeCommitExit transaction property set. The servlet then inserts data into oracleDB table and
-   * sends a message to a JMS queue as part of a same transaction. The coordinator (server in domain2)
-   * should exit before commit and the domain1 admin server should be able to re-establish connection
-   * with domain2 and the transaction should commit.
+   * Test verifies a cross-domain transaction with re-connection is istio env. 
+   * It makes sure the disitibuted transaction is completed successfully 
+   * when a coordinator server is re-started after writing to transcation log
+   * A servlet is deployed to the admin server of domain1. 
+   * The servlet starts a transaction with TMAfterTLogBeforeCommitExit 
+   * transaction property set. The servlet inserts data into an Oracle DB 
+   * table and sends a message to a JMS queue as part of the same transaction. 
+   * The coordinator (server in domain2) should exit before commit and the 
+   * domain1 admin server should be able to re-establish the connection with 
+   * domain2 and the transaction should commit.
    */
-
   @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
@@ -429,7 +436,7 @@ public class ItIstioCrossDomainTransaction {
   }
 
   /*
-   * This test verifies a cross-domain MessageDrivenBean communication
+   * Test verifies a cross-domain MessageDrivenBean communication in istio env.
    * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
    * on Domain D2. 
    * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
@@ -481,6 +488,7 @@ public class ItIstioCrossDomainTransaction {
             + "action=receive&dest=jms.testAccountingQueue\"",
         K8S_NODEPORT_HOST, istioIngressPort);
 
+    logger.info("curl command {0}", curlString);
     withStandardRetryPolicy 
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for local queue to be updated "
@@ -489,7 +497,7 @@ public class ItIstioCrossDomainTransaction {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> {
           return () -> {
-            return exec(new String(curlString), true).stdout().contains("Drained (20) message");
+            return exec(new String(curlString), true).stdout().contains("Messages are distributed");
           };
         }));
     return true;
