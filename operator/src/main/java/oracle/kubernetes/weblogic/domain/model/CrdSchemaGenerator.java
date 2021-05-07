@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import io.kubernetes.client.custom.Quantity;
 import oracle.kubernetes.json.SchemaGenerator;
+import oracle.kubernetes.operator.TuningParameters;
 
 public class CrdSchemaGenerator {
 
@@ -18,6 +19,7 @@ public class CrdSchemaGenerator {
     generator.setSupportObjectReferences(false);
     generator.setIncludeSchemaReference(false);
     generator.addPackageToSuppressDescriptions("io.kubernetes.client.openapi.models");
+    generator.defineEnabledFeatures(TuningParameters.getInstance().getFeatureGates().enabledFeatures);
     return generator;
   }
 }
