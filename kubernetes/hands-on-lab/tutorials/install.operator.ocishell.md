@@ -1,8 +1,8 @@
-# Oracle WebLogic Server Kubernetes Operator Tutorial #
+# WebLogic Kubernetes Operator Tutorial #
 
 ### Install and configure the operator  ###
 
-An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The Oracle WebLogic Server Kubernetes Operator (the "operator") simplifies the management and operation of WebLogic domains and deployments.
+An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The WebLogic Kubernetes Operator (the "operator") simplifies the management and operation of WebLogic domains and deployments.
 
 #### Clone the operator repository to a Cloud Shell instance ####
 First, clone the operator git repository to OCI Cloud Shell.
@@ -106,4 +106,4 @@ NAME                            NAMESPACE                       REVISION        
 sample-weblogic-operator        sample-weblogic-operator-ns     1               2020-03-06 18:24:29.312983566 +0000 UTC deployed        weblogic-operator-2.5.0
 ```
 
-The WebLogic Server Kubernetes Operator has been installed. You can continue with next tutorial module.
+The WebLogic Kubernetes Operator has been installed. You can continue with next tutorial module.

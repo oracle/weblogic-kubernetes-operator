@@ -122,6 +122,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
+  static void cleanupNamespace(String namespace) {
+    DOMAINS.remove(namespace);
+    domainEventK8SObjects.remove(namespace);
+    namespaceEventK8SObjects.remove(namespace);
+    statusUpdaters.remove((namespace));
+  }
+
   static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     DOMAINS
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
@@ -129,10 +136,16 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
-    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-    if (map != null) {
-      map.remove(domainUid);
-    }
+    Optional.ofNullable(DOMAINS.get(ns)).map(m -> m.remove(domainUid));
+  }
+
+  private static void unregisterEventK8SObject(String ns, String domainUid) {
+    Optional.ofNullable(domainEventK8SObjects.get(ns)).map(m -> m.remove(domainUid));
+  }
+
+  private static void unregisterDomain(String ns, String domainUid) {
+    unregisterPresenceInfo(ns, domainUid);
+    unregisterEventK8SObject(ns, domainUid);
   }
 
   private static void registerStatusUpdater(
@@ -1190,7 +1203,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+      unregisterDomain(info.getNamespace(), info.getDomainUid());
       return doNext(packet);
     }
   }

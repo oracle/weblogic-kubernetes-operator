@@ -6,7 +6,7 @@ description: "Ingress controllers and load balancer sample scripts."
 ---
 
 
-The Oracle WebLogic Server Kubernetes Operator supports NGINX, Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one.
+The WebLogic Kubernetes Operator supports NGINX, Traefik, Voyager, and Apache. We provide samples that demonstrate how to install and configure each one.
 
 {{% notice note %}}
 For production environments, we recommend NGINX, Voyager, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.

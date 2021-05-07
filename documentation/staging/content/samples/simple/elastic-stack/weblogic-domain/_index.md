@@ -11,10 +11,10 @@ This document describes to how to configure a WebLogic domain to use Fluentd to 
 
 Here's the general mechanism for how this works:
 
-* `fluentd` runs as a separate container in the Administration Server and Managed Server pods
-* The log files reside on a volume that is shared between the `weblogic-server` and `fluentd` containers
-* `fluentd` tails the domain logs files and exports them to Elasticsearch
-* A `ConfigMap` contains the filter and format rules for exporting log records
+* `fluentd` runs as a separate container in the Administration Server and Managed Server pods.
+* The log files reside on a volume that is shared between the `weblogic-server` and `fluentd` containers.
+* `fluentd` tails the domain logs files and exports them to Elasticsearch.
+* A `ConfigMap` contains the filter and format rules for exporting log records.
 
 ##### Sample code
 
@@ -37,8 +37,8 @@ The sample Elasticsearch configuration is:
 #### Configure log files to use a volume
 The domain log files must be written to a volume that can be shared between the `weblogic-server` and `fluentd` containers.  The following elements are required to accomplish this:
 
-* `logHome` must be a path that can be shared between containers
-* `logHomeEnabled` must be set to `true` so that the logs will be written outside the pod and persist across pod restarts
+* `logHome` must be a path that can be shared between containers.
+* `logHomeEnabled` must be set to `true` so that the logs will be written outside the pod and persist across pod restarts.
 * A `volume` must be defined on which the log files will reside.  In the example, `emptyDir` is a volume that gets created empty when a pod is created.  It will persist across pod restarts but deleting the pod would delete the `emptyDir` content.
 * The `volumeMounts` mounts the named volume created with `emptyDir` and establishes the base path for accessing the volume.
 
@@ -75,11 +75,11 @@ Create a `ConfigMap` named `fluentd-config` in the namespace of the domain.  The
 
 Here's an explanation of some elements defined in the `ConfigMap`:
 
-* The `@type tail` indicates that `tail` will be used to obtain updates to the log file
-* The `path` of the log file is obtained from the `LOG_PATH` environment variable that is defined in the `fluentd` container
-* The `tag` value of log records is obtained from the `DOMAIN_UID` environment variable that is defined in the `fluentd` container
-* The `<parse>` section defines how to interpret and tag each element of a log record
-* The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`
+* The `@type tail` indicates that `tail` will be used to obtain updates to the log file.
+* The `path` of the log file is obtained from the `LOG_PATH` environment variable that is defined in the `fluentd` container.
+* The `tag` value of log records is obtained from the `DOMAIN_UID` environment variable that is defined in the `fluentd` container.
+* The `<parse>` section defines how to interpret and tag each element of a log record.
+* The `<match **>` section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the `domainUID`.
 
 The following is an example of how to create the `ConfigMap`:
 ```shell
@@ -165,9 +165,9 @@ Add a container to the domain that will run `fluentd` in the Administration Serv
 
 Notice the container definition:
 
-* Defines a `LOG_PATH` environment variable that points to the log location of `bobbys-front-end`
-* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their values from the secret `bobs-bookstore-weblogic-credentials`
-* Has volume mounts for the `fluentd-config` `ConfigMap` and the volume containing the domain logs
+* Defines a `LOG_PATH` environment variable that points to the log location of `bobbys-front-end`.
+* Defines `ELASTICSEARCH_HOST`, `ELASTICSEARCH_PORT`, `ELASTICSEARCH_USER`, and `ELASTICSEARCH_PASSWORD` environment variables that are all retrieving their values from the secret `bobs-bookstore-weblogic-credentials`.
+* Has volume mounts for the `fluentd-config` `ConfigMap` and the volume containing the domain logs.
 
 **NOTE**: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.
 

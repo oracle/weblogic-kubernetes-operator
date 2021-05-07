@@ -3,7 +3,7 @@ title: "Container image layering"
 date: 2019-04-11T13:15:32-04:00
 weight: 1
 draft: false
-description: "Learn about Container image layering and why it is important."
+description: "Learn about container image layering and why it is important."
 ---
 
 
