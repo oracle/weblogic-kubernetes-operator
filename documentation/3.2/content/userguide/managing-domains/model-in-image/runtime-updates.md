@@ -101,7 +101,7 @@ documented as [unsupported](#unsupported-updates) below:
              MaxCapacity: 5
    ```
 
-   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#using-multiple-models) in the WebLogic Deploy Tooling documentation.
+   For more information, see [Using Multiple Models](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
  - You can change or add secrets that your model macros reference
    (macros that use the `@@SECRET:secretname:secretkey@@` syntax).
@@ -130,7 +130,7 @@ documented as [unsupported](#unsupported-updates) below:
    There are [some exceptions for online updates](#online-update-handling-of-deletes).
 
    For more information, see
-   [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete)
+   [Declaring Named MBeans to Delete](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete)
    in the WebLogic Deploying Tooling documentation.
 
 #### Unsupported updates
@@ -201,13 +201,13 @@ and a description of workarounds and alternatives when applicable:
    `spec.logHomeEnabled`, or `spec.httpAccessLogInLogHome` attributes.
 
  - Embedded LDAP security entries for
-   [users, groups, roles](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-users-groups-and-roles),
-   and [credential mappings](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-user-password-credential-mapping).
+   [users, groups, roles](https://oracle.github.io/weblogic-deploy-tooling/samples/usersgroups-model/),
+   and [credential mappings](https://oracle.github.io/weblogic-deploy-tooling/samples/pwcredentialmap-model/).
    For example, you cannot add a user to the default security realm.
    Online update attempts in this area will fail during the introspector job, and offline update attempts
    may result in inconsistent security checks during the offline update's rolling cycle.
    If you need to make these kinds of updates, then shut down your domain entirely before making the change,
-   or switch to an [external security provider](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-security-providers).
+   or switch to an [external security provider](https://oracle.github.io/weblogic-deploy-tooling/samples/securityproviders-model/).
 
  - Any Model YAML `topology:` stanza changes,
    for example, `ConsoleEnabled`, `RootDirectory`, `AdminServerName`, and such.
@@ -272,7 +272,7 @@ plus an offline update if there are any accompanying model changes.
 Model updates can include additions, changes, and deletions. For help generating model changes:
 
  - For a discussion of model file syntax, see the
-   [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) documentation
+   [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation
    and Model in Image [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
  - For a discussion about helper tooling that you can use to generate model change YAML,
@@ -804,9 +804,9 @@ in the Model in Image sample.
 
 Optionally, you can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates.
 The WebLogic Deploy Tooling
-[Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md)
+[Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/)
 generates model files from an existing domain home,
-and its [Compare Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md)
+and its [Compare Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/compare/)
 compares two domain models and generates the YAML file for updating the first domain to the second domain.
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
