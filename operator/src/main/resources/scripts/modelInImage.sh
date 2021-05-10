@@ -603,12 +603,11 @@ function diff_model() {
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
 
-  # no need to redirect output, -output_dir for compareModel will generate the output file
-  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /dev/null 2>&1
+  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
-    cat /tmp/compare_model_stdout
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -713,8 +712,8 @@ function createPrimordialDomain() {
       # recreate the domain if there is an unsafe security update such as admin password update or security roles
 
       # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
-      # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequenetly any
-      # other updates such as admin credenitals or security roles that caused the re-create of the primordial
+      # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequently any
+      # other updates such as admin credentials or security roles that caused the re-create of the primordial
       # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
       # getDatabaseDefaults).
       #
@@ -725,12 +724,13 @@ function createPrimordialDomain() {
         fi
       fi
 
-      # if the domain is JRF and the schema password has been changed. Set this so that updateDomain will also update
-      # the RCU password using the RCUDnbinfo
+      # if the domain is JRF and the schema password has been changed. Set this so that the changes are persisted
+      # in the primordial domain.
 
       local rcu_password_updated="false"
       rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
       if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
+          recreate_domain=1
           UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
       fi
     fi
