@@ -141,7 +141,7 @@ weight: 1
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) and [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
    ```shell
    $ cd /tmp/mii-sample/model-images

@@ -44,6 +44,7 @@ weight: 1
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
+
 1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
@@ -141,7 +142,7 @@ weight: 1
    If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) and [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
    ```shell
    $ cd /tmp/mii-sample/model-images
