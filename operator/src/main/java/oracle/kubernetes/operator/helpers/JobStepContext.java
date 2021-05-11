@@ -37,6 +37,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
@@ -273,8 +274,7 @@ public abstract class JobStepContext extends BasePodStepContext {
           .spec(createPodSpec(tuningParameters));
     Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
             addCommonMountInitContainers(podTemplateSpec.getSpec(), commonMounts));
-    Optional.ofNullable(info.getDomain().getCommonMountVolumes()).ifPresent(cmv -> cmv
-            .stream().forEach(e -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume(e))));
+    addEmptyDirVolume(podTemplateSpec.getSpec(), info.getDomain().getCommonMountVolumes());
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
@@ -421,13 +421,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     return container;
-  }
-
-  private void addVolumeMount(V1Container container, CommonMount cm) {
-    Optional.ofNullable(getMountPath(cm, info.getDomain().getCommonMountVolumes())).map(mountPath ->
-            container.addVolumeMountsItem(
-                    new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
-                            .mountPath(mountPath)));
   }
 
   private String getVolumeName(String resourceName, String type) {

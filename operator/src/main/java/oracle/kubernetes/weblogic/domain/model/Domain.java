@@ -794,6 +794,7 @@ public class Domain implements KubernetesObject {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
+    private final Set<String> commonMountVolumes = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -806,6 +807,7 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
+      addCommonMountVolumeNames();
       verifyCommonMountContainers();
 
       return failures;
@@ -966,11 +968,27 @@ public class Domain implements KubernetesObject {
           .forEach(this::checkDuplicateClusterName);
     }
 
+    private void addCommonMountVolumeNames() {
+      getSpec().getCommonMountVolumes()
+              .stream()
+              .map(CommonMountVolume::getName)
+              .map(LegalNames::toDns1123LegalName)
+              .forEach(this::checkDuplicateCommomMountVolumeName);
+    }
+
     private void checkDuplicateServerName(String serverName) {
       if (serverNames.contains(serverName)) {
         failures.add(DomainValidationMessages.duplicateServerName(serverName));
       } else {
         serverNames.add(serverName);
+      }
+    }
+
+    private void checkDuplicateCommomMountVolumeName(String commonMountVolumeName) {
+      if (commonMountVolumes.contains(commonMountVolumeName)) {
+        failures.add(DomainValidationMessages.duplicateVolumeName(commonMountVolumeName));
+      } else {
+        commonMountVolumes.add(commonMountVolumeName);
       }
     }
 

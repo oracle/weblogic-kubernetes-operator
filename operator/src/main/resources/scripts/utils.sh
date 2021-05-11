@@ -908,7 +908,7 @@ function checkCommonMount() {
       touch ${COMMON_MOUNT_PATH}/testaccess.tmp
       if [ $? -ne 0 ]; then
         trace SEVERE "Common Mount: Cannot write to the COMMON_MOUNT_PATH '${COMMON_MOUNT_PATH}'. " \
-                     "This path is configurable using the domain resource 'serverPod.commonMount.mountPath' " \
+                     "This path is configurable using the domain resource 'serverPod.commonMounts.volume' " \
                      "attribute." && return 1
       fi
       rm -f ${COMMON_MOUNT_PATH}/testaccess.tmp || return 1

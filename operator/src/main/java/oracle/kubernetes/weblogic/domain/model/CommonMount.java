@@ -15,9 +15,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class CommonMount {
 
-  public static final String DEFAULT_COMMON_MOUNT_PATH = "/common";
   public static final String COMMON_MOUNT_TARGET_PATH = "/tmpCommonMount";
-  public static final String COMMON_MOUNT_VOLUME_NAME = "common-mount-volume-";
+  public static final String COMMON_MOUNT_VOLUME_NAME_PREFIX = "common-mount-volume-";
   public static final String COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
   public static final String COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
   public static final String COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND

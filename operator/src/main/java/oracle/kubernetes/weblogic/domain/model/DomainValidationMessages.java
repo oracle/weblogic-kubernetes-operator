@@ -28,6 +28,16 @@ class DomainValidationMessages {
   }
 
   /**
+   * Returns a validation message indicating that more than one managed server spec has the same effective name
+   * after DNS-1123 conversion.
+   * @param serverName the duplicate server name
+   * @return the localized message
+   */
+  static String duplicateVolumeName(@Nonnull String serverName) {
+    return getMessage(MessageKeys.DUPLICATE_VOLUME_NAME_FOUND, serverName);
+  }
+
+  /**
    * Returns a validation message indicating that more than one cluster spec has the same effective name
    * after DNS-1123 conversion.
    * @param clusterName the duplicate cluster name

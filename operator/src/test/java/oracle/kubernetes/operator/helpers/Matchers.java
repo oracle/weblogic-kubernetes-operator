@@ -33,7 +33,7 @@ import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MO
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -116,7 +116,8 @@ public class Matchers {
                                                             String command, String volumeName) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
             .command(Arrays.asList(COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null).volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME + volumeName).mountPath(COMMON_MOUNT_TARGET_PATH),
+                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + volumeName)
+                            .mountPath(COMMON_MOUNT_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
             .env(PodHelperTestBase.getCommonMountEnvVariables(image, command, name));
   }

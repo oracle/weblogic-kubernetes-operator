@@ -164,6 +164,7 @@ public class MessageKeys {
   public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
   public static final String NO_AVAILABLE_PORT_TO_USE_FOR_REST = "WLSDO-0021";
   public static final String NO_COMMON_MOUNT_VOLUMES_DEFINED = "WLSDO-0022";
+  public static final String DUPLICATE_VOLUME_NAME_FOUND = "WLSDO-0023";
 
   private MessageKeys() {
   }

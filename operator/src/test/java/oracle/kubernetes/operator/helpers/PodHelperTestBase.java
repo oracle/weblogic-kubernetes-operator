@@ -135,7 +135,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -556,7 +556,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @NotNull
   protected String getCommonMountVolumeName(String testVolumeName) {
-    return COMMON_MOUNT_VOLUME_NAME + testVolumeName;
+    return COMMON_MOUNT_VOLUME_NAME_PREFIX + testVolumeName;
   }
 
   @Test
@@ -619,7 +619,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithMultipleContainers_createPodsWithCommonMountInitContainers() {
+  public void whenDomainHasMultipleCommonMounts_createPodsWithCommonMountInitContainers() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
                     new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
@@ -630,6 +630,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                     "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
                     hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image1:v1",
                             "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   @NotNull

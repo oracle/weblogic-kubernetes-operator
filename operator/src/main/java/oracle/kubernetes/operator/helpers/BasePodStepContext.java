@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -32,7 +33,7 @@ import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -56,6 +57,24 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
     return commonMount.getVolume().equals(commonMountVolume.getName());
+  }
+
+  protected void addVolumeMount(V1Container container, CommonMount cm) {
+    Optional.ofNullable(getMountPath(cm, info.getDomain().getCommonMountVolumes())).ifPresent(mountPath ->
+            addVolumeMountIfMissing(container, cm, mountPath));
+  }
+
+  protected void addVolumeMountIfMissing(V1Container container, CommonMount cm, String mountPath) {
+    if (!container.getVolumeMounts().stream().filter(
+            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm)).findFirst().isPresent()) {
+      container.addVolumeMountsItem(
+              new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
+                      .mountPath(mountPath));
+    }
+  }
+
+  private boolean hasMatchingVolumeMountName(V1VolumeMount volumeMount, CommonMount commonMount) {
+    return getDNS1123CommonMountVolumeName(commonMount.getVolume()).equals(volumeMount.getName());
   }
 
   abstract String getContainerName();
@@ -84,7 +103,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   public String getDNS1123CommonMountVolumeName(String name) {
-    return toDns1123LegalName(COMMON_MOUNT_VOLUME_NAME + name);
+    return toDns1123LegalName(COMMON_MOUNT_VOLUME_NAME_PREFIX + name);
   }
 
   protected V1Container createInitContainerForCommonMount(CommonMount commonMount, int index) {
@@ -111,6 +130,22 @@ public abstract class BasePodStepContext extends StepContextBase {
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, commonMount.getImage());
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
     return vars;
+  }
+
+  protected void addEmptyDirVolume(V1PodSpec podSpec, List<CommonMountVolume> commonMountVolumes) {
+    Optional.ofNullable(commonMountVolumes).ifPresent(cmv -> cmv
+            .stream().forEach(commonMountVolume -> addVolumeIfMissing(podSpec, commonMountVolume)));
+  }
+
+  private void addVolumeIfMissing(V1PodSpec podSpec, CommonMountVolume commonMountVolume) {
+    if (!podSpec.getVolumes().stream().filter(
+            volume -> podHasMatchingVolumeName(volume, commonMountVolume)).findFirst().isPresent()) {
+      podSpec.addVolumesItem(createEmptyDirVolume(commonMountVolume));
+    }
+  }
+
+  private boolean podHasMatchingVolumeName(V1Volume volume, CommonMountVolume commonMountVolume) {
+    return volume.getName().equals(commonMountVolume.getName());
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
@@ -279,9 +314,9 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   private String createCommonMountPathEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
-    StringBuffer commonMountPath = new StringBuffer();
+    StringJoiner commonMountPath = new StringJoiner(",","","");
     for (CommonMount commonMount:commonMounts) {
-      commonMountPath.append(getMountPath(commonMount, commonMountVolumes) + ",");
+      commonMountPath.add(getMountPath(commonMount, commonMountVolumes));
     }
     return commonMountPath.toString();
   }

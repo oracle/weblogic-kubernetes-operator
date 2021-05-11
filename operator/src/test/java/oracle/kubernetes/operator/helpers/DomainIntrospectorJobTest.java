@@ -45,6 +45,7 @@ import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Model;
+import org.hamcrest.CoreMatchers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -76,7 +77,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.empty;
@@ -349,10 +350,10 @@ public class DomainIntrospectorJobTest {
             allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
                     "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME + TEST_VOLUME_NAME)
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
                     .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
@@ -386,7 +387,7 @@ public class DomainIntrospectorJobTest {
 
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME + TEST_VOLUME_NAME)
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
                     .mountPath(CUSTOM_MOUNT_PATH)));
   }
 
@@ -400,7 +401,7 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
 
@@ -414,7 +415,7 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
@@ -445,7 +446,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountAndMultipleContainers_createJobPodsHasMultipleInitContainers() {
+  public void whenJobCreatedWithMultipleCommonMounts_createdJobPodsHasMultipleInitContainers() {
     getConfigurator()
             .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
             .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
@@ -456,6 +457,10 @@ public class DomainIntrospectorJobTest {
                     "wdt-image2:v1", "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
                     hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image1:v1",
                             "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   @Test

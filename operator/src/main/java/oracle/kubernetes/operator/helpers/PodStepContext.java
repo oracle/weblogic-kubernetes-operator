@@ -723,9 +723,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-    Optional.ofNullable(info.getDomain().getCommonMountVolumes())
-            .ifPresent(commonMountVolumes -> commonMountVolumes.stream()
-                    .forEach(e -> podSpec.addVolumesItem(createEmptyDirVolume(e))));
+    addEmptyDirVolume(podSpec, info.getDomain().getCommonMountVolumes());
     return podSpec;
   }
 
@@ -782,10 +780,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(cl ->
-            cl.stream().forEach(cm -> v1Container.addVolumeMountsItem(
-                    new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
-                            .mountPath(getMountPath(cm, info.getDomain().getCommonMountVolumes())))));
+    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
+            commonMounts.forEach(cm -> addVolumeMount(v1Container, cm)));
     return v1Container;
   }
 
