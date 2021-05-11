@@ -92,14 +92,14 @@ Additional information about using this image is available in the Oracle Contain
 
 The WebLogic Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
 This patch has some prerequisite patches that will also need to be applied. The WebLogic Server 12.2.1.4.0 image does not require any patches. To create and customize the WebLogic Server image,
-and apply the required patches, use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool).
+and apply the required patches, use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/).
 
-To use the Image Tool, follow the [Setup](https://github.com/oracle/weblogic-image-tool/blob/master/README.md#setup) instructions
-and [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md) Guide.
+To use the Image Tool, follow the [Setup](https://oracle.github.io/weblogic-image-tool/quickstart/setup/) instructions
+and [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) Guide.
 
 To build the WebLogic Server image and apply the patches:
 
-1. Add the Server JRE and the WebLogic Server installer to the [`cache` command](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+1. Add the Server JRE and the WebLogic Server installer to the [`cache` command](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
 
     ```shell
     $ imagetool cache addInstaller \
@@ -113,7 +113,7 @@ To build the WebLogic Server image and apply the patches:
     --version=12.2.1.4.0 \
     --path=/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
     ```
-2. Use the [Create Tool](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md)
+2. Use the [Create Tool](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/)
 to build the image and apply the patches.
 
     For the Create Tool to download the patches, you must supply your My Oracle Support credentials.
@@ -140,7 +140,7 @@ You can also create an image with the WebLogic domain inside the image.
 are provided that demonstrate how to create the image using either:
 
 * WLST to define the domain, or
-* [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) to define the domain.
+* [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) to define the domain.
 
 In these samples, you will see a reference to a "base" or `FROM` image.  You should use an image
 with the mandatory patches installed as this base image.  This image could be either
@@ -157,14 +157,14 @@ including keys and credentials that are used to access external resources
 
 #### Patch WebLogic Server images
 
-Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) to patch
+Use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) to patch
 WebLogic Server images with quarterly Patch Set Updates (PSUs), which include security fixes, or with one-off patches.
 
-Use either the WIT [`create`](https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md) or
-[`update`](https://github.com/oracle/weblogic-image-tool/blob/master/site/update-image.md) command, however,
+Use either the WIT [`create`](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/) or
+[`update`](https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/) command, however,
 patching using the `create` command results in a smaller WebLogic Server image size. Note that you will need to
 download the WebLogic Server 12.2.1.4.0 installer and JDK installer prior to running the `create` command. For details, see
-the WIT [Quick Start](https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md) guide.
+the WIT [Quick Start](https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/) guide.
 
 Example: Create an image named `sample:wls` with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, a slim version of the Oracle Linux 7 container image,
 and latest PSU and recommended CPU and SPU patches applied.
@@ -181,12 +181,12 @@ to update the running domain differs depending on the [domain home source type](
 difference between the domain home source types is the location of the domain home:
 
 * Domain in PV: The container image contains the JDK and WebLogic Server binaries. The domain home is located in a Persistent Volume (PV).
-* Model in Image: The container image contains the JDK, WebLogic Server binaries, and a [WebLogic Deployment Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) installation, WDT model file, and application archive file.
+* Model in Image: The container image contains the JDK, WebLogic Server binaries, and a [WebLogic Deployment Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) installation, WDT model file, and application archive file.
 * Domain in Image: The container image contains the JDK, WebLogic Server binaries, and domain home.   
 
 For Domain in PV, the operator can apply the update to the running domain without modifying the patched container image. For Model in Image (MII) and Domain in Image,
 before the operator can apply the update, the patched container images must be modified to add the domain home or a
-WDT model and archive. You use WebLogic Image Tool (WIT) [Rebase Image](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md)
+WDT model and archive. You use WebLogic Image Tool (WIT) [Rebase Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/)
 to update the Oracle Home of the original image using the patched Oracle Home from a patched container image.
 
 In all three domain home source types, you edit the [Domain Resource]({{< relref "/userguide/managing-domains/domain-resource#domain-resource-attribute-references" >}})
@@ -202,7 +202,7 @@ of the WebLogic domain to update the Oracle Home of the servers.
 For information on server restarts, see [Restarting]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting.md" >}}).
 
 ##### Model in Image
-Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command
+Use the WIT [`rebase`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/) command
 to update the Oracle Home for an existing image with the model and archive files in the image using the patched Oracle Home from a
 patched container image. Then, the operator performs a [rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}})
 of the domain, updating the Oracle Home of each server pod.
@@ -221,7 +221,7 @@ $ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage ora
 Then, edit the Domain Resource image reference with the new image name/tag (`mydomain:2`).
 
 ##### Domain in Image
-Use the WIT [`rebase`](https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md) command to update the Oracle Home
+Use the WIT [`rebase`](https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/) command to update the Oracle Home
 for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a
 [rolling update]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}) of the domain,
 updating the Oracle Home of each server pod.

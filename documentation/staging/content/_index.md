@@ -11,7 +11,7 @@ You can:
 * Supply WebLogic domain configuration using:
   * _Domain in PV_: Locates WebLogic domain homes in a Kubernetes PersistentVolume (PV). This PV can reside in an NFS file system or other Kubernetes volume types.
   * _Domain in Image_: Includes a WebLogic domain home in a container image.
-  * _Model in Image_: Includes [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) models and archives in a container image.
+  * _Model in Image_: Includes [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) models and archives in a container image.
 * Configure deployment of WebLogic domains as a Kubernetes resource (using a Kubernetes custom resource definition).
 * Override certain aspects of the WebLogic domain configuration; for example, use a different database password for different deployments.
 * Start and stop servers and clusters in the domain based on declarative startup parameters and desired states.

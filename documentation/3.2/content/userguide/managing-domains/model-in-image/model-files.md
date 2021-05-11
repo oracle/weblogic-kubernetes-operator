@@ -19,9 +19,9 @@ description = "Model file requirements, macros, and loading order."
 
 #### Introduction
 
-This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) documentation.
+This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
-{{% notice tip %}} The WDT [Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md) is particularly useful for generating model files from an existing domain home.
+{{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
 {{% /notice %}}
 
 #### Sample model file
@@ -68,7 +68,7 @@ For a description of model file macro references to secrets and environment vari
 
       - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging.
 
-      - Model files encrypted with the WDT [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md) are not supported. Use secrets instead.
+      - Model files encrypted with the WDT [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/)) are not supported. Use secrets instead.
 
     - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your Domain YAML file, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
 
