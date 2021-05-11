@@ -408,7 +408,7 @@ Spec:
       Value:            -Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m 
   Server Start Policy:  IF_NEEDED
   Web Logic Credentials Secret:
-    Name:  domain1-weblogic-credentials
+    Name:  fmwdomain-weblogic-credentials
 Status:
   Clusters:
     Cluster Name:      cluster-1
