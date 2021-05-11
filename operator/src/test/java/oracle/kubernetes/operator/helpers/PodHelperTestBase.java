@@ -74,7 +74,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Container;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
@@ -105,6 +105,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -131,11 +132,11 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.DEFAULT_COMMON_MOUNT_PATH;
-import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -535,54 +536,69 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   public void whenDomainHasCommonMount_createPodsWithCommonMountInitContainerAndEmptyDirVolumeAndVolumeMounts() {
     getConfigurator()
-            .withCommonMount(new CommonMount().container(getContainer("wdt-image:v1")));
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
                     "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @NotNull
+  protected String getCommonMountVolumeName() {
+    return getCommonMountVolumeName(TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  protected String getCommonMountVolumeName(String testVolumeName) {
+    return COMMON_MOUNT_VOLUME_NAME + testVolumeName;
   }
 
   @Test
   public void whenDomainHasCommonMountWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(getCommonMountContainers()).mountPath(CUSTOM_MOUNT_PATH));
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test
   public void whenDomainHasCommonMountWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(
-                    getCommonMountContainers()).mountPath(CUSTOM_MOUNT_PATH).medium("Memory"));
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).medium("Memory")))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
 
   @Test
   public void whenDomainHasCommonMountWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(getCommonMountContainers())
-                    .mountPath(CUSTOM_MOUNT_PATH).sizeLimit("100G"));
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withCommonMounts(getCommonMounts());
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
   @Test
   public void whenDomainHasCommonMountWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(Arrays.asList(getContainer("wdt-image:v1")
-                    .imagePullPolicy("ALWAYS"))));
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS").volume(TEST_VOLUME_NAME)));
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
@@ -592,8 +608,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   public void whenDomainHasCommonMountWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(Arrays.asList(getContainer("wdt-image:v1")
-                    .command(CUSTOM_COMMAND_SCRIPT))));
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT)));
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
@@ -603,27 +621,33 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   public void whenDomainHasCommonMountWithMultipleContainers_createPodsWithCommonMountInitContainers() {
     getConfigurator()
-            .withCommonMount(new CommonMount().containers(
-                    getCommonMountContainers("wdt-image1:v1", "wdt-image2:v1")));
-
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
+            .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image2:v1",
                     "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image1:v1",
                             "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @NotNull
-  private List<Container> getCommonMountContainers(String...images) {
-    List<Container> containerList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> containerList.add(new Container().image(image)));
-    return containerList;
+  List<CommonMount> getCommonMounts(String... images) {
+    List<CommonMount> commonMountList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> commonMountList
+            .add(new CommonMount().image(image).volume(TEST_VOLUME_NAME)));
+    return commonMountList;
   }
 
   @NotNull
-  public static Container getContainer(String image) {
-    return new Container().image(image);
+  List<CommonMountVolume> getCommonMountVolume(String mountPath) {
+    return Collections.singletonList(new CommonMountVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+  }
+
+  @NotNull
+  public static CommonMount getCommonMount(String image) {
+    return new CommonMount().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test

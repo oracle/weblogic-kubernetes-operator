@@ -9,11 +9,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -22,11 +26,14 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
@@ -42,6 +49,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_F
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -61,6 +71,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String END_VALUE_1 = "value-ADMIN_SERVER";
   private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
+  public static final String CUSTOM_MOUNT_PATH2 = "/common1";
+  public static final String TEST_MEDIUM = "TestMedium";
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -569,6 +581,66 @@ public class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
+  }
+
+  @Test
+  public void whenDomainAndServerHasCommonMount_createAdminPodWithInitContainersAndVolumeMounts() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .configureAdminServer()
+            .withCommonMounts(Collections.singletonList((getCommonMount("wdt-image:v2"))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image:v2",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName(TEST_VOLUME_NAME))
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenServerHasCommonMountWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
+            .configureAdminServer()
+            .withCommonMounts(Collections.singletonList((getCommonMount("wdt-image:v2"))));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName(TEST_VOLUME_NAME)).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenServerHasCommonMountWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).medium(TEST_MEDIUM)))
+            .configureAdminServer()
+            .withCommonMounts(getCommonMounts());
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource().medium(TEST_MEDIUM))));
+  }
+
+  @Test
+  public void whenServerHasCommonMountWithMedium_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).sizeLimit("200G")))
+            .configureAdminServer()
+            .withCommonMounts(getCommonMounts());
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("200G")))));
   }
 
   @Test

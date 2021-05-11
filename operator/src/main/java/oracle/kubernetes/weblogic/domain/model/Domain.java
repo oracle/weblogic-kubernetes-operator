@@ -734,8 +734,8 @@ public class Domain implements KubernetesObject {
    *
    * @return common mount specs
    */
-  public CommonMount getCommonMount() {
-    return spec.getCommonMount();
+  public List<CommonMountVolume> getCommonMountVolumes() {
+    return spec.getCommonMountVolumes();
   }
 
   @Override
@@ -824,9 +824,26 @@ public class Domain implements KubernetesObject {
 
     private void verifyCommonMountContainers() {
       // if the common mount is specified, verify that at least one container is defined.
-      if ((spec.getCommonMount() != null) && spec.getCommonMount().getContainers() == null) {
-        failures.add(DomainValidationMessages.noCommonMountContainerDefined(getDomainUid()));
+      Optional.ofNullable(getAdminServerSpec().getCommonMounts())
+              .ifPresent(cmList -> cmList.stream().forEach(commonMount -> checkIfVolumeExists(commonMount)));
+      List<ManagedServer> managedServers = getSpec().getManagedServers();
+      for (ManagedServer managedServer : managedServers) {
+        Optional.ofNullable(managedServer.getCommonMounts()).ifPresent(commonMounts -> commonMounts.stream()
+                .forEach(commonMount -> checkIfVolumeExists(commonMount)));
       }
+    }
+
+    private void checkIfVolumeExists(CommonMount cm) {
+      List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
+              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
+              .collect(Collectors.toList())).orElse(new ArrayList<>());
+      if (cmList.isEmpty()) {
+        failures.add(DomainValidationMessages.noCommonMountVolumeDefined(cm.getVolume()));
+      }
+    }
+
+    private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
+      return commonMount.getVolume().equals(commonMountVolume.getName());
     }
 
     private void verifyServerPorts(WlsDomainConfig wlsDomainConfig) {

@@ -25,13 +25,14 @@ import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
-import oracle.kubernetes.weblogic.domain.model.Container;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
 import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.Container.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -46,6 +47,16 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   abstract ServerSpec getServerSpec();
+
+  String getMountPath(CommonMount commonMount, List<CommonMountVolume> commonMountVolumes) {
+    return commonMountVolumes.stream().filter(
+            commonMountVolume -> hasMatchingVolumeName(commonMountVolume, commonMount)).findFirst()
+            .map(cmv -> cmv.getMountPath()).orElse(null);
+  }
+
+  private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
+    return commonMount.getVolume().equals(commonMountVolume.getName());
+  }
 
   abstract String getContainerName();
 
@@ -64,22 +75,26 @@ public abstract class BasePodStepContext extends StepContextBase {
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
 
-  protected V1Volume createEmptyDirVolume(CommonMount cm) {
+  protected V1Volume createEmptyDirVolume(CommonMountVolume cmv) {
     V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
-    Optional.ofNullable(cm.getMedium()).ifPresent(medium -> emptyDirVolumeSource.medium(medium));
-    Optional.ofNullable(cm.getSizeLimit())
-            .ifPresent(sizeLimit -> emptyDirVolumeSource.sizeLimit(Quantity.fromString(sizeLimit)));
-    return new V1Volume().name(COMMON_MOUNT_VOLUME_NAME).emptyDir(emptyDirVolumeSource);
+    Optional.ofNullable(cmv.getMedium()).ifPresent(medium -> emptyDirVolumeSource.medium(medium));
+    Optional.ofNullable(cmv.getSizeLimit())
+            .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
+    return new V1Volume().name(getDNS1123CommonMountVolumeName(cmv.getName())).emptyDir(emptyDirVolumeSource);
   }
 
-  protected V1Container createInitContainerForCommonMount(Container container, int index, CommonMount cm) {
+  public String getDNS1123CommonMountVolumeName(String name) {
+    return toDns1123LegalName(COMMON_MOUNT_VOLUME_NAME + name);
+  }
+
+  protected V1Container createInitContainerForCommonMount(CommonMount commonMount, int index) {
     return new V1Container().name(getName(index))
-        .image(container.getImage())
-            .imagePullPolicy(container.getImagePullPolicy())
+        .image(commonMount.getImage())
+            .imagePullPolicy(commonMount.getImagePullPolicy())
             .command(Collections.singletonList(COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT))
-            .env(createEnv(container, cm, getName(index)))
+            .env(createEnv(commonMount, info.getDomain().getCommonMountVolumes(), getName(index)))
             .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME)
+                    new V1VolumeMount().name(getDNS1123CommonMountVolumeName(commonMount.getVolume()))
                             .mountPath(COMMON_MOUNT_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
   }
@@ -88,12 +103,12 @@ public abstract class BasePodStepContext extends StepContextBase {
     return COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(Container container, CommonMount cm, String name) {
+  protected List<V1EnvVar> createEnv(CommonMount commonMount, List<CommonMountVolume> cmv, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, cm.getMountPath());
+    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, getMountPath(commonMount, cmv));
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH);
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_COMMAND, container.getCommand());
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, container.getImage());
+    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_COMMAND, commonMount.getCommand());
+    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, commonMount.getImage());
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
     return vars;
   }
@@ -256,5 +271,18 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected String getMainContainerName() {
     return KubernetesConstants.CONTAINER_NAME;
+  }
+
+  protected String getCommonMountPaths(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
+    return Optional.ofNullable(commonMounts).map(cmList -> createCommonMountPathEnv(cmList, commonMountVolumes))
+            .orElse(null);
+  }
+
+  private String createCommonMountPathEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
+    StringBuffer commonMountPath = new StringBuffer();
+    for (CommonMount commonMount:commonMounts) {
+      commonMountPath.append(getMountPath(commonMount, commonMountVolumes) + ",");
+    }
+    return commonMountPath.toString();
   }
 }

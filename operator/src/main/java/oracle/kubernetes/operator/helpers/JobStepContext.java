@@ -37,12 +37,10 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.Container;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME;
 
 public abstract class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -173,8 +171,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  CommonMount getCommonMount() {
-    return getDomain().getCommonMount();
+  List<CommonMount> getCommonMounts() {
+    return getServerSpec().getCommonMounts();
   }
 
   String getWdtDomainType() {
@@ -273,8 +271,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
-    Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
-            addCommonMountInitContainerAndVolume(podTemplateSpec.getSpec(), cm));
+    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
+            addCommonMountInitContainers(podTemplateSpec.getSpec(), commonMounts));
+    Optional.ofNullable(info.getDomain().getCommonMountVolumes()).ifPresent(cmv -> cmv
+            .stream().forEach(e -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume(e))));
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
@@ -292,16 +292,15 @@ public abstract class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  protected V1PodSpec addCommonMountInitContainerAndVolume(V1PodSpec podSpec, CommonMount cm) {
-    Optional.ofNullable(cm.getContainers()).ifPresent(cl -> addInitContainerAndVolume(podSpec, cm, cl));
+  protected V1PodSpec addCommonMountInitContainers(V1PodSpec podSpec, List<CommonMount> commonMounts) {
+    Optional.ofNullable(commonMounts).ifPresent(cl -> addInitContainers(podSpec, cl));
     return podSpec;
   }
 
-  private V1PodSpec addInitContainerAndVolume(V1PodSpec podSpec, CommonMount cm, List<Container> containerList) {
-    IntStream.range(0, containerList.size()).forEach(idx ->
-        podSpec.addInitContainersItem(createInitContainerForCommonMount(containerList.get(idx), idx,
-                cm)));
-    podSpec.addVolumesItem(createEmptyDirVolume(cm));
+  private V1PodSpec addInitContainers(V1PodSpec podSpec, List<CommonMount> commonMounts) {
+    Collections.reverse(commonMounts);
+    IntStream.range(0, commonMounts.size()).forEach(idx ->
+        podSpec.addInitContainersItem(createInitContainerForCommonMount(commonMounts.get(idx), idx)));
     return podSpec;
   }
 
@@ -400,9 +399,8 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
-    Optional.ofNullable(info.getDomain().getCommonMount()).ifPresent(cm ->
-            Optional.ofNullable(cm.getContainers()).ifPresent(cl -> container.addVolumeMountsItem(
-                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME).mountPath(cm.getMountPath()))));
+    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
+            commonMounts.forEach(cm -> addVolumeMount(container, cm)));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
@@ -423,6 +421,13 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     return container;
+  }
+
+  private void addVolumeMount(V1Container container, CommonMount cm) {
+    Optional.ofNullable(getMountPath(cm, info.getDomain().getCommonMountVolumes())).map(mountPath ->
+            container.addVolumeMountsItem(
+                    new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
+                            .mountPath(mountPath)));
   }
 
   private String getVolumeName(String resourceName, String type) {

@@ -3,11 +3,12 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.operator.ImagePullPolicy;
+import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -16,99 +17,99 @@ public class CommonMount {
 
   public static final String DEFAULT_COMMON_MOUNT_PATH = "/common";
   public static final String COMMON_MOUNT_TARGET_PATH = "/tmpCommonMount";
-  public static final String COMMON_MOUNT_VOLUME_NAME = "operator-common-volume";
+  public static final String COMMON_MOUNT_VOLUME_NAME = "common-mount-volume-";
+  public static final String COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
+  public static final String COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
+  public static final String COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND
+          = "cp -R $COMMON_MOUNT_PATH/* $COMMON_MOUNT_TARGET_PATH";
 
-  @Description("The common mount containers.")
-  private List<Container> containers;
+  /**
+   * The common mount.
+   */
+  @Description("The name of an image with files located in directory 'commonMount.mountPath' "
+          + "(which defaults to '/common').")
+  private String image;
 
-  @Description("The common mount path. The files in the path are populated from the same named directory in the images "
-          + "supplied by each container in 'commonMount.containers'. Defaults to '/common'.")
-  private String mountPath;
+  @Description(
+          "The image pull policy for the common mount container image. "
+                  + "Legal values are Always, Never, and IfNotPresent. "
+                  + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
+  @EnumClass(ImagePullPolicy.class)
+  private String imagePullPolicy;
 
-  @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. "
-          + "Defaults to unset, which means the volume's files are stored on the local node's file system for "
-          + "the life of the pod.")
-  private String medium;
+  @Description("The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. "
+          + "This is an advanced setting for customizing the container command for copying files from the container "
+          + "image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference "
+          + "the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to "
+          + "refer to the temporary directory created by the Operator that resolves to the common mount's internal "
+          + "emptyDir volume.")
+  private String command;
 
-  @Description("The emptyDir volume size limit. Defaults to unset.")
-  private String sizeLimit;
+  @Description("The name of common mount volume.")
+  private String volume;
 
-  public List<Container> getContainers() {
-    return containers;
+  public String getImage() {
+    return image;
   }
 
-  public void setContainers(List<Container> containers) {
-    this.containers = containers;
+  public void setImage(String image) {
+    this.image = image;
   }
 
-  public CommonMount container(Container container) {
-    this.containers = Arrays.asList(container);
+  public CommonMount image(String image) {
+    this.image = image;
     return this;
   }
 
-  public CommonMount containers(List<Container> containers) {
-    this.containers = containers;
+  public String getImagePullPolicy() {
+    return Optional.ofNullable(imagePullPolicy).orElse(KubernetesUtils.getInferredImagePullPolicy(getImage()));
+  }
+
+  public void setImagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
+  }
+
+  public CommonMount imagePullPolicy(String imagePullPolicy) {
+    this.imagePullPolicy = imagePullPolicy;
     return this;
   }
 
-  public String getMountPath() {
-    return Optional.ofNullable(mountPath).orElse(DEFAULT_COMMON_MOUNT_PATH);
+  public String getCommand() {
+    return Optional.ofNullable(command)
+            .orElse(COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
-  public void setMountPath(String mountPath) {
-    this.mountPath = mountPath;
+  public void setCommand(String command) {
+    this.command = command;
   }
 
-  public CommonMount mountPath(String commonMountPath) {
-    this.mountPath = commonMountPath;
+  public CommonMount command(String command) {
+    this.command = command;
     return this;
   }
 
-  public String getMedium() {
-    return medium;
+  public String getVolume() {
+    return volume;
   }
 
-  public void setMedium(String medium) {
-    this.medium = medium;
+  public void setVolume(String volume) {
+    this.volume = volume;
   }
 
-  public CommonMount medium(String medium) {
-    this.medium = medium;
-    return this;
-  }
-
-  public String getSizeLimit() {
-    return sizeLimit;
-  }
-
-  public void setSizeLimit(String sizeLimit) {
-    this.sizeLimit = sizeLimit;
-  }
-
-  public CommonMount sizeLimit(String sizeLimit) {
-    this.sizeLimit = sizeLimit;
+  public CommonMount volume(String volume) {
+    this.volume = volume;
     return this;
   }
 
   @Override
   public String toString() {
     ToStringBuilder builder =
-        new ToStringBuilder(this)
-            .append("containers", containers)
-            .append("commonDir", mountPath)
-            .append("medium", medium)
-            .append("sizeLimit", sizeLimit);
+            new ToStringBuilder(this)
+                    .append("image", image)
+                    .append("imagePullPolicy", imagePullPolicy)
+                    .append("command", command)
+                    .append("volume", volume);
     return builder.toString();
-  }
-
-  @Override
-  public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder()
-        .append(containers)
-        .append(mountPath)
-        .append(medium)
-        .append(sizeLimit);
-    return builder.toHashCode();
   }
 
   @Override
@@ -122,13 +123,22 @@ public class CommonMount {
 
     CommonMount rhs = ((CommonMount) other);
     EqualsBuilder builder =
-        new EqualsBuilder()
-            .append(containers, rhs.containers)
-            .append(mountPath, rhs.mountPath)
-            .append(medium, rhs.medium)
-            .append(sizeLimit, rhs.sizeLimit);
+            new EqualsBuilder()
+                    .append(image, rhs.image)
+                    .append(imagePullPolicy, rhs.imagePullPolicy)
+                    .append(command, rhs.command)
+                    .append(volume, rhs.volume);
 
     return builder.isEquals();
   }
 
+  @Override
+  public int hashCode() {
+    HashCodeBuilder builder = new HashCodeBuilder()
+            .append(image)
+            .append(imagePullPolicy)
+            .append(command)
+            .append(volume);
+    return builder.toHashCode();
+  }
 }

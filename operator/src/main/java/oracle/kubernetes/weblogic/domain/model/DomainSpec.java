@@ -280,6 +280,10 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
+  @Description("The common mount tuning. Allows overriding the global default values for mountPath, medium "
+          + "and sizeLimits for the common mount. See spec.commonMountTuning.globalDefaults for more details.")
+  private List<CommonMountVolume> commonMountVolumes;
+
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
@@ -701,6 +705,14 @@ public class DomainSpec extends BaseConfiguration {
 
   public void setConfiguration(Configuration configuration) {
     this.configuration = configuration;
+  }
+
+  public List<CommonMountVolume> getCommonMountVolumes() {
+    return commonMountVolumes;
+  }
+
+  public void setCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
+    this.commonMountVolumes = commonMountVolumes;
   }
 
   /**

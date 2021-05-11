@@ -222,7 +222,7 @@ class ServerPod extends KubernetesResource {
           + "without requiring modifications to the pod's base image 'domain.spec.image'. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
-  private CommonMount commonMount;
+  private List<CommonMount> commonMounts;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -407,12 +407,12 @@ class ServerPod extends KubernetesResource {
         .periodSeconds(period);
   }
 
-  CommonMount getCommonMount() {
-    return this.commonMount;
+  List<CommonMount> getCommonMounts() {
+    return this.commonMounts;
   }
 
-  void setCommonMount(CommonMount cm) {
-    this.commonMount = cm;
+  void setCommonMounts(List<CommonMount> commonMounts) {
+    this.commonMounts = commonMounts;
   }
 
   ProbeTuning getLivenessProbeTuning() {
@@ -433,6 +433,7 @@ class ServerPod extends KubernetesResource {
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
+    addCommonMountIfMissing(serverPod1);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
       addIfMissing(var);
     }
@@ -475,6 +476,15 @@ class ServerPod extends KubernetesResource {
       schedulerName = serverPod1.schedulerName;
     }
     tolerations.addAll(serverPod1.tolerations);
+  }
+
+  private void addCommonMountIfMissing(ServerPod serverPod1) {
+    if (serverPod1.commonMounts != null) {
+      if (commonMounts == null) {
+        commonMounts = new ArrayList<CommonMount>();
+      }
+      commonMounts.addAll(serverPod1.commonMounts);
+    }
   }
 
   private void addIfMissing(V1Volume var) {
@@ -771,7 +781,7 @@ class ServerPod extends KubernetesResource {
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
         .append("serviceAccountName", serviceAccountName)
-        .append("commonMount", commonMount)
+        .append("commonMounts", commonMounts)
         .toString();
   }
 
@@ -816,7 +826,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
         .append(serviceAccountName, that.serviceAccountName)
-        .append(commonMount, that.commonMount)
+        .append(commonMounts, that.commonMounts)
         .isEquals();
   }
 
@@ -845,7 +855,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName)
         .append(tolerations)
         .append(serviceAccountName)
-        .append(commonMount)
+        .append(commonMounts)
         .toHashCode();
   }
 }

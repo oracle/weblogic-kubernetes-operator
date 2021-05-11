@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain;
 
 import java.util.Arrays;
+import java.util.List;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -17,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -228,7 +230,13 @@ public abstract class DomainConfigurator {
    * Add common mount for the domain resource.
    *
    */
-  public abstract void withCommonMount(CommonMount cm);
+  public abstract void withCommonMounts(List<CommonMount> cm);
+
+  /**
+   * Add common mount for the domain resource.
+   *
+   */
+  public abstract DomainConfigurator withCommonMountVolumes(List<CommonMountVolume> commonMountVolume);
 
   /**
    * Sets the default settings for the liveness probe. Any settings left null will default to the
@@ -535,4 +543,5 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainType(String type);
+
 }
