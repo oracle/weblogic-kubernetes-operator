@@ -6,6 +6,8 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -16,10 +18,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.meterware.simplestub.Memento;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion;
 import com.networknt.schema.ValidationMessage;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -30,6 +36,18 @@ import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V2_S
 import static oracle.kubernetes.weblogic.domain.model.DomainTestBase.DOMAIN_V2_SAMPLE_YAML_5;
 
 public class CrdSchemaGeneratorTest {
+
+  private final List<Memento> mementos = new ArrayList<>();
+
+  @BeforeEach
+  public void setUp() throws Exception {
+    mementos.add(TuningParametersStub.install());
+  }
+
+  @AfterEach
+  public void tearDown() {
+    mementos.forEach(Memento::revert);
+  }
 
   @ParameterizedTest
   @ValueSource(strings = {DOMAIN_V2_SAMPLE_YAML, DOMAIN_V2_SAMPLE_YAML_2, DOMAIN_V2_SAMPLE_YAML_3,

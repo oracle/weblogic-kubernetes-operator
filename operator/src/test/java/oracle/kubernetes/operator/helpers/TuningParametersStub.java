@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -92,5 +93,10 @@ public abstract class TuningParametersStub implements TuningParameters {
   @Override
   public Set<Entry<String, String>> entrySet() {
     return namedParameters.entrySet();
+  }
+
+  @Override
+  public FeatureGates getFeatureGates() {
+    return new FeatureGates(Collections.emptyList());
   }
 }

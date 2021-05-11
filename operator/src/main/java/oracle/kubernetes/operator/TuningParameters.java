@@ -326,6 +326,10 @@ public interface TuningParameters extends Map<String, String> {
       this.enabledFeatures = Collections.unmodifiableCollection(enabledFeatures);
     }
 
+    public Collection<String> getEnabledFeatures() {
+      return enabledFeatures;
+    }
+
     @Override
     public String toString() {
       return new ToStringBuilder(this)
