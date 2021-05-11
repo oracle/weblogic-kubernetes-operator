@@ -2,7 +2,7 @@
 title: "FMW Infrastructure domain home in image"
 date: 2019-04-18T07:32:31-05:00
 weight: 6
-description: "Sample for creating an FMW Infrastructure domain home inside an image, and the Domain YAML file for deploying the generated WebLogic domain."
+description: "Sample for creating an FMW Infrastructure domain home inside an image, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
 
@@ -10,7 +10,7 @@ The sample scripts demonstrate the creation of a FMW Infrastructure domain home 
 [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). 
 The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, 
 and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). 
-The scripts also generate the domain YAML file, which can then be used by the scripts or used manually
+The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
 to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
 #### Prerequisites
@@ -20,7 +20,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
+* The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
   For details on how to obtain or create the image, refer to 
   [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
@@ -59,7 +59,9 @@ The script will perform the following steps:
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 
-* Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample FMW Infrastructure domain.
+* Create a properties file, `domain.properties`, in the directory that is created above. 
+  This properties file will be used to create a sample FMW Infrastructure domain. 
+  The `domain.properties` file will be removed upon successful completion of the script.
 
 * Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. 
   WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
@@ -99,12 +101,8 @@ The script will perform the following steps:
   For more information, see
   [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
-```shell
-$ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
-```
 
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -158,7 +156,7 @@ The following parameters can be provided in the inputs file.
 | `adminNodePort` | Port number of the Administration Server outside the Kubernetes cluster. | `30701` |
 | `adminServerName` | Name of the Administration Server. | `admin-server` |
 | `clusterName` | Name of the WebLogic cluster instance to generate for the domain. | `cluster-1` |
-| `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. This value is ignored when using WDT with a model that creates configured cluster. | `5` |
+| `configuredManagedServerCount` | Number of Managed Server instances to generate for the domain. This value is ignored when using WDT with a model that creates configured cluster where the number of Managed Server instances is determined by the WDT model specified by `createDomainWdtModel`.  | `5` |
 | `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when the `mode` is set to `wlst`. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
 | `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when the `mode` is set to `wdt` (which is the default `mode`). | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_projects/domains/<domainUID>` |
@@ -169,11 +167,11 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | Oracle FMW Infrastructure Server image that the operator uses to start the domain. The create domain scripts generate a Oracle FMW Infrastructure Server image with a domain home in it. By default, the scripts tag the generated Oracle FMW Infrastructure Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | `domain-home-in-image:<tag from domainHomeImageBase>`|
+| `image` | Oracle FMW Infrastructure Server image that the operator uses to start the domain. The create domain scripts generate a Oracle FMW Infrastructure Server image with a domain home in it. By default, the scripts tag the generated Oracle FMW Infrastructure Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain resource YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain resource YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | `domain-home-in-image:<tag from domainHomeImageBase>`|
 | `imagePullPolicy` | Oracle FMW Infrastructure Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
-| `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `2` |
+| `initialManagedServerReplicas` | Number of Managed Servers to start initially for the domain. | `1` |
 | `javaOptions` | Java options for starting the Administration Server and Managed Servers. A Java option can have references to one or more of the following pre-defined variables to obtain WebLogic domain information: `$(DOMAIN_NAME)`, `$(DOMAIN_HOME)`, `$(ADMIN_NAME)`, `$(ADMIN_PORT)`, and `$(SERVER_NAME)`. | `-Dweblogic.StdoutDebugEnabled=false` |
 | `logHome` | The in-pod location for the domain log, server logs, server out, Node Manager log, introspector out, and server HTTP access log files. If not specified, the value is derived from the `domainUID` as `/shared/logs/<domainUID>`. | `/shared/logs/domain1` |
 | `managedServerNameBase` | Base string used to generate Managed Server names. | `managed-server` |
@@ -203,7 +201,7 @@ lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a FMW Infrastructure domain home and associated Kubernetes resources for a domain
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
-to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
+to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
 #### Verify the results
 
@@ -233,9 +231,10 @@ metadata:
     weblogic.domainUID: fmwdomain
 spec:
   # The WebLogic Domain Home
-  domainHome: /shared/domains/fmwdomain
+  domainHome: /u01/oracle/user_projects/domains/fmwdomain
+
   # The domain home source type
-  # Set domain home type to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
+  # Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
   domainHomeSourceType: Image
 
   # The WebLogic Server image that the Operator uses to start the domain
@@ -246,21 +245,28 @@ spec:
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name:
+  #- name: 
 
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  webLogicCredentialsSecret:
+  webLogicCredentialsSecret: 
     name: fmwdomain-weblogic-credentials
 
   # Whether to include the server out file into the pod's stdout, default is true
   includeServerOutInPodLog: true
-  # Whether to enable log home
 
-  logHomeEnabled: true
+  # Whether to enable log home
+  # logHomeEnabled: false
+
+  # Whether to write HTTP access log file to log home
+  # httpAccessLogInLogHome: true
 
   # The in-pod location for domain log, server logs, server out, introspector out, and Node Manager log files
-  logHome: /shared/logs/fmwdomain
+  # logHome: /shared/logs/domain1
+  # An (optional) in-pod location for data storage of default and custom file stores.
+  # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+  # data storage directories are determined from the WebLogic domain home configuration.
+  dataHome: ""
 
   # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
   # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
@@ -268,20 +274,22 @@ spec:
   # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
   serverStartPolicy: "IF_NEEDED"
+
   serverPod:
     # an (optional) list of environment variable to be set on the servers
     env:
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom "
-    volumes:
-    - name: weblogic-domain-storage-volume
-      persistentVolumeClaim:
-        claimName: fmw-domain-weblogic-pvc
-    volumeMounts:
-    - mountPath: /shared
-      name: weblogic-domain-storage-volume
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
+    # volumes:
+    # - name: weblogic-domain-storage-volume
+    #   persistentVolumeClaim:
+    #     claimName: weblogic-sample-pvc
+    # volumeMounts:
+    # - mountPath: /shared
+    #   name: weblogic-domain-storage-volume
+
   # adminServer is used to configure the desired behavior for starting the administration server.
   adminServer:
     # serverStartState legal values are "RUNNING" or "ADMIN"
@@ -292,14 +300,14 @@ spec:
       channels:
     # The Admin Server's NodePort
        - channelName: default
-         nodePort: 30731
+         nodePort: 30701
     # Uncomment to export the T3Channel as a service
     #    - channelName: T3Channel
     serverPod:
       # an (optional) list of environment variable to be set on the admin servers
       env:
-        - name: USER_MEM_ARGS
-          value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
+      - name: USER_MEM_ARGS
+        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
 
   # clusters is used to configure the desired behavior for starting member servers of a cluster.  
   # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
@@ -321,7 +329,7 @@ spec:
                       values:
                         - $(CLUSTER_NAME)
                 topologyKey: "kubernetes.io/hostname"
-    replicas: 2
+    replicas: 1
   # The number of managed servers to start for unlisted clusters
   # replicas: 1
 
@@ -329,8 +337,7 @@ spec:
   # configuration:
   #   istio:
   #     enabled: 
-  #     readinessPort: 
-
+  #     readinessPort:
 ```
 
 #### Verify the domain
@@ -354,13 +361,17 @@ Annotations:  kubectl.kubernetes.io/last-applied-configuration:
 API Version:  weblogic.oracle/v8
 Kind:         Domain
 Metadata:
-  Creation Timestamp:  2021-03-29T18:02:42Z
+  Creation Timestamp:  2021-05-11T17:13:56Z
   Generation:          1
-  Resource Version:    30822957
+  Resource Version:    39039230
   Self Link:           /apis/weblogic.oracle/v8/namespaces/default/domains/fmwdomain
-  UID:                 519a406d-e001-4811-a5be-a887d05e8d50
+  UID:                 447a6d1f-cb6f-4884-82bf-c7b3dd1f898d
 Spec:
   Admin Server:
+    Admin Service:
+      Channels:
+        Channel Name:  default
+        Node Port:     30701
     Server Pod:
       Env:
         Name:            USER_MEM_ARGS
@@ -368,7 +379,7 @@ Spec:
     Server Start State:  RUNNING
   Clusters:
     Cluster Name:  cluster-1
-    Replicas:      2
+    Replicas:      1
     Server Pod:
       Affinity:
         Pod Anti Affinity:
@@ -404,19 +415,19 @@ Status:
     Maximum Replicas:  3
     Minimum Replicas:  0
     Ready Replicas:    1
-    Replicas:          2
-    Replicas Goal:     2
+    Replicas:          1
+    Replicas Goal:     1
   Conditions:
-    Last Transition Time:        2021-03-29T18:04:00.819Z
-    Reason:                      ManagedServersStarting
+    Last Transition Time:        2021-05-11T17:16:42.202063Z
+    Reason:                      ServersReady
     Status:                      True
-    Type:                        Progressing
+    Type:                        Available
   Introspect Job Failure Count:  0
-  Replicas:                      2
+  Replicas:                      1
   Servers:
     Desired State:  RUNNING
     Health:
-      Activation Time:  2021-03-29T18:03:59.047Z
+      Activation Time:  2021-05-11T17:15:43.355000Z
       Overall Health:   ok
       Subsystems:
         Subsystem Name:  ServerRuntime
@@ -427,7 +438,7 @@ Status:
     Cluster Name:   cluster-1
     Desired State:  RUNNING
     Health:
-      Activation Time:  2021-03-29T18:09:43.946Z
+      Activation Time:  2021-05-11T17:16:36.586000Z
       Overall Health:   ok
       Subsystems:
         Subsystem Name:  ServerRuntime
@@ -436,19 +447,16 @@ Status:
     Server Name:    managed-server1
     State:          RUNNING
     Cluster Name:   cluster-1
-    Desired State:  RUNNING
-    Node Name:      alai-1
+    Desired State:  SHUTDOWN
     Server Name:    managed-server2
-    State:          STARTING
     Cluster Name:   cluster-1
     Desired State:  SHUTDOWN
     Server Name:    managed-server3
-  Start Time:       2021-03-29T18:02:42.816Z
+  Start Time:       2021-05-11T17:13:56.329656Z
 Events:
-  Type    Reason                    Age    From  Message
-  ----    ------                    ----   ----  -------
-  Normal  DomainCreated             8m55s        Domain resource fmwdomain was created
-  Normal  DomainProcessingStarting  8m55s        Creating or updating Kubernetes presence for WebLogic Domain with UID fmwdomain
+  Type    Reason                     Age   From  Message
+  ----    ------                     ----  ----  -------
+  Normal  DomainProcessingCompleted  59m         Successfully completed processing domain resource fmwdomain
 ```
 
 In the `Status` section of the output, the available servers and clusters are listed.
@@ -472,9 +480,8 @@ $ kubectl get pods
 ```
 ```
 NAME                                     READY   STATUS    RESTARTS   AGE
-fmwdomain-admin-server                   1/1     Running   0          10m
-fmwdomain-managed-server1                1/1     Running   0          9m8s
-fmwdomain-managed-server2                1/1     Running   0          9m8s
+fmwdomain-admin-server                   1/1     Running   0          14m
+fmwdomain-managed-server1                1/1     Running   0          12m
 ```
 
 #### Verify the services
@@ -495,7 +502,6 @@ fmwdomain-admin-server              ClusterIP   None             <none>        7
 fmwdomain-admin-server-ext          NodePort    10.101.26.42     <none>        7001:30731/TCP    15h
 fmwdomain-cluster-cluster-1         ClusterIP   10.107.55.188    <none>        8001/TCP          15h
 fmwdomain-managed-server1           ClusterIP   None             <none>        8001/TCP          15h
-fmwdomain-managed-server2           ClusterIP   None             <none>        8001/TCP          15h
 ```
 
 #### Delete the domain
@@ -508,8 +514,8 @@ $ kubectl delete -f domain.yaml
 
 #### Delete the generated image.
 
-When no longer needed, delete the generated image by using the`docker rmi` command.
-Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
+When no longer needed, delete the generated image.
+If the image is in a local repository, use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
 
 ```shell
 $ docker rmi domain-home-in-image:12.2.1.4

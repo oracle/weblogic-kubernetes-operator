@@ -2,10 +2,10 @@
 title: "Domain home in image"
 date: 2019-02-23T17:32:31-05:00
 weight: 3
-description: "Sample for creating a WebLogic domain home inside an image, and the Domain YAML file for deploying the generated WebLogic domain."
+description: "Sample for creating a WebLogic domain home inside an image, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
-The sample scripts demonstrate the creation of a WebLogic domain home in an image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home in an image using [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
 #### Prerequisites
 
@@ -14,7 +14,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * The WebLogic Image Tool requires that `JAVA_HOME` is set to a Java JDK version 8 or later.
-* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
+* The operator requires an image with either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
 * Create a Kubernetes Secret for the WebLogic administrator credentials that contains the fields `username` and `password`, and make sure that the secret name matches the value specified for `weblogicCredentialsSecretName`; see [Configuration parameters](#configuration-parameters) below. For example:
@@ -61,7 +61,9 @@ The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 
-* Create a properties file, `domain.properties`, in the directory that is created above. This properties file will be used to create a sample WebLogic Server domain.
+* Create a properties file, `domain.properties`, in the directory that is created above. 
+  This properties file will be used to create a sample WebLogic Server domain.
+  The `domain.properties` file will be removed upon successful completion of the script.
 
 * Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory.
   WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
@@ -101,14 +103,14 @@ The script will perform the following steps:
   For more information, see
   [WebLogic domain in image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
   {{% /notice %}}
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command.
 ```shell
 $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
 ```
 
 As a convenience, using the `-e` option, the script can optionally create the domain object, which in turn results in the creation of the corresponding WebLogic Server pods and services. This option should be used in a single node Kubernetes cluster only.
 
-For a multi-node Kubernetes cluster, make sure that the generated image is available on all nodes before creating the Domain YAML file using the `kubectl apply -f` command.
+For a multi-node Kubernetes cluster, make sure that the generated image is available on all nodes before creating the domain resource YAML file using the `kubectl apply -f` command.
 
 The usage of the create script is as follows:
 
@@ -176,7 +178,7 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome` if `logHomeOnPV` is true. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Server image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server image with a domain home in it. By default, the scripts tag the generated WebLogic Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | `domain-home-in-image:<tag from domainHomeImageBase>`|
+| `image` | WebLogic Server image that the operator uses to start the domain. The create domain scripts generate a WebLogic Server image with a domain home in it. By default, the scripts tag the generated WebLogic Server image as  `domain-home-in-image`, and use it plus the tag that is obtained from the `domainHomeImageBase` to set the `image` element in the generated domain resource YAML file. If this property is set, the create domain scripts will use the value specified, instead of the default value, to tag the generated image and set the `image` in the domain resource YAML file. A unique value is required for each domain that is created using the scripts. If you are running the sample scripts from a machine that is remote to the Kubernetes cluster where the domain is going to be running, you need to set this property to the image name that is intended to be used in a registry local to that Kubernetes cluster. You also need to push the `image` to that registry before starting the domain using the `kubectl create -f` or `kubectl apply -f` command. | `domain-home-in-image:<tag from domainHomeImageBase>`|
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` int the pod's stdout. | `true` |
@@ -202,7 +204,7 @@ The following parameters can be provided in the inputs file.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the inputs YAML file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
-The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain YAML file can be modified to cover more use cases.
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that has only one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. Also, the generated domain resource YAML file can be modified to cover more use cases.
 
 #### Verify the results
 
@@ -481,8 +483,8 @@ $ kubectl delete -f domain.yaml
 
 #### Delete the generated image.
 
-When no longer needed, delete the generated image by using the `docker rmi` command.
-Use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
+When no longer needed, delete the generated image.
+If the image is in a local repository, use the following command to delete an image tagged with `domain-home-in-image:12.2.1.4`:
 
 ```shell
 $ docker rmi domain-home-in-image:12.2.1.4

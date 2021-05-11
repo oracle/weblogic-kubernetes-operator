@@ -3,13 +3,13 @@ title: "FMW Infrastructure domain on a PV"
 date: 2019-04-18T07:32:31-05:00
 weight: 5
 description: "Sample for creating an FMW Infrastructure domain home on an existing PV or
-PVC, and the Domain YAML file for deploying the generated WebLogic domain."
+PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
 
 The sample scripts demonstrate the creation of an FMW Infrastructure domain home on an
 existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts
-also generate the domain YAML file, which can then be used to start the Kubernetes
+also generate the domain resource YAML file, which can then be used to start the Kubernetes
 artifacts of the corresponding domain. Optionally, the scripts start up the domain,
 and WebLogic Server pods and services.
 
@@ -20,7 +20,7 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
+* The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
   For details on how to obtain or create the image, refer to 
   [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
@@ -62,7 +62,7 @@ The script will perform the following steps:
 * Create a Kubernetes Job that will start up a utility FMW Infrastructure container and run
   offline WLST scripts to create the domain on the shared storage.
 * Run and wait for the job to finish.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -156,7 +156,7 @@ lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
-to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
+to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
 #### Verify the results
 
