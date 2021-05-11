@@ -104,7 +104,7 @@ public class ItCrossDomainTransaction {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static String domainUid1 = "domain1";
   private static String domainUid2 = "domain2";
-  private static int  admin1ServiceNodePort = -1;
+  private static int  domain1AdminServiceNodePort = -1;
   private static int  admin2ServiceNodePort = -1;
   private static String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
@@ -242,7 +242,7 @@ public class ItCrossDomainTransaction {
 
     assertDoesNotThrow(() -> copyFolder(
          mdbSrcDir.toString(), mdbDestDir.toString()),
-        "Could not mdbtopic application directory");
+        "Could not copy mdbtopic application directory");
 
     Path template = Paths.get(PROPS_TEMP_DIR, 
            "mdbtopic/src/application/MdbTopic.java");
@@ -314,10 +314,10 @@ public class ItCrossDomainTransaction {
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
 
     logger.info("Getting admin server external service node port(s)");
-    admin1ServiceNodePort = assertDoesNotThrow(
+    domain1AdminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
-    assertNotEquals(-1, admin1ServiceNodePort, "admin server default node port is not valid");
+    assertNotEquals(-1, domain1AdminServiceNodePort, "admin server default node port is not valid");
 
     admin2ServiceNodePort = assertDoesNotThrow(
        () -> getServiceNodePort(domain2Namespace, getExternalServicePodName(domain2AdminServerPodName), "default"),
@@ -348,7 +348,7 @@ public class ItCrossDomainTransaction {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST, admin1ServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
@@ -383,7 +383,7 @@ public class ItCrossDomainTransaction {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST, admin1ServiceNodePort, domain1Namespace, domain2Namespace);
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
@@ -398,7 +398,7 @@ public class ItCrossDomainTransaction {
   }
 
   /*
-   * This test verifies a cross-domain MessageDrivenBean communication
+   * This test verifies cross-domain MessageDrivenBean communication
    * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
    * on Domain D2. 
    * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
@@ -424,7 +424,7 @@ public class ItCrossDomainTransaction {
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
             + "dest=jms/testCdtUniformTopic\"",
-        K8S_NODEPORT_HOST, admin1ServiceNodePort, domain2Namespace);
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
@@ -446,7 +446,7 @@ public class ItCrossDomainTransaction {
             + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
             + "action=receive&dest=jms.testAccountingQueue\"",
-        K8S_NODEPORT_HOST, admin1ServiceNodePort);
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort);
 
     logger.info("curl command {0}", curlString);
 

@@ -254,7 +254,7 @@ public class ItIstioCrossDomainTransaction {
 
     assertDoesNotThrow(() -> copyFolder(
          mdbSrcDir.toString(), mdbDestDir.toString()),
-        "Could not mdbtopic application directory");
+        "Could not copy mdbtopic application directory");
 
     Path template = Paths.get(PROPS_TEMP_DIR, 
            "mdbtopic/src/application/MdbTopic.java");
@@ -436,7 +436,7 @@ public class ItIstioCrossDomainTransaction {
   }
 
   /*
-   * Test verifies a cross-domain MessageDrivenBean communication in istio env.
+   * Test verifies cross-domain MessageDrivenBean communication in istio env.
    * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
    * on Domain D2. 
    * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
