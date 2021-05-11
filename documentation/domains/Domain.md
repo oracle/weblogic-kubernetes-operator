@@ -17,6 +17,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
 | `clusters` | array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
+| `commonMountVolumes` | array of [Common Mount Volume](#common-mount-volume) | The common mount tuning. Allows overriding the global default values for mountPath, medium and sizeLimits for the common mount. See spec.commonMountTuning.globalDefaults for more details. |
 | `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
@@ -89,6 +90,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING. |
 
+### Common Mount Volume
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
+| `mountPath` | string | The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in 'commonMount.containers'. Defaults to '/common'. |
+| `name` | string | The name of common mount volume. |
+| `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
+
 ### Configuration
 
 | Name | Type | Description |
@@ -126,7 +136,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
 | `annotations` | Map | The annotations to be added to generated resources. |
-| `commonMount` | [Common Mount](#common-mount) | Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+| `commonMounts` | array of [Common Mount](#common-mount) | Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `containers` | array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
 | `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
 | `env` | array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
@@ -234,10 +244,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `containers` | array of [Container](#container) | The common mount containers. |
-| `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `mountPath` | string | The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in 'commonMount.containers'. Defaults to '/common'. |
-| `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
+| `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
+| `image` | string | The name of an image with files located in directory 'commonMount.mountPath' (which defaults to '/common'). |
+| `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `volume` | string | The name of common mount volume. |
 
 ### Probe Tuning
 
@@ -277,14 +287,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `enabled` | Boolean | Enable online update. Default is 'false'. |
 | `onNonDynamicChanges` | string | Controls behavior when non-dynamic WebLogic configuration changes are detected during an online update. Non-dynamic changes are changes that require a domain restart to take effect. Valid values are 'CommitUpdateOnly' (default), and 'CommitUpdateAndRoll'. <br/><br/> If set to 'CommitUpdateOnly' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will not automatically restart (roll), and any non-dynamic changes will become effective on a pod only if the pod is later restarted. <br/><br/> If set to 'CommitUpdateAndRoll' and any non-dynamic changes are detected, then all changes will be committed, dynamic changes will take effect immediately, the domain will automatically restart (roll), and non-dynamic changes will take effect on each pod once the pod restarts. <br/><br/> For more information, see the runtime update section of the Model in Image user guide. |
 | `wdtTimeouts` | [WDT Timeouts](#wdt-timeouts) |  |
-
-### Container
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
-| `image` | string | The name of an image with files located in directory 'commonMount.mountPath' (which defaults to '/common'). |
-| `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 
 ### Subsystem Health
 

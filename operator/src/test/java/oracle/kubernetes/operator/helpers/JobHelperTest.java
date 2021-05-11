@@ -43,7 +43,6 @@ import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -74,7 +73,6 @@ import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createPodSecu
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecretKeyRefEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createSecurityContext;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.createToleration;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getContainer;
 import static oracle.kubernetes.operator.utils.ChecksumUtils.getMD5Hash;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -756,21 +754,6 @@ public class JobHelperTest extends DomainValidationBaseTest {
     assertThat(
         getPodSpec(jobSpec).getInitContainers(),
         nullValue());
-  }
-
-  @Test
-  public void introspectorPodSpec_createdWithWdtResourcesContainer() {
-    configureDomain()
-            .withCommonMount(new CommonMount().container(getContainer("wdt-model:v1")));
-
-    V1JobSpec jobSpec = createJobSpec();
-
-    assertThat(
-            getPodSpec(jobSpec).getInitContainers(),
-            notNullValue());
-    assertThat(
-            getPodSpec(jobSpec).getInitContainers().get(0).getImage(),
-            equalTo("wdt-model:v1"));
   }
 
   @Test

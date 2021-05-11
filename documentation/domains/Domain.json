@@ -187,6 +187,32 @@
     "CommonMount": {
       "type": "object",
       "properties": {
+        "volume": {
+          "description": "The name of common mount volume.",
+          "type": "string"
+        },
+        "image": {
+          "description": "The name of an image with files located in directory \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027).",
+          "type": "string"
+        },
+        "imagePullPolicy": {
+          "description": "The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "type": "string",
+          "enum": [
+            "Always",
+            "Never",
+            "IfNotPresent"
+          ]
+        },
+        "command": {
+          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027$COMMON_MOUNT_PATH\u0027 environment variable to reference the value configured in \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
+          "type": "string"
+        }
+      }
+    },
+    "CommonMountVolume": {
+      "type": "object",
+      "properties": {
         "sizeLimit": {
           "description": "The emptyDir volume size limit. Defaults to unset.",
           "type": "string"
@@ -195,12 +221,9 @@
           "description": "The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in \u0027commonMount.containers\u0027. Defaults to \u0027/common\u0027.",
           "type": "string"
         },
-        "containers": {
-          "description": "The common mount containers.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Container"
-          }
+        "name": {
+          "description": "The name of common mount volume.",
+          "type": "string"
         },
         "medium": {
           "description": "The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
@@ -245,28 +268,6 @@
         "introspectorJobActiveDeadlineSeconds": {
           "description": "The introspector job timeout value in seconds. If this field is specified, then the operator\u0027s ConfigMap `data.introspectorJobActiveDeadlineSeconds` value is ignored. Defaults to 120 seconds.",
           "type": "number"
-        }
-      }
-    },
-    "Container": {
-      "type": "object",
-      "properties": {
-        "image": {
-          "description": "The name of an image with files located in directory \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027).",
-          "type": "string"
-        },
-        "imagePullPolicy": {
-          "description": "The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "Never",
-            "IfNotPresent"
-          ]
-        },
-        "command": {
-          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027$COMMON_MOUNT_PATH\u0027 environment variable to reference the value configured in \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
-          "type": "string"
         }
       }
     },
@@ -383,6 +384,13 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Cluster"
+          }
+        },
+        "commonMountVolumes": {
+          "description": "The common mount tuning. Allows overriding the global default values for mountPath, medium and sizeLimits for the common mount. See spec.commonMountTuning.globalDefaults for more details.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CommonMountVolume"
           }
         },
         "serverStartState": {
@@ -766,9 +774,12 @@
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
           }
         },
-        "commonMount": {
+        "commonMounts": {
           "description": "Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
-          "$ref": "#/definitions/CommonMount"
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CommonMount"
+          }
         },
         "resources": {
           "description": "Memory and CPU minimum requirements and limits for the WebLogic Server instance. See `kubectl explain pods.spec.containers.resources`.",

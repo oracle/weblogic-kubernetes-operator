@@ -119,8 +119,8 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
   }
 
-  public static String noCommonMountContainerDefined(String domainUid) {
-    return getMessage(MessageKeys.NO_COMMON_MOUNT_CONTAINERS_DEFINED, domainUid);
+  public static String noCommonMountVolumeDefined(String volumeName) {
+    return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUMES_DEFINED, volumeName);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {

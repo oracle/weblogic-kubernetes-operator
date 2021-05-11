@@ -8,6 +8,9 @@ public class CommonMountEnvVars {
   /** The common mount path. */
   public static final String COMMON_MOUNT_PATH = "COMMON_MOUNT_PATH";
 
+  /** The common mount paths for all common mounts. */
+  public static final String COMMON_MOUNT_PATHS = "COMMON_MOUNT_PATHS";
+
   /** The common mount target path. */
   public static final String COMMON_MOUNT_TARGET_PATH = "COMMON_MOUNT_TARGET_PATH";
 
