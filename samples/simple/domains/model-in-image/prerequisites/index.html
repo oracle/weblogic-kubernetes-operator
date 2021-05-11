@@ -12,20 +12,20 @@
     <title>Prerequisites :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620237159" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620739169" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620739169"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620237159"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620237159"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620739169"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620739169"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620237159"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620739169"></script>
 
     
   </div>
@@ -3414,7 +3414,7 @@ $ kubectl apply -f traefik-ingress-sample-domain2-cluster-cluster-1.yaml
 
 </li>
 <li>
-<p>Download the latest <a href="https://github.com/oracle/weblogic-deploy-tooling">WebLogic Deploy Tooling</a> (WDT) and <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a> (WIT) installer ZIP files to your <code>/tmp/mii-sample/model-images</code> directory. Both WDT and WIT are required to create your Model in Image container images.</p>
+<p>Download the latest <a href="https://github.com/oracle/weblogic-deploy-tooling/releases">WebLogic Deploy Tooling</a> (WDT) and <a href="https://github.com/oracle/weblogic-image-tool/releases">WebLogic Image Tool</a> (WIT) installer ZIP files to your <code>/tmp/mii-sample/model-images</code> directory. Both WDT and WIT are required to create your Model in Image container images.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/mii-sample/model-images
 </code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl -m <span style="color:#ae81ff">120</span> -fL https://github.com/oracle/weblogic-deploy-tooling/releases/latest/download/weblogic-deploy.zip <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  -o /tmp/mii-sample/model-images/weblogic-deploy.zip
@@ -3437,7 +3437,7 @@ file by default, and if the cache already
 has a version of WDT in its <code>--type wdt --version latest</code> location, then the
 <code>cache addInstaller</code> command would fail.
 For more information about the WIT cache, see the
-<a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md">WIT Cache documentation</a>.</p>
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/">WIT Cache documentation</a>.</p>
 <p>These steps will install WIT to the <code>/tmp/mii-sample/model-images/imagetool</code> directory,
 plus put a <code>wdt_latest</code> entry in the tool&rsquo;s cache which points to the WDT ZIP file installer.
 You will use WIT and its cached reference to the WDT installer later in the sample for creating model images.</p>
@@ -5695,19 +5695,19 @@ You will use WIT and its cached reference to the WDT installer later in the samp
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620739169"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620739169"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620237159"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620739169"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

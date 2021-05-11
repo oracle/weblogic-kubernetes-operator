@@ -12,20 +12,20 @@
     <title>WebLogic Server images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620237160" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620739170" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620739170"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620237160"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620237160"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620739170"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620739170"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620237160"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620739170"></script>
 
     
   </div>
@@ -3333,13 +3333,13 @@ Your acceptance of these terms is stored in a database that links the software i
 <h4 id="create-a-custom-image-with-patches-applied">Create a custom image with patches applied</h4>
 <p>The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
 This patch has some prerequisite patches that will also need to be applied. The WebLogic Server 12.2.1.4.0 image does not require any patches. To create and customize the WebLogic Server image,
-and apply the required patches, use the <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a>.</p>
-<p>To use the Image Tool, follow the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/README.md#setup">Setup</a> instructions
-and <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md">Quick Start</a> Guide.</p>
+and apply the required patches, use the <a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool</a>.</p>
+<p>To use the Image Tool, follow the <a href="https://oracle.github.io/weblogic-image-tool/quickstart/setup/">Setup</a> instructions
+and <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/">Quick Start</a> Guide.</p>
 <p>To build the WebLogic Server image and apply the patches:</p>
 <ol>
 <li>
-<p>Add the Server JRE and the WebLogic Server installer to the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md"><code>cache</code> command</a>.</p>
+<p>Add the Server JRE and the WebLogic Server installer to the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/"><code>cache</code> command</a>.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool cache addInstaller <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--type<span style="color:#f92672">=</span>jdk <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>--version<span style="color:#f92672">=</span>8u241 <span style="color:#ae81ff">\
@@ -3350,7 +3350,7 @@ and <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/quic
 </span><span style="color:#ae81ff"></span>--path<span style="color:#f92672">=</span>/home/acmeuser/wls-installers/fmw_12.2.1.4.0_wls_Disk1_1of1.zip
 </code></pre></div></li>
 <li>
-<p>Use the <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md">Create Tool</a>
+<p>Use the <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/">Create Tool</a>
 to build the image and apply the patches.</p>
 <p>For the Create Tool to download the patches, you must supply your My Oracle Support credentials.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool create <span style="color:#ae81ff">\
@@ -3373,7 +3373,7 @@ to build the image and apply the patches.</p>
 are provided that demonstrate how to create the image using either:</p>
 <ul>
 <li>WLST to define the domain, or</li>
-<li><a href="https://github.com/oracle/weblogic-deploy-tooling">WebLogic Deploy Tooling</a> to define the domain.</li>
+<li><a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tooling</a> to define the domain.</li>
 </ul>
 <p>In these samples, you will see a reference to a &ldquo;base&rdquo; or <code>FROM</code> image.  You should use an image
 with the mandatory patches installed as this base image.  This image could be either
@@ -3388,13 +3388,13 @@ including keys and credentials that are used to access external resources
 </div>
 
 <h4 id="patch-weblogic-server-images">Patch WebLogic Server images</h4>
-<p>Use the <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a> (WIT) to patch
+<p>Use the <a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool</a> (WIT) to patch
 WebLogic Server images with quarterly Patch Set Updates (PSUs), which include security fixes, or with one-off patches.</p>
-<p>Use either the WIT <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/create-image.md"><code>create</code></a> or
-<a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/update-image.md"><code>update</code></a> command, however,
+<p>Use either the WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/create-image/"><code>create</code></a> or
+<a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/update-image/"><code>update</code></a> command, however,
 patching using the <code>create</code> command results in a smaller WebLogic Server image size. Note that you will need to
 download the WebLogic Server 12.2.1.4.0 installer and JDK installer prior to running the <code>create</code> command. For details, see
-the WIT <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/quickstart.md">Quick Start</a> guide.</p>
+the WIT <a href="https://oracle.github.io/weblogic-image-tool/quickstart/quickstart/">Quick Start</a> guide.</p>
 <p>Example: Create an image named <code>sample:wls</code> with the WebLogic Server 12.2.1.4.0 slim installer, JDK 8u291, a slim version of the Oracle Linux 7 container image,
 and latest PSU and recommended CPU and SPU patches applied.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool create --tag sample:wls --type<span style="color:#f92672">=</span>wlsslim --recommendedPatches --pull --user testuser@xyz.com --password hello --version<span style="color:#f92672">=</span>12.2.1.4.0 --jdkVersion<span style="color:#f92672">=</span>8u291
@@ -3405,12 +3405,12 @@ to update the running domain differs depending on the <a href="/weblogic-kuberne
 difference between the domain home source types is the location of the domain home:</p>
 <ul>
 <li>Domain in PV: The container image contains the JDK and WebLogic Server binaries. The domain home is located in a Persistent Volume (PV).</li>
-<li>Model in Image: The container image contains the JDK, WebLogic Server binaries, and a <a href="https://github.com/oracle/weblogic-deploy-tooling">WebLogic Deployment Tooling</a> (WDT) installation, WDT model file, and application archive file.</li>
+<li>Model in Image: The container image contains the JDK, WebLogic Server binaries, and a <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deployment Tooling</a> (WDT) installation, WDT model file, and application archive file.</li>
 <li>Domain in Image: The container image contains the JDK, WebLogic Server binaries, and domain home.</li>
 </ul>
 <p>For Domain in PV, the operator can apply the update to the running domain without modifying the patched container image. For Model in Image (MII) and Domain in Image,
 before the operator can apply the update, the patched container images must be modified to add the domain home or a
-WDT model and archive. You use WebLogic Image Tool (WIT) <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md">Rebase Image</a>
+WDT model and archive. You use WebLogic Image Tool (WIT) <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/">Rebase Image</a>
 to update the Oracle Home of the original image using the patched Oracle Home from a patched container image.</p>
 <p>In all three domain home source types, you edit the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#domain-resource-attribute-references">Domain Resource</a>
 to inform the operator of the name of the new patched image so that it can manage the update of the WebLogic domain.</p>
@@ -3421,7 +3421,7 @@ Then, the operator performs a <a href="/weblogic-kubernetes-operator/userguide/m
 of the WebLogic domain to update the Oracle Home of the servers.
 For information on server restarts, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/">Restarting</a>.</p>
 <h5 id="model-in-image">Model in Image</h5>
-<p>Use the WIT <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md"><code>rebase</code></a> command
+<p>Use the WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"><code>rebase</code></a> command
 to update the Oracle Home for an existing image with the model and archive files in the image using the patched Oracle Home from a
 patched container image. Then, the operator performs a <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/#overview">rolling update</a>
 of the domain, updating the Oracle Home of each server pod.</p>
@@ -3431,7 +3431,7 @@ to a new image, <code>mydomain:v2</code>, based on a target image named <code>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ imagetool rebase --tag mydomain:v2 --sourceImage mydomain:v1 --targetImage oracle/weblogic:generic-12.2.1.4.0-patched  --wdtModelOnly
 </code></pre></div><p>Then, edit the Domain Resource image reference with the new image name/tag (<code>mydomain:2</code>).</p>
 <h5 id="domain-in-image">Domain in Image</h5>
-<p>Use the WIT <a href="https://github.com/oracle/weblogic-image-tool/blob/master/site/rebase-image.md"><code>rebase</code></a> command to update the Oracle Home
+<p>Use the WIT <a href="https://oracle.github.io/weblogic-image-tool/userguide/tools/rebase-image/"><code>rebase</code></a> command to update the Oracle Home
 for an existing domain image using the patched Oracle Home from a patched container image. Then, the operator performs a
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/#overview">rolling update</a> of the domain,
 updating the Oracle Home of each server pod.</p>
@@ -5542,19 +5542,19 @@ image named <code>oracle/weblogic:12.2.1.4-patched</code>.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620739170"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620739170"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620237160"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620739170"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

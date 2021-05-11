@@ -12,20 +12,20 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620237160" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620237160" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620739170" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620739170" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620739170"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620237160"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620237160"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620739170"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620739170"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620237160"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620739170"></script>
 
     
   </div>
@@ -3380,7 +3380,7 @@ For example, to add or alter the maximum capacity of a data source named <code>m
       <span style="color:#f92672">JdbcResource</span>:
         <span style="color:#f92672">JDBCConnectionPoolParams</span>:
           <span style="color:#f92672">MaxCapacity</span>: <span style="color:#ae81ff">5</span>
-</code></pre></div><p>For more information, see <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
+</code></pre></div><p>For more information, see <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models">Using Multiple Models</a> in the WebLogic Deploy Tooling documentation.</p>
 </li>
 <li>
 <p>You can change or add secrets that your model macros reference
@@ -3408,7 +3408,7 @@ small model file looks like this:</p>
     <span style="color:#f92672">!mynewdatasource</span>:
 </code></pre></div><p>There are <a href="#online-update-handling-of-deletes">some exceptions for online updates</a>.</p>
 <p>For more information, see
-<a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a>
+<a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete">Declaring Named MBeans to Delete</a>
 in the WebLogic Deploying Tooling documentation.</p>
 </li>
 </ul>
@@ -3491,13 +3491,13 @@ when the domain resource is configured to override the same MBeans using the <co
 </li>
 <li>
 <p>Embedded LDAP security entries for
-<a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-users-groups-and-roles">users, groups, roles</a>,
-and <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-user-password-credential-mapping">credential mappings</a>.
+<a href="https://oracle.github.io/weblogic-deploy-tooling/samples/usersgroups-model/">users, groups, roles</a>,
+and <a href="https://oracle.github.io/weblogic-deploy-tooling/samples/pwcredentialmap-model/">credential mappings</a>.
 For example, you cannot add a user to the default security realm.
 Online update attempts in this area will fail during the introspector job, and offline update attempts
 may result in inconsistent security checks during the offline update&rsquo;s rolling cycle.
 If you need to make these kinds of updates, then shut down your domain entirely before making the change,
-or switch to an <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-security-providers">external security provider</a>.</p>
+or switch to an <a href="https://oracle.github.io/weblogic-deploy-tooling/samples/securityproviders-model/">external security provider</a>.</p>
 </li>
 <li>
 <p>Any Model YAML <code>topology:</code> stanza changes,
@@ -3572,7 +3572,7 @@ plus an offline update if there are any accompanying model changes.</p>
 <ul>
 <li>
 <p>For a discussion of model file syntax, see the
-<a href="https://github.com/oracle/weblogic-deploy-tooling">WebLogic Deploy Tool</a> documentation
+<a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tool</a> documentation
 and Model in Image <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/">Model files</a> documentation.</p>
 </li>
 <li>
@@ -4177,9 +4177,9 @@ in the Model in Image sample.</p>
 <h5 id="using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover Domain and Compare Model Tools</h5>
 <p>Optionally, you can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates.
 The WebLogic Deploy Tooling
-<a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md">Discover Domain Tool</a>
+<a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/">Discover Domain Tool</a>
 generates model files from an existing domain home,
-and its <a href="https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md">Compare Model Tool</a>
+and its <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/compare/">Compare Model Tool</a>
 compares two domain models and generates the YAML file for updating the first domain to the second domain.</p>
 <p>For example, assuming you&rsquo;ve installed WDT in <code>/u01/wdt/weblogic-deploy</code> and assuming your domain type is <code>WLS</code>:</p>
 <pre><code># (1) Run discover for your existing domain home.
@@ -6388,19 +6388,19 @@ the <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">Do
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620739170"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1620237160"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620237160"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1620739170"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620739170"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620237160"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620739170"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

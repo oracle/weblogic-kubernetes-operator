@@ -12,20 +12,20 @@
     <title>Answers for newcomers :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620237159" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620237159" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1620739169" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1620739169" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1620739169"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620237159"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620237159"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1620739169"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1620739169"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620237159"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1620739169"></script>
 
     
   </div>
@@ -3282,7 +3282,7 @@
 <p><strong>A:</strong> In a Kubernetes and container environment, the WebLogic domain home can be externalized to a persistent volume, or supplied in an image (by using a layer on top of a WebLogic Server image). For WebLogic domains that are supplied using an image, the domain logs and store locations optionally can be located on a persistent volume.  See the <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> in this project.</p>
 <p>When using the operator, each deployed domain is specified by a domain resource that you define which describes important aspects of the domain. These include the location of the WebLogic Server image you wish to use, a unique identifier for the domain called the <code>domain-uid</code>, any PVs or PVC the domain pods will need to mount, the WebLogic clusters and servers which you want to be running, and the location of its domain home.</p>
 <p>Multiple deployments of the same domain are supported by specifying a unique <code>domain-uid</code> string for each deployed domain and specifying a different domain resource. The <code>domain-uid</code> is in turn used by the operator as the name-prefix and/or label for the domain&rsquo;s Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain&rsquo;s deployments optionally can by customized by specifying configuration overrides in the domain resource &ndash; which, for example, is useful for overriding the configuration of a data source URL, user name, or password.</p>
-<p>The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called <a href="https://github.com/oracle/weblogic-deploy-tooling">WebLogic Server Deploy Tooling</a> (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> show how to create domains using WLST and using WDT.</p>
+<p>The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Server Deploy Tooling</a> (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> show how to create domains using WLST and using WDT.</p>
 <p><strong>Q:</strong> Is the Administration Server required? Node Manager?</p>
 <p><strong>A:</strong> Certification of both WebLogic running in containers and WebLogic in Kubernetes consists of a WebLogic domain with the Administration Server. The operator configures and runs Node Managers for you within a domain&rsquo;s pods - you don&rsquo;t need to configure them yourself - so their presence is largely transparent.</p>
 <hr>
@@ -5439,19 +5439,19 @@ For an example, see the Quick Start, <a href="/weblogic-kubernetes-operator/quic
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1620739169"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1620237159"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620237159"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1620739169"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1620739169"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620237159"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1620739169"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
