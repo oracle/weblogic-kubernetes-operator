@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -293,8 +292,9 @@ class ItIstioMiiDomain {
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    assertDoesNotThrow(()->checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", "30510"));
+    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", "30510"));
   }
+
   /**
    * Create a configmap containing model yaml to add a new work manager, 
    * a min threads constraint, and a max threads constraint
@@ -394,6 +394,7 @@ class ItIstioMiiDomain {
     setPodAntiAffinity(domain);
     return domain;
   }
+
   private String getMonitoringExporterApp() {
     String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
         .orElse(MONITORING_EXPORTER_VERSION);
