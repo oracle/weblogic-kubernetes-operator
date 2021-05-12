@@ -95,7 +95,7 @@ public class PodCompatibilityTest {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().addEnvItem(envVar(name, value)),
-            new V1Container().addEnvItem(envVar("aa", "cc")));
+            new V1Container().addEnvItem(envVar(name, "cc")));
 
     assertThat(
         compatibility.getIncompatibility(), both(containsString("aa")).and(containsString("bb")));

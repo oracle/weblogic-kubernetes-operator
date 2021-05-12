@@ -67,17 +67,11 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   public String getIncompatibility() {
     StringBuilder sb = new StringBuilder();
 
-    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty()) {
-      sb.append(String.format("%s changed and contains '%s' as well%n", description, missingKeys));
-    }
+    handleMissingElements(sb);
 
     for (K key : expected.keySet()) {
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key)) {
-        sb.append(
-            String.format(
-                "%s '%s' changed from '%s' to '%s'%n",
-                description, key, getValue(actual.get(key)), getValue(expected.get(key))));
+      if (isKeyChanged(key)) {
+        sb.append(getGeneralScopedFormat(key));
       }
     }
 
@@ -87,21 +81,50 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private String getDomainIncompatibility() {
     StringBuilder sb = new StringBuilder();
 
-    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty()) {
-      sb.append(String.format("%s changed and contains '%s' as well%n", description, missingKeys));
-    }
+    handleMissingElements(sb);
 
     for (K key : expected.keySet()) {
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key) && isDomainKey(key)) {
-        sb.append(
-            String.format(
-                "'%s' changed from '%s' to '%s'%n",
-                ELEMENT_NAMES_MAP.get(key), getValue(actual.get(key)), getValue(expected.get(key))));
+      if (isKeyChanged(key) && isDomainKey(key)) {
+        sb.append(getDomainScopedFormat(ELEMENT_NAMES_MAP.get(key), key));
       }
     }
 
     return sb.length() == 0 ? null : sb.toString();
+  }
+
+  private String getUnknownIncompatibility() {
+    StringBuilder sb = new StringBuilder();
+
+    handleMissingElements(sb);
+
+    for (K key : expected.keySet()) {
+      if (isKeyChanged(key) && !isDomainKey(key)) {
+        sb.append(getGeneralScopedFormat(key));
+      }
+    }
+
+    return sb.length() == 0 ? null : sb.toString();
+  }
+
+  private boolean isKeyChanged(K key) {
+    return isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key);
+  }
+
+  private String getDomainScopedFormat(String name, K key) {
+    return String.format(
+        "'%s' changed from '%s' to '%s'%n",
+        name, getValue(actual.get(key)), getValue(expected.get(key)));
+  }
+
+  private String getGeneralScopedFormat(K key) {
+    return String.format("%s %s", description, getDomainScopedFormat((String)key, key));
+  }
+
+  private void handleMissingElements(StringBuilder sb) {
+    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
+    if (!missingKeys.isEmpty()) {
+      sb.append(String.format("%s changed and contains '%s' as well%n", description, missingKeys));
+    }
   }
 
   private Object getValue(Object obj) {
@@ -109,27 +132,6 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
       return ((V1EnvVar) obj).getValue();
     }
     return obj;
-  }
-
-  private String getUnknownIncompatibility() {
-    StringBuilder sb = new StringBuilder();
-
-
-    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
-    if (!missingKeys.isEmpty()) {
-      sb.append(String.format("%s changed and contains '%s' as well%n", description, missingKeys));
-    }
-
-    for (K key : expected.keySet()) {
-      if (isKeyToCheck(key) && actual.containsKey(key) && valuesDiffer(key) && !isDomainKey(key)) {
-        sb.append(
-            String.format(
-                "%s '%s' changed from '%s' to '%s'%n",
-                description, key, actual.get(key), expected.get(key)));
-      }
-    }
-
-    return sb.length() == 0 ? null : sb.toString();
   }
 
   private boolean isDomainKey(K key) {

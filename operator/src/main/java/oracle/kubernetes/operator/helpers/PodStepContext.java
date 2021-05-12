@@ -1017,16 +1017,17 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction apply(Packet packet) {
+
+      markBeingDeleted();
+      return doNext(createCyclePodEventStep(deletePod(pod, getNext())), packet);
+    }
+
+    private Step createCyclePodEventStep(Step next) {
       String reason = getReasonToRecycle(pod, CompatibilityScope.POD);
       LOGGER.info(
           MessageKeys.CYCLING_POD,
           Objects.requireNonNull(pod.getMetadata()).getName(),
           reason);
-      markBeingDeleted();
-      return doNext(createCyclePodEventStep(reason, deletePod(pod, getNext())), packet);
-    }
-
-    private Step createCyclePodEventStep(String reason, Step next) {
       return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
           next);
     }

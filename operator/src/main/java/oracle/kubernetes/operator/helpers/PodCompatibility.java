@@ -68,31 +68,25 @@ class PodCompatibility extends CollectiveCompatibility {
     }
 
     private boolean isLabelSame(String labelName) {
-      return Objects.equals(
-          getExpected(labelName),
-          getActual(labelName)
+      return Objects.equals(getLabel(expected, labelName), getLabel(actual, labelName)
       );
     }
 
-    private String getExpected(String labelName) {
-      return Objects.requireNonNull(expected.getLabels()).get(labelName);
-    }
-
-    private String getActual(String labelName) {
-      return Objects.requireNonNull(actual.getLabels()).get(labelName);
+    private String getLabel(V1ObjectMeta metadata, String labelName) {
+      return Objects.requireNonNull(metadata.getLabels()).get(labelName);
     }
 
     @Override
     public String getIncompatibility() {
       if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
-        return "domain restart version changed from '" + getActual(DOMAINRESTARTVERSION_LABEL)
-            + "' to '" + getExpected(DOMAINRESTARTVERSION_LABEL) + "'";
+        return "domain restart version changed from '" + getLabel(actual, DOMAINRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, DOMAINRESTARTVERSION_LABEL) + "'";
       } else if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
-        return "cluster restart version changed from '" + getActual(CLUSTERRESTARTVERSION_LABEL)
-            + "' to '" + getExpected(CLUSTERRESTARTVERSION_LABEL) + "'";
+        return "cluster restart version changed from '" + getLabel(actual, CLUSTERRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, CLUSTERRESTARTVERSION_LABEL) + "'";
       } else if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
-        return "server restart version changed from '" + getActual(SERVERRESTARTVERSION_LABEL)
-            + "' to '" + getExpected(SERVERRESTARTVERSION_LABEL) + "'";
+        return "server restart version changed from '" + getLabel(actual, SERVERRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, SERVERRESTARTVERSION_LABEL) + "'";
       } else {
         return null;
       }

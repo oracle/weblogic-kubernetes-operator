@@ -505,11 +505,6 @@ public class EventHelper {
     },
     POD_CYCLE_STARTING {
       @Override
-      protected String getType() {
-        return EVENT_NORMAL;
-      }
-
-      @Override
       public String getReason() {
         return POD_CYCLE_STARTING_EVENT;
       }

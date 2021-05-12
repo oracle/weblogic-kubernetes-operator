@@ -247,7 +247,7 @@ public class RollingHelper {
         }
       }
 
-      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers.toString(), readyServers);
+      LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
       int countToRestartNow = countReady - dom.getMinAvailable(clusterName);
       Collection<StepAndPacket> restarts = new ArrayList<>();
