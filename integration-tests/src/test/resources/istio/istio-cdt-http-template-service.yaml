@@ -34,6 +34,8 @@ spec:
             prefix: /TxForward
         - uri:
             prefix: /cdttxservlet
+        - uri:
+            prefix: /jmsservlet
         - port: 7001
       route:
         - destination:

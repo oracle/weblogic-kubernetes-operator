@@ -109,7 +109,7 @@ public class AppBuilder {
         copyFolder(APP_DIR + "/" + item, ARCHIVE_SRC_DIR);
       }
     } catch (IOException ioe) {
-      getLogger().info("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
+      getLogger().severe("Failed to get the directory " + ARCHIVE_DIR + " ready", ioe);
       return false;
     }
 
@@ -245,7 +245,7 @@ public class AppBuilder {
       checkDirectory(appDir);
       for (String appSrcFile : srcFiles) {
         if (appSrcFile.length() > 0) {
-          getLogger().info("copy {0]} to {1} ", appSrcFile, appDir);
+          getLogger().info("copy {0} to {1} ", appSrcFile, appDir);
           String fileName = appSrcFile.substring(appSrcFile.lastIndexOf("/") + 1);
           Files.copy(Paths.get(appSrcFile), Paths.get(appDir + "/" + fileName),
                   StandardCopyOption.REPLACE_EXISTING);
