@@ -28,8 +28,15 @@ import weblogic.transaction.Transaction;
 import weblogic.transaction.TransactionHelper;
 import weblogic.transaction.TransactionManager;
 
+import javax.servlet.*;
+import javax.servlet.annotation.*;
+import javax.servlet.http.*;
+
 import static java.lang.Thread.sleep;
      
+@WebServlet(name="cdttxservlet", urlPatterns={"/cdttxservlet"},
+     initParams={ @WebInitParam(name="simpleParam", value="paramValue") } )
+
 public class CdtTxServlet extends HttpServlet {
   private static final long serialVersionUID = 1L;
   private TransactionManager tm = (TransactionManager)
