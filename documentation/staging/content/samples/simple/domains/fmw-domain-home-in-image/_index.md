@@ -7,7 +7,7 @@ description: "Sample for creating an FMW Infrastructure domain home inside an im
 
 
 The sample scripts demonstrate the creation of a FMW Infrastructure domain home in an image using
-[WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT). 
+[WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). 
 The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, 
 and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). 
 The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
@@ -63,7 +63,7 @@ The script will perform the following steps:
   This properties file will be used to create a sample FMW Infrastructure domain. 
   The `domain.properties` file will be removed upon successful completion of the script.
 
-* Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) installer ZIP files to your `/tmp/dhii-sample/tools` directory. 
+* Download the latest [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) and [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) installer ZIP files to your `/tmp/dhii-sample/tools` directory. 
   WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
@@ -72,16 +72,16 @@ The script will perform the following steps:
   WIT cache store location to the `<tools>/imagetool-cache` directory and
   put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
-  [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+  [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
 
 * If the optional `-n` option and an encryption key is provided, invoke the WDT 
-  [Encrypt Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/encrypt.md)
+  [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/)
   in a container running the image specified in `domainHomeImageBase` parameter in your inputs file 
   to encrypt the password properties in `domain.properties` file. Note that this password encryption
   step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because 
   the feature is provided by WDT.
   
-* Invoke the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) to create a new 
+* Invoke the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) to create a new 
   FWM Infrastructure domain based on the FMW Infrastructure image specified in the `domainHomeImageBase` 
   parameter from your inputs file. The new WebLogic Server domain is created using one of the 
   following options based on the value of the `mode` parameter in the inputs YAML file:
