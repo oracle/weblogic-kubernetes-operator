@@ -8,7 +8,7 @@ description: "Tools that are available to build CI/CD pipelines."
 
 #### WebLogic Deploy Tooling (WDT)
 
-You can use several of the [WDT tools](https://github.com/oracle/weblogic-deploy-tooling)
+You can use several of the [WDT tools](https://oracle.github.io/weblogic-deploy-tooling/)
 in a CI/CD pipeline. For example, the
 `createDomain` tool creates a new domain based on a simple model, and
 `updateDomain` (and `deployApps`) uses the same model concept to update
@@ -30,7 +30,7 @@ that you supply a domain home.
 Other than the tools themselves, there are three components to the WDT tools:  
 
 - *The Domain Model* - Metadata model describing the desired domain.  
-  The metadata domain model can be written in YAML or JSON and is documented [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md).
+  The metadata domain model can be written in YAML or JSON and is documented [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/).
 - *The Archive ZIP* - Binaries to supplement the model.  
   All binaries needed to supplement the model must be specified in an archive
   file, which is just a ZIP file with a specific directory structure. Optionally,
@@ -45,7 +45,7 @@ Other than the tools themselves, there are three components to the WDT tools:
 - (Docker) A sample for creating a domain in a container image with WDT can be found
   [here](https://github.com/oracle/weblogic-deploy-tooling/tree/master/samples/docker-domain).
 - (Kubernetes) A similar sample of creating a domain in an image with WDT
-  can be found in the WebLogic Server Kubernetes Operator project for creating a
+  can be found in the WebLogic Kubernetes Operator project for creating a
   [domain-in-image with WDT](https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/).
 - (Kubernetes) A [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})
   for supplying an image that contains a WDT model only,

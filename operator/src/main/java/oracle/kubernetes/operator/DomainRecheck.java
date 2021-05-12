@@ -128,7 +128,8 @@ class DomainRecheck {
 
     @Override
     public Step getDedicatedStrategySelection() {
-      return createStartNamespacesStep(Collections.singletonList(getOperatorNamespace()));
+      return Step.chain(new Namespaces.NamespaceListAfterStep(domainNamespaces),
+          createStartNamespacesStep(Collections.singletonList(getOperatorNamespace())));
     }
 
     @Override

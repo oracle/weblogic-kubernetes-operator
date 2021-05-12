@@ -1,0 +1,38 @@
+<!-- Copyright (c) 2021, Oracle and/or its affiliates.
+     Licensed under the Universal Permissive License v 1.0 as shown at
+          https://oss.oracle.com/licenses/upl.-->
+
+<project name="jmsservlet" default="build">
+    <description>
+      ant script to build the jms servlet to send/receive message
+    </description>
+
+    <dirname file="${ant.file.jmsservlet}" property="jmsservlet.dir" />
+
+    <property environment="env" />
+    <property name="tempdir" location="temp" />
+    <property name="builddir" location="build" />
+    <property name="app" value="jmsservlet" />
+
+    <path id="build.classpath">
+      <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+    </path>
+
+    <target name="build">
+        <delete dir="${builddir}" quiet="true" />
+        <sleep seconds="2"/>
+        <mkdir dir="${builddir}" />
+        <delete dir="${tempdir}" quiet="true" />
+        <mkdir dir="${tempdir}" />
+        <javac debug="${javac.debug}" srcdir="src"
+               destdir="${tempdir}">
+            <classpath refid="build.classpath"/>
+        </javac>
+     <war destfile="${builddir}/${app}.war" needxmlfile="no">
+       <classes dir="${tempdir}"/>
+       <zipfileset dir="src/application" 
+          includes="JmsTestServlet.java" prefix="src/application"/>
+      </war>
+      <delete dir="${tempdir}" quiet="true" />
+    </target>
+</project>

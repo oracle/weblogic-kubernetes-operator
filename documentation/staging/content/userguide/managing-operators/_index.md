@@ -61,7 +61,7 @@ For more detailed information, see the [REST interface configuration]({{<relref 
 
 ##### Sample SSL certificate and private key for the REST interface
 
-For testing purposes, the WebLogic Server Kubernetes Operator project provides a sample script
+For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
 that generates a self-signed certificate and private key for the operator external REST interface.
 The generated certificate and key are stored in a Kubernetes `tls secret` and the sample
 script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.

@@ -5,13 +5,13 @@ weight: 3
 description: "Sample for creating a WebLogic cluster on the Azure Kubernetes Service with model in image approach."
 ---
 
-This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
 
 #### Contents
 
  - [Prerequisites](#prerequisites)
  - [Create an AKS cluster](#create-the-aks-cluster)
- - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
+ - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
  - [Create Docker image](#create-docker-image)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Invoke the web application](#invoke-the-web-application)
@@ -25,9 +25,9 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
-##### Clone WebLogic Server Kubernetes Operator repository
+##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```shell
 $ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -41,9 +41,9 @@ $ cd weblogic-kubernetes-operator
 **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
-#### Install WebLogic Server Kubernetes Operator
+#### Install WebLogic Kubernetes Operator
 
-The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
+The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 Create a namespace and service account for the operator.
 
@@ -202,7 +202,7 @@ The sample includes a predefined archive directory in `/tmp/mii-sample/archives/
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an ‘exploded’ sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
   - WDT archives can contain multiple applications, libraries, and other components.
-  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md), which always has `wlsdeploy` as the top directory.
+  - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
 
 The application displays important details about the WebLogic Server instance that it’s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server.
 

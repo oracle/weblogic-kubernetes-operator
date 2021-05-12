@@ -3,10 +3,10 @@ title: "Design philosophy"
 date: 2019-02-23T20:51:51-05:00
 draft: false
 weight: 4
-description: "The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly."
+description: "The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly."
 ---
 
-The Oracle WebLogic Server Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
 
 Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.  It is envisaged that the operator will have similar responsibilities in a Kubernetes environment.
 
@@ -16,7 +16,7 @@ Human operators may manage more than one domain, and the operator is also design
 
 Like a human operator, the operator is designed to be event-based.  It waits for a significant event to occur, or for a scheduled time to perform some action, and then takes the appropriate action.  Examples of significant events include being made aware of a new domain that needs to be managed, receiving a request to scale up a WebLogic cluster, or applying a WebLogic Server patch or an application while preserving cluster availability.
 
-There are some operator tasks, such as initiating backups, that are presently not implemented by the Oracle WebLogic Server Kubernetes Operator. We welcome any feedback or requirements as this helps us to properly create our roadmap.
+There are some operator tasks, such as initiating backups, that are presently not implemented by the WebLogic Kubernetes Operator. We welcome any feedback or requirements as this helps us to properly create our roadmap.
 
 The operator is designed with security in mind from the outset.  Some examples of the specific security practices we follow are:
 

@@ -310,7 +310,6 @@ public class RollingHelperTest {
 
   protected String getExpectedEventMessage(EventHelper.EventItem event, String name, String ns) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
-    System.out.println(events);
     for (CoreV1Event e : events) {
       if (e.getMessage().contains(name) && e.getMetadata().getNamespace().equals(ns)) {
         return e.getMessage();
