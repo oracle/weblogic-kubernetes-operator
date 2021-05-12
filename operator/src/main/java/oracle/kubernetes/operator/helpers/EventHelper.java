@@ -44,12 +44,15 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYI
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
@@ -223,10 +226,6 @@ public class EventHelper {
           domainNamespaces.clearNamespaceStartingFlag(eventData.getNamespace());
         }
       }
-
-      private boolean isForbiddenForNamespaceWatchingStoppedEvent(CallResponse<CoreV1Event> callResponse) {
-        return isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
-      }
     }
 
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
@@ -281,12 +280,12 @@ public class EventHelper {
     }
 
     private boolean isForbiddenForNSWatchStoppedEvent(
-        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+        ResponseStep<CoreV1Event> responseStep, CallResponse<CoreV1Event> callResponse) {
       return responseStep.isForbidden(callResponse) && NAMESPACE_WATCHING_STOPPED == eventData.eventItem;
     }
 
     private boolean hasLoggedForbiddenNSWatchStoppedEvent(
-        ResponseStep responseStep, CallResponse<CoreV1Event> callResponse) {
+        ResponseStep<CoreV1Event> responseStep, CallResponse<CoreV1Event> callResponse) {
       if (isForbiddenForNSWatchStoppedEvent(responseStep, callResponse)) {
         LOGGER.info(MessageKeys.CREATING_EVENT_FORBIDDEN, eventData.eventItem.getReason(), eventData.getNamespace());
         return true;
@@ -454,6 +453,35 @@ public class EventHelper {
       }
 
     },
+    DOMAIN_ROLL_STARTING {
+      @Override
+      public String getReason() {
+        return DOMAIN_ROLL_STARTING_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.DOMAIN_ROLL_STARTING_PATTERN;
+      }
+
+      @Override
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventData(eventData);
+      }
+
+    },
+    DOMAIN_ROLL_COMPLETED {
+      @Override
+      public String getReason() {
+        return EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN;
+      }
+
+    },
     DOMAIN_VALIDATION_ERROR {
       @Override
       protected String getType() {
@@ -473,6 +501,27 @@ public class EventHelper {
       @Override
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
+      }
+    },
+    POD_CYCLE_STARTING {
+      @Override
+      protected String getType() {
+        return EVENT_NORMAL;
+      }
+
+      @Override
+      public String getReason() {
+        return POD_CYCLE_STARTING_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return POD_CYCLE_STARTING_PATTERN;
+      }
+
+      @Override
+      public String getMessage(EventData eventData) {
+        return getMessageFromEventDataWithPod(eventData);
       }
     },
     NAMESPACE_WATCHING_STARTED {
@@ -606,6 +655,11 @@ public class EventHelper {
           eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
     }
 
+    private static String getMessageFromEventDataWithPod(EventData eventData) {
+      return String.format(eventData.eventItem.getPattern(),
+          eventData.getPodName(), Optional.ofNullable(eventData.message).orElse(""));
+    }
+
     private static void addCreatedByOperatorLabel(V1ObjectMeta metadata) {
       metadata.putLabelsItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true");
     }
@@ -680,6 +734,7 @@ public class EventHelper {
     private String message;
     private String namespace;
     private String resourceName;
+    private String podName;
     private DomainPresenceInfo info;
 
     public EventData(EventItem eventItem) {
@@ -706,6 +761,11 @@ public class EventHelper {
       return this;
     }
 
+    public EventData podName(String podName) {
+      this.podName = podName;
+      return this;
+    }
+
     public EventData domainPresenceInfo(DomainPresenceInfo info) {
       this.info = info;
       return this;
@@ -718,6 +778,10 @@ public class EventHelper {
     public String getNamespace() {
       return Optional.ofNullable(namespace).orElse(Optional.ofNullable(info)
           .map(DomainPresenceInfo::getNamespace).orElse(""));
+    }
+
+    public String getPodName() {
+      return podName;
     }
 
     public String getResourceName() {

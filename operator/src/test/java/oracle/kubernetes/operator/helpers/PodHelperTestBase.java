@@ -11,6 +11,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -18,6 +21,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -48,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -56,6 +61,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -74,6 +80,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,6 +88,9 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
+import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
@@ -93,6 +103,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEP
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -100,6 +111,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
@@ -122,6 +134,7 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.allOf;
@@ -137,6 +150,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
@@ -179,6 +193,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
   protected final V1Affinity affinity = createAffinity();
   private Memento hashMemento;
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -251,6 +268,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -944,6 +962,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void initializeExistingPod(V1Pod pod) {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
+  void initializeExistingPodWithMii() {
+    initializeExistingPod(createPodModel());
   }
 
   void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
@@ -1718,6 +1740,212 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .controller(true);
 
     assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
+  }
+
+
+  @Test
+  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domainHome", " changed from", "to", "adfgg"));
+  }
+
+  @Test
+  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectNS()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertContainsEventWithNamespace(DOMAIN_ROLL_STARTING, NS);
+  }
+
+  @Test
+  public void whenDomainHomeChanged_butEventAlreadyGenerated_dontCreateDomainRollStartEvent()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Found unexpected Event " + DOMAIN_ROLL_STARTING,
+        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
+  }
+
+  @Test
+  public void whenImageChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "image changed","adfgg"));
+  }
+
+  @Test
+  public void whenImageChanged_expectedLogMessageFound()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
+    logRecords.clear();
+  }
+
+  @Test
+  public void whenInitContainerLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domain resource changed"));
+  }
+
+  @Test
+  public void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withDefaultReadinessProbeSettings(12, 23, 45);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "readiness probe", "changed from", "1", "2", "3", "to", "12", "23", "45"));
+  }
+
+  @Test
+  public void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    disableAutoIntrospectOnNewMiiPods();
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "WebLogic domain configuration changed"));
+  }
+
+  @Test
+  public void whenDomainZipHashChanged_butIsMIIDynamicUpdate_dontCreateDomainRollStartEvent() {
+    initializeExistingPod();
+    disableAutoIntrospectOnNewMiiPods();
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    getConfigurator().withMIIOnlineUpdate();
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Found unexpected event " + DOMAIN_ROLL_STARTING,
+        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
+  }
+
+  @Test
+  public void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
+    logRecords.clear();
+  }
+
+  @Test
+  public void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    logRecords.clear();
+
+    /*
+      message: Rolling restart the pods in domain uid1 because domain restart version changed.
+      image changed from image:latest to adfgg
+      imagePullPolicy changed from image:latest to IfNotPresent
+      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345'
+     */
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "domain restart version changed",
+            "image changed", "adfgg",
+            "domainHome", "changed", "12345"));
+  }
+
+
+  protected static String getCyclePodKey() {
+    return CYCLING_POD;
+  }
+
+  protected static String getDomainRollStartingKey() {
+    return MessageKeys.DOMAIN_ROLL_STARTING;
+  }
+
+  protected void assertContainsEventWithNamespace(EventHelper.EventItem event, String ns) {
+    MatcherAssert.assertThat(
+        "Expected Event " + event.getReason() + " was not created",
+        containsEventWithNamespace(getEvents(), event.getReason(), ns),
+        is(true));
+  }
+
+  protected String getExpectedEventMessage(EventHelper.EventItem event) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    return Optional.ofNullable(events)
+        .filter(list -> list.size() != 0)
+        .map(n -> n.get(0))
+        .map(CoreV1Event::getMessage)
+        .orElse("Event not found");
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
   interface PodMutator {
