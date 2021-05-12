@@ -32,12 +32,12 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.TestAssertions;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -71,9 +72,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinit
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -92,15 +96,19 @@ public class ItCrossDomainTransaction {
   private static final String PROPS_TEMP_DIR = RESULTS_ROOT + "/crossdomaintransactiontemp";
   private static final String WDT_MODEL_FILE_JMS = "model-cdt-jms.yaml";
   private static final String WDT_MODEL_FILE_JDBC = "model-cdt-jdbc.yaml";
+  private static final String WDT_MODEL_FILE_JMS2 = "model2-cdt-jms.yaml";
 
   private static String opNamespace = null;
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
-  private String domainUid1 = "domain1";
-  private String domainUid2 = "domain2";
-  private final String domain1AdminServerPodName = domainUid1 + "-admin-server";
+  private static String domainUid1 = "domain1";
+  private static String domainUid2 = "domain2";
+  private static int  domain1AdminServiceNodePort = -1;
+  private static int  admin2ServiceNodePort = -1;
+  private static String domain1AdminServerPodName = domainUid1 + "-admin-server";
   private final String domain1ManagedServerPrefix = domainUid1 + "-managed-server";
+  private static String domain2AdminServerPodName = domainUid2 + "-admin-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
@@ -146,7 +154,7 @@ public class ItCrossDomainTransaction {
     logger.info("DB Node Port = {0}", dbNodePort);
 
     // Now that we got the namespaces for both the domains, we need to update the model properties
-    // file with the namespaces. For cross domain transaction to work, we need to have the externalDNSName
+    // file with the namespaces. For a cross-domain transaction to work, we need to have the externalDNSName
     // set in the config file. Cannot set this after the domain is up since a server restart is
     // required for this to take effect. So, copying the property file to RESULT_ROOT and updating the
     // property file
@@ -155,6 +163,7 @@ public class ItCrossDomainTransaction {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
 
+    buildApplicationsAndDomains();
   }
 
   private static void updatePropertyFile() {
@@ -196,23 +205,10 @@ public class ItCrossDomainTransaction {
     out.close();
   }
 
-  /*
-   * This test verifies cross domain transaction is successful. domain in image using wdt is used
-   * to create 2 domains in different namespaces. An app is deployed to both the domains and the servlet
-   * is invoked which starts a transaction that spans both domains.
-   * The application consists of a servlet front-end and a remote object that defines a method to register
-   * a simple javax.transaction.Synchronization object. When the servlet is invoked, a global transaction
-   * is started, and the specified list of server URLs is used to look up the remote object and register
-   * a Synchronization object on each server.  Finally, the transaction is committed.  If the server
-   * listen-addresses are resolvable between the transaction participants, then the transaction should
-   * complete successfully
-   */
-  @Test
-  @DisplayName("Check cross domain transaction works")
-  public void testCrossDomainTransaction() {
+  private static void buildApplicationsAndDomains() {
 
     //build application archive
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
+    Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
@@ -222,7 +218,7 @@ public class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
-    distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
+    distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
     assertTrue(Paths.get(distDir.toString(),
@@ -230,6 +226,42 @@ public class ItCrossDomainTransaction {
         "Application archive is not available");
     String appSource1 = distDir.toString() + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
+
+    //build application archive for JMS Send/Receive 
+    distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "jmsservlet.war").toFile().exists(),
+        "Application archive is not available");
+    String appSource2 = distDir.toString() + "/jmsservlet.war";
+    logger.info("Application is in {0}", appSource2);
+
+    Path mdbSrcDir  = Paths.get(APP_DIR, "mdbtopic");
+    Path mdbDestDir = Paths.get(PROPS_TEMP_DIR, "mdbtopic");
+
+    assertDoesNotThrow(() -> copyFolder(
+         mdbSrcDir.toString(), mdbDestDir.toString()),
+        "Could not copy mdbtopic application directory");
+
+    Path template = Paths.get(PROPS_TEMP_DIR, 
+           "mdbtopic/src/application/MdbTopic.java");
+
+    // Add the domain2 namespace decorated URL to the providerURL of MDB
+    // so that it can communicate with remote destination on domain2
+    assertDoesNotThrow(() -> replaceStringInFile(
+        template.toString(), "domain2-namespace", domain2Namespace),
+        "Could not modify the domain2Namespace in MDB Template file");
+
+    //build application archive for MDB
+    distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
+        "build", domain1Namespace);
+    logger.info("distDir is {0}", distDir.toString());
+    assertTrue(Paths.get(distDir.toString(),
+        "mdbtopic.jar").toFile().exists(),
+        "Application archive is not available");
+    String appSource3 = distDir.toString() + "/mdbtopic.jar";
+    logger.info("Application is in {0}", appSource3);
 
     // create admin credential secret for domain1
     logger.info("Create admin credential secret for domain1");
@@ -250,7 +282,7 @@ public class ItCrossDomainTransaction {
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN1,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JMS);
 
-    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1);
+    final List<String> appSrcDirList1 = Arrays.asList(appSource, appSource1, appSource2, appSource3);
 
     logger.info("Creating image with model file and verify");
     String domain1Image = createImageAndVerify(
@@ -263,6 +295,7 @@ public class ItCrossDomainTransaction {
     // build the model file list for domain2
     final List<String> modelListDomain2 = Arrays.asList(
         MODEL_DIR + "/" + WDT_MODEL_FILE_DOMAIN2,
+        MODEL_DIR + "/" + WDT_MODEL_FILE_JMS2,
         MODEL_DIR + "/" + WDT_MODEL_FILE_JDBC);
 
     final List<String> appSrcDirList2 = Collections.singletonList(appSource);
@@ -280,14 +313,42 @@ public class ItCrossDomainTransaction {
     //create domain2
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
 
-    logger.info("Getting admin server external service node port");
-    int adminServiceNodePort = assertDoesNotThrow(
+    logger.info("Getting admin server external service node port(s)");
+    domain1AdminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
         "Getting admin server node port failed");
+    assertNotEquals(-1, domain1AdminServiceNodePort, "admin server default node port is not valid");
+
+    admin2ServiceNodePort = assertDoesNotThrow(
+       () -> getServiceNodePort(domain2Namespace, getExternalServicePodName(domain2AdminServerPodName), "default"),
+        "Getting admin server node port failed");
+    assertNotEquals(-1, admin2ServiceNodePort, "admin server default node port is not valid");
+  }
+
+  /*
+   * This test verifies a cross-domain transaction in non-istio environment.
+   * domain-in-image using wdt is used to create 2 domains in different 
+   * namespaces. An app is deployed to both the domains and the servlet
+   * is invoked which starts a transaction that spans both domains.
+   * The application consists of 
+   *  (a) servlet 
+   *  (b) a remote object that defines a method to register a 
+   *      simple javax.transaction.Synchronization object. 
+   * When the servlet is invoked, a global transaction is started, and the 
+   * specified list of server URLs is used to look up the remote objects and 
+   * register a Synchronization object on each server. 
+   * Finally, the transaction is committed.  
+   * If the server listen-addresses are resolvable between the transaction 
+   * participants, then the transaction should complete successfully
+   */
+  @Order(1)
+  @Test
+  @DisplayName("Check cross domain transaction works")
+  public void testCrossDomainTransaction() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST, adminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
@@ -300,27 +361,25 @@ public class ItCrossDomainTransaction {
       logger.info("curl command returned {0}", result.toString());
       assertTrue(result.stdout().contains("Status=Committed"), "crossDomainTransaction failed");
     }
-
   }
 
   /*
-   * This test verifies cross domain transaction is successful and able to re-establish connection when
-   * one domain is shutdown. Domain in image with wdt is used to create 2 domains in different namespaces.
-   * A servlet is deployed to the admin server of domain1. This servlet starts a transaction with
-   * TMAfterTLogBeforeCommitExit transaction property set. The servlet inserts data into oracleDB table and
-   * sends a message to a JMS queue as part of a same transaction.The coordinator (server in domain2)
-   * should exit before commit and the domain1 admin server should be able to re-establish connection
-   * with domain2 and the transaction should commit.
+   * This test verifies a cross-domain transaction with re-connection. 
+   * It makes sure the disitibuted transaction is completed successfully 
+   * when a coordinator server is re-started after writing to transcation log
+   * A servlet is deployed to the admin server of domain1. 
+   * The servlet starts a transaction with TMAfterTLogBeforeCommitExit 
+   * transaction property set. The servlet inserts data into an Oracle DB 
+   * table and sends a message to a JMS queue as part of the same transaction. 
+   * The coordinator (server in domain2) should exit before commit and the 
+   * domain1 admin server should be able to re-establish the connection with 
+   * domain2 and the transaction should commit.
    *
    */
+  @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   public void testCrossDomainTransactionWithFailInjection() {
-
-    logger.info("Getting admin server external service node port");
-    int domain1AdminServiceNodePort = assertDoesNotThrow(
-        () -> getServiceNodePort(domain1Namespace, domain1AdminServerPodName + "-external", "default"),
-        "Getting admin server node port failed");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
@@ -336,10 +395,76 @@ public class ItCrossDomainTransaction {
       assertTrue(result.stdout().contains("Status=SUCCESS"),
           "crossDomainTransaction with TMAfterTLogBeforeCommitExit failed");
     }
-
   }
 
-  private void createDomain(String domainUid, String domainNamespace, String adminSecretName,
+  /*
+   * This test verifies cross-domain MessageDrivenBean communication
+   * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
+   * on Domain D2. 
+   * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
+   * set to One-Copy-Per-Server. The OnMessage() routine sends a message to 
+   * local queue on receiving the message.
+   * An application servlet is deployed to Administration Server on D1 which
+   * send/receive message from a JMS destination based on a given URL.
+   * (a) app servlet send message to Distributed Topic on D2
+   * (b) mdb puts a message into local Queue for each received message
+   * (c) make sure local Queue gets 2X times messages sent to Distributed Topic 
+   * Since the MessagesDistributionMode is set to One-Copy-Per-Server and 
+   * targeted to a cluster of two servers, onMessage() will be triggered 
+   * for both instance of MDB for a message sent to Distributed Topic   
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Check cross domain transcated MDB communication ")
+  public void testCrossDomainTranscatedMDB() {
+
+    String curlRequest = String.format("curl -v --show-error --noproxy '*' "
+            + "\"http://%s:%s/jmsservlet/jmstest?"  
+            + "url=t3://domain2-cluster-cluster-1.%s:8001&"
+            + "cf=jms.ClusterConnectionFactory&"
+            + "action=send&"
+            + "dest=jms/testCdtUniformTopic\"",
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain2Namespace);
+
+    ExecResult result = null;
+    logger.info("curl command {0}", curlRequest);
+    result = assertDoesNotThrow(
+        () -> exec(curlRequest, true));
+    if (result.exitValue() == 0) {
+      logger.info("\n HTTP response is \n " + result.stdout());
+      logger.info("curl command returned {0}", result.toString());
+      assertTrue(result.stdout().contains("Sent (10) message"),
+          "Can not send message to remote Distributed Topic");
+    }
+
+    assertTrue(checkLocalQueue(),
+         "Expected number of message not found in Accounting Queue");
+  }
+
+  private boolean checkLocalQueue() {
+    String curlString = String.format("curl -v --show-error --noproxy '*' "
+            + "\"http://%s:%s/jmsservlet/jmstest?"
+            + "url=t3://localhost:7001&"
+            + "action=receive&dest=jms.testAccountingQueue\"",
+        K8S_NODEPORT_HOST, domain1AdminServiceNodePort);
+
+    logger.info("curl command {0}", curlString);
+
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for local queue to be updated "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("Messages are distributed");
+          };
+        }));
+    return true;
+  }
+
+  private static void createDomain(String domainUid, String domainNamespace, String adminSecretName,
                             String domainImage) {
     // admin/managed server name here should match with model yaml in WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
@@ -418,7 +543,7 @@ public class ItCrossDomainTransaction {
     }
   }
 
-  private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+  private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
                                     String repoSecretName, int replicaCount, String domainImage) {
     logger.info("Image to be used is {0}", domainImage);
     // create the domain CR
