@@ -37,3 +37,11 @@ appDeployments:
       SourcePath: "wlsdeploy/applications/cdttxservlet.war"
       ModuleType: war
       Target: 'admin-server'
+    jmservlet:
+      SourcePath: "wlsdeploy/applications/jmsservlet.war"
+      ModuleType: war
+      Target: 'admin-server'
+    mdbtopic:
+      SourcePath: "wlsdeploy/applications/mdbtopic.jar"
+      ModuleType: jar
+      Target: 'cluster-1'
