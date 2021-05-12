@@ -16,7 +16,9 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -222,6 +224,44 @@ public class IstioUtils {
     }
     logger.info("deployIstioDestinationRule: kubectl returned {0}", result.toString());
     return result.stdout().contains("destination-rule created");
+  }
+
+
+  /**
+   * Deploy the Istio Prometheus.
+   *
+   * @param domainNamespace namespace of domain to monitor
+   * @param domainUid uid of domain to monitor
+   * @return true if deployment is success otherwise false
+   */
+  public static boolean deployIstioPrometheus(
+      String domainNamespace, String domainUid) {
+    LoggingFacade logger = getLogger();
+    final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
+    Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
+    assertDoesNotThrow(()->deleteDirectory(fileTemp.toFile()));
+    assertDoesNotThrow(()->Files.createDirectories(fileTemp));
+    logger.info("copy the promvalue.yaml to staging location");
+    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "istioprometheus.yaml");
+    Path targetPromFile = Paths.get(fileTemp.toString(), "istioprometheus.yaml");
+    assertDoesNotThrow(()->Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
+    String oldValue = "regex: default;domain1";
+    assertDoesNotThrow(()->replaceStringInFile(targetPromFile.toString(),
+        oldValue,
+        prometheusRegexValue));
+    ExecResult result = null;
+    StringBuffer deployIstioPrometheus = null;
+    deployIstioPrometheus = new StringBuffer("kubectl apply -f ");
+    deployIstioPrometheus.append(targetPromFile.toString());
+    logger.info("deployIstioPrometheus: kubectl command {0}", new String(deployIstioPrometheus));
+    try {
+      result = exec(new String(deployIstioPrometheus), true);
+    } catch (Exception ex) {
+      logger.info("Exception in deployIstioPrometheus() {0}", ex);
+      return false;
+    }
+    logger.info("deployIstioPrometheus: kubectl returned {0}", result.toString());
+    return result.stdout().contains("reated");
   }
 
 }
