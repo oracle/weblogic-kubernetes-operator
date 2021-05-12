@@ -239,14 +239,14 @@ public class IstioUtils {
     LoggingFacade logger = getLogger();
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
     Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
-    assertDoesNotThrow(()->deleteDirectory(fileTemp.toFile()));
-    assertDoesNotThrow(()->Files.createDirectories(fileTemp));
+    assertDoesNotThrow(() -> deleteDirectory(fileTemp.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp));
     logger.info("copy the promvalue.yaml to staging location");
     Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "istioprometheus.yaml");
     Path targetPromFile = Paths.get(fileTemp.toString(), "istioprometheus.yaml");
-    assertDoesNotThrow(()->Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
+    assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
     String oldValue = "regex: default;domain1";
-    assertDoesNotThrow(()->replaceStringInFile(targetPromFile.toString(),
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         oldValue,
         prometheusRegexValue));
     ExecResult result = null;
