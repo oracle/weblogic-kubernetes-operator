@@ -330,6 +330,10 @@ public interface TuningParameters extends Map<String, String> {
       return enabledFeatures;
     }
 
+    public boolean isFeatureEnabled(String featureName) {
+      return enabledFeatures.contains(featureName);
+    }
+
     @Override
     public String toString() {
       return new ToStringBuilder(this)

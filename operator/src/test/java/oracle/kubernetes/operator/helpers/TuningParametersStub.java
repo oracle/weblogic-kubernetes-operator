@@ -17,6 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class TuningParametersStub implements TuningParameters {
+  public static final String ENABLED_FEATURE = "TestFeature";
+  public static final String DISABLED_FEATURE = "OtherFeature";
+
   // Pod tuning
   static final int READINESS_INITIAL_DELAY = 1;
   static final int READINESS_TIMEOUT = 2;
@@ -97,6 +100,6 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public FeatureGates getFeatureGates() {
-    return new FeatureGates(Collections.emptyList());
+    return new FeatureGates(Collections.singletonList(ENABLED_FEATURE));
   }
 }
