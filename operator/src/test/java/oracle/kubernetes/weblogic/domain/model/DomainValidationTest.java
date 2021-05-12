@@ -139,7 +139,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withCommonMounts(Collections.singletonList(new CommonMount().image("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("commonMounts", "does not define volume name")));
+            contains(stringContainsInOrder("serverPod.commonMounts", "does not define a volume name")));
   }
 
   @Test

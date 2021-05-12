@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Init container script for the common mount feature. 
-# See 'domain.spec.serverPod.commonMount' for details.
+# See 'domain.spec.serverPod.commonMounts' for details.
 
 # Notes:
 # This script purposely tries to exit zero even on failure as

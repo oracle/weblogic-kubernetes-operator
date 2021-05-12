@@ -17,7 +17,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
 | `clusters` | array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
-| `commonMountVolumes` | array of [Common Mount Volume](#common-mount-volume) | Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a Kubernetes 'emptyDir' volume. |
+| `commonMountVolumes` | array of [Common Mount Volume](#common-mount-volume) | Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a Kubernetes 'emptyDir' volume. |
 | `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
@@ -92,7 +92,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 ### Common Mount Volume
 
-Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a Kubernetes 'emptyDir' volume.
+Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a Kubernetes 'emptyDir' volume.
 
 | Name | Type | Description |
 | --- | --- | --- |

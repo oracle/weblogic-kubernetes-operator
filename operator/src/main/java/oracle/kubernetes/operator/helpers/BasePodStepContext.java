@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -65,8 +67,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected void addVolumeMountIfMissing(V1Container container, CommonMount cm, String mountPath) {
-    if (container.getVolumeMounts().stream().noneMatch(
-            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm))) {
+    if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
+            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm))).orElse(true)) {
       container.addVolumeMountsItem(
               new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
                       .mountPath(mountPath));
@@ -138,8 +140,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   private void addVolumeIfMissing(V1PodSpec podSpec, CommonMountVolume commonMountVolume) {
-    if (podSpec.getVolumes().stream().noneMatch(
-            volume -> podHasMatchingVolumeName(volume, commonMountVolume))) {
+    if (Optional.ofNullable(podSpec.getVolumes()).map(volumes -> volumes.stream().noneMatch(
+            volume -> podHasMatchingVolumeName(volume, commonMountVolume))).orElse(true)) {
       podSpec.addVolumesItem(createEmptyDirVolume(commonMountVolume));
     }
   }
@@ -316,6 +318,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   private String createCommonMountPathsEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
     StringJoiner commonMountPaths = new StringJoiner(",","","");
     commonMounts.forEach(commonMount -> commonMountPaths.add(getMountPath(commonMount, commonMountVolumes)));
-    return commonMountPaths.toString();
+    return Arrays.stream(commonMountPaths.toString().split(Pattern.quote(","))).distinct()
+            .filter(st -> !st.isEmpty()).collect(Collectors.joining(","));
   }
 }

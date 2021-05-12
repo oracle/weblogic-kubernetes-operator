@@ -281,7 +281,7 @@ public class DomainSpec extends BaseConfiguration {
   private Configuration configuration;
 
   @Description("Configure common mount volumes including their respective mount paths. Common mount volumes are in "
-          + "turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a "
+          + "turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a "
           + "Kubernetes 'emptyDir' volume.")
   private List<CommonMountVolume> commonMountVolumes;
 

@@ -905,6 +905,8 @@ function checkCommonMount() {
     trace FINE "Common Mount: Skipping common mount checks (no common mounts configured)."
     return
   fi
+
+  trace FINE "Common Mount: COMMON_MOUNT_PATHS is '$COMMON_MOUNT_PATHS'."
   for COMMON_MOUNT_PATH in ${COMMON_MOUNT_PATHS/,/ }; do
     trace FINE "Common Mount: COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH'."
     traceDirs $COMMON_MOUNT_PATH

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: dd60ec2eb660a22da78f024009a1efcecde3e6e7e8cbf555f3db27fc5c7a9845
+    weblogic.sha256: 59295e213b053a1a3406fd9c8a432a091a387d324dc4adca214dccf9fcef9d55
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -5734,12 +5734,12 @@ spec:
               commonMountVolumes:
                 description: Configure common mount volumes including their respective
                   mount paths. Common mount volumes are in turn referenced by one
-                  or more serverPod.commonMount mounts, and are internally implemented
+                  or more serverPod.commonMounts mounts, and are internally implemented
                   using a Kubernetes 'emptyDir' volume.
                 items:
                   description: Configure common mount volumes including their respective
                     mount paths. Common mount volumes are in turn referenced by one
-                    or more serverPod.commonMount mounts, and are internally implemented
+                    or more serverPod.commonMounts mounts, and are internally implemented
                     using a Kubernetes 'emptyDir' volume.
                   type: object
                   properties:

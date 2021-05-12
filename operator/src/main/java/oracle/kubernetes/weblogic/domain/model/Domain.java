@@ -830,15 +830,13 @@ public class Domain implements KubernetesObject {
       // domain level serverConfigs do not contain servers in dynamic clusters
       wlsDomainConfig.getServerConfigs()
           .values()
-          .stream()
-          .forEach(server -> checkServerPorts(server));
+          .forEach(this::checkServerPorts);
       wlsDomainConfig.getClusterConfigs()
           .values()
           .iterator()
           .forEachRemaining(wlsClusterConfig
               // serverConfigs contains configured and dynamic servers in the cluster
-              -> wlsClusterConfig.getServerConfigs().forEach(wlsServerConfig
-                  -> this.checkServerPorts(wlsServerConfig)));
+              -> wlsClusterConfig.getServerConfigs().forEach(this::checkServerPorts));
     }
 
     private void checkServerPorts(WlsServerConfig wlsServerConfig) {
@@ -1007,38 +1005,31 @@ public class Domain implements KubernetesObject {
     private void verifyCommonMounts() {
       // if the common mount is specified, verify that specified volume exists in 'spec.commonMountVolumes'.
       verifyCommonMounts(getAdminServerSpec().getCommonMounts());
-      List<ManagedServer> managedServers = getSpec().getManagedServers();
-      for (ManagedServer managedServer : managedServers) {
-        verifyCommonMounts(managedServer.getCommonMounts());
-      }
+      getSpec().getManagedServers().forEach(managedServer -> verifyCommonMounts(managedServer.getCommonMounts()));
     }
 
     private void verifyCommonMounts(List<CommonMount> commonMounts) {
       Optional.ofNullable(commonMounts)
-              .ifPresent(cmList -> cmList.stream().forEach(commonMount -> checkIfVolumeExists(commonMount)));
+              .ifPresent(cmList -> cmList.forEach(this::checkIfVolumeExists));
     }
 
     private void checkIfVolumeExists(CommonMount cm) {
       if (cm.getVolume() == null) {
         failures.add(DomainValidationMessages.noCommonMountVolumeDefined());
-      } else {
-        List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
-                .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
-                .collect(Collectors.toList())).orElse(new ArrayList<>());
-        if (cmList.isEmpty()) {
-          failures.add(DomainValidationMessages.noMatchingCommonMountVolumeDefined(cm.getVolume()));
-        }
+      } else if (Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
+              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
+              .collect(Collectors.toList())).orElse(new ArrayList<>()).isEmpty()) {
+        failures.add(DomainValidationMessages.noMatchingCommonMountVolumeDefined(cm.getVolume()));
       }
     }
 
     private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
-      return Optional.ofNullable(commonMount.getVolume()).map(v -> v.equals(commonMountVolume.getName()))
-              .orElse(false);
+      return commonMount.getVolume().equals(commonMountVolume.getName());
     }
 
     private void verifyCommonMountVolumes() {
       Optional.ofNullable(getSpec().getCommonMountVolumes())
-              .ifPresent(commonMountVolumes -> commonMountVolumes.stream().forEach(cmv -> checkNameAndMountPath(cmv)));
+              .ifPresent(commonMountVolumes -> commonMountVolumes.forEach(this::checkNameAndMountPath));
     }
 
     private void checkNameAndMountPath(CommonMountVolume cmv) {
@@ -1050,29 +1041,18 @@ public class Domain implements KubernetesObject {
     private void addDuplicateCommonMountVolumeNames() {
       Optional.ofNullable(getSpec().getCommonMountVolumes())
               .ifPresent(commonMountVolumes -> commonMountVolumes
-                      .stream()
-                      .forEach(commonMountVolume -> checkDuplicateCommomMountVolume(commonMountVolume)));
+                      .forEach(this::checkDuplicateCommomMountVolume));
     }
 
     private void checkDuplicateCommomMountVolume(CommonMountVolume commonMountVolume) {
-      if (commonMountVolumes.stream().filter(cmv -> checkDuplicateMountPath(cmv, commonMountVolume))
-              .findFirst().isPresent()) {
+      if (commonMountVolumes.stream().anyMatch(cmv -> cmv.getMountPath().equals(commonMountVolume.getMountPath()))) {
         failures.add(DomainValidationMessages.duplicateCMVMountPath(commonMountVolume.getMountPath()));
-      } else if (commonMountVolumes.stream().filter(cmv -> checkDuplicateCommonMountVolumeName(cmv, commonMountVolume))
-                .findFirst().isPresent()) {
+      } else if (commonMountVolumes.stream().anyMatch(cmv ->
+              cmv.getName().equals(toDns1123LegalName(commonMountVolume.getName())))) {
         failures.add(DomainValidationMessages.duplicateCommonMountVolumeName(commonMountVolume.getName()));
       } else {
         commonMountVolumes.add(commonMountVolume);
       }
-    }
-
-    private boolean checkDuplicateMountPath(CommonMountVolume cmv, CommonMountVolume other) {
-      return cmv.getMountPath().equals(other.getMountPath());
-    }
-
-    private boolean checkDuplicateCommonMountVolumeName(CommonMountVolume cmv, CommonMountVolume other) {
-      return Optional.ofNullable(cmv.getName()).map(
-              name -> name.equals(toDns1123LegalName(other.getName()))).orElse(false);
     }
 
     @Nonnull

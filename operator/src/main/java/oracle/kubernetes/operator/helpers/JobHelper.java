@@ -464,6 +464,7 @@ public class JobHelper {
       Collection<StepAndPacket> readIntroPodContainerLogs = new ArrayList<>();
       Optional.ofNullable(initContainerNames).ifPresent(initContainers -> addStepsToReadIntrospectorInitContainerLogs(
               packet, info, namespace, jobPodName, readIntroPodContainerLogs, initContainers));
+      //Add step to read introspector pod main container logs
       readIntroPodContainerLogs.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace,
               info.getDomainUid(), null, false), packet));
       return doForkJoin(getNext(), packet, readIntroPodContainerLogs);
