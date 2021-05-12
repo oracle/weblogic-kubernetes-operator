@@ -227,13 +227,13 @@ public abstract class DomainConfigurator {
       Integer initialDelay, Integer timeout, Integer period);
 
   /**
-   * Add common mount for the domain resource.
+   * Add common mounts for the domain resource.
    *
    */
   public abstract void withCommonMounts(List<CommonMount> cm);
 
   /**
-   * Add common mount for the domain resource.
+   * Add common mount volumes for the domain resource.
    *
    */
   public abstract DomainConfigurator withCommonMountVolumes(List<CommonMountVolume> commonMountVolume);
@@ -543,5 +543,4 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainType(String type);
-
 }

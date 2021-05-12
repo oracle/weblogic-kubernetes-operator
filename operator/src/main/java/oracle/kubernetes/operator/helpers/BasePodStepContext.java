@@ -52,7 +52,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   String getMountPath(CommonMount commonMount, List<CommonMountVolume> commonMountVolumes) {
     return commonMountVolumes.stream().filter(
             commonMountVolume -> hasMatchingVolumeName(commonMountVolume, commonMount)).findFirst()
-            .map(cmv -> cmv.getMountPath()).orElse(null);
+            .map(CommonMountVolume::getMountPath).orElse(null);
   }
 
   private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
@@ -65,8 +65,8 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected void addVolumeMountIfMissing(V1Container container, CommonMount cm, String mountPath) {
-    if (!container.getVolumeMounts().stream().filter(
-            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm)).findFirst().isPresent()) {
+    if (container.getVolumeMounts().stream().noneMatch(
+            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm))) {
       container.addVolumeMountsItem(
               new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
                       .mountPath(mountPath));
@@ -96,7 +96,7 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected V1Volume createEmptyDirVolume(CommonMountVolume cmv) {
     V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
-    Optional.ofNullable(cmv.getMedium()).ifPresent(medium -> emptyDirVolumeSource.medium(medium));
+    Optional.ofNullable(cmv.getMedium()).ifPresent(emptyDirVolumeSource::medium);
     Optional.ofNullable(cmv.getSizeLimit())
             .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
     return new V1Volume().name(getDNS1123CommonMountVolumeName(cmv.getName())).emptyDir(emptyDirVolumeSource);
@@ -122,9 +122,9 @@ public abstract class BasePodStepContext extends StepContextBase {
     return COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(CommonMount commonMount, List<CommonMountVolume> cmv, String name) {
+  protected List<V1EnvVar> createEnv(CommonMount commonMount, List<CommonMountVolume> commonMountVolumes, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, getMountPath(commonMount, cmv));
+    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, getMountPath(commonMount, commonMountVolumes));
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH);
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_COMMAND, commonMount.getCommand());
     addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, commonMount.getImage());
@@ -133,13 +133,13 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected void addEmptyDirVolume(V1PodSpec podSpec, List<CommonMountVolume> commonMountVolumes) {
-    Optional.ofNullable(commonMountVolumes).ifPresent(cmv -> cmv
-            .stream().forEach(commonMountVolume -> addVolumeIfMissing(podSpec, commonMountVolume)));
+    Optional.ofNullable(commonMountVolumes).ifPresent(volumes -> volumes.forEach(commonMountVolume ->
+            addVolumeIfMissing(podSpec, commonMountVolume)));
   }
 
   private void addVolumeIfMissing(V1PodSpec podSpec, CommonMountVolume commonMountVolume) {
-    if (!podSpec.getVolumes().stream().filter(
-            volume -> podHasMatchingVolumeName(volume, commonMountVolume)).findFirst().isPresent()) {
+    if (podSpec.getVolumes().stream().noneMatch(
+            volume -> podHasMatchingVolumeName(volume, commonMountVolume))) {
       podSpec.addVolumesItem(createEmptyDirVolume(commonMountVolume));
     }
   }
@@ -309,15 +309,13 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected String getCommonMountPaths(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
-    return Optional.ofNullable(commonMounts).map(cmList -> createCommonMountPathEnv(cmList, commonMountVolumes))
+    return Optional.ofNullable(commonMounts).map(cmList -> createCommonMountPathsEnv(cmList, commonMountVolumes))
             .orElse(null);
   }
 
-  private String createCommonMountPathEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
-    StringJoiner commonMountPath = new StringJoiner(",","","");
-    for (CommonMount commonMount:commonMounts) {
-      commonMountPath.add(getMountPath(commonMount, commonMountVolumes));
-    }
-    return commonMountPath.toString();
+  private String createCommonMountPathsEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
+    StringJoiner commonMountPaths = new StringJoiner(",","","");
+    commonMounts.forEach(commonMount -> commonMountPaths.add(getMountPath(commonMount, commonMountVolumes)));
+    return commonMountPaths.toString();
   }
 }

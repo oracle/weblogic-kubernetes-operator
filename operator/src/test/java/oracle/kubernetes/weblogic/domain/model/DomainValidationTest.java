@@ -117,7 +117,8 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("commonMounts", "no volume defined with name 'test'")));
+            contains(stringContainsInOrder("serverPod.commonMounts",
+                    "there is no matching volume defined with name 'test'")));
   }
 
   @Test
@@ -127,7 +128,18 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("commonMounts", "no volume defined with name 'test'")));
+            contains(stringContainsInOrder("serverPod.commonMounts",
+                    "there is no matching volume defined with name 'test'")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountButNoVolumeName_reportError() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(TEST_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(new CommonMount().image("wdt-image:v1")));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("commonMounts", "does not define volume name")));
   }
 
   @Test

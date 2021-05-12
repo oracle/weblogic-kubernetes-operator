@@ -39,11 +39,11 @@ class DomainValidationMessages {
 
   /**
    * Returns a validation message indicating that more than one common mount volume has same mountPath.
-   * @param mountPath the duplicate  mount path
+   * @param mountPath the duplicate mount path
    * @return the localized message
    */
-  static String duplicateCommonMountPath(@Nonnull String mountPath) {
-    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_PATH_FOUND, mountPath);
+  static String duplicateCMVMountPath(@Nonnull String mountPath) {
+    return getMessage(MessageKeys.DUPLICATE_MOUNT_PATH_FOUND, mountPath);
   }
 
   /**
@@ -138,8 +138,12 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
   }
 
-  public static String noCommonMountVolumeDefined(String volumeName) {
-    return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUMES_DEFINED, volumeName);
+  public static String noMatchingCommonMountVolumeDefined(String volumeName) {
+    return getMessage(MessageKeys.NO_MATCHING_COMMON_MOUNT_VOLUME_DEFINED, volumeName);
+  }
+
+  public static String noCommonMountVolumeDefined() {
+    return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUME_DEFINED);
   }
 
   public static String commonMountVolumeNameNotDefined() {

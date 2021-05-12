@@ -461,20 +461,28 @@ public class JobHelper {
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
       Set<String> initContainerNames = (Set<String>) packet.get(INTRO_POD_INIT_CONTAINERS);
-      Collection<StepAndPacket> startDetails = new ArrayList<>();
-      Optional.ofNullable(initContainerNames).ifPresent(i -> i.stream().forEach(c -> startDetails.add(new StepAndPacket(
-              readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), c, true, null),
-              packet))));
-      startDetails.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(),
-              null, false, null), packet));
-      return doForkJoin(getNext(), packet, startDetails);
+      Collection<StepAndPacket> readIntroPodContainerLogs = new ArrayList<>();
+      Optional.ofNullable(initContainerNames).ifPresent(initContainers -> addStepsToReadIntrospectorInitContainerLogs(
+              packet, info, namespace, jobPodName, readIntroPodContainerLogs, initContainers));
+      readIntroPodContainerLogs.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace,
+              info.getDomainUid(), null, false), packet));
+      return doForkJoin(getNext(), packet, readIntroPodContainerLogs);
+    }
+
+    private void addStepsToReadIntrospectorInitContainerLogs(Packet packet, DomainPresenceInfo info, String namespace,
+                                                             String jobPodName,
+                                                             Collection<StepAndPacket> readIntroPodContainerLogs,
+                                                             Set<String> initContainers) {
+      initContainers.forEach(initContainer -> readIntroPodContainerLogs.add(new StepAndPacket(
+              readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), initContainer, true),
+              packet)));
     }
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid,
-                                              String containerName, boolean isInitContainer, Step next) {
+                                              String containerName, boolean isInitContainer) {
       return new CallBuilder().withContainerName(containerName)
             .readPodLogAsync(jobPodName, namespace, domainUid,
-                    new ReadDomainIntrospectorPodLogResponseStep(isInitContainer, next));
+                    new ReadDomainIntrospectorPodLogResponseStep(isInitContainer, null));
     }
   }
 
@@ -720,7 +728,7 @@ public class JobHelper {
       if (containerList == null) {
         containerList = new LinkedHashSet<>();
       }
-      for (V1Container c: containers) {
+      for (V1Container c : containers) {
         containerList.add(c.getName());
       }
       packet.put(INTRO_POD_INIT_CONTAINERS, containerList);

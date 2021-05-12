@@ -731,9 +731,9 @@ public class Domain implements KubernetesObject {
   }
 
   /**
-   * Returns the common mount specs for the domain.
+   * Returns the common mount volumes for the domain.
    *
-   * @return common mount specs
+   * @return common mount volumes
    */
   public List<CommonMountVolume> getCommonMountVolumes() {
     return spec.getCommonMountVolumes();
@@ -1019,11 +1019,15 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkIfVolumeExists(CommonMount cm) {
-      List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
-              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
-              .collect(Collectors.toList())).orElse(new ArrayList<>());
-      if (cmList.isEmpty()) {
-        failures.add(DomainValidationMessages.noCommonMountVolumeDefined(cm.getVolume()));
+      if (cm.getVolume() == null) {
+        failures.add(DomainValidationMessages.noCommonMountVolumeDefined());
+      } else {
+        List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
+                .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
+                .collect(Collectors.toList())).orElse(new ArrayList<>());
+        if (cmList.isEmpty()) {
+          failures.add(DomainValidationMessages.noMatchingCommonMountVolumeDefined(cm.getVolume()));
+        }
       }
     }
 
@@ -1053,7 +1057,7 @@ public class Domain implements KubernetesObject {
     private void checkDuplicateCommomMountVolume(CommonMountVolume commonMountVolume) {
       if (commonMountVolumes.stream().filter(cmv -> checkDuplicateMountPath(cmv, commonMountVolume))
               .findFirst().isPresent()) {
-        failures.add(DomainValidationMessages.duplicateCommonMountPath(commonMountVolume.getMountPath()));
+        failures.add(DomainValidationMessages.duplicateCMVMountPath(commonMountVolume.getMountPath()));
       } else if (commonMountVolumes.stream().filter(cmv -> checkDuplicateCommonMountVolumeName(cmv, commonMountVolume))
                 .findFirst().isPresent()) {
         failures.add(DomainValidationMessages.duplicateCommonMountVolumeName(commonMountVolume.getName()));

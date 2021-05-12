@@ -588,8 +588,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
       return this;
     }
 
-
-
     @Override
     public ServerConfigurator withNodeName(String nodeName) {
       server.setNodeName(nodeName);
