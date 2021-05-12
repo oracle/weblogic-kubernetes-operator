@@ -901,42 +901,44 @@ function adjustPath() {
 #
 function checkCommonMount() {
   # check commonMount results (if any)
+  if [ -z "$COMMON_MOUNT_PATHS" ]; then
+    trace FINE "Common Mount: Skipping common mount checks (no common mounts configured)."
+    return
+  fi
   for COMMON_MOUNT_PATH in ${COMMON_MOUNT_PATHS/,/ }; do
-    if [ ! -z "$COMMON_MOUNT_PATH" ]; then
-      trace FINE "Common Mount: COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH'."
-      traceDirs $COMMON_MOUNT_PATH
-      touch ${COMMON_MOUNT_PATH}/testaccess.tmp
-      if [ $? -ne 0 ]; then
-        trace SEVERE "Common Mount: Cannot write to the COMMON_MOUNT_PATH '${COMMON_MOUNT_PATH}'. " \
-                     "This path is configurable using the domain resource 'serverPod.commonMounts.volume' " \
-                     "attribute." && return 1
-      fi
-      rm -f ${COMMON_MOUNT_PATH}/testaccess.tmp || return 1
-  
-      out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
-        || (trace SEVERE "Common Mount: Assertion failure. No files found in '$COMMON_MOUNT_PATH/commonMountLogs/*.out" \
-        && return 1)
-      severe_found=false
-      for out_file in $out_files; do
-        if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
-          trace SEVERE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
-          severe_found=true
-        elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-          trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount."
-          severe_found=true
-        fi
-        trace "Common Mount: Contents of '${out_file}':"
-        cat $out_file
-        trace "Common Mount: End of '${out_file}' contents"
-      done
-      [ "${severe_found}" = "true" ] && return 1
-      rm -fr $COMMON_MOUNT_PATH/commonMountLogs
-      [ -z "$(ls -A $COMMON_MOUNT_PATH)" ] \
-        && trace SEVERE "Common Mount: No files found in '$COMMON_MOUNT_PATH'. " \
-         "Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories? " \
-         "This path is configurable using the domain resource 'serverPod.commonMount.mountPath' attribute." \
-        && return 1
+    trace FINE "Common Mount: COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH'."
+    traceDirs $COMMON_MOUNT_PATH
+    touch ${COMMON_MOUNT_PATH}/testaccess.tmp
+    if [ $? -ne 0 ]; then
+      trace SEVERE "Common Mount: Cannot write to the COMMON_MOUNT_PATH '${COMMON_MOUNT_PATH}'. " \
+                   "This path is configurable using the domain resource 'spec.commonMountVolumes.mountPath' " \
+                   "attribute." && return 1
     fi
+    rm -f ${COMMON_MOUNT_PATH}/testaccess.tmp || return 1
+
+    out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
+      || (trace SEVERE "Common Mount: Assertion failure. No files found in '$COMMON_MOUNT_PATH/commonMountLogs/*.out" \
+      && return 1)
+    severe_found=false
+    for out_file in $out_files; do
+      if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
+        trace SEVERE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
+        severe_found=true
+      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+        trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount."
+        severe_found=true
+      fi
+      trace "Common Mount: Contents of '${out_file}':"
+      cat $out_file
+      trace "Common Mount: End of '${out_file}' contents"
+    done
+    [ "${severe_found}" = "true" ] && return 1
+    rm -fr $COMMON_MOUNT_PATH/commonMountLogs
+    [ -z "$(ls -A $COMMON_MOUNT_PATH)" ] \
+      && trace SEVERE "Common Mount: No files found in '$COMMON_MOUNT_PATH'. " \
+       "Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories? " \
+       "This path is configurable using the domain resource 'spec.commonMountVolumes.mountPath' attribute." \
+      && return 1
   done
   return 0
 }
@@ -953,7 +955,7 @@ function checkCommonMount() {
 function initCommonMount() {
 
   if [ -z "${COMMON_MOUNT_COMMAND}" ]; then
-    trace ERROR "Common Mount: The 'serverPod.commonMount.container.mountCommand' is empty for the " \
+    trace ERROR "Common Mount: The 'serverPod.commonMounts.command' is empty for the " \
                 "container image='$COMMON_MOUNT_CONTAINER_IMAGE'. Exiting."
     return
   fi

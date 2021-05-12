@@ -17,7 +17,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
 | `clusters` | array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
-| `commonMountVolumes` | array of [Common Mount Volume](#common-mount-volume) | The common mount tuning. Allows overriding the global default values for mountPath, medium and sizeLimits for the common mount. See spec.commonMountTuning.globalDefaults for more details. |
+| `commonMountVolumes` | array of [Common Mount Volume](#common-mount-volume) | Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a Kubernetes 'emptyDir' volume. |
 | `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
@@ -92,11 +92,13 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 ### Common Mount Volume
 
+Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a Kubernetes 'emptyDir' volume.
+
 | Name | Type | Description |
 | --- | --- | --- |
 | `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `mountPath` | string | The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in 'commonMount.containers'. Defaults to '/common'. |
-| `name` | string | The name of common mount volume. |
+| `mountPath` | string | The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in 'serverPod.commonMounts'. Each common mount volume must be configured with a different common mount path. Required. |
+| `name` | string | The name of the common mount volume. Required. |
 | `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
 
 ### Configuration
@@ -242,12 +244,14 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 ### Common Mount
 
+Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.
+
 | Name | Type | Description |
 | --- | --- | --- |
 | `command` | string | The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the common mount's internal emptyDir volume. |
-| `image` | string | The name of an image with files located in directory 'commonMount.mountPath' (which defaults to '/common'). |
+| `image` | string | The name of an image with files located in directory specified by 'spec.commonMountVolumes.mountPath' of the common mount volume referenced by serverPod.commonMounts.volume (which defaults to '/common'). |
 | `imagePullPolicy` | string | The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `volume` | string | The name of common mount volume. |
+| `volume` | string | The name of common mount volume defined in 'spec.commonMountVolumes'. Required. |
 
 ### Probe Tuning
 

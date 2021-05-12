@@ -37,7 +37,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
@@ -298,7 +297,6 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private V1PodSpec addInitContainers(V1PodSpec podSpec, List<CommonMount> commonMounts) {
-    Collections.reverse(commonMounts);
     IntStream.range(0, commonMounts.size()).forEach(idx ->
         podSpec.addInitContainersItem(createInitContainerForCommonMount(commonMounts.get(idx), idx)));
     return podSpec;

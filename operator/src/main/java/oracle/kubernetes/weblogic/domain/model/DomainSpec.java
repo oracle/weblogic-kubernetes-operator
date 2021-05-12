@@ -280,8 +280,9 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
-  @Description("The common mount tuning. Allows overriding the global default values for mountPath, medium "
-          + "and sizeLimits for the common mount. See spec.commonMountTuning.globalDefaults for more details.")
+  @Description("Configure common mount volumes including their respective mount paths. Common mount volumes are in "
+          + "turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a "
+          + "Kubernetes 'emptyDir' volume.")
   private List<CommonMountVolume> commonMountVolumes;
 
   /**

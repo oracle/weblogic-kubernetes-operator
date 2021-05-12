@@ -737,7 +737,6 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected void getCommonMountInitContainers(List<CommonMount> commonMountList, List<V1Container> initContainers) {
-    Collections.reverse(commonMountList);
     Optional.ofNullable(commonMountList).ifPresent(cl -> IntStream.range(0, cl.size()).forEach(idx ->
             initContainers.add(createInitContainerForCommonMount(cl.get(idx), idx))));
   }

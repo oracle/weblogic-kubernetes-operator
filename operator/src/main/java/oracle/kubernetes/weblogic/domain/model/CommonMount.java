@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.operator.ImagePullPolicy;
@@ -13,6 +14,11 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Description("Use a common mount to automatically include directory content from additional images. "
+        + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+        + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+        + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+        + "the files from the additional images with the pod.")
 public class CommonMount {
 
   public static final String COMMON_MOUNT_TARGET_PATH = "/tmpCommonMount";
@@ -25,8 +31,9 @@ public class CommonMount {
   /**
    * The common mount.
    */
-  @Description("The name of an image with files located in directory 'commonMount.mountPath' "
-          + "(which defaults to '/common').")
+  @Description("The name of an image with files located in directory specified by 'spec.commonMountVolumes.mountPath' "
+          + "of the common mount volume referenced by serverPod.commonMounts.volume (which defaults to '/common').")
+  @NotNull
   private String image;
 
   @Description(
@@ -44,7 +51,8 @@ public class CommonMount {
           + "emptyDir volume.")
   private String command;
 
-  @Description("The name of common mount volume.")
+  @Description("The name of common mount volume defined in 'spec.commonMountVolumes'. Required.")
+  @NotNull
   private String volume;
 
   public String getImage() {

@@ -5,20 +5,27 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Optional;
 
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+@Description("Configure common mount volumes including their respective mount paths. Common mount volumes are in "
+        + "turn referenced by one or more serverPod.commonMount mounts, and are internally implemented using a "
+        + "Kubernetes 'emptyDir' volume.")
 public class CommonMountVolume {
 
   public static final String DEFAULT_COMMON_MOUNT_PATH = "/common";
 
-  @Description("The name of common mount volume.")
+  @Description("The name of the common mount volume. Required.")
+  @NotNull
   private String name;
 
   @Description("The common mount path. The files in the path are populated from the same named directory in the images "
-          + "supplied by each container in 'commonMount.containers'. Defaults to '/common'.")
+          + "supplied by each container in 'serverPod.commonMounts'. Each common mount volume must be configured with "
+          + "a different common mount path. Required.")
+  @NotNull
   private String mountPath;
 
   @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. "

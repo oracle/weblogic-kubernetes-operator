@@ -45,6 +45,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
@@ -794,7 +795,7 @@ public class Domain implements KubernetesObject {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
-    private final Set<String> commonMountVolumes = new HashSet<>();
+    private final Set<CommonMountVolume> commonMountVolumes = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -807,8 +808,9 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
-      addCommonMountVolumeNames();
-      verifyCommonMountContainers();
+      verifyCommonMounts();
+      verifyCommonMountVolumes();
+      addDuplicateCommonMountVolumeNames();
 
       return failures;
     }
@@ -822,30 +824,6 @@ public class Domain implements KubernetesObject {
             LegalNames.toJobIntrospectorName(getDomainUid()),
             LegalNames.LEGAL_DNS_LABEL_NAME_MAX_LENGTH - 5));
       }
-    }
-
-    private void verifyCommonMountContainers() {
-      // if the common mount is specified, verify that at least one container is defined.
-      Optional.ofNullable(getAdminServerSpec().getCommonMounts())
-              .ifPresent(cmList -> cmList.stream().forEach(commonMount -> checkIfVolumeExists(commonMount)));
-      List<ManagedServer> managedServers = getSpec().getManagedServers();
-      for (ManagedServer managedServer : managedServers) {
-        Optional.ofNullable(managedServer.getCommonMounts()).ifPresent(commonMounts -> commonMounts.stream()
-                .forEach(commonMount -> checkIfVolumeExists(commonMount)));
-      }
-    }
-
-    private void checkIfVolumeExists(CommonMount cm) {
-      List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
-              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
-              .collect(Collectors.toList())).orElse(new ArrayList<>());
-      if (cmList.isEmpty()) {
-        failures.add(DomainValidationMessages.noCommonMountVolumeDefined(cm.getVolume()));
-      }
-    }
-
-    private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
-      return commonMount.getVolume().equals(commonMountVolume.getName());
     }
 
     private void verifyServerPorts(WlsDomainConfig wlsDomainConfig) {
@@ -968,27 +946,11 @@ public class Domain implements KubernetesObject {
           .forEach(this::checkDuplicateClusterName);
     }
 
-    private void addCommonMountVolumeNames() {
-      getSpec().getCommonMountVolumes()
-              .stream()
-              .map(CommonMountVolume::getName)
-              .map(LegalNames::toDns1123LegalName)
-              .forEach(this::checkDuplicateCommomMountVolumeName);
-    }
-
     private void checkDuplicateServerName(String serverName) {
       if (serverNames.contains(serverName)) {
         failures.add(DomainValidationMessages.duplicateServerName(serverName));
       } else {
         serverNames.add(serverName);
-      }
-    }
-
-    private void checkDuplicateCommomMountVolumeName(String commonMountVolumeName) {
-      if (commonMountVolumes.contains(commonMountVolumeName)) {
-        failures.add(DomainValidationMessages.duplicateVolumeName(commonMountVolumeName));
-      } else {
-        commonMountVolumes.add(commonMountVolumeName);
       }
     }
 
@@ -1040,6 +1002,73 @@ public class Domain implements KubernetesObject {
         }
       }
       return true;
+    }
+
+    private void verifyCommonMounts() {
+      // if the common mount is specified, verify that specified volume exists in 'spec.commonMountVolumes'.
+      verifyCommonMounts(getAdminServerSpec().getCommonMounts());
+      List<ManagedServer> managedServers = getSpec().getManagedServers();
+      for (ManagedServer managedServer : managedServers) {
+        verifyCommonMounts(managedServer.getCommonMounts());
+      }
+    }
+
+    private void verifyCommonMounts(List<CommonMount> commonMounts) {
+      Optional.ofNullable(commonMounts)
+              .ifPresent(cmList -> cmList.stream().forEach(commonMount -> checkIfVolumeExists(commonMount)));
+    }
+
+    private void checkIfVolumeExists(CommonMount cm) {
+      List<CommonMountVolume> cmList = Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
+              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
+              .collect(Collectors.toList())).orElse(new ArrayList<>());
+      if (cmList.isEmpty()) {
+        failures.add(DomainValidationMessages.noCommonMountVolumeDefined(cm.getVolume()));
+      }
+    }
+
+    private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
+      return Optional.ofNullable(commonMount.getVolume()).map(v -> v.equals(commonMountVolume.getName()))
+              .orElse(false);
+    }
+
+    private void verifyCommonMountVolumes() {
+      Optional.ofNullable(getSpec().getCommonMountVolumes())
+              .ifPresent(commonMountVolumes -> commonMountVolumes.stream().forEach(cmv -> checkNameAndMountPath(cmv)));
+    }
+
+    private void checkNameAndMountPath(CommonMountVolume cmv) {
+      if (cmv.getName() == null) {
+        failures.add(DomainValidationMessages.commonMountVolumeNameNotDefined());
+      }
+    }
+
+    private void addDuplicateCommonMountVolumeNames() {
+      Optional.ofNullable(getSpec().getCommonMountVolumes())
+              .ifPresent(commonMountVolumes -> commonMountVolumes
+                      .stream()
+                      .forEach(commonMountVolume -> checkDuplicateCommomMountVolume(commonMountVolume)));
+    }
+
+    private void checkDuplicateCommomMountVolume(CommonMountVolume commonMountVolume) {
+      if (commonMountVolumes.stream().filter(cmv -> checkDuplicateMountPath(cmv, commonMountVolume))
+              .findFirst().isPresent()) {
+        failures.add(DomainValidationMessages.duplicateCommonMountPath(commonMountVolume.getMountPath()));
+      } else if (commonMountVolumes.stream().filter(cmv -> checkDuplicateCommonMountVolumeName(cmv, commonMountVolume))
+                .findFirst().isPresent()) {
+        failures.add(DomainValidationMessages.duplicateCommonMountVolumeName(commonMountVolume.getName()));
+      } else {
+        commonMountVolumes.add(commonMountVolume);
+      }
+    }
+
+    private boolean checkDuplicateMountPath(CommonMountVolume cmv, CommonMountVolume other) {
+      return cmv.getMountPath().equals(other.getMountPath());
+    }
+
+    private boolean checkDuplicateCommonMountVolumeName(CommonMountVolume cmv, CommonMountVolume other) {
+      return Optional.ofNullable(cmv.getName()).map(
+              name -> name.equals(toDns1123LegalName(other.getName()))).orElse(false);
     }
 
     @Nonnull

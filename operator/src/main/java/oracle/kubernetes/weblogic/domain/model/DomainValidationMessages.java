@@ -28,13 +28,22 @@ class DomainValidationMessages {
   }
 
   /**
-   * Returns a validation message indicating that more than one managed server spec has the same effective name
+   * Returns a validation message indicating that more than one common mount volume has same name
    * after DNS-1123 conversion.
-   * @param serverName the duplicate server name
+   * @param volumeName the duplicate volume name
    * @return the localized message
    */
-  static String duplicateVolumeName(@Nonnull String serverName) {
-    return getMessage(MessageKeys.DUPLICATE_VOLUME_NAME_FOUND, serverName);
+  static String duplicateCommonMountVolumeName(@Nonnull String volumeName) {
+    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_VOLUME_FOUND, volumeName);
+  }
+
+  /**
+   * Returns a validation message indicating that more than one common mount volume has same mountPath.
+   * @param mountPath the duplicate  mount path
+   * @return the localized message
+   */
+  static String duplicateCommonMountPath(@Nonnull String mountPath) {
+    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_PATH_FOUND, mountPath);
   }
 
   /**
@@ -131,6 +140,10 @@ class DomainValidationMessages {
 
   public static String noCommonMountVolumeDefined(String volumeName) {
     return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUMES_DEFINED, volumeName);
+  }
+
+  public static String commonMountVolumeNameNotDefined() {
+    return getMessage(MessageKeys.COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {

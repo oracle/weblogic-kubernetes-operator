@@ -112,7 +112,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountButNoCommomMountVolumes_reportError1() {
+  public void whenDomainConfiguredWithCommonMountButNoCommomMountVolumes_reportError() {
     configureDomain(domain)
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
 
@@ -121,7 +121,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountButNoMatchingCommomMountVolumes_reportError1() {
+  public void whenDomainConfiguredWithCommonMountButNoMatchingCommomMountVolumes_reportError() {
     configureDomain(domain)
             .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(WRONG_VOLUME_NAME)))
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
@@ -138,6 +138,41 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
             not(contains(stringContainsInOrder("commonMounts", "no volume defined with name 'test'"))));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithNullName_reportError() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume()));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("An item under 'spec.commonMountVolumes'", "does not have a name",
+                    "A name is required")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithSameMountPath_reportError() {
+    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
+    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
+    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
+    configureDomain(domain)
+            .withCommonMountVolumes(commonMountVolumes);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'", "/shared")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithSameName_reportError() {
+    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
+    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME));
+    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
+    configureDomain(domain)
+            .withCommonMountVolumes(commonMountVolumes);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'",
+                    TEST_VOLUME_NAME)));
   }
 
   @Test

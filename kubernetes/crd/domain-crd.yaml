@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fb65d3f28833a7f573c59c5e490bd4f156dc3ea658c7f4e375ec5bb36d8ea583
+    weblogic.sha256: dd60ec2eb660a22da78f024009a1efcecde3e6e7e8cbf555f3db27fc5c7a9845
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1201,15 +1201,25 @@ spec:
                           uses a Kubernetes emptyDir volume and Kubernetes init containers
                           to share the files from the additional images with the pod.
                         items:
+                          description: Use a common mount to automatically include
+                            directory content from additional images. This is a useful
+                            alternative for including Model in Image model files,
+                            or other types of files, in a pod without requiring modifications
+                            to the pod's base image 'domain.spec.image'. This feature
+                            internally uses a Kubernetes emptyDir volume and Kubernetes
+                            init containers to share the files from the additional
+                            images with the pod.
                           type: object
                           properties:
                             volume:
-                              description: The name of common mount volume.
+                              description: The name of common mount volume defined
+                                in 'spec.commonMountVolumes'. Required.
                               type: string
                             image:
                               description: The name of an image with files located
-                                in directory 'commonMount.mountPath' (which defaults
-                                to '/common').
+                                in directory specified by 'spec.commonMountVolumes.mountPath'
+                                of the common mount volume referenced by serverPod.commonMounts.volume
+                                (which defaults to '/common').
                               type: string
                             imagePullPolicy:
                               description: The image pull policy for the common mount
@@ -3944,15 +3954,25 @@ spec:
                             images with the pod.
                           type: array
                           items:
+                            description: Use a common mount to automatically include
+                              directory content from additional images. This is a
+                              useful alternative for including Model in Image model
+                              files, or other types of files, in a pod without requiring
+                              modifications to the pod's base image 'domain.spec.image'.
+                              This feature internally uses a Kubernetes emptyDir volume
+                              and Kubernetes init containers to share the files from
+                              the additional images with the pod.
                             type: object
                             properties:
                               volume:
-                                description: The name of common mount volume.
+                                description: The name of common mount volume defined
+                                  in 'spec.commonMountVolumes'. Required.
                                 type: string
                               image:
                                 description: The name of an image with files located
-                                  in directory 'commonMount.mountPath' (which defaults
-                                  to '/common').
+                                  in directory specified by 'spec.commonMountVolumes.mountPath'
+                                  of the common mount volume referenced by serverPod.commonMounts.volume
+                                  (which defaults to '/common').
                                 type: string
                               imagePullPolicy:
                                 description: The image pull policy for the common
@@ -5712,10 +5732,15 @@ spec:
                   - clusterName
                 type: array
               commonMountVolumes:
-                description: The common mount tuning. Allows overriding the global
-                  default values for mountPath, medium and sizeLimits for the common
-                  mount. See spec.commonMountTuning.globalDefaults for more details.
+                description: Configure common mount volumes including their respective
+                  mount paths. Common mount volumes are in turn referenced by one
+                  or more serverPod.commonMount mounts, and are internally implemented
+                  using a Kubernetes 'emptyDir' volume.
                 items:
+                  description: Configure common mount volumes including their respective
+                    mount paths. Common mount volumes are in turn referenced by one
+                    or more serverPod.commonMount mounts, and are internally implemented
+                    using a Kubernetes 'emptyDir' volume.
                   type: object
                   properties:
                     sizeLimit:
@@ -5724,11 +5749,12 @@ spec:
                     mountPath:
                       description: The common mount path. The files in the path are
                         populated from the same named directory in the images supplied
-                        by each container in 'commonMount.containers'. Defaults to
-                        '/common'.
+                        by each container in 'serverPod.commonMounts'. Each common
+                        mount volume must be configured with a different common mount
+                        path. Required.
                       type: string
                     name:
-                      description: The name of common mount volume.
+                      description: The name of the common mount volume. Required.
                       type: string
                     medium:
                       description: The emptyDir volume medium. This is an advanced
@@ -6725,14 +6751,24 @@ spec:
                       a Kubernetes emptyDir volume and Kubernetes init containers
                       to share the files from the additional images with the pod.
                     items:
+                      description: Use a common mount to automatically include directory
+                        content from additional images. This is a useful alternative
+                        for including Model in Image model files, or other types of
+                        files, in a pod without requiring modifications to the pod's
+                        base image 'domain.spec.image'. This feature internally uses
+                        a Kubernetes emptyDir volume and Kubernetes init containers
+                        to share the files from the additional images with the pod.
                       type: object
                       properties:
                         volume:
-                          description: The name of common mount volume.
+                          description: The name of common mount volume defined in
+                            'spec.commonMountVolumes'. Required.
                           type: string
                         image:
                           description: The name of an image with files located in
-                            directory 'commonMount.mountPath' (which defaults to '/common').
+                            directory specified by 'spec.commonMountVolumes.mountPath'
+                            of the common mount volume referenced by serverPod.commonMounts.volume
+                            (which defaults to '/common').
                           type: string
                         imagePullPolicy:
                           description: The image pull policy for the common mount
@@ -9351,15 +9387,25 @@ spec:
                             images with the pod.
                           type: array
                           items:
+                            description: Use a common mount to automatically include
+                              directory content from additional images. This is a
+                              useful alternative for including Model in Image model
+                              files, or other types of files, in a pod without requiring
+                              modifications to the pod's base image 'domain.spec.image'.
+                              This feature internally uses a Kubernetes emptyDir volume
+                              and Kubernetes init containers to share the files from
+                              the additional images with the pod.
                             type: object
                             properties:
                               volume:
-                                description: The name of common mount volume.
+                                description: The name of common mount volume defined
+                                  in 'spec.commonMountVolumes'. Required.
                                 type: string
                               image:
                                 description: The name of an image with files located
-                                  in directory 'commonMount.mountPath' (which defaults
-                                  to '/common').
+                                  in directory specified by 'spec.commonMountVolumes.mountPath'
+                                  of the common mount volume referenced by serverPod.commonMounts.volume
+                                  (which defaults to '/common').
                                 type: string
                               imagePullPolicy:
                                 description: The image pull policy for the common
