@@ -27,7 +27,7 @@ class Equality implements CompatibilityCheck {
 
   @Override
   public String getIncompatibility() {
-    return description + " changed from " + "'" + actual + "'" + " to " + "'" + expected + "'";
+    return "'" + description + "'" + " changed from '" + actual + "' to '" + expected + "'";
   }
 
   @Override

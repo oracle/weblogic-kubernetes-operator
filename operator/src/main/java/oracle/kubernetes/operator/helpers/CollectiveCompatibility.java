@@ -41,7 +41,7 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
         reasons.add(getIndent() + check.getIncompatibility());
       }
     }
-    return reasons.isEmpty() ? null : getHeader() + String.join(",\n", reasons);
+    return reasons.isEmpty() ? null : getHeader() + String.join(",%n", reasons);
   }
 
   @Override
@@ -55,8 +55,8 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
     return reasons.isEmpty()
         ? null
         : scope == CompatibilityScope.DOMAIN
-            ? String.join(",\n", reasons)
-            : getHeader() + String.join(",\n", reasons);
+            ? String.join(",%n", reasons)
+            : getHeader() + String.join(",%n", reasons);
   }
 
   @Override

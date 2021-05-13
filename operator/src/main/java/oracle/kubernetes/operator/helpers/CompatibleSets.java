@@ -30,7 +30,7 @@ class CompatibleSets<T> implements CompatibilityCheck {
   @Override
   public String getIncompatibility() {
     return String.format(
-        "%s contains additional elements %s", description, getMissingElements(expected, actual));
+        "'%s' contains additional elements '%s'", description, getMissingElements(expected, actual));
   }
 
   @Override

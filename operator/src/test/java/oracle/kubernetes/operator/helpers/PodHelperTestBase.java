@@ -1797,7 +1797,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(
         "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
         getExpectedEventMessage(DOMAIN_ROLL_STARTING),
-        stringContainsInOrder("Rolling restart", UID, "image changed","adfgg"));
+        stringContainsInOrder("Rolling restart", UID, "image", "changed","adfgg"));
   }
 
   @Test
@@ -1922,8 +1922,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     /*
       message: Rolling restart the pods in domain uid1 because domain restart version changed,
-      image changed from image:latest to adfgg,
-      imagePullPolicy changed from image:latest to IfNotPresent,
+      'image' changed from image:latest to adfgg,
       'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345'
      */
     assertThat(
@@ -1931,7 +1930,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getExpectedEventMessage(DOMAIN_ROLL_STARTING),
         stringContainsInOrder("Rolling restart", UID,
             "domain restart version changed",
-            "image changed", "adfgg",
+            "image", "changed", "adfgg",
             "domainHome", "changed", "12345"));
   }
 
@@ -1951,7 +1950,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     /*
       message: Rolling restart the pods in domain uid1 because domain restart version changed,
-      imagePullPolicy changed from image:latest to IfNotPresent,
+      'image' changed from image:latest to 'adcgg',
       'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345',
       WebLogic domain configuration changed
      */
@@ -1959,7 +1958,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
         getExpectedEventMessage(DOMAIN_ROLL_STARTING),
         stringContainsInOrder("Rolling restart", UID,
-            "image changed", "adfgg",
+            "image", "changed", "adfgg",
             "domainHome", "changed", "12345",
             "WebLogic domain configuration changed"));
   }
