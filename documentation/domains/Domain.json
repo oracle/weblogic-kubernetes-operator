@@ -189,7 +189,7 @@
       "type": "object",
       "properties": {
         "volume": {
-          "description": "The name of common mount volume defined in \u0027spec.commonMountVolumes\u0027. Required.",
+          "description": "The name of a common mount volume defined in \u0027spec.commonMountVolumes\u0027. Required.",
           "type": "string"
         },
         "image": {

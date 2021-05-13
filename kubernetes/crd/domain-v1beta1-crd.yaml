@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 59295e213b053a1a3406fd9c8a432a091a387d324dc4adca214dccf9fcef9d55
+    weblogic.sha256: 32a313edcfbc439755d0e7276594f392cbb3460aa2dbf496ffd225f156d718b9
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1209,8 +1209,8 @@ spec:
                         type: object
                         properties:
                           volume:
-                            description: The name of common mount volume defined in
-                              'spec.commonMountVolumes'. Required.
+                            description: The name of a common mount volume defined
+                              in 'spec.commonMountVolumes'. Required.
                             type: string
                           image:
                             description: The name of an image with files located in
@@ -3951,7 +3951,7 @@ spec:
                           type: object
                           properties:
                             volume:
-                              description: The name of common mount volume defined
+                              description: The name of a common mount volume defined
                                 in 'spec.commonMountVolumes'. Required.
                               type: string
                             image:
@@ -6739,8 +6739,8 @@ spec:
                     type: object
                     properties:
                       volume:
-                        description: The name of common mount volume defined in 'spec.commonMountVolumes'.
-                          Required.
+                        description: The name of a common mount volume defined in
+                          'spec.commonMountVolumes'. Required.
                         type: string
                       image:
                         description: The name of an image with files located in directory
@@ -9370,7 +9370,7 @@ spec:
                           type: object
                           properties:
                             volume:
-                              description: The name of common mount volume defined
+                              description: The name of a common mount volume defined
                                 in 'spec.commonMountVolumes'. Required.
                               type: string
                             image:

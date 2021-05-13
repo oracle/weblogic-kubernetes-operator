@@ -43,7 +43,7 @@ class DomainValidationMessages {
    * @return the localized message
    */
   static String duplicateCMVMountPath(@Nonnull String mountPath) {
-    return getMessage(MessageKeys.DUPLICATE_MOUNT_PATH_FOUND, mountPath);
+    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_PATH_FOUND, mountPath);
   }
 
   /**

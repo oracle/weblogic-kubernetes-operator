@@ -918,17 +918,21 @@ function checkCommonMount() {
     fi
     rm -f ${COMMON_MOUNT_PATH}/testaccess.tmp || return 1
 
+    # The container .out files embed their container name, the names will sort in the same order in which the containers ran
     out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
       || (trace SEVERE "Common Mount: Assertion failure. No files found in '$COMMON_MOUNT_PATH/commonMountLogs/*.out" \
       && return 1)
     severe_found=false
     for out_file in $out_files; do
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
-        trace SEVERE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
+        trace FINE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
         severe_found=true
       elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-        trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount."
+        out_file_contents=$(cat $out_file)
+        trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount. " \
+                     "Contents of '${out_file}': ${out_file_contents//$'\n'/\\n}"
         severe_found=true
+        continue
       fi
       trace "Common Mount: Contents of '${out_file}':"
       cat $out_file
@@ -957,7 +961,7 @@ function checkCommonMount() {
 function initCommonMount() {
 
   if [ -z "${COMMON_MOUNT_COMMAND}" ]; then
-    trace ERROR "Common Mount: The 'serverPod.commonMounts.command' is empty for the " \
+    trace SEVERE "Common Mount: The 'serverPod.commonMounts.command' is empty for the " \
                 "container image='$COMMON_MOUNT_CONTAINER_IMAGE'. Exiting."
     return
   fi

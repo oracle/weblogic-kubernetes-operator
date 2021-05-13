@@ -51,7 +51,7 @@ public class CommonMount {
           + "emptyDir volume.")
   private String command;
 
-  @Description("The name of common mount volume defined in 'spec.commonMountVolumes'. Required.")
+  @Description("The name of a common mount volume defined in 'spec.commonMountVolumes'. Required.")
   @NotNull
   private String volume;
 
