@@ -254,8 +254,7 @@ class PodCompatibility extends CollectiveCompatibility {
     @Override
     public String getIncompatibility() {
       return String.format(
-          "%s probe changed from "
-              + "'initial delay %d, timeout %d and period %d' to 'initial delay %d, timeout %d and period %d'",
+          "%s probe {initial delay, timeout, period} changed from " + "'{%d, %d, %d}' to '{%d, %d, %d}'",
           description,
           actual.getInitialDelaySeconds(),
           actual.getTimeoutSeconds(),

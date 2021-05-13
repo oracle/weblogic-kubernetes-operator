@@ -76,7 +76,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
       }
     }
 
-    return reasons.isEmpty() ? null : String.join(",%n", reasons);
+    return reasons.isEmpty() ? null : String.join(",\n", reasons);
   }
 
   private String getDomainIncompatibility() {
@@ -90,7 +90,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
       }
     }
 
-    return reasons.isEmpty() ? null : String.join(",%n", reasons);
+    return reasons.isEmpty() ? null : String.join(",\n", reasons);
   }
 
   private String getUnknownIncompatibility() {
@@ -104,7 +104,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
       }
     }
 
-    return reasons.isEmpty() ? null : String.join(",%n", reasons);
+    return reasons.isEmpty() ? null : String.join(",\n", reasons);
   }
 
   private boolean isKeyChanged(K key) {
