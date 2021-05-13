@@ -16,6 +16,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -254,7 +255,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectMessage() {
+  public void whenRolling_podCycleEventCreatedWithCorrectMessage() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
@@ -271,22 +272,22 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void whenDomainHomeChanged_generateExpectedLogMessage() {
+  public void whenDomainHomeAndRestartVersionChanged_podCycleEventCreatedWithCorrectMessage() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
     SERVER_NAMES.forEach(s ->
-        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V5"), s)));
+        rolling.put(s, createRollingStepAndPacket(
+            modifyDomainHome(modifyRestartVersion(createPodModel(s), "V5"), "xxxx"), s)));
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
 
-    // printLogRecords();
-    SERVER_NAMES.forEach(s -> assertThat(logRecords,
-        containsInfo(CYCLING_POD, getPodName(s), "domain restart version changed from 'V5' to 'null'")));
-    SERVER_NAMES.forEach(s -> assertThat(logRecords,
-        containsInfo(MANAGED_POD_REPLACED, s)));
-    assertThat(logRecords,
-        containsInfo(MessageKeys.DOMAIN_ROLL_COMPLETED, UID));
+    SERVER_NAMES.forEach(s -> assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
+        stringContainsInOrder("Replacing ", getPodName(s),
+            "domain restart version changed", "V5", "DOMAIN_HOME", "changed", "xxxx")));
   }
 
   private void printLogRecords() {
@@ -323,6 +324,19 @@ public class RollingHelperTest {
         new V1PodCondition().type("Ready").status("True")));
     pod.getMetadata().getLabels().remove(LabelConstants.DOMAINRESTARTVERSION_LABEL);
     pod.getMetadata().getLabels().put(LabelConstants.DOMAINRESTARTVERSION_LABEL, restartVersion);
+    return pod;
+  }
+
+  private V1Pod modifyDomainHome(V1Pod pod, String domainHome) {
+    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
+        new V1PodCondition().type("Ready").status("True")));
+    List<V1EnvVar> envList = pod.getSpec().getContainers().get(0).getEnv();
+    for (V1EnvVar env : envList) {
+      if (env.getName().equals("DOMAIN_HOME")) {
+        env.setValue(domainHome);
+        return pod;
+      }
+    }
     return pod;
   }
 

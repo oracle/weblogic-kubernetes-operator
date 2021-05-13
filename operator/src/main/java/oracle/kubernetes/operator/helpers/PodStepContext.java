@@ -462,20 +462,29 @@ public abstract class PodStepContext extends BasePodStepContext {
       return next;
     }
 
-    String domainIncompatibility = getReasonToRecycle(pod, DOMAIN);
-    if (hasChangesInExpectedScope(domainIncompatibility)) {
+    String domainIncompatibility = getDomainIncompatibility(pod);
+    if (haveReasonsToRoll(domainIncompatibility)) {
       return createDomainRollStartEvent(next, domainIncompatibility);
     }
 
-    if (hasChangesInExpectedScope(getReasonToRecycle(pod, UNKNOWN))) {
-      return createDomainRollStartEvent(next, "domain resource changed");
+    return next;
+  }
+
+  private String getDomainIncompatibility(V1Pod pod) {
+    String domainIncompatibility = getReasonToRecycle(pod, DOMAIN);
+    if (!haveReasonsToRoll(domainIncompatibility)
+        && haveReasonsToRoll(getReasonToRecycle(pod, UNKNOWN))) {
+      domainIncompatibility = "domain resource changed";
     }
 
     if (!canUseNewDomainZip(pod)) {
-      return createDomainRollStartEvent(next, "WebLogic domain configuration changed");
+      if (haveReasonsToRoll(domainIncompatibility)) {
+        domainIncompatibility += ",\nWebLogic domain configuration changed";
+      } else {
+        domainIncompatibility = "WebLogic domain configuration changed";
+      }
     }
-
-    return next;
+    return domainIncompatibility;
   }
 
   private Step createDomainRollStartEvent(Step next, String domainIncompatibility) {
@@ -487,7 +496,7 @@ public abstract class PodStepContext extends BasePodStepContext {
         next);
   }
 
-  private boolean hasChangesInExpectedScope(String domainIncompatibility) {
+  private boolean haveReasonsToRoll(String domainIncompatibility) {
     return domainIncompatibility != null && domainIncompatibility.length() != 0;
   }
 

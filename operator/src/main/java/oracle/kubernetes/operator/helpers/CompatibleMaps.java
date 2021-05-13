@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -67,7 +68,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   public String getIncompatibility() {
     StringBuilder sb = new StringBuilder();
 
-    handleMissingElements(sb);
+    handleMissingElements(sb, getMissingElements(expected.keySet(), actual.keySet()));
 
     for (K key : expected.keySet()) {
       if (isKeyChanged(key)) {
@@ -81,7 +82,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private String getDomainIncompatibility() {
     StringBuilder sb = new StringBuilder();
 
-    handleMissingElements(sb);
+    handleMissingElements(sb, getDomainScopedKeys(getMissingElements(expected.keySet(), actual.keySet())));
 
     for (K key : expected.keySet()) {
       if (isKeyChanged(key) && isDomainKey(key)) {
@@ -95,7 +96,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
   private String getUnknownIncompatibility() {
     StringBuilder sb = new StringBuilder();
 
-    handleMissingElements(sb);
+    handleMissingElements(sb, getUnknownScopedKeys(getMissingElements(expected.keySet(), actual.keySet())));
 
     for (K key : expected.keySet()) {
       if (isKeyChanged(key) && !isDomainKey(key)) {
@@ -120,8 +121,7 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
     return String.format("%s %s", description, getDomainScopedFormat((String)key, key));
   }
 
-  private void handleMissingElements(StringBuilder sb) {
-    Set<K> missingKeys = getMissingElements(expected.keySet(), actual.keySet());
+  private void handleMissingElements(StringBuilder sb, Set<K> missingKeys) {
     if (!missingKeys.isEmpty()) {
       sb.append(String.format("%s changed and contains '%s' as well%n", description, missingKeys));
     }
@@ -138,13 +138,24 @@ class CompatibleMaps<K, V> implements CompatibilityCheck {
     return DOMAIN_ENV_KEYS.contains(key);
   }
 
-  private boolean containsDomainKeys(Set<K> missingKeys) {
+  private Set<K> getDomainScopedKeys(Set<K> missingKeys) {
+    Set<K> newSet = new HashSet<>();
     for (K key : missingKeys) {
       if (isDomainKey(key)) {
-        return true;
+        newSet.add(key);
       }
     }
-    return false;
+    return newSet;
+  }
+
+  private Set<K> getUnknownScopedKeys(Set<K> missingKeys) {
+    Set<K> newSet = new HashSet<>();
+    for (K key : missingKeys) {
+      if (!isDomainKey(key)) {
+        newSet.add(key);
+      }
+    }
+    return newSet;
   }
 
   @Override

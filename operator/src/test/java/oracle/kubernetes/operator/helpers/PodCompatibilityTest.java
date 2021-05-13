@@ -582,13 +582,39 @@ public class PodCompatibilityTest {
   public void whenExpectedNotSubmapOfActual_reportDomainScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
+            "env",
+            ImmutableMap.of("alpha", 1, "beta", 2, "DOMAIN_HOME", 4),
+            ImmutableMap.of("beta", 2, "gamma", 3, "alpha", 1));
+
+    assertThat(check.getScopedIncompatibility(DOMAIN), containsString("DOMAIN_HOME"));
+    assertThat(check.getScopedIncompatibility(DOMAIN), not(containsString("alpha")));
+    assertThat(check.getScopedIncompatibility(DOMAIN), not(containsString("gamma")));
+  }
+
+  @Test
+  public void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportDomainScopeMissingElements() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
             "letters",
             ImmutableMap.of("alpha", 1, "beta", 2, "delta", 4),
             ImmutableMap.of("beta", 2, "gamma", 3, "alpha", 1));
 
-    assertThat(check.getScopedIncompatibility(DOMAIN), containsString("delta"));
+    assertThat(check.getScopedIncompatibility(DOMAIN), not(containsString("delta")));
     assertThat(check.getScopedIncompatibility(DOMAIN), not(containsString("alpha")));
     assertThat(check.getScopedIncompatibility(DOMAIN), not(containsString("gamma")));
+  }
+
+  @Test
+  public void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportUnknownScopeMissingElements() {
+    CompatibilityCheck check =
+        new CompatibleMaps<>(
+            "letters",
+            ImmutableMap.of("alpha", 1, "beta", 2, "delta", 4),
+            ImmutableMap.of("beta", 2, "gamma", 3, "alpha", 1));
+
+    assertThat(check.getScopedIncompatibility(UNKNOWN), containsString("delta"));
+    assertThat(check.getScopedIncompatibility(UNKNOWN), not(containsString("alpha")));
+    assertThat(check.getScopedIncompatibility(UNKNOWN), not(containsString("gamma")));
   }
 
   @Test

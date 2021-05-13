@@ -1845,6 +1845,22 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
+  public void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withDefaultLivenessProbeSettings(12, 23, 45);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "liveness probe", "changed from", "4", "5", "6", "to", "12", "23", "45"));
+  }
+
+  @Test
   public void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     disableAutoIntrospectOnNewMiiPods();
@@ -1905,9 +1921,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     logRecords.clear();
 
     /*
-      message: Rolling restart the pods in domain uid1 because domain restart version changed.
-      image changed from image:latest to adfgg
-      imagePullPolicy changed from image:latest to IfNotPresent
+      message: Rolling restart the pods in domain uid1 because domain restart version changed,
+      image changed from image:latest to adfgg,
+      imagePullPolicy changed from image:latest to IfNotPresent,
       'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345'
      */
     assertThat(
@@ -1919,6 +1935,52 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             "domainHome", "changed", "12345"));
   }
 
+  @Test
+  public void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    logRecords.clear();
+
+    /*
+      message: Rolling restart the pods in domain uid1 because domain restart version changed,
+      imagePullPolicy changed from image:latest to IfNotPresent,
+      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345',
+      WebLogic domain configuration changed
+     */
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "image changed", "adfgg",
+            "domainHome", "changed", "12345",
+            "WebLogic domain configuration changed"));
+  }
+
+  @Test
+  public void whenInitContainerLivenessProbeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domain resource changed",
+            "WebLogic domain configuration changed"));
+  }
 
   protected static String getCyclePodKey() {
     return CYCLING_POD;
@@ -1937,6 +1999,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   protected String getExpectedEventMessage(EventHelper.EventItem event) {
     List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    //System.out.println(events);
     return Optional.ofNullable(events)
         .filter(list -> list.size() != 0)
         .map(n -> n.get(0))
