@@ -534,7 +534,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMount_createPodsWithCommonMountInitContainerAndEmptyDirVolumeAndVolumeMounts() {
+  public void whenDomainHasCommonMount_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
     getConfigurator()
             .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
@@ -560,7 +560,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+  public void whenDomainHasCommonMountAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
     getConfigurator()
             .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
             .withCommonMounts(getCommonMounts("wdt-image:v1"));
@@ -570,10 +570,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+  public void whenDomainHasCommonMountVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).medium("Memory")))
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
             .withCommonMounts(getCommonMounts("wdt-image:v1"));
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
@@ -582,10 +582,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+  public void whenDomainHasCommonMountVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).sizeLimit("100G")))
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
             .withCommonMounts(getCommonMounts());
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
@@ -594,7 +594,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
+  public void whenDomainHasCommonMountsWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
     getConfigurator()
             .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
@@ -606,7 +606,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMountWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
+  public void whenDomainHasCommonMountsWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
                     new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
@@ -619,7 +619,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasMultipleCommonMounts_createPodsWithCommonMountInitContainers() {
+  public void whenDomainHasMultipleCommonMounts_createPodsWithCommonMountInitContainersInCorrectOrder() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
                     new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
@@ -645,8 +645,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @NotNull
-  List<CommonMountVolume> getCommonMountVolume(String mountPath) {
-    return Collections.singletonList(new CommonMountVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+  List<CommonMountVolume> getCommonMountVolume(String... mountPath) {
+    CommonMountVolume cmv = new CommonMountVolume().name(TEST_VOLUME_NAME);
+    return Collections.singletonList(mountPath.length > 0 ? cmv.mountPath(mountPath[0]) : cmv);
   }
 
   @NotNull

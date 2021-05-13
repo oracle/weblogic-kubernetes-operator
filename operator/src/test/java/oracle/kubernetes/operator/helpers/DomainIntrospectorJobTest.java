@@ -379,7 +379,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountHavingCustomMountPath_hasVolumeMountWithCustomMountPath() {
+  public void whenJobCreatedWithCommonMountAndVolumeHavingCustomMountPath_hasVolumeMountWithCustomMountPath() {
     DomainConfiguratorFactory.forDomain(domain)
             .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
             .withCommonMounts(getCommonMounts("wdt-image:v1"));
@@ -390,12 +390,11 @@ public class DomainIntrospectorJobTest {
                     .mountPath(CUSTOM_MOUNT_PATH)));
   }
 
-
   @Test
-  public void whenJobCreatedWithCommonMountWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+  public void whenJobCreatedWithCommonMountVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).medium("Memory")))
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
             .withCommonMounts(getCommonMounts("wdt-image:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);
@@ -406,10 +405,10 @@ public class DomainIntrospectorJobTest {
 
 
   @Test
-  public void whenJobCreatedWithCommonMountWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+  public void whenJobCreatedWithCommonMountVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
     getConfigurator()
             .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).sizeLimit("100G")))
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
             .withCommonMounts(getCommonMounts());
 
     V1Job job = runStepsAndGetJobs().get(0);

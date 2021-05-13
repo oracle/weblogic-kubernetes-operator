@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -36,7 +35,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
@@ -48,7 +46,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.AdminPodHelperTest.CUSTOM_MOUNT_PATH2;
-import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
 import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
@@ -1087,20 +1084,20 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAndClusterHaveCommonMounts_createManagedPodWithInitContainersAndVolumeMounts() {
+  public void whenDomainAndClusterHaveCommonMounts_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMountVolumes(getCommonMountVolume())
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMountVolumes(getCommonMountVolume())
             .configureCluster(CLUSTER_NAME)
             .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v2")));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v2",
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
                     "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image:v1",
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image:v2",
                             "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
@@ -1110,7 +1107,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasCommonMountWithCustomMountPath_createVolumeWithSpecifiedMountPathAtClusterScope() {
+  public void whenClusterHasCommonMountAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
     getConfigurator()
             .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH2))
             .configureCluster(CLUSTER_NAME)
@@ -1119,34 +1116,6 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH2)));
-  }
-
-  @Test
-  public void whenClusterHasCommonMountWithMedium_createVolumeWithSpecifiedMediumAtClusterScope() {
-    getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(CUSTOM_MOUNT_PATH).name(TEST_VOLUME_NAME).medium("TestMedium")))
-            .configureCluster(CLUSTER_NAME)
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v2")));
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-
-    assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
-                    new V1EmptyDirVolumeSource().medium("TestMedium"))));
-  }
-
-  @Test
-  public void whenClusterHasCommonMountWithSizeLimit_createVolumeWithSpecifiedSizeLimitAtClusterScope() {
-    getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume()
-                    .mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME).sizeLimit("200G")))
-            .configureCluster(CLUSTER_NAME)
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v2")));
-    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
-
-    assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
-                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("200G")))));
   }
 
   @Test

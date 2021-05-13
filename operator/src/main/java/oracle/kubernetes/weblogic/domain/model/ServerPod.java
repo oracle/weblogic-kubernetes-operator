@@ -433,7 +433,7 @@ class ServerPod extends KubernetesResource {
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
-    addCommonMountIfMissing(serverPod1);
+    addCommonMount(serverPod1);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
       addIfMissing(var);
     }
@@ -478,12 +478,15 @@ class ServerPod extends KubernetesResource {
     tolerations.addAll(serverPod1.tolerations);
   }
 
-  private void addCommonMountIfMissing(ServerPod serverPod1) {
+  private void addCommonMount(ServerPod serverPod1) {
     if (serverPod1.commonMounts != null) {
       if (commonMounts == null) {
-        commonMounts = new ArrayList<CommonMount>();
+        commonMounts = new ArrayList<>(serverPod1.commonMounts);
+      } else {
+        commonMounts = Stream.of(serverPod1.commonMounts, commonMounts)
+                .flatMap(c -> c.stream())
+                .collect(Collectors.toList());
       }
-      commonMounts.addAll(serverPod1.commonMounts);
     }
   }
 
