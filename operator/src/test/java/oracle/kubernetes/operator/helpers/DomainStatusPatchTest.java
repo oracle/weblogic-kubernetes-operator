@@ -392,13 +392,14 @@ public class DomainStatusPatchTest {
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/servers/0/health "
-                      + "{'activationTime':'" + activationTime
+                      + "{'activationTime':'" + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(activationTime)
                       + "','overallHealth':'Confused','subsystems':[{'health':'confused','subsystemName':'ejb'}]}",
                 "REPLACE /status/servers/1/health/overallHealth 'Lagging'",
                 "ADD /status/servers/1/health/subsystems/- {'health':'slow','subsystemName':'web'}",
                 "ADD /status/servers/- "
                       + "{'health':"
-                      +     "{'activationTime':'" + activationTime + "','overallHealth':'Broken',"
+                      +     "{'activationTime':'" + DateTimeFormatter.ISO_OFFSET_DATE_TIME.format(activationTime)
+                      + "','overallHealth':'Broken',"
                       +      "'subsystems':["
                       +         "{'health':'obsolete','subsystemName':'jmx'},"
                       +         "{'health':'uninitialized','subsystemName':'sockets'}"
