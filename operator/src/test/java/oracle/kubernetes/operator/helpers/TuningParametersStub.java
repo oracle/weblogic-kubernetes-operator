@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,9 @@ import org.jetbrains.annotations.NotNull;
 import static com.meterware.simplestub.Stub.createStrictStub;
 
 public abstract class TuningParametersStub implements TuningParameters {
+  public static final String ENABLED_FEATURE = "TestFeature";
+  public static final String DISABLED_FEATURE = "OtherFeature";
+
   // Pod tuning
   static final int READINESS_INITIAL_DELAY = 1;
   static final int READINESS_TIMEOUT = 2;
@@ -92,5 +96,10 @@ public abstract class TuningParametersStub implements TuningParameters {
   @Override
   public Set<Entry<String, String>> entrySet() {
     return namedParameters.entrySet();
+  }
+
+  @Override
+  public FeatureGates getFeatureGates() {
+    return new FeatureGates(Collections.singletonList(ENABLED_FEATURE));
   }
 }
