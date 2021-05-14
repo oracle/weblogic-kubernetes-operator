@@ -22,7 +22,12 @@ weight: 6
     with the value specified by the `-d` flag.  For example, the command above would create a secret named
     `sample-domain1-weblogic-credentials`.
 
-1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script. First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
+1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
+
+    {{% notice tip %}} For a detailed understanding of the steps that the `create-domain.sh` script performs for you, see the bulleted items under [Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-in-image/#use-the-script-to-create-a-domain" >}}).
+    {{% /notice%}}
+
+    First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
        * `domainUID`: `sample-domain1`
        * `image`: Leave empty unless you need to tag the new image that the script builds to a different name.
           For example if you are using a remote cluster that will need to pull the image from a container registry,
