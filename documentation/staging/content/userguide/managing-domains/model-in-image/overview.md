@@ -28,6 +28,7 @@ It enables:
  - Supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models. For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source to a running domain. See [Runtime updates](#runtime-updates) for details.
+ - Supplying WDT model files, application archives and WDT installation using a container image different from the WebLogic installation image using the [Common Mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts" >}}) option.
 
 This feature is supported for standard WLS domains, Restricted JRF domains, and JRF domains.
 

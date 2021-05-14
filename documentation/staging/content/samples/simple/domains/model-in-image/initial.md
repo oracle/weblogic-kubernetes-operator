@@ -372,6 +372,49 @@ Also, if you run the `docker images` command, then you will see an image named `
 
 > Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
 
+#### Creating the image containing Model In Image files for the Common Mounts option
+[Common Mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts" >}}) option is an alternative for including Model in Image model files, or other types of files, in a Pod without requiring modifications to the Pod's base image specified using domain.spec.image. 
+If you are using the [Common Mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts" >}}) option, then you
+can use the below steps to create an image containing the model files, application archives, and the WDT installation files.
+
+At this point, you have staged all of the files needed for image `model-in-image:WLS-v1`; they include:
+
+- `/tmp/mii-sample/model-images/weblogic-deploy.zip`
+- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml`
+- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
+- `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
+
+If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
+
+Run the following commands to create the model file image `model-file-image:v1`:
+
+  ```shell
+  $ kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/build-model-files-image.sh
+  ```
+
+The script does the followings:
+
+1. Create a temporary directory for docker build context `/tmp/mii-file-iamge`.
+2. Copy the Dockefile to the context root.
+3. Unzip the WDT executable to the context root. It also removes all the `weblogic-deploy/bin/*.cmd` files which are not used in Unix environment.
+4. Copy all WDT models, variables, and archives into the `/tmp/mii-file-image/models`
+5. build the docker image.
+
+The image has WDT executables copied to `/common/weblogic-deploy` and all the WDT models, variables, and archives are copied to `/common/models`, you can verify
+the contents of the image:
+
+  ```shell
+  $ docker run -it --rm model-files-image:v1 ls -l /common
+  ```
+
+  ```shell
+  $ docker run -it --rm model-files-image:v1 ls -l /common/models  
+  ```
+
+  ```shell
+  $ docker run -it --rm model-files-image:v1 ls -l /common/weblogic-deploy
+  ```
+
 #### Deploy resources - Introduction
 
 In this section, you will deploy the new image to namespace `sample-domain1-ns`, including the following steps:
@@ -470,6 +513,8 @@ Now, you create a Domain YAML file. A Domain is the key resource that tells the 
 
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` that is included in the sample source.
 
+**Note:** If you are using the [Common Mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts" >}}) option then use the file `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml` that is included in the sample source. You can do a diff of `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` and `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CMv1.yaml` to see the changes that are required for the common mounts option.
+
   {{%expand "Click here to view the WLS Domain YAML file." %}}
   ```yaml
     #
@@ -534,6 +579,140 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
           value: "-Dweblogic.StdoutDebugEnabled=false"
         - name: USER_MEM_ARGS
           value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+
+        # Optional volumes and mounts for the domain's pods. See also 'logHome'.
+        #volumes:
+        #- name: weblogic-domain-storage-volume
+        #  persistentVolumeClaim:
+        #    claimName: sample-domain1-weblogic-sample-pvc
+        #volumeMounts:
+        #- mountPath: /shared
+        #  name: weblogic-domain-storage-volume
+
+      # The desired behavior for starting the domain's administration server.
+      adminServer:
+        # The serverStartState legal values are "RUNNING" or "ADMIN"
+        # "RUNNING" means the listed server will be started up to "RUNNING" mode
+        # "ADMIN" means the listed server will be start up to "ADMIN" mode
+        serverStartState: "RUNNING"
+        # Setup a Kubernetes node port for the administration server default channel
+        #adminService:
+        #  channels:
+        #  - channelName: default
+        #    nodePort: 30701
+
+      # The number of managed servers to start for unlisted clusters
+      replicas: 1
+
+      # The desired behavior for starting a specific cluster's member servers
+      clusters:
+      - clusterName: cluster-1
+        serverStartState: "RUNNING"
+        replicas: 2
+
+      # Change the `restartVersion` to force the introspector job to rerun
+      # and apply any new model configuration, to also force a subsequent
+      # roll of your domain's WebLogic Server pods.
+      restartVersion: '1'
+
+      configuration:
+
+        # Settings for domainHomeSourceType 'FromModel'
+        model:
+          # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
+          domainType: "WLS"
+
+          # Optional configmap for additional models and variable files
+          #configMap: sample-domain1-wdt-config-map
+
+          # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
+          runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
+
+        # Secrets that are referenced by model yaml macros
+        # (the model yaml in the optional configMap or in the image)
+        #secrets:
+        #- sample-domain1-datasource-secret
+  ```
+  {{% /expand %}}
+
+  {{%expand "Click here to view the WLS Domain YAML file using the common mounts feature." %}}
+  ```yaml
+    #
+    # This is an example of how to define a Domain resource.
+    #
+    apiVersion: "weblogic.oracle/v8"
+    kind: Domain
+    metadata:
+      name: sample-domain1
+      namespace: sample-domain1-ns
+      labels:
+        weblogic.domainUID: sample-domain1
+
+    spec:
+      # Set to 'FromModel' to indicate 'Model in Image'.
+      domainHomeSourceType: FromModel
+
+      # The WebLogic Domain Home, this must be a location within
+      # the image for 'Model in Image' domains.
+      domainHome: /u01/domains/sample-domain1
+
+      # The WebLogic Server image that the Operator uses to start the domain
+      image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+
+      # Defaults to "Always" if image tag (version) is ':latest'
+      imagePullPolicy: "IfNotPresent"
+
+      # Identify which Secret contains the credentials for pulling an image
+      #imagePullSecrets:
+      #- name: regsecret
+
+      # Identify which Secret contains the WebLogic Admin credentials,
+      # the secret must contain 'username' and 'password' fields.
+      webLogicCredentialsSecret:
+        name: sample-domain1-weblogic-credentials
+
+      # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
+      includeServerOutInPodLog: true
+
+      # Whether to enable overriding your log file location, see also 'logHome'
+      #logHomeEnabled: false
+
+      # The location for domain log, server logs, server out, introspector out, and Node Manager log files
+      # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
+      #logHome: /shared/logs/sample-domain1
+
+      # Set which WebLogic Servers the Operator will start
+      # - "NEVER" will not start any server in the domain
+      # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+      # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
+      serverStartPolicy: "IF_NEEDED"
+
+      # settings for common mount volume, see alow serverPod.commonMounts.
+      commonMountVolumes:
+      - name: commonMountsVolume1
+        mountPath: /common
+        #medium: Memory
+        #sizeLimit: 100G
+
+      # Settings for all server pods in the domain including the introspector job pod
+      serverPod:
+        # Optional new or overridden environment variables for the domain's pods
+        # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
+        #   to set the Weblogic domain name
+        env:
+        - name: CUSTOM_DOMAIN_NAME
+          value: "domain1"
+        - name: JAVA_OPTIONS
+          value: "-Dweblogic.StdoutDebugEnabled=false"
+        - name: USER_MEM_ARGS
+          value: "-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom "
+
+        # Settings for common mounts with images containing model, archives and WDT instal. See also commonMountVolumes.
+        commonMounts:
+        - image: model-files-image:v1
+          imagePullPolicy: IfNotPresent
+          volume: commonMountsVolume1
+          #command: cp -R $COMMON_MOUNT_PATH/* $COMMON_MOUNT_TARGET_PATH
 
         # Optional volumes and mounts for the domain's pods. See also 'logHome'.
         #volumes:
