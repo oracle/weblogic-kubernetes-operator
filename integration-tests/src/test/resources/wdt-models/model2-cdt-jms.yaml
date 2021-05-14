@@ -12,34 +12,19 @@ resources:
       PersistentStore: 'TestCdtFileStore'
       InsertionPausedAtStartup: false
       MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
-    TestAdminJmsServer:
-      ProductionPausedAtStartup: false
-      ConsumptionPausedAtStartup: false
-      Target: 'admin-server'
-      InsertionPausedAtStartup: false
-      MessageCompressionOptions: GZIP_DEFAULT_COMPRESSION
 
   JMSSystemResource:
-    TestAdminJmsModule:
-      Target: 'admin-server'
-      SubDeployment:
-        TestAdminSubDeployment:
-          Target: TestAdminJmsServer
-      JmsResource:
-        Queue:
-          testAccountingQueue:
-            SubDeploymentName: TestAdminSubDeployment
-            JNDIName: jms.testAccountingQueue
     TestCdtJmsModule:
       Target: 'cluster-1'
       SubDeployment:
         TestCdtSubDeployment:
           Target: TestCdtJmsServer
       JmsResource:
-        UniformDistributedQueue:
-          testCdtUniformQueue:
+        UniformDistributedTopic:
+          testCdtUniformTopic:
             SubDeploymentName: TestCdtSubDeployment
-            JNDIName: jms/testCdtUniformQueue
+            JNDIName: jms.testCdtUniformTopic
+            ForwardingPolicy: Partitioned
         ConnectionFactory:
                 ClusterConnectionFactory:
                    JNDIName: jms.ClusterConnectionFactory
