@@ -193,7 +193,7 @@ public class EventHelper {
         }
 
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
+            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -228,6 +228,12 @@ public class EventHelper {
       }
     }
 
+    private void setLastEventItemIfNeeded(DomainPresenceInfo dpi, EventItem eventItem) {
+      if (eventItem.shouldSetLastEventItem()) {
+        dpi.setLastEventItem(eventItem);
+      }
+    }
+
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
       Step replaceEventStep;
       CoreV1Event existingEvent;
@@ -241,7 +247,7 @@ public class EventHelper {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
         Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> dpi.setLastEventItem(eventData.eventItem));
+            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -386,6 +392,11 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_PROCESSING_STARTING_PATTERN;
       }
+
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
+      }
     },
     DOMAIN_PROCESSING_COMPLETED {
       @Override
@@ -396,6 +407,11 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return DOMAIN_PROCESSING_COMPLETED_PATTERN;
+      }
+
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
       }
     },
     DOMAIN_PROCESSING_FAILED {
@@ -419,6 +435,11 @@ public class EventHelper {
         return getMessageFromEventData(eventData);
       }
 
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
+      }
+
     },
     DOMAIN_PROCESSING_RETRYING {
       @Override
@@ -429,6 +450,11 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return DOMAIN_PROCESSING_RETRYING_PATTERN;
+      }
+
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
       }
     },
     DOMAIN_PROCESSING_ABORTED {
@@ -450,6 +476,11 @@ public class EventHelper {
       @Override
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
+      }
+
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
       }
 
     },
@@ -501,6 +532,11 @@ public class EventHelper {
       @Override
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
+      }
+
+      @Override
+      public boolean shouldSetLastEventItem() {
+        return true;
       }
     },
     POD_CYCLE_STARTING {
@@ -717,6 +753,10 @@ public class EventHelper {
 
     String getType() {
       return EVENT_NORMAL;
+    }
+
+    boolean shouldSetLastEventItem() {
+      return false;
     }
 
     public abstract String getPattern();
