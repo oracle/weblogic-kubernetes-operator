@@ -127,6 +127,8 @@ function initialize {
   validateCommonInputs
 
   initOutputDir
+
+  domain_type="WLS"
 }
 
 # create domain configmap using what is in the createDomainFilesDir
@@ -146,6 +148,10 @@ function createDomainConfigmap {
   if [ -d "${scriptDir}/common" ]; then
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
+  if [ -d "${scriptDir}/../../common" ]; then
+    cp ${scriptDir}/../../common/wdt-and-wit-utility.sh ${externalFilesTmpDir}/
+  fi
+
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
  
   # Set the domainName in the inputs file that is contained in the configmap.

@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -17,7 +19,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -57,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Tests related to FMW domain samples.
  */
-@DisplayName("Verify the JRF domain on pv sample using wlst")
+@DisplayName("Verify the JRF domain on pv sample using wlst and wdt")
 @IntegrationTest
 public class ItFmwSample {
 
@@ -66,9 +69,7 @@ public class ItFmwSample {
 
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-sample-testing");
-  private final String domainUid = "fmwsamplepv";
 
-  private static final String RCUSCHEMAPREFIX = "fmwsamplepv";
   private static final String ORACLEDBURLPREFIX = "oracle-db.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
@@ -76,10 +77,6 @@ public class ItFmwSample {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static String dbUrl = null;
-  // in general the node port range has to be between 30,100 to 32,767
-  // to avoid port conflict because of the delay in using it, the port here
-  // starts with 30172
-  final int t3ChannelPort = getNextFreePort(30172, 32767);
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -88,6 +85,13 @@ public class ItFmwSample {
           .atMost(10, MINUTES).await();
 
   private static LoggingFacade logger = null;
+
+  private static final String[] params = { "wdt:fmwsamplepv", "wlst:fmwsamplepv2"};
+
+  // generates the stream of objects used by parametrized test.
+  private static Stream<String> paramProvider() {
+    return Arrays.stream(params);
+  }
 
   /**
    * Start DB service and create RCU schema.
@@ -115,13 +119,24 @@ public class ItFmwSample {
     domainNamespace = namespaces.get(2);
 
     int dbPort = 30011 + getNewSuffixCount();
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
-        + "dbUrl: {2}, dbImage: {3},  fmwImage: {4}, dbPort: {5} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
+    logger.info("Start DB and for namespace: {0}, "
+            + "dbImage: {2},  fmwImage: {3}, dbPort: {4} ", dbNamespace,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC, dbPort);
-    assertDoesNotThrow(() -> setupDBandRCUschemaBySample(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, dbPort, dbUrl),
-        String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
+    assertDoesNotThrow(() -> setupDBBySample(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
+        dbNamespace, dbPort),
+        String.format("Failed to create DB in the namespace %s with dbPort %d ",
+            dbNamespace, dbPort));
+
+    for (String param: params) {
+      String rcuSchemaPrefix = param.split(":")[1];
+
+      logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
+          + " dbNamespace: {3}:", FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, dbNamespace);
+      assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, dbNamespace),
+          String.format("Failed to create RCU schema for prefix %s in the namespace %s with dbUrl %s",
+              rcuSchemaPrefix, dbNamespace, dbUrl));
+    }
+
 
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
@@ -133,14 +148,21 @@ public class ItFmwSample {
   }
 
   /**
-   * Test JRF domain on pv samples using domains created by wlst.
-   * Verify Pod is ready and service exists for both admin server and managed servers.
-   * Verify EM console is accessible.
+   * Test JRF domain on pv samples using domains created by wlst and wdt. Verify Pod is ready and
+   * service exists for both admin server and managed servers. Verify EM console is accessible.
+   *
+   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
-  @Test
-  @DisplayName("Test FMW Sample domain on PV")
-  public void testFmwSampleDomainInPvUsingWlst() {
+  @ParameterizedTest
+  @MethodSource("paramProvider")
+  @DisplayName("Test FMW domain on PV sample")
+  public void testFmwDomainInPv(String model) {
+
+    String domainUid = model.split(":")[1];
+    String script = model.split(":")[0];
+
     setupSample();
+
     // create persistent volume and persistent volume claims used by the samples
     createPvPvc(domainUid);
 
@@ -159,6 +181,8 @@ public class ItFmwSample {
 
     // change image name
     assertDoesNotThrow(() -> {
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "image: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -323,7 +347,7 @@ public class ItFmwSample {
     });
 
     String command = "chmod -R 755 " + tempSamplePath;
-    logger.info("The command to be executed: " + command); 
+    logger.info("The command to be executed: " + command);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(command))
@@ -331,6 +355,12 @@ public class ItFmwSample {
   }
 
   private void updateDomainInputsFile(String domainUid, Path sampleBase) {
+    // in general the node port range has to be between 30,100 to 32,767
+    // to avoid port conflict because of the delay in using it, the port here
+    // starts with 30172
+    final int t3ChannelPort = getNextFreePort(30172, 32767);
+    final int adminNodePort = getNextFreePort(30701, 32767);
+
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
@@ -346,6 +376,8 @@ public class ItFmwSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "exposeAdminNodePort: false", "exposeAdminNodePort: true");
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "adminNodePort: 30701", "adminNodePort: " + adminNodePort);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
@@ -357,15 +389,13 @@ public class ItFmwSample {
    *
    * @param dbImage image name of database
    * @param fmwImage image name of FMW
-   * @param rcuSchemaPrefix rcu SchemaPrefix
-   * @param dbNamespace namespace where DB and RCU schema are going to start
+]   * @param dbNamespace namespace where DB and RCU schema are going to start
    * @param dbPort NodePort of DB
-   * @param dbUrl URL of DB
    * @throws Exception if any error occurs when setting up RCU database
    */
 
-  private static void setupDBandRCUschemaBySample(String dbImage, String fmwImage,
-       String rcuSchemaPrefix, String dbNamespace, int dbPort, String dbUrl) throws ApiException {
+  private static void setupDBBySample(String dbImage, String fmwImage,
+       String dbNamespace, int dbPort) throws ApiException {
     LoggingFacade logger = getLogger();
 
     setupSample();
@@ -376,10 +406,6 @@ public class ItFmwSample {
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
         dbImage, dbPort, dbNamespace);
     startOracleDB(dbImage, dbPort, dbNamespace);
-    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
-        + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
-    createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
-
   }
 
   /**
