@@ -44,6 +44,9 @@ weight: 6
     respectively, as you provided when creating the Kubernetes Secret in Step 2.
     {{% /notice %}}
 
+    For the detailed steps that the `create-domain.sh` script performs, see [Domain Home In Image]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}}).
+    
+
 1.	Confirm that the operator started the servers for the domain:
 
     a. Use `kubectl` to show that the Domain was created:

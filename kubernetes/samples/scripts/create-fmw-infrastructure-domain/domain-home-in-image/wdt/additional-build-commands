@@ -1,0 +1,13 @@
+#Copyright (c) 2021, Oracle and/or its affiliates.
+#Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+[final-build-commands]
+USER root
+RUN mkdir -p /u01/oracle/user_projects/domains/applications/
+RUN chmod g+w /u01/oracle/user_projects/domains/applications
+ 
+USER oracle
+# copy EM console app
+COPY --from=wdt_build --chown=oracle:root /u01/oracle/user_projects/domains/applications /u01/oracle/user_projects/domains/applications/
+
+
