@@ -136,16 +136,16 @@ function initialize {
   if [ "${fmwDomainType}" == "JRF" -a "${createDomainFilesDir}" == "wlst" ]; 
   then
    rm -rf ${scriptDir}/common/createFMWDomain.py
-   cp -f ${scriptDir}/common/createFMWJRFDomain.py \
+   cp -f ${scriptDir}/../../common/createFMWJRFDomain.py \
          ${scriptDir}/common/createFMWDomain.py
   fi
   if [ "${fmwDomainType}" == "RestrictedJRF" -a "${createDomainFilesDir}" == "wlst" ]; 
   then
     rm -rf ${scriptDir}/common/createFMWDomain.py
-    cp -f ${scriptDir}/common/createFMWRestrictedJRFDomain.py \
+    cp -f ${scriptDir}/../../common/createFMWRestrictedJRFDomain.py \
          ${scriptDir}/common/createFMWDomain.py
   fi
-  
+  domain_type=${fmwDomainType}
 }
 
 # create domain configmap using what is in the createDomainFilesDir
@@ -164,6 +164,10 @@ function createDomainConfigmap {
   if [ -d "${scriptDir}/common" ]; then
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
+  if [ -d "${scriptDir}/../../common" ]; then
+    cp ${scriptDir}/../../common/wdt-and-wit-utility.sh ${externalFilesTmpDir}/
+  fi
+
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
  
   # Set the domainName in the inputs file that is contained in the configmap.
@@ -174,6 +178,10 @@ function createDomainConfigmap {
   if [ -f ${externalFilesTmpDir}/prepare.sh ]; then
    bash ${externalFilesTmpDir}/prepare.sh -i ${externalFilesTmpDir} -t ${fmwDomainType}
   fi
+
+  # Now that we have the model file in the domainoutputdir/tmp,
+  # we can add the kubernetes section to the model file.
+  updateModelFile
  
   # create the configmap and label it properly
   local cmName=${domainUID}-create-fmw-infra-sample-domain-job-cm
@@ -205,6 +213,38 @@ function createDomainHome {
 
   echo Creating the domain by creating the job ${createJobOutput}
   kubectl create -f ${createJobOutput}
+
+  # When using WDT to create a domain, a job to create a domain is started. It then creates
+  # a pod which will run a script that creates a domain. The script then will extract the domain
+  # resource using  WDT's extractDomainResource tool. So, the following code loops until the
+  # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
+
+  if [ "$useWdt" = true ]; then
+    POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+    echo "Waiting for results to be available from $POD_NAME"
+    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
+    #echo "Fetching results"
+    sleep 30
+    max=30
+    count=0
+    kubectl exec $POD_NAME -c create-fmw-infra-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+    kubectl exec $POD_NAME -c create-fmw-infra-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    while [ $? -eq 1 -a $count -lt $max ]; do
+      sleep 5
+      kubectl exec $POD_NAME -c create-fmw-infra-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt"
+      count=`expr $count + 1`
+      kubectl exec $POD_NAME -c create-fmw-infra-sample-domain-job -n ${namespace} -- bash -c "ls -l ${domainPVMountPath}/wdt" | grep "domaincreate.yaml"
+    done
+    kubectl cp ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/domaincreate.yaml ${domainOutputDir}/domain.yaml
+
+    # The pod waits for this script to copy the domain resource yaml (domainCreate.yaml) out of the pod and into
+    # the output directory as domain.yaml. To let the pod know that domainCreate.yaml has been copied, a file called
+    # doneExtract is copied into the pod. When the script running in the pod sees the doneExtract file, it exits.
+
+    touch doneExtract
+    kubectl cp doneExtract ${namespace}/$POD_NAME:${domainPVMountPath}/wdt/
+    rm -rf doneExtract
+  fi
 
   echo "Waiting for the job to complete..."
   JOB_STATUS="0"
