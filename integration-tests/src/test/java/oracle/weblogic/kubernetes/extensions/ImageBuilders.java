@@ -123,11 +123,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       try {
         // clean up the download directory so that we always get the latest
         // versions of the WDT and WIT tools in every run of the test suite.
-        try {
+        /*try {
           cleanupDirectory(DOWNLOAD_DIR);
         } catch (IOException ioe) {
           logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);
-        }
+        }*/
 
         // Only the first thread will enter this block.
 

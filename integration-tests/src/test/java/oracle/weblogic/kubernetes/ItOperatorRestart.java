@@ -4,14 +4,14 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+//import java.util.ArrayList;
+//import java.util.LinkedHashMap;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
+//import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -19,11 +19,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
+//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
+//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+//import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -36,15 +36,16 @@ import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyMiiUpdateWebLogicCredential;
+//import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
+//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+//import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -226,6 +227,11 @@ public class ItOperatorRestart {
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
   public void testOperatorRestartWhenPodRoll() {
+
+    verifyMiiUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
+        managedServerPrefix, replicaCount);
+
+    /*
     final boolean VALID = true;
     final boolean INVALID = false;
 
@@ -285,9 +291,9 @@ public class ItOperatorRestart {
     String restartVersion = CommonPatchTestUtils.patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
-        adminServerPodName,
-        managedServerPrefix,
-        replicaCount,
+        //adminServerPodName,
+        //managedServerPrefix,
+        //replicaCount,
         adminSecretName);
 
     // wait till rolling restart has started by checking admin server pod has restarted
@@ -319,6 +325,7 @@ public class ItOperatorRestart {
 
     logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
         domainUid, domainNamespace);
+    */
   }
 
   private void restartOperatorAndVerify() {

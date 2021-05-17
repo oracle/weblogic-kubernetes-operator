@@ -35,6 +35,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyMiiUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -45,7 +46,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.updateRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuPassword;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -63,13 +66,15 @@ public class ItFmwMiiDomain {
   private static String jrfDomainNamespace = null;
   private static String jrfMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
+  //private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
+  private static final String RCUSCHEMAPREFIX = "JRFDOMAINMII";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
+  private static final String RCUSCHEMAPASSWORDNEW = "Oradoc_db2";
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
   private static String dbUrl = null;
@@ -228,6 +233,48 @@ public class ItFmwMiiDomain {
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
     startupDomain();
     verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+  }
+
+  /**
+   * Shutdown the jrf domain completely.
+   * Update all the passwords for the RCU schema.
+   * Update the RCU access secret with new RCU schema password.
+   * Start the domain and verify domain is up and running.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Update RCU schema password")
+  public void testUpdateRcuSchemaPassword() {
+    shutdownDomain();
+    logger.info("Updating RCU schema password with dbNamespace: {0}, RCU prefix: {1}, new schemapassword: {2}",
+        dbNamespace, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORDNEW);
+    updateRcuPassword(dbNamespace, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORDNEW);
+    logger.info("Updating RCU access secret: {0}, with prefix: {1}, new schemapassword: {2}, dbUrl: {3})",
+        rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORDNEW, dbUrl);
+    assertDoesNotThrow(() -> updateRcuAccessSecret(
+        rcuaccessSecretName,
+        jrfDomainNamespace,
+        RCUSCHEMAPREFIX,
+        RCUSCHEMAPASSWORDNEW,
+        dbUrl),
+        String.format("update Secret failed for %s with new schema password %s", rcuaccessSecretName,
+            RCUSCHEMAPASSWORDNEW));
+    startupDomain();
+    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+  }
+
+  /**
+   * After updating RCU schema password change the WebLogic Admin credential of the domain.
+   * Update domainRestartVersion to trigger a rolling restart of server pods.
+   * Verify all the server pods are re-started in a rolling fashion.
+   * Check the validity of new credentials by accessing WebLogic RESTful Service.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Update WebLogic Credentials after updating RCU schema password")
+  public void testUpdateWebLogicCredentialAfterUpdateRcuSchemaPassword() {
+    verifyMiiUpdateWebLogicCredential(jrfDomainNamespace, domainUid, adminServerPodName,
+        managedServerPrefix, replicaCount, "-c1");
   }
 
   /**

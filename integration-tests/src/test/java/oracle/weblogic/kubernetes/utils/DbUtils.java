@@ -73,6 +73,7 @@ public class DbUtils {
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
   private static int suffixCount = 0;
+  private static String dbPodName = null;
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
@@ -221,7 +222,7 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
-    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
+    dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
@@ -541,7 +542,7 @@ public class DbUtils {
     Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
     String ddlString = "DROP TABLE ACTIVE;\n"
         + "CREATE TABLE ACTIVE (\n" 
-        + "  SERVER VARCHAR2(255) NOT NULL,\n" 
+        + "  SERVER VARCHAR2(255) NOT NULL,\n"
         + "  INSTANCE VARCHAR2(255) NOT NULL,\n" 
         + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n" 
         + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n" 
@@ -572,5 +573,65 @@ public class DbUtils {
         () -> execCommand(namespace, podName,
             null, true, "/bin/sh", "-c", ecmd.toString()));
     assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
+  }
+
+  /**
+   * Update RCU schema password on an Oracle DB instance.
+   * @param dbNamespace namespace where DB instance started
+   * @param rcuprefix prefix of RCU schema
+   * @param rcupasswd RCU schema password that is going to change to
+   */
+  public static void updateRcuPassword(String dbNamespace, String rcuprefix, String rcupasswd) {
+
+    Path updateScript = Paths.get(WORK_DIR + "/update.sql");
+    String updateString = "alter user " + rcuprefix + "_MDS " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_IAU_VIEWER " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_WLS " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_OPSS " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_WLS_RUNTIME " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_IAU_APPEND " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_STB " + "identified by " + rcupasswd + ";\n"
+        +  "alter user " + rcuprefix + "_IAU " + "identified by " + rcupasswd + ";\n"
+        +  "commit;\n";
+    getLogger().info("updateString is: \n" + updateString);
+    assertDoesNotThrow(() -> Files.write(updateScript, updateString.getBytes()));
+
+    String updateLocation = "/u01/update.sql";
+    getLogger().info("Is going to update RCU schema password for dbPod: {0} in namespace: {1} using"
+        + "destLocation {2}", dbPodName, dbNamespace, updateLocation);
+    assertDoesNotThrow(() -> copyFileToPod(dbNamespace,
+             dbPodName, "",
+             Paths.get(WORK_DIR, "update.sql"),
+             Paths.get(updateLocation)));
+
+    Path sqlplusScript = Paths.get(WORK_DIR + "/sqlplus.sh");
+    String sqlplusString = "#!/bin/bash\n"
+        + "$ORACLE_HOME/bin/sqlplus sys/Oradoc_db1@DEVPDB as sysdba < /u01/update.sql";
+    getLogger().info("sqlCmd is: \n" + sqlplusString);
+    assertDoesNotThrow(() -> Files.write(sqlplusScript, sqlplusString.getBytes()));
+
+    String sqlplusLocation = "/u01/sqlplus.sh";
+    getLogger().info("Is going to update RCU schema password for dbPod: {0} in namespace: {1} using"
+        + "sqlplusLocation {2}", dbPodName, dbNamespace, sqlplusLocation);
+    assertDoesNotThrow(() -> copyFileToPod(dbNamespace,
+             dbPodName, "",
+             Paths.get(WORK_DIR, "sqlplus.sh"),
+             Paths.get(sqlplusLocation)));
+    // change file permissions
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
+        true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
+        String.format("Failed to change permissions for file %s in pod %s", sqlplusLocation, dbPodName));
+    assertTrue(execResult.exitValue() == 0,
+        String.format("Failed to change file %s permissions, stderr %s stdout %s", sqlplusLocation,
+            execResult.stderr(), execResult.stdout()));
+    getLogger().info("File permissions changed inside pod");
+
+    String cmd = "source /home/oracle/.bashrc; /u01/sqlplus.sh";
+    getLogger().info("Command to run inside DB pod", cmd);
+    execResult = assertDoesNotThrow(
+        () -> execCommand(dbNamespace, dbPodName,
+            null, true, "bin/bash", "-c", cmd));
+    assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
+
   }
 }
