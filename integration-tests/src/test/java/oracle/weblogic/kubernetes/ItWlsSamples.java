@@ -41,6 +41,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -125,9 +126,8 @@ public class ItWlsSamples {
   }
 
   /**
-   * Test domain in image samples using domains created by wlst and wdt.
+   * Test domain in image samples using domains created by image tool using wlst and wdt.
    *
-   * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
   @Order(1)
   @ParameterizedTest
@@ -158,19 +158,22 @@ public class ItWlsSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
               "image: " + imageName);
-
-      if (script.equalsIgnoreCase("wdt")) {
-        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-                "domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image",
-                "domainHomeImageBuildPath: ./docker-images/OracleWebLogic/samples/12213-domain-home-in-image-wdt");
-      }
     });
+
+    if (script.equals("wlst")) {
+      assertDoesNotThrow(() -> {
+        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+            "mode: wdt",
+            "mode: wlst");
+      });
+    }
 
     // build the command to run create-domain.sh
     String additonalOptions = " -u "
             + ADMIN_USERNAME_DEFAULT
             + " -p "
             + ADMIN_PASSWORD_DEFAULT;
+
 
     String[] additonalStr = {additonalOptions, imageName};
 
@@ -197,6 +200,14 @@ public class ItWlsSamples {
 
     //copy the samples directory to a temporary location
     setupSample();
+    String secretName = domainName + "-weblogic-credentials";
+    if (!secretExists(secretName, domainNamespace)) {
+      createSecretWithUsernamePassword(
+          secretName,
+          domainNamespace,
+          ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT);
+    }
     //create PV and PVC used by the domain
     createPvPvc(domainName);
 
