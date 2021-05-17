@@ -1604,10 +1604,21 @@ public class ItTwoDomainsLoadBalancers {
         tlsList.add(tls);
       }
 
-      if (isTLS) {
-        assertDoesNotThrow(() -> createIngress(ingressName, defaultNamespace, annotations, ingressRules, tlsList));
-      } else {
-        assertDoesNotThrow(() -> createIngress(ingressName, defaultNamespace, annotations, ingressRules, null));
+      for (int i = 0; i < 60; i++) {
+        try {
+          if (isTLS) {
+            createIngress(ingressName, defaultNamespace, annotations, ingressRules, tlsList);
+          } else {
+            createIngress(ingressName, defaultNamespace, annotations, ingressRules, null);
+          }
+          break;
+        } catch (ApiException apiEx) {
+          try {
+            Thread.sleep(5000);
+          } catch (InterruptedException ignore) {
+            //ignore
+          }
+        }
       }
 
       // wait until voyager ingress pod is ready
