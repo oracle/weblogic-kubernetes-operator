@@ -4,6 +4,7 @@
 #
 # This script should be run on Jenkins Job to run the integration tests
 
+set -x
 
 echo "WORKSPACE ${WORKSPACE}"
 
