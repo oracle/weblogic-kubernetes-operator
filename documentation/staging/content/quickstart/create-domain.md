@@ -24,7 +24,9 @@ weight: 6
 
 1.	Create a new image with a domain home by running the [create-domain](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh) script.
 
-    {{% notice tip %}} For a detailed understanding of the steps that the `create-domain.sh` script performs for you, see the bulleted items under [Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-in-image/#use-the-script-to-create-a-domain" >}}).
+    The script's behavior is controlled by an inputs YAML file plus command-line options. The script downloads the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) and [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/), and uses these tools to create a new image with a domain home, a domain resource YAML file that references the image, and, if the `-e` option is specified, deploy the domain resource to Kubernetes. For a detailed understanding of the steps that the `create-domain.sh` script performs for you, see the bulleted items under [Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-in-image/#use-the-script-to-create-a-domain" >}})
+
+    {{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes only. In production, we strongly recommend that you use the WebLogic Image Tool and directly work with domain resource files instead.
     {{% /notice%}}
 
     First, copy the sample [create-domain-inputs.yaml](http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml) file and update your copy with:  
