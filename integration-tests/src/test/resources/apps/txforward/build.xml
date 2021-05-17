@@ -64,7 +64,6 @@
 				<exclude name="**/*.java"/>
 			</fileset>
 		</copy>
-		<echo message="${test.src.dir}" />
 		<echo message="building remotesync" />
 		<javac debug="${javac.debug}" srcdir="remotesync/src"
 			destdir="remotesync/bin">

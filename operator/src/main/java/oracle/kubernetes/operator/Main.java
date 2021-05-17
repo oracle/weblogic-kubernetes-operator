@@ -175,6 +175,8 @@ public class Main {
 
     private void logStartup(LoggingFacade loggingFacade) {
       loggingFacade.info(MessageKeys.OPERATOR_STARTED, buildVersion, operatorImpl, operatorBuildTime);
+      Optional.ofNullable(TuningParameters.getInstance().getFeatureGates().getEnabledFeatures())
+          .ifPresent(ef -> loggingFacade.info(MessageKeys.ENABLED_FEATURES, ef));
       loggingFacade.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
       loggingFacade.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
       Optional.ofNullable(Namespaces.getConfiguredDomainNamespaces())

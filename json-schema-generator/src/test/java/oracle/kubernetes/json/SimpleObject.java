@@ -23,4 +23,10 @@ class SimpleObject {
   private float aaFloat;
 
   private Map<String,Integer> keys;
+
+  @Feature("Mount")
+  private String fieldAssociatedWithMountFeature;
+
+  @Feature("Binding")
+  private String fieldAssociatedWithBindingFeature;
 }
