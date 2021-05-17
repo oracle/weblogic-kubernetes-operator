@@ -4,8 +4,6 @@
 #
 # This script should be run on Jenkins Job to run the integration tests
 
-set -x
-
 echo "WORKSPACE ${WORKSPACE}"
 
 if [ -z "$WORKSPACE" ]; then
@@ -111,5 +109,5 @@ helm repo add stable https://charts.helm.sh/stable --force-update
 helm repo update
 
 echo "Run tests.../kindtest.sh -t ${IT_TEST} -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS}"
-./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS}
+sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS}
 
