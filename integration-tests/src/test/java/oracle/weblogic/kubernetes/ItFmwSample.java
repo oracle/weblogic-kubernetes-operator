@@ -184,8 +184,8 @@ public class ItFmwSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
-              "image: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+              "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
+              "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     });
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
