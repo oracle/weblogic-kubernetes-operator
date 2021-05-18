@@ -58,6 +58,26 @@ if [ -z "$JAVA_HOME" ]; then
    echo "Error: JAVA_HOME env variable is not set, should be at least 11.0.10"
    exit 1
 fi
+if [ -z "$OCR_PASSWORD" ]; then
+   echo "Error: OCR_PASSWORD env variable is not set"
+   exit 1
+fi
+if [ -z "$OCR_USERNAME" ]; then
+   echo "Error: OCR_USERNAME env variable is not set"
+   exit 1
+fi
+if [ -z "$OCIR_USERNAME" ]; then
+   echo "Error: OCIR_USERNAME env variable is not set"
+   exit 1
+fi
+if [ -z "$OCIR_PASSWORD" ]; then
+   echo "Error: OCIR_PASSWORD env variable is not set"
+   exit 1
+fi
+if [ -z "$OCIR_EMAIL" ]; then
+   echo "Error: OCIR_EMAIL env variable is not set"
+   exit 1
+fi
 
 mkdir -p ${WORKSPACE}/bin
 
