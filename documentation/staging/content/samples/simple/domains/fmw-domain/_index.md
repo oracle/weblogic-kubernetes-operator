@@ -1,15 +1,15 @@
 ---
-title: "FMW Infrastructure domain"
+title: "FMW Infrastructure domain on a PV"
 date: 2019-04-18T07:32:31-05:00
 weight: 5
 description: "Sample for creating an FMW Infrastructure domain home on an existing PV or
-PVC, and the Domain YAML file for deploying the generated WebLogic domain."
+PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
 
 The sample scripts demonstrate the creation of an FMW Infrastructure domain home on an
 existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts
-also generate the domain YAML file, which can then be used to start the Kubernetes
+also generate the domain resource YAML file, which can then be used to start the Kubernetes
 artifacts of the corresponding domain. Optionally, the scripts start up the domain,
 and WebLogic Server pods and services.
 
@@ -20,7 +20,9 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, refer to [FMW Infrastructure domains]({{< relref "/userguide/managing-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}).
+* The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
+  For details on how to obtain or create the image, refer to 
+  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain
   home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples
@@ -32,12 +34,18 @@ The following prerequisites must be met prior to running the create domain scrip
   with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
-* Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
-* Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
-
+* Unless you are creating a Restricted-JRF domain, you also need to:  
+  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
+  * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
+  
 #### Use the script to create a domain
 
-Make a copy of the `create-domain-inputs.yaml` file, and run the create script, pointing it at
+The sample for creating domains is in this directory:
+
+```shell
+$ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-on-pv
+```
+Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values, and run the create script, pointing it at
 your inputs file and an output directory:
 
 ```shell
@@ -54,7 +62,7 @@ The script will perform the following steps:
 * Create a Kubernetes Job that will start up a utility FMW Infrastructure container and run
   offline WLST scripts to create the domain on the shared storage.
 * Run and wait for the job to finish.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above.
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above.
   This YAML file can be used to create the Kubernetes resource using the `kubectl create -f`
   or `kubectl apply -f` command:
 
@@ -116,8 +124,9 @@ The following parameters can be provided in the inputs file.
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
+| `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | WebLogic Server image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#obtaining-the-fmw-infrastructure-docker-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |
@@ -140,14 +149,14 @@ The following parameters can be provided in the inputs file.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the
 value of some of the properties specified in the `create-inputs.yaml` file. Those properties include
-the `adminServerName`, `clusterName` and `managedServerNameBase`. If those values contain any
+the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any
 characters that are invalid in a Kubernetes Service name, those characters are converted to
 valid values in the generated YAML files. For example, an uppercase letter is converted to a
 lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
 The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain
 that has one cluster only. In addition, the sample provides the capability for users to supply their own scripts
-to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
+to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
 #### Verify the results
 

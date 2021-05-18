@@ -1,0 +1,52 @@
+domainInfo:
+    AdminUserName: '@@PROP:ADMIN_USER_NAME@@'
+    AdminPassword: '@@PROP:ADMIN_USER_PASS@@'
+    ServerStartMode: prod
+topology:
+    AdminServerName: '@@PROP:ADMIN_NAME@@'
+    Name: '@@PROP:DOMAIN_NAME@@'
+    ProductionModeEnabled: '@@PROP:PRODUCTION_MODE_ENABLED@@'
+    Cluster:
+        '@@PROP:CLUSTER_NAME@@':
+    Server:
+        '@@PROP:ADMIN_NAME@@':
+            NetworkAccessPoint:
+                T3Channel:
+                    ListenPort: '@@PROP:T3_CHANNEL_PORT@@'
+                    PublicAddress: '@@PROP:T3_PUBLIC_ADDRESS@@'
+                    PublicPort: '@@PROP:T3_CHANNEL_PORT@@'
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@1':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+            JTAMigratableTarget:
+                Cluster: '@@PROP:CLUSTER_NAME@@'
+                UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@1'
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@2':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+            JTAMigratableTarget:
+                Cluster: '@@PROP:CLUSTER_NAME@@'
+                UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@2'
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@3':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            ListenPort: '@@PROP:MANAGED_SERVER_PORT@@'
+            NumOfRetriesBeforeMsiMode: 0
+            RetryIntervalBeforeMsiMode: 1
+            JTAMigratableTarget:
+                Cluster: '@@PROP:CLUSTER_NAME@@'
+                UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@3'
+    MigratableTarget:
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@1 (migratable)':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@1'
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@2 (migratable)':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@2'
+        '@@PROP:MANAGED_SERVER_NAME_BASE@@3 (migratable)':
+            Cluster: '@@PROP:CLUSTER_NAME@@'
+            UserPreferredServer: '@@PROP:MANAGED_SERVER_NAME_BASE@@3'
+
