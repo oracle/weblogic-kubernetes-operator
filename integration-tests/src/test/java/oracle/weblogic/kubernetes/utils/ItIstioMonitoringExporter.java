@@ -275,11 +275,11 @@ class ItIstioMonitoringExporter {
     assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
         String.valueOf(prometheusPort)), "failed to install istio prometheus");
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/wls-exporter/metrics";
-    logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application");
+    //int istioIngressPort = getIstioHttpIngressPort();
+    //String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/wls-exporter/metrics";
+    //logger.info("Application Access URL {0}", url);
+    //boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
+    //assertTrue(checkApp, "Failed to access WebLogic application");
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
