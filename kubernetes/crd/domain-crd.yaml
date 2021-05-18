@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 72bf46030281ba8f203386e37d13812d853bd3ee8f2a6ae631f0b940ff713181
+    weblogic.sha256: 2c458de3536da4e8a31d375fc7375c55387080a19f260f687dd687ec4f61d67b
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -32,10 +32,10 @@ spec:
                   container alongside each WebLogic Server instance that runs the
                   exporter. WebLogic Server instances that are already running when
                   the `monitoringExporter` field is created or deleted, will not be
-                  restarted simply to provision or remove the exporter's sidecar container.
-                  When any given server is restarted for another reason, such as a
-                  change to the `restartVersion`, then the newly created pod will
-                  have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
+                  affected until they are restarted. When any given server is restarted
+                  for another reason, such as a change to the `restartVersion`, then
+                  the newly created pod will have the exporter sidecar or not, as
+                  appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.
                 properties:
                   image:
                     description: The WebLogic Monitoring Exporter sidecar container
