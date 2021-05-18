@@ -74,6 +74,10 @@ spec:
               value: "%CUSTOM_CONNECTION_STRING%"
             - name: EXPOSE_T3_CHANNEL_PREFIX
               value: "%EXPOSE_T3_CHANNEL_PREFIX%"
+            - name: PROXY_VAL
+              value: "%PROXY_VAL%"
+            - name: DOMAIN_TYPE
+              value: "%DOMAIN_TYPE%"
       volumes:
         - name: create-fmw-infra-sample-domain-job-cm-volume
           configMap:

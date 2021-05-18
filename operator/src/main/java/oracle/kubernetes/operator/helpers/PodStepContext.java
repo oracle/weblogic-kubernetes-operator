@@ -62,12 +62,15 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
+import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
+import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
@@ -86,6 +89,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private static final String READINESS_PATH = "/weblogic/ready";
   private static String productVersion;
+  protected final ExporterContext exporterContext;
 
   final WlsServerConfig scan;
   @Nonnull
@@ -108,6 +112,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
     this.packet = packet;
+    exporterContext = createExporterContext();
   }
 
   private static boolean isPatchableItem(Map.Entry<String, String> entry) {
@@ -135,6 +140,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private Step getConflictStep() {
     return new ConflictStep();
+  }
+
+  ExporterContext createExporterContext() {
+    return useSidecar() ? new SidecarExporterContext() : new WebAppExporterContext();
+  }
+
+  // Use the monitoring exporter sidecar if an exporter configuration is part of the domain.
+  private boolean useSidecar() {
+    return getDomain().getMonitoringExporterConfiguration() != null;
   }
 
   abstract Map<String, String> getPodLabels();
@@ -617,6 +631,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
     updateForOwnerReference(metadata);
+
+    // Add prometheus annotations. This will overwrite any custom annotations with same name.
+    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+    if (exporterContext.isEnabled()) {
+      AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
+    }
+
     return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
@@ -784,7 +806,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected List<V1Container> getContainers() {
-    return getServerSpec().getContainers();
+    List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
+    exporterContext.addContainer(containers);
+    return containers;
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
@@ -1130,6 +1154,105 @@ public abstract class PodStepContext extends BasePodStepContext {
         setRecordedPod(newPod);
       }
       return newPod;
+    }
+  }
+
+  abstract class ExporterContext {
+    int getWebLogicRestPort() {
+      return scan.getLocalAdminProtocolChannelPort();
+    }
+
+    boolean isWebLogicSecure() {
+      return !Objects.equals(getWebLogicRestPort(), getListenPort());
+    }
+
+    abstract boolean isEnabled();
+
+    abstract int getPort();
+
+    abstract String getBasePath();
+
+    abstract void addContainer(List<V1Container> containers);
+  }
+
+  class WebAppExporterContext extends ExporterContext {
+
+    @Override
+    boolean isEnabled() {
+      return getListenPort() != null;
+    }
+
+    @Override
+    int getPort() {
+      return getListenPort();
+    }
+
+    @Override
+    String getBasePath() {
+      return "/wls-exporter";
+    }
+
+    @Override
+    void addContainer(List<V1Container> containers) {
+      // do nothing
+    }
+  }
+
+  class SidecarExporterContext extends ExporterContext {
+    private static final int DEBUG_PORT = 30055;
+    private final int metricsPort;
+
+    public SidecarExporterContext() {
+      metricsPort = MonitoringExporterSpecification.getRestPort(scan);
+    }
+
+    @Override
+    boolean isEnabled() {
+      return true;
+    }
+
+    @Override
+    int getPort() {
+      return metricsPort;
+    }
+
+    @Override
+    String getBasePath() {
+      return "";
+    }
+
+    @Override
+    void addContainer(List<V1Container> containers) {
+      containers.add(createMonitoringExporterContainer());
+    }
+
+    private V1Container createMonitoringExporterContainer() {
+      return new V1Container()
+            .name(EXPORTER_CONTAINER_NAME)
+            .image(getDomain().getMonitoringExporterImage())
+            .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
+            .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
+            .addPortsItem(new V1ContainerPort().name("metrics").protocol("TCP").containerPort(getPort()))
+            .addPortsItem(new V1ContainerPort().name("debugger").protocol("TCP").containerPort(DEBUG_PORT));
+    }
+
+    private String createJavaOptions() {
+      final List<String> args = new ArrayList<>();
+      args.add("-DDOMAIN=" + getDomainUid());
+      args.add("-DWLS_PORT=" + getWebLogicRestPort());
+      if (isWebLogicSecure()) {
+        args.add("-DWLS_SECURE=true");
+      }
+      if (metricsPort != DEFAULT_EXPORTER_SIDECAR_PORT) {
+        args.add("-DEXPORTER_PORT=" + metricsPort);
+      }
+      args.add(getDebugOption());
+
+      return String.join(" ", args);
+    }
+
+    private String getDebugOption() {
+      return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:" + DEBUG_PORT;
     }
   }
 }

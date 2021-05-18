@@ -71,158 +71,28 @@
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
-WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
-
-WDT_DIR=${WDT_DIR:-/shared/wdt}
-WDT_VERSION=${WDT_VERSION:-1.9.1}
-
-WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
-WDT_INSTALL_ZIP_URL=${WDT_INSTALL_ZIP_URL:-"https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-$WDT_VERSION/$WDT_INSTALL_ZIP_FILE"}
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
-https_proxy=${https_proxy-""}
+https_proxy=${PROXY_VAL-""}
 https_proxy2=${https_proxy2-""}
 
-# Define functions
-
-function setup_wdt_shared_dir {
-  mkdir -p $WDT_DIR || return 1
-}
-
-function install_wdt {
-  #
-  # Download $WDT_INSTALL_ZIP_FILE from $WDT_INSTALL_ZIP_URL into $WDT_DIR using
-  # proxies https_proxy or https_proxy2, then unzip the zip file in $WDT_DIR.
-  #
-
-  local save_dir=`pwd`
-  cd $WDT_DIR || return 1
-
-  local curl_res=1
-  for proxy in "${https_proxy}" "${https_proxy2}"; do
-    echo @@ "Info:  Downloading $WDT_INSTALL_ZIP_URL with https_proxy=\"$proxy\""
-    https_proxy="${proxy}" \
-      curl --silent --show-error --connect-timeout 10 -O -L $WDT_INSTALL_ZIP_URL 
-    curl_res=$?
-    [ $curl_res -eq 0 ] && break
-  done
-
-  if [ $curl_res -ne 0 ] || [ ! -f $WDT_INSTALL_ZIP_FILE ]; then
-    cd $save_dir
-    echo @@ "Error: Download failed or $WDT_INSTALL_ZIP_FILE not found."
-    return 1
-  fi
-
-  echo @@ "Info: Archive downloaded to $WDT_DIR/$WDT_INSTALL_ZIP_FILE, about to unzip via 'jar xf'."
-
-  jar xf $WDT_INSTALL_ZIP_FILE
-  local jar_res=$?
-
-  cd $save_dir
-
-  if [ $jar_res -ne 0 ]; then
-    echo @@ "Error: Install failed while unzipping $WDT_DIR/$WDT_INSTALL_ZIP_FILE"
-    return $jar_res
-  fi
-
-  if [ ! -d "$WDT_DIR/weblogic-deploy/bin" ]; then
-    echo @@ "Error: Install failed: directory '$WDT_DIR/weblogic-deploy/bin' not found."
-    return 1
-  fi
-
-  chmod 775 $WDT_DIR/weblogic-deploy/bin/* || return 1
-
-  echo @@ "Info: Install succeeded, wdt install is in the $WDT_DIR/weblogic-deploy directory."
-  return 0
-}
-
-function run_wdt {
-  #
-  # Run WDT using WDT_VAR_FILE, WDT_MODEL_FILE, and ORACLE_HOME.  
-  # Output:
-  # - result domain will be in DOMAIN_HOME_DIR
-  # - logging output is in $WDT_DIR/createDomain.sh.out and $WDT_DIR/weblogic-deploy/logs
-  # - WDT_VAR_FILE & WDT_MODEL_FILE will be copied to WDT_DIR.
-  #
-
-  # Input files and directories.
-
-  local inputs_orig="$WDT_VAR_FILE"
-  local model_orig="$WDT_MODEL_FILE"
-  local oracle_home="$ORACLE_HOME"
-  local wdt_bin_dir="$WDT_DIR/weblogic-deploy/bin"
-  local wdt_createDomain_script="$wdt_bin_dir/createDomain.sh"
-
-  local domain_home_dir="$DOMAIN_HOME_DIR"
-  if [ -z "${domain_home_dir}" ]; then
-    local domain_dir="/shared/domains"
-    local domain_uid=`egrep 'domainUID' $inputs_orig | awk '{print $2}'`
-    local domain_home_dir=$domain_dir/$domain_uid
-  fi 
-
-  local domain_type=`egrep 'fmwDomainType:' $inputs_orig | grep -v '#' | awk '{print $2}'`
-  echo domain_type = $domain_type
-  echo domain_home_dir = $domain_home_dir
-
-  # Output files and directories.
-
-  local inputs_final=$WDT_DIR/$(basename "$inputs_orig")
-  local model_final=$WDT_DIR/$(basename "$model_orig")
-  local out_file=$WDT_DIR/createDomain.sh.out
-  local wdt_log_dir="$WDT_DIR/weblogic-deploy/logs"
-
-  echo @@ "Info:  About to run WDT createDomain.sh"
-
-  for directory in wdt_bin_dir SCRIPTPATH WDT_DIR oracle_home; do
-    if [ ! -d "${!directory}" ]; then
-       echo @@ "Error:  Could not find ${directory} directory ${!directory}."    
-       return 1
-    fi
-  done
-
-  for fil in inputs_orig model_orig wdt_createDomain_script; do
-    if [ ! -f "${!fil}" ]; then
-       echo @@ "Error:  Could not find ${fil} file ${!fil}."
-       return 1
-    fi
-  done
-
-  cp $model_orig $model_final   || return 1
-  cp $inputs_orig $inputs_final || return 1
-
-  local save_dir=`pwd`
-  cd $WDT_DIR || return 1
-
-  echo @@ "Info:  WDT createDomain.sh output will be in $out_file and $wdt_log_dir"
-
-  # domain_type can be WLS, JRF or RestrictedJRF
-  $wdt_createDomain_script \
-     -oracle_home $oracle_home \
-     -domain_type ${domain_type} \
-     -domain_home $domain_home_dir \
-     -model_file $model_final \
-     -variable_file $inputs_final > $out_file 2>&1
-
-  local wdt_res=$?
-
-  cd $save_dir
-
-  if [ $wdt_res -ne 0 ]; then
-    cat $WDT_DIR/createDomain.sh.out
-    echo @@ "Info:  WDT createDomain.sh output is in $out_file and $wdt_log_dir"
-    echo @@ "Error:  WDT createDomain.sh failed." 
-    return 1
-  fi
-
-  echo @@ "Info:  WDT createDomain.sh succeeded."
-  return 0
-}
+source ${SCRIPTPATH}/wdt-and-wit-utility.sh
 
 # Run
+
+echo "create-domain-script.sh DOMAIN_TYPE is ${DOMAIN_TYPE}"
 
 setup_wdt_shared_dir || exit 1
 
 install_wdt || exit 1
 
-run_wdt || exit 1
+run_wdt "create" || exit 1
+
+echo "Does ${WDT_DIR}/doneExtract exist?"
+while [ ! -f "${WDT_DIR}/doneExtract" ]; do
+   echo @@ "${WDT_DIR}/doneExtract does not exist yet"
+   sleep 20
+done
+echo "Found it and removing the doneExtract file"
+rm -rf ${WDT_DIR}/doneExtract || exit 1
+

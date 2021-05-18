@@ -61,7 +61,7 @@ import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
-import oracle.kubernetes.operator.steps.MonitorExporterSteps;
+import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
@@ -1154,7 +1154,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
         EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
-        MonitorExporterSteps.updateExporterSidecars(),
+        MonitoringExporterSteps.updateExporterSidecars(),
         new TailStep());
 
     Step domainUpStrategy =
