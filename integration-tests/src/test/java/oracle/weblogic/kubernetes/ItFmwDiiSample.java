@@ -68,6 +68,8 @@ public class ItFmwDiiSample {
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-sample-testing");
 
+  private static final String ORACLEDBURLPREFIX = "oracle-db.";
+  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -122,7 +124,8 @@ public class ItFmwDiiSample {
         String.format("Failed to create DB in the namespace %s with dbPort %d ",
             dbNamespace, dbPort));
 
-    dbUrl = K8S_NODEPORT_HOST + ":" + dbPort + "/devpdb.k8s";
+    //dbUrl = K8S_NODEPORT_HOST + ":" + dbPort + "/devpdb.k8s";
+    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     for (String param: params) {
       String rcuSchemaPrefix = param.split(":")[1];
