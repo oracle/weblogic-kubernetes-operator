@@ -30,7 +30,7 @@ The operator generates these event types in a domain namespace, which indicate t
  *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered a failure.
  *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
  *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
- *  `DomainRollStarting`:  The operator has started a rolling restart of a domain after it detects a change or changes in the domain resource or WebLogic domain configuration, which require a restart of all running pods in the domain. Please refer to [Fields in domain resource that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}}).
+ *  `DomainRollStarting`:  The operator has started a rolling restart of a domain after it detects a change or changes in the domain resource or WebLogic domain configuration, which require a restart of all running pods in the domain. The operator makes its best efforts in providing the reason of the rolling restart. If the rolling restart is caused by one or more of the following fields in the domain resource, the event message contains the fields that have changed as well as their old and new values: image, imagePullPolicy, livenessProbe, readinessProbe, domain restartVersion, domainHome, includeServerOutInPodLog, and logHome. When the rolling restart is caused by changes in the other domain resource fields (Please refer to [Fields in domain resource that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup#fields-that-cause-servers-to-be-restarted" >}})), the event message simply indicates that the domain resource has changed. If the cause of the rolling restart is in the WebLogic domain configuration, the event message indicates that as well without the details.
  *  `DomainRollCompleted`:  The operator has successfully completed a rolling restart of a domain.
  *  `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod is not conformed to the current domain resource or WebLogic domain configuration.
  *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
@@ -291,33 +291,35 @@ Events:  <none>
 
 Example of the sequence of operator generated events in a domain rolling restart after the domain resource's `image` and `logHomeEnabled` changed.
 
+The output of command `kubectl get events -n sample-domain1-ns --selector=weblogic.domainUID=sample-domain1,weblogic.createdByOperator=true --sort-by=lastTimestamp'.
+
 ```
 LAST SEEN   TYPE     REASON                     OBJECT           MESSAGE
-2m58s       Normal   DomainChanged              domain/domain1   Domain resource domain1 was changed
-2m58s       Normal   DomainProcessingStarting   domain/domain1   Creating or updating Kubernetes presence for WebLogic Domain with UID domain1
-2m58s       Normal   DomainRollStarting         domain/domain1   Rolling restart WebLogic server pods in domain domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  'logHome' changed from 'null' to '/shared/logs/domain1'
-2m58s       Normal   PodCycleStarting           domain/domain1   Replacing pod domain1-adminserver because: In container 'weblogic-server':
+2m58s       Normal   DomainChanged              domain/sample-domain1   Domain resource sample-domain1 was changed
+2m58s       Normal   DomainProcessingStarting   domain/sample-domain1   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
+2m58s       Normal   DomainRollStarting         domain/sample-domain1   Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
+  'logHome' changed from 'null' to '/shared/logs/sample-domain1'
+2m58s       Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-adminserver because: In container 'weblogic-server':
   'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/domain1'
-2m7s        Normal   PodCycleStarting           domain/domain1   Replacing pod domain1-managed-server1 because: In container 'weblogic-server':
+  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
+2m7s        Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
   'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/domain1'
-71s         Normal   PodCycleStarting           domain/domain1   Replacing pod domain1-managed-server2 because: In container 'weblogic-server':
+  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
+71s         Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-managed-server2 because: In container 'weblogic-server':
   'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/domain1'
-19s         Normal   DomainRollCompleted         domain/domain1   Rolling restart of domain domain1 completed
-19s         Normal   DomainProcessingCompleted   domain/domain1   Successfully completed processing domain resource domain1
+  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
+19s         Normal   DomainRollCompleted         domain/sample-domain1   Rolling restart of domain sample-domain1 completed
+19s         Normal   DomainProcessingCompleted   domain/sample-domain1   Successfully completed processing domain resource sample-domain1
 
 ```
 
 Example of a `DomainRollStarting` event:
 
 ```
-Name:             domain1.DomainRollStarting.7d33e9b787e9c318
-Namespace:        weblogic-domain
+Name:             sample-domain1.DomainRollStarting.7d33e9b787e9c318
+Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
-                  weblogic.domainUID=domain1
+                  weblogic.domainUID=sample-domain1
 Annotations:      <none>
 API Version:      v1
 Count:            1
@@ -326,17 +328,17 @@ First Timestamp:  2021-05-18T02:00:24Z
 Involved Object:
   API Version:   weblogic.oracle/v8
   Kind:          Domain
-  Name:          domain1
-  Namespace:     weblogic-domain
+  Name:          sample-domain1
+  Namespace:     sample-domain1-ns
   UID:           5df7dcda-d606-4509-9a06-32f25e16e166
 Kind:            Event
 Last Timestamp:  2021-05-18T02:00:24Z
-Message:         Rolling restart WebLogic server pods in domain domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  'logHome' changed from 'null' to '/shared/logs/domain1'
+Message:         Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
+  'logHome' changed from 'null' to '/shared/logs/sample-domain1'
 Metadata:
   Creation Timestamp:  2021-05-18T02:00:24Z
   Resource Version:   12842363
-  Self Link:          /api/v1/namespaces/weblogic-domain/events/domain1.DomainRollStarting.7d33e9b787e9c318
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainRollStarting.7d33e9b787e9c318
   UID:                6ec92655-9d06-43b1-8b26-c01ebccadecf
 Reason:               DomainRollStarting
 Reporting Component:  weblogic.operator
@@ -350,10 +352,10 @@ Events:  <none>
 Example of a `PodCycleStarting` event:
 
 ```
-Name:             domain1.PodCycleStarting.7d34bc3232231f49
-Namespace:        weblogic-domain
+Name:             sample-domain1.PodCycleStarting.7d34bc3232231f49
+Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
-                  weblogic.domainUID=domain1
+                  weblogic.domainUID=sample-domain1
 Annotations:      <none>
 API Version:      v1
 Count:            1
@@ -362,18 +364,18 @@ First Timestamp:  2021-05-18T02:01:18Z
 Involved Object:
   API Version:   weblogic.oracle/v8
   Kind:          Domain
-  Name:          domain1
-  Namespace:     weblogic-domain
+  Name:          sample-domain1
+  Namespace:     sample-domain1-ns
   UID:           5df7dcda-d606-4509-9a06-32f25e16e166
 Kind:            Event
 Last Timestamp:  2021-05-18T02:01:18Z
-Message:         Replacing pod domain1-managed-server1 because: In container 'weblogic-server':
+Message:         Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
   'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/domain1'
+  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
 Metadata:
   Creation Timestamp:  2021-05-18T02:01:18Z
   Resource Version:   12842530
-  Self Link:          /api/v1/namespaces/weblogic-domain/events/domain1.PodCycleStarting.7d34bc3232231f49
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.PodCycleStarting.7d34bc3232231f49
   UID:                4c6a203e-9b93-4b46-b9e3-1a448b52c7ca
 Reason:               PodCycleStarting
 Reporting Component:  weblogic.operator
