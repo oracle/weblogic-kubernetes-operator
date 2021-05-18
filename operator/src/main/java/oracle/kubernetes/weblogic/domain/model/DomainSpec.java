@@ -306,8 +306,8 @@ public class DomainSpec extends BaseConfiguration {
    * @since 3.2
    */
   @Description("Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator "
-      + "will deploy a sidecar container alongside each WebLogic server instance that runs the exporter. "
-      + "WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted "
+      + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
+      + "WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, "
       + "will not be restarted simply to provision or remove the exporter's sidecar container. When any given server "
       + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will "
       + "have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.")
