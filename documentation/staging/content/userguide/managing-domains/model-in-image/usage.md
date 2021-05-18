@@ -53,7 +53,7 @@ There are three methods for layering Model in Image artifacts on top of a base i
 
   - Manual Image Creation: Use Docker commands to layer the WDT artifacts from the above table on top of your base image into a new image.
 
-  - WebLogic Image Tool: Use the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool). The WebLogic Image Tool (WIT) has built-in options for layering WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
+  - WebLogic Image Tool: Use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/). The WebLogic Image Tool (WIT) has built-in options for layering WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
 
   - Persistent Volume Claim: This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files in a [Persistent Volume Claim]({{< relref "/faq/volumes.md" >}}) and modify `configuration.model.modelHome` to the corresponding directory within the PVC's mount location. This method does not address the requirement to include unzipped WDT install binaries in the `/u01/wdt/weblogic-deploy` directory (use either of the previous two methods).
 
@@ -123,7 +123,7 @@ The following Domain fields are specific to Model in Image domains.
 | `configuration.model.configMap`              | Optional. Set if you have stored additional models in a ConfigMap as per [Optional WDT model ConfigMap](#optional-wdt-model-configmap). |
 | `configuration.secrets`                      | Optional. Set this array if your image or ConfigMap models contain macros that reference custom Kubernetes Secrets. For example, if your macros depend on secrets `my-secret` and `my-other-secret`, then set to `[my-secret, my-other-secret]`.|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
-| `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/tool_configuration.md#domain-type-definitions).|
+| `configuration.model.domainType`             | Set the type of domain. Valid values are `WLS`, `JRF`, and `RestrictedJRF`, where `WLS` is the default. See [WDT Domain Types](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools-config/domain_def/).|
 | `configuration.model.runtimeEncryptionSecret`| Required. All Model in Image domains must specify a runtime encryption secret. See [Required runtime encryption secret](#required-runtime-encryption-secret). |
 | `configuration.model.modelHome`              | Optional. Location of the WDT model home, which can include model YAML files, `.properties` files, and application `.zip` archives. Defaults to `/u01/wdt/models`.|
 
@@ -251,4 +251,4 @@ Follow these steps to ensure that a JRF domain can continue to access its RCU da
 
 For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
 
-See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/rcuinfo.md) in the WDT documentation.
+See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/main/documentation/1.9/content/rcuinfo.md) in the WDT documentation.

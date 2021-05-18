@@ -30,7 +30,7 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
 
 This sample demonstrates deploying a Model in Image [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}). Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to pre-create your WebLogic domain home prior to deploying your Domain YAML file. Instead, Model in Image uses a WebLogic Deploy Tooling (WDT) model to specify your WebLogic configuration.
 
-WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md).
+WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST) configuration scripts and templates. They compactly define a WebLogic domain using YAML files and support including application archives in a ZIP file. The WDT model format is described in the open source, [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project, and the required directory structure for a WDT archive is specifically discussed [here](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/).
 
 For more information on Model in Image, see the [Model in Image user guide]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}). For a comparison of Model in Image to other domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
@@ -146,5 +146,5 @@ For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pul
 
 For references to the relevant user documentation, see:
  - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
- - [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling)
- - [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
+ - [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)
+ - [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/)

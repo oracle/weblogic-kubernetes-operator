@@ -364,7 +364,9 @@ function validateDomainFilesDir {
 # Function to validate the common input parameters
 #
 function validateCommonInputs {
-  # Parse the commonn inputs file
+  sample_name=${1:-"other"}
+
+  # Parse the common inputs file
   parseCommonInputs
 
   validateInputParamsSpecified \
@@ -378,11 +380,14 @@ function validateCommonInputs {
 
   validateIntegerInputParamsSpecified \
     adminPort \
-    configuredManagedServerCount \
     initialManagedServerReplicas \
     managedServerPort \
     t3ChannelPort \
     adminNodePort
+
+  if [ ! "${sample_name}" == "fmw-domain-home-in-image" ]; then
+    validateIntegerInputParamsSpecified configuredManagedServerCount
+  fi
 
   validateBooleanInputParamsSpecified \
     productionModeEnabled \
