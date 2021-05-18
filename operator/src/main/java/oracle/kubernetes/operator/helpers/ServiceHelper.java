@@ -268,12 +268,20 @@ public class ServiceHelper {
 
     @Override
     protected Map<String, String> getServiceLabels() {
-      return getServerSpec().getServiceLabels();
+      Map<String, String> serviceLabels = getServerSpec().getServiceLabels();
+      if (isForAdminServer()) {
+        serviceLabels.putAll(getDomain().getAdminServerSpec().getServiceLabels());
+      }
+      return serviceLabels;
     }
 
     @Override
     protected Map<String, String> getServiceAnnotations() {
-      return getServerSpec().getServiceAnnotations();
+      Map<String, String> serviceAnnotations = getServerSpec().getServiceAnnotations();
+      if (isForAdminServer()) {
+        serviceAnnotations.putAll(getDomain().getAdminServerSpec().getServiceAnnotations());
+      }
+      return serviceAnnotations;
     }
 
     String getServerName() {

@@ -17,7 +17,7 @@ spec:
     services:
     - kind: Service
       name: @domain1uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -35,7 +35,7 @@ spec:
     services:
     - kind: Service
       name: @domain1uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
   tls:
      secretName: @domain1uid@-traefik-tls-secret
 ---
@@ -55,7 +55,7 @@ spec:
     services:
     - kind: Service
       name: @domain2uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
@@ -73,7 +73,7 @@ spec:
     services:
     - kind: Service
       name: @domain2uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
   tls:
      secretName: @domain2uid@-tls-secret
 ---
@@ -130,7 +130,7 @@ spec:
     services:
     - kind: Service
       name: @domain1uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -159,7 +159,7 @@ spec:
     services:
     - kind: Service
       name: @domain2uid@-cluster-cluster-1
-      port: 8001
+      port: 7100
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: Middleware
@@ -231,7 +231,7 @@ spec:
     - kind: Service
       name: @domain1uid@-cluster-cluster-1
       namespace: default
-      port: 8001
+      port: 7100
   tls:
     secretName: @domain1uid@-traefik-tls-secret
 ---
@@ -267,7 +267,7 @@ spec:
     - kind: Service
       name: @domain2uid@-cluster-cluster-1
       namespace: default
-      port: 8001
+      port: 7100
   tls:
     secretName: @domain2uid@-traefik-tls-secret
 ---

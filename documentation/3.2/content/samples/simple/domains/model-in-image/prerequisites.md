@@ -23,7 +23,7 @@ weight: 1
    $ cd /tmp
    ```
    ```shell
-   $ git clone --branch v3.2.1 https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
@@ -44,6 +44,7 @@ weight: 1
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
+
 1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.
@@ -138,10 +139,10 @@ weight: 1
    e. Later in this sample, when you run WebLogic Image Tool commands, the tool will use the image as a base image for creating model images. Specifically, the tool will implicitly call `docker pull` for one of the above licensed images as specified in the tool's command line using the `--fromImage` parameter. For `JRF`, this sample specifies `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4`, and for `WLS`, the sample specifies `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
      {{% notice info %}}
-   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/managing-domains/domain-in-image/base-images/_index.md" >}}).
+   If you prefer, you can create your own base image and then substitute this image name in the WebLogic Image Tool `--fromImage` parameter throughout this sample. For example, you may wish to start with a base image that has patches applied. See [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md" >}}).
      {{% /notice %}}
 
-1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
+1. Download the latest [WebLogic Deploy Tooling](https://github.com/oracle/weblogic-deploy-tooling/releases) (WDT) and [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool/releases) (WIT) installer ZIP files to your `/tmp/mii-sample/model-images` directory. Both WDT and WIT are required to create your Model in Image container images.
 
    ```shell
    $ cd /tmp/mii-sample/model-images
@@ -180,7 +181,7 @@ weight: 1
    has a version of WDT in its `--type wdt --version latest` location, then the
    `cache addInstaller` command would fail.
    For more information about the WIT cache, see the
-   [WIT Cache documentation](https://github.com/oracle/weblogic-image-tool/blob/master/site/cache.md).
+   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
 
    These steps will install WIT to the `/tmp/mii-sample/model-images/imagetool` directory,
    plus put a `wdt_latest` entry in the tool's cache which points to the WDT ZIP file installer.

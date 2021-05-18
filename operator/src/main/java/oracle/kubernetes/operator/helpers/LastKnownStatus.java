@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 
+import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -26,7 +27,7 @@ public class LastKnownStatus {
   public LastKnownStatus(String status, int unchangedCount) {
     this.status = status;
     this.unchangedCount = unchangedCount;
-    this.time = OffsetDateTime.now();
+    this.time = SystemClock.now();
   }
 
   public String getStatus() {

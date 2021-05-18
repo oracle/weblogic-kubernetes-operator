@@ -15,7 +15,7 @@
     <property name="app" value="cdttxservlet" />
 
     <path id="build.classpath">
-        <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
+      <pathelement path="${env.ORACLE_HOME}/wlserver/server/lib/weblogic.jar"/>
     </path>
 
     <target name="build">
@@ -24,15 +24,16 @@
         <mkdir dir="${builddir}" />
         <delete dir="${tempdir}" quiet="true" />
         <mkdir dir="${tempdir}" />
-        <mkdir dir="${tempdir}/WEB-INF"/>
-        <mkdir dir="${tempdir}/WEB-INF/classes"/>
         <javac debug="${javac.debug}" srcdir="src"
-               destdir="${tempdir}/WEB-INF/classes">
+               destdir="${tempdir}">
             <classpath refid="build.classpath"/>
         </javac>
-        <copy file="descriptors/web.xml"
-              tofile="${tempdir}/WEB-INF/web.xml"/>
-        <jar destfile="${builddir}/${app}.war" basedir="${tempdir}" />
-        <delete dir="${tempdir}" quiet="true" />
+
+     <war destfile="${builddir}/${app}.war" needxmlfile="no">
+       <classes dir="${tempdir}"/>
+       <zipfileset dir="src/application" 
+          includes="CdtTxServlet.java" prefix="src/application"/>
+      </war>
+      <delete dir="${tempdir}" quiet="true" />
     </target>
 </project>

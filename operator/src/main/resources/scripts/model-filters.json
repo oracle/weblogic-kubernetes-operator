@@ -7,5 +7,9 @@
     "discover": [
     ],
     "update": [
+      { "name": "update_mii_filter", "path": "/u01/wdt/weblogic-deploy/lib/model_wdt_mii_filter.py" }
+    ],
+    "validate": [
+      { "name": "validate_mii_filter", "path": "/u01/wdt/weblogic-deploy/lib/model_wdt_mii_filter.py" }
     ]
   }

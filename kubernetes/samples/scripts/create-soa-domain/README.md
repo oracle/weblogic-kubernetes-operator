@@ -1,6 +1,6 @@
 ### Oracle SOA Suite on Kubernetes
 
-The Oracle WebLogic Server Kubernetes Operator (the “operator”) supports deployment of Oracle SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these domain types:
+The WebLogic Kubernetes Operator (the “operator”) supports deployment of Oracle SOA Suite components such as Oracle Service-Oriented Architecture (SOA), Oracle Service Bus (OSB), and Oracle Enterprise Scheduler (ESS). Currently the operator supports these domain types:
 
 * `soa`: Deploys a SOA domain
 * `osb`: Deploys an OSB domain
@@ -24,4 +24,3 @@ The operator has several key features to assist you with deploying and managing 
 
 Refer the following documentation link for detailed information about deploying Oracle SOA Suite domains on Kubernetes.  
 [Documentation](https://oracle.github.io/fmw-kubernetes/soa-domains/)
-
