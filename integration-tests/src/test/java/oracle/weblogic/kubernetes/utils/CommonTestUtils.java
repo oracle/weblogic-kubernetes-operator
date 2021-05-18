@@ -2063,7 +2063,7 @@ public class CommonTestUtils {
       boolean buildCoherence = false;
 
       for (String appSrcDir : appSrcDirList) {
-        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear") || appSrcDir.contains(".jar")) {
           //remove from build
           buildAppDirList.remove(appSrcDir);
           archiveAppsList.add(appSrcDir);

@@ -117,6 +117,13 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
+# featureGates specifies a set of key=value pairs separated by commas that describe whether a given
+# operator feature is enabled. You enable a feature by including a key=value pair where the key is the
+# feature name and the value is "true". This will allow the operator team to release features that
+# are not yet ready to be enabled by default, but that are ready for testing by customers. Once a feature is
+# stable then it will be enabled by default and can not be disabled using this configuration.
+# featureGates: "...,CommonMounts=true"
+
 # javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
 # log output and the contents of log files in the container's /logs/ directory.
 # Valid values are: "SEVERE", "WARNING", "INFO", "CONFIG", "FINE", "FINER", and "FINEST".
