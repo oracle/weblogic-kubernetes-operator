@@ -13,19 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Istio;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.OnlineUpdate;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -35,15 +23,12 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -64,8 +49,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioPrometheus;
@@ -78,8 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test istio enabled WebLogic Domain in mii model")
+@DisplayName("Test the monitoring WebLogic Domain via istio provided Prometheus")
 @IntegrationTest
 class ItIstioMonitoringExporter {
 
@@ -163,15 +147,15 @@ class ItIstioMonitoringExporter {
     String miiImage = createAndVerifyMiiImage(monitoringExporterApp,
         MODEL_DIR + "/model.monexp.yaml");
     // create the domain object
-    Domain domain = createDomainResource(domainUid,
+    Domain domain = createIstioDomainResource(domainUid,
         domainNamespace,
         adminSecretName,
         OCIR_SECRET_NAME,
         encryptionSecretName,
         replicaCount,
         miiImage,
-        //MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        configMapName);
+        configMapName,
+        clusterName);
 
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
@@ -266,75 +250,23 @@ class ItIstioMonitoringExporter {
    * Verify login to WebLogic console is successful thru istio ingress port.
    * Deploy a web application thru istio http ingress port using REST api.
    * Access web application thru istio http ingress port using curl.
+   * Deploy Istio provided Promethues
+   * Verify Weblogic metrics can be processed via istio based prometheus
    */
   @Test
-  @DisplayName("Create istio provided prometheus and verify that it can monitor via weblogic exporter webapp")
+  @DisplayName("Create istio provided prometheus and verify "
+      + "it can monitor Weblogic domain via weblogic exporter webapp")
   public void testIstioPrometheus() {
     assertDoesNotThrow(() -> setupIstioModelInImageDomain(), "setup for istio based domain failed");
     int prometheusPort = getNextFreePort(30510, 30600);
     assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
         String.valueOf(prometheusPort)), "failed to install istio prometheus");
 
-    //int istioIngressPort = getIstioHttpIngressPort();
-    //String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/wls-exporter/metrics";
-    //logger.info("Application Access URL {0}", url);
-    //boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    //assertTrue(checkApp, "Failed to access WebLogic application");
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
     assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey,
         "testwebapp", String.valueOf(prometheusPort)));
-  }
-
-  private Domain createDomainResource(String domainUid, String domNamespace,
-                                      String adminSecretName, String repoSecretName,
-                                      String encryptionSecretName, int replicaCount,
-                                      String miiImage, String configmapName) {
-
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888))
-                .model(new Model()
-                    .domainType("WLS")
-                    .configMap(configmapName)
-                    .onlineUpdate(new OnlineUpdate().enabled(true))
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-    setPodAntiAffinity(domain);
-    return domain;
   }
 
   private String getMonitoringExporterApp() {
@@ -369,28 +301,6 @@ class ItIstioMonitoringExporter {
         .execute(), "Failed to build monitoring exporter webapp");
     return RESULTS_ROOT + "/wls-exporter.war";
   }
-
-  private void deployMonitoringExporterApp() {
-    String monitoringExporterApp = getMonitoringExporterApp();
-    assertNotNull(monitoringExporterApp, "Failed to download Monitoring Exporter Application");
-    Path archivePath = Paths.get(monitoringExporterApp);
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-    ExecResult result = null;
-    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
-        String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        clusterName, archivePath, domainNamespace + ".org", "wls-exporter");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
-
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/wls-exporter/metrics";
-    logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application");
-  }
-
 
   /**
    * Check metrics using Prometheus.
