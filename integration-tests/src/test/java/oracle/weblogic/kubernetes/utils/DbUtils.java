@@ -577,6 +577,7 @@ public class DbUtils {
 
   /**
    * Update RCU schema password on an Oracle DB instance.
+   *
    * @param dbNamespace namespace where DB instance started
    * @param rcuprefix prefix of RCU schema
    * @param rcupasswd RCU schema password that is going to change to

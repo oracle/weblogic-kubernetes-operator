@@ -66,7 +66,6 @@ public class ItFmwMiiDomain {
   private static String jrfDomainNamespace = null;
   private static String jrfMiiImage = null;
 
-  //private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
   private static final String RCUSCHEMAPREFIX = "JRFDOMAINMII";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";

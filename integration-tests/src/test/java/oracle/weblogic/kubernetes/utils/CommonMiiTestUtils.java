@@ -843,7 +843,7 @@ public class CommonMiiTestUtils {
    * @param managedServerPrefix prefix of the managed server
    * @param replicaCount replica count of the domain
    * @param args arguments to determine appending suffix to managed server pod name or not.
-   *             append suffix if it's set. Otherwise do not append.
+   *             Append suffix if it's set. Otherwise do not append.
    */
   @DisplayName("Change the WebLogic Admin credential of the domain")
   public static void verifyMiiUpdateWebLogicCredential(String domainNamespace, String domainUid,
@@ -888,9 +888,6 @@ public class CommonMiiTestUtils {
     String restartVersion = patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
-        //adminServerPodName,
-        //managedServerPrefix,
-        //replicaCount,
         adminSecretName);
 
     getLogger().info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted with "
