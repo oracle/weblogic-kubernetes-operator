@@ -54,9 +54,20 @@ if [ -z "$NUMBER_OF_THREADS" ]; then
    echo "Error: NUMBER_OF_THREADS env variable is not set"
    exit 1
 fi
+if [ -z "$JAVA_HOME" ]; then
+   echo "Error: JAVA_HOME env variable is not set, should be at least 11.0.10"
+   exit 1
+fi
+
 mkdir -p ${WORKSPACE}/bin
 
-export PATH=${APACHE_MAVEN_HOME}/bin:${WORKSPACE}/bin:$PATH   
+export PATH=${JAVA_HOME}/bin:${APACHE_MAVEN_HOME}/bin:${WORKSPACE}/bin:$PATH
+
+which java
+java -version
+
+which mvn
+mvn --version
 
 echo 'Set up helm...'
 curl -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
@@ -76,16 +87,8 @@ chmod +x ./kind
 mv ./kind bin/kind
 kind version
 
-echo 'Validate Java install...'
-#export JAVA_HOME=/home/opc/tools/openjdk-11.0.7+10
-#export PATH=${JAVA_HOME}/bin:$PATH
-which java
-java -version
-
 export TWO_CLUSTERS=false
 
-which mvn
-mvn --version
 
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 
