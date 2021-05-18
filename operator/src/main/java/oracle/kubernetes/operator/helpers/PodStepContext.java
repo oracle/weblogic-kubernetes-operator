@@ -69,6 +69,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
+import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
@@ -474,14 +476,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     String domainIncompatibility = getReasonToRecycle(pod, DOMAIN);
     if (!haveReasonsToRoll(domainIncompatibility)
         && haveReasonsToRoll(getReasonToRecycle(pod, UNKNOWN))) {
-      domainIncompatibility = "domain resource changed";
+      domainIncompatibility = ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
     }
 
     if (!canUseNewDomainZip(pod)) {
       if (haveReasonsToRoll(domainIncompatibility)) {
-        domainIncompatibility += ",\nWebLogic domain configuration changed";
+        domainIncompatibility += ",\n" + ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
       } else {
-        domainIncompatibility = "WebLogic domain configuration changed";
+        domainIncompatibility = ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
       }
     }
     return domainIncompatibility;

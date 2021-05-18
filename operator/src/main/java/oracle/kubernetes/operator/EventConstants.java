@@ -53,4 +53,6 @@ public interface EventConstants {
   String START_MANAGING_NAMESPACE_FAILED_PATTERN = "Start managing namespace %s failed due to an authorization error";
   String DOMAIN_ROLL_STARTING_PATTERN = "Rolling restart WebLogic server pods in domain %s because: %s";
   String DOMAIN_ROLL_COMPLETED_PATTERN = "Rolling restart of domain %s completed";
+  String ROLL_REASON_DOMAIN_RESOURCE_CHANGED = "domain resource changed";
+  String ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED = "WebLogic domain configuration changed due to a Model in Image model update";
 }
