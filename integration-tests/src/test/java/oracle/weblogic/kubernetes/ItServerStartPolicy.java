@@ -1420,19 +1420,6 @@ class ItServerStartPolicy {
     logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
   }
 
-  /*
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
-    Map<String, String> secretMap = new HashMap<>();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
-  }*/
-
   private static void createDomainResource(
           String domNamespace, String adminSecretName,
           String encryptionSecretName,
