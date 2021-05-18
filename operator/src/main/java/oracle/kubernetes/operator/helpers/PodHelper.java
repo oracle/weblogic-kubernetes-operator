@@ -7,13 +7,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -38,12 +35,9 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
-import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
-import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
@@ -405,24 +399,13 @@ public class PodHelper {
 
     private final String clusterName;
     private final Packet packet;
-    private final ExporterContext exporterContext;
 
     ManagedPodStepContext(Step conflictStep, Packet packet) {
       super(conflictStep, packet);
       this.packet = packet;
       clusterName = (String) packet.get(ProcessingConstants.CLUSTER_NAME);
-      exporterContext = createExporterContext();
 
       init();
-    }
-
-    ExporterContext createExporterContext() {
-      return useSidecar() ? new SidecarExporterContext() : new WebAppExporterContext();
-    }
-
-    // Use the monitoring exporter sidecar if an exporter configuration is part of the domain.
-    private boolean useSidecar() {
-      return getDomain().getMonitoringExporterConfiguration() != null;
     }
 
     @Override
@@ -514,21 +497,6 @@ public class PodHelper {
     }
 
     @Override
-    V1Pod withNonHashedElements(V1Pod pod) {
-      V1Pod v1Pod = super.withNonHashedElements(pod);
-
-      // Add prometheus annotations. This will overwrite any custom annotations with same name.
-      // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
-      // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
-      if (exporterContext.isEnabled()) {
-        final V1ObjectMeta metadata = v1Pod.getMetadata();
-        AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
-      }
-
-      return v1Pod;
-    }
-
-    @Override
     protected V1ObjectMeta createMetadata() {
       V1ObjectMeta metadata = super.createMetadata();
       if (getClusterName() != null) {
@@ -549,13 +517,6 @@ public class PodHelper {
     }
 
     @Override
-    protected List<V1Container> getContainers() {
-      List<V1Container> containers = new ArrayList<>(super.getContainers());
-      exporterContext.addContainer(containers);
-      return containers;
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     List<V1EnvVar> getConfiguredEnvVars(TuningParameters tuningParameters) {
       List<V1EnvVar> envVars = createCopy((List<V1EnvVar>) packet.get(ProcessingConstants.ENVVARS));
@@ -564,106 +525,6 @@ public class PodHelper {
       addStartupEnvVars(vars);
       return vars;
     }
-
-    abstract class ExporterContext {
-      int getWebLogicRestPort() {
-        return scan.getLocalAdminProtocolChannelPort();
-      }
-
-      boolean isWebLogicSecure() {
-        return !Objects.equals(getWebLogicRestPort(), getListenPort());
-      }
-
-      abstract boolean isEnabled();
-
-      abstract int getPort();
-
-      abstract String getBasePath();
-
-      abstract void addContainer(List<V1Container> containers);
-    }
-
-    class WebAppExporterContext extends ExporterContext {
-
-      @Override
-      boolean isEnabled() {
-        return getListenPort() != null;
-      }
-
-      @Override
-      int getPort() {
-        return getListenPort();
-      }
-
-      @Override
-      String getBasePath() {
-        return "/wls-exporter";
-      }
-
-      @Override
-      void addContainer(List<V1Container> containers) {
-        // do nothing
-      }
-    }
-
-    class SidecarExporterContext extends ExporterContext {
-      private static final int DEBUG_PORT = 30055;
-      private final int metricsPort;
-
-      public SidecarExporterContext() {
-        metricsPort = MonitoringExporterSpecification.getRestPort(scan);
-      }
-
-      @Override
-      boolean isEnabled() {
-        return true;
-      }
-
-      @Override
-      int getPort() {
-        return metricsPort;
-      }
-
-      @Override
-      String getBasePath() {
-        return "";
-      }
-
-      @Override
-      void addContainer(List<V1Container> containers) {
-        containers.add(createMonitoringExporterContainer());
-      }
-
-      private V1Container createMonitoringExporterContainer() {
-        return new V1Container()
-              .name(EXPORTER_CONTAINER_NAME)
-              .image(getDomain().getMonitoringExporterImage())
-              .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
-              .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
-              .addPortsItem(new V1ContainerPort().name("metrics").protocol("TCP").containerPort(getPort()))
-              .addPortsItem(new V1ContainerPort().name("debugger").protocol("TCP").containerPort(DEBUG_PORT));
-      }
-
-      private String createJavaOptions() {
-        final List<String> args = new ArrayList<>();
-        args.add("-DDOMAIN=" + getDomainUid());
-        args.add("-DWLS_PORT=" + getWebLogicRestPort());
-        if (isWebLogicSecure()) {
-          args.add("-DWLS_SECURE=true");
-        }
-        if (metricsPort != DEFAULT_EXPORTER_SIDECAR_PORT) {
-          args.add("-DEXPORTER_PORT=" + metricsPort);
-        }
-        args.add(getDebugOption());
-
-        return String.join(" ", args);
-      }
-
-      private String getDebugOption() {
-        return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:" + DEBUG_PORT;
-      }
-    }
-
   }
 
   static class ManagedPodStep extends Step {
