@@ -7,9 +7,9 @@ description: "Sample for creating an FMW Infrastructure domain home inside an im
 
 
 The sample scripts demonstrate the creation of a FMW Infrastructure domain home in an image using
-[WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT). 
-The sample scripts have the option of putting the WebLogic domain log, server logs, server output files, 
-and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). 
+[WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT).
+The sample scripts have the option of putting the WebLogic domain log, server logs, server output files,
+and the Node Manager logs on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC).
 The scripts also generate the domain resource YAML file, which can then be used by the scripts or used manually
 to start the Kubernetes artifacts of the corresponding domain, including the WebLogic Server pods and services.
 
@@ -20,8 +20,8 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 The following prerequisites must be met prior to running the create domain script:
 
 * Make sure the WebLogic Kubernetes Operator is running.
-* The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. 
-  For details on how to obtain or create the image, refer to 
+* The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
+  For details on how to obtain or create the image, refer to
   [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
@@ -38,10 +38,10 @@ The sample for creating domains is in this directory:
 ```shell
 $ cd kubernetes/samples/scripts/create-fmw-infrastructure-domain/domain-home-in-image
 ```
-Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values. 
+Make a copy of the `create-domain-inputs.yaml` file, update it with the correct values.
 If `fwmDomainType` is `JRF`, also update the input files with configurations for accessing the RCU database schema,
 including `rcuSchemaPrefix`, `rcuSchemaPassword`, `rcuDatabaseURL`, and `rcuCredentialSecrets`.
-Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator, 
+Run the create script, pointing it at your inputs file and an output directory, along with user name and password for the WebLogic administrator,
 and if creating a JFR FMW domain, also provide the password for the RCU schema:
 
 ```shell
@@ -52,6 +52,8 @@ $ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /<path to output-directory>
 ```
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% /notice%}}
 
 The script will perform the following steps:
 
@@ -59,11 +61,11 @@ The script will perform the following steps:
   already exist.  The path name is `/<path to output-directory>/weblogic-domains/<domainUID>`.
   If the directory already exists, its contents must be removed before using this script.
 
-* Create a properties file, `domain.properties`, in the directory that is created above. 
-  This properties file will be used to create a sample FMW Infrastructure domain. 
+* Create a properties file, `domain.properties`, in the directory that is created above.
+  This properties file will be used to create a sample FMW Infrastructure domain.
   The `domain.properties` file will be removed upon successful completion of the script.
 
-* Download the latest [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) and [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) installer ZIP files to your `/tmp/dhii-sample/tools` directory. 
+* Download the latest [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT) and [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) installer ZIP files to your `/tmp/dhii-sample/tools` directory.
   WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
@@ -74,23 +76,23 @@ The script will perform the following steps:
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
 
-* If the optional `-n` option and an encryption key is provided, invoke the WDT 
+* If the optional `-n` option and an encryption key is provided, invoke the WDT
   [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/)
-  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file 
+  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file
   to encrypt the password properties in `domain.properties` file. Note that this password encryption
-  step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because 
+  step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because
   the feature is provided by WDT.
-  
-* Invoke the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) to create a new 
-  FWM Infrastructure domain based on the FMW Infrastructure image specified in the `domainHomeImageBase` 
-  parameter from your inputs file. The new WebLogic Server domain is created using one of the 
+
+* Invoke the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) to create a new
+  FWM Infrastructure domain based on the FMW Infrastructure image specified in the `domainHomeImageBase`
+  parameter from your inputs file. The new WebLogic Server domain is created using one of the
   following options based on the value of the `mode` parameter in the inputs YAML file:
-  * If the value of the `mode` parameter is `wdt`, the WDT model specified in the `createDomainWdtModel` 
+  * If the value of the `mode` parameter is `wdt`, the WDT model specified in the `createDomainWdtModel`
     parameter and the WDT variables in `domain.properties` file are used by the WebLogic Image Tool to create
     the new WebLogic Server domain.
-  * If the value of the `mode` parameter is `wlst`, the offline WLST 
+  * If the value of the `mode` parameter is `wlst`, the offline WLST
     script specified in the `createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
-  
+
 * The generated image is tagged with the `image` parameter provided in your inputs file.
 
   {{% notice warning %}}
@@ -245,11 +247,11 @@ spec:
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: 
+  #- name:
 
   # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
   # how to create that Secret at the end of this file)
-  webLogicCredentialsSecret: 
+  webLogicCredentialsSecret:
     name: fmwdomain-weblogic-credentials
 
   # Whether to include the server out file into the pod's stdout, default is true
@@ -336,7 +338,7 @@ spec:
   # Istio
   # configuration:
   #   istio:
-  #     enabled: 
+  #     enabled:
   #     readinessPort:
 ```
 
@@ -375,7 +377,7 @@ Spec:
     Server Pod:
       Env:
         Name:            USER_MEM_ARGS
-        Value:           -Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m 
+        Value:           -Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m
     Server Start State:  RUNNING
   Clusters:
     Cluster Name:  cluster-1
@@ -405,7 +407,7 @@ Spec:
       Name:             JAVA_OPTIONS
       Value:            -Dweblogic.StdoutDebugEnabled=false
       Name:             USER_MEM_ARGS
-      Value:            -Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m 
+      Value:            -Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m
   Server Start Policy:  IF_NEEDED
   Web Logic Credentials Secret:
     Name:  fmwdomain-weblogic-credentials
