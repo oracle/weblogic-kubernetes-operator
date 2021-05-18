@@ -232,10 +232,11 @@ public class IstioUtils {
    *
    * @param domainNamespace namespace of domain to monitor
    * @param domainUid uid of domain to monitor
+   * @param prometheusPort nodePort value for prometheus
    * @return true if deployment is success otherwise false
    */
   public static boolean deployIstioPrometheus(
-      String domainNamespace, String domainUid) {
+      String domainNamespace, String domainUid, String prometheusPort) {
     LoggingFacade logger = getLogger();
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
     Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
@@ -249,6 +250,10 @@ public class IstioUtils {
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         oldValue,
         prometheusRegexValue));
+    String oldPortValue = "30510";
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        oldPortValue,
+        prometheusPort));
     ExecResult result = null;
     StringBuffer deployIstioPrometheus = null;
     deployIstioPrometheus = new StringBuffer("kubectl apply -f ");

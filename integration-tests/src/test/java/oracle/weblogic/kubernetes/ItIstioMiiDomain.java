@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,8 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -68,8 +67,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -79,6 +80,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioPrometheus;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -98,7 +100,7 @@ class ItIstioMiiDomain {
   private String configMapName = "dynamicupdate-istio-configmap";
   private final String clusterName = "cluster-1"; // do not modify
   private final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-managed-server";
+  private final String managedServerPrefix = domainUid + "-cluster-1-managed-server";
   private final String workManagerName = "newWM";
   private final int replicaCount = 2;
   
@@ -179,6 +181,9 @@ class ItIstioMiiDomain {
 
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
+    String monitoringExporterApp = getMonitoringExporterApp();
+    String miiImage = createAndVerifyMiiImage(monitoringExporterApp,
+        MODEL_DIR + "/model.monexp.yaml");
     // create the domain object
     Domain domain = createDomainResource(domainUid,
                                       domainNamespace,
@@ -186,7 +191,8 @@ class ItIstioMiiDomain {
                                       OCIR_SECRET_NAME,
                                       encryptionSecretName,
                                       replicaCount,
-                              MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
+                              miiImage,
+                              //MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
                               configMapName);
 
     // create model in image domain
@@ -287,12 +293,20 @@ class ItIstioMiiDomain {
   @Order(2)
   @DisplayName("Create istio provided prometheus and verify that it can monitor via weblogic exporter webapp")
   public void testIstioPrometheus() {
-    assertTrue(deployIstioPrometheus(domainNamespace, domainUid), "failed to install istio prometheus");
-    deployMonitoringExporterApp();
+    int prometheusPort = getNextFreePort(30510, 30600);
+    assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
+        String.valueOf(prometheusPort)), "failed to install istio prometheus");
+    //deployMonitoringExporterApp();
+    int istioIngressPort = getIstioHttpIngressPort();
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/wls-exporter/metrics";
+    logger.info("Application Access URL {0}", url);
+    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
+    assertTrue(checkApp, "Failed to access WebLogic application");
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", "30510"));
+        "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
+    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey,
+        "testwebapp", String.valueOf(prometheusPort)));
   }
 
   /**
@@ -509,4 +523,25 @@ class ItIstioMiiDomain {
     return () -> execCommandCheckResponse(cmd, searchKey);
   }
 
+  /**
+   * Create mii image with monitoring exporter webapp.
+   */
+  private static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath) {
+    // create image with model files
+    logger.info("Create image with model file with monitoring exporter app and verify");
+
+    List<String> appList = new ArrayList();
+    appList.add(monexpAppDir);
+    appList.add("sessmigr-app");
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(modelFilePath);
+    String myImage =
+        createMiiImageAndVerify("monexp", modelList, appList);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(myImage);
+
+    return myImage;
+  }
 }
