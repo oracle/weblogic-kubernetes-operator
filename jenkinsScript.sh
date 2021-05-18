@@ -16,7 +16,6 @@ if [ -z "$APACHE_MAVEN_HOME" ]; then
    exit 1
 fi
 
-
 if [ -z "$HELM_VERSION" ]; then 
    echo "Error: HELM_VERSION env variable is not set"
    exit 1
@@ -108,16 +107,13 @@ mv ./kind bin/kind
 kind version
 
 export TWO_CLUSTERS=false
-
-
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
+export BRANCH_NAME=${BRANCH}
 
 cd $WORKSPACE
 [ -d ${WORKSPACE}/logdir ] && rm -rf ${WORKSPACE}/logdir && mkdir -p ${WORKSPACE}/logdir
 pwd
 ls
-
-export BRANCH_NAME=${BRANCH}
 
 echo "soft limits"
 ulimit -a
