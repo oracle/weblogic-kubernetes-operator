@@ -37,7 +37,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createRequestStep;
 import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 
-public class MonitorExporterSteps {
+public class MonitoringExporterSteps {
 
   /** Time in seconds to wait to recheck for ready state. **/
   private static final int READY_RECHECK_INTERVAL = 2;
