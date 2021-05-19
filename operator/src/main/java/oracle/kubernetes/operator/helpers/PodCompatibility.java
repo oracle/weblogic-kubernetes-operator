@@ -29,7 +29,6 @@ import static oracle.kubernetes.operator.helpers.PodHelper.AdminPodStepContext.I
 /** A class which defines the compatibility rules for existing vs. specified pods. */
 class PodCompatibility extends CollectiveCompatibility {
   PodCompatibility(V1Pod expected, V1Pod actual) {
-    add("sha256Hash", AnnotationHelper.getHash(expected), AnnotationHelper.getHash(actual));
     add(new PodMetadataCompatibility(expected.getMetadata(), actual.getMetadata()));
     add(new PodSpecCompatibility(Objects.requireNonNull(expected.getSpec()), Objects.requireNonNull(actual.getSpec())));
   }
@@ -69,24 +68,51 @@ class PodCompatibility extends CollectiveCompatibility {
     }
 
     private boolean isLabelSame(String labelName) {
-      return Objects.equals(
-            Objects.requireNonNull(expected.getLabels()).get(labelName),
-            Objects.requireNonNull(actual.getLabels()).get(labelName)
+      return Objects.equals(getLabel(expected, labelName), getLabel(actual, labelName)
       );
+    }
+
+    private String getLabel(V1ObjectMeta metadata, String labelName) {
+      return Objects.requireNonNull(metadata.getLabels()).get(labelName);
     }
 
     @Override
     public String getIncompatibility() {
       if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
-        return "domain restart label changed.";
+        return "domain restart version changed from '" + getLabel(actual, DOMAINRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, DOMAINRESTARTVERSION_LABEL) + "'";
       } else if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
-        return "cluster restart label changed.";
+        return "cluster restart version changed from '" + getLabel(actual, CLUSTERRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, CLUSTERRESTARTVERSION_LABEL) + "'";
       } else if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
-        return "server restart label changed.";
+        return "server restart version changed from '" + getLabel(actual, SERVERRESTARTVERSION_LABEL)
+            + "' to '" + getLabel(expected, SERVERRESTARTVERSION_LABEL) + "'";
       } else {
         return null;
       }
     }
+
+    @Override
+    public String getScopedIncompatibility(CompatibilityScope scope) {
+      if (scope.contains(getScope())) {
+        return getIncompatibility();
+      }
+      return null;
+    }
+
+    @Override
+    public CompatibilityScope getScope() {
+      if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
+        return CompatibilityScope.DOMAIN;
+      } else if (!isLabelSame(CLUSTERRESTARTVERSION_LABEL)) {
+        return CompatibilityScope.DOMAIN;
+      } else if (!isLabelSame(SERVERRESTARTVERSION_LABEL)) {
+        return CompatibilityScope.POD;
+      } else {
+        return CompatibilityScope.UNKNOWN;
+      }
+    }
+
   }
 
   static class PodSpecCompatibility extends CollectiveCompatibility {
@@ -111,13 +137,13 @@ class PodCompatibility extends CollectiveCompatibility {
         if (actual.containsKey(name)) {
           containerChecks.add(createCompatibilityCheck(expected.get(name), actual.get(name)));
         } else {
-          containerChecks.add(new Mismatch("Expected container '%s' not found", name));
+          containerChecks.add(new Mismatch("additional container '%s' added", name));
         }
       }
 
       for (String name : actual.keySet()) {
         if (!expected.containsKey(name)) {
-          containerChecks.add(new Mismatch("Found unexpected container '%s'", name));
+          containerChecks.add(new Mismatch("container '%s' removed", name));
         }
       }
 
@@ -191,6 +217,19 @@ class PodCompatibility extends CollectiveCompatibility {
     public String getIncompatibility() {
       return errorMessage;
     }
+
+    @Override
+    public String getScopedIncompatibility(CompatibilityScope scope) {
+      if (scope.contains(getScope())) {
+        return getIncompatibility();
+      }
+      return null;
+    }
+
+    @Override
+    public CompatibilityScope getScope() {
+      return CompatibilityScope.UNKNOWN;
+    }
   }
 
   static class Probes implements CompatibilityCheck {
@@ -215,15 +254,27 @@ class PodCompatibility extends CollectiveCompatibility {
     @Override
     public String getIncompatibility() {
       return String.format(
-          "Expected %s probe with initial delay %d, timeout %d and period %d \n"
-              + "       but found initial delay %d, timeout %d and period %d.",
+          "%s probe {initial delay, timeout, period} changed from " + "'{%d, %d, %d}' to '{%d, %d, %d}'",
           description,
-          expected.getInitialDelaySeconds(),
-          expected.getTimeoutSeconds(),
-          expected.getPeriodSeconds(),
           actual.getInitialDelaySeconds(),
           actual.getTimeoutSeconds(),
-          actual.getPeriodSeconds());
+          actual.getPeriodSeconds(),
+          expected.getInitialDelaySeconds(),
+          expected.getTimeoutSeconds(),
+          expected.getPeriodSeconds());
+    }
+
+    @Override
+    public String getScopedIncompatibility(CompatibilityScope scope) {
+      if (scope.contains(getScope())) {
+        return getIncompatibility();
+      }
+      return null;
+    }
+
+    @Override
+    public CompatibilityScope getScope() {
+      return CompatibilityScope.DOMAIN;
     }
   }
 
@@ -256,16 +307,29 @@ class PodCompatibility extends CollectiveCompatibility {
       if (!KubernetesUtils.mapEquals(getLimits(expected), getLimits(actual))) {
         sb.append(
             String.format(
-                "Expected resource limits: %s but found %s",
-                getLimits(expected), getLimits(actual)));
+                "resource limits changed from '%s' to '%s'",
+                getLimits(actual), getLimits(expected)));
       }
       if (!KubernetesUtils.mapEquals(getRequests(expected), getRequests(actual))) {
         sb.append(
             String.format(
-                "Expected resource requests: %s but found %s",
+                "resource requests changed from '%s' to '%s'",
                 getRequests(expected), getRequests(actual)));
       }
-      return sb.toString();
+      return sb.length() == 0 ? null : sb.toString();
+    }
+
+    @Override
+    public String getScopedIncompatibility(CompatibilityScope scope) {
+      if (scope.contains(getScope())) {
+        return getIncompatibility();
+      }
+      return null;
+    }
+
+    @Override
+    public CompatibilityScope getScope() {
+      return CompatibilityScope.UNKNOWN;
     }
   }
 }
