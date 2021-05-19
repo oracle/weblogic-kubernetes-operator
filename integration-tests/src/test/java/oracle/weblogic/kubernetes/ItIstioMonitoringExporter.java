@@ -144,7 +144,7 @@ class ItIstioMonitoringExporter {
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
     String monitoringExporterApp = getMonitoringExporterApp();
-    String miiImage = createAndVerifyMiiImage(monitoringExporterApp,
+    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(monitoringExporterApp,
         MODEL_DIR + "/model.monexp.yaml");
     // create the domain object
     Domain domain = createIstioDomainResource(domainUid,
@@ -364,7 +364,7 @@ class ItIstioMonitoringExporter {
   /**
    * Create mii image with monitoring exporter webapp.
    */
-  private static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath) {
+  private static String createAndVerifyMiiImageWithMonitoringExporter(String monexpAppDir, String modelFilePath) {
     // create image with model files
     logger.info("Create image with model file with monitoring exporter app and verify");
 

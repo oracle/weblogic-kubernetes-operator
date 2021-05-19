@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -28,8 +29,9 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -282,8 +284,19 @@ public class IstioUtils {
       return false;
     }
     logger.info("deployIstioPrometheus: kubectl returned {0}", result.toString());
-    assertDoesNotThrow(() -> checkServiceExists("prometheus", "istio-system"), "prometheus service does not exists");
-    return result.stdout().contains("service/prometheus created");
+    try {
+      for (var item : listPods("istio-system", null).getItems()) {
+        if (item.getMetadata() != null) {
+          if (item.getMetadata().getName().contains("prometheus")) {
+            checkPodReadyAndServiceExists(item.getMetadata().getName(), null, "istio-system");
+          }
+        }
+      }
+    } catch (ApiException e) {
+      e.printStackTrace();
+      return false;
+    }
+    return true;
   }
 
   /**
