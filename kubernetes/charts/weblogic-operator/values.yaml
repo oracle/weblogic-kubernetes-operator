@@ -137,6 +137,14 @@ javaLoggingFileSizeLimit: 20000000
 # directory as the files are rotated.
 javaLoggingFileCount: 10
 
+# labels specifies a set of key-value labels that will be added to each pod running the operator.
+# See https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+#labels:
+
+# annotations specifies a set of key-value annotations that will be added to each pod running the operator.
+# See https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+#annotations:
+
 # nodeSelector specifies a matching rule that the Kubernetes scheduler will use when selecting the node
 # where the operator will run. If the nodeSelector value is specified, then this content will be added to
 # the operator's deployment. See https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector

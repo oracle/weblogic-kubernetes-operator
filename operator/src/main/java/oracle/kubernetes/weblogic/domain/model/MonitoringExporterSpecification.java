@@ -28,8 +28,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SI
 public class MonitoringExporterSpecification {
 
   public static final String EXPORTER_PORT_NAME = "exporter";
-  @Description("The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will "
-        + "deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter")
+  @Description("The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances "
+      + "are already running and have the monitoring exporter sidecar container, then changes to this field will "
+      + "be propagated to the exporter without requiring the restart of the WebLogic Server instances.")
   @PreserveUnknown
   private Map<String,Object> configuration;
 
@@ -37,12 +38,12 @@ public class MonitoringExporterSpecification {
    * The Monitoring Exporter sidecar image.
    */
   @Description(
-        "The WebLogic Monitoring Exporter sidecar image name. Defaults to "
+        "The WebLogic Monitoring Exporter sidecar container image name. Defaults to "
            + DEFAULT_EXPORTER_IMAGE)
   private String image;
   
   @Description(
-      "The image pull policy for the WebLogic Monitoring Exporter sidecar image. "
+      "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)

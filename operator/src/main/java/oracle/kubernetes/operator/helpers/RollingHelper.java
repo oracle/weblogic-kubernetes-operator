@@ -28,6 +28,8 @@ import oracle.kubernetes.operator.work.Step.StepAndPacket;
 import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
+
 /**
  * After the {@link PodHelper} identifies servers that are presently running, but that are using an
  * out-of-date specification, it defers the processing of these servers to the RollingHelper. This
@@ -134,7 +136,6 @@ public class RollingHelper {
       }
 
       if (!clusteredRestarts.isEmpty()) {
-        LOGGER.fine("Restarting server " + packet.get(ProcessingConstants.SERVER_NAME));
         for (Map.Entry<String, Queue<StepAndPacket>> entry : clusteredRestarts.entrySet()) {
           work.add(
               new StepAndPacket(
@@ -143,11 +144,48 @@ public class RollingHelper {
       }
 
       if (!work.isEmpty()) {
-        return doForkJoin(getNext(), packet, work);
+        return doForkJoin(createAfterRollStep(getNext()), packet, work);
       }
 
-      return doNext(packet);
+      return doNext(createAfterRollStep(getNext()), packet);
     }
+
+    private Step createAfterRollStep(Step next) {
+      return new AfterRollStep(next);
+    }
+  }
+
+  private static class AfterRollStep extends Step {
+    public AfterRollStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(createDomainRollCompletedEventStepIfNeeded(getNext(), packet), packet);
+    }
+
+  }
+
+  /**
+   * Create DOMAIN_ROLL_COMPLETED event if a roll started earlier.
+   *
+   * @param next next step
+   * @param packet packet to use
+   * @return step chain
+   */
+  public static Step createDomainRollCompletedEventStepIfNeeded(Step next, Packet packet) {
+    if ("true".equals(packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED))) {
+      LOGGER.info(MessageKeys.DOMAIN_ROLL_COMPLETED, getDomainUid(packet));
+      return Step.chain(
+          EventHelper.createEventStep(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_ROLL_COMPLETED)),
+          next);
+    }
+    return next;
+  }
+
+  private static String getDomainUid(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class).getDomainUid();
   }
 
   private static class ServersThatCanRestartNowStep extends Step {

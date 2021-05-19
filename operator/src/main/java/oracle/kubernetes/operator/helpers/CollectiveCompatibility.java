@@ -41,8 +41,29 @@ abstract class CollectiveCompatibility implements CompatibilityCheck {
         reasons.add(getIndent() + check.getIncompatibility());
       }
     }
-    return reasons.isEmpty() ? null : getHeader() + String.join("\n", reasons);
+    return reasons.isEmpty() ? null : getHeader() + String.join(",\n", reasons);
   }
+
+  @Override
+  public String getScopedIncompatibility(CompatibilityScope scope) {
+    final List<String> reasons = new ArrayList<>();
+    for (CompatibilityCheck check : checks) {
+      if (!check.isCompatible() && check.getScopedIncompatibility(scope) != null) {
+        reasons.add(getIndent() + check.getScopedIncompatibility(scope));
+      }
+    }
+    return reasons.isEmpty()
+        ? null
+        : scope == CompatibilityScope.DOMAIN
+            ? String.join(",\n", reasons)
+            : getHeader() + String.join(",\n", reasons);
+  }
+
+  @Override
+  public CompatibilityScope getScope() {
+    return CompatibilityScope.MINIMUM;
+  }
+
 
   <T> void addSets(String description, List<T> expected, List<T> actual) {
     add(CheckFactory.create(description, expected, actual));

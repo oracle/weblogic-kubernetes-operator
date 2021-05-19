@@ -21,12 +21,14 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
@@ -51,6 +53,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
@@ -61,6 +64,8 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String END_VALUE_1 = "value-ADMIN_SERVER";
   private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
+
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -748,6 +753,47 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
     assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
+  }
+
+
+  @Test
+  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + POD_CYCLE_STARTING + " expected with message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING),
+        stringContainsInOrder("Replacing ", getPodName(), "DOMAIN_HOME", "changed from", "adfgg"));
+  }
+
+  @Test
+  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectNS()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
+  }
+
+  @Test
+  public void whenDomainHomeChanged_generateExpectedLogMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getCyclePodKey()));
   }
 
   private V1Pod createTestPodModel() {

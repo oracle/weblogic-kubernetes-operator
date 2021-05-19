@@ -117,7 +117,7 @@ public abstract class ResponseStep<T> extends Step {
    */
   protected final NextAction doContinueListOrNext(CallResponse<T> callResponse, Packet packet, Step next) {
     String cont = accessContinue(callResponse.getResult());
-    if (callResponse != null && cont != null) {
+    if (cont != null) {
       packet.put(CONTINUE, cont);
       // Since the continue value is present, invoking the original request will return
       // the next window of data.
