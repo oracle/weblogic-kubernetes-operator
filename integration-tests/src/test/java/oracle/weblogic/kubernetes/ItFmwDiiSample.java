@@ -124,8 +124,8 @@ public class ItFmwDiiSample {
         String.format("Failed to create DB in the namespace %s with dbPort %d ",
             dbNamespace, dbPort));
 
-    //dbUrl = K8S_NODEPORT_HOST + ":" + dbPort + "/devpdb.k8s";
-    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
+    dbUrl = K8S_NODEPORT_HOST + ":" + dbPort + "/devpdb.k8s";
+    //dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     for (String param: params) {
       String rcuSchemaPrefix = param.split(":")[1];
@@ -185,6 +185,7 @@ public class ItFmwDiiSample {
               "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     });
+    assertDoesNotThrow(() -> TimeUnit.HOURS.sleep(1));
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     //verify EM console is accessible
