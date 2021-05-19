@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -32,8 +33,11 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -184,6 +188,9 @@ public class ItFmwDiiSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain.sh").toString(),
+          "$WIT_DIR/imagetool/bin/imagetool.sh update",
+          "$WIT_DIR/imagetool/bin/imagetool.sh update\n  --buildNetwork host");
     });
     //assertDoesNotThrow(() -> TimeUnit.HOURS.sleep(3));
 
@@ -209,6 +216,23 @@ public class ItFmwDiiSample {
 
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
+
+    if (KIND_REPO != null) {
+      String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost:", "domain-home-in-image");
+      String newImage = KIND_REPO + "domain-in-image:" + domainName;
+      withStandardRetryPolicy
+          .conditionEvaluationListener(
+              condition -> logger.info("Waiting for tagAndPushToKind for image {0} to be "
+                  + "successful (elapsed time {1} ms, remaining time {2} ms)", newImage,
+                  condition.getElapsedTimeInMS(),
+                  condition.getRemainingTimeInMS()))
+          .until(tagAndPushToKind(taggedImage, newImage));
+      assertDoesNotThrow(() -> replaceStringInFile(
+          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString(),
+          taggedImage, newImage));
+      assertDoesNotThrow(() -> logger.info(Files.readString(
+          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml"))));
+    }
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
@@ -399,6 +423,12 @@ public class ItFmwDiiSample {
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
 
+  }
+
+  private Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
+    return (() -> {
+      return dockerTag(originalImage, taggedImage) && dockerPush(taggedImage);
+    });
   }
 
 }
