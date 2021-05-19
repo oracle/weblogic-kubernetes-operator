@@ -113,7 +113,6 @@ public class FmwUtils {
    * @param pvName name of the persistent volume to create
    * @param pvcName name of the persistent volume claim to create
    * @param domainInHomePrefix prefix of path of domain in home
-   * @param allowDynClusterInFmw true to create a FMW dynamic domain, false otherwise
    * @param replicaCount count of replicas
    * @param t3ChannelPort port number of t3 channel
    * @return Domain WebLogic domain
@@ -125,7 +124,6 @@ public class FmwUtils {
                                                 String pvName,
                                                 String pvcName,
                                                 String domainInHomePrefix,
-                                                String allowDynClusterInFmw,
                                                 int replicaCount,
                                                 int t3ChannelPort) {
     // create a domain custom resource configuration object
@@ -159,9 +157,6 @@ public class FmwUtils {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom"))
-                .addEnvItem(new V1EnvVar()
-                    .name("ALLOW_DYNAMIC_CLUSTER_IN_FMW")
-                    .value(allowDynClusterInFmw))
                 .addVolumesItem(new V1Volume()
                     .name(pvName)
                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
