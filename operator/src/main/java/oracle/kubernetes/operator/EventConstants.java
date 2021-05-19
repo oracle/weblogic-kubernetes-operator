@@ -14,7 +14,10 @@ public interface EventConstants {
   String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
   String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetrying";
   String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
+  String DOMAIN_ROLL_COMPLETED_EVENT = "DomainRollCompleted";
+  String DOMAIN_ROLL_STARTING_EVENT = "DomainRollStarting";
   String DOMAIN_VALIDATION_ERROR_EVENT = "DomainValidationError";
+  String POD_CYCLE_STARTING_EVENT = "PodCycleStarting";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
@@ -34,6 +37,7 @@ public interface EventConstants {
       = "Aborting the processing of domain resource %s permanently due to: %s";
   String DOMAIN_VALIDATION_ERROR_PATTERN
       = "Validation error in domain resource %s: %s";
+  String POD_CYCLE_STARTING_PATTERN = "Replacing pod %s because: %s";
   String NAMESPACE_WATCHING_STARTED_EVENT = "NamespaceWatchingStarted";
   String NAMESPACE_WATCHING_STARTED_PATTERN = "Started watching namespace %s";
   String NAMESPACE_WATCHING_STOPPED_EVENT = "NamespaceWatchingStopped";
@@ -47,4 +51,9 @@ public interface EventConstants {
   String STOP_MANAGING_NAMESPACE_PATTERN = "Stop managing namespace %s";
   String START_MANAGING_NAMESPACE_FAILED_EVENT = "StartManagingNamespaceFailed";
   String START_MANAGING_NAMESPACE_FAILED_PATTERN = "Start managing namespace %s failed due to an authorization error";
+  String DOMAIN_ROLL_STARTING_PATTERN = "Rolling restart WebLogic server pods in domain %s because: %s";
+  String DOMAIN_ROLL_COMPLETED_PATTERN = "Rolling restart of domain %s completed";
+  String ROLL_REASON_DOMAIN_RESOURCE_CHANGED = "domain resource changed";
+  String ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED
+      = "WebLogic domain configuration changed due to a Model in Image model update";
 }

@@ -144,6 +144,9 @@ weblogic-operator-secrets                 Opaque                                
 ##### Create WebLogic Domain
 We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
 
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% /notice%}}
+
 We need to set up the domain configuration for the WebLogic domain.
 
 1. Check if resources are ready.

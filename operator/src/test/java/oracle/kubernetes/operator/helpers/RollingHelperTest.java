@@ -8,20 +8,28 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.PodHelper.ManagedPodStepContext;
 import oracle.kubernetes.operator.helpers.PodHelperTestBase.PassthroughPodAwaiterStepFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Packet;
@@ -31,16 +39,26 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.hamcrest.junit.MatcherAssert;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
+import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACED;
 import static oracle.kubernetes.utils.LogMatcher.containsInOrder;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
 public class RollingHelperTest {
@@ -68,6 +86,8 @@ public class RollingHelperTest {
   protected final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   protected final List<Memento> mementos = new ArrayList<>();
   protected final List<LogRecord> logRecords = new ArrayList<>();
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
   private WlsDomainConfig domainTopology;
 
@@ -95,6 +115,8 @@ public class RollingHelperTest {
         new PassthroughPodAwaiterStepFactory());
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
   }
 
   @AfterEach
@@ -134,7 +156,7 @@ public class RollingHelperTest {
 
   private String[] getMessageKeys() {
     return new String[] {
-        MANAGED_POD_REPLACED
+        MANAGED_POD_REPLACED, CYCLING_POD, MessageKeys.DOMAIN_ROLL_COMPLETED
     };
   }
 
@@ -148,6 +170,16 @@ public class RollingHelperTest {
             testSupport.getResourceWithName(
                 KubernetesTestSupport.POD,
                 LegalNames.toPodName(UID, serverName)), null)), packet);
+  }
+
+  private Step.StepAndPacket createRollingStepAndPacket(V1Pod pod, String serverName) {
+    Packet packet = testSupport.getPacket().copy();
+    packet.put(SERVER_SCAN, domainTopology.getServerConfig(serverName));
+    return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
+        DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
+        false,
+        new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
+            pod, null)), packet);
   }
 
   private void initializeExistingPods() {
@@ -176,6 +208,7 @@ public class RollingHelperTest {
         containsInfo(MANAGED_POD_REPLACED, SERVER2_NAME),
         containsInfo(MANAGED_POD_REPLACED, SERVER10_NAME)
     ));
+    logRecords.clear();
   }
 
   @Test
@@ -186,6 +219,136 @@ public class RollingHelperTest {
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
 
     assertThat(logRecords, empty());
+  }
+
+  @Test
+  public void afterRoll_domainRollCompletedEventCreated() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V10"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    assertContainsEventWithMessage(DOMAIN_ROLL_COMPLETED, UID);
+  }
+
+  @Test
+  public void afterRoll_expectedLogMessageFound() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V11"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+
+    // printLogRecords();
+    SERVER_NAMES.forEach(s -> assertThat(logRecords,
+        containsInfo(CYCLING_POD, getPodName(s), "domain restart version changed from 'V11' to 'null'")));
+    SERVER_NAMES.forEach(s -> assertThat(logRecords,
+        containsInfo(MANAGED_POD_REPLACED, s)));
+    assertThat(logRecords,
+        containsInfo(MessageKeys.DOMAIN_ROLL_COMPLETED, UID));
+  }
+
+  @Test
+  public void whenRolling_podCycleEventCreatedWithCorrectMessage() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V3"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    SERVER_NAMES.forEach(s -> assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
+        stringContainsInOrder("Replacing ", getPodName(s), "domain restart version changed")));
+  }
+
+  @Test
+  public void whenDomainHomeAndRestartVersionChanged_podCycleEventCreatedWithCorrectMessage() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(
+            modifyDomainHome(modifyRestartVersion(createPodModel(s), "V5"), "xxxx"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    SERVER_NAMES.forEach(s -> assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
+        stringContainsInOrder("Replacing ", getPodName(s),
+            "domain restart version changed", "V5", "DOMAIN_HOME", "changed", "xxxx")));
+  }
+
+  private void printLogRecords() {
+    String str = "";
+    for (LogRecord r : logRecords) {
+      str += r.getLevel() + " " + r.getMessage();
+      for (Object o : r.getParameters()) {
+        str += o.toString();
+      }
+    }
+    System.out.println(str);
+  }
+
+  private String getPodName(String s) {
+    return getPodNameFromMetadata(domainPresenceInfo.getServerPod(s));
+  }
+
+  private String getPodNameFromMetadata(V1Pod serverPod) {
+    return Optional.ofNullable(serverPod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+  }
+
+  protected String getExpectedEventMessage(EventHelper.EventItem event, String name, String ns) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    for (CoreV1Event e : events) {
+      if (e.getMessage().contains(name) && e.getMetadata().getNamespace().equals(ns)) {
+        return e.getMessage();
+      }
+    }
+    return "Event not found";
+  }
+
+  private V1Pod modifyRestartVersion(V1Pod pod, String restartVersion) {
+    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
+        new V1PodCondition().type("Ready").status("True")));
+    pod.getMetadata().getLabels().remove(LabelConstants.DOMAINRESTARTVERSION_LABEL);
+    pod.getMetadata().getLabels().put(LabelConstants.DOMAINRESTARTVERSION_LABEL, restartVersion);
+    return pod;
+  }
+
+  private V1Pod modifyDomainHome(V1Pod pod, String domainHome) {
+    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
+        new V1PodCondition().type("Ready").status("True")));
+    List<V1EnvVar> envList = pod.getSpec().getContainers().get(0).getEnv();
+    for (V1EnvVar env : envList) {
+      if (env.getName().equals("DOMAIN_HOME")) {
+        env.setValue(domainHome);
+        return pod;
+      }
+    }
+    return pod;
+  }
+
+  private void assertContainsEventWithMessage(EventHelper.EventItem event, Object...params) {
+    String message = String.format(event.getPattern(), params);
+    MatcherAssert.assertThat(
+        "Expected Event " + event.getReason() + " with message" + message + " was not created",
+        containsEventWithMessage(getEvents(), event.getReason(), message), is(true));
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
 }

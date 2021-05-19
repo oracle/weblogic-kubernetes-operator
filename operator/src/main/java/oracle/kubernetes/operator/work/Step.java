@@ -341,5 +341,9 @@ public abstract class Step {
       this.step = step;
       this.packet = packet;
     }
+
+    public Step getStep() {
+      return step;
+    }
   }
 }
