@@ -189,8 +189,8 @@ public class ItFmwDiiSample {
               "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
               "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain.sh").toString(),
-          "$WIT_DIR/imagetool/bin/imagetool.sh update",
-          "$WIT_DIR/imagetool/bin/imagetool.sh update\n  --buildNetwork host");
+          "imagetool.sh update",
+          "imagetool.sh update\n  --buildNetwork host");
     });
     //assertDoesNotThrow(() -> TimeUnit.HOURS.sleep(3));
 
