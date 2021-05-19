@@ -236,6 +236,7 @@ function createDomainHome {
 
       cmd="
         $WIT_DIR/imagetool/bin/imagetool.sh update
+	  --buildNetwork host
           --fromImage \"$domainHomeImageBase\"
           --tag \"${BUILD_IMAGE_TAG}\"
           --wdtOperation CREATE
@@ -262,6 +263,7 @@ function createDomainHome {
 
     cmd="
       $WIT_DIR/imagetool/bin/imagetool.sh update
+        --buildNetwork host
         --fromImage \"$domainHomeImageBase\"
         --tag ${BUILD_IMAGE_TAG}
         --wdtModel \"${createDomainWdtModelCopy}\"
