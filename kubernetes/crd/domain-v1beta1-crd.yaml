@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 32a313edcfbc439755d0e7276594f392cbb3460aa2dbf496ffd225f156d718b9
+    weblogic.sha256: ed45413f7ffa5cdb0ad3ed69f217f02a8b060c2502f0c164a33f1084354475df
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1235,10 +1235,10 @@ spec:
                               command for copying files from the container image to
                               the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH'
                               environment variable to reference the value configured
-                              in 'commonMount.mountPath' (which defaults to '/common').
-                              Use 'TARGET_MOUNT_PATH' to refer to the temporary directory
-                              created by the Operator that resolves to the common
-                              mount's internal emptyDir volume.
+                              in 'spec.commonMountVolumes.mountPath' (which defaults
+                              to '/common'). Use '$TARGET_MOUNT_PATH' to refer to
+                              the temporary directory created by the Operator that
+                              resolves to the common mount's internal emptyDir volume.
                             type: string
                       type: array
                     resources:
@@ -3977,10 +3977,10 @@ spec:
                                 command for copying files from the container image
                                 to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH'
                                 environment variable to reference the value configured
-                                in 'commonMount.mountPath' (which defaults to '/common').
-                                Use 'TARGET_MOUNT_PATH' to refer to the temporary
-                                directory created by the Operator that resolves to
-                                the common mount's internal emptyDir volume.
+                                in 'spec.commonMountVolumes.mountPath' (which defaults
+                                to '/common'). Use '$TARGET_MOUNT_PATH' to refer to
+                                the temporary directory created by the Operator that
+                                resolves to the common mount's internal emptyDir volume.
                               type: string
                       resources:
                         description: Memory and CPU minimum requirements and limits
@@ -6764,9 +6764,9 @@ spec:
                           is an advanced setting for customizing the container command
                           for copying files from the container image to the common
                           mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment
-                          variable to reference the value configured in 'commonMount.mountPath'
-                          (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to
-                          refer to the temporary directory created by the Operator
+                          variable to reference the value configured in 'spec.commonMountVolumes.mountPath'
+                          (which defaults to '/common'). Use '$TARGET_MOUNT_PATH'
+                          to refer to the temporary directory created by the Operator
                           that resolves to the common mount's internal emptyDir volume.
                         type: string
                   type: array
@@ -9396,10 +9396,10 @@ spec:
                                 command for copying files from the container image
                                 to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH'
                                 environment variable to reference the value configured
-                                in 'commonMount.mountPath' (which defaults to '/common').
-                                Use 'TARGET_MOUNT_PATH' to refer to the temporary
-                                directory created by the Operator that resolves to
-                                the common mount's internal emptyDir volume.
+                                in 'spec.commonMountVolumes.mountPath' (which defaults
+                                to '/common'). Use '$TARGET_MOUNT_PATH' to refer to
+                                the temporary directory created by the Operator that
+                                resolves to the common mount's internal emptyDir volume.
                               type: string
                       resources:
                         description: Memory and CPU minimum requirements and limits

@@ -3,6 +3,10 @@
 
 set -o pipefail
 
+SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
+source ${SCRIPTPATH}/utils_base.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${SCRIPTPATH}/utils_base.sh" && exit 1
+
 #
 # Purpose:
 #   Defines various shared utility functions, including a trace function.
@@ -29,153 +33,6 @@ function exportInstallHomes() {
 
   export WL_HOME=${WL_HOME:-${ORACLE_HOME}/wlserver}
   export MW_HOME=${MW_HOME:-${ORACLE_HOME}}
-}
-
-# timestamp
-#   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
-#   example:  20181001T14:00:00.001 UTC
-function timestamp() {
-  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
-  if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
-    # old shell versions don't support %N or --utc
-    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"
-  fi
-  local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
-  # convert nano to milli
-  local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
-  local timezone="`echo $timestamp | awk '{ print $4 }'`"
-  echo "${ymdhms}.${milli} ${timezone}"
-}
-
-#
-# trace [-cloc caller-location] -n [log-level] [text]*
-# trace [-cloc caller-location] -pipe [log-level] [text]*
-# trace [-cloc caller-location] [log-level] [text]*
-#
-#   Generate logging in a format similar to WLST utils.py using the
-#   same timestamp format as the Operator, and using the same 
-#   log levels as the Operator. This logging is may be parsed by the
-#   Operator when it reads in a job or pod log.
-#
-#   log-level can be one of SEVERE|ERROR|WARNING|INFO|CONFIG|FINE|FINER|FINEST
-#     - Default is 'FINE'.
-#     - NOTE: Use SEVERE, ERROR, WARNING, INFO sparingly since these log-levels
-#             are visible by default in the Operator log and the Operator captures
-#             some script logs and echos them to the Operator log.
-#     - if it's ERROR it's converted to SEVERE
-#     - if there's no log-level and the text starts with a
-#       recognized keyword like 'Error:' then the log-level is inferred
-#     - if there's no log-level and the text does not start with
-#       a recognized keyword, the log-level is assumed to be 'FINE' (the default)
-#
-#   -n     Suppress new-line.
-#
-#   -pipe  Redirect stdout through a trace, see example below.
-#
-#   -cloc  Use the supplied value as the caller location
-#
-#   examples:
-#     trace "Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] Situation normal.
-#
-#     trace INFO "Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Situation normal.
-#
-#     trace "Info: Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Info: Situation normal.
-#
-#     ls 2>&1 | tracePipe FINE "ls output: "
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file1
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file2
-#
-#   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
-#
-function trace() {
-  (
-  set +x
-
-  local logLoc=""
-  if [ ${TRACE_INCLUDE_FILE:-true} = "true" ]; then
-    if [ "$1" = "-cloc" ]; then
-      logLoc="$2"
-      shift
-      shift
-    else
-      logLoc="$(basename ${BASH_SOURCE[1]}):${BASH_LINENO[0]}"
-    fi
-  else
-    if [ "$1" = "-cloc" ]; then
-      shift
-      shift
-    fi
-  fi
-
-  local logMode='-normal'
-  case $1 in
-    -pipe|-n) logMode=$1; shift; ;;
-  esac
-
-  # Support log-levels in operator, if unknown then assume FINE
-  #  SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST
-  #  (The '^^' trick below converts the var to upper case.)
-  local logLevel='FINE'
-  case ${1^^} in
-    SEVERE|WARNING|INFO|CONFIG|FINE|FINER|FINEST)
-      logLevel=$1
-      shift
-      ;;
-    ERROR)
-      logLevel='SEVERE'
-      shift
-      ;;
-    WARNING*)
-      logLevel='WARNING'
-      ;;
-    ERROR*|SEVERE*)
-      logLevel='SEVERE'
-      ;;
-    INFO*)
-      logLevel='INFO'
-      ;;
-    CONFIG*)
-      logLevel='CONFIG'
-      ;;
-    FINEST*)
-      logLevel='FINEST'
-      ;;
-    FINER*)
-      logLevel='FINER'
-      ;;
-    FINE*)
-      logLevel='FINE'
-      ;;
-  esac
-
-  function logPrefix() {
-    echo "@[`timestamp`][$logLoc][$logLevel]"
-  }
-
-  case $logMode in 
-    -pipe) 
-          (
-          # IFS='' causes read line to preserve leading spaces
-          # -r cause read to treat backslashes as-is, e.g. '\n' --> '\n'
-          IFS=''
-          while read -r line; do
-            echo "$(logPrefix)" "$@" "$line"
-          done
-          )
-          ;;
-    -n)
-          echo -n "$(logPrefix)" "$@"
-          ;;
-    *)
-          echo "$(logPrefix)" "$@"
-          ;;
-  esac
-  )
 }
 
 #
@@ -206,42 +63,6 @@ function tracePipe() {
 #
 function traceTiming() {
   [ "${TRACE_TIMING^^}" = "TRUE" ] && trace INFO "TIMING: ""$@"
-}
-
-# 
-# checkEnv [-q] envvar1 envvar2 ...
-#
-#   purpose: Check and trace the values of the provided env vars.
-#            If any env vars don't exist or are empty, return non-zero
-#            and trace an '[SEVERE]'.
-#            (Pass '-q' to suppress FINE tracing.)
-#
-#   sample:  checkEnv HOST NOTSET1 USER NOTSET2
-#            @[2018-10-05T22:48:04.368 UTC][FINE] HOST='esscupcakes'
-#            @[2018-10-05T22:48:04.393 UTC][FINE] USER='friendly'
-#            @[2018-10-05T22:48:04.415 UTC][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
-#
-function checkEnv() {
-  local do_fine="true"
-  if [ "$1" = "-q" ]; then 
-    do_fine="false"
-    shift
-  fi
-  
-  local not_found=""
-  while [ ! -z "${1}" ]; do 
-    if [ -z "${!1}" ]; then
-      not_found="$not_found ${1}"
-    else
-      [ "$do_fine" = "true" ] && trace FINE "${1}='${!1}'"
-    fi
-    shift
-  done
-  if [ ! -z "${not_found}" ]; then
-    trace SEVERE "The following env vars are missing or empty: ${not_found}"
-    return 1
-  fi
-  return 0
 }
 
 #
@@ -285,32 +106,6 @@ function traceEnv() {
     echo "    ${env_var}='${!env_var}'"
   done
 }
-
-#
-# traceDirs before|after DOMAIN_HOME LOG_HOME DATA_HOME ...
-#   Trace contents and owner of directory for the specified env vars...
-
-function traceDirs() {
-  trace "id = '`id`'"
-  local keyword="$1"
-  shift
-  local indir
-  for indir in $*; do
-    [ -z "${!indir}" ] && continue
-    trace "Directory trace for $indir=${!indir} ($keyword)"
-    local cnt=0
-    local odir=""
-    local cdir="${!indir}/*"
-    while [ ${cnt} -lt 30 ] && [ ! "$cdir" = "$odir" ]; do
-      echo "  ls -ld $cdir:"
-      ls -ld $cdir 2>&1 | sed 's/^/    /'
-      odir="$cdir"
-      cdir="`dirname "$cdir"`"
-      cnt=$((cnt + 1))
-    done
-  done
-}
-
 
 #
 # internal helper for logFileRotate():

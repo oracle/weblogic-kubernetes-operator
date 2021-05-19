@@ -206,7 +206,7 @@
           ]
         },
         "command": {
-          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027$COMMON_MOUNT_PATH\u0027 environment variable to reference the value configured in \u0027commonMount.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
+          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027$COMMON_MOUNT_PATH\u0027 environment variable to reference the value configured in \u0027spec.commonMountVolumes.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027$TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
           "type": "string"
         }
       }

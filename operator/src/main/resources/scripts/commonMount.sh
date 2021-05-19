@@ -24,8 +24,9 @@ scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
 if [ "${debug}" == "true" ]; then set -x; fi;
 
-source ${scriptDir}/utils.sh
-[ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils.sh" && exit 1
+source ${scriptDir}/utils_base.sh
+[ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
+UNKNOWN_SHELL=true
 
 checkEnv COMMON_MOUNT_TARGET_PATH COMMON_MOUNT_CONTAINER_NAME || exit 1
 

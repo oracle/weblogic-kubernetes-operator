@@ -46,9 +46,9 @@ public class CommonMount {
   @Description("The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. "
           + "This is an advanced setting for customizing the container command for copying files from the container "
           + "image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference "
-          + "the value configured in 'commonMount.mountPath' (which defaults to '/common'). Use 'TARGET_MOUNT_PATH' to "
-          + "refer to the temporary directory created by the Operator that resolves to the common mount's internal "
-          + "emptyDir volume.")
+          + "the value configured in 'spec.commonMountVolumes.mountPath' (which defaults to '/common'). Use "
+          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the "
+          + "common mount's internal emptyDir volume.")
   private String command;
 
   @Description("The name of a common mount volume defined in 'spec.commonMountVolumes'. Required.")
