@@ -128,6 +128,36 @@ imagePullSecrets:
 - name: "my-image-pull-secret"
 ```
 
+##### `annotations`
+Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.
+
+Example:
+```yaml
+annotations:
+  stage: production
+```
+
+You may also specify annotations [using the "--set" parameter to the Helm install command](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing), as follows:
+
+```
+--set annotations.stage=production
+```
+
+##### `labels`
+Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.
+
+Example:
+```yaml
+labels:
+  sidecar.istio.io/inject: "false"
+```
+
+You may also specify labels [using the "--set" parameter to the Helm install command](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing), as follows:
+
+```
+--set labels."sidecar\.istio\.io/inject"=false
+```
+
 ##### `nodeSelector`
 Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
 
@@ -137,8 +167,8 @@ nodeSelector:
   disktype: ssd
 ```
 
-##### `nodeAffinity`
-Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `nodeAffinity` provides advanced capabilities to limit Pod placement on specific Nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
+##### `affinity`
+Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `affinity` provides advanced capabilities to limit Pod placement on specific Nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
 
 Example:
 ```yaml
@@ -260,7 +290,7 @@ domainNamespaceLabelSelector: environment notin (production,systemtest)
 
 {{% notice note %}}
 To specify the above sample on the Helm command line, escape spaces and commas as follows:
-```yaml
+```
 --set "domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)"
 ```
 {{% /notice %}}

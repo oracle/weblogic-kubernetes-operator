@@ -21,13 +21,15 @@ spec:
     metadata:
       {{- with .annotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- range $key, $value := .annotations }}
+        {{ $key }}: {{ $value | quote }}
       {{- end }}
       labels:
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
-      {{- with .labels }}
-        {{- toYaml . | nindent 8 }}
+      {{- range $key, $value := .labels }}
+        {{ $key }}: {{ $value | quote }}
       {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
