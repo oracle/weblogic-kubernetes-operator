@@ -27,7 +27,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -152,40 +151,18 @@ class ItRemoteConsole {
     // create ingress rules with path routing for Traefik, Voyager and NGINX
     createTraefikIngressRoutingRules(domainNamespace);
     createVoyagerIngressPathRoutingRules();
-    createNginxIngressPathRouting();
+    createNginxIngressPathRoutingRules();
 
     // install WebLogic remote console
     assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
-  }
 
-  /**
-   * Verify k8s WebLogic domain is accessible through remote console.
-   */
-  @Order(1)
-  @Test
-  @DisplayName("Verify Connecting to Mii domain through WLS Remote Console is successful")
-  public void testWlsRemoteConsoleConnection() {
-
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
-        "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
-    logger.info("WebLogic domain is accessible through remote console");
-
+    // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
+    verifyWlsRemoteConsoleConnection();
   }
 
   /**
    * Verify k8s WebLogic domain is accessible through remote console using Traefik.
    */
-  @Order(2)
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Traefik is successful")
   public void testWlsRemoteConsoleConnectionThroughTraefik() {
@@ -207,7 +184,6 @@ class ItRemoteConsole {
   /**
    * Verify k8s WebLogic domain is accessible through remote console using Voyager.
    */
-  @Order(3)
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Voyager is successful")
   public void testWlsRemoteConsoleConnectionThroughVoyager() {
@@ -228,7 +204,6 @@ class ItRemoteConsole {
   /**
    * Verify k8s WebLogic domain is accessible through remote console using NGINX.
    */
-  @Order(4)
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through NGINX is successful")
   public void testWlsRemoteConsoleConnectionThroughNginx() {
@@ -341,14 +316,14 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
-  private static void createNginxIngressPathRouting() {
+  private static void createNginxIngressPathRoutingRules() {
 
     // create an ingress in domain namespace
     String ingressName = domainNamespace + "-nginx-path-routing";
 
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("kubernetes.io/ingress.class", "nginx");
-    
+
     // create ingress rules for two domains
     List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
     List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
@@ -387,5 +362,22 @@ class ItRemoteConsole {
 
     logger.info("Executing curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+  }
+
+  private static void verifyWlsRemoteConsoleConnection() {
+
+    int nodePort = getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertTrue(nodePort != -1,
+        "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
+        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
+        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    logger.info("WebLogic domain is accessible through remote console");
   }
 }
