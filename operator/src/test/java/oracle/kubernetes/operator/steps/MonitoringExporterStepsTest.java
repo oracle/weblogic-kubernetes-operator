@@ -174,7 +174,7 @@ public class MonitoringExporterStepsTest {
     testSupport.runSteps(
           Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
-                MonitorExporterSteps.createConfigurationUpdateStep()));
+                MonitoringExporterSteps.createConfigurationUpdateStep()));
 
     assertThat(httpSupport.getLastRequestContents(),
           equalTo(domain.getMonitoringExporterConfiguration().asJsonString()));
@@ -205,7 +205,7 @@ public class MonitoringExporterStepsTest {
     testSupport.runSteps(
           Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
-                MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
+                MonitoringExporterSteps.createConfigurationTestAndUpdateSteps()));
 
 
     assertThat(httpSupport.getLastRequestContents(),
@@ -241,7 +241,7 @@ public class MonitoringExporterStepsTest {
     testSupport.runSteps(
           Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
-                MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
+                MonitoringExporterSteps.createConfigurationTestAndUpdateSteps()));
 
     assertThat(httpSupport.getLastRequest().method(), equalTo("GET"));
   }
@@ -253,7 +253,7 @@ public class MonitoringExporterStepsTest {
     expectConfigurationQueryAndReturn(MANAGED_SERVER3, OLD_CONFIGURATION);
     forEachServer(this::expectConfigurationUpdate);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE3));
   }
@@ -277,7 +277,7 @@ public class MonitoringExporterStepsTest {
     forEachServer(this::expectConfigurationUpdate);
     setDeletingState(MANAGED_SERVER1);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2, POD_NODE3));
   }
@@ -302,7 +302,7 @@ public class MonitoringExporterStepsTest {
     setNotReadyState(MANAGED_SERVER1);
     setNotReadyState(MANAGED_SERVER3);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2));
   }
@@ -325,7 +325,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.schedule(() -> setReadyState(MANAGED_SERVER1), 1, TimeUnit.SECONDS);
     testSupport.schedule(() -> setReadyState(MANAGED_SERVER3), 1, TimeUnit.SECONDS);
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
     testSupport.setTime(3, TimeUnit.SECONDS);
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE2, POD_NODE3));
@@ -342,7 +342,7 @@ public class MonitoringExporterStepsTest {
     forEachServer(this::expectQueryAndReturnOldConfiguration);
     forEachServer(this::expectConfigurationUpdate);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), empty());
   }

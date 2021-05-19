@@ -3,9 +3,13 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.helpers.ConfigMapConsumer;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -23,6 +27,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private CallBuilderTuning callBuilder = null;
   private WatchTuning watch = null;
   private PodTuning pod = null;
+  private FeatureGates featureGates = null;
 
   private TuningParametersImpl(ScheduledExecutorService executorService) {
     super(executorService);
@@ -82,21 +87,38 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
             (int) readTuningParameter("livenessProbePeriodSeconds", 45),
             readTuningParameter("introspectorJobActiveDeadlineSeconds", 120));
 
+    FeatureGates featureGates =
+        new FeatureGates(generateFeatureGates(get("featureGates")));
+
     lock.writeLock().lock();
     try {
       if (!main.equals(this.main)
           || !callBuilder.equals(this.callBuilder)
           || !watch.equals(this.watch)
-          || !pod.equals(this.pod)) {
+          || !watch.equals(this.pod)
+          || !pod.equals(this.featureGates)) {
         LOGGER.info(MessageKeys.TUNING_PARAMETERS);
       }
       this.main = main;
       this.callBuilder = callBuilder;
       this.watch = watch;
       this.pod = pod;
+      this.featureGates = featureGates;
     } finally {
       lock.writeLock().unlock();
     }
+  }
+
+  private Collection<String> generateFeatureGates(String featureGatesProperty) {
+    Collection<String> enabledGates = new ArrayList<>();
+    if (featureGatesProperty != null) {
+      Arrays.stream(
+          featureGatesProperty.split(","))
+          .filter(s -> s.endsWith("=true"))
+          .map(s -> s.substring(s.indexOf('=')))
+          .collect(Collectors.toCollection(() -> enabledGates));
+    }
+    return enabledGates;
   }
 
   @Override
@@ -134,6 +156,16 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     lock.readLock().lock();
     try {
       return pod;
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public FeatureGates getFeatureGates() {
+    lock.readLock().lock();
+    try {
+      return featureGates;
     } finally {
       lock.readLock().unlock();
     }

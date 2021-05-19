@@ -64,6 +64,8 @@ public class SchemaGenerator {
   private final Collection<String> suppressDescriptionForPackages = new ArrayList<>();
   private final Map<Class<?>, String> additionalPropertiesTypes = new HashMap<>();
 
+  private final Collection<String> enabledFeatures = new ArrayList<>();
+
   /**
    * Returns a pretty-printed string corresponding to a generated schema.
    *
@@ -195,7 +197,7 @@ public class SchemaGenerator {
   }
 
   private boolean includeInSchema(Field field) {
-    return !isStatic(field) && !isVolatile(field);
+    return !isStatic(field) && !isVolatile(field) && !isDisabledFeature(field);
   }
 
   private boolean isStatic(Field field) {
@@ -208,6 +210,11 @@ public class SchemaGenerator {
 
   private boolean isDeprecated(Field field) {
     return field.getAnnotation(Deprecated.class) != null;
+  }
+
+  private boolean isDisabledFeature(Field field) {
+    Feature feature = field.getAnnotation(Feature.class);
+    return feature != null && !enabledFeatures.contains(feature.value());
   }
 
   private String getPropertyName(Field field) {
@@ -500,6 +507,10 @@ public class SchemaGenerator {
 
   public void defineAdditionalProperties(Class<?> forClass, String additionalPropertyType) {
     additionalPropertiesTypes.put(forClass, additionalPropertyType);
+  }
+
+  public void defineEnabledFeatures(Collection<String> enabledFeatures) {
+    this.enabledFeatures.addAll(enabledFeatures);
   }
 
   private class SubSchemaGenerator {
