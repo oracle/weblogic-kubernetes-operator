@@ -139,6 +139,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
@@ -1604,22 +1605,7 @@ public class ItTwoDomainsLoadBalancers {
         tlsList.add(tls);
       }
 
-      for (int i = 0; i < 60; i++) {
-        try {
-          if (isTLS) {
-            createIngress(ingressName, defaultNamespace, annotations, ingressRules, tlsList);
-          } else {
-            createIngress(ingressName, defaultNamespace, annotations, ingressRules, null);
-          }
-          break;
-        } catch (ApiException apiEx) {
-          try {
-            Thread.sleep(5000);
-          } catch (InterruptedException ignore) {
-            //ignore
-          }
-        }
-      }
+      createIngressAndRetryIfFail(60, isTLS, ingressName, defaultNamespace, annotations, ingressRules, tlsList);
 
       // wait until voyager ingress pod is ready
       waitUntilVoyagerPodReady(ingressName);
