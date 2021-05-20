@@ -9,9 +9,7 @@ import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,7 +17,6 @@ import java.util.regex.Pattern;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
@@ -57,16 +54,19 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
@@ -106,6 +106,8 @@ class ItServerStartPolicy {
   public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
   public static final String SCALE_CLUSTER_SCRIPT = "scaleCluster.sh";
   public static final String STATUS_CLUSTER_SCRIPT = "clusterStatus.sh";
+  public static final String ROLLING_DOMAIN_SCRIPT = "rollDomain.sh";
+  public static final String ROLLING_CLUSTER_SCRIPT = "rollCluster.sh";
   public static final String managedServerNamePrefix = "managed-server";
   public static final String CLUSTER_1 = "cluster-1";
   public static final String CLUSTER_2 = "cluster-2";
@@ -1133,12 +1135,152 @@ class ItServerStartPolicy {
   }
 
   /**
+   * Rolling restart the configured cluster using the sample script rollCluster.sh script
+   * Verify that server(s) in the configured cluster are restarted and in RUNNING state.
+   * Verify that server(s) in the dynamic cluster are not affected.
+   */
+  @Order(19)
+  @Test
+  @DisplayName("Rolling restart the configured cluster with rollCluster.sh script")
+  public void testConfigClusterRollingRestart() {
+    String configServerName = "config-cluster-server1";
+    String configServerPodName = domainUid + "-" + configServerName;
+    String dynamicServerPodName = domainUid + "-managed-server1";
+
+    // restore the env
+    restoreEnv();
+
+    // get the creation time of the configured and dynamic server pod before patching
+    OffsetDateTime configServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+    OffsetDateTime dynServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+
+    // use rollCluster.sh to rolling-restart a configured cluster
+    logger.info("Rolling restart the configured cluster with rollCluster.sh script");
+    String result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_2),
+        String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
+
+    // wait till rolling restart has started by checking managed server pods have restarted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
+        configServerPodName, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, configServerPodName, configServerPodCreationTime);
+
+    // check managed server from other cluster are not affected
+    logger.info("Check dynamic managed server pods are not affected");
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1,
+        domainUid, domainNamespace, replicaCount)));
+
+    boolean isPodRestarted =
+        assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
+        dynamicServerPodName, dynServerPodCreationTime).call().booleanValue(),
+        String.format("pod %s should not been restarted in namespace %s",
+            dynamicServerPodName, domainNamespace));
+
+    assertFalse(isPodRestarted,
+        String.format("dynamic server %s shouldn't be rolling-restarted", dynamicServerPodName));
+  }
+
+  /**
+   * Rolling restart the dynamic cluster using the sample script rollCluster.sh script
+   * Verify that server(s) in the dynamic cluster are restarted and in RUNNING state.
+   * Verify that server(s) in the configured cluster are not affected.
+   */
+  @Order(20)
+  @Test
+  @DisplayName("Rolling restart the dynamic cluster with rollCluster.sh script")
+  public void testDynamicClusterRollingRestart() {
+    String dynamicServerName = "managed-server1";
+    String dynamicServerPodName = domainUid + "-" + dynamicServerName;
+    String configServerPodName = domainUid + "-config-cluster-server1";
+
+    // restore the env
+    restoreEnv();
+
+    // get the creation time of the configured and dynamic server pod before patching
+    OffsetDateTime dynServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+    OffsetDateTime configServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+
+    // use rollCluster.sh to rolling-restart a dynamic cluster
+    logger.info("Rolling restart the dynamic cluster with rollCluster.sh script");
+    assertDoesNotThrow(() ->
+        executeLifecycleScript(ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1),
+        String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
+
+    // wait till rolling restart has started by checking managed server pods have restarted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
+        dynamicServerPodName, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, dynamicServerPodName, dynServerPodCreationTime);
+
+    // check managed server from other cluster are not affected
+    logger.info("Check configured managed server pods are not affected");
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
+        domainUid, domainNamespace, replicaCount)));
+
+    boolean isPodRestarted =
+        assertDoesNotThrow(() -> checkIsPodRestarted(domainNamespace,
+        configServerPodName, configServerPodCreationTime).call().booleanValue(),
+        String.format("pod %s should not been restarted in namespace %s",
+            configServerPodName, domainNamespace));
+
+    assertFalse(isPodRestarted,
+        String.format("configured server %s shouldn't be rolling-restarted", configServerPodName));
+  }
+
+  /**
+   * Rolling restart the domain using the sample script rollDomain.sh script
+   * Verify that server(s) in the domain is restarted and all servers are in RUNNING state.
+   */
+  @Order(21)
+  @Test
+  @DisplayName("Rolling restart the domain with rollDomain.shscript")
+  public void testConfigDomainRollingRestart() {
+    String configServerName = "config-cluster-server1";
+    String dynamicServerName = "managed-server1";
+    String configServerPodName = domainUid + "-" + configServerName;
+    String dynamicServerPodName = domainUid + "-" + dynamicServerName;
+
+    // restore the env
+    restoreEnv();
+
+    // get the creation time of the configured and dynamic server pod before patching
+    OffsetDateTime configServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", configServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", configServerPodName));
+    OffsetDateTime dynServerPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", dynamicServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", dynamicServerPodName));
+
+    // use rollDomain.sh to rolling-restart a configured cluster
+    logger.info("Rolling restart the domain with rollDomain.sh script");
+    String result =  assertDoesNotThrow(() ->
+        executeLifecycleScript(ROLLING_DOMAIN_SCRIPT, DOMAIN, ""),
+        String.format("Failed to run %s", ROLLING_DOMAIN_SCRIPT));
+
+    // wait till rolling restart has started by checking managed server pods have restarted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
+        configServerPodName, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, configServerPodName, configServerPodCreationTime);
+
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
+        dynamicServerPodName, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, dynamicServerPodName, dynServerPodCreationTime);
+  }
+
+  /**
    * Scale the configured cluster using the sample script scaleCluster.sh script
    * Verify that server(s) in the configured cluster are scaled up and in RUNNING state.
    * Verify that server(s) in the dynamic cluster are not affected.
    * Restore the env using the sample script stopServer.sh.
    */
-  @Order(19)
+  @Order(22)
   @Test
   @DisplayName("Scale the configured cluster with scaleCluster.sh script")
   public void testConfigClusterScale() {
@@ -1187,7 +1329,7 @@ class ItServerStartPolicy {
    * Verify that server(s) in the configured cluster are not affected.
    * Restore the env using the sample script stopServer.sh.
    */
-  @Order(20)
+  @Order(23)
   @Test
   @DisplayName("Scale the dynamic cluster with scaleCluster.sh script")
   public void testDynamicClusterScale() {
@@ -1257,16 +1399,25 @@ class ItServerStartPolicy {
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 
-  private static void createDomainSecret(String secretName, String username, String password, String domNamespace) {
-    Map<String, String> secretMap = new HashMap<>();
-    secretMap.put("username", username);
-    secretMap.put("password", password);
-    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
-            .metadata(new V1ObjectMeta()
-                    .name(secretName)
-                    .namespace(domNamespace))
-            .stringData(secretMap)), "Create secret failed with ApiException");
-    assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
+  private void restoreEnv() {
+    int newReplicaCount = 2;
+    String configServerName = "config-cluster-server" + newReplicaCount;
+    String configServerPodName = domainUid + "-" + configServerName;
+    String dynamicServerName = "managed-server" + newReplicaCount;
+    String dynamicServerPodName = domainUid + "-" + dynamicServerName;
+
+    // restore test env
+    assertDoesNotThrow(() ->
+        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
+        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+    checkPodDeleted(configServerPodName, domainUid, domainNamespace);
+    logger.info("managed server " + configServerPodName + " stopped successfully.");
+
+    assertDoesNotThrow(() ->
+        executeLifecycleScript(STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
+        String.format("Failed to run %s", STOP_SERVER_SCRIPT));
+    checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
+    logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
   }
 
   private static void createDomainResource(
