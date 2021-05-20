@@ -99,9 +99,6 @@ externalRestHttpsPort: 31001
 # kubernetes/samples/scripts/rest/generate-external-rest-identity.sh
 # externalRestIdentitySecret:
 
-# istioEnabled specifies whether or not the Domain is deployed under an Istio service mesh.
-istioEnabled: false
-
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 

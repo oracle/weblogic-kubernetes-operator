@@ -158,6 +158,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterApp;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -376,7 +380,7 @@ class ItMonitoringExporter {
       logger.info("verify metrics via prometheus");
       String testappPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp");
+      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportserver);
       logger.info("fire alert by scaling down");
       fireAlert();
       logger.info("switch to monitor another domain");
@@ -391,7 +395,7 @@ class ItMonitoringExporter {
       editPrometheusCM(oldRegex, newRegex);
       String sessionAppPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
       checkPromGrafanaLatestVersion();
     } finally {
       logger.info("Shutting down domain1");
@@ -423,7 +427,7 @@ class ItMonitoringExporter {
 
     String sessionAppPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
     Domain domain = getDomainCustomResource(domain7Uid,domain7Namespace);
     String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
     logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
@@ -487,7 +491,7 @@ class ItMonitoringExporter {
         managedServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
-    checkMetricsViaPrometheus(promSearchString, expectedVal);
+    checkMetricsViaPrometheus(promSearchString, expectedVal,nodeportserver);
   }
 
   /**
@@ -512,9 +516,9 @@ class ItMonitoringExporter {
 
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1");
+        cluster1Name + "-managed-server1",nodeportserver);
     checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
-        cluster2Name + "-managed-server2");
+        cluster2Name + "-managed-server2",nodeportserver);
   }
 
   /**
@@ -540,7 +544,7 @@ class ItMonitoringExporter {
 
     String sessionAppPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
 
     Domain domain = getDomainCustomResource(domain6Uid,domain6Namespace);
     String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
@@ -718,7 +722,7 @@ class ItMonitoringExporter {
       //verify metrics via prometheus
       String testappPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp");
+      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportserver);
     } finally {
       uninstallPrometheusGrafana();
     }
@@ -1403,66 +1407,17 @@ class ItMonitoringExporter {
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
     if (!toBuildMonitoringExporter) {
-      String monitoringExporterBuildFile = String.format(
-          "%s/get%s.sh", monitoringExporterAppDir, monitoringExporterVersion);
-      logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-      String curlDownloadCmd = String.format("cd %s && "
-              + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
-          monitoringExporterAppDir,
-          monitoringExporterVersion,
-          monitoringExporterVersion);
-      logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-              .command(curlDownloadCmd))
-          .execute(), "Failed to download monitoring exporter webapp");
-      String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-              .command(command))
-          .execute(), "Failed to build monitoring exporter webapp");
-
-      command = String.format("cd %s && %s  %s/exporter/exporter-config.yaml",
-          monitoringExporterAppDir,
-          monitoringExporterBuildFile,
-          RESOURCE_DIR);
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-              .command(command))
-          .execute(), "Failed to build monitoring exporter webapp");
-      command = String.format("cd %s && %s  %s/exporter/exporter-config-norestport.yaml",
-          monitoringExporterAppNoRestPortDir,
-          monitoringExporterBuildFile,
-          RESOURCE_DIR);
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-              .command(command))
-          .execute(), "Failed to build monitoring exporter webapp with no restport");
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
     } else {
-      buildMonitoringExporterApp("exporter-config.yaml", monitoringExporterAppDir);
-      buildMonitoringExporterApp("exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+      buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
+          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
+      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
     }
     logger.info("Finished to build Monitoring Exporter webapp.");
-  }
-
-  private static void buildMonitoringExporterApp(String configFile, String appDir) {
-
-    String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s/exporter/%s",
-        monitoringExporterSrcDir,
-        RESOURCE_DIR,
-        configFile);
-    logger.info("Executing command " + command);
-    java.nio.file.Path srcFile = java.nio.file.Paths.get(monitoringExporterSrcDir,
-        "target", "wls-exporter.war");
-
-    assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
-        .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
-            .command(command))
-        .execute(), "Failed to build monitoring exporter webapp");
-
-    java.nio.file.Path targetFile = java.nio.file.Paths.get(appDir, "wls-exporter.war");
-    assertDoesNotThrow(() ->
-        java.nio.file.Files.copy(srcFile, targetFile, java.nio.file.StandardCopyOption.REPLACE_EXISTING));
   }
 
   private static void buildMonitoringExporterImage(String imageName) {
@@ -1900,65 +1855,6 @@ class ItMonitoringExporter {
   }
 
   /**
-   * Check metrics using Prometheus.
-   *
-   * @param searchKey   - metric query expression
-   * @param expectedVal - expected metrics to search
-   * @throws Exception if command to check metrics fails
-   */
-  private static void checkMetricsViaPrometheus(String searchKey, String expectedVal)
-      throws Exception {
-
-    // url
-    String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/api/v1/query?query=%s",
-            K8S_NODEPORT_HOST, nodeportserver, searchKey);
-
-    logger.info("Executing Curl cmd {0}", curlCmd);
-    logger.info("Checking searchKey: {0}", searchKey);
-    logger.info(" expected Value {0} ", expectedVal);
-
-
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Check prometheus metric {0} against expected {1} "
-                                + "(elapsed time {2}ms, remaining time {3}ms)",
-                        searchKey,
-                        expectedVal,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-            .until(searchForKey(curlCmd, expectedVal));
-  }
-
-  /**
-   * Check output of the command against expected output.
-   *
-   * @param cmd command
-   * @param searchKey expected response from the command
-   * @return true if the command succeeds
-   */
-  public static boolean execCommandCheckResponse(String cmd, String searchKey) {
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(cmd)
-        .saveResults(true)
-        .redirect(false)
-        .verbose(true);
-    return Command.withParams(params).executeAndVerify(searchKey);
-  }
-
-  /**
-   * Check if executed command contains expected output.
-   *
-   * @param cmd   command to execute
-   * @param searchKey expected output
-   * @return true if the output matches searchKey otherwise false
-   */
-  private static Callable<Boolean> searchForKey(String cmd, String searchKey) {
-    return () -> execCommandCheckResponse(cmd, searchKey);
-  }
-
-  /**
    * Check if executed command contains expected output.
    *
    * @param pod   V1Pod object
@@ -2147,7 +2043,7 @@ class ItMonitoringExporter {
     Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1");
+        cluster1Name + "-managed-server1",nodeportserver);
 
   }
 
@@ -2167,7 +2063,7 @@ class ItMonitoringExporter {
 
     String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr");
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
   }
 
   /**
@@ -2306,7 +2202,7 @@ class ItMonitoringExporter {
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "sessmigr");
+    checkMetricsViaPrometheus(searchKey, "sessmigr",nodeportserver);
   }
 
   /**
@@ -2326,7 +2222,7 @@ class ItMonitoringExporter {
 
     String prometheusSearchKey1 =
         "heap_free_current";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1");
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1",nodeportserver);
   }
 
   /**
@@ -2343,7 +2239,7 @@ class ItMonitoringExporter {
     assertTrue(page.asText().contains("domainQualifier"));
 
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-" + domain1Uid + "\"");
+    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-" + domain1Uid + "\"",nodeportserver);
   }
 
   /**
