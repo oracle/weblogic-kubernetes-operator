@@ -192,7 +192,6 @@ public class ItFmwDiiSample {
           "imagetool.sh update",
           "imagetool.sh update\n  --buildNetwork host");
     });
-    //assertDoesNotThrow(() -> TimeUnit.HOURS.sleep(3));
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     //verify EM console is accessible
