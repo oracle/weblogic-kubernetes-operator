@@ -31,7 +31,9 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
@@ -288,7 +290,9 @@ public class IstioUtils {
       for (var item : listPods("istio-system", null).getItems()) {
         if (item.getMetadata() != null) {
           if (item.getMetadata().getName().contains("prometheus")) {
-            checkPodReadyAndServiceExists(item.getMetadata().getName(), null, "istio-system");
+            logger.info("Waiting for pod {0} to be ready in namespace {1}", item.getMetadata().getName(), "istio-system");
+            checkPodReady(item.getMetadata().getName(), null, "istio-system");
+            checkServiceExists("prometheus", "istio-system");
           }
         }
       }

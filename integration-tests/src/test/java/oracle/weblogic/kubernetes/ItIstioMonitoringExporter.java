@@ -10,12 +10,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.Callable;
 
 import oracle.weblogic.domain.Domain;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -30,7 +26,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
@@ -55,6 +50,9 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioPrometheus;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -114,6 +112,55 @@ class ItIstioMonitoringExporter {
     installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
+  /**
+   * Create a domain using model-in-image model.
+   * Add istio configuration with default readinessPort.
+   * Do not add any AdminService under AdminServer configuration.
+   * Deploy istio gateways and virtual service.
+   * Verify server pods are in ready state and services are created.
+   * Verify login to WebLogic console is successful thru istio ingress port.
+   * Deploy a web application thru istio http ingress port using REST api.
+   * Access web application thru istio http ingress port using curl.
+   * Deploy Istio provided Promethues
+   * Verify Weblogic metrics can be processed via istio based prometheus
+   */
+  @Test
+  @DisplayName("Create istio provided prometheus and verify "
+      + "it can monitor Weblogic domain via weblogic exporter webapp")
+  public void testIstioPrometheus() {
+    assertDoesNotThrow(() -> setupIstioModelInImageDomain(), "setup for istio based domain failed");
+    int prometheusPort = getNextFreePort(30510, 30600);
+    assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
+        String.valueOf(prometheusPort)), "failed to install istio prometheus");
+
+    //verify metrics via prometheus
+    String testappPrometheusSearchKey =
+        "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
+    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey,
+        "testwebapp", prometheusPort));
+  }
+
+  /**
+   * Create mii image with monitoring exporter webapp.
+   */
+  private static String createAndVerifyMiiImageWithMonitoringExporter(String monexpAppDir, String modelFilePath) {
+    // create image with model files
+    logger.info("Create image with model file with monitoring exporter app and verify");
+
+    List<String> appList = new ArrayList();
+    appList.add(monexpAppDir);
+    appList.add("sessmigr-app");
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(modelFilePath);
+    String myImage =
+        createMiiImageAndVerify("monexp", modelList, appList);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(myImage);
+
+    return myImage;
+  }
 
   private void setupIstioModelInImageDomain() {
 
@@ -143,8 +190,9 @@ class ItIstioMonitoringExporter {
 
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
-    String monitoringExporterApp = getMonitoringExporterApp();
-    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(monitoringExporterApp,
+    assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
+        + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
+    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
         MODEL_DIR + "/model.monexp.yaml");
     // create the domain object
     Domain domain = createIstioDomainResource(domainUid,
@@ -240,146 +288,4 @@ class ItIstioMonitoringExporter {
     assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
-
-  /**
-   * Create a domain using model-in-image model.
-   * Add istio configuration with default readinessPort.
-   * Do not add any AdminService under AdminServer configuration.
-   * Deploy istio gateways and virtual service.
-   * Verify server pods are in ready state and services are created.
-   * Verify login to WebLogic console is successful thru istio ingress port.
-   * Deploy a web application thru istio http ingress port using REST api.
-   * Access web application thru istio http ingress port using curl.
-   * Deploy Istio provided Promethues
-   * Verify Weblogic metrics can be processed via istio based prometheus
-   */
-  @Test
-  @DisplayName("Create istio provided prometheus and verify "
-      + "it can monitor Weblogic domain via weblogic exporter webapp")
-  public void testIstioPrometheus() {
-    assertDoesNotThrow(() -> setupIstioModelInImageDomain(), "setup for istio based domain failed");
-    int prometheusPort = getNextFreePort(30510, 30600);
-    assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
-        String.valueOf(prometheusPort)), "failed to install istio prometheus");
-
-    //verify metrics via prometheus
-    String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
-    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey,
-        "testwebapp", String.valueOf(prometheusPort)));
-  }
-
-  private String getMonitoringExporterApp() {
-    String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
-        .orElse(MONITORING_EXPORTER_VERSION);
-    String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", RESULTS_ROOT, monitoringExporterVersion);
-    logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-    String curlDownloadCmd = String.format("cd %s && "
-            + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
-        RESULTS_ROOT,
-        monitoringExporterVersion,
-        monitoringExporterVersion);
-    logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(curlDownloadCmd))
-        .execute(), "Failed to download monitoring exporter webapp");
-    String command = String.format("chmod 777 %s ", monitoringExporterBuildFile);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to download monitoring exporter webapp");
-
-    command = String.format("cd %s && %s  %s/exporter/exporter-config.yaml",
-        RESULTS_ROOT,
-        monitoringExporterBuildFile,
-        RESOURCE_DIR);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to build monitoring exporter webapp");
-    return RESULTS_ROOT + "/wls-exporter.war";
-  }
-
-  /**
-   * Check metrics using Prometheus.
-   *
-   * @param searchKey   - metric query expression
-   * @param expectedVal - expected metrics to search
-   * @throws Exception if command to check metrics fails
-   */
-  private static void checkMetricsViaPrometheus(String searchKey, String expectedVal, String nodeportserver)
-      throws Exception {
-
-    // url
-    String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/api/v1/query?query=%s",
-            K8S_NODEPORT_HOST, nodeportserver, searchKey);
-
-    logger.info("Executing Curl cmd {0}", curlCmd);
-    logger.info("Checking searchKey: {0}", searchKey);
-    logger.info(" expected Value {0} ", expectedVal);
-
-
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Check prometheus metric {0} against expected {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                searchKey,
-                expectedVal,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(searchForKey(curlCmd, expectedVal));
-  }
-
-  /**
-   * Check output of the command against expected output.
-   *
-   * @param cmd command
-   * @param searchKey expected response from the command
-   * @return true if the command succeeds
-   */
-  public static boolean execCommandCheckResponse(String cmd, String searchKey) {
-    CommandParams params = Command
-        .defaultCommandParams()
-        .command(cmd)
-        .saveResults(true)
-        .redirect(false)
-        .verbose(true);
-    return Command.withParams(params).executeAndVerify(searchKey);
-  }
-
-  /**
-   * Check if executed command contains expected output.
-   *
-   * @param cmd   command to execute
-   * @param searchKey expected output
-   * @return true if the output matches searchKey otherwise false
-   */
-  private static Callable<Boolean> searchForKey(String cmd, String searchKey) {
-    return () -> execCommandCheckResponse(cmd, searchKey);
-  }
-
-  /**
-   * Create mii image with monitoring exporter webapp.
-   */
-  private static String createAndVerifyMiiImageWithMonitoringExporter(String monexpAppDir, String modelFilePath) {
-    // create image with model files
-    logger.info("Create image with model file with monitoring exporter app and verify");
-
-    List<String> appList = new ArrayList();
-    appList.add(monexpAppDir);
-    appList.add("sessmigr-app");
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(modelFilePath);
-    String myImage =
-        createMiiImageAndVerify("monexp", modelList, appList);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
-
-    return myImage;
-  }
 }
