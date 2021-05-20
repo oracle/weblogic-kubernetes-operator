@@ -28,6 +28,8 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -3897,5 +3899,40 @@ public class CommonTestUtils {
       logger.info("java returned EXIT value {0}", result.exitValue());
       return ((result.exitValue() == 0));
     });
+  }
+
+  /**
+   * Create an ingress in specified namespace and retry up to maxRetries times if fail.
+   * @param maxRetries max number of retries
+   * @param isTLS whether the ingress uses TLS
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   */
+  public static void createIngressAndRetryIfFail(int maxRetries,
+                                                 boolean isTLS,
+                                                 String ingressName,
+                                                 String namespace,
+                                                 Map<String, String> annotations,
+                                                 List<NetworkingV1beta1IngressRule> ingressRules,
+                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        if (isTLS) {
+          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+        } else {
+          createIngress(ingressName, namespace, annotations, ingressRules, null);
+        }
+        break;
+      } catch (ApiException apiEx) {
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ignore) {
+          //ignore
+        }
+      }
+    }
   }
 }
