@@ -693,6 +693,7 @@ function adjustPath() {
 #            It also returns 1 if 'successfully' message is not found in the output files
 #            or if the COMMON_MOUNT_PATH directory is empty. Otherwise it returns 0 (success).
 #            See also 'commonMount.sh'.
+#            See also initCommonMount in 'utils_base.sh'.
 #
 function checkCommonMount() {
   # check commonMount results (if any)

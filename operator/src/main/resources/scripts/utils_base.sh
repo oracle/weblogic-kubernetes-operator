@@ -1,6 +1,9 @@
 # Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+# Important: Functions defined in this file can work with unknown shells,
+#            e.g. pure shell instead of bash, when UNKNOWN_SHELL has been set to true. 
+
 #
 # trace [-cloc caller-location] -n [log-level] [text]*
 # trace [-cloc caller-location] -pipe [log-level] [text]*
@@ -227,6 +230,7 @@ function checkEnv() {
 #            If the command execution fails, it logs errror message with failure details. Otherwise it
 #            logs a success message with details.
 #            See also 'commonMount.sh'.
+#            See also checkCommonMount in 'utils.sh'.
 #
 function initCommonMount() {
 
