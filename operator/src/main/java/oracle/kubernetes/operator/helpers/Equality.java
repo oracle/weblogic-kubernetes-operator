@@ -3,9 +3,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 
 class Equality implements CompatibilityCheck {
+  private static final List<String> DOMAIN_FIELDS = Arrays.asList("image", "imagePullPolicy");
+
   private final String description;
   private final Object expected;
   private final Object actual;
@@ -23,6 +27,23 @@ class Equality implements CompatibilityCheck {
 
   @Override
   public String getIncompatibility() {
-    return description + " expected: " + expected + " but was: " + actual;
+    return "'" + description + "'" + " changed from '" + actual + "' to '" + expected + "'";
   }
+
+  @Override
+  public String getScopedIncompatibility(CompatibilityScope scope) {
+    if (scope.contains(getScope())) {
+      return getIncompatibility();
+    }
+    return null;
+  }
+
+  @Override
+  public CompatibilityScope getScope() {
+    if (DOMAIN_FIELDS.contains(description)) {
+      return CompatibilityScope.DOMAIN;
+    }
+    return CompatibilityScope.POD;
+  }
+
 }

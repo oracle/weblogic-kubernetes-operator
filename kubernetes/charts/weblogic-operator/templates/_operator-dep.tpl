@@ -19,9 +19,18 @@ spec:
   replicas: 1
   template:
     metadata:
-     labels:
+      {{- with .annotations }}
+      annotations:
+      {{- end }}
+      {{- range $key, $value := .annotations }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+      labels:
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
+      {{- range $key, $value := .labels }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
       {{- with .nodeSelector }}
@@ -103,15 +112,15 @@ spec:
         livenessProbe:
           exec:
             command:
-              - "bash"
-              - "/operator/livenessProbe.sh"
+            - "bash"
+            - "/operator/livenessProbe.sh"
           initialDelaySeconds: 20
           periodSeconds: 5
         readinessProbe:
           exec:
             command:
-              - "bash"
-              - "/operator/readinessProbe.sh"
+            - "bash"
+            - "/operator/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}

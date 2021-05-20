@@ -50,6 +50,8 @@ import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
+import oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope;
+import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -62,19 +64,29 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
+import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
+import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
+import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.DOMAIN;
+import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -86,6 +98,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private static final String READINESS_PATH = "/weblogic/ready";
   private static String productVersion;
+  protected final ExporterContext exporterContext;
 
   final WlsServerConfig scan;
   @Nonnull
@@ -108,6 +121,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     domainRestartVersion = (String)packet.get(IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION);
     scan = (WlsServerConfig) packet.get(ProcessingConstants.SERVER_SCAN);
     this.packet = packet;
+    exporterContext = createExporterContext();
   }
 
   private static boolean isPatchableItem(Map.Entry<String, String> entry) {
@@ -135,6 +149,15 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private Step getConflictStep() {
     return new ConflictStep();
+  }
+
+  ExporterContext createExporterContext() {
+    return useSidecar() ? new SidecarExporterContext() : new WebAppExporterContext();
+  }
+
+  // Use the monitoring exporter sidecar if an exporter configuration is part of the domain.
+  private boolean useSidecar() {
+    return getDomain().getMonitoringExporterConfiguration() != null;
   }
 
   abstract Map<String, String> getPodLabels();
@@ -450,6 +473,49 @@ public abstract class PodStepContext extends BasePodStepContext {
     LOGGER.info(getPodReplacedMessageKey(), getDomainUid(), getServerName());
   }
 
+  protected Step createDomainRollStartEventIfNeeded(V1Pod pod, Step next) {
+    if ("true".equals(packet.getValue(DOMAIN_ROLL_START_EVENT_GENERATED))) {
+      return next;
+    }
+
+    String domainIncompatibility = getDomainIncompatibility(pod);
+    if (haveReasonsToRoll(domainIncompatibility)) {
+      return createDomainRollStartEvent(next, domainIncompatibility);
+    }
+
+    return next;
+  }
+
+  private String getDomainIncompatibility(V1Pod pod) {
+    String domainIncompatibility = getReasonToRecycle(pod, DOMAIN);
+    if (!haveReasonsToRoll(domainIncompatibility)
+        && haveReasonsToRoll(getReasonToRecycle(pod, UNKNOWN))) {
+      domainIncompatibility = ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
+    }
+
+    if (!canUseNewDomainZip(pod)) {
+      if (haveReasonsToRoll(domainIncompatibility)) {
+        domainIncompatibility += ",\n" + ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
+      } else {
+        domainIncompatibility = ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
+      }
+    }
+    return domainIncompatibility;
+  }
+
+  private Step createDomainRollStartEvent(Step next, String domainIncompatibility) {
+    LOGGER.info(MessageKeys.DOMAIN_ROLL_STARTING, getDomainUid(), domainIncompatibility);
+    packet.put(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    return Step.chain(
+        EventHelper.createEventStep(
+            new EventData(DOMAIN_ROLL_STARTING, domainIncompatibility.trim())),
+        next);
+  }
+
+  private boolean haveReasonsToRoll(String domainIncompatibility) {
+    return domainIncompatibility != null && domainIncompatibility.length() != 0;
+  }
+
   abstract String getPodCreatedMessageKey();
 
   abstract String getPodExistsMessageKey();
@@ -546,7 +612,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     return pod;
   }
 
-  private boolean canUseNewDomainZip(V1Pod currentPod) {
+  protected boolean canUseNewDomainZip(V1Pod currentPod) {
     String dynamicUpdateResult = packet.getValue(MII_DYNAMIC_UPDATE);
 
     if (miiDomainZipHash == null || isDomainZipUnchanged(currentPod)) {
@@ -567,9 +633,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     return formatHashLabel(miiDomainZipHash).equals(getLabel(currentPod, MODEL_IN_IMAGE_DOMAINZIP_HASH));
   }
 
-  private String getReasonToRecycle(V1Pod currentPod) {
+  protected String getReasonToRecycle(V1Pod currentPod, CompatibilityScope scope) {
     PodCompatibility compatibility = new PodCompatibility(getPodModel(), currentPod);
-    return compatibility.getIncompatibility();
+    return compatibility.getScopedIncompatibility(scope);
   }
 
   private ResponseStep<V1Pod> createResponse(Step next) {
@@ -617,6 +683,14 @@ public abstract class PodStepContext extends BasePodStepContext {
     getContainer(pod).map(V1Container::getEnv).ifPresent(this::updateEnv);
 
     updateForOwnerReference(metadata);
+
+    // Add prometheus annotations. This will overwrite any custom annotations with same name.
+    // Prometheus does not support "prometheus.io/scheme".  The scheme(http/https) can be set
+    // in the Prometheus Chart values yaml under the "extraScrapeConfigs:" section.
+    if (exporterContext.isEnabled()) {
+      AnnotationHelper.annotateForPrometheus(metadata, exporterContext.getBasePath(), exporterContext.getPort());
+    }
+
     return updateForDeepSubstitution(pod.getSpec(), pod);
   }
 
@@ -784,7 +858,9 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected List<V1Container> getContainers() {
-    return getServerSpec().getContainers();
+    List<V1Container> containers = new ArrayList<>(getServerSpec().getContainers());
+    exporterContext.addContainer(containers);
+    return containers;
   }
 
   private List<V1VolumeMount> getVolumeMounts() {
@@ -966,7 +1042,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
   }
 
-  private class CyclePodStep extends BaseStep {
+  public class CyclePodStep extends BaseStep {
     private final V1Pod pod;
 
     CyclePodStep(V1Pod pod, Step next) {
@@ -976,8 +1052,19 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction apply(Packet packet) {
+
       markBeingDeleted();
-      return doNext(deletePod(pod, getNext()), packet);
+      return doNext(createCyclePodEventStep(deletePod(pod, getNext())), packet);
+    }
+
+    private Step createCyclePodEventStep(Step next) {
+      String reason = getReasonToRecycle(pod, CompatibilityScope.POD);
+      LOGGER.info(
+          MessageKeys.CYCLING_POD,
+          Objects.requireNonNull(pod.getMetadata()).getName(),
+          reason);
+      return Step.chain(EventHelper.createEventStep(new EventData(POD_CYCLE_STARTING, reason).podName(getPodName())),
+          next);
     }
   }
 
@@ -999,10 +1086,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (currentPod == null) {
         return doNext(createNewPod(getNext()), packet);
       } else if (!canUseCurrentPod(currentPod)) {
-        LOGGER.info(
-            MessageKeys.CYCLING_POD,
-            Objects.requireNonNull(currentPod.getMetadata()).getName(),
-            getReasonToRecycle(currentPod));
         return doNext(replaceCurrentPod(currentPod, getNext()), packet);
       } else if (mustPatchPod(currentPod)) {
         return doNext(patchCurrentPod(currentPod, getNext()), packet);
@@ -1130,6 +1213,105 @@ public abstract class PodStepContext extends BasePodStepContext {
         setRecordedPod(newPod);
       }
       return newPod;
+    }
+  }
+
+  abstract class ExporterContext {
+    int getWebLogicRestPort() {
+      return scan.getLocalAdminProtocolChannelPort();
+    }
+
+    boolean isWebLogicSecure() {
+      return !Objects.equals(getWebLogicRestPort(), getListenPort());
+    }
+
+    abstract boolean isEnabled();
+
+    abstract int getPort();
+
+    abstract String getBasePath();
+
+    abstract void addContainer(List<V1Container> containers);
+  }
+
+  class WebAppExporterContext extends ExporterContext {
+
+    @Override
+    boolean isEnabled() {
+      return getListenPort() != null;
+    }
+
+    @Override
+    int getPort() {
+      return getListenPort();
+    }
+
+    @Override
+    String getBasePath() {
+      return "/wls-exporter";
+    }
+
+    @Override
+    void addContainer(List<V1Container> containers) {
+      // do nothing
+    }
+  }
+
+  class SidecarExporterContext extends ExporterContext {
+    private static final int DEBUG_PORT = 30055;
+    private final int metricsPort;
+
+    public SidecarExporterContext() {
+      metricsPort = MonitoringExporterSpecification.getRestPort(scan);
+    }
+
+    @Override
+    boolean isEnabled() {
+      return true;
+    }
+
+    @Override
+    int getPort() {
+      return metricsPort;
+    }
+
+    @Override
+    String getBasePath() {
+      return "";
+    }
+
+    @Override
+    void addContainer(List<V1Container> containers) {
+      containers.add(createMonitoringExporterContainer());
+    }
+
+    private V1Container createMonitoringExporterContainer() {
+      return new V1Container()
+            .name(EXPORTER_CONTAINER_NAME)
+            .image(getDomain().getMonitoringExporterImage())
+            .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
+            .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
+            .addPortsItem(new V1ContainerPort().name("metrics").protocol("TCP").containerPort(getPort()))
+            .addPortsItem(new V1ContainerPort().name("debugger").protocol("TCP").containerPort(DEBUG_PORT));
+    }
+
+    private String createJavaOptions() {
+      final List<String> args = new ArrayList<>();
+      args.add("-DDOMAIN=" + getDomainUid());
+      args.add("-DWLS_PORT=" + getWebLogicRestPort());
+      if (isWebLogicSecure()) {
+        args.add("-DWLS_SECURE=true");
+      }
+      if (metricsPort != DEFAULT_EXPORTER_SIDECAR_PORT) {
+        args.add("-DEXPORTER_PORT=" + metricsPort);
+      }
+      args.add(getDebugOption());
+
+      return String.join(" ", args);
+    }
+
+    private String getDebugOption() {
+      return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:" + DEBUG_PORT;
     }
   }
 }

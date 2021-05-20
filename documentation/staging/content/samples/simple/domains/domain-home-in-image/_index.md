@@ -56,12 +56,14 @@ $ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /<path to output-directory>
 ```
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% /notice%}}
 
 The script will perform the following steps:
 
 * Create a directory for the generated properties and Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, its contents will be removed.
 
-* Create a properties file, `domain.properties`, in the directory that is created above. 
+* Create a properties file, `domain.properties`, in the directory that is created above.
   This properties file will be used to create a sample WebLogic Server domain.
   The `domain.properties` file will be removed upon successful completion of the script.
 
@@ -69,22 +71,22 @@ The script will perform the following steps:
   WIT is required to create your Domain in Image container images, and WDT is required if using `wdt` mode.
   Visit the GitHub [WebLogic Deploy Tooling Releases](https://github.com/oracle/weblogic-deploy-tooling/releases) and [WebLogic Image Tool Releases](https://github.com/oracle/weblogic-image-tool/releases) web pages to determine the latest release version for each.
 
-* Set up the WebLogic Image Tool in the `<toolsDir>/imagetool` directory, where `<toolsDir>` is the 
+* Set up the WebLogic Image Tool in the `<toolsDir>/imagetool` directory, where `<toolsDir>` is the
   directory specified in the `toolsDir` parameter in the inputs YAML file. Set the
   WIT cache store location to the `<tools>/imagetool-cache` directory and
   put a `wdt_<WDT_VERSION>` entry in the tool's cache, which points to the path of the WDT ZIP file installer.
   For more information about the WIT cache, see the
   [WIT Cache documentation](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
 
-* If the optional `-n` option and an encryption key is provided, invoke the WDT 
+* If the optional `-n` option and an encryption key is provided, invoke the WDT
   [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/)
-  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file 
+  in a container running the image specified in `domainHomeImageBase` parameter in your inputs file
   to encrypt the password properties in `domain.properties` file. Note that this password encryption
-  step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because 
+  step is skipped if the value of the `mode` parameter in the inputs YAML file is `wlst` because
   the feature is provided by WDT.
 
-* Invoke the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool) to create a 
-  new WebLogic Server domain based on the WebLogic image specified in the `domainHomeImageBase` parameter 
+* Invoke the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool) to create a
+  new WebLogic Server domain based on the WebLogic image specified in the `domainHomeImageBase` parameter
   from your inputs file. The new WebLogic Server domain is created using one of the
   following options based on the value of the `mode` parameter in the inputs YAML file:
   * If the value of the `mode` parameter is `wdt`, the WDT model specified in the `createDomainWdtModel`
@@ -92,8 +94,8 @@ The script will perform the following steps:
     the new WebLogic Server domain.
   * If the value of the `mode` parameter is `wlst`, the offline WLST
     script specified in the `createDomainWlstScript` parameter is run to create the new WebLogic Server domain.
-  
-* The generated image is tagged with the `image` parameter provided in your inputs file. 
+
+* The generated image is tagged with the `image` parameter provided in your inputs file.
 
   {{% notice warning %}}
   Oracle strongly recommends storing the image containing the domain home as private
@@ -498,7 +500,3 @@ By default, they are installed under `/tmp/dhii-sample/tools` directory.
 ```shell
 $ rm -rf /tmp/dhii-sample/tools/
 ```
-
-
-
-
