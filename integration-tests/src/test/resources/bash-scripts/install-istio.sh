@@ -35,8 +35,8 @@ kubectl delete namespace istio-system --ignore-not-found
 )
 
 ( cd ${istiodir}
-  bin/istioctl x precheck 
-  bin/istioctl install --set profile=demo -y
+  bin/istioctl x precheck
+  bin/istioctl install --set profile=demo --set hub=gcr.io/istio-release --set meshConfig.enablePrometheusMerge=false -y
   bin/istioctl verify-install
   bin/istioctl version
 )
