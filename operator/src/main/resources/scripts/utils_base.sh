@@ -145,14 +145,14 @@ function traceDirs() {
   local keyword="$1"
   shift
   local indir
-  local val_inder
+  local val_indir
   for indir in $*; do
-    eval "val_inder=\"\$${indir}\""
-    [ -z "${val_inder}" ] && continue
-    trace "Directory trace for $indir=${val_inder} ($keyword)"
+    eval "val_indir=\"\$${indir}\""
+    [ -z "${val_indir}" ] && continue
+    trace "Directory trace for $indir=${val_indir} ($keyword)"
     local cnt=0
     local odir=""
-    local cdir="${val_inder}/*"
+    local cdir="${val_indir}/*"
     while [ ${cnt} -lt 30 ] && [ ! "$cdir" = "$odir" ]; do
       echo "  ls -ld $cdir:"
       ls -ld $cdir 2>&1 | sed 's/^/    /'
