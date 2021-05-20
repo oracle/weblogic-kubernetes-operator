@@ -24,7 +24,7 @@ function checkEnvVar {
    exit 1
   fi
 }
-function ver { printf "%02d%02d%02d%02d" $(echo "$1" | tr '.' ' '); }
+function ver { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
 
 function checkJavaVersion {
   java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
