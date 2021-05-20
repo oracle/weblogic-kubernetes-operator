@@ -157,7 +157,7 @@ public class ItFmwDiiSample {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test FMW domain in image sample")
-  public void testFmwDomainInImage(String model) {
+  public void testFmwDomainInImageSample(String model) {
     String domainUid = model.split(":")[1];
     String script = model.split(":")[0]; // wlst | wdt way of creating domain
 
