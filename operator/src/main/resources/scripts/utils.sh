@@ -743,39 +743,3 @@ function checkCommonMount() {
   done
   return 0
 }
-
-#
-# initCommonMount
-#   purpose: Execute the COMMON_MOUNT_COMMAND specified as part of the common mount init container.
-#            If the specified COMMON_MOUNT_COMMAND is empty, it logs an error message and returns.
-#            If the COMMON_MOUNT_PATH directory doesn't exist or is empty, it logs error and returns.
-#            If the command execution fails, it logs errror message with failure details. Otherwise it
-#            logs a success message with details.
-#            See also 'commonMount.sh'.
-#
-function initCommonMount() {
-
-  if [ -z "${COMMON_MOUNT_COMMAND}" ]; then
-    trace SEVERE "Common Mount: The 'serverPod.commonMounts.command' is empty for the " \
-                "container image='$COMMON_MOUNT_CONTAINER_IMAGE'. Exiting."
-    return
-  fi
-
-  trace FINE "Common Mount: About to execute command '$COMMON_MOUNT_COMMAND' in container image='$COMMON_MOUNT_CONTAINER_IMAGE'. " \
-             "COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH' and COMMON_MOUNT_TARGET_PATH is '${COMMON_MOUNT_TARGET_PATH}'."
-  traceDirs $COMMON_MOUNT_PATH
-
-  if [ ! -d ${COMMON_MOUNT_PATH} ] ||  [ -z "$(ls -A ${COMMON_MOUNT_PATH})" ]; then
-    trace ERROR "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
-    return
-  fi
-
-  trace FINE "Common Mount: About to execute COMMON_MOUNT_COMMAND='$COMMON_MOUNT_COMMAND' ."
-  results=$(eval $COMMON_MOUNT_COMMAND 2>&1)
-  if [ $? -ne 0 ]; then
-    trace ERROR "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$COMMON_MOUNT_CONTAINER_IMAGE' " \
-                "with COMMON_MOUNT_PATH=$COMMON_MOUNT_PATH. Error -> '$results' ."
-  else
-    trace FINE "Common Mount: Command '$COMMON_MOUNT_COMMAND' executed successfully. Output -> '$results'."
-  fi
-}

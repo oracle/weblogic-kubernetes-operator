@@ -145,12 +145,14 @@ function traceDirs() {
   local keyword="$1"
   shift
   local indir
+  local val_inder
   for indir in $*; do
-    [ -z "${!indir}" ] && continue
-    trace "Directory trace for $indir=${!indir} ($keyword)"
+    eval "val_inder=\"\$${indir}\""
+    [ -z "${val_inder}" ] && continue
+    trace "Directory trace for $indir=${val_inder} ($keyword)"
     local cnt=0
     local odir=""
-    local cdir="${!indir}/*"
+    local cdir="${val_inder}/*"
     while [ ${cnt} -lt 30 ] && [ ! "$cdir" = "$odir" ]; do
       echo "  ls -ld $cdir:"
       ls -ld $cdir 2>&1 | sed 's/^/    /'
@@ -200,12 +202,13 @@ function checkEnv() {
   fi
   
   local not_found=""
+  local val_1
   while [ ! -z "${1}" ]; do 
-    eval "env=\"\$${1}\""
-    if [ -z "${env}" ]; then
+    eval "val_1=\"\$${1}\""
+    if [ -z "${val_1}" ]; then
       not_found="$not_found ${1}"
     else
-      [ "$do_fine" = "true" ] && trace FINE "${1}='${env}'"
+      [ "$do_fine" = "true" ] && trace FINE "${1}='${val_1}'"
     fi
     shift
   done
@@ -235,7 +238,7 @@ function initCommonMount() {
 
   trace FINE "Common Mount: About to execute command '$COMMON_MOUNT_COMMAND' in container image='$COMMON_MOUNT_CONTAINER_IMAGE'. " \
              "COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH' and COMMON_MOUNT_TARGET_PATH is '${COMMON_MOUNT_TARGET_PATH}'."
-  traceDirs $COMMON_MOUNT_PATH
+  traceDirs before $COMMON_MOUNT_PATH
 
   if [ ! -d ${COMMON_MOUNT_PATH} ] ||  [ -z "$(ls -A ${COMMON_MOUNT_PATH})" ]; then
     trace ERROR "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
