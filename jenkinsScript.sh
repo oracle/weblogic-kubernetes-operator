@@ -18,6 +18,9 @@
 # OCIR_PASSWORD
 # OCIR_EMAIL
 
+set -o errexit
+set -o pipefail
+
 function checkEnvVar {
   if [ -z "$0" ]; then
    echo "Error: $0 env variable is not set"
