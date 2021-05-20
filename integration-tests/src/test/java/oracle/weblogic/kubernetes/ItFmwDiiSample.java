@@ -72,8 +72,6 @@ public class ItFmwDiiSample {
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-sample-testing");
 
-  private static final String ORACLEDBURLPREFIX = "oracle-db.";
-  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -141,8 +139,6 @@ public class ItFmwDiiSample {
               rcuSchemaPrefix, dbNamespace, dbUrl));
     }
 
-
-
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
@@ -162,10 +158,10 @@ public class ItFmwDiiSample {
   @MethodSource("paramProvider")
   @DisplayName("Test FMW domain in image sample")
   public void testFmwDomainInImage(String model) {
-
     String domainUid = model.split(":")[1];
-    String script = model.split(":")[0];
+    String script = model.split(":")[0]; // wlst | wdt way of creating domain
 
+    //copy sample a temporary directory
     setupSample();
 
     //create WebLogic secrets for the domain
@@ -179,28 +175,14 @@ public class ItFmwDiiSample {
         "scripts/create-fmw-infrastructure-domain/domain-home-in-image");
 
     //update create-domain-inputs.yaml with the values from this test
-    updateDomainInputsFile(domainUid, sampleBase);
-
-    // change image name
-    assertDoesNotThrow(() -> {
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "mode: wdt", "mode: " + script);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
-              "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain.sh").toString(),
-          "imagetool.sh update",
-          "imagetool.sh update\n  --buildNetwork host");
-    });
+    updateDomainInputsFile(domainUid, sampleBase, script);
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     //verify EM console is accessible
     createDomainAndVerify(domainUid, sampleBase);
-
   }
 
   private void createDomainAndVerify(String domainName, Path sampleBase) {
-
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
     CommandParams params = new CommandParams().defaults();
@@ -216,6 +198,7 @@ public class ItFmwDiiSample {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
 
+    //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
       String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost", "domain-home-in-image");
       String newImage = KIND_REPO + "domain-in-image:" + domainName;
@@ -268,10 +251,8 @@ public class ItFmwDiiSample {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
-
     checkAccessToEMconsole(adminServerPodName);
   }
-
 
   // copy samples directory to a temporary location
   private static void setupSample() {
@@ -292,7 +273,7 @@ public class ItFmwDiiSample {
         .execute(), "Failed to chmod tempSamplePath");
   }
 
-  private void updateDomainInputsFile(String domainUid, Path sampleBase) {
+  private void updateDomainInputsFile(String domainUid, Path sampleBase, String script) {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30172
@@ -302,26 +283,33 @@ public class ItFmwDiiSample {
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "namespace: default", "namespace: " + domainNamespace);
+          "mode: wdt", "mode: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domain1", domainUid);
+          "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
+          "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain.sh").toString(),
+          "imagetool.sh update",
+          "imagetool.sh update\n  --buildNetwork host");
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
+          "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "t3ChannelPort: 30012", "t3ChannelPort: " + t3ChannelPort);
+          "domain1", domainUid);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "exposeAdminT3Channel: false", "exposeAdminT3Channel: true");
+          "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "exposeAdminNodePort: false", "exposeAdminNodePort: true");
+          "t3ChannelPort: 30012", "t3ChannelPort: " + t3ChannelPort);
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "exposeAdminT3Channel: false", "exposeAdminT3Channel: true");
+      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+          "exposeAdminNodePort: false", "exposeAdminNodePort: true");
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "adminNodePort: 30701", "adminNodePort: " + adminNodePort);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+          "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
+          "rcuDatabaseURL: database:1521/service", "rcuDatabaseURL: " + dbUrl);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "initialManagedServerReplicas: 1", "initialManagedServerReplicas: 2");
-
+          "initialManagedServerReplicas: 1", "initialManagedServerReplicas: 2");
     });
   }
 
@@ -405,7 +393,6 @@ public class ItFmwDiiSample {
             .saveResults(true)
             .redirect(true))
         .execute(), "Failed to execute command: " + command);
-
   }
 
   private void checkAccessToEMconsole(String adminServerPodName) {
@@ -421,7 +408,6 @@ public class ItFmwDiiSample {
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
-
   }
 
   private Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
