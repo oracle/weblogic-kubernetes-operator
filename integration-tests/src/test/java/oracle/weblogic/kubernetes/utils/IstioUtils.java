@@ -8,15 +8,36 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Istio;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.OnlineUpdate;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -224,4 +245,125 @@ public class IstioUtils {
     return result.stdout().contains("destination-rule created");
   }
 
+
+  /**
+   * Deploy the Istio Prometheus.
+   *
+   * @param domainNamespace namespace of domain to monitor
+   * @param domainUid uid of domain to monitor
+   * @param prometheusPort nodePort value for prometheus
+   * @return true if deployment is successful otherwise false
+   */
+  public static boolean deployIstioPrometheus(
+      String domainNamespace, String domainUid, String prometheusPort) {
+    LoggingFacade logger = getLogger();
+    final String prometheusRegexValue = String.format("regex: %s;%s", domainNamespace, domainUid);
+    Path fileTemp = Paths.get(RESULTS_ROOT, "createTempValueFile");
+    assertDoesNotThrow(() -> deleteDirectory(fileTemp.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(fileTemp));
+    logger.info("copy the promvalue.yaml to staging location");
+    Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "istioprometheus.yaml");
+    Path targetPromFile = Paths.get(fileTemp.toString(), "istioprometheus.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING));
+    String oldValue = "regex: default;domain1";
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        oldValue,
+        prometheusRegexValue));
+    String oldPortValue = "30510";
+    assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+        oldPortValue,
+        prometheusPort));
+    ExecResult result = null;
+    StringBuffer deployIstioPrometheus = null;
+    deployIstioPrometheus = new StringBuffer("kubectl apply -f ");
+    deployIstioPrometheus.append(targetPromFile.toString());
+    logger.info("deployIstioPrometheus: kubectl command {0}", new String(deployIstioPrometheus));
+    try {
+      result = exec(new String(deployIstioPrometheus), true);
+    } catch (Exception ex) {
+      logger.info("Exception in deployIstioPrometheus() {0}", ex);
+      return false;
+    }
+    logger.info("deployIstioPrometheus: kubectl returned {0}", result.toString());
+    try {
+      for (var item : listPods("istio-system", null).getItems()) {
+        if (item.getMetadata() != null) {
+          if (item.getMetadata().getName().contains("prometheus")) {
+            logger.info("Waiting for pod {0} to be ready in namespace {1}",
+                item.getMetadata().getName(), "istio-system");
+            checkPodReady(item.getMetadata().getName(), null, "istio-system");
+            checkServiceExists("prometheus", "istio-system");
+          }
+        }
+      }
+    } catch (ApiException e) {
+      e.printStackTrace();
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource for istio using the basic model-in-image
+   * image.
+   *
+   * @param domainUid uid of the domain
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param miiImage used image name
+   * @param clusterName name of the cluster to add in domain
+   * @return domain object of the domain resource
+   */
+  public static Domain createIstioDomainResource(String domainUid, String domNamespace,
+                                      String adminSecretName, String repoSecretName,
+                                      String encryptionSecretName, int replicaCount,
+                                      String miiImage, String configmapName, String clusterName) {
+
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING"))
+            .addClustersItem(new Cluster()
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .istio(new Istio()
+                    .enabled(Boolean.TRUE)
+                    .readinessPort(8888))
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .onlineUpdate(new OnlineUpdate().enabled(true))
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
+  }
 }
