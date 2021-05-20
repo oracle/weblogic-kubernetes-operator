@@ -1724,6 +1724,19 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static Callable<Boolean> checkIsPodRestarted(String domNamespace,
+                                                      String podName,
+                                                      OffsetDateTime lastCreationTime) {
+    return isPodRestarted(podName, domNamespace, lastCreationTime);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
