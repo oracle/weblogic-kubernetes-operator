@@ -218,7 +218,7 @@ public class ItFmwDiiSample {
     assertTrue(result, "Failed to create domain.yaml");
 
     if (KIND_REPO != null) {
-      String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost:", "domain-home-in-image");
+      String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost", "domain-home-in-image");
       String newImage = KIND_REPO + "domain-in-image:" + domainName;
       withStandardRetryPolicy
           .conditionEvaluationListener(
