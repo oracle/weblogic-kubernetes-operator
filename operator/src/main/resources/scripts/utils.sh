@@ -724,9 +724,9 @@ function checkCommonMount() {
         trace FINE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
         severe_found=true
       elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-        out_file_contents=$(cat $out_file)
         trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount. " \
-                     "Contents of '${out_file}': ${out_file_contents//$'\n'/\\n}"
+                     "Contents of '${out_file}':"
+        cat $out_file
         severe_found=true
         continue
       fi

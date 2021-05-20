@@ -245,14 +245,14 @@ function initCommonMount() {
   traceDirs before $COMMON_MOUNT_PATH
 
   if [ ! -d ${COMMON_MOUNT_PATH} ] ||  [ -z "$(ls -A ${COMMON_MOUNT_PATH})" ]; then
-    trace ERROR "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
+    trace SEVERE "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
     return
   fi
 
   trace FINE "Common Mount: About to execute COMMON_MOUNT_COMMAND='$COMMON_MOUNT_COMMAND' ."
   results=$(eval $COMMON_MOUNT_COMMAND 2>&1)
   if [ $? -ne 0 ]; then
-    trace ERROR "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$COMMON_MOUNT_CONTAINER_IMAGE' " \
+    trace SEVERE "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$COMMON_MOUNT_CONTAINER_IMAGE' " \
                 "with COMMON_MOUNT_PATH=$COMMON_MOUNT_PATH. Error -> '$results' ."
   else
     trace FINE "Common Mount: Command '$COMMON_MOUNT_COMMAND' executed successfully. Output -> '$results'."
