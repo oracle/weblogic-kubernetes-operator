@@ -2,81 +2,56 @@
 # Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-# This script should be run on Jenkins Job to run the integration tests
+# This script checks for the below required environment variables on Jenkins and runs the integration tests
+# APACHE_MAVEN_HOME
+# HELM_VERSION
+# KUBECTL_VERSION
+# KIND_VERSION
+# IT_TEST
+# WDT_DOWNLOAD_URL
+# WIT_DOWNLOAD_URL
+# NUMBER_OF_THREADS
+# JAVA_HOME
+# OCR_PASSWORD
+# OCR_USERNAME
+# OCIR_USERNAME
+# OCIR_PASSWORD
+# OCIR_EMAIL
+
+function checkEnvVar {
+  if [ -z "$0" ]; then
+   echo "Error: $0 env variable is not set"
+   exit 1
+  fi
+}
+function ver { printf "%02d%02d%02d%02d" $(echo "$1" | tr '.' ' '); }
+
+function checkJavaVersion {
+  java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
+  echo $java_version
+  if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
+    echo "Java version should be 11.0.10 or higher"
+    exit 1
+  fi
+}
 
 echo "WORKSPACE ${WORKSPACE}"
 
-if [ -z "$WORKSPACE" ]; then
-   echo "Error: WORKSPACE env variable has to be set "
-   exit 1
-fi
+checkEnvVar "$APACHE_MAVEN_HOME"
+checkEnvVar "$HELM_VERSION"
+checkEnvVar "$KUBECTL_VERSION"
+checkEnvVar "$KIND_VERSION"
+checkEnvVar "$IT_TEST"
+checkEnvVar "$WDT_DOWNLOAD_URL"
+checkEnvVar "$WIT_DOWNLOAD_URL"
+checkEnvVar "$NUMBER_OF_THREADS"
+checkEnvVar "$JAVA_HOME"
+checkEnvVar "$OCR_PASSWORD"
+checkEnvVar "$OCR_USERNAME"
+checkEnvVar "$OCIR_USERNAME"
+checkEnvVar "$OCIR_PASSWORD"
+checkEnvVar "$OCIR_EMAIL"
 
-if [ -z "$APACHE_MAVEN_HOME" ]; then
-   echo "Error: APACHE_MAVEN_HOME env variable is not set"
-   exit 1
-fi
-
-if [ -z "$HELM_VERSION" ]; then 
-   echo "Error: HELM_VERSION env variable is not set"
-   exit 1
-fi
-
-if [ -z "$KUBECTL_VERSION" ]; then
-   echo "Error: KUBECTL_VERSION env variable is not set"
-   exit 1
-fi
-
-if [ -z "$KIND_VERSION" ]; then
-   echo "Error: KIND_VERSION env variable is not set"
-   exit 1
-fi
-
-if [ -z "$IT_TEST" ]; then
-   echo "Error: IT_TEST env variable is not set"
-   exit 1
-fi
-
-if [ -z "$PARALLEL_RUN" ]; then
-   echo "Error: PARALLEL_RUN env variable is not set"
-   exit 1
-fi
-if [ -z "$WDT_DOWNLOAD_URL" ]; then
-   echo "Error: WDT_DOWNLOAD_URL env variable is not set"
-   exit 1
-fi
-
-if [ -z "$WIT_DOWNLOAD_URL" ]; then
-   echo "Error: WIT_DOWNLOAD_URL env variable is not set"
-   exit 1
-fi
-if [ -z "$NUMBER_OF_THREADS" ]; then
-   echo "Error: NUMBER_OF_THREADS env variable is not set"
-   exit 1
-fi
-if [ -z "$JAVA_HOME" ]; then
-   echo "Error: JAVA_HOME env variable is not set, should be at least 11.0.10"
-   exit 1
-fi
-if [ -z "$OCR_PASSWORD" ]; then
-   echo "Error: OCR_PASSWORD env variable is not set"
-   exit 1
-fi
-if [ -z "$OCR_USERNAME" ]; then
-   echo "Error: OCR_USERNAME env variable is not set"
-   exit 1
-fi
-if [ -z "$OCIR_USERNAME" ]; then
-   echo "Error: OCIR_USERNAME env variable is not set"
-   exit 1
-fi
-if [ -z "$OCIR_PASSWORD" ]; then
-   echo "Error: OCIR_PASSWORD env variable is not set"
-   exit 1
-fi
-if [ -z "$OCIR_EMAIL" ]; then
-   echo "Error: OCIR_EMAIL env variable is not set"
-   exit 1
-fi
 
 mkdir -p ${WORKSPACE}/bin
 
@@ -84,6 +59,7 @@ export PATH=${JAVA_HOME}/bin:${APACHE_MAVEN_HOME}/bin:${WORKSPACE}/bin:$PATH
 
 which java
 java -version
+checkJavaVersion
 
 which mvn
 mvn --version
@@ -129,4 +105,5 @@ helm repo update
 
 echo "Run tests.."
 sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS}
+
 
