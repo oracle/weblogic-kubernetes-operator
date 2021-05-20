@@ -11,15 +11,6 @@ metadata:
 spec:
   routes:
   - kind: Rule
-    match: PathPrefix(`/domain1`)
-    middlewares:
-    - name: middleware-domain1
-      namespace: @NS@
-    services:
-    - kind: Service
-      name: @domain1uid@-cluster-cluster-1
-      port: 8001
-  - kind: Rule
     match: PathPrefix(`/console`)
     services:
     - kind: Service
@@ -33,13 +24,3 @@ spec:
       name: @domain1uid@-admin-server
       namespace: @NS@
       port: 7001
----
-apiVersion: traefik.containo.us/v1alpha1
-kind: Middleware
-metadata:
-  name: middleware-domain1
-  namespace: @NS@
-spec:
-  replacePathRegex:
-    regex: ^/domain1(.*)
-    replacement: /$1
