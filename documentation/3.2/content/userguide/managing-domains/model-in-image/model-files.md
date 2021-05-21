@@ -68,7 +68,7 @@ For a description of model file macro references to secrets and environment vari
 
       - All password fields in a model should use a secret macro. Passwords should not be directly included in property or model files because the files may appear in logs or debugging.
 
-      - Model files encrypted with the WDT [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/)) are not supported. Use secrets instead.
+      - Model files encrypted with the WDT [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/) are not supported. Use secrets instead.
 
     - You can use model macros to reference arbitrary environment variables from model files. This is useful for handling plain text mutable values that you can define using an `env` stanza in your Domain YAML file, and is also useful for accessing the built in `DOMAIN_UID` environment variable. See [Using environment variables in model files](#using-environment-variables-in-model-files).
 

@@ -5,13 +5,13 @@ weight: 2
 description: "Sample for creating a WebLogic domain home on an existing PV or PVC on the Azure Kubernetes Service."
 ---
 
-This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
 
 #### Contents
 
  - [Prerequisites](#prerequisites)
  - [Create an AKS cluster](#create-the-aks-cluster)
- - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator-into-the-aks-cluster)
+ - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator-into-the-aks-cluster)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Automation](#automation)
  - [Deploy sample application](#deploy-sample-application)
@@ -24,12 +24,12 @@ This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Opera
 
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
-##### Clone WebLogic Server Kubernetes Operator repository
+##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [Oracle WebLogic Server Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```shell
-$ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
@@ -42,9 +42,9 @@ $ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operat
 {{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
 
-#### Install WebLogic Server Kubernetes Operator into the AKS cluster
+#### Install WebLogic Kubernetes Operator into the AKS cluster
 
-The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
+The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
 Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Please install the operator by running the corresponding command.
 
@@ -143,6 +143,9 @@ weblogic-operator-secrets                 Opaque                                
 
 ##### Create WebLogic Domain
 We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
+
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% /notice%}}
 
 We need to set up the domain configuration for the WebLogic domain.
 

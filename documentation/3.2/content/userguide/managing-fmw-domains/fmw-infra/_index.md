@@ -61,7 +61,7 @@ following limitations currently exist for FMW Infrastructure domains:
 
 #### Obtaining the FMW Infrastructure image
 
-The Oracle WebLogic Server Kubernetes Operator requires patch 29135930.
+The WebLogic Kubernetes Operator requires patch 29135930.
 The standard pre-built FMW Infrastructure image, `container-registry.oracle.com/middleware/fmw-infrastrucutre:12.2.1.3`, already has this patch applied. For detailed instructions on how to log in to the Oracle Container Registry and accept license agreement, see this [document]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
 The FMW Infrastructure 12.2.1.4.0 images do not require patches.
 

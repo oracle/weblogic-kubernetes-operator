@@ -30,7 +30,7 @@ Many of the samples accompanying the operator project include scripts to generat
 The following prerequisites must be fulfilled before proceeding with the creation of a domain resource:
 
 * Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.
-* Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.
+* Make sure the WebLogic Kubernetes Operator is running and is configured to monitor the namespace.
 * Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a `spec.webLogicCredentialsSecret` field that references a Kubernetes Secret containing the `username` and `password` of the WebLogic server administrative account.
 * Make sure a domain resource configuration and its corresponding WebLogic configuration [meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 
@@ -73,16 +73,8 @@ The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, l
 
 The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
 
-For Kubernetes 1.16 and later:
-
 ```shell
 $ kubectl create -f kubernetes/crd/domain-crd.yaml
-```
-
-For Kubernetes 1.15 and earlier:
-
-```shell
-$ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
 ```
 
 After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:

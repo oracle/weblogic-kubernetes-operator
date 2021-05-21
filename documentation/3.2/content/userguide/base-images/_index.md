@@ -90,7 +90,7 @@ Additional information about using this image is available in the Oracle Contain
 
 #### Create a custom image with patches applied
 
-The Oracle WebLogic Server Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
+The WebLogic Kubernetes Operator and WebLogic Server 12.2.1.3.0 image requires patch 29135930.
 This patch has some prerequisite patches that will also need to be applied. The WebLogic Server 12.2.1.4.0 image does not require any patches. To create and customize the WebLogic Server image,
 and apply the required patches, use the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/).
 
