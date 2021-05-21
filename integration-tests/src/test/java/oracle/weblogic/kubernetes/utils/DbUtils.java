@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -73,7 +74,7 @@ public class DbUtils {
   private static V1Service oracleDBService = null;
   private static V1Deployment oracleDbDepl = null;
   private static int suffixCount = 0;
-  private static String dbPodName = null;
+  private static Map<String, String> dbMap = new HashMap<>();
 
   private static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
@@ -222,7 +223,7 @@ public class DbUtils {
     }
 
     // wait for the Oracle DB pod to be ready
-    dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
+    String dbPodName = assertDoesNotThrow(() -> getPodNameOfDb(dbNamespace),
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
@@ -242,6 +243,7 @@ public class DbUtils {
     String msg = "The database is ready for use";
     checkDbReady(msg, dbPodName, dbNamespace);
 
+    dbMap.put(dbNamespace, dbPodName);
   }
 
   /**
@@ -597,8 +599,12 @@ public class DbUtils {
     getLogger().info("updateString is: \n" + updateString);
     assertDoesNotThrow(() -> Files.write(updateScript, updateString.getBytes()));
 
+    //get dbPodName for the specified dbNamespace
+    String dbPodName = dbMap.containsKey(dbNamespace) ? dbMap.get(dbNamespace) : null;
+    assertNotNull(dbPodName, "Failed to get dbPodName");
+
     String updateLocation = "/u01/update.sql";
-    getLogger().info("Is going to update RCU schema password for dbPod: {0} in namespace: {1} using"
+    getLogger().info("Is going to update RCU schema password for dbPod: {0} in namespace: {1} using "
         + "destLocation {2}", dbPodName, dbNamespace, updateLocation);
     assertDoesNotThrow(() -> copyFileToPod(dbNamespace,
              dbPodName, "",
@@ -618,6 +624,7 @@ public class DbUtils {
              dbPodName, "",
              Paths.get(WORK_DIR, "sqlplus.sh"),
              Paths.get(sqlplusLocation)));
+
     // change file permissions
     ExecResult execResult = assertDoesNotThrow(() -> execCommand(dbNamespace, dbPodName, null,
         true, "/bin/sh", "-c", "chmod +x " + sqlplusLocation),
