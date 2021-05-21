@@ -48,7 +48,6 @@ externalRestHttpsPort: 31001
 image: ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2
 imagePullPolicy: IfNotPresent
 internalDebugHttpPort: 30999
-istioEnabled: false
 javaLoggingLevel: INFO
 logStashImage: logstash:6.6.0
 remoteDebugNodePortEnabled: false

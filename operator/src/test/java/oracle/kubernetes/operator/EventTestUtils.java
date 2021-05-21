@@ -19,7 +19,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
 public class EventTestUtils {
-  private static List<CoreV1Event> getEventsWithReason(@NotNull List<CoreV1Event> events, String reason) {
+  public static List<CoreV1Event> getEventsWithReason(@NotNull List<CoreV1Event> events, String reason) {
     return events.stream().filter(event -> reasonMatches(event, reason)).collect(Collectors.toList());
   }
 
