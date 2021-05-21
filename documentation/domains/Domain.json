@@ -184,55 +184,6 @@
         }
       }
     },
-    "CommonMount": {
-      "description": "Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
-      "type": "object",
-      "properties": {
-        "volume": {
-          "description": "The name of a common mount volume defined in \u0027spec.commonMountVolumes\u0027. Required.",
-          "type": "string"
-        },
-        "image": {
-          "description": "The name of an image with files located in directory specified by \u0027spec.commonMountVolumes.mountPath\u0027 of the common mount volume referenced by serverPod.commonMounts.volume (which defaults to \u0027/common\u0027).",
-          "type": "string"
-        },
-        "imagePullPolicy": {
-          "description": "The image pull policy for the common mount container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
-          "type": "string",
-          "enum": [
-            "Always",
-            "Never",
-            "IfNotPresent"
-          ]
-        },
-        "command": {
-          "description": "The command for this init container. Defaults to \u0027cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH\u0027. This is an advanced setting for customizing the container command for copying files from the container image to the common mount emptyDir volume. Use the \u0027$COMMON_MOUNT_PATH\u0027 environment variable to reference the value configured in \u0027spec.commonMountVolumes.mountPath\u0027 (which defaults to \u0027/common\u0027). Use \u0027$TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the Operator that resolves to the common mount\u0027s internal emptyDir volume.",
-          "type": "string"
-        }
-      }
-    },
-    "CommonMountVolume": {
-      "description": "Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a Kubernetes \u0027emptyDir\u0027 volume.",
-      "type": "object",
-      "properties": {
-        "sizeLimit": {
-          "description": "The emptyDir volume size limit. Defaults to unset.",
-          "type": "string"
-        },
-        "mountPath": {
-          "description": "The common mount path. The files in the path are populated from the same named directory in the images supplied by each container in \u0027serverPod.commonMounts\u0027. Each common mount volume must be configured with a different common mount path. Required.",
-          "type": "string"
-        },
-        "name": {
-          "description": "The name of the common mount volume. Required.",
-          "type": "string"
-        },
-        "medium": {
-          "description": "The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
-          "type": "string"
-        }
-      }
-    },
     "Configuration": {
       "type": "object",
       "properties": {
@@ -317,7 +268,7 @@
       "type": "object",
       "properties": {
         "monitoringExporter": {
-          "description": "Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.",
+          "description": "Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.",
           "$ref": "#/definitions/MonitoringExporterSpecification"
         },
         "configuration": {
@@ -386,13 +337,6 @@
           "type": "array",
           "items": {
             "$ref": "#/definitions/Cluster"
-          }
-        },
-        "commonMountVolumes": {
-          "description": "Configure common mount volumes including their respective mount paths. Common mount volumes are in turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a Kubernetes \u0027emptyDir\u0027 volume.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CommonMountVolume"
           }
         },
         "serverStartState": {
@@ -650,11 +594,11 @@
       "type": "object",
       "properties": {
         "image": {
-          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.1",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.1",
           "type": "string"
         },
         "imagePullPolicy": {
-          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
           "type": "string",
           "enum": [
             "Always",
@@ -664,7 +608,7 @@
         },
         "configuration": {
           "x-kubernetes-preserve-unknown-fields": "true",
-          "description": "The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter",
+          "description": "The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances.",
           "$ref": "#/definitions/Map"
         }
       }
@@ -774,13 +718,6 @@
           "type": "array",
           "items": {
             "$ref": "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.13.5/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
-          }
-        },
-        "commonMounts": {
-          "description": "Use a common mount to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/CommonMount"
           }
         },
         "resources": {

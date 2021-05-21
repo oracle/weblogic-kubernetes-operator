@@ -36,6 +36,7 @@ public interface ProcessingConstants {
   String MII_DYNAMIC_UPDATE_SUCCESS = "0";
   String MII_DYNAMIC_UPDATE_RESTART_REQUIRED = "103";
   String INTRO_POD_INIT_CONTAINERS = "INTRO_POD_INIT_CONTAINERS";
+  String DOMAIN_ROLL_START_EVENT_GENERATED = "domainRollStartEventGenerated";
 
   String DOMAIN_VALIDATION_ERRORS = "domainValidationErrors";
   String INTROSPECTOR_JOB_FAILURE_LOGGED = "introspectorJobFailureLogged";

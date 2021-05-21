@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Feature;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -222,6 +223,7 @@ class ServerPod extends KubernetesResource {
           + "without requiring modifications to the pod's base image 'domain.spec.image'. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
+  @Feature("CommonMounts")
   private List<CommonMount> commonMounts;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {

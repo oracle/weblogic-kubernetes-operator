@@ -30,6 +30,20 @@ class CompatibleSets<T> implements CompatibilityCheck {
   @Override
   public String getIncompatibility() {
     return String.format(
-        "actual %s does not have %s", description, getMissingElements(expected, actual));
+        "'%s' contains additional elements '%s'", description, getMissingElements(expected, actual));
   }
+
+  @Override
+  public String getScopedIncompatibility(CompatibilityScope scope) {
+    if (scope.contains(getScope())) {
+      return getIncompatibility();
+    }
+    return null;
+  }
+
+  @Override
+  public CompatibilityScope getScope() {
+    return CompatibilityScope.UNKNOWN;
+  }
+
 }
