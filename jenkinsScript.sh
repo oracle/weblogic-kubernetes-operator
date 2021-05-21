@@ -21,14 +21,27 @@
 set -o errexit
 set -o pipefail
 
-function checkEnvVar {
-  if [ -z "$0" ]; then
-   echo "Error: $0 env variable is not set"
-   exit 1
+function checkEnvVars {
+  local has_errors=false
+  while [ ! -z "${1}" ]; do
+    if [ -z "${!1}" ]; then
+      echo "Error: '${1}' env variable is not set"
+      has_errors=true
+    else
+      if [ "${1/PASSWORD//}" = "${1}" ]; then
+        echo "Info: env var ${1}='${!1}'"
+      else
+        echo "Info: env var ${1}='***'"
+      fi
+    fi
+    shift
+  done
+  if [ ! "$has_errors" = "false" ]; then
+    echo "Error: Missing env vars, exiting."
+    exit 1
   fi
 }
 function ver { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
-
 function checkJavaVersion {
   java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
   echo $java_version
@@ -40,20 +53,21 @@ function checkJavaVersion {
 
 echo "WORKSPACE ${WORKSPACE}"
 
-checkEnvVar "$APACHE_MAVEN_HOME"
-checkEnvVar "$HELM_VERSION"
-checkEnvVar "$KUBECTL_VERSION"
-checkEnvVar "$KIND_VERSION"
-checkEnvVar "$IT_TEST"
-checkEnvVar "$WDT_DOWNLOAD_URL"
-checkEnvVar "$WIT_DOWNLOAD_URL"
-checkEnvVar "$NUMBER_OF_THREADS"
-checkEnvVar "$JAVA_HOME"
-checkEnvVar "$OCR_PASSWORD"
-checkEnvVar "$OCR_USERNAME"
-checkEnvVar "$OCIR_USERNAME"
-checkEnvVar "$OCIR_PASSWORD"
-checkEnvVar "$OCIR_EMAIL"
+checkEnvVars  \
+   APACHE_MAVEN_HOME  \
+   HELM_VERSION  \
+   KUBECTL_VERSION \
+   KIND_VERSION  \
+   IT_TEST  \
+   WDT_DOWNLOAD_URL  \
+   WIT_DOWNLOAD_URL  \
+   NUMBER_OF_THREADS  \
+   JAVA_HOME  \
+   OCR_PASSWORD  \
+   OCR_USERNAME  \
+   OCIR_USERNAME  \
+   OCIR_PASSWORD  \
+   OCIR_EMAIL
 
 
 mkdir -p ${WORKSPACE}/bin
