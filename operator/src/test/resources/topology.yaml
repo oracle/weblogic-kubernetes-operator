@@ -1,0 +1,24 @@
+domainValid: true
+domain:
+  name: "wls-domain1"
+  adminServerName: "admin-server"
+  configuredClusters:
+    - name: "cluster-1"
+      dynamicServersConfig:
+        name: "NO_NAME_0"
+        serverTemplateName: "cluster-1-template"
+        calculatedListenPorts: 0
+        serverNamePrefix: "managed-server"
+        dynamicClusterSize: 5
+        maxDynamicClusterSize: 5
+        minDynamicClusterSize: 1
+  serverTemplates:
+    - name: "cluster-1-template"
+      listenPort: 8001
+      listenAddress: "mii-dynamic-update-cluster-1-template"
+      clusterName: "cluster-1"
+  servers:
+    - name: "admin-server"
+      listenPort: 7001
+      listenAddress: "mii-dynamic-update-admin-server"
+

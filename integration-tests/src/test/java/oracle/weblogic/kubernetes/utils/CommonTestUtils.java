@@ -28,6 +28,8 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -1198,6 +1200,36 @@ public class CommonTestUtils {
   }
 
   /**
+   * Install WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully installed, false otherwise.
+   */
+  public static boolean installAndVerifyWlsRemoteConsole() {
+
+    assertThat(TestActions.installWlsRemoteConsole())
+        .as("WebLogic Remote Console installation succeeds")
+        .withFailMessage("WebLogic Remote Console installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Shutdown WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully shutdown, false otherwise.
+   */
+  public static boolean shutdownWlsRemoteConsole() {
+
+    assertThat(TestActions.shutdownWlsRemoteConsole())
+        .as("WebLogic Remote Console shutdown succeeds")
+        .withFailMessage("WebLogic Remote Console shutdown failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
    * Verify that the logging exporter is ready to use in Operator pod or WebLogic server pod.
    *
    * @param namespace namespace of Operator pod (for ELK Stack) or
@@ -1694,6 +1726,19 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static Callable<Boolean> checkIsPodRestarted(String domNamespace,
+                                                      String podName,
+                                                      OffsetDateTime lastCreationTime) {
+    return isPodRestarted(podName, domNamespace, lastCreationTime);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -2020,7 +2065,7 @@ public class CommonTestUtils {
       boolean buildCoherence = false;
 
       for (String appSrcDir : appSrcDirList) {
-        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear") || appSrcDir.contains(".jar")) {
           //remove from build
           buildAppDirList.remove(appSrcDir);
           archiveAppsList.add(appSrcDir);
@@ -3854,5 +3899,40 @@ public class CommonTestUtils {
       logger.info("java returned EXIT value {0}", result.exitValue());
       return ((result.exitValue() == 0));
     });
+  }
+
+  /**
+   * Create an ingress in specified namespace and retry up to maxRetries times if fail.
+   * @param maxRetries max number of retries
+   * @param isTLS whether the ingress uses TLS
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   */
+  public static void createIngressAndRetryIfFail(int maxRetries,
+                                                 boolean isTLS,
+                                                 String ingressName,
+                                                 String namespace,
+                                                 Map<String, String> annotations,
+                                                 List<NetworkingV1beta1IngressRule> ingressRules,
+                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        if (isTLS) {
+          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+        } else {
+          createIngress(ingressName, namespace, annotations, ingressRules, null);
+        }
+        break;
+      } catch (ApiException apiEx) {
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ignore) {
+          //ignore
+        }
+      }
+    }
   }
 }

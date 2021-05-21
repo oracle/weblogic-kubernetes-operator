@@ -61,7 +61,7 @@ import oracle.kubernetes.operator.steps.BeforeAdminServiceStep;
 import oracle.kubernetes.operator.steps.DeleteDomainStep;
 import oracle.kubernetes.operator.steps.DomainPresenceStep;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep;
-import oracle.kubernetes.operator.steps.MonitorExporterSteps;
+import oracle.kubernetes.operator.steps.MonitoringExporterSteps;
 import oracle.kubernetes.operator.steps.WatchPodReadyAdminStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Fiber;
@@ -122,6 +122,13 @@ public class DomainProcessorImpl implements DomainProcessor {
     return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
+  static void cleanupNamespace(String namespace) {
+    DOMAINS.remove(namespace);
+    domainEventK8SObjects.remove(namespace);
+    namespaceEventK8SObjects.remove(namespace);
+    statusUpdaters.remove((namespace));
+  }
+
   static void registerDomainPresenceInfo(DomainPresenceInfo info) {
     DOMAINS
           .computeIfAbsent(info.getNamespace(), k -> new ConcurrentHashMap<>())
@@ -129,10 +136,16 @@ public class DomainProcessorImpl implements DomainProcessor {
   }
 
   private static void unregisterPresenceInfo(String ns, String domainUid) {
-    Map<String, DomainPresenceInfo> map = DOMAINS.get(ns);
-    if (map != null) {
-      map.remove(domainUid);
-    }
+    Optional.ofNullable(DOMAINS.get(ns)).map(m -> m.remove(domainUid));
+  }
+
+  private static void unregisterEventK8SObject(String ns, String domainUid) {
+    Optional.ofNullable(domainEventK8SObjects.get(ns)).map(m -> m.remove(domainUid));
+  }
+
+  private static void unregisterDomain(String ns, String domainUid) {
+    unregisterPresenceInfo(ns, domainUid);
+    unregisterEventK8SObject(ns, domainUid);
   }
 
   private static void registerStatusUpdater(
@@ -917,7 +930,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
-      return explicitRecheck || isSpecChanged(liveInfo, cachedInfo);
+      return explicitRecheck || isGenerationChanged(liveInfo, cachedInfo);
     }
 
     private boolean isFatalIntrospectorError() {
@@ -999,17 +1012,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static boolean isSpecChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
-    // TODO, RJE: now that we are switching to updating domain status using the separate
-    // status-specific endpoint, Kubernetes guarantees that changes to the main endpoint
-    // will only be for metadata and spec, so we can know that we have an important
-    // change just by looking at metadata.generation.
-    return Optional.ofNullable(liveInfo.getDomain())
-          .map(Domain::getSpec)
-          .map(spec -> !spec.equals(cachedInfo.getDomain().getSpec()))
-          .orElse(true);
+  private static boolean isGenerationChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
+    return getGeneration(liveInfo)
+        .map(gen -> (gen.compareTo(getGeneration(cachedInfo).orElse(0L)) > 0))
+        .orElse(true);
   }
 
+  private static Optional<Long> getGeneration(DomainPresenceInfo dpi) {
+    return Optional.ofNullable(dpi)
+        .map(DomainPresenceInfo::getDomain)
+        .map(Domain::getMetadata)
+        .map(V1ObjectMeta::getGeneration);
+  }
 
   private static boolean isImgRestartIntrospectVerChanged(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return !Objects.equals(getIntrospectVersion(liveInfo), getIntrospectVersion(cachedInfo))
@@ -1140,7 +1154,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         bringManagedServersUp(null),
         DomainStatusUpdater.createEndProgressingStep(null),
         EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
-        MonitorExporterSteps.updateExporterSidecars(),
+        MonitoringExporterSteps.updateExporterSidecars(),
         new TailStep());
 
     Step domainUpStrategy =
@@ -1189,7 +1203,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      unregisterPresenceInfo(info.getNamespace(), info.getDomainUid());
+      unregisterDomain(info.getNamespace(), info.getDomainUid());
       return doNext(packet);
     }
   }

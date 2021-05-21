@@ -19,10 +19,12 @@ public class NginxParams {
   // https://github.com/helm/charts/blob/master/stable/nginx-ingress/values.yaml
   private static final String NODEPORTS_HTTP = "controller.service.nodePorts.http";
   private static final String NODEPORTS_HTTPS = "controller.service.nodePorts.https";
+  private static final String ADMISSIONWEBHOOKS_ENABLED = "controller.admissionWebhooks.enabled";
 
   // Adding some of the most commonly used params for now
   private int nodePortsHttp;
   private int nodePortsHttps;
+  private boolean webhooksEnabled = false;
   private HelmParams helmParams;
 
   public NginxParams nodePortsHttp(int nodePortsHttp) {
@@ -32,6 +34,11 @@ public class NginxParams {
 
   public NginxParams nodePortsHttps(int nodePortsHttps) {
     this.nodePortsHttps = nodePortsHttps;
+    return this;
+  }
+
+  public NginxParams webhooksEnabled(boolean webhooksEnabled) {
+    this.webhooksEnabled = webhooksEnabled;
     return this;
   }
 
@@ -58,6 +65,8 @@ public class NginxParams {
     if (nodePortsHttps > 0) {
       values.put(NODEPORTS_HTTPS, nodePortsHttps);
     }
+
+    values.put(ADMISSIONWEBHOOKS_ENABLED, webhooksEnabled);
 
     values.values().removeIf(Objects::isNull);
     return values;

@@ -321,7 +321,6 @@ public class JobHelper {
             Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
       }
 
-
       String dataHome = getDataHome();
       if (dataHome != null && !dataHome.isEmpty()) {
         addEnvVar(vars, ServerEnvVars.DATA_HOME, dataHome);

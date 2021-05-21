@@ -1,0 +1,97 @@
+# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+
+#
+# This is the template for kubernetes section for wdt_model file. This
+# will be appended to the wdt_model.yaml file so that we can use wdt's
+# extractDomainResource script to generate a domain.yaml
+#
+kubernetes:
+  apiVersion: "weblogic.oracle/v8"
+  kind: Domain
+  metadata:
+    name: %DOMAIN_UID%
+    namespace: "%NAMESPACE%"
+    labels:
+      #weblogic.resourceVersion: "domain-v2"
+      weblogic.domainUID: %DOMAIN_UID%
+  spec:
+    # The WebLogic Domain Home
+    domainHome: %DOMAIN_HOME%
+
+    # The domain home source type
+    # Set to PersistentVolume for domain-in-pv, Image for domain-in-image, or FromModel for model-in-image
+    domainHomeSourceType: %DOMAIN_HOME_SOURCE_TYPE%
+
+    # The WebLogic Server Docker image that the Operator uses to start the domain
+    image: "%WEBLOGIC_IMAGE%"
+
+    # imagePullPolicy defaults to "Always" if image version is :latest
+    imagePullPolicy: "%WEBLOGIC_IMAGE_PULL_POLICY%"
+
+    # Identify which Secret contains the credentials for pulling an image
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%imagePullSecrets: 
+    %WEBLOGIC_IMAGE_PULL_SECRET_PREFIX%  "%WEBLOGIC_IMAGE_PULL_SECRET_NAME%":
+
+    # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
+    # how to create that Secret at the end of this file)
+    webLogicCredentialsSecret: 
+       name: '%WEBLOGIC_CREDENTIALS_SECRET_NAME%'
+
+    # Whether to include the server out file into the pod's stdout, default is true
+    includeServerOutInPodLog: %INCLUDE_SERVER_OUT_IN_POD_LOG%
+
+    # Whether to enable log home
+    %LOG_HOME_ON_PV_PREFIX%logHomeEnabled: %LOG_HOME_ENABLED%
+
+    # Whether to write HTTP access log file to log home
+    #%LOG_HOME_ON_PV_PREFIX%httpAccessLogInLogHome: %HTTP_ACCESS_LOG_IN_LOG_HOME%
+
+    # The in-pod location for domain log, server logs, server out, and Node Manager log files
+    %LOG_HOME_ON_PV_PREFIX%logHome: %LOG_HOME%
+    # An (optional) in-pod location for data storage of default and custom file stores.
+    # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+    # data storage directories are determined from the WebLogic domain home configuration.
+    dataHome: "%DATA_HOME%"
+
+    # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+    # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+    # - "NEVER" will not start any server in the domain
+    # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+    # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+    serverStartPolicy: "%SERVER_START_POLICY%"
+
+    serverPod:
+      # an (optional) list of environment variable to be set on the servers
+      env:
+        JAVA_OPTIONS:
+          value: "%JAVA_OPTIONS%"
+        USER_MEM_ARGS:
+          value: "-Djava.security.egd=file:/dev/./urandom "
+      %OPTIONAL_SERVERPOD_RESOURCES%
+      %LOG_HOME_ON_PV_PREFIX%volumes:
+      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
+      %LOG_HOME_ON_PV_PREFIX%     persistentVolumeClaim:
+      %LOG_HOME_ON_PV_PREFIX%       claimName: '%DOMAIN_PVC_NAME%'
+      %LOG_HOME_ON_PV_PREFIX%volumeMounts:
+      %LOG_HOME_ON_PV_PREFIX%  'weblogic-domain-storage-volume':
+      %LOG_HOME_ON_PV_PREFIX%     mountPath: %DOMAIN_ROOT_DIR%
+
+    # adminServer is used to configure the desired behavior for starting the administration server.
+    adminServer:
+      # serverStartState legal values are "RUNNING" or "ADMIN"
+      # "RUNNING" means the listed server will be started up to "RUNNING" mode
+      # "ADMIN" means the listed server will be start up to "ADMIN" mode
+      serverStartState: "RUNNING"
+      %EXPOSE_ANY_CHANNEL_PREFIX%adminService:
+      %EXPOSE_ANY_CHANNEL_PREFIX%  channels:
+      # The Admin Server's NodePort
+      %EXPOSE_ANY_CHANNEL_PREFIX%    default:
+      %EXPOSE_ADMIN_PORT_PREFIX%       nodePort: %ADMIN_NODE_PORT%
+      # Uncomment to export the T3Channel as a service
+      %EXPOSE_T3_CHANNEL_PREFIX%     T3Channel:
+
+    # Istio service mesh support is experimental.
+    %ISTIO_PREFIX%configuration:
+    %ISTIO_PREFIX%  istio:
+    %ISTIO_PREFIX%    enabled: %ISTIO_ENABLED%
+    %ISTIO_PREFIX%    readinessPort: %ISTIO_READINESS_PORT%

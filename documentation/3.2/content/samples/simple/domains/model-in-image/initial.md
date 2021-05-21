@@ -55,7 +55,7 @@ The sample includes a predefined archive directory in `/tmp/mii-sample/archives/
 The archive top directory, named `wlsdeploy`, contains a directory named `applications`, which includes an 'exploded' sample JSP web application in the directory, `myapp-v1`. Three useful aspects to remember about WDT archives are:
   - A model image can contain multiple WDT archives.
   - WDT archives can contain multiple applications, libraries, and other components.
-  - WDT archives have a [well defined directory structure](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/archive.md), which always has `wlsdeploy` as the top directory.
+  - WDT archives have a [well defined directory structure](https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/), which always has `wlsdeploy` as the top directory.
 
 {{%expand "If you are interested in the web application source, click here to see the JSP code." %}}
 

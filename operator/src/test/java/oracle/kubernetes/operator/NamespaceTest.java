@@ -17,6 +17,7 @@ import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventRetryStrategyStub;
@@ -51,6 +52,8 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class NamespaceTest {
+  public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
+  public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
   private static final String ADDITIONAL_NS1 = "EXTRA_NS1";
   private static final String ADDITIONAL_NS2 = "EXTRA_NS2";
@@ -275,7 +278,7 @@ public class NamespaceTest {
 
     @Override
     public KubernetesVersion getKubernetesVersion() {
-      return KubernetesVersion.TEST_VERSION;
+      return TEST_VERSION;
     }
 
     @Override

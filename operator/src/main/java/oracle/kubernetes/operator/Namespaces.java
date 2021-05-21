@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
 import oracle.kubernetes.operator.helpers.NamespaceHelper;
@@ -60,6 +61,12 @@ public class Namespaces {
     return getSelectionStrategy().getConfiguredDomainNamespaces();
   }
 
+  /**
+   * Returns a (possibly empty) collection of strings which designate namespaces for the operator to manage.
+   */
+  static @NotNull Collection<String> getFoundDomainNamespaces(Packet packet) {
+    return getSelectionStrategy().getFoundDomainNamespaces(packet);
+  }
 
   /**
    * Returns an array of the label selectors that will determine that a namespace is being used to manage domains.
@@ -157,6 +164,11 @@ public class Namespaces {
       public <V> V getSelection(NamespaceStrategyVisitor<V> visitor) {
         return visitor.getDedicatedStrategySelection();
       }
+
+      @Override
+      public Collection<String> getFoundDomainNamespaces(Packet packet) {
+        return Collections.singleton(getOperatorNamespace());
+      }
     };
 
     static final String[] NO_SELECTORS = new String[0];
@@ -174,21 +186,22 @@ public class Namespaces {
     public abstract <V> V getSelection(NamespaceStrategyVisitor<V> visitor);
 
     private static final Map<String, Pattern> compiledPatterns = new WeakHashMap<>();
+
+    /**
+     * Returns a modifiable collection of found namespace names in a packet.
+     * Callers should use this to add to the collection.
+     *
+     * @param packet the packet passed to a step
+     */
+    @SuppressWarnings("unchecked")
+    Collection<String> getFoundDomainNamespaces(Packet packet) {
+      if (!packet.containsKey(ALL_DOMAIN_NAMESPACES)) {
+        packet.put(ALL_DOMAIN_NAMESPACES, new HashSet<>());
+      }
+      return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
+    }
   }
 
-  /**
-   * Returns a modifiable collection of found namespace names in a packet.
-   * Callers should use this to add to the collection.
-   *
-   * @param packet the packet passed to a step
-   */
-  @SuppressWarnings("unchecked")
-  static Collection<String> getFoundDomainNamespaces(Packet packet) {
-    if (!packet.containsKey(ALL_DOMAIN_NAMESPACES)) {
-      packet.put(ALL_DOMAIN_NAMESPACES, new HashSet<>());
-    }
-    return (Collection<String>) packet.get(ALL_DOMAIN_NAMESPACES);
-  }
 
   /**
    * Gets the configured domain namespace selection strategy.
@@ -271,9 +284,6 @@ public class Namespaces {
           return doForkJoin(getNext(), packet, nsStopEventDetails);
         }
       }
-
-
-
     }
 
     @Nonnull

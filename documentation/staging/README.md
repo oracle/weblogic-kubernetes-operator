@@ -1,4 +1,4 @@
-# Oracle WebLogic Server Kubernetes Operator Documentation
+# WebLogic Kubernetes Operator Documentation
 
 ***
 For information on updating and contributing to the operator

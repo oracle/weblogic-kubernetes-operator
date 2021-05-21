@@ -156,14 +156,6 @@ class OfflineWlstEnv(object):
     self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
     self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
 
-    # Set IS_FMW_INFRA to True if the image contains a FMW infrastructure domain
-    # (dectected by checking the RCUPREFIX environment variable)
-    self.IS_FMW_INFRA_DOMAIN = self.isEnvSet('RCUPREFIX')
-
-    # Check environment variable that allows dynamic clusters in FMW infrastructure
-    # domains
-    self.ALLOW_DYNAMIC_CLUSTER_IN_FMW = self.getEnvOrDef('ALLOW_DYNAMIC_CLUSTER_IN_FMW', "False")
-
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
     self.errors             = []
@@ -232,12 +224,6 @@ class OfflineWlstEnv(object):
 
   def isAccessLogInLogHome(self):
     return self.ACCESS_LOG_IN_LOG_HOME == 'true';
-
-  def isFMWInfraDomain(self):
-    return self.IS_FMW_INFRA_DOMAIN
-
-  def allowDynamicClusterInFMWInfraDomain(self):
-    return self.ALLOW_DYNAMIC_CLUSTER_IN_FMW.lower() == 'true'
 
   def addError(self, error):
     self.errors.append(error)
@@ -422,10 +408,7 @@ class TopologyGenerator(Generator):
     if self.getDynamicServersOrNone(cluster) is None:
       self.validateNonDynamicCluster(cluster)
     else:
-      if self.env.isFMWInfraDomain() and not self.env.allowDynamicClusterInFMWInfraDomain():
-        self.addError("WebLogic dynamic clusters are not supported in FMW Infrastructure domains. Set ALLOW_DYNAMIC_CLUSTER_IN_FMW environment variable to true to bypass this validation.")
-      else:
-        self.validateDynamicCluster(cluster)
+      self.validateDynamicCluster(cluster)
 
   def validateNonDynamicCluster(self, cluster):
     self.validateNonDynamicClusterReferencedByAtLeastOneServer(cluster)
@@ -767,6 +750,10 @@ class TopologyGenerator(Generator):
     nap_protocol = getNAPProtocol(nap, server, self.env.getDomain(), is_server_template)
 
     if istio_enabled == 'true':
+      name = nap.getName()
+      if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') or name.startswith('https-'):
+        # skip istio ports already defined by WDT filtering for MII
+        return
       http_protocol = [ 'http' ]
       https_protocol = ['https','admin']
       tcp_protocol = [ 't3', 'snmp', 'ldap', 'cluster-broadcast', 'iiop', 'sip']
@@ -1606,10 +1593,11 @@ class DomainIntrospector(SecretManager):
     tg = TopologyGenerator(self.env)
 
     if tg.validate():
-      SitConfigGenerator(self.env).generate()
+      DOMAIN_SOURCE_TYPE = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
+      if DOMAIN_SOURCE_TYPE != "FromModel":
+        SitConfigGenerator(self.env).generate()
       BootPropertiesGenerator(self.env).generate()
       UserConfigAndKeyGenerator(self.env).generate()
-      DOMAIN_SOURCE_TYPE      = self.env.getEnvOrDef("DOMAIN_SOURCE_TYPE", None)
 
       if DOMAIN_SOURCE_TYPE == "FromModel":
         trace("cfgmap write primordial_domain")

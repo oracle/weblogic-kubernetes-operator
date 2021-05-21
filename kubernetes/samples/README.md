@@ -1,4 +1,4 @@
-# WebLogic operator samples
+# WebLogic Kubernetes Operator samples
 
 These samples provide simple demonstrations of how to accomplish common tasks.
 The samples are **not** intended to be used in production deployments or to be depended upon to
