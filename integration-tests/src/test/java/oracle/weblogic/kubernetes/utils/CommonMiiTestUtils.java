@@ -43,7 +43,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.DisplayName;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -845,8 +844,7 @@ public class CommonMiiTestUtils {
    * @param args arguments to determine appending suffix to managed server pod name or not.
    *             Append suffix if it's set. Otherwise do not append.
    */
-  @DisplayName("Change the WebLogic Admin credential of the domain")
-  public static void verifyMiiUpdateWebLogicCredential(String domainNamespace, String domainUid,
+  public static void verifyUpdateWebLogicCredential(String domainNamespace, String domainUid,
        String adminServerPodName, String managedServerPrefix, int replicaCount, String... args) {
 
     final boolean VALID = true;

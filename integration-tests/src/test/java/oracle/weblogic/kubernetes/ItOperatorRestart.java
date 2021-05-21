@@ -30,7 +30,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyMiiUpdateWebLogicCredential;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -215,8 +215,9 @@ public class ItOperatorRestart {
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
   public void testOperatorRestartWhenPodRoll() {
-    verifyMiiUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
+    verifyUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount);
+    restartOperatorAndVerify();
   }
 
   private void restartOperatorAndVerify() {

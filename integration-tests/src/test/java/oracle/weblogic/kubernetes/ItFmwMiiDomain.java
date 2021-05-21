@@ -35,7 +35,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyMiiUpdateWebLogicCredential;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -57,16 +57,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create JRF model in image domain and start the domain")
+@DisplayName("Test to a create FMW model in image domain and start the domain")
 @IntegrationTest
 public class ItFmwMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
-  private static String jrfDomainNamespace = null;
-  private static String jrfMiiImage = null;
+  private static String fmwDomainNamespace = null;
+  private static String fmwMiiImage = null;
 
-  private static final String RCUSCHEMAPREFIX = "JRFDOMAINMII";
+  private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
@@ -79,7 +79,7 @@ public class ItFmwMiiDomain {
   private static String dbUrl = null;
   private static LoggingFacade logger = null;
 
-  private String domainUid = "jrfdomain-mii";
+  private String domainUid = "fmwdomain-mii";
   private String adminServerPodName = domainUid + "-admin-server";
   private String managedServerPrefix = domainUid + "-managed-server";
   private int replicaCount = 2;
@@ -117,9 +117,9 @@ public class ItFmwMiiDomain {
     assertNotNull(namespaces.get(1), "Namespace is null");
     opNamespace = namespaces.get(1);
 
-    logger.info("Assign a unique namespace for JRF domain");
+    logger.info("Assign a unique namespace for FMW domain");
     assertNotNull(namespaces.get(2), "Namespace is null");
-    jrfDomainNamespace = namespaces.get(2);
+    fmwDomainNamespace = namespaces.get(2);
 
     logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
          + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
@@ -130,7 +130,7 @@ public class ItFmwMiiDomain {
         + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, jrfDomainNamespace);
+    installAndVerifyOperator(opNamespace, fmwDomainNamespace);
 
     logger.info("For ItFmwMiiDomain using DB image: {0}, FMW image {1}",
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
@@ -144,17 +144,17 @@ public class ItFmwMiiDomain {
    */
   @Order(1)
   @Test
-  @DisplayName("Create FMW Domain model in image")
+  @DisplayName("Create JRF Domain model in image")
   public void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
-    createOcirRepoSecret(jrfDomainNamespace);
+    createOcirRepoSecret(fmwDomainNamespace);
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         "weblogic",
         "welcome1"),
         String.format("createSecret failed for %s", adminSecretName));
@@ -163,7 +163,7 @@ public class ItFmwMiiDomain {
     logger.info("Create encryption secret");
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         encryptionSecretName,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         "weblogicenc",
         "weblogicenc"),
         String.format("createSecret failed for %s", encryptionSecretName));
@@ -173,7 +173,7 @@ public class ItFmwMiiDomain {
         rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORD, dbUrl);
     assertDoesNotThrow(() -> createRcuAccessSecret(
         rcuaccessSecretName,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         RCUSCHEMAPREFIX,
         RCUSCHEMAPASSWORD,
         dbUrl),
@@ -182,13 +182,13 @@ public class ItFmwMiiDomain {
     logger.info("Create OPSS wallet password secret");
     assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
         opsswalletpassSecretName,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         "welcome1"),
         String.format("createSecret failed for %s", opsswalletpassSecretName));
 
     logger.info("Create an image with jrf model file");
     final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
-    jrfMiiImage = createMiiImageAndVerify(
+    fmwMiiImage = createMiiImageAndVerify(
         "jrf-mii-image",
         modelList,
         Collections.singletonList(MII_BASIC_APP_NAME),
@@ -198,21 +198,21 @@ public class ItFmwMiiDomain {
         false);
 
     // push the image to a registry to make it accessible in multi-node cluster
-    dockerLoginAndPushImageToRegistry(jrfMiiImage);
+    dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
     Domain domain = FmwUtils.createDomainResource(domainUid,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         adminSecretName,
         OCIR_SECRET_NAME,
         encryptionSecretName,
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        jrfMiiImage);
+        fmwMiiImage);
 
-    createDomainAndVerify(domain, jrfDomainNamespace);
-    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    createDomainAndVerify(domain, fmwDomainNamespace);
+    verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -227,15 +227,15 @@ public class ItFmwMiiDomain {
   @Test
   @DisplayName("Reuse the same RCU schema to restart JRF domain")
   public void testReuseRCUschemalToRestartDomain() {
-    saveAndRestoreOpssWalletfileSecret(jrfDomainNamespace, domainUid, opsswalletfileSecretName);
+    saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, domainUid, opsswalletfileSecretName);
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
     startupDomain();
-    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
   }
 
   /**
-   * Shutdown the jrf domain completely.
+   * Shutdown the FMW domain completely.
    * Update all the passwords for the RCU schema.
    * Update the RCU access secret with new RCU schema password.
    * Start the domain and verify domain is up and running.
@@ -252,14 +252,14 @@ public class ItFmwMiiDomain {
         rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORDNEW, dbUrl);
     assertDoesNotThrow(() -> updateRcuAccessSecret(
         rcuaccessSecretName,
-        jrfDomainNamespace,
+        fmwDomainNamespace,
         RCUSCHEMAPREFIX,
         RCUSCHEMAPASSWORDNEW,
         dbUrl),
         String.format("update Secret failed for %s with new schema password %s", rcuaccessSecretName,
             RCUSCHEMAPASSWORDNEW));
     startupDomain();
-    verifyDomainReady(jrfDomainNamespace, domainUid, replicaCount);
+    verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
   }
 
   /**
@@ -272,7 +272,7 @@ public class ItFmwMiiDomain {
   @Test
   @DisplayName("Update WebLogic Credentials after updating RCU schema password")
   public void testUpdateWebLogicCredentialAfterUpdateRcuSchemaPassword() {
-    verifyMiiUpdateWebLogicCredential(jrfDomainNamespace, domainUid, adminServerPodName,
+    verifyUpdateWebLogicCredential(fmwDomainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount, "-c1");
   }
 
@@ -315,13 +315,13 @@ public class ItFmwMiiDomain {
    * Shutdown the domain by setting serverStartPolicy as "NEVER".
    */
   private void shutdownDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "NEVER", jrfDomainNamespace, domainUid);
+    patchServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
-    checkPodDeleted(adminServerPodName, domainUid, jrfDomainNamespace);
+    checkPodDeleted(adminServerPodName, domainUid, fmwDomainNamespace);
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodDeleted(managedServerPrefix + i, domainUid, jrfDomainNamespace);
+      checkPodDeleted(managedServerPrefix + i, domainUid, fmwDomainNamespace);
     }
 
     logger.info("Domain shutdown success");
@@ -332,7 +332,7 @@ public class ItFmwMiiDomain {
    * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
    */
   private void startupDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", jrfDomainNamespace, domainUid);
+    patchServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 
@@ -351,10 +351,10 @@ public class ItFmwMiiDomain {
         .append("\"}]");
 
     logger.info("Adding opssWalletPasswordSecretName for domain {0} in namespace {1} using patch string: {2}",
-        domainUid, jrfDomainNamespace, patchStr.toString());
+        domainUid, fmwDomainNamespace, patchStr.toString());
 
     V1Patch patch = new V1Patch(new String(patchStr));
 
-    return patchDomainCustomResource(domainUid, jrfDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 }
