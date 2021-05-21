@@ -23,7 +23,7 @@ weight: 1
    $ cd /tmp
    ```
    ```shell
-   $ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
@@ -44,7 +44,6 @@ weight: 1
    {{< rawhtml >}}
    <a name="resume"></a>
    {{< /rawhtml >}}
-
 1. Make sure an operator is set up to manage namespace `sample-domain1-ns`. Also, make sure a Traefik ingress controller is managing the same namespace and listening on port 30305.
 
    For example, follow the same steps as the [Quick Start](https://oracle.github.io/weblogic-kubernetes-operator/quickstart/) guide up through the [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}}) step.

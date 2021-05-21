@@ -7,7 +7,7 @@ description: "OpenShift information for the operator"
 
 #### Security requirements to run WebLogic in OpenShift
 
-WebLogic Server Kubernetes Operator images starting with version 3.1 and
+WebLogic Kubernetes Operator images starting with version 3.1 and
 WebLogic Server images obtained from Oracle Container Registry after August 2020
 have an `oracle` user with UID 1000 with the default group set to `root`.
 
@@ -103,7 +103,7 @@ using the following command:
 $ oc create -f uid1000.yaml
 ```
 
-After you have created the security context constraint, you can install the WebLogic Server Kubernetes Operator.
+After you have created the security context constraint, you can install the WebLogic Kubernetes Operator.
 Make sure you use the same service account to which you granted permission in the security
 context constraint (`weblogic-operator` in the preceding example).  The operator will then run
 with UID 1000, and any WebLogic domain it creates will also run with UID 1000.
