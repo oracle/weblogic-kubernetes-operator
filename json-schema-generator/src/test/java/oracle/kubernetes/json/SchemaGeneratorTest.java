@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -213,6 +214,14 @@ public class SchemaGeneratorTest {
 
     assertThat(schema, hasNoJsonPath("$.properties.staticInt"));
     assertThat(schema, hasJsonPath("$.required", not(arrayContaining("staticInt"))));
+  }
+
+  @Test
+  public void generateSchemaForEnabledFeature() throws NoSuchFieldException {
+    generator.defineEnabledFeatures(List.of("Binding"));
+    Object schema = generator.generate(SimpleObject.class);
+
+    assertThat(schema, hasJsonPath("$.properties.fieldAssociatedWithBindingFeature"));
   }
 
   @Test
