@@ -187,7 +187,6 @@ public class ItFmwDomainInPVUsingWDT {
                                              pvName,
                                              pvcName,
                                              DOMAINHOMEPREFIX,
-                                             "true",
                                              replicaCount,
                                              t3ChannelPort);
 

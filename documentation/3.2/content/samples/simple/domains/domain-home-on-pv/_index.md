@@ -2,11 +2,11 @@
 title: "Domain home on a PV"
 date: 2019-02-23T17:32:31-05:00
 weight: 2
-description: "Sample for creating a WebLogic domain home on an existing PV or PVC, and the Domain YAML file for deploying the generated WebLogic domain."
+description: "Sample for creating a WebLogic domain home on an existing PV or PVC, and the domain resource YAML file for deploying the generated WebLogic domain."
 ---
 
 
-The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
+The sample scripts demonstrate the creation of a WebLogic domain home on an existing Kubernetes PersistentVolume (PV) and PersistentVolumeClaim (PVC). The scripts also generate the domain resource YAML file, which can then be used to start the Kubernetes artifacts of the corresponding domain. Optionally, the scripts start up the domain, and WebLogic Server pods and services.
 
 #### Prerequisites
 
@@ -14,8 +14,8 @@ Before you begin, read this document, [Domain resource]({{< relref "/userguide/m
 
 The following prerequisites must be met prior to running the create domain script:
 
-* Make sure the WebLogic Server Kubernetes Operator is running.
-* The operator requires either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
+* Make sure the WebLogic Kubernetes Operator is running.
+* The operator requires an image with Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes Namespace as the domain.
@@ -51,13 +51,15 @@ $ ./create-domain.sh \
   -i create-domain-inputs.yaml \
   -o /<path to output-directory>
 ```
+{{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
+{{% /notice%}}
 
 The script will perform the following steps:
 
 * Create a directory for the generated Kubernetes YAML files for this domain if it does not already exist.  The pathname is `/<path to output-directory>/weblogic-domains/<domainUID>`. If the directory already exists, then its contents must be removed before using this script.
 * Create a Kubernetes Job that will start up a utility WebLogic Server container and run offline WLST scripts, or WebLogic Deploy Tool (WDT) scripts, to create the domain on the shared storage.
 * Run and wait for the job to finish.
-* Create a Kubernetes domain YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
+* Create a Kubernetes domain resource YAML file, `domain.yaml`, in the directory that is created above. This YAML file can be used to create the Kubernetes resource using the `kubectl create -f` or `kubectl apply -f` command:
 ```shell
 $ kubectl apply -f /<path to output-directory>/weblogic-domains/<domainUID>/domain.yaml
 ```
@@ -133,7 +135,7 @@ The following parameters can be provided in the inputs file.
 
 Note that the names of the Kubernetes resources in the generated YAML files may be formed with the value of some of the properties specified in the `create-inputs.yaml` file. Those properties include the `adminServerName`, `clusterName`, and `managedServerNameBase`. If those values contain any characters that are invalid in a Kubernetes Service name, those characters are converted to valid values in the generated YAML files. For example, an uppercase letter is converted to a lowercase letter and an underscore `("_")` is converted to a hyphen `("-")`.
 
-The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain YAML file could also be modified to cover more use cases.
+The sample demonstrates how to create a WebLogic domain home and associated Kubernetes resources for a domain that only has one cluster. In addition, the sample provides the capability for users to supply their own scripts to create the domain home for other use cases. The generated domain resource YAML file could also be modified to cover more use cases.
 
 #### Verify the results
 
@@ -438,7 +440,7 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-   If you do not find something similar in the output, the WebLogic Server Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
+   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
 
 
 **Message**: `ERROR: Unable to create folder /shared/domains`  

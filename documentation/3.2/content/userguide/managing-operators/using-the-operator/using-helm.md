@@ -17,7 +17,7 @@ description: "Useful Helm operations."
   * [Debugging options](#debugging-options)
 * [Common mistakes and solutions](#common-mistakes-and-solutions)
 
-Note that the operator Helm chart is available from the GitHub chart repository, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation/_index.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
+Note that the operator Helm chart is available from the GitHub chart repository. For more details, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation/_index.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
 
 #### Useful Helm operations
 
@@ -102,7 +102,7 @@ javaLoggingLevel:  "FINE"
 ##### `image`
 Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3`.
 
 Example:
 ```yaml
@@ -128,8 +128,38 @@ imagePullSecrets:
 - name: "my-image-pull-secret"
 ```
 
+##### `annotations`
+Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.
+
+Example:
+```yaml
+annotations:
+  stage: production
+```
+
+You may also specify annotations [using the `--set` parameter to the Helm install command](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing), as follows:
+
+```
+--set annotations.stage=production
+```
+
+##### `labels`
+Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.
+
+Example:
+```yaml
+labels:
+  sidecar.istio.io/inject: "false"
+```
+
+You may also specify labels [using the `--set` parameter to the Helm install command](https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing), as follows:
+
+```
+--set labels."sidecar\.istio\.io/inject"=false
+```
+
 ##### `nodeSelector`
-Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
+Allows you to run the operator Pod on a Node whose labels match the specified `nodeSelector` labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. For more details, see [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector) in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.
 
 Example:
 ```yaml
@@ -137,8 +167,8 @@ nodeSelector:
   disktype: ssd
 ```
 
-##### `nodeAffinity`
-Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `nodeAffinity` provides advanced capabilities to limit Pod placement on specific Nodes. See  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
+##### `affinity`
+Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to `nodeSelector`. `affinity` provides advanced capabilities to limit Pod placement on specific Nodes. For more details, see  [Assign Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity) in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using `nodeSelector`.
 
 Example:
 ```yaml
@@ -233,7 +263,7 @@ You must include the `default` namespace in the list if you want the operator to
 This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
 {{% /notice %}}
 
-For more information about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}}).
+For more details about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}}).
 
 ##### `domainNamespaceLabelSelector`
 Specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors) that will be used when searching for namespaces that the operator will manage.
@@ -260,7 +290,7 @@ domainNamespaceLabelSelector: environment notin (production,systemtest)
 
 {{% notice note %}}
 To specify the above sample on the Helm command line, escape spaces and commas as follows:
-```yaml
+```
 --set "domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)"
 ```
 {{% /notice %}}
@@ -322,7 +352,7 @@ Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect
 {{% /notice %}}
 
 {{% notice note %}}
-In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters (see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}})).
+In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
@@ -657,4 +687,4 @@ To recover:
 #### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more information about the problem and solutions, see [Managing domain namespaces]({{<relref "/faq/namespace-management.md">}}).
+For more details about the problem and solutions, see [Managing domain namespaces]({{<relref "/faq/namespace-management.md">}}).

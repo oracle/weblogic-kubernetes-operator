@@ -12,9 +12,6 @@ metadata:
     weblogic.operatorName: {{ .Release.Namespace | quote }}
 rules:
 - apiGroups: [""]
-  resources: ["secrets", "configmaps"]
-  verbs: ["get", "list", "watch"]
-- apiGroups: [""]
-  resources: ["events"]
+  resources: ["events", "secrets", "configmaps"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete", "deletecollection"]
 {{- end }}

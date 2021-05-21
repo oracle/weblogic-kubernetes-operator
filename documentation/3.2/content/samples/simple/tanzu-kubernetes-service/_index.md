@@ -6,7 +6,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Tanzu
 ---
 
 
-This sample demonstrates how to use the Oracle [WebLogic Server Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
+This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic-kubernetes-operator/) (hereafter “the operator”) to set up a WebLogic Server (WLS) cluster on the Tanzu Kubernetes Grid (TKG).
 After performing the sample steps, your WLS domain with a Model in Image domain source type runs on a TKG Kubernetes cluster instance. After the domain has been provisioned, you can monitor it using the WebLogic Server Administration console.
 
 TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. To learn more, see the [Tanzu Kubernetes Grid (TKG)](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) overview page.
@@ -16,7 +16,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
  - [Prerequisites](#prerequisites)
    - [Create a Tanzu Kubernetes cluster](#create-a-tanzu-kubernetes-cluster)
    - [Oracle Container Registry](#oracle-container-registry)
- - [Install WebLogic Server Kubernetes Operator](#install-weblogic-server-kubernetes-operator)
+ - [Install WebLogic Kubernetes Operator](#install-weblogic-kubernetes-operator)
  - [Create an image](#create-an-image)
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Invoke the web application](#invoke-the-web-application)
@@ -25,7 +25,7 @@ TKG is a managed Kubernetes Service that lets you quickly deploy and manage Kube
 
 This sample assumes the following prerequisite environment setup:
 
-* WebLogic Server Kubernetes Operator: This document was tested with version v3.1.0.
+* WebLogic Kubernetes Operator: This document was tested with version v3.1.0.
 * Operating System: GNU/Linux.
 * [Git](https://git-scm.com/downloads); use `git --version` to test if `git` works.  This document was tested with version 2.17.1.
 * TKG CLI; use `tkg version` to test if TKG works. This document was tested with version v1.1.3.
@@ -52,18 +52,18 @@ k8s-cluster-101-md-0-577b7dc766-p2gkz   Ready      <none>   2d20h   v1.18.6+vmwa
 
 You will need an Oracle Container Registry account. The following steps will direct you to accept the Oracle Standard Terms and Restrictions to pull the WebLogic Server images.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
 
-#### Install WebLogic Server Kubernetes Operator
+#### Install WebLogic Kubernetes Operator
 
-The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.
+The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.
 The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.
 
-Clone the Oracle WebLogic Server Kubernetes Operator repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
+Clone the WebLogic Kubernetes Operator repository to your machine. We will use several scripts in this repository to create a WebLogic domain.
 Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applications. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory. Install the operator by running the following commands.
 
 Clone the repository.
 
 ```shell
-$ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 ```shell
 $ cd weblogic-kubernetes-operator

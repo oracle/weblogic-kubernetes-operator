@@ -18,7 +18,7 @@ description: "Sample for using the operator to set up a WLS cluster on the Azure
 
 ### Introduction
 
-This sample demonstrates how to use the [Oracle WebLogic Server Kubernetes Operator]({{< relref "/_index.md" >}}) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.
+This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relref "/_index.md" >}}) (hereafter "the operator") to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS). After going through the steps, your WLS domain runs on an AKS cluster.  You have several options for managing the cluster, depending on which [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) you choose.  With Domain in PV, you can manage your WLS domain by accessing the WebLogic Server Administration Console or WLST.  With Model in Image, you use the operator to perform WLS administrative operations.
 
 #### Azure Kubernetes Service cluster
 
