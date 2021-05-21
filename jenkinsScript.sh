@@ -44,9 +44,9 @@ function checkEnvVars {
 function ver { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
 function checkJavaVersion {
   java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
-  echo $java_version
+  echo "Info: java version ${java_version}"
   if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
-    echo "Java version should be 11.0.10 or higher"
+    echo "Error: Java version should be 11.0.10 or higher"
     exit 1
   fi
 }
@@ -81,19 +81,19 @@ checkJavaVersion
 which mvn
 mvn --version
 
-echo 'Set up helm...'
+echo 'Info: Set up helm...'
 curl -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
 tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz
 cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
-echo 'Set up kubectl...'
+echo 'Info: Set up kubectl...'
 curl -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 mv kubectl bin/kubectl
 chmod +x bin/kubectl
 kubectl version --client=true
 
-echo 'Set up kind...'
+echo 'Info: Set up kind...'
 curl -Lo ./kind --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
 chmod +x ./kind
 mv ./kind bin/kind
@@ -108,19 +108,19 @@ cd $WORKSPACE
 pwd
 ls
 
-echo "soft limits"
+echo "Info: soft limits"
 ulimit -a
-echo "hard limits"
+echo "Info: hard limits"
 ulimit -aH
 
-echo 'Run build...'
+echo 'Info: Run build...'
 mvn clean install
 
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
 helm repo add stable https://charts.helm.sh/stable --force-update
 helm repo update
 
-echo "Run tests.."
+echo "Info: Run tests.."
 sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS}
 
 
