@@ -121,7 +121,7 @@ The usage of the create script is as follows:
 $ sh create-domain.sh -h
 ```
 ```text
-usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-n encryption-key] [-e] [-v] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-b buildNetworkParam] [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -u WebLogic administrator user name for the WebLogic domain.
@@ -130,6 +130,7 @@ usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPass
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
+  -b Value to be used in the buildNetwork parameter when invoking WebLogic Image Tool, optional.
   -h Help
 ```
 
