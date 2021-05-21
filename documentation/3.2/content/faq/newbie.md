@@ -5,13 +5,13 @@ draft: false
 weight: 1
 description: "Answers to commonly asked newcomer questions."
 ---
-#### What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation?
+#### What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?
 
 It's all [here]({{< relref "/_index.md" >}}).
 
 #### How much does it cost?
 
-The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.
+The WebLogic Kubernetes Operator (the “operator”) is open source and free.
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
@@ -36,7 +36,7 @@ When using the operator, each deployed domain is specified by a domain resource 
 
 Multiple deployments of the same domain are supported by specifying a unique `domain-uid` string for each deployed domain and specifying a different domain resource. The `domain-uid` is in turn used by the operator as the name-prefix and/or label for the domain's Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain's deployments optionally can by customized by specifying configuration overrides in the domain resource -- which, for example, is useful for overriding the configuration of a data source URL, user name, or password.
 
-The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called [WebLogic Server Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator [samples]({{< relref "/samples/simple/_index.md" >}}) show how to create domains using WLST and using WDT.
+The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/) (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator [samples]({{< relref "/samples/simple/_index.md" >}}) show how to create domains using WLST and using WDT.
 
 
 **Q:** Is the Administration Server required? Node Manager?
@@ -62,7 +62,7 @@ For an example, see the Quick Start, [Install the operator and ingress controlle
 
 * _Access the WebLogic Server Administration Console_: This can be done through a load balancer; see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.  Or, this can be done through a Kubernetes NodePort service; run `$ kubectl explain domain.spec.adminServer.adminService.channels`.
 
-* _Access the WebLogic Server Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
+* _Access the WebLogic Remote Console_: This can be done using a load balancer or Kubernetes NodePort service; see [Use the Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}}).
 
 
 **Q:** Are clusters supported on Kubernetes using both multicast and unicast?
@@ -114,7 +114,7 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **Q:** Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.
 
-**A:** For relevant information, see [Apply patched images to a running domain]({{< relref "/userguide/base-images/#apply-patched-images-to-a-running-domain" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** For relevant information, see [Patch WebLogic Server images]({{< relref "/userguide/base-images/#patch-weblogic-server-images" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ***
 
