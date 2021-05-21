@@ -12,20 +12,20 @@
     <title>Create a domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614859" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614859"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3276,7 +3302,13 @@ with the value specified by the <code>-d</code> flag.  For example, the command 
 <code>sample-domain1-weblogic-credentials</code>.</p>
 </li>
 <li>
-<p>Create a new image with a domain home by running the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh">create-domain</a> script. First, copy the sample <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml">create-domain-inputs.yaml</a> file and update your copy with:</p>
+<p>Create a new image with a domain home, plus create a domain resource that the operator will use to deploy the image, by running the <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain.sh">create-domain</a> script.</p>
+<p>The script&rsquo;s behavior is controlled by an inputs file plus command-line options. The script downloads the <a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool</a> and <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tool</a> and uses these tools to create a new image with a domain home. The script also creates a domain resource YAML file that references the image, and, if the <code>-e</code> option is specified, deploys the domain resource to Kubernetes. For a detailed understanding of the steps that the <code>create-domain.sh</code> script performs for you, see the bulleted items under <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/#use-the-script-to-create-a-domain">Use the script to create a domain</a></p>
+
+<div class="notices note" ><p>The <code>create-domain.sh</code> script and its inputs file are for demonstration purposes <em>only</em>; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.</p>
+</div>
+
+<p>First, copy the sample <a href="http://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain/domain-home-in-image/create-domain-inputs.yaml">create-domain-inputs.yaml</a> file and update your copy with:</p>
 <ul>
 <li><code>domainUID</code>: <code>sample-domain1</code></li>
 <li><code>image</code>: Leave empty unless you need to tag the new image that the script builds to a different name.
@@ -3295,6 +3327,7 @@ push the image manually.</li>
 respectively, as you provided when creating the Kubernetes Secret in Step 2.</p>
 </div>
 
+<p>For the detailed steps that the <code>create-domain.sh</code> script performs, see <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/">Domain Home In Image</a>.</p>
 </li>
 <li>
 <p>Confirm that the operator started the servers for the domain:</p>
@@ -4606,6 +4639,22 @@ shown in the example below, which will return an HTTP 200 status code.</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5441,19 +5490,19 @@ shown in the example below, which will return an HTTP 200 status code.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614859"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

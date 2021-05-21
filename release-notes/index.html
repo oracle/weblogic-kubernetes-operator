@@ -12,20 +12,20 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614859" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615912" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615912" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615912"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614859"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615912"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615912"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615912"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3275,6 +3301,12 @@
 </thead>
 <tbody>
 <tr>
+<td>May 21, 2021</td>
+<td>v3.2.3</td>
+<td>no</td>
+<td>Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.</td>
+</tr>
+<tr>
 <td>April 27, 2021</td>
 <td>v3.2.2</td>
 <td>no</td>
@@ -3445,6 +3477,17 @@
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-323">Operator 3.2.3</h4>
+<ul>
+<li>Resolved an issue related to preserving the operator-generated internal certificate (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2374">#2374</a>).</li>
+<li>Corrected the monitoring exporter integration to include the Administration Server (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2365">#2365</a>).</li>
+<li>Enhanced the model-in-image support to not require the use of configuration overrides (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2344">#2344</a>).</li>
+<li>Resolved an issue related to model-in-image domains performing a rolling restart when there had been no change to the model (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2348">#2348</a>).</li>
+<li>Resolved an issue related to RCU schema password updates (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2357">#2357</a>).</li>
+<li>Resolved an issue related to namespace starting and stopping events (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2345">#2345</a>).</li>
+<li>Added support for several new events related to rolling restarts (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2364">#2364</a>).</li>
+<li>Added support for customer-defined labels and annotations on the operator&rsquo;s pod (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2370">#2370</a>).</li>
+</ul>
 <h4 id="operator-322">Operator 3.2.2</h4>
 <ul>
 <li>Resolved an issue where the operator would retry Kubernetes API requests that timed out without a backoff causing increased network utilization (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2300">#2300</a>).</li>
@@ -4825,6 +4868,22 @@
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5658,19 +5717,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615912"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615912"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615912"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614859"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615912"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

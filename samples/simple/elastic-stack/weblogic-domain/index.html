@@ -12,20 +12,20 @@
     <title>WebLogic domain :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614860" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614860"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3284,10 +3310,10 @@
 <p>This document describes to how to configure a WebLogic domain to use Fluentd to send log information to Elasticsearch.</p>
 <p>Here&rsquo;s the general mechanism for how this works:</p>
 <ul>
-<li><code>fluentd</code> runs as a separate container in the Administration Server and Managed Server pods</li>
-<li>The log files reside on a volume that is shared between the <code>weblogic-server</code> and <code>fluentd</code> containers</li>
-<li><code>fluentd</code> tails the domain logs files and exports them to Elasticsearch</li>
-<li>A <code>ConfigMap</code> contains the filter and format rules for exporting log records</li>
+<li><code>fluentd</code> runs as a separate container in the Administration Server and Managed Server pods.</li>
+<li>The log files reside on a volume that is shared between the <code>weblogic-server</code> and <code>fluentd</code> containers.</li>
+<li><code>fluentd</code> tails the domain logs files and exports them to Elasticsearch.</li>
+<li>A <code>ConfigMap</code> contains the filter and format rules for exporting log records.</li>
 </ul>
 <h5 id="sample-code">Sample code</h5>
 <p>The samples in this document assume an existing domain is being edited.  However, all changes to the domain YAML file can be performed before the domain is created.</p>
@@ -3305,8 +3331,8 @@
 </code></pre></div><h4 id="configure-log-files-to-use-a-volume">Configure log files to use a volume</h4>
 <p>The domain log files must be written to a volume that can be shared between the <code>weblogic-server</code> and <code>fluentd</code> containers.  The following elements are required to accomplish this:</p>
 <ul>
-<li><code>logHome</code> must be a path that can be shared between containers</li>
-<li><code>logHomeEnabled</code> must be set to <code>true</code> so that the logs will be written outside the pod and persist across pod restarts</li>
+<li><code>logHome</code> must be a path that can be shared between containers.</li>
+<li><code>logHomeEnabled</code> must be set to <code>true</code> so that the logs will be written outside the pod and persist across pod restarts.</li>
 <li>A <code>volume</code> must be defined on which the log files will reside.  In the example, <code>emptyDir</code> is a volume that gets created empty when a pod is created.  It will persist across pod restarts but deleting the pod would delete the <code>emptyDir</code> content.</li>
 <li>The <code>volumeMounts</code> mounts the named volume created with <code>emptyDir</code> and establishes the base path for accessing the volume.</li>
 </ul>
@@ -3333,11 +3359,11 @@ elasticsearchpassword: d2VsY29tZTE=
 <p>Create a <code>ConfigMap</code> named <code>fluentd-config</code> in the namespace of the domain.  The <code>ConfigMap</code> contains the parsing rules and Elasticsearch configuration.</p>
 <p>Here&rsquo;s an explanation of some elements defined in the <code>ConfigMap</code>:</p>
 <ul>
-<li>The <code>@type tail</code> indicates that <code>tail</code> will be used to obtain updates to the log file</li>
-<li>The <code>path</code> of the log file is obtained from the <code>LOG_PATH</code> environment variable that is defined in the <code>fluentd</code> container</li>
-<li>The <code>tag</code> value of log records is obtained from the <code>DOMAIN_UID</code> environment variable that is defined in the <code>fluentd</code> container</li>
-<li>The <code>&lt;parse&gt;</code> section defines how to interpret and tag each element of a log record</li>
-<li>The <code>&lt;match **&gt;</code> section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the <code>domainUID</code></li>
+<li>The <code>@type tail</code> indicates that <code>tail</code> will be used to obtain updates to the log file.</li>
+<li>The <code>path</code> of the log file is obtained from the <code>LOG_PATH</code> environment variable that is defined in the <code>fluentd</code> container.</li>
+<li>The <code>tag</code> value of log records is obtained from the <code>DOMAIN_UID</code> environment variable that is defined in the <code>fluentd</code> container.</li>
+<li>The <code>&lt;parse&gt;</code> section defines how to interpret and tag each element of a log record.</li>
+<li>The <code>&lt;match **&gt;</code> section contains the configuration information for connecting to Elasticsearch and defines the index name of each record to be the <code>domainUID</code>.</li>
 </ul>
 <p>The following is an example of how to create the <code>ConfigMap</code>:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cat <span style="color:#e6db74">&lt;&lt;EOF | kubectl apply -f -
@@ -3414,9 +3440,9 @@ elasticsearchpassword: d2VsY29tZTE=
 <p>Add a container to the domain that will run <code>fluentd</code> in the Administration Server and Managed Server pods.</p>
 <p>Notice the container definition:</p>
 <ul>
-<li>Defines a <code>LOG_PATH</code> environment variable that points to the log location of <code>bobbys-front-end</code></li>
-<li>Defines <code>ELASTICSEARCH_HOST</code>, <code>ELASTICSEARCH_PORT</code>, <code>ELASTICSEARCH_USER</code>, and <code>ELASTICSEARCH_PASSWORD</code> environment variables that are all retrieving their values from the secret <code>bobs-bookstore-weblogic-credentials</code></li>
-<li>Has volume mounts for the <code>fluentd-config</code> <code>ConfigMap</code> and the volume containing the domain logs</li>
+<li>Defines a <code>LOG_PATH</code> environment variable that points to the log location of <code>bobbys-front-end</code>.</li>
+<li>Defines <code>ELASTICSEARCH_HOST</code>, <code>ELASTICSEARCH_PORT</code>, <code>ELASTICSEARCH_USER</code>, and <code>ELASTICSEARCH_PASSWORD</code> environment variables that are all retrieving their values from the secret <code>bobs-bookstore-weblogic-credentials</code>.</li>
+<li>Has volume mounts for the <code>fluentd-config</code> <code>ConfigMap</code> and the volume containing the domain logs.</li>
 </ul>
 <p><strong>NOTE</strong>: For brevity, only the paths to the relevant configuration being added is shown.  A complete example of a domain definition is at the end of this document.</p>
 <p>Example: <code>kubectl edit domain bobs-bookstore -n bob</code> and add the following container definition.</p>
@@ -4859,6 +4885,22 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5702,19 +5744,19 @@ _id:OQIeiG0BGd1zHsxmUrEJ _type:fluentd _index:bobs-bookstore _score:1
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614860"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

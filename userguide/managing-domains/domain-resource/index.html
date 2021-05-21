@@ -12,20 +12,20 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614860" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614860"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3296,7 +3322,7 @@
 <p>The following prerequisites must be fulfilled before proceeding with the creation of a domain resource:</p>
 <ul>
 <li>Create a Kubernetes Namespace for the Domain unless the intention is to use the default namespace.</li>
-<li>Make sure the WebLogic Server Kubernetes Operator is running and is configured to monitor the namespace.</li>
+<li>Make sure the WebLogic Kubernetes Operator is running and is configured to monitor the namespace.</li>
 <li>Make sure any resources that the domain resource references are deployed to the same namespace. For example, all domain resources have a <code>spec.webLogicCredentialsSecret</code> field that references a Kubernetes Secret containing the <code>username</code> and <code>password</code> of the WebLogic server administrative account.</li>
 <li>Make sure a domain resource configuration and its corresponding WebLogic configuration <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">meet Kubernetes resource name restrictions</a>.</li>
 </ul>
@@ -3316,10 +3342,7 @@
 </code></pre></div><h4 id="domain-resource-custom-resource-definition-crd">Domain resource custom resource definition (CRD)</h4>
 <p>The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, like all <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/">Kubernetes objects</a>, is described by three sections: <code>metadata</code>, <code>spec</code>, and <code>status</code>.</p>
 <p>The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator&rsquo;s role based access control (RBAC) requirements are documented <a href="/weblogic-kubernetes-operator/security/rbac/">here</a>.</p>
-<p>For Kubernetes 1.16 and later:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f kubernetes/crd/domain-crd.yaml
-</code></pre></div><p>For Kubernetes 1.15 and earlier:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create -f kubernetes/crd/domain-v1beta1-crd.yaml
 </code></pre></div><p>After the CustomResourceDefinition is installed, either by the operator or using one of the <code>create</code> commands above, you can verify that the CRD is installed correctly using:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get crd domains.weblogic.oracle
 </code></pre></div><h4 id="domain-resource-attribute-references">Domain resource attribute references</h4>
@@ -4865,6 +4888,22 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5700,19 +5739,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614860"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

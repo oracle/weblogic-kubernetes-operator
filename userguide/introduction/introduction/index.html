@@ -12,20 +12,20 @@
     <title>Get started :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614860" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614860"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3281,13 +3307,13 @@
 
 
 <p>An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
-of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and
+of complex applications. The WebLogic Kubernetes Operator follows the standard Kubernetes operator pattern, and
 simplifies the management and operation of WebLogic domains and deployments.</p>
 <p>You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each.
 We provide a Helm chart to manage the installation and configuration of the operator.
 Detailed instructions are available <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">here</a>.</p>
 <h3 id="operator-prerequisites">Operator prerequisites</h3>
-<p>For the current production release 3.2.2:</p>
+<p>For the current production release 3.2.3:</p>
 <ul>
 <li>Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with <code>kubectl version</code>).</li>
 <li>Flannel networking v0.9.1-amd64 or later (check with <code>docker images | grep flannel</code>), Calico networking v3.16.1 or later,
@@ -3320,7 +3346,7 @@ WebLogic Server and the operator are supported on &ldquo;Authorized Cloud Enviro
 Infrastructure using <em>Oracle Container Engine for Kubernetes</em>, or in a cluster running <em>Oracle Linux
 Container Services for use with Kubernetes</em> on OCI Compute, and on &ldquo;Authorized Cloud Environments&rdquo;.</p>
 <h3 id="microsoft-azure-kubernetes-service">Microsoft Azure Kubernetes Service</h3>
-<p><a href="https://docs.microsoft.com/en-us/azure/aks/">Azure Kubernetes Service (AKS)</a> is a hosted Kubernetes environment.  The WebLogic Server Kubernetes
+<p><a href="https://docs.microsoft.com/en-us/azure/aks/">Azure Kubernetes Service (AKS)</a> is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
 referenced above).</p>
 <p>AKS support and limitations:</p>
@@ -3334,7 +3360,7 @@ Infrastructure MDS data stores only when accessed through an OCI FastConnect.</l
 <li>Windows Server containers are not currently supported, only Linux containers.</li>
 </ul>
 <h3 id="vmware-tanzu-kubernetes-service">VMware Tanzu Kubernetes Service</h3>
-<p>Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Server Kubernetes
+<p>Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
 Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).</p>
 <p>TKG support and limitations:</p>
 <ul>
@@ -3348,7 +3374,7 @@ Operator and Oracle WebLogic Sever are fully supported and certified on VMware T
 </ul>
 <h3 id="oracle-linux-cloud-native-environment-olcne">Oracle Linux Cloud Native Environment (OLCNE)</h3>
 <p><a href="https://docs.oracle.com/en/operating-systems/olcne/">Oracle Linux Cloud Native Environment</a> is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.</p>
-<p>WebLogic Server and the WebLogic Server Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.</p>
+<p>WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.</p>
 <h3 id="openshift">OpenShift</h3>
 <p>Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.</p>
 <p>Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.</p>
@@ -4633,6 +4659,22 @@ development/test option.</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5468,19 +5510,19 @@ development/test option.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614860"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

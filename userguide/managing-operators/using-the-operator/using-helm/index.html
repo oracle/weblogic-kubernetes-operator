@@ -12,20 +12,20 @@
     <title>Use Helm :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614860" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614860" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614860"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614860"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3296,7 +3322,7 @@
 </li>
 <li><a href="#common-mistakes-and-solutions">Common mistakes and solutions</a></li>
 </ul>
-<p>Note that the operator Helm chart is available from the GitHub chart repository, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository">Alternatively, install the operator Helm chart from the GitHub chart repository</a>.</p>
+<p>Note that the operator Helm chart is available from the GitHub chart repository. For more details, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository">Alternatively, install the operator Helm chart from the GitHub chart repository</a>.</p>
 <h4 id="useful-helm-operations">Useful Helm operations</h4>
 <p>Show the available operator configuration values and their defaults:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ helm inspect values kubernetes/charts/weblogic-operator
@@ -3338,7 +3364,7 @@ The <code>helm install</code> or <code>helm upgrade</code> command with a non-ex
 </code></pre></div><h4 id="creating-the-operator-pod">Creating the operator pod</h4>
 <h5 id="image"><code>image</code></h5>
 <p>Specifies the container image containing the operator code.</p>
-<p>Defaults to <code>ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2</code>.</p>
+<p>Defaults to <code>ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3</code>.</p>
 <p>Example:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">image</span>:  <span style="color:#e6db74">&#34;ghcr.io/oracle/weblogic-kubernetes-operator:some-tag&#34;</span>
 </code></pre></div><h5 id="imagepullpolicy"><code>imagePullPolicy</code></h5>
@@ -3351,13 +3377,27 @@ The <code>helm install</code> or <code>helm upgrade</code> command with a non-ex
 <p>Example:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">imagePullSecrets</span>:
 - <span style="color:#f92672">name</span>: <span style="color:#e6db74">&#34;my-image-pull-secret&#34;</span>
-</code></pre></div><h5 id="nodeselector"><code>nodeSelector</code></h5>
-<p>Allows you to run the operator Pod on a Node whose labels match the specified <code>nodeSelector</code> labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. See <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector">Assign Pods to Nodes</a> in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.</p>
+</code></pre></div><h5 id="annotations"><code>annotations</code></h5>
+<p>Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.</p>
+<p>Example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">annotations</span>:
+  <span style="color:#f92672">stage</span>: <span style="color:#ae81ff">production</span>
+</code></pre></div><p>You may also specify annotations <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre><code>--set annotations.stage=production
+</code></pre><h5 id="labels"><code>labels</code></h5>
+<p>Specifies a set of key-value labels that will be added to each pod running the operator. The Helm chart will automatically add any required labels, so the customer is not required to define those here. If no customer defined labels are required, then omit this property.</p>
+<p>Example:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">labels</span>:
+  <span style="color:#f92672">sidecar.istio.io/inject</span>: <span style="color:#e6db74">&#34;false&#34;</span>
+</code></pre></div><p>You may also specify labels <a href="https://helm.sh/docs/intro/using_helm/#customizing-the-chart-before-installing">using the <code>--set</code> parameter to the Helm install command</a>, as follows:</p>
+<pre><code>--set labels.&quot;sidecar\.istio\.io/inject&quot;=false
+</code></pre><h5 id="nodeselector"><code>nodeSelector</code></h5>
+<p>Allows you to run the operator Pod on a Node whose labels match the specified <code>nodeSelector</code> labels. You can use this optional feature if you want the operator Pod to run on a Node with particular labels. For more details, see <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector">Assign Pods to Nodes</a> in the Kubernetes documentation for more details. This is not required if the operator Pod can run on any Node.</p>
 <p>Example:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">nodeSelector</span>:
   <span style="color:#f92672">disktype</span>: <span style="color:#ae81ff">ssd</span>
-</code></pre></div><h5 id="nodeaffinity"><code>nodeAffinity</code></h5>
-<p>Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to <code>nodeSelector</code>. <code>nodeAffinity</code> provides advanced capabilities to limit Pod placement on specific Nodes. See  <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity">Assign Pods to Nodes</a> in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using <code>nodeSelector</code>.</p>
+</code></pre></div><h5 id="affinity"><code>affinity</code></h5>
+<p>Allows you to constrain the operator Pod to be scheduled on a Node with certain labels; it is conceptually similar to <code>nodeSelector</code>. <code>affinity</code> provides advanced capabilities to limit Pod placement on specific Nodes. For more details, see  <a href="https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity">Assign Pods to Nodes</a> in the Kubernetes documentation for more details. This is optional and not required if the operator Pod can run on any Node or when using <code>nodeSelector</code>.</p>
 <p>Example:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">affinity</span>:
   <span style="color:#f92672">nodeAffinity</span>:
@@ -3429,7 +3469,7 @@ This value is required if <code>domainNamespaceSelectionStrategy</code> is <code
 <div class="notices note" ><p>This value is ignored if <code>dedicated</code> is set to <code>true</code>. Then, the operator will manage only domains in its own namespace.</p>
 </div>
 
-<p>For more information about managing <code>domainNamespaces</code>, see <a href="/weblogic-kubernetes-operator/faq/namespace-management/">Managing domain namespaces</a>.</p>
+<p>For more details about managing <code>domainNamespaces</code>, see <a href="/weblogic-kubernetes-operator/faq/namespace-management/">Managing domain namespaces</a>.</p>
 <h5 id="domainnamespacelabelselector"><code>domainNamespaceLabelSelector</code></h5>
 <p>Specifies a <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors">label selector</a> that will be used when searching for namespaces that the operator will manage.
 The operator will only manage Domains found in namespaces matching this selector.
@@ -3447,8 +3487,8 @@ but where the value of that label is not &ldquo;production&rdquo; or &ldquo;syst
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainNamespaceLabelSelector</span>: <span style="color:#ae81ff">environment notin (production,systemtest)</span>
 </code></pre></div>
 <div class="notices note" ><p>To specify the above sample on the Helm command line, escape spaces and commas as follows:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">--<span style="color:#ae81ff">set &#34;domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)&#34;</span>
-</code></pre></div></div>
+<pre><code>--set &quot;domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)&quot;
+</code></pre></div>
 
 <h5 id="domainnamespaceregexp"><code>domainNamespaceRegExp</code></h5>
 <p>Specifies a regular expression that will be used when searching for namespaces that the operator will manage.
@@ -3491,7 +3531,7 @@ complicated expressions. If you need to use a complex regular expression, then e
 </div>
 
 
-<div class="notices note" ><p>In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters (see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>).</p>
+<div class="notices note" ><p>In order to work with Kubernetes limits to resource names, the resultant names for the domain introspector job and the external service should not be more than 63 characters. For more details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </div>
 
 <h5 id="clustersizepaddingvalidationenabled"><code>clusterSizePaddingValidationEnabled</code></h5>
@@ -3701,7 +3741,7 @@ See <a href="https://github.com/helm/helm/issues/2349">https://github.com/helm/h
 </ul>
 <h4 id="deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator">Deleting and recreating a namespace that an operator manages without informing the operator</h4>
 <p>If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more information about the problem and solutions, see <a href="/weblogic-kubernetes-operator/faq/namespace-management/">Managing domain namespaces</a>.</p>
+For more details about the problem and solutions, see <a href="/weblogic-kubernetes-operator/faq/namespace-management/">Managing domain namespaces</a>.</p>
 
 
 <footer class="footline">
@@ -4971,6 +5011,22 @@ For more information about the problem and solutions, see <a href="/weblogic-kub
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5806,19 +5862,19 @@ For more information about the problem and solutions, see <a href="/weblogic-kub
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614860"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614860"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614860"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -13,7 +13,7 @@
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/introduction/</guid>
-      <description>Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the Oracle WebLogic Server Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
+      <description>Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
 All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
     </item>
     
@@ -35,7 +35,7 @@ You should clone this repository to your local machine so that you have access t
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.2   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:

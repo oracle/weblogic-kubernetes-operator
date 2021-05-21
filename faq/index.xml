@@ -13,9 +13,10 @@
       <pubDate>Thu, 19 Sep 2019 10:41:32 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</guid>
-      <description>What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
-How much does it cost? The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.
-WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
+      <description>What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
+How much does it cost? The WebLogic Kubernetes Operator (the “operator”) is open source and free.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
+How can I get help?</description>
     </item>
     
     <item>
@@ -66,7 +67,7 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
       <pubDate>Wed, 03 Jun 2020 08:08:19 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/node-heating/</guid>
-      <description>The WebLogic Server Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
+      <description>The WebLogic Kubernetes Operator creates a Pod for each WebLogic Server instance that is started. The Kubernetes Scheduler then selects a Node for each Pod. Because the default scheduling algorithm gives substantial weight to selecting a Node where the necessary container images have already been pulled, this often results in Kubernetes running many of the Pods for WebLogic Server instances on the same Node while other Nodes are not fairly utilized.</description>
     </item>
     
     <item>

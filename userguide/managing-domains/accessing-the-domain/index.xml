@@ -13,8 +13,8 @@
       <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/</guid>
-      <description>The Oracle WebLogic Server Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Server Remote Console&amp;rdquo;. For detailed documentation, see the Oracle WebLogic Server Remote Console GitHub project.
-A major benefit of using the Remote Console is that it runs in your browser and can be used to connect to different WebLogic Server instances.</description>
+      <description>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;. For detailed documentation, see the WebLogic Remote Console GitHub project.
+A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.</description>
     </item>
     
     <item>

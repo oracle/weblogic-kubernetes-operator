@@ -12,20 +12,20 @@
     <title>Model in Image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614859" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614859"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3279,12 +3305,12 @@
         
 
 
-<p>This sample demonstrates how to use the <a href="/weblogic-kubernetes-operator/">Oracle WebLogic Server Kubernetes Operator</a> (hereafter &ldquo;the operator&rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.</p>
+<p>This sample demonstrates how to use the <a href="/weblogic-kubernetes-operator/">WebLogic Kubernetes Operator</a> (hereafter &ldquo;the operator&rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.</p>
 <h4 id="contents">Contents</h4>
 <ul>
 <li><a href="#prerequisites">Prerequisites</a></li>
 <li><a href="#create-the-aks-cluster">Create an AKS cluster</a></li>
-<li><a href="#install-weblogic-server-kubernetes-operator">Install WebLogic Server Kubernetes Operator</a></li>
+<li><a href="#install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</a></li>
 <li><a href="#create-docker-image">Create Docker image</a></li>
 <li><a href="#create-weblogic-domain">Create WebLogic domain</a></li>
 <li><a href="#invoke-the-web-application">Invoke the web application</a></li>
@@ -3363,9 +3389,9 @@ $ az role assignment create --assignee $SP_APP_ID --role Contributor
 <p>If you have problems accessing the Oracle Container Registry, you can build your own Docker images from the <a href="https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles">Oracle GitHub repository</a>.</p>
 
 
-<h5 id="clone-weblogic-server-kubernetes-operator-repository">Clone WebLogic Server Kubernetes Operator repository</h5>
-<p>Clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">Oracle WebLogic Server Kubernetes Operator repository</a> to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.2.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+<h5 id="clone-weblogic-kubernetes-operator-repository">Clone WebLogic Kubernetes Operator repository</h5>
+<p>Clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">WebLogic Kubernetes Operator repository</a> to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
 </code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd weblogic-kubernetes-operator
 </code></pre></div>
 <h4 id="create-the-aks-cluster">Create the AKS cluster</h4>
@@ -3406,8 +3432,8 @@ aks-pool1haiche-33688868-vmss000001   Ready    agent   4m12s   v1.17.13   10.240
 </code></pre></div>
 
 <p><strong>Note</strong>: If you run into VM size failure, see <a href="/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/#virtual-machine-size-is-not-supported">Troubleshooting - Virtual Machine size is not supported</a>.</p>
-<h4 id="install-weblogic-server-kubernetes-operator">Install WebLogic Server Kubernetes Operator</h4>
-<p>The Oracle WebLogic Server Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.</p>
+<h4 id="install-weblogic-kubernetes-operator">Install WebLogic Kubernetes Operator</h4>
+<p>The WebLogic Kubernetes Operator is an adapter to integrate WebLogic Server and Kubernetes, allowing Kubernetes to serve as a container infrastructure hosting WLS instances.  The operator runs as a Kubernetes Pod and stands ready to perform actions related to running WLS on Kubernetes.</p>
 <p>Create a namespace and service account for the operator.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl create namespace sample-weblogic-operator-ns
 </code></pre></div><pre><code>namespace/sample-weblogic-operator-ns created
@@ -5355,6 +5381,22 @@ $ az ad sp delete --id $SP_APP_ID
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -6198,19 +6240,19 @@ $ az ad sp delete --id $SP_APP_ID
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614859"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -12,20 +12,20 @@
     <title>Answers for newcomers :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621614859" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621614859" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1621615913" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1621615913" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1621615913"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621614859"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1621615913"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1621615913"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621614859"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1621615913"></script>
 
     
   </div>
@@ -1900,13 +1900,39 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/">
-          FMW Infrastructure domain
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
           
       </a>
       
@@ -3267,10 +3293,10 @@
         
 
 
-<h4 id="what-is-the-weblogic-server-kubernetes-operator-how-can-i-get-started-with-it-where-is-its-documentation">What is the WebLogic Server Kubernetes Operator, how can I get started with it, where is its documentation?</h4>
+<h4 id="what-is-the-weblogic-kubernetes-operator-how-can-i-get-started-with-it-where-is-its-documentation">What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation?</h4>
 <p>It&rsquo;s all <a href="/weblogic-kubernetes-operator/">here</a>.</p>
 <h4 id="how-much-does-it-cost">How much does it cost?</h4>
-<p>The WebLogic Server Kubernetes Operator (the “operator”) is open source and free.</p>
+<p>The WebLogic Kubernetes Operator (the “operator”) is open source and free.</p>
 <p>WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</p>
 <h4 id="how-can-i-get-help">How can I get help?</h4>
 <p>We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. To join our channel, please <a href="https://weblogic-slack-inviter.herokuapp.com/">visit this site to get an invitation</a>.  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to <code>#operator</code> and say, &ldquo;hello!&rdquo;</p>
@@ -3282,7 +3308,7 @@
 <p><strong>A:</strong> In a Kubernetes and container environment, the WebLogic domain home can be externalized to a persistent volume, or supplied in an image (by using a layer on top of a WebLogic Server image). For WebLogic domains that are supplied using an image, the domain logs and store locations optionally can be located on a persistent volume.  See the <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> in this project.</p>
 <p>When using the operator, each deployed domain is specified by a domain resource that you define which describes important aspects of the domain. These include the location of the WebLogic Server image you wish to use, a unique identifier for the domain called the <code>domain-uid</code>, any PVs or PVC the domain pods will need to mount, the WebLogic clusters and servers which you want to be running, and the location of its domain home.</p>
 <p>Multiple deployments of the same domain are supported by specifying a unique <code>domain-uid</code> string for each deployed domain and specifying a different domain resource. The <code>domain-uid</code> is in turn used by the operator as the name-prefix and/or label for the domain&rsquo;s Kubernetes resources that the operator deploys for you. The WebLogic configuration of a domain&rsquo;s deployments optionally can by customized by specifying configuration overrides in the domain resource &ndash; which, for example, is useful for overriding the configuration of a data source URL, user name, or password.</p>
-<p>The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Server Deploy Tooling</a> (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> show how to create domains using WLST and using WDT.</p>
+<p>The operator does not specify how a WebLogic domain home configuration is created. You can use WLST, REST, or a very convenient new tool called <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tooling</a> (WDT). WDT allows you to compactly specify WebLogic configuration and deployments (including JMS, data sources, applications, authenticators, and such) using a YAML file and a ZIP file (which include the binaries). The operator <a href="/weblogic-kubernetes-operator/samples/simple/">samples</a> show how to create domains using WLST and using WDT.</p>
 <p><strong>Q:</strong> Is the Administration Server required? Node Manager?</p>
 <p><strong>A:</strong> Certification of both WebLogic running in containers and WebLogic in Kubernetes consists of a WebLogic domain with the Administration Server. The operator configures and runs Node Managers for you within a domain&rsquo;s pods - you don&rsquo;t need to configure them yourself - so their presence is largely transparent.</p>
 <hr>
@@ -3303,7 +3329,7 @@ For an example, see the Quick Start, <a href="/weblogic-kubernetes-operator/quic
 <p><em>Access the WebLogic Server Administration Console</em>: This can be done through a load balancer; see the <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/">Model in Image</a> sample.  Or, this can be done through a Kubernetes NodePort service; run <code>$ kubectl explain domain.spec.adminServer.adminService.channels</code>.</p>
 </li>
 <li>
-<p><em>Access the WebLogic Server Remote Console</em>: This can be done using a load balancer or Kubernetes NodePort service; see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/">Use the Remote Console</a>.</p>
+<p><em>Access the WebLogic Remote Console</em>: This can be done using a load balancer or Kubernetes NodePort service; see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/">Use the Remote Console</a>.</p>
 </li>
 </ul>
 <p><strong>Q:</strong> Are clusters supported on Kubernetes using both multicast and unicast?</p>
@@ -3337,7 +3363,7 @@ For an example, see the Quick Start, <a href="/weblogic-kubernetes-operator/quic
 <hr>
 <h4 id="patching-and-upgrades">Patching and Upgrades</h4>
 <p><strong>Q:</strong> Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.</p>
-<p><strong>A:</strong> For relevant information, see <a href="/weblogic-kubernetes-operator/userguide/base-images/#apply-patched-images-to-a-running-domain">Apply patched images to a running domain</a>, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/#overview">Rolling restarts</a>, and <a href="/weblogic-kubernetes-operator/userguide/cicd/">CI/CD considerations</a>.</p>
+<p><strong>A:</strong> For relevant information, see <a href="/weblogic-kubernetes-operator/userguide/base-images/#patch-weblogic-server-images">Patch WebLogic Server images</a>, <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/restarting/#overview">Rolling restarts</a>, and <a href="/weblogic-kubernetes-operator/userguide/cicd/">CI/CD considerations</a>.</p>
 <hr>
 <h4 id="diagnostics-and-logging">Diagnostics and Logging</h4>
 <p><strong>Q:</strong> Integration with ecosystems: logging, monitoring (OS, JVM and application level), and such.</p>
@@ -4599,6 +4625,22 @@ For an example, see the Quick Start, <a href="/weblogic-kubernetes-operator/quic
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -5439,19 +5481,19 @@ For an example, see the Quick Start, <a href="/weblogic-kubernetes-operator/quic
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1621615913"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1621614859"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621614859"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1621615913"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1621615913"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621614859"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1621615913"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
