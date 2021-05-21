@@ -277,6 +277,10 @@ function createDomainHome {
       cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
       "
     fi
+    if [ -n "${buildNetwork}" ]; then
+      cmd="$cmd  --buildNetwork ${buildNetwork}
+      "
+    fi
   fi
 
   echo @@ "Info: About to run the following WIT command:"
