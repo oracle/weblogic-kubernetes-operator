@@ -94,7 +94,7 @@ The example ClusterRole definition below grants `get`, `list`, `patch` and `upda
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -108,7 +108,7 @@ rules:
 ```
 ##### Operator REST endpoints
 
-The WebLogic Server Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
+The WebLogic Kubernetes Operator can expose both an internal and external REST HTTPS endpoint.
 The internal REST endpoint is only accessible from within the Kubernetes cluster. The external REST endpoint
 is accessible from outside the Kubernetes cluster.
 The internal REST endpoint is enabled by default and thus always available, whereas the external REST endpoint
@@ -137,7 +137,7 @@ In response to a change to either `replicas` field, in the Domain, the operator 
 The WebLogic Diagnostics Framework (WLDF) is a suite of services and APIs that collect and surface metrics that provide visibility into server and application performance.
 To support automatic scaling of WebLogic clusters in Kubernetes, WLDF provides the Policies and Actions component, which lets you write policy expressions for automatically executing scaling
 operations on a cluster. These policies monitor one or more types of WebLogic Server metrics, such as memory, idle threads, and CPU load.  When the configured threshold
-in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Server Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh),
+in a policy is met, the policy is triggered, and the corresponding scaling action is executed.  The WebLogic Kubernetes Operator project provides a shell script, [`scalingAction.sh`](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/operator/scripts/scaling/scalingAction.sh),
 for use as a Script Action, which illustrates how to issue a request to the operator’s REST endpoint.
 
 ##### Configure automatic scaling of WebLogic clusters in Kubernetes with WLDF
@@ -187,7 +187,7 @@ Set this to `https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}` when
 
 * `wls_domain_namespace` - Kubernetes Namespace in which the WebLogic domain is defined, default=`default`
 
-* `operator_service_name` - WebLogic Server Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
+* `operator_service_name` - WebLogic Kubernetes Operator Service name of the REST endpoint, default=`internal-weblogic-operator-service`
 
 * `operator_service_account` - Kubernetes Service Account name for the operator, default=`weblogic-operator`
 
@@ -218,7 +218,7 @@ In the example ClusterRoleBinding definition below, the WebLogic domain is deplo
 
 ```yaml
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
@@ -233,7 +233,7 @@ rules:
 # creating role-bindings for cluster role
 #
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: domain-cluster-rolebinding
 subjects:
@@ -250,7 +250,7 @@ roleRef:
 # creating role-bindings
 #
 kind: RoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-operator-rolebinding
   namespace: weblogic-operator
