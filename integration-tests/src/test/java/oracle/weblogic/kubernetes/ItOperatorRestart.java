@@ -4,11 +4,14 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -16,7 +19,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -29,11 +36,15 @@ import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -215,9 +226,96 @@ public class ItOperatorRestart {
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
   public void testOperatorRestartWhenPodRoll() {
-    verifyUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
-        managedServerPrefix, replicaCount);
+    final boolean VALID = true;
+    final boolean INVALID = false;
+
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    OffsetDateTime adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+        String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
+
+    logger.info("Domain {0} in namespace {1}, admin server pod {2} creationTimestamp before patching is {3}",
+        domainUid,
+        domainNamespace,
+        adminServerPodName,
+        adminPodCreationTime);
+
+    pods.put(adminServerPodName, adminPodCreationTime);
+
+    List<OffsetDateTime> msLastCreationTime = new ArrayList<OffsetDateTime>();
+    // get the creation time of the managed server pods before patching
+    assertDoesNotThrow(
+        () -> {
+            for (int i = 1; i <= replicaCount; i++) {
+              String managedServerPodName = managedServerPrefix + i;
+              OffsetDateTime creationTime = getPodCreationTimestamp(domainNamespace, "", managedServerPodName);
+              msLastCreationTime.add(creationTime);
+              pods.put(managedServerPodName, creationTime);
+
+              logger.info("Domain {0} in namespace {1}, server pod {2} creationTimestamp before patching is {3}",
+                  domainUid,
+                  domainNamespace,
+                  managedServerPodName,
+                  creationTime);
+            }
+        },
+        String.format("Failed to get creationTimestamp for managed server pods"));
+
+    logger.info("Check that before patching current credentials are valid and new credentials are not");
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID);
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, INVALID);
+
+    // create a new secret for admin credentials
+    logger.info("Create a new secret that contains new WebLogic admin credentials");
+    String adminSecretName = "weblogic-credentials-new";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        ADMIN_USERNAME_PATCH,
+        ADMIN_PASSWORD_PATCH),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // patch the domain resource with the new secret and verify that the domain resource is patched.
+    logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
+        domainUid, domainNamespace, adminSecretName);
+
+    String restartVersion = CommonPatchTestUtils.patchDomainWithNewSecretAndVerify(
+        domainUid,
+        domainNamespace,
+        adminSecretName);
+
+    // wait till rolling restart has started by checking admin server pod has restarted
+    logger.info("Waiting for rolling restart to start by checking {0} pod is restarted in namespace {0}",
+        adminServerPodName, domainNamespace);
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName,
+        adminPodCreationTime);
+
+    logger.info("Delete the operator pod in namespace {0} and wait for it to be restarted", opNamespace);
     restartOperatorAndVerify();
+
+    logger.info("Wait for domain {0} server pods in namespace {1} to be restarted",
+        domainUid, domainNamespace);
+
+    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+        "Rolling restart failed");
+
+    for (int i = 1; i <= replicaCount; i++) {
+      final String podName = managedServerPrefix + i;
+      final OffsetDateTime lastCreationTime = msLastCreationTime.get(i - 1);
+      // check that the managed server pod's label has been updated with the new restartVersion
+      checkPodRestartVersionUpdated(podName, domainUid, domainNamespace, restartVersion);
+    }
+
+    // check if the new credentials are valid and the old credentials are not valid any more
+    logger.info("Check that after patching current credentials are not valid and new credentials are");
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
+    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
+
+    logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
+        domainUid, domainNamespace);
   }
 
   private void restartOperatorAndVerify() {

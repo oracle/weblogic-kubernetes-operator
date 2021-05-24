@@ -138,13 +138,13 @@ public class ItFmwMiiDomain {
   }
 
   /**
-   * Create a basic JRF model in image domain.
+   * Create a basic FMW model in image domain.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
   @Order(1)
   @Test
-  @DisplayName("Create JRF Domain model in image")
+  @DisplayName("Create FMW Domain model in image")
   public void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
