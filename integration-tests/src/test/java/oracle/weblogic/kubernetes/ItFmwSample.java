@@ -358,8 +358,8 @@ public class ItFmwSample {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30572
-    final int t3ChannelPort = getNextFreePort(30572, 32767);
-    final int adminNodePort = getNextFreePort(30701, 32767);
+    final int t3ChannelPort = getNextFreePort(31715, 32767);
+    final int adminNodePort = getNextFreePort(31815, 32767);
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {

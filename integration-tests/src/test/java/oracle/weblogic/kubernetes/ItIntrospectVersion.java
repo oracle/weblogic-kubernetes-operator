@@ -232,7 +232,7 @@ public class ItIntrospectVersion {
     // in general the node port range has to be between 30,000 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30100
-    final int t3ChannelPort = getNextFreePort(30172, 32767);
+    final int t3ChannelPort = getNextFreePort(31915, 32767);
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim

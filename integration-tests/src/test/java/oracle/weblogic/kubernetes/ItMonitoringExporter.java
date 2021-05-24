@@ -813,7 +813,7 @@ class ItMonitoringExporter {
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
       FileUtils.deleteDirectory(fileTemp.toFile());
       Files.createDirectories(fileTemp);
-  
+
       logger.info("copy the promvalue.yaml to staging location");
       Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
       Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
@@ -827,7 +827,7 @@ class ItMonitoringExporter {
               "webhook.webhook.svc.cluster.local",
               String.format("webhook.%s.svc.cluster.local", webhookNS));
 
-    
+
       nodeportserver = getNextFreePort(32400, 32600);
       int nodeportalertmanserver = getNextFreePort(30400, 30600);
       promHelmParams = installAndVerifyPrometheus("prometheus",
@@ -836,7 +836,7 @@ class ItMonitoringExporter {
               promChartVersion,
               nodeportserver,
               nodeportalertmanserver);
-    
+
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     //if prometheus already installed change CM for specified domain
@@ -1560,7 +1560,7 @@ class ItMonitoringExporter {
     appList.add(app1Path);
     appList.add(app2Path);
 
-    int t3ChannelPort = getNextFreePort(31600, 32767);  // the port range has to be between 31,000 to 32,767
+    int t3ChannelPort = getNextFreePort(32115, 32767);  // the port range has to be between 31,000 to 32,767
 
     Properties p = new Properties();
     p.setProperty("ADMIN_USER", ADMIN_USERNAME_DEFAULT);
@@ -1693,7 +1693,7 @@ class ItMonitoringExporter {
                                               int replicaCount,
                                               boolean twoClusters,
                                               String monexpConfig) {
-    int t3ChannelPort = getNextFreePort(31570, 32767);
+    int t3ChannelPort = getNextFreePort(32215, 32767);
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
