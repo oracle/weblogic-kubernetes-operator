@@ -535,7 +535,7 @@ $ rm -rf /tmp/dhii-sample/tools/
 ### Troubleshooting
 ***Message***: `Failed to build JDBC Connection object`
 
-If the WebLogic Image Tool failed to create a domain, and the following error is seen in the output:
+If the WebLogic Image Tool failed to create a domain and the following error is seen in the output:
 ```shell
 Configuring the Service Table DataSource...
 fmwDatabase  jdbc:oracle:thin:@172.18.0.2:30012/devpdb.k8s
@@ -560,9 +560,9 @@ com.oracle.cie.domain.script.jython.WLSTException: com.oracle.cie.domain.script.
 Failed to build JDBC Connection object:
 ```
 
-First verify that the JDBC connection URL shown in the output is correct. Update the `rcuDatabaseURL` parameter in the inputs YAML to the correct value if necessary.
+First, verify that the JDBC connection URL shown in the output is correct. Update the `rcuDatabaseURL` parameter in the inputs YAML file to the correct value if necessary.
 
-If the JDBC connection URL  is correct, it is possible that the container in which the WebLogic Image Tool is running for creating a WebLogic domain is not using the correct networking stack.
-The optional `-b` option in the `create-domain.sh` can be used to specify the networking mode for the RUN instruction during image build.
+If the JDBC connection URL is correct, it is possible that the container in which the WebLogic Image Tool is running for creating a WebLogic domain, is not using the correct networking stack.
+The optional `-b` option in the `create-domain.sh` script can be used to specify the networking mode for the RUN instruction during image build.
 For example, to use the host's network stack, invoke `create-domain.sh` with `-b host`.
 Please refer to Docker Network Settings references for supported networking options.
