@@ -276,9 +276,9 @@ public class ItFmwDiiSample {
   private void updateDomainInputsFile(String domainUid, Path sampleBase, String script) {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
-    // starts with 30172
-    final int t3ChannelPort = getNextFreePort(30172, 32767);
-    final int adminNodePort = getNextFreePort(30701, 32767);
+    // starts with 31972
+    final int t3ChannelPort = getNextFreePort(31972, 32767);
+    final int adminNodePort = getNextFreePort(31901, 32767);
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
