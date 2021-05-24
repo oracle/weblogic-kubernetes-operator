@@ -285,9 +285,6 @@ public class ItOperatorRestart {
     String restartVersion = CommonPatchTestUtils.patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
-        adminServerPodName,
-        managedServerPrefix,
-        replicaCount,
         adminSecretName);
 
     // wait till rolling restart has started by checking admin server pod has restarted

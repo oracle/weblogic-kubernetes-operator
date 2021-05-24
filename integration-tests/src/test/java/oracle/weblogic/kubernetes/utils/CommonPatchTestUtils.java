@@ -94,18 +94,12 @@ public class CommonPatchTestUtils {
    *
    * @param domainUid name of the domain resource
    * @param namespace Kubernetes namespace that the domain is hosted
-   * @param adminServerPodName name of the WebLogic admin server pod
-   * @param managedServerPrefix prefix of the managed server pods
-   * @param replicaCount number of managed servers to start
    * @param secretName name of the secret that is used to patch the domain resource
    * @return restartVersion of the domain resource
    */
   public static String patchDomainWithNewSecretAndVerify(
       final String domainUid,
       final String namespace,
-      final String adminServerPodName,
-      final String managedServerPrefix,
-      final int replicaCount,
       final String secretName
   ) {
     LoggingFacade logger = getLogger();
