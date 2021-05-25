@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -17,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
@@ -38,6 +40,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -346,8 +349,17 @@ public class JobHelper {
       if (modelHome != null && !modelHome.isEmpty()) {
         addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, modelHome);
       }
+
+      String wdtInstallHome = getWdtInstallHome();
+      if (wdtInstallHome != null && !wdtInstallHome.isEmpty()) {
+        addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
+      }
+
+      Optional.ofNullable(getCommonMountPaths(getServerSpec().getCommonMounts(), getDomain().getCommonMountVolumes()))
+              .ifPresent(c -> addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATHS, c));
       return vars;
     }
+
   }
 
   static class DomainIntrospectorJobStep extends Step {
@@ -449,9 +461,10 @@ public class JobHelper {
 
     private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
       return new CallBuilder()
-            .readPodLogAsync(
-                  jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
+              .readPodLogAsync(
+                      jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
+
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
@@ -477,7 +490,7 @@ public class JobHelper {
       }
 
       V1Job domainIntrospectorJob =
-            (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+              (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
       if (isNotComplete(domainIntrospectorJob)) {
         List<String> jobConditionsReason = new ArrayList<>();
@@ -495,11 +508,11 @@ public class JobHelper {
         }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
-            DomainStatusUpdater.createFailureRelatedSteps(
-              onSeparateLines(jobConditionsReason),
-              onSeparateLines(severeStatuses),
-                null),
-            packet);
+                DomainStatusUpdater.createFailureRelatedSteps(
+                        onSeparateLines(jobConditionsReason),
+                        onSeparateLines(severeStatuses),
+                        null),
+                packet);
       }
 
       return doNext(packet);
@@ -662,12 +675,21 @@ public class JobHelper {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
     }
 
+    private List<V1Container> getInitContainers(V1Pod pod) {
+      return Optional.of(pod).map(V1Pod::getSpec).map(V1PodSpec::getInitContainers).orElse(Collections.emptyList());
+    }
+
     private boolean isJobPodName(String podName) {
       return podName.startsWith(createJobName(domainUid));
+    }
+
+    private boolean isJobPod(V1Pod pod) {
+      return pod.getMetadata().getName().startsWith(createJobName(domainUid));
     }
 
     private void recordJobPodName(Packet packet, String podName) {
       packet.put(ProcessingConstants.JOB_POD_NAME, podName);
     }
+
   }
 }

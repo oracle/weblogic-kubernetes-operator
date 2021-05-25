@@ -115,7 +115,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       Arrays.stream(
           featureGatesProperty.split(","))
           .filter(s -> s.endsWith("=true"))
-          .map(s -> s.substring(s.indexOf('=')))
+          .map(s -> s.substring(0, s.indexOf('=')))
           .collect(Collectors.toCollection(() -> enabledGates));
     }
     return enabledGates;

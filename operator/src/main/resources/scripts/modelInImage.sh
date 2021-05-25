@@ -32,7 +32,7 @@ IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
 WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
@@ -309,8 +309,19 @@ function createWLDomain() {
        "but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
+  if [ ! -f "${WDT_ROOT}/lib/weblogic-deploy-core.jar" ]; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+         "is 'FromModel' " \
+         "and a WebLogic Deploy Tool (WDT) install is not located at " \
+         "'spec.configuration.model.wdtInstallHome' " \
+         "which is currently set to '${WDT_ROOT}'. A WDT install " \
+         "is normally created when you use the WebLogic Image Tool " \
+         "to create an image for Model in Image."
+     exitOrLoop
+  fi
+
+  # Check if modelHome (default /u01/wdt/models) and wdtInstallHome (default /u01/wdt/weblogic-deploy) exists
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 

@@ -157,6 +157,14 @@ public abstract class BaseConfiguration {
     return serverPod.getReadinessProbeTuning();
   }
 
+  List<CommonMount> getCommonMounts() {
+    return serverPod.getCommonMounts();
+  }
+
+  void setCommonMounts(List<CommonMount> commonMountList) {
+    serverPod.setCommonMounts(commonMountList);
+  }
+
   Shutdown getShutdown() {
     return serverPod.getShutdown();
   }

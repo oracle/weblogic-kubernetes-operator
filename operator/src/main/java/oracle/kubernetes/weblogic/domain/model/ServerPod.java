@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Feature;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -212,6 +213,18 @@ class ServerPod extends KubernetesResource {
   @Description("Additional volume mounts for the container running a WebLogic Server instance. "
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
+
+  /**
+   * The common mount.
+   *
+   */
+  @Description("Use a common mount to automatically include directory content from additional images. "
+          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+          + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+          + "the files from the additional images with the pod.")
+  @Feature("CommonMounts")
+  private List<CommonMount> commonMounts;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -396,6 +409,14 @@ class ServerPod extends KubernetesResource {
         .periodSeconds(period);
   }
 
+  List<CommonMount> getCommonMounts() {
+    return this.commonMounts;
+  }
+
+  void setCommonMounts(List<CommonMount> commonMounts) {
+    this.commonMounts = commonMounts;
+  }
+
   ProbeTuning getLivenessProbeTuning() {
     return this.livenessProbe;
   }
@@ -414,6 +435,7 @@ class ServerPod extends KubernetesResource {
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
+    addCommonMount(serverPod1);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
       addIfMissing(var);
     }
@@ -456,6 +478,18 @@ class ServerPod extends KubernetesResource {
       schedulerName = serverPod1.schedulerName;
     }
     tolerations.addAll(serverPod1.tolerations);
+  }
+
+  private void addCommonMount(ServerPod serverPod1) {
+    if (serverPod1.commonMounts != null) {
+      if (commonMounts == null) {
+        commonMounts = new ArrayList<>(serverPod1.commonMounts);
+      } else {
+        commonMounts = Stream.of(serverPod1.commonMounts, commonMounts)
+                .flatMap(c -> c.stream())
+                .collect(Collectors.toList());
+      }
+    }
   }
 
   private void addIfMissing(V1Volume var) {
@@ -752,6 +786,7 @@ class ServerPod extends KubernetesResource {
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
         .append("serviceAccountName", serviceAccountName)
+        .append("commonMounts", commonMounts)
         .toString();
   }
 
@@ -796,6 +831,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
         .append(serviceAccountName, that.serviceAccountName)
+        .append(commonMounts, that.commonMounts)
         .isEquals();
   }
 
@@ -824,6 +860,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName)
         .append(tolerations)
         .append(serviceAccountName)
+        .append(commonMounts)
         .toHashCode();
   }
 }
