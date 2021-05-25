@@ -23,6 +23,7 @@ import java.util.Properties;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -32,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -86,6 +88,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -116,6 +119,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -573,6 +580,8 @@ public class ItIntrospectVersion {
     assertTrue(execResult.exitValue() == 0 || execResult.stderr() == null || execResult.stderr().isEmpty(),
         "Failed to change admin port number");
 
+    OffsetDateTime timestamp = now();
+
     patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
 
     //verify the introspector pod is created and runs
@@ -583,6 +592,18 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, introDomainNamespace,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the resource changed messages is logged");
+    //assertTrue(event.getMessage().contains("imagePullPolicy"));
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
@@ -1166,4 +1187,19 @@ public class ItIntrospectVersion {
   @interface AssumeWebLogicImage {
   }
 
+
+  // Utility method to check event
+  private static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            logger.info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
 }

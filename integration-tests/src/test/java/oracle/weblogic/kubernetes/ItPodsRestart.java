@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -38,15 +39,18 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -82,6 +86,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test pods are restarted after some properties in server pods are changed")
 @IntegrationTest
 class ItPodsRestart {
+
+  private static String miiImage;
 
   private static String opNamespace;
   private static String domainNamespace = null;
@@ -306,7 +312,7 @@ class ItPodsRestart {
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
-    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
+    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
 
   }
 
@@ -367,11 +373,21 @@ class ItPodsRestart {
     assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
         + " in the new patched domain");
 
+    OffsetDateTime timestamp = now();
+
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info("verify the event message contains the resource changed messages is logged");
+    assertTrue(event.getMessage().contains("domain resource changed"));
 
   }
 
@@ -486,11 +502,120 @@ class ItPodsRestart {
     assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
         + " in the new patched domain");
 
+    OffsetDateTime timestamp = now();
+
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
         domainUid, domainNamespace);
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info("verify the event message contains the resource changed messages is logged");
+    assertTrue(event.getMessage().contains("imagePullPolicy"));
+
+  }
+
+  @Test
+  @DisplayName("Restart pods using restartVersion flag")
+  public void testRestartVersion() {
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    // get the map with server pods and their original creation timestamps
+    podsWithTimeStamps = getPodsWithTimeStamps();
+
+    String oldVersion = assertDoesNotThrow(()
+        -> getDomainCustomResource(domainUid, domainNamespace).getSpec().getRestartVersion());
+    int newVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+
+    logger.info("patch the domain resource with new WebLogic secret, restartVersion and introspectVersion");
+    String patchStr
+        = "["
+        + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", "
+        + "\"value\": \"" + newVersion + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    OffsetDateTime timestamp = now();
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, domainNamespace,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+
+  }
+
+  @Test
+  @DisplayName("Restart pods using restartVersion flag")
+  public void testRestartWithImageChange() {
+
+    String newImage = KIND_REPO != null ? KIND_REPO + "mychangedimage:mii" : "mychangedimage:mii";
+    String originalImage = KIND_REPO != null ? miiImage.substring(KIND_REPO.length()) : miiImage;
+    dockerTag(originalImage, newImage);
+    if (KIND_REPO != null) {
+      dockerPush(newImage);
+    }
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
+
+    // get the map with server pods and their original creation timestamps
+    podsWithTimeStamps = getPodsWithTimeStamps();
+
+    logger.info("patch the domain resource with new image");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/image\", "
+        + "\"value\": \"" + newImage + "\"}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}\n", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        "Failed to patch domain");
+
+    OffsetDateTime timestamp = now();
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, domainNamespace,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
 
   }
 
@@ -520,7 +645,7 @@ class ItPodsRestart {
   private static void createAndVerifyMiiDomain() {
 
     // get the pre-built image created by IntegrationTestWatcher
-    String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+    miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);

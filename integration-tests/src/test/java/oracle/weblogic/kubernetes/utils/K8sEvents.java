@@ -138,6 +138,16 @@ public class K8sEvents {
     return false;
   }
 
+  /**
+   * Get matching event object.
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
   public static CoreV1Event getEvent(String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
 
