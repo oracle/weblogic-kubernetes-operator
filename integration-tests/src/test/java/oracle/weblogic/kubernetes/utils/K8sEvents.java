@@ -138,6 +138,25 @@ public class K8sEvents {
     return false;
   }
 
+  public static CoreV1Event getEvent(String opNamespace, String domainNamespace, String domainUid, String reason,
+      String type, OffsetDateTime timestamp) {
+
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          if (event.getType().equals(type)) {
+            return event;
+          }
+        }
+      }
+    } catch (ApiException ex) {
+      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return null;
+  }
+
   /**
    * Check if a given event is logged by the operator.
    *
@@ -306,11 +325,13 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
+  public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
   public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
   public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
+  public static final String POD_CYCLE_STARTING = "PodCycleStarting";
 
 }

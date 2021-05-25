@@ -714,6 +714,12 @@ public class ItKubernetesEvents {
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
   }
 
+
+  public void testDomainRolingEvent(){
+
+
+  }
+
   /**
    * Cleanup the persistent volume and persistent volume claim used by the test.
    */
