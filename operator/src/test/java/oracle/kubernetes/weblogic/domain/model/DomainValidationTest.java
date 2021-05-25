@@ -3,8 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
@@ -28,10 +28,13 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getCommonMount;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -44,6 +47,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   private static final String BAD_MOUNT_PATH_1 = "$DOMAIN_HOME/servers/$SERVER_NAME";
   private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
+  public static final String WRONG_VOLUME_NAME = "BadVolume";
 
   private final Domain domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -105,6 +109,82 @@ public class DomainValidationTest extends DomainValidationBaseTest {
 
     assertThat(domain.getValidationFailures(resourceLookup),
                contains(stringContainsInOrder("managedServers", "server-1")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountButNoCommomMountVolumes_reportError() {
+    configureDomain(domain)
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("serverPod.commonMounts",
+                    "there is no matching volume defined with name 'test'")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountButNoMatchingCommomMountVolumes_reportError() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(WRONG_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("serverPod.commonMounts",
+                    "there is no matching volume defined with name 'test'")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountButNoVolumeName_reportError() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(TEST_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(new CommonMount().image("wdt-image:v1")));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("serverPod.commonMounts", "does not define a volume name")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountAndMatchingCommomMountVolumes_noErrorsReported() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(TEST_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            not(contains(stringContainsInOrder("commonMounts", "no volume defined with name 'test'"))));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithNullName_reportError() {
+    configureDomain(domain)
+            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume()));
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("An item under 'spec.commonMountVolumes'", "does not have a name",
+                    "A name is required")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithSameMountPath_reportError() {
+    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
+    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
+    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
+    configureDomain(domain)
+            .withCommonMountVolumes(commonMountVolumes);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'", "/shared")));
+  }
+
+  @Test
+  public void whenDomainConfiguredWithCommonMountVolumesWithSameName_reportError() {
+    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
+    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME));
+    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
+    configureDomain(domain)
+            .withCommonMountVolumes(commonMountVolumes);
+
+    assertThat(domain.getValidationFailures(resourceLookup),
+            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'",
+                    TEST_VOLUME_NAME)));
   }
 
   @Test

@@ -18,7 +18,7 @@ public class ServerEnvVars {
 
   /** The path to the domain home, either in a PV or image. */
   public static final String DOMAIN_HOME = "DOMAIN_HOME";
-  
+
   /** The path to the node manager home, either in a PV or image. */
   public static final String NODEMGR_HOME = "NODEMGR_HOME";
 
