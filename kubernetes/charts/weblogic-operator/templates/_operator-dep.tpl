@@ -19,9 +19,18 @@ spec:
   replicas: 1
   template:
     metadata:
-     labels:
+      {{- with .annotations }}
+      annotations:
+      {{- end }}
+      {{- range $key, $value := .annotations }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
+      labels:
         weblogic.operatorName: {{ .Release.Namespace | quote }}
         app: "weblogic-operator"
+      {{- range $key, $value := .labels }}
+        {{ $key }}: {{ $value | quote }}
+      {{- end }}
     spec:
       serviceAccountName: {{ .serviceAccount | quote }}
       {{- with .nodeSelector }}
@@ -59,8 +68,6 @@ spec:
           value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
           value: {{ .javaLoggingFileCount | default 10 | quote }}
-        - name: ISTIO_ENABLED
-          value: {{ .istioEnabled | quote }}
         {{- if .remoteDebugNodePortEnabled }}
         - name: "REMOTE_DEBUG_PORT"
           value: {{ .internalDebugHttpPort | quote }}
@@ -103,15 +110,15 @@ spec:
         livenessProbe:
           exec:
             command:
-              - "bash"
-              - "/operator/livenessProbe.sh"
+            - "bash"
+            - "/operator/livenessProbe.sh"
           initialDelaySeconds: 20
           periodSeconds: 5
         readinessProbe:
           exec:
             command:
-              - "bash"
-              - "/operator/readinessProbe.sh"
+            - "bash"
+            - "/operator/readinessProbe.sh"
           initialDelaySeconds: 2
           periodSeconds: 10
         {{- end }}

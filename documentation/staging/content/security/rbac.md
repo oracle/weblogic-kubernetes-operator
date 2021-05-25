@@ -65,7 +65,7 @@ $ kubectl -n weblogic-operator-ns \
 ```
 ```shell
 $ kubectl -n domain1-ns \
-  describe rolebinding weblogic-operator-rolebinding-namespace \
+  describe rolebinding weblogic-operator-rolebinding-namespace
 ```
 
 ##### Kubernetes Role and RoleBinding naming conventions

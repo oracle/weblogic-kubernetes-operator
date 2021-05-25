@@ -11,6 +11,6 @@ Because we want to balance separating destabilizing work into feature branches a
 
 All commits to `main` must pass the [integration test suite]({{< relref "/developerguide/integration-tests.md" >}}).  Please run these tests locally before submitting a pull request.  Additionally, each push to a branch in our GitHub repository triggers a run of a subset of the integration tests with the results visible [here](http://build.weblogick8s.org:8080/job/weblogic-kubernetes-operator-quicktest/).
 
-Please submit pull requests to the `main` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests on the [README]({{< relref "/_index.md#contributing-to-the-oracle-weblogic-server-kubernetes-operator-repository" >}}).
+Please submit pull requests to the `main` branch unless you are collaborating on a feature and have another target branch.  Please see details on the Oracle Contributor Agreement (OCA) and guidelines for pull requests in [Contribute to the operator]({{< relref "/developerguide/contributing#contributing-to-the-oracle-weblogic-server-kubernetes-operator-repository" >}}).
 
 We will create git tags for each release candidate and generally available (GA) release of the operator.

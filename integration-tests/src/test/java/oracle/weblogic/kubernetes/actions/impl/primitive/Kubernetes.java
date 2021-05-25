@@ -2006,6 +2006,9 @@ public class Kubernetes {
    * @return node port if service and channel is found, otherwise -1
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
+    LoggingFacade logger = getLogger();
+    logger.info("Retrieving Service NodePort for service [{0}] in namespace [{1}] for channel [{2}]", 
+        serviceName, namespace, channelName);
     V1Service service = getNamespacedService(namespace, serviceName);
     if (service != null) {
       V1ServicePort port = service.getSpec().getPorts().stream().filter(

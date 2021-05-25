@@ -7,9 +7,7 @@ import io.kubernetes.client.openapi.models.VersionInfo;
 
 /** Major and minor version of Kubernetes API Server. */
 public class KubernetesVersion extends SemanticVersion {
-  public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
-  public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
-  private static final String[] MINIMUM_K8S_VERSIONS = {"1.14.8", "1.15.7", "1.16.0", "1.17.0", "1.18.0"};
+  private static final String[] MINIMUM_K8S_VERSIONS = {"1.16.15", "1.17.13", "1.18.10", "1.19.7"};
   static final KubernetesVersion UNREADABLE = new KubernetesVersion(0, 0);
   private final String version;
 
@@ -23,7 +21,7 @@ public class KubernetesVersion extends SemanticVersion {
     version = String.format("%d.%d.0", major, minor);
   }
 
-  KubernetesVersion(VersionInfo info) {
+  public KubernetesVersion(VersionInfo info) {
     super(Integer.parseInt(info.getMajor()), getNumericPortion(info.getMinor()), getRevision(info.getGitVersion()));
     version = info.getGitVersion();
   }
@@ -62,10 +60,6 @@ public class KubernetesVersion extends SemanticVersion {
 
   boolean isPublishNotReadyAddressesSupported() {
     return getMajor() > 1 || (getMajor() == 1 && getMinor() >= 8);
-  }
-
-  boolean isCrdV1Supported() {
-    return getMajor() > 1 || (getMajor() == 1 && getMinor() >= 16);
   }
 
   @Override

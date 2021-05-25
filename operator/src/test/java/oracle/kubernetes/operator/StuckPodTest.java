@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -200,6 +201,11 @@ public class StuckPodTest {
     @Override
     public void runSteps(Step firstStep) {
       testSupport.runSteps(firstStep);
+    }
+
+    @Override
+    public void runSteps(Packet packet, Step firstStep,  Runnable completionAction) {
+      testSupport.runSteps(packet, firstStep);
     }
 
     @Override

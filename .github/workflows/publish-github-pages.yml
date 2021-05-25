@@ -1,0 +1,66 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# Description
+#  Use Hugo to build static site and publish to gh-pages
+#
+name: "PublishGitHubPages"
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '15 3 * * 1'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: main
+          fetch-depth: 32
+          path: main
+
+      - name: Checkout gh-pages
+        uses: actions/checkout@v2.3.4
+        with:
+          ref: gh-pages
+          path: gh-pages
+          token: ${{ secrets.PUBLISH_SECRET }}
+
+      - name: Verify changes to documentation present
+        id: change-check
+        run: |
+          cd $GITHUB_WORKSPACE/main
+          X=`git diff HEAD~1 --name-only | { grep "^documentation" || test $? = 1; } | wc -l`
+          if [ $X == "0" ]; then
+            echo 'No changes to the documenation'
+          else
+            echo '::set-output name=DOCUMENTATION_CHANGED::true'
+          fi
+
+      - name: Build and publish site
+        if: ${{ steps.change-check.outputs.DOCUMENTATION_CHANGED == 'true' }}
+        run: |
+          curl -fL -o hugo.tar.gz "https://github.com/gohugoio/hugo/releases/download/v0.82.0/hugo_0.82.0_Linux-64bit.tar.gz"
+          tar -xf hugo.tar.gz
+          export PATH="$PWD:$PATH"
+          mkdir $GITHUB_WORKSPACE/WORK
+          cd $GITHUB_WORKSPACE/main/documentation
+          ./publish.sh -o $GITHUB_WORKSPACE/WORK
+          cd $GITHUB_WORKSPACE/gh-pages
+          rm -Rf *
+          cp -R $GITHUB_WORKSPACE/WORK/* .
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Documentation update from publish GitHub Action"
+          git push origin gh-pages

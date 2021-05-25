@@ -53,8 +53,11 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
@@ -79,8 +82,11 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PR
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
@@ -834,6 +840,60 @@ public class EventHelperTest {
     assertThat("Found 1 NAMESPACE_WATCHING_STOPPED event with expected count 2",
         containsOneEventWithCount(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT, 2), is(true));
+  }
+
+  @Test
+  public void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedCount() {
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_STARTING)));
+
+    assertThat("Found DOMAIN_ROLL_STARTING event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_ROLL_STARTING_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_STARTING).message("abcde")));
+
+    assertThat("Found DOMAIN_ROLL_STARTING event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_ROLL_STARTING_EVENT,
+            String.format(EventConstants.DOMAIN_ROLL_STARTING_PATTERN, UID, "abcde")), is(true));
+  }
+
+  @Test
+  public void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedCount() {
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_COMPLETED)));
+
+    assertThat("Found DOMAIN_ROLL_COMPLETED event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_ROLL_COMPLETED_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_COMPLETED)));
+
+    assertThat("Found DOMAIN_ROLL_COMPLETED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_ROLL_COMPLETED_EVENT,
+            String.format(EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  public void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedCount() {
+    testSupport.runSteps(createEventStep(new EventData(POD_CYCLE_STARTING)));
+
+    assertThat("Found POD_CYCLE_STARTING event with expected count",
+        containsOneEventWithCount(getEvents(testSupport), POD_CYCLE_STARTING_EVENT, 1), is(true));
+  }
+
+  @Test
+  public void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createEventStep(new EventData(POD_CYCLE_STARTING).podName("12345").message("abcde")));
+
+    assertThat("Found POD_CYCLE_STARTING event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            POD_CYCLE_STARTING_EVENT,
+            String.format(EventConstants.POD_CYCLE_STARTING_PATTERN, "12345", "abcde")), is(true));
   }
 
   private void dispatchAddedEventWatches() {

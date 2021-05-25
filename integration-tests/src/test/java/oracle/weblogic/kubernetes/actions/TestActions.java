@@ -62,6 +62,7 @@ import oracle.weblogic.kubernetes.actions.impl.Traefik;
 import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.Voyager;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
+import oracle.weblogic.kubernetes.actions.impl.WebLogicRemoteConsole;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
@@ -1434,6 +1435,24 @@ public class TestActions {
    */
   public static boolean installElasticsearch(LoggingExporterParams params) {
     return LoggingExporter.installElasticsearch(params);
+  }
+
+  /**
+   * Install WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully installed, false otherwise.
+   */
+  public static boolean installWlsRemoteConsole() {
+    return WebLogicRemoteConsole.installWlsRemoteConsole();
+  }
+
+  /**
+   * Shutdown WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully shutdown, false otherwise.
+   */
+  public static boolean shutdownWlsRemoteConsole() {
+    return WebLogicRemoteConsole.shutdownWlsRemoteConsole();
   }
 
   /**

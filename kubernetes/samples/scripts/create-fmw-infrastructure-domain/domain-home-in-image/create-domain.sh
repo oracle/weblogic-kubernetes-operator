@@ -14,26 +14,27 @@
 #    * The kubernetes secrets 'username' and 'password' of the admin account have been created in the namespace
 #    * The host directory that will be used as the persistent volume must already exist
 #      and have the appropriate file permissions set.
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume must already be created
-#    * If logHomeOnPV is enabled, the kubernetes persisitent volume claim must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume must already be created
+#    * If logHomeOnPV is enabled, the kubernetes persistent volume claim must already be created
 #
 
 # Initialize
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
+source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
 function usage {
-  echo usage: ${script} -o dir -i file -u username -p password [-k] [-e] [-v] [-h]
+  echo usage: ${script} -o dir -i file -u username -p password [-q rcuSchemaPassword] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
-  echo "  -u Username used in building the image for WebLogic domain in image."
-  echo "  -p Password used in building the image for WebLogic domain in image."
+  echo "  -u WebLogic administrator user name for the WebLogic domain."
+  echo "  -p WebLogic administrator password for the WebLogic domain."
+  echo "  -q Password for the RCU schema. Required for JRF FMW domain type."
   echo "  -e Also create the resources in the generated YAML files, optional."
   echo "  -v Validate the existence of persistentVolumeClaim, optional."
-  echo "  -k Keep what has been previously from cloned https://github.com/oracle/docker-images.git, optional. "
-  echo "     If not specified, this script will always remove existing project directory and clone again."
+  echo "  -n Encryption key for encrypting passwords in the WDT model and properties files, optional."
   echo "  -h Help"
   exit $1
 }
@@ -43,8 +44,7 @@ function usage {
 #
 doValidation=false
 executeIt=false
-cloneIt=true
-while getopts "evhki:o:u:p:" opt; do
+while getopts "evhi:o:u:p:n:q:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -58,7 +58,9 @@ while getopts "evhki:o:u:p:" opt; do
     ;;
     p) password="${OPTARG}"
     ;;
-    k) cloneIt=false;
+    q) rcuSchemaPassword="${OPTARG}"
+    ;;
+    n) wdtEncryptKey="${OPTARG}"
     ;;
     h) usage 0
     ;;
@@ -148,16 +150,55 @@ function initialize {
 
   failIfValidationErrors
 
-  validateCommonInputs
+  validateCommonInputs "fmw-domain-home-in-image"
+
+  mode="${mode:-wdt}"
+  if [ ! "${mode}" == "wdt" ] && [ ! "${mode}" == "wlst" ]; then
+    validationError "mode must be either 'wdt' or 'wlst'."
+  fi
+
+  if [ "${mode}" == "wlst" ]; then
+    if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
+      createDomainWlstScript="${createDomainWlstScript:-../../common/createFMWRestrictedJRFDomain.py}"
+    else
+      createDomainWlstScript="${createDomainWlstScript:-../../common/createFMWJRFDomain.py}"
+    fi
+    if [ ! -f ${scriptDir}/${createDomainWlstScript} ]; then
+      validationError "The create domain WLST script file ${createDomainWlstScript} was not found"
+    fi
+    echo @@ "Info: Using WLST script at ${createDomainWlstScript} to create a WebLogic domain home."
+    if [ -n "${wdtEncryptKey}" ]; then
+      echo @@ "Info: ${script}: -n is ignored for wlst mode."
+    fi
+  fi
+
+  if [ "${mode}" == "wdt" ]; then
+    # fmwDomainType is either JRF or RestrictedJRF. JRF does not support Dynamic Cluster Model
+    if [ "${fmwDomainType}" == "RestrictedJRF" ]; then
+      createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_restricted_jrf_configured.yaml}"
+      wdtDomainType=RestrictedJRF
+    else
+      createDomainWdtModel="${createDomainWdtModel:-wdt/wdt_model_configured.yaml}"
+      wdtDomainType=JRF
+    fi
+    if [ ! -f ${scriptDir}/${createDomainWdtModel} ]; then
+      validationError "The create domain WDT model file ${createDomainWdtModel} was not found"
+    fi
+    echo @@ "Info: Using WDT model YAML file at ${createDomainWdtModel} to create a WebLogic domain home."
+  fi
 
   validateBooleanInputParamsSpecified logHomeOnPV
   failIfValidationErrors
 
   initOutputDir
 
-  if [ "${cloneIt}" = true ] || [ ! -d ${domainHomeImageBuildPath} ]; then
-    getDockerSample
-  fi
+  export WDT_DIR=${toolsDir:-"/tmp/dhii-sample/tools"}
+  export WIT_DIR="${WDT_DIR}"
+
+  export WDT_VERSION=${wdtVersion:-LATEST}
+  export WIT_VERSION=${witVersion:-LATEST}
+
+  install_wit_if_needed || exit 1
 }
 
 #
@@ -173,60 +214,85 @@ function getDockerSample {
 # Function to build docker image and create WebLogic domain home
 #
 function createDomainHome {
-  dockerDir=${domainHomeImageBuildPath}
-  dockerPropsDir=${dockerDir}/properties
-  cp ${domainPropertiesOutput} ${dockerPropsDir}
 
-  # 12213-domain-home-in-image use one properties file for the credentials 
-  usernameFile="${dockerPropsDir}/domain_security.properties"
-  passwordFile="${dockerPropsDir}/domain_security.properties"
+  echo @@ "Info: WIT_DIR is ${WIT_DIR}"
 
-  rcuPropFile="${dockerPropsDir}/rcu.properties"
-  rcuSecurityPropFile="${dockerPropsDir}/rcu_security.properties"
- 
-  # 12213-domain-home-in-image-wdt uses two properties files for the credentials 
-  if [ ! -f $usernameFile ]; then
-    usernameFile="${dockerPropsDir}/adminuser.properties"
-    passwordFile="${dockerPropsDir}/adminpass.properties"
+  domainPropertiesOutput="${domainOutputDir}/domain.properties"
+
+  echo @@ "Info: Invoking WebLogic Image Tool to create a WebLogic domain at '${domainHome}' from image '${domainHomeImageBase}' and tagging the resulting image as '${BUILD_IMAGE_TAG}'."
+
+  if [ "${mode}" == "wlst" ]; then
+      additionalBuildCommandsOutput="${domainOutputDir}/additional-build-commands"
+      additionalBuildCommandsTemplate="wlst/additional-build-commands-template"
+
+      # Generate the additional-build-commands file that will be used when creating the weblogic domain
+      echo @@ "Info: Generating ${additionalBuildCommandsOutput} from ${additionalBuildCommandsTemplate}"
+
+      cp ${scriptDir}/${additionalBuildCommandsTemplate} ${additionalBuildCommandsOutput} || exit 1
+      sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${additionalBuildCommandsOutput}
+
+      createDomainWlstScriptCopy="${domainOutputDir}/createFMWDomain.py"
+      cp ${scriptDir}/${createDomainWlstScript} ${createDomainWlstScriptCopy} || exit 1
+
+      cmd="
+        $WIT_DIR/imagetool/bin/imagetool.sh update
+          --fromImage \"$domainHomeImageBase\"
+          --tag \"${BUILD_IMAGE_TAG}\"
+          --wdtOperation CREATE
+          --wdtVersion ${WDT_VERSION}
+          --wdtDomainHome \"${domainHome}\"
+          --additionalBuildCommands ${additionalBuildCommandsOutput}
+          --additionalBuildFiles \"${scriptDir}/wlst/createFMWDomain.sh,${createDomainWlstScriptCopy},${domainPropertiesOutput}\"
+          --chown=oracle:root
+        "
+  else # wdt
+    createDomainWdtModelCopy="${domainOutputDir}/wdt_model.yaml"
+    cp ${scriptDir}/${createDomainWdtModel} ${createDomainWdtModelCopy} || exit 1
+
+    if [ -n "${wdtEncryptKey}" ]; then
+      echo @@ "Info: An encryption key is provided, encrypting passwords in WDT properties file"
+      wdtEncryptionKeyFile=${domainOutputDir}/wdt_encrypt_key
+      echo  -e "${wdtEncryptKey}" > "${wdtEncryptionKeyFile}"
+      domainOutputDirFullPath="$( cd "$( dirname "${domainPropertiesOutput}" )" && pwd)"
+      encrypt_model ${domainOutputDirFullPath} wdt_model.yaml wdt_encrypt_key domain.properties || exit 1
+    fi
+
+    echo @@ "Info: dumping output of ${domainPropertiesOutput}"
+    sed 's/ADMIN_USER_PASS=[^{].*/ADMIN_USER_PASS=********/g;s/RCU_SCHEMA_PASSWORD=[^{].*/RCU_SCHEMA_PASSWORD=********/g' ${domainPropertiesOutput}
+
+    cmd="
+      $WIT_DIR/imagetool/bin/imagetool.sh update
+        --fromImage \"$domainHomeImageBase\"
+        --tag ${BUILD_IMAGE_TAG}
+        --wdtModel \"${createDomainWdtModelCopy}\"
+        --wdtVariables \"${domainPropertiesOutput}\"
+        --wdtOperation CREATE
+        --wdtVersion ${WDT_VERSION}
+        --wdtDomainType ${wdtDomainType}
+        --wdtDomainHome \"${domainHome}\"
+        --additionalBuildCommands ${scriptDir}/wdt/additional-build-commands
+        --chown=oracle:root
+    "
+    if [ -n "${wdtEncryptKey}" ]; then
+      cmd="$cmd  --wdtEncryptionKeyFile \"${wdtEncryptionKeyFile}\"
+      "
+    fi
   fi
-  
-  sed -i -e "s|myusername|${username}|g" $usernameFile
-  sed -i -e "s|welcome1|${password}|g" $passwordFile
 
-  sed -i -e "s|INFRA08|${rcuSchemaPrefix}|g" $rcuPropFile
-  sed -i -e "s|InfraDB:1521/InfraPDB1|${rcuDatabaseURL}|g" $rcuPropFile
-
-  cp -f ${scriptDir}/common/Dockerfile ${dockerDir}/Dockerfile
-  cp -f ${scriptDir}/common/createFMWDomain.sh ${dockerDir}/container-scripts
-
-  if [ ! -z $domainHomeImageBase ]; then
-    sed -i -e "s|\(FROM \).*|\1 ${domainHomeImageBase}|g" ${dockerDir}/Dockerfile
-  fi
-
-  cp ${domainPropertiesOutput} ${dockerPropsDir}
-  sed  -i  '$ a extract_env IMAGE_TAG ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg EXPOSE_T3_CHANNEL ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg FMW_DOMAIN_TYPE ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg T3_CHANNEL_PORT ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-  sed  -i  '$ a set_env_arg T3_PUBLIC_ADDRESS ${PROPERTIES_FILE} ' ${dockerDir}/container-scripts/setEnv.sh
-
-  cp -f ${scriptDir}/common/createFMWDomain.py \
-        ${dockerDir}/container-scripts/createFMWDomain.py
-
-  # Set WDT_VERSION in case dockerDir references a WDT sample
-  # (wdtVersion comes from the inputs file)
-  export WDT_VERSION="${WDT_VERSION:-${wdtVersion:-1.9.1}}"
-  bash ${dockerDir}/build.sh
+  echo @@ "Info: About to run the following WIT command:"
+  echo "$cmd"
+  echo
+  eval $cmd
 
   if [ "$?" != "0" ]; then
     fail "Create domain ${domainName} failed."
   fi
 
   # clean up the generated domain.properties file
-  rm ${domainPropertiesOutput}
+  rm -f ${domainPropertiesOutput} ${createDomainWlstScriptCopy} ${createDomainWdtModelCopy} ${wdtEncryptionKeyFile} ${additionalBuildCommandsOutput}
 
   echo ""
-  echo "Create domain ${domainName} successfully."
+  echo @@ "Info: Create domain ${domainName} successfully."
 }
 
 #
@@ -238,21 +304,20 @@ function printSummary {
   getKubernetesClusterIP
 
   echo ""
-  echo "Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
+  echo @@ "Info: Domain ${domainName} was created and will be started by the WebLogic Kubernetes Operator"
   echo ""
   if [ "${exposeAdminNodePort}" = true ]; then
-    echo "Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
+    echo @@ "Info: Administration console access is available at http://${K8S_IP}:${adminNodePort}/console"
   fi
   if [ "${exposeAdminT3Channel}" = true ]; then
-    echo "T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
+    echo @@ "Info: T3 access is available at t3://${K8S_IP}:${t3ChannelPort}"
   fi
-  echo "The following files were generated:"
+  echo @@ "Info: The following files were generated:"
   echo "  ${domainOutputDir}/create-domain-inputs.yaml"
   echo "  ${dcrOutput}"
   echo ""
-  echo "Completed"
+  echo @@ "Info: Completed"
 }
 
 # Perform the sequence of steps to create a domain
 createDomain true
-
