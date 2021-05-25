@@ -441,8 +441,9 @@ public class TestAssertions {
       String podName,
       String namespace,
       String username,
-      String password) {
-    return () -> Domain.credentialsValid(host, podName, namespace, username, password);
+      String password,
+      String... args) {
+    return () -> Domain.credentialsValid(host, podName, namespace, username, password, args);
   }
 
   /**
@@ -461,8 +462,9 @@ public class TestAssertions {
       String podName,
       String namespace,
       String username,
-      String password) {
-    return () -> Domain.credentialsNotValid(host, podName, namespace, username, password);
+      String password,
+      String... args) {
+    return () -> Domain.credentialsNotValid(host, podName, namespace, username, password, args);
   }
 
   /**
