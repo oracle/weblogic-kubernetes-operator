@@ -15,6 +15,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
+  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -25,6 +26,9 @@ public class Model {
 
   @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
+
+  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.")
+  private String wdtInstallHome;
 
   @Description("Online update option for Model In Image dynamic update.")
   private OnlineUpdate onlineUpdate;
@@ -89,6 +93,20 @@ public class Model {
     return this;
   }
 
+  @Nullable
+  String getWdtInstallHome() {
+    return wdtInstallHome;
+  }
+
+  void setWdtInstallHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
+  }
+
+  public Model withWdtInstallHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
+    return this;
+  }
+
   String getModelHome() {
     return modelHome;
   }
@@ -109,6 +127,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
+            .append("wdtInstallHome", wdtInstallHome)
             .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
 
@@ -121,6 +140,7 @@ public class Model {
         .append(domainType)
         .append(configMap)
         .append(modelHome)
+        .append(wdtInstallHome)
         .append(onlineUpdate)
         .append(runtimeEncryptionSecret);
 
@@ -142,6 +162,7 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
+            .append(wdtInstallHome,rhs.wdtInstallHome)
             .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
 

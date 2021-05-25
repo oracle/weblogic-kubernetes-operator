@@ -14,6 +14,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
@@ -21,6 +22,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
@@ -37,7 +40,9 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.AdminPodHelperTest.CUSTOM_MOUNT_PATH2;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
@@ -54,6 +59,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACE
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.both;
@@ -1042,6 +1050,41 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
 
     containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
+  }
+
+  @Test
+  public void whenDomainAndClusterHaveCommonMounts_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume())
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume())
+            .configureCluster(CLUSTER_NAME)
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v2")));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image:v2",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenClusterHasCommonMountAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH2))
+            .configureCluster(CLUSTER_NAME)
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v2")));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH2)));
   }
 
   @Test
