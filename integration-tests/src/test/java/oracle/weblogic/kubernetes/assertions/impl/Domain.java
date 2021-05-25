@@ -254,8 +254,9 @@ public class Domain {
       String podName,
       String namespace,
       String username,
-      String password) {
-    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+      String password,
+      String... args) {
+    CommandParams params = createCommandParams(host, podName, namespace, username, password, args);
     return Command.withParams(params).executeAndVerify("200");
   }
 
@@ -275,8 +276,9 @@ public class Domain {
       String podName,
       String namespace,
       String username,
-      String password) {
-    CommandParams params = createCommandParams(host, podName, namespace, username, password);
+      String password,
+      String... args) {
+    CommandParams params = createCommandParams(host, podName, namespace, username, password, args);
     return Command.withParams(params).executeAndVerify("401");
   }
 
@@ -285,7 +287,8 @@ public class Domain {
       String podName,
       String namespace,
       String username,
-      String password) {
+      String password,
+      String... args) {
     int adminServiceNodePort
         = getServiceNodePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
 
@@ -298,10 +301,11 @@ public class Domain {
 
     // create a RESTful management services command that connects to admin server using given credentials to get
     // information about a managed server
+    String managedServer1 = (args.length == 0) ? "managed-server1" : "managed-server1-c1";
     StringBuffer cmdString = new StringBuffer()
         .append("status=$(curl --user " + username + ":" + password)
         .append(" http://" + host + ":" + adminServiceNodePort)
-        .append("/management/tenant-monitoring/servers/managed-server1")
+        .append("/management/tenant-monitoring/servers/" + managedServer1)
         .append(" --silent --show-error")
         .append(" --noproxy '*'")
         .append(" -o /dev/null")

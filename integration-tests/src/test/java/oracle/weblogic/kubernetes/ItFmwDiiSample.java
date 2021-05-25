@@ -192,6 +192,7 @@ public class ItFmwDiiSample {
             + " -u " + ADMIN_USERNAME_DEFAULT
             + " -p " + ADMIN_PASSWORD_DEFAULT
             + " -q " + RCUSYSPASSWORD
+            + " -b host"
             + " -o "
             + Paths.get(sampleBase.toString()));
 
@@ -287,9 +288,6 @@ public class ItFmwDiiSample {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4",
           "domainHomeImageBase: " + FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain.sh").toString(),
-          "imagetool.sh update",
-          "imagetool.sh update\n  --buildNetwork host");
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
           "namespace: default", "namespace: " + domainNamespace);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
