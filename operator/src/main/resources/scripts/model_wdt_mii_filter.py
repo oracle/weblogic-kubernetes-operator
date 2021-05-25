@@ -385,6 +385,9 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   if istio_readiness_port is None:
     return
   admin_server_port = server['ListenPort']
+  if admin_server_port is None:
+    admin_server_port = 7001
+
   # readiness probe
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                       listen_port=istio_readiness_port, protocol='http', http_enabled="true")
@@ -445,6 +448,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   if istio_readiness_port is None:
     return
   listen_port = template['ListenPort']
+  if listen_port is None:
+    listen_port = 7001
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                  listen_port=istio_readiness_port, protocol='http', http_enabled="true")
