@@ -4,13 +4,10 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
@@ -55,7 +52,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
-import static oracle.kubernetes.operator.ProcessingConstants.INTRO_POD_INIT_CONTAINERS;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -460,41 +456,24 @@ public class JobHelper {
       String namespace = info.getNamespace();
 
       String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
-      Set<String> initContainerNames = (Set<String>) packet.get(INTRO_POD_INIT_CONTAINERS);
-      Collection<StepAndPacket> readIntroPodContainerLogs = new ArrayList<>();
-      Optional.ofNullable(initContainerNames).ifPresent(initContainers -> addStepsToReadIntrospectorInitContainerLogs(
-              packet, info, namespace, jobPodName, readIntroPodContainerLogs, initContainers));
-      //Add step to read introspector pod main container logs
-      readIntroPodContainerLogs.add(new StepAndPacket(readDomainIntrospectorPodLog(jobPodName, namespace,
-              info.getDomainUid(), null, false), packet));
-      return doForkJoin(getNext(), packet, readIntroPodContainerLogs);
+
+      return doNext(readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), getNext()), packet);
     }
 
-    private void addStepsToReadIntrospectorInitContainerLogs(Packet packet, DomainPresenceInfo info, String namespace,
-                                                             String jobPodName,
-                                                             Collection<StepAndPacket> readIntroPodContainerLogs,
-                                                             Set<String> initContainers) {
-      initContainers.forEach(initContainer -> readIntroPodContainerLogs.add(new StepAndPacket(
-              readDomainIntrospectorPodLog(jobPodName, namespace, info.getDomainUid(), initContainer, true),
-              packet)));
+    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid, Step next) {
+      return new CallBuilder()
+              .readPodLogAsync(
+                      jobPodName, namespace, domainUid, new ReadDomainIntrospectorPodLogResponseStep(next));
     }
 
-    private Step readDomainIntrospectorPodLog(String jobPodName, String namespace, String domainUid,
-                                              String containerName, boolean isInitContainer) {
-      return new CallBuilder().withContainerName(containerName)
-            .readPodLogAsync(jobPodName, namespace, domainUid,
-                    new ReadDomainIntrospectorPodLogResponseStep(isInitContainer, null));
-    }
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
     private StringBuilder logMessage = new StringBuilder();
     private final List<String> severeStatuses = new ArrayList<>();
-    private final boolean isInitContainer;
 
-    ReadDomainIntrospectorPodLogResponseStep(boolean isInitContainer, Step nextStep) {
+    ReadDomainIntrospectorPodLogResponseStep(Step nextStep) {
       super(nextStep);
-      this.isInitContainer = isInitContainer;
     }
 
     @Override
@@ -510,12 +489,9 @@ public class JobHelper {
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
         MakeRightDomainOperation.recordInspection(packet);
       }
-      if (isInitContainer) {
-        return doNext(getNext(), packet);
-      }
 
       V1Job domainIntrospectorJob =
-            (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+              (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
       if (isNotComplete(domainIntrospectorJob)) {
         List<String> jobConditionsReason = new ArrayList<>();
@@ -533,11 +509,11 @@ public class JobHelper {
         }
         //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
-            DomainStatusUpdater.createFailureRelatedSteps(
-              onSeparateLines(jobConditionsReason),
-              onSeparateLines(severeStatuses),
-                null),
-            packet);
+                DomainStatusUpdater.createFailureRelatedSteps(
+                        onSeparateLines(jobConditionsReason),
+                        onSeparateLines(severeStatuses),
+                        null),
+                packet);
       }
 
       return doNext(packet);
@@ -693,14 +669,6 @@ public class JobHelper {
             .findFirst()
             .ifPresent(name -> recordJobPodName(packet, name));
 
-      Optional.ofNullable(callResponse.getResult())
-              .map(V1PodList::getItems)
-              .orElseGet(Collections::emptyList)
-              .stream()
-              .filter(this::isJobPod)
-              .map(this::getInitContainers)
-              .forEach(initContainerList -> recordIntroInitContainerNames(packet, initContainerList));
-
       return doContinueListOrNext(callResponse, packet);
     }
 
@@ -724,15 +692,5 @@ public class JobHelper {
       packet.put(ProcessingConstants.JOB_POD_NAME, podName);
     }
 
-    private void recordIntroInitContainerNames(Packet packet, List<V1Container> containers) {
-      Set<String> containerList = (Set<String>)packet.get(INTRO_POD_INIT_CONTAINERS);
-      if (containerList == null) {
-        containerList = new LinkedHashSet<>();
-      }
-      for (V1Container c : containers) {
-        containerList.add(c.getName());
-      }
-      packet.put(INTRO_POD_INIT_CONTAINERS, containerList);
-    }
   }
 }

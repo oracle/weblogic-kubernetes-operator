@@ -927,6 +927,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   protected void addCommonMountEnv(List<CommonMount> commonMountList, List<V1EnvVar> vars) {
     Optional.ofNullable(commonMountList).ifPresent(commonMounts -> {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       Optional.ofNullable(getCommonMountPaths(commonMountList, getDomain().getCommonMountVolumes()))
               .ifPresent(c -> addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATHS, c));
     });
@@ -938,6 +939,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getWdtInstallHome() {
     return getDomain().getWdtInstallHome();
+  }
+
+  private String getModelHome() {
+    return getDomain().getModelHome();
   }
 
   private boolean distributeOverridesDynamically() {
