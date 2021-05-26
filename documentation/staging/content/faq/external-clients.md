@@ -23,6 +23,8 @@ description: "This FAQ describes approaches for giving WebLogic applications acc
 - [Enabling unknown host access](#enabling-unknown-host-access)
    - [When is it necessary to enable unknown host access?](#when-is-it-necessary-to-enable-unknown-host-access)
    - [How to enable unknown host access](#how-to-enable-unknown-host-access)
+- [Configuring WebLogic Server Affinity Load Balancing Algorithm](#configuring-weblogic-server-affinity-load-balancing-algorithm)
+- [Configuring External Listen Address for WebLogic Default Channel](#configuring-external-listen-address-for-weblogic-default-channel) 
 - [Optional reading](#optional-reading)
 
 #### Overview
@@ -106,6 +108,10 @@ is hosted outside of the Kubernetes cluster, then:
   - [Load balancer tunneling](#load-balancer-tunneling) (preferred)
   - [Kubernetes `NodePorts`](#kubernetes-nodeports)
 
+{{% notice note %}}
+[Load balancer tunneling](#load-balancer-tunneling) is the preferred approach over [Kubernetes `NodePorts`](#kubernetes-nodeports).  Although [Kubernetes `NodePorts`](#kubernetes-nodeports) are good for use in demos and getting-started guides, they are not suited for production systems as they can directly expose applications to the outside world, bypass almost all network security in Kubernetes, cannot expose standard low-numbered ports like 80 and 443 (or even 8080 and 8443), and many network policies block outbound HTTP/S requests on ports other than 80 and 443.  
+{{% /notice %}}
+
 - The applications must specify a URL that resolves to the external address.
   If tunneling, then this
   URL must begin with `http` or `https` instead of `t3` or `t3s`.
@@ -113,6 +119,8 @@ is hosted outside of the Kubernetes cluster, then:
 
 - You may need to [enable unknown host access](#enabling-unknown-host-access)
   on the WebLogic Servers that host the EJB or JMS resources.
+
+- You may need to configure a default load balancer algorithm that provides server affinity, for the cluster in which EJB or JMS resources are targted, to enable appropriate routing of requests via replica-aware stubs.
 
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications 
@@ -124,10 +132,15 @@ that call the resource are located within the cluster, then:
     * [Set up an HTTP tunneling-enabled custom channel](#adding-a-weblogic-custom-channel) on the external WebLogic Servers.
     * Specify URLs on the source server that resolve to the load balancer's address and that start with `http` instead of `t3`.
     * Ensure the load balancer configures the HTTP flow to be 'sticky'.
+    * Configure a WebLogic load balancer method that provides server affinity for the cluster's default load balancing algorithm to enable appropriate routing of requests via replica-aware stubs.
 
 {{% notice note %}}
 The operator does not currently support external WebLogic JTA access to a Kubernetes hosted WebLogic cluster. This is because external JTA access requires each server in a cluster to be individually addressable, but this conflicts with the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.
 {{% /notice %}}
+
+Transactions that span WebLogic Server domains are referred to as cross-domain transactions.  For cross-domain transactions in the same Kubernetes cluster, where transaction participants are part of different domains in different namespaces, additional configuration requirements are needed:
+
+  - Server listen addresses must be resolvable between the transaction participants and this can be accomplished by configuring each servers 'External Listen Address' to its service name.  See [Configuring External Listen Address for WebLogic Default Channel](#configuring-external-listen-address-for-weblogic-default-channel) for more information.
 
 #### Load balancer tunneling
 
@@ -140,6 +153,8 @@ Here are the steps:
 - Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see [Ingress]({{<relref "/userguide/managing-domains/ingress/_index.md">}}). If you're using OKE/OCI to host your Kubernetes cluster, also see [Using an OCI Load Balancer]({{<relref "/faq/oci-lb">}}).
 
 - __Important__: Ensure that the load balancer configures the HTTP flow to be 'sticky' - for example, a Traefik load balancer has a `sticky sessions` option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.
+
+- __Important__: For EJB and JMS resources that are targeted to a cluster, it is recommended that you configure a default load balancer algorithm that provides server affinity (round-robin-affinity, weight-based-affinity, random-affinity) to enable appropriate routing of requests via replica-aware stubs. For more information see [Load Balancing for EJBs and RMI Objects](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6) in _Load Balancing in a Cluster_.
 
 - If you are adding access for applications that are hosted on remote WebLogic Servers, then the Kubernetes hosted servers may need to [enable unknown host access](#enabling-unknown-host-access).
 
@@ -365,6 +380,129 @@ To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA 
   * Set the `weblogic.rjvm.allowUnknownHost` Java system property to `true` on each target WebLogic Server.
     * For operator hosted WebLogic Servers, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
   * Also apply patch 30656708 on each target WebLogic Server for versions 12.2.1.4 (PS4) or earlier.
+
+#### Configuring WebLogic Server Affinity Load Balancing Algorithm
+
+When providing external clients access to EJB and JMS resources using load balancer tunneling, it is recommended to configure a server affinity load balancing algorithm for the cluster in which the resources are targeted.  Using a server affinity based algorithm turns off load balancing between external Java clients and server instances causing method calls to 'stick' to a server instance to which the external client is communicating with.  For more information see [Load Balancing for EJBs and RMI Objects](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6) in _Load Balancing in a Cluster_.
+
+Here are steps for enabling server affinity in a cluster, named 'cluster-1', for a domain source type __Domain in PV__:
+
+```
+How to implement Server Affinity in Cluster: 
+=========================================== 
+1. Go to  admin console 
+2. Expand the Clusters link on the left panel 
+3. Click on 'cluster-1' link 
+    i.   look on the right panel. 
+    ii.  look for Default Load Algorithm property 
+    iii. change the value to "RoundRobinAffinity" instead of "RoundRobin". 
+4. Restart the domain/weblogic server instances. 
+``` 
+
+Here is a snippet of offline WLST code for enabling server affinity in a cluster 'cluster-1':
+
+```javascript
+clusterName = "cluster-1"
+cd('/Clusters/%s' % clusterName)
+set('DefaultLoadAlgorithm', 'round-robin-affinity')
+```
+Here is a snippet of WDT model YAML file configuration for enabling server affinity in a cluster 'cluster-1':
+
+```yaml
+topology:
+    Cluster:
+        'cluster-1':
+            DynamicServers:
+                ServerTemplate:  'cluster-1-template'
+                ServerNamePrefix: 'managed-server'
+                DynamicClusterSize: '5'
+                MaxDynamicClusterSize: '5'
+                MinDynamicClusterSize: '0'
+                CalculatedListenPorts: false
+            DefaultLoadAlgorithm: 'round-robin-affinity'
+```
+
+#### Configuring External Listen Address for WebLogic Default Channel
+
+WebLogic Server provides an External Listen Address/DNS Name for use in RMI stubs to allow external clients to connect to the server through a Kubernetes external service name. For more information on 'External Listen Address' (i.e. ExternalDNSName attribute) on the ServerMBean, see ExternalDNSName attribute in [ ServerMBean reference ](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/wlmbr/core/index.html).
+
+Here are steps for setting the 'ExternalDNSName' attribute on the ServerMBean, for the default channel, for a domain source type __Domain in PV__:
+
+```
+How to set the 'External Listen Address' on the ServerMBean for stand-alone server 'AdminServer': 
+=========================================== 
+
+1. Go to Admin console 
+2. Expand the Environment link on the left panel 
+3. Click on the Servers link on the sub-panel
+4. On the right panel, click on AdminServer -> Configuration -> General tabs. 
+5. Click on the Advanced link to expand the server configuration page.
+6. Enter the service name for the WLS server pod in the External Listen Address field.
+   For example:
+     i. For Admin Server the service name would be of the form <DOMAIN_UID>-admin-server.<NAMESPACE> 
+     ii. For a managed server the service name would be of the form <DOMAIN_UID>-managed-server${id}.<NAMESPACE>
+``` 
+
+Here are steps for setting the 'ExternalDNSName' attribute on the ServerTemplateMBean, for the default channel, for a domain source type __Domain in PV__:
+
+```
+How to set the 'External Listen Address' on the ServerTemplateMBean for server template named 'cluster-1-template': 
+=========================================== 
+
+1. Go to Admin console 
+2. Expand the Environment link on the left panel 
+3. Click on the Clusters link on the sub-panel
+4. Click on the Server Templates link on the sub-panel
+5. On the right panel, click on cluster-1-template -> Configuration -> General tabs. 
+6. Click on the Advanced link to expand the server configuration page.
+7. Enter the service name for the WLS server pod in the External Listen Address field.
+   For example:
+     i. For Admin Server the service name would be of the form <DOMAIN_UID>-admin-server.<NAMESPACE> 
+     ii. For a managed server the service name would be of the form <DOMAIN_UID>-managed-server${id}.<NAMESPACE>
+``` 
+
+Here is a snippet of offline WLST code for setting the 'External Listen Address' for a stand-alone server named 'AdminServer':
+
+```javascript
+serverName = "AdminServer"
+cd('/Servers/%s' % serverName)
+set('ExternalDNSName', 'domain1-adminserver.weblogic-domain')
+```
+
+Here is a snippet of offline WLST code for setting the 'External Listen Address' for a server template named 'cluster-1-template':
+
+```javascript
+templateName = "cluster-1-template"
+cd('/ServerTemplates/%s' % templateName)
+set('ExternalDNSName', 'domain1-managed-server1.weblogic-domain')
+```
+
+Here is a snippet of WDT model YAML file configuration for set the 'ExternalDNSName' attribute for both a stand-alone server and for a server template:
+
+```yaml
+topology:
+    Cluster:
+        "cluster-1":
+          DynamicServers:
+            ServerTemplate:  "cluster-1-template"
+            ServerNamePrefix: "managed-server"
+            DynamicClusterSize: 5
+            MaxDynamicClusterSize: 5
+            CalculatedListenPorts: false
+      Server:
+        "admin-server":
+          ListenPort: 7001
+          ExternalDNSName: '@@ENV:DOMAIN_UID@@-admin-server.@@ENV:NAMESPACE@@'
+      ServerTemplate:
+        "cluster-1-template":
+          Cluster: "cluster-1"
+          ListenPort : 8001
+          ExternalDNSName: '@@ENV:DOMAIN_UID@@-managed-server${id}.@@ENV:NAMESPACE@@'
+```
+
+{{% notice note %}}
+DOMAIN_UID and NAMESPACE are expected to be 'DNS-1123' compliant. For more information on Kuberenetes resource compliant naming, please see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).  Alternatively you can substitute the macro with equivalent values, for the DOMAIN_UID and NAMESPACE, that been changed to (a) all lower case, and (b) has any underscores converted to dashes.  
+{{% /notice %}}
 
 #### Security notes
 
