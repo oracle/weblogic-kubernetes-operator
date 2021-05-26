@@ -38,6 +38,7 @@ DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
 DO_UPDATE4=false
+DO_CM=false
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -59,6 +60,8 @@ function usage() {
     TRAEFIK_HTTP_NODEPORT : 30305 (used by -traefik and by tests, can be 0 to dynamically choose)
     TRAEFIK_HTTPS_NODEPORT: 30433 (used by -traefik, can be 0 to dynamically choose)
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
+    BASE_IMAGE_NAME       : Base WebLogic Image
+    BASE_IMAGE_TAG        : Base WebLogic Image Tag
 
     (see test-env.sh for full list)
 
@@ -159,6 +162,7 @@ while [ ! -z "${1:-}" ]; do
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
     -initial-main)   DO_INITIAL_MAIN="true" ;;
+    -cm)             DO_CM="true" ;;
     -update1)        DO_UPDATE1="true" ;;
     -update2)        DO_UPDATE2="true" ;;
     -update3-image)  DO_UPDATE3_IMAGE="true" ;;  
@@ -349,6 +353,10 @@ fi
 if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-MAIN ======"
 
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
   doCommand -c "export INCLUDE_CONFIGMAP=false"
@@ -384,6 +392,10 @@ fi
 if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE1 ======"
 
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
@@ -418,6 +430,10 @@ fi
 if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE2 ======"
 
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID2"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
@@ -454,7 +470,13 @@ fi
 
 if [ "$DO_UPDATE3_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE3-IMAGE ======"
-  doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+    doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
+  else
+    doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+  fi
   doCommand -c "export ARCHIVE_SOURCEDIR=archives/archive-v2"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
 fi
@@ -464,12 +486,18 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   dumpInfo
 
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+    doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
+  else
+    doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+  fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"
   doCommand -c "export CORRECTED_DATASOURCE_SECRET=false"
   doCommand -c "export CUSTOM_DOMAIN_NAME=domain1"
-  doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
@@ -499,6 +527,11 @@ fi
 
 if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE4 ======"
+
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  fi
 
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export INCLUDE_MODEL_CONFIGMAP=true"

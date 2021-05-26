@@ -74,8 +74,37 @@ MODEL_ARCHIVE_FILES=$WORKDIR/$MODEL_DIR/archive.zip
 MODEL_VARIABLE_FILES="$(ls $WORKDIR/$MODEL_DIR/*.properties | xargs | sed 's/ /,/g')"
 CHOWN_ROOT="--chown oracle:root"
 
+if [[ ${MODEL_IMAGE_TAG} == *"-CM"* ]]; then
 cat << EOF
-
+dryrun:#!/bin/bash
+dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
+dryrun:
+dryrun:set -eux
+dryrun:
+dryrun:rm -rf $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:mkdir -p $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
+dryrun:cp $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:rm $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/weblogic-deploy/bin/*.cmd
+dryrun:cp $MODEL_YAML_FILES $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
+dryrun:cp $MODEL_VARIABLE_FILES $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
+dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
+dryrun:zip -q -r archive.zip wlsdeploy
+dryrun:cp archive.zip $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
+dryrun:cp archive.zip  $WORKDIR/$MODEL_DIR
+dryrun:cd $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:#  Use additional docker build-arg as necessary to override default --build-arg=NAME=VALUE
+dryrun:#
+dryrun:#  MOUNT_PATH=/common (default)
+dryrun:#  USER_ID=1000 (default)d
+dryrun:#  USER=oracle (default)
+dryrun:#  GROUP=root (default)
+dryrun:#
+dryrun:docker build --build-arg MOUNT_PATH=${COMMON_MOUNT_PATH} --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
+EOF
+else
+cat << EOF
 dryrun:#!/bin/bash
 dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
 dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
@@ -116,6 +145,7 @@ dryrun:
 dryrun:echo "@@ Info: Success! Model image '$MODEL_IMAGE' build complete. Seconds=\$SECONDS."
 
 EOF
+fi
 
 } # end of function output_dryrun()
 
