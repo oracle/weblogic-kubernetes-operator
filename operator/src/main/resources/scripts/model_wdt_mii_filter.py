@@ -385,6 +385,8 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   if istio_readiness_port is None:
     return
   admin_server_port = server['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
+
   if admin_server_port is None:
     admin_server_port = 7001
 
@@ -448,6 +450,7 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   if istio_readiness_port is None:
     return
   listen_port = template['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
   if listen_port is None:
     listen_port = 7001
   # readiness probe
