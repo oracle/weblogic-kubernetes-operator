@@ -9,7 +9,7 @@ pre = "<b> </b>"
 
  - [Introduction](#introduction)
  - [Configuration](#configuration)
- - [Common Mount Reference](#common-mount-reference)
+ - [References](#references)
  - [Common Mount Volumes Fields](#common-mount-volumes-fields)
  - [Running Model in Image sample initial use case using common mounts](#running-model-in-image-sample-initial-use-case-using-common-mounts)
     - [Prerequisites](#prerequisites)
@@ -61,8 +61,9 @@ For the Model In Image use case using common mounts, you also need to configure 
 {{% /notice %}}
 
 
-#### Common Mount Reference
-Use the `kubectl explain domain.spec.commonMountVolumes` and `kubectl explain domain.spec.serverPod.commonMounts` commands or see the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list and the description of the common mount volume and common mount fields.
+#### References
+- Run the `kubectl explain domain.spec.commonMountVolumes` and `kubectl explain domain.spec.serverPod.commonMounts` commands.
+- See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 ### Running Model in Image sample initial use case using common mounts
 The initial use case for the Model in Image is described [here](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). The goal for this section is to create the initial domain using the common mounts feature where you provide the WDT model files and archive ZIP file in a separate container image.
