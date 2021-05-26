@@ -401,11 +401,13 @@ public class ServiceHelper {
     }
 
     protected V1ServiceSpec createServiceSpec() {
-      return new V1ServiceSpec()
+      V1ServiceSpec spec = new V1ServiceSpec()
           .type(getSpecType())
           .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .ports(createServicePorts());
+      Optional.ofNullable(getSessionAffinity()).ifPresent(spec::setSessionAffinity);
+      return spec;
     }
 
     void addServicePorts(List<V1ServicePort> ports, WlsServerConfig serverConfig) {
@@ -526,6 +528,10 @@ public class ServiceHelper {
     abstract Map<String, String> getServiceLabels();
 
     abstract Map<String, String> getServiceAnnotations();
+
+    String getSessionAffinity() {
+      return null;
+    }
 
     protected abstract void logServiceCreated(String messageKey);
 
@@ -838,6 +844,11 @@ public class ServiceHelper {
     @Override
     Map<String, String> getServiceAnnotations() {
       return getClusterSpec().getClusterAnnotations();
+    }
+
+    @Override
+    String getSessionAffinity() {
+      return getClusterSpec().getClusterSessionAffinity();
     }
   }
 
