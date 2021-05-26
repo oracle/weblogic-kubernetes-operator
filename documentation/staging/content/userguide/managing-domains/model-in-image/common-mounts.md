@@ -31,7 +31,6 @@ Here's an example configuration for the Common Mounts.
     commonMounts:
     - image: model-in-image:v1
       imagePullPolicy: IfNotPresent
-      command: cp -R $COMMON_MOUNT_PATH/* $COMMON_MOUNT_TARGET_PATH
       volume: commonMountsVolume1
 ```
 
@@ -74,16 +73,38 @@ $ kubectl explain domain.spec.commonMountVolumes
 ### Running Model in Image initial use case using common mounts
 The initial use case for the Model in Image is described [here](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). The goal for this section is to create the initial domain using the common mounts feature where you provide the WDT model files and archive ZIP file in a separate container image.
 
-You will begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. To run the initial use case with common mounts, delete the existing domain by running the `kubectl delete domain sample-domain1 -n sample-domain1-ns` command to bring down the domain. Afterward, run the steps described in the following section to create the common mounts image that will host the Model in Image model files and other related files. Once the image is created, execute the steps in the [Domain Resource](#domain-resource) section below to create the new domain. 
+You will begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. To run the initial use case with common mounts, delete the existing domain by running the `kubectl delete domain sample-domain1 -n sample-domain1-ns` command to bring down the domain. Afterward, run the steps described in the following section to create the common mounts image that will host the model files, application archives, and the WDT installation files. Once the image is created, execute the steps in the [Domain Resource](#domain-resource) section below to create the new domain. 
 
 #### Creating the common mounts image 
 Run the following steps to create the common mounts image containing Model In Image model files, application archives, and the WDT installation files.
 1. Create a temporary directory for docker build context `/tmp/cm-image`.
-2. Copy the Dockefile in `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/cm-docker-file` directory to the context root.
-3. Unzip the WDT executable to the context root. Remove all the `weblogic-deploy/bin/*.cmd` files which are not used in Unix environment.
-4. Copy all WDT models, variables, and archives into the models directory under the context root i.e. under `/tmp/cm-image/models`.
-5. Build the docker image by running the command `docker build --build-arg MOUNT_PATH=/common --tag model-in-image:v1 .`.
-6. Optionally, you can customize the mount path by using MOUNT_PATH build argument (it defaults to /common). 
+2. Copy the Dockefile in `/tmp/mii-sample/cm-docker-file` directory to the build context root i.e `/tmp/cm-image`.
+3. Unzip the WDT installation zip into the build context root. Remove all the `weblogic-deploy/bin/*.cmd` files which are not used in Unix environment.
+4. Create a `models` directory under the `/tmp/cm-image` directory.
+5. Copy the WDT model YAML files and properties files in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory.
+6. Stage the application archive ZIP in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory and copy the archive file to `/tmp/cm-image/models` directory.
+  - Run the following commands to create your application archive ZIP file and put it in the expected directory:
+    ```
+    # Delete existing archive.zip in case we have an old leftover version
+    ```
+    ```shell
+    $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip
+    ```
+    ```
+    # Move to the directory which contains the source files for our archive
+    ```
+    ```shell
+    $ cd /tmp/mii-sample/archives/archive-v1
+    ```
+    ```
+    # Zip the archive to the location will later use when we run the WebLogic Image Tool
+    ```
+    ```shell
+    $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
+    ```
+7. Copy the archive ZIP file in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory..
+8. Build the docker image by running the command `docker build --build-arg MOUNT_PATH=/common --tag model-in-image:v1 .`.
+9. Optionally, you can customize the mount path by using MOUNT_PATH build argument (it defaults to /common). 
 
 Once the image is created, it will have the WDT executables copied to `/${MOUNT_PATH}/weblogic-deploy`, and all the WDT models, variables, and archives are copied to `/${MOUNT_PATH}/models`. If you use the default mount path '/common', you can verify the contents of the image using the following commands:
 
