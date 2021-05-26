@@ -418,8 +418,11 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   model = env.getModel()
   if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
     ssl_listen_port = ssl['ListenPort']
+    if ssl_listen_port is None:
+      ssl_listen_port = 7002
   elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
     ssl_listen_port = "7002"
+
 
   if ssl_listen_port is not None:
     _writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -481,6 +484,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   model = env.getModel()
   if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
     ssl_listen_port = ssl['ListenPort']
+    if ssl_listen_port is None:
+      ssl_listen_port = 7002
   elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
     ssl_listen_port = "7002"
 
