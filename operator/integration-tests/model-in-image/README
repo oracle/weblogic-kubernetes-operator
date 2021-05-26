@@ -31,6 +31,9 @@ To run the test:
    JRF mode - all 5 tests (initial, update1, update2, update3, update4):
      ./run-test.sh -precleanup -oper -traefik -precleandb -jrf -db -rcu -all
 
+   Common Mounts Mode - all 5 tests (initial, update1, update2, update3, update4), JRF optional:
+     ./run-test.sh -precleanup -oper -traefik -precleandb -cm [-jrf] -db -rcu -all
+
 --------------------
 SAMPLE REGENERATION:
 --------------------

@@ -77,12 +77,13 @@ CHOWN_ROOT="--chown oracle:root"
 if [[ ${MODEL_IMAGE_TAG} == *"-CM"* ]]; then
 cat << EOF
 dryrun:#!/bin/bash
-dryrun:# Use this script to build image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
+dryrun:# Use this script to build common mount image '$MODEL_IMAGE_NAME:$MODEL_IMAGE_TAG'
 dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
 dryrun:
 dryrun:set -eux
 dryrun:
-dryrun:rm -rf $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:cd "$WORKDIR"
+dryrun:[ -d "cm-image/${MODEL_IMAGE_TAG}" ] && rm -rf cm-image/${MODEL_IMAGE_TAG}
 dryrun:mkdir -p $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
 dryrun:cp $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
 dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
@@ -94,14 +95,8 @@ dryrun:zip -q -r archive.zip wlsdeploy
 dryrun:cp archive.zip $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
 dryrun:cp archive.zip  $WORKDIR/$MODEL_DIR
 dryrun:cd $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
-dryrun:#  Use additional docker build-arg as necessary to override default --build-arg=NAME=VALUE
-dryrun:#
-dryrun:#  MOUNT_PATH=/common (default)
-dryrun:#  USER_ID=1000 (default)d
-dryrun:#  USER=oracle (default)
-dryrun:#  GROUP=root (default)
-dryrun:#
-dryrun:docker build --build-arg MOUNT_PATH=${COMMON_MOUNT_PATH} --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
+dryrun:# see file $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
+dryrun:docker build --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} --build-arg WDT_MODEL_HOME=${COMMON_MOUNT_PATH}/models --build-arg WDT_INSTALL_HOME=${COMMON_MOUNT_PATH}/weblogic-deploy --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
 else
 cat << EOF

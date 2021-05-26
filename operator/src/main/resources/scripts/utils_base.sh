@@ -150,7 +150,7 @@ function traceDirs() {
   local indir
   local val_indir
   for indir in $*; do
-    eval "val_indir=\"\$${indir}\""
+    eval "val_indir=\"\${indir}\""
     [ -z "${val_indir}" ] && continue
     trace "Directory trace for $indir=${val_indir} ($keyword)"
     local cnt=0

@@ -9,19 +9,24 @@ pre = "<b> </b>"
 
  - [Introduction](#introduction)
  - [Configuration](#configuration)
- - [Common Mounts Fields](#common-mounts-fields)
+ - [Common Mount Reference](#common-mount-reference)
  - [Common Mount Volumes Fields](#common-mount-volumes-fields)
- - [Running Model in Image initial use case using common mounts](#running-model-in-image-initial-use-case-using-common-mounts)
+ - [Running Model in Image sample initial use case using common mounts](#running-model-in-image-sample-initial-use-case-using-common-mounts)
+    - [Prerequisites](#prerequisites)
     - [Creating the common mounts image](#creating-the-common-mounts-image)
-    - [Domain resource](#domain-resource)
+    - [Prepare and Apply the Domain Resource](#prepare-and-apply-the-domain-resource)
 
 ### Introduction
-Use common mounts to automatically include the directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a Pod without requiring modifications to the Pod's base image specified using `domain.spec.image`. This feature internally uses a Kubernetes [emptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir) volume and Kubernetes [init containers](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to share the files from the additional images with the Pod.
+Common mounts are an alternative approach for including Model in Image model files, application archive files, Weblogic Deploying Tooling install files, or other types of files, in your pods. This feature eliminates the need to provide these files in the image specified in `domain.spec.image`. Instead:
+- The domain resource's `domain.spec.image` directly reference a base image that only needs to include a WebLogic install and a Java install
+- The domain resource's common mount related fields reference one or more smaller images that contain the desired Model in Image files.
+- The domain resource's `domain.spec.configuration.model.wdtInstallHome` and `domain.spec.configuration.model.modelHome` fields are set to reference a directory that contains the files from the smaller images.
 
-When using the common mounts feature with the Model In Image use case, the WebLogic image would be the Domain resource's `domain.spec.image` field. The model files, application archives, and the WDT installation files can be provided in a separate image specified as part of the common mounts. The application archive could also be provided by a second container image in the common mounts section. Specific advantages of the common mounts feature for Model In Image domains are:
-  - Use a WebLogic install image, or patch a WebLogic install image, without needing to include model artifacts within the image.
-  - Share one large WebLogic install image with multiple different model configurations.
-  - Distribute model files, application archives, and WebLogic Deploy Tooling executable using very small images instead of a large image that also contains a WebLogic install.
+The common mounts feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share files from additional images within a WebLogic Server pod or the Introspector job pod.
+The advantages of the common mounts feature for Model In Image domains are:
+- Use or patch a WebLogic install image without needing to include WDT install, application archive, or model artifacts within the image.
+- Share one large WebLogic install image with multiple different model configurations that are supplied in smaller images.
+- Distribute or update model files, application archives, and the WebLogic Deploy Tooling executable using very small images instead of a large image that also contains a WebLogic install.
 
 ### Configuration
 Here's an example configuration for the Common Mounts. 
@@ -56,24 +61,19 @@ For the Model In Image use case using common mounts, you also need to configure 
 {{% /notice %}}
 
 
-#### Common Mounts Fields
-Use the below `kubectl explain` command or see the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list and the description of the common mounts fields.
+#### Common Mount Reference
+Use the `kubectl explain domain.spec.commonMountVolumes` and `kubectl explain domain.spec.serverPod.commonMounts` commands or see the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list and the description of the common mount volume and common mount fields.
 
-```shell
-kubectl explain domain.spec.serverPod.commonMounts
-```
-
-#### Common Mount Volumes Fields
-Use the below `kubectl explain` command or see the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}) for a full list and the description of the common mount volumes fields.
-
-```shell
-$ kubectl explain domain.spec.commonMountVolumes
-```
-
-### Running Model in Image initial use case using common mounts
+### Running Model in Image sample initial use case using common mounts
 The initial use case for the Model in Image is described [here](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). The goal for this section is to create the initial domain using the common mounts feature where you provide the WDT model files and archive ZIP file in a separate container image.
 
-You will begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. To run the initial use case with common mounts, delete the existing domain by running the `kubectl delete domain sample-domain1 -n sample-domain1-ns` command to bring down the domain. Afterward, run the steps described in the following section to create the common mounts image that will host the model files, application archives, and the WDT installation files. Once the image is created, execute the steps in the [Domain Resource](#domain-resource) section below to create the new domain. 
+#### Prerequisites
+- Begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). 
+- Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. 
+- To run the initial use case with common mounts:
+  - Delete the existing domain by running the `kubectl delete domain sample-domain1 -n sample-domain1-ns` command to bring down the domain. 
+  - Run the steps described in the [following section](#creating-the-common-mounts-image) to create the common mounts image that will host the model files, application archives, and the WDT installation files. 
+  - Once the image is created, execute the steps in the [Prepare and Apply the Domain Resource](#prepare-and-apply-the-domain-resource) section below to create the new domain. 
 
 #### Creating the common mounts image 
 Run the following steps to create the common mounts image containing Model In Image model files, application archives, and the WDT installation files.
@@ -97,14 +97,14 @@ Run the following steps to create the common mounts image containing Model In Im
     $ cd /tmp/mii-sample/archives/archive-v1
     ```
     ```
-    # Zip the archive to the location will later use when we run the WebLogic Image Tool
+    # Zip the archive to the location will later use when we use docker to build the common mount image.
     ```
     ```shell
     $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
     ```
-7. Copy the archive ZIP file in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory..
-8. Build the docker image by running the command `docker build --build-arg MOUNT_PATH=/common --tag model-in-image:v1 .`.
-9. Optionally, you can customize the mount path by using MOUNT_PATH build argument (it defaults to /common). 
+7. Copy the archive ZIP file from `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory..
+8. Build the docker image by running `docker build --build-arg COMMON_MOUNT_PATH=/common --tag model-in-image:v1 .` command.
+9. Optionally, you can customize the mount path, WDT_MODE_HOME or WDT_INSTALLATION_HOME by using the build arguments.
 
 Once the image is created, it will have the WDT executables copied to `/${MOUNT_PATH}/weblogic-deploy`, and all the WDT models, variables, and archives are copied to `/${MOUNT_PATH}/models`. If you use the default mount path '/common', you can verify the contents of the image using the following commands:
 
@@ -120,7 +120,7 @@ Once the image is created, it will have the WDT executables copied to `/${MOUNT_
   $ docker run -it --rm model-in-image:v1 ls -l /common/weblogic-deploy
   ```
 
-#### Domain Resource
+#### Prepare and Apply the Domain Resource
 Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml` that is included in the sample source to create the new domain using common mounts.
 
   {{%expand "Click here to view the WLS Domain YAML file using the common mounts feature." %}}
@@ -280,7 +280,33 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
-You can compare this domain resource YAML file with the domain resource YAML file from the initial use case (`/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`) to see the changes required for the common mounts option. If you created your own YAML file, then you can make the required changes for the common mounts option and create the new domain using the modified YAML file.
+You can compare this domain resource YAML file with the domain resource YAML file from the initial use case (`/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`) to see the changes required for the common mounts option. For example:
+
+```
+$ diff /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+23c23
+<   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+---
+>   image: "model-in-image:WLS-v1"
+53,57d52
+<   # settings for common mount volume, see also 'serverPod.commonMounts'.
+<   commonMountVolumes:
+<   - name: commonMountsVolume1
+<     mountPath: "/common"
+<
+75,80d69
+<     # Settings for common mounts with images containing model, archives and WDT instal. See also 'spec.commonMountVolumes'.
+<     commonMounts:
+<     - image: "model-in-image:WLS-CM-v1"
+<       imagePullPolicy: IfNotPresent
+<       volume: commonMountsVolume1
+<
+142,143d130
+<       modelHome: "/common/models"
+<       wdtInstallHome: "/common/weblogic-deploy"
+```
+
+If you created your own YAML file, then you can make the required changes for the common mounts option and create the new domain using the modified YAML file.
 
 Run the following command to create the domain custom resource:
 
@@ -294,26 +320,37 @@ $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM
   {{%expand "Click here to expand." %}}
   ```shell
   $ kubectl get pods -n sample-domain1-ns --watch
-    ```
-    ```
-  NAME                                         READY   STATUS    RESTARTS   AGE
-  sample-domain1-introspector-lqqj9   0/1   Pending   0     0s
-  sample-domain1-introspector-lqqj9   0/1   ContainerCreating   0     0s
-  sample-domain1-introspector-lqqj9   1/1   Running   0     1s
-  sample-domain1-introspector-lqqj9   0/1   Completed   0     65s
-  sample-domain1-introspector-lqqj9   0/1   Terminating   0     65s
-  sample-domain1-admin-server   0/1   Pending   0     0s
-  sample-domain1-admin-server   0/1   ContainerCreating   0     0s
-  sample-domain1-admin-server   0/1   Running   0     1s
-  sample-domain1-admin-server   1/1   Running   0     32s
-  sample-domain1-managed-server1   0/1   Pending   0     0s
-  sample-domain1-managed-server2   0/1   Pending   0     0s
-  sample-domain1-managed-server1   0/1   ContainerCreating   0     0s
-  sample-domain1-managed-server2   0/1   ContainerCreating   0     0s
-  sample-domain1-managed-server1   0/1   Running   0     2s
-  sample-domain1-managed-server2   0/1   Running   0     2s
-  sample-domain1-managed-server1   1/1   Running   0     43s
-  sample-domain1-managed-server2   1/1   Running   0     42s
+  ```
+  ```
+  NAME                                READY   STATUS    RESTARTS   AGE
+  sample-domain1-introspector-z5vmp   0/1     Pending   0          0s
+  sample-domain1-introspector-z5vmp   0/1     Pending   0          0s
+  sample-domain1-introspector-z5vmp   0/1     Init:0/1   0          0s
+  sample-domain1-introspector-z5vmp   0/1     PodInitializing   0          2s
+  sample-domain1-introspector-z5vmp   1/1     Running           0          3s
+  sample-domain1-introspector-z5vmp   0/1     Completed         0          71s
+  sample-domain1-admin-server         0/1     Pending           0          0s
+  sample-domain1-admin-server         0/1     Pending           0          0s
+  sample-domain1-admin-server         0/1     Init:0/1          0          0s
+  sample-domain1-introspector-z5vmp   0/1     Terminating       0          71s
+  sample-domain1-introspector-z5vmp   0/1     Terminating       0          71s
+  sample-domain1-admin-server         0/1     PodInitializing   0          2s
+  sample-domain1-admin-server         0/1     Running           0          3s
+  sample-domain1-admin-server         1/1     Running           0          41s
+  sample-domain1-managed-server1      0/1     Pending           0          0s
+  sample-domain1-managed-server1      0/1     Pending           0          0s
+  sample-domain1-managed-server1      0/1     Init:0/1          0          0s
+  sample-domain1-managed-server2      0/1     Pending           0          0s
+  sample-domain1-managed-server2      0/1     Pending           0          0s
+  sample-domain1-managed-server2      0/1     Init:0/1          0          0s
+  sample-domain1-managed-server2      0/1     Init:0/1          0          1s
+  sample-domain1-managed-server1      0/1     Init:0/1          0          1s
+  sample-domain1-managed-server1      0/1     PodInitializing   0          2s
+  sample-domain1-managed-server2      0/1     PodInitializing   0          2s
+  sample-domain1-managed-server2      0/1     Running           0          3s
+  sample-domain1-managed-server1      0/1     Running           0          3s
+  sample-domain1-managed-server2      1/1     Running           0          39s
+  sample-domain1-managed-server1      1/1     Running           0          43s
   ```
   {{% /expand %}}
 
@@ -363,82 +400,85 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
 
   {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   namespace='sample-domain1-ns'
-  @@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID='sample-domain1'
-
-  @@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                          VERSION  IMAGE  READY  PHASE
-  --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Pending'
-
-  @@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                                          VERSION  IMAGE  READY  PHASE
-  --------------------------------------------  -------  -----  -----  ---------
-  'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Running'
-
-
-  @@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME  VERSION  IMAGE  READY  PHASE
-  ----  -------  -----  -----  -----
-
-  @@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           VERSION  IMAGE                    READY    PHASE
-  -----------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-
-  @@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                           VERSION  IMAGE                    READY    PHASE
-  -----------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-
-  @@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY    PHASE
-  --------------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
-
-  @@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY    PHASE
-  --------------------------------  -------  -----------------------  -------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
-
-  @@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
-  @@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
-
-  NAME                              VERSION  IMAGE                    READY   PHASE
-  --------------------------------  -------  -----------------------  ------  ---------
-  'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'
-  'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-  'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
-
-
-  @@ [2020-04-30T13:53:14][seconds=152] Info: Success!
-
+  @@ [2021-05-26T22:31:49][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   ready='true'
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   image='container-registry.oracle.com/middleware/weblogic:12.2.1.4'
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   domainRestartVersion='1'
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   introspectVersion='1'
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   namespace='sample-domain1-ns'
+  @@ [2021-05-26T22:31:49][seconds=0] Info:   domainUID='sample-domain1'
+  
+  @@ [2021-05-26T22:31:49][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:31:49][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                                 RVERSION  IVERSION  IMAGE  READY  PHASE
+  -----------------------------------  --------  --------  -----  -----  ---------
+  'sample-domain1-introspector-l7nql'  ''        ''        ''     ''     'Pending'
+  
+  @@ [2021-05-26T22:31:52][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:31:52][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                                 RVERSION  IVERSION  IMAGE  READY  PHASE
+  -----------------------------------  --------  --------  -----  -----  ---------
+  'sample-domain1-introspector-l7nql'  ''        ''        ''     ''     'Running'
+  
+  @@ [2021-05-26T22:33:01][seconds=72] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:33:01][seconds=72] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                                 RVERSION  IVERSION  IMAGE                                                         READY    PHASE
+  -----------------------------------  --------  --------  ------------------------------------------------------------  -------  -----------
+  'sample-domain1-admin-server'        '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Pending'
+  'sample-domain1-introspector-l7nql'  ''        ''        ''                                                            ''       'Succeeded'
+  
+  @@ [2021-05-26T22:33:03][seconds=74] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:33:03][seconds=74] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                           RVERSION  IVERSION  IMAGE                                                         READY    PHASE
+  -----------------------------  --------  --------  ------------------------------------------------------------  -------  ---------
+  'sample-domain1-admin-server'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Pending'
+  
+  @@ [2021-05-26T22:33:04][seconds=75] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:33:04][seconds=75] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                           RVERSION  IVERSION  IMAGE                                                         READY    PHASE
+  -----------------------------  --------  --------  ------------------------------------------------------------  -------  ---------
+  'sample-domain1-admin-server'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Running'
+  
+  @@ [2021-05-26T22:33:36][seconds=107] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:33:36][seconds=107] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                              RVERSION  IVERSION  IMAGE                                                         READY    PHASE
+  --------------------------------  --------  --------  ------------------------------------------------------------  -------  ---------
+  'sample-domain1-admin-server'     '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'true'   'Running'
+  'sample-domain1-managed-server1'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Pending'
+  'sample-domain1-managed-server2'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Pending'
+  
+  @@ [2021-05-26T22:33:39][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:33:39][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                              RVERSION  IVERSION  IMAGE                                                         READY    PHASE
+  --------------------------------  --------  --------  ------------------------------------------------------------  -------  ---------
+  'sample-domain1-admin-server'     '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'true'   'Running'
+  'sample-domain1-managed-server1'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Running'
+  'sample-domain1-managed-server2'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'false'  'Running'
+  
+  @@ [2021-05-26T22:34:20][seconds=151] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+  @@ [2021-05-26T22:34:20][seconds=151] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+  
+  NAME                              RVERSION  IVERSION  IMAGE                                                         READY   PHASE
+  --------------------------------  --------  --------  ------------------------------------------------------------  ------  ---------
+  'sample-domain1-admin-server'     '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'true'  'Running'
+  'sample-domain1-managed-server1'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'true'  'Running'
+  'sample-domain1-managed-server2'  '1'       '1'       'container-registry.oracle.com/middleware/weblogic:12.2.1.4'  'true'  'Running'
+  
+  
+  @@ [2021-05-26T22:34:20][seconds=151] Info: Success!
   ```
   {{% /expand %}}
+
+
 
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
 #### Invoke the web application
-You can follow the same steps as described in [Invoke the web application](#/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/#invoke-the-web-application) section of the initial use case to invoke the web application. 
+You can follow the same steps as described in [Invoke the web application](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/#invoke-the-web-application) section of the initial use case to invoke the web application. 

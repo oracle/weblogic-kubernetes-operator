@@ -73,6 +73,7 @@ function usage() {
                 Note that this depends on the db being deployed
                 and initialized via rcu. So either pre-deploy
                 the db and run rcu or pass '-db' and '-rcu' too.
+    -cm       : Run the tests in common mounts mode.
     -assume-db: Assume Oracle DB is running.
                 If set, then the 'update4' test will include DB tests.
                 Defaults to true for '-jrf' or '-db'.
