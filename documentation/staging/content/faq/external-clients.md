@@ -137,9 +137,16 @@ is hosted outside of the Kubernetes cluster, then:
 - You may need to [enable unknown host access](#enabling-unknown-host-access)
   on the WebLogic Servers that host the EJB or JMS resources.
 
-- If tunneling, you may need to configure a default load balancer algorithm that provides server affinity, for the cluster in which EJB or JMS resources are targeted, to speedup connection creation for EJB and JMS clients.  See [Configuring WebLogic Server Affinity Load Balancing Algorithm](#configuring-weblogic-server-affinity-load-balancing-algorithm).
+- If tunneling, then you may need to configure clusters that host EJB or 
+  JMS resources with a 'server affinity' default load balancer algorithm.
+  This an significantly speedup connection creation for EJB and JMS clients.
+  See [Configuring WebLogic Server Affinity Load Balancing Algorithm](#configuring-weblogic-server-affinity-load-balancing-algorithm).
 
-- __NOTE__: The operator does not currently support external WebLogic JTA access to a Kubernetes hosted WebLogic cluster. This is because external JTA access requires each server in a cluster to be individually addressable, but this conflicts with the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.
+- __JTA NOTE__: The operator does not currently support external WebLogic JTA access
+  to a Kubernetes hosted WebLogic cluster. This is because external JTA access
+  requires each server in a cluster to be individually addressable,
+  but this conflicts with the current operator requirement that
+  a network channel in a cluster have the same port across all servers in the cluster.
 
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications 
@@ -148,15 +155,20 @@ that call the resource are located within the cluster, then:
 - You may need to [enable unknown host access](#enabling-unknown-host-access)
   on the external WebLogic Server(s).
 
-- Plus, if the target server(s) can be accessed only through a load balancer using HTTP:
+- Plus, if the target server(s) can be accessed only by tunneling through a load balancer using HTTP:
   - [Set up an HTTP tunneling-enabled custom channel](#adding-a-weblogic-custom-channel) on the external WebLogic Servers.
   - Specify URLs on the source server that resolve to the load balancer's address and that start with `http` instead of `t3`.
   - Ensure the load balancer configures the HTTP flow to be 'sticky'.
-  - Configure a WebLogic load balancer method that provides server affinity for the cluster's default load balancing algorithm to to speedup connection creation for EJB and JMS clients.   See [Configuring WebLogic Server Affinity Load Balancing Algorithm](#configuring-weblogic-server-affinity-load-balancing-algorithm).
+  - You may need to configure clusters that host EJB or
+    JMS resources with a 'server affinity' default load balancer algorithm.
+    This can significantly speedup tunneling connection creation for EJB and JMS clients.
+    See [Configuring WebLogic Server Affinity Load Balancing Algorithm](#configuring-weblogic-server-affinity-load-balancing-algorithm).
+  - __JTA NOTE__: WebLogic does not support JTA access to a cluster that is exposed using a single port.
+    This is because external JTA requires each server in a cluster to be individually addressable.
 
 {{% notice note %}}
 All DNS addresses must be 'DNS-1123' compliant;
-any DNS names created using the name of a service,
+this means that any DNS names created using the name of a service,
 pod, WebLogic server, WebLogic cluster, etc.
 must be lower case with underscores converted to dashes (hyphens).
 For example, if a WebLogic server is named `My_Server`
