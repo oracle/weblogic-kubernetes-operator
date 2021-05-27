@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3e2981c2a3c6057a30a7d22c0a969b992f3a36051a133b6ba4e9fe20121d3088
+    weblogic.sha256: e091b25f525f2d1a6b90729dcee23d63ead5beb23660912acebf921d1c0499a7
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -5590,6 +5590,15 @@ spec:
                         for this WebLogic cluster.
                       type: object
                       properties:
+                        sessionAffinity:
+                          description: 'Supports "ClientIP" and "None". Used to maintain
+                            session affinity. Enable client IP based session affinity.
+                            Must be ClientIP or None. Defaults to None. More info:
+                            https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies'
+                          type: string
+                          enum:
+                          - ClientIP
+                          - None
                         annotations:
                           description: The annotations to be added to generated resources.
                           additionalProperties:
