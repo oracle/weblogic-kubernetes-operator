@@ -61,6 +61,8 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -677,22 +679,39 @@ class ItExternalRmiTunneling {
   }
 
   @AfterAll
-  void tearDown() {
+  public void tearDownAll() {
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
 
-    StringBuffer deployIngress = new StringBuffer("kubectl delete -f ");
-    deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
-    assertDoesNotThrow(() -> exec(new String(deployIngress), true));
+      StringBuffer deployIngress = new StringBuffer("kubectl delete -f ");
+      deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
+      assertDoesNotThrow(() -> exec(new String(deployIngress), true));
+      StringBuffer deployTlsIngress = new StringBuffer("kubectl delete -f ");
+      deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
+      assertDoesNotThrow(() -> exec(new String(deployTlsIngress), true));
 
-    StringBuffer deployTlsIngress = new StringBuffer("kubectl delete -f ");
-    deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
-    assertDoesNotThrow(() -> exec(new String(deployTlsIngress), true));
-
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
+      // uninstall Traefik loadbalancer
+      if (traefikHelmParams != null) {
+        assertThat(uninstallTraefik(traefikHelmParams))
+            .as("Test uninstallTraefik returns true")
+            .withFailMessage("uninstallTraefik() did not return true")
+            .isTrue();
+      }
+      // uninstall Voyager
+      if (voyagerHelmParams != null) {
+        assertThat(uninstallVoyager(voyagerHelmParams))
+            .as("Test uninstallVoyager returns true")
+            .withFailMessage("uninstallVoyager() did not return true")
+            .isTrue();
+      }
+      // uninstall NGINX
+      if (nginxHelmParams != null) {
+        assertThat(uninstallNginx(nginxHelmParams))
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
+      }
     }
   }
 
