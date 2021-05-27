@@ -112,7 +112,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.clusterName = clusterName;
   }
 
-  Cluster withClusterName(@Nonnull String clusterName) {
+  public Cluster withClusterName(@Nonnull String clusterName) {
     setClusterName(clusterName);
     return this;
   }
@@ -173,6 +173,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   public void setClusterService(ClusterService clusterService) {
     this.clusterService = clusterService;
+  }
+
+  public Cluster withClusterService(ClusterService clusterService) {
+    this.setClusterService(clusterService);
+    return this;
   }
 
   public Map<String, String> getClusterLabels() {
