@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 3849fd79f2fd85ababbb97db2faa400ec0de29ee7daf1558268a05d8a250ce65
+    weblogic.sha256: e091b25f525f2d1a6b90729dcee23d63ead5beb23660912acebf921d1c0499a7
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -5596,6 +5596,9 @@ spec:
                             Must be ClientIP or None. Defaults to None. More info:
                             https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies'
                           type: string
+                          enum:
+                          - ClientIP
+                          - None
                         annotations:
                           description: The annotations to be added to generated resources.
                           additionalProperties:

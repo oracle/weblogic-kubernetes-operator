@@ -6,12 +6,14 @@ package oracle.kubernetes.weblogic.domain.model;
 import java.util.Optional;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.EnumClass;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class ClusterService extends KubernetesResource {
 
+  @EnumClass(SessionAffinity.class)
   @Description(
       "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. "
           + "Must be ClientIP or None. Defaults to None. More info: "
