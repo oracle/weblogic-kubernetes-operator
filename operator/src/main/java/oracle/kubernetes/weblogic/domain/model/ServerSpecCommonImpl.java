@@ -221,6 +221,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
+  public List<CommonMount> getCommonMounts() {
+    return server.getCommonMounts();
+  }
+
+  @Override
   public V1PodSecurityContext getPodSecurityContext() {
     return server.getPodSecurityContext();
   }

@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.Arrays;
+import java.util.List;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -54,6 +55,16 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   public void withDefaultReadinessProbeSettings(
       Integer initialDelay, Integer timeout, Integer period) {
     getDomainSpec().setReadinessProbe(initialDelay, timeout, period);
+  }
+
+  @Override
+  public void withCommonMounts(List<CommonMount> commonMounts) {
+    getDomainSpec().setCommonMounts(commonMounts);
+  }
+
+  public DomainConfigurator withCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
+    getDomainSpec().setCommonMountVolumes(commonMountVolumes);
+    return this;
   }
 
   @Override
@@ -481,6 +492,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
+    public ServerConfigurator withCommonMounts(List<CommonMount> commonMounts) {
+      server.setCommonMounts(commonMounts);
+      return this;
+    }
+
+    @Override
     public ServerConfigurator withNodeSelector(String labelKey, String labelValue) {
       server.addNodeSelector(labelKey, labelValue);
       return this;
@@ -747,6 +764,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAffinity(V1Affinity affinity) {
       cluster.setAffinity(affinity);
+      return this;
+    }
+
+    @Override
+    public ClusterConfigurator withCommonMounts(List<CommonMount> commonMounts) {
+      cluster.setCommonMounts(commonMounts);
       return this;
     }
 

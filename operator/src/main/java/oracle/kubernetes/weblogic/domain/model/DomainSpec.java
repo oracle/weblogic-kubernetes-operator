@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -36,6 +37,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -278,6 +280,12 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
+
+  @Description("Configure common mount volumes including their respective mount paths. Common mount volumes are in "
+          + "turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a "
+          + "Kubernetes 'emptyDir' volume.")
+  @Feature("CommonMounts")
+  private List<CommonMountVolume> commonMountVolumes;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
@@ -707,6 +715,14 @@ public class DomainSpec extends BaseConfiguration {
     this.configuration = configuration;
   }
 
+  public List<CommonMountVolume> getCommonMountVolumes() {
+    return commonMountVolumes;
+  }
+
+  public void setCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
+    this.commonMountVolumes = commonMountVolumes;
+  }
+
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -875,6 +891,16 @@ public class DomainSpec extends BaseConfiguration {
   public String getModelHome() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
+  }
+
+  /**
+   * Returns the WDT install home directory of the domain.
+   *
+   * @return WDT install home directory
+   */
+  public String getWdtInstallHome() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(DEFAULT_WDT_INSTALL_HOME);
   }
 
   @Override
