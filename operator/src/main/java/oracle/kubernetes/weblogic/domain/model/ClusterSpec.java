@@ -28,6 +28,8 @@ public abstract class ClusterSpec {
   @Nonnull
   public abstract Map<String, String> getClusterAnnotations();
 
+  public abstract String getClusterSessionAffinity();
+
   /**
    * Returns the list of initContainers.
    *

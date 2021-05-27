@@ -31,6 +31,11 @@ public class ClusterSpecCommonImpl extends ClusterSpec {
   }
 
   @Override
+  public String getClusterSessionAffinity() {
+    return cluster.getClusterSessionAffinity();
+  }
+
+  @Override
   public List<V1Container> getInitContainers() {
     return cluster.getInitContainers();
   }

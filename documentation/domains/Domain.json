@@ -121,7 +121,7 @@
         },
         "clusterService": {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ClusterService"
         },
         "maxConcurrentShutdown": {
           "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
@@ -149,6 +149,33 @@
       "required": [
         "clusterName"
       ]
+    },
+    "ClusterService": {
+      "type": "object",
+      "properties": {
+        "sessionAffinity": {
+          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "type": "string",
+          "enum": [
+            "ClientIP",
+            "None"
+          ]
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
     },
     "ClusterStatus": {
       "type": "object",
@@ -490,25 +517,6 @@
         "enabled": {
           "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified.",
           "type": "boolean"
-        }
-      }
-    },
-    "KubernetesResource": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "description": "The annotations to be added to generated resources.",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
         }
       }
     },

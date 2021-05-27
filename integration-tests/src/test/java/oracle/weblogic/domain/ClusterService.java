@@ -21,6 +21,12 @@ public class ClusterService {
   @ApiModelProperty("The annotations to be attached to generated resources.")
   private Map<String, String> annotations = new HashMap<>();
 
+  @ApiModelProperty(
+      "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. "
+          + "Must be ClientIP or None. Defaults to None. More info: "
+          + "https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies")
+  private String sessionAffinity;
+
   public ClusterService labels(Map<String, String> labels) {
     this.labels = labels;
     return this;
@@ -83,11 +89,20 @@ public class ClusterService {
     this.annotations = annotations;
   }
 
+  public String getSessionAffinity() {
+    return sessionAffinity;
+  }
+
+  public void setSessionAffinity(String sessionAffinity) {
+    this.sessionAffinity = sessionAffinity;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("labels", labels)
         .append("annotations", annotations)
+        .append("sessionAffinity", sessionAffinity)
         .toString();
   }
 
@@ -104,11 +119,13 @@ public class ClusterService {
     return new EqualsBuilder()
         .append(labels, rhs.labels)
         .append(annotations, rhs.annotations)
+        .append(sessionAffinity, rhs.sessionAffinity)
         .isEquals();
   }
 
   @Override
   public int hashCode() {
-    return new HashCodeBuilder(17, 37).append(labels).append(annotations).toHashCode();
+    return new HashCodeBuilder(17, 37)
+        .append(labels).append(annotations).append(sessionAffinity).toHashCode();
   }
 }

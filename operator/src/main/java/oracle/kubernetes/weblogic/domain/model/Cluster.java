@@ -68,7 +68,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
   @Description("Customization affecting Kubernetes Service generated for this WebLogic cluster.")
   @SerializedName("clusterService")
   @Expose
-  private KubernetesResource clusterService = new KubernetesResource();
+  private ClusterService clusterService = new ClusterService();
 
   @Description("Specifies whether the number of running cluster members is allowed to drop below the "
       + "minimum dynamic cluster size configured in the WebLogic domain configuration. "
@@ -112,7 +112,7 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.clusterName = clusterName;
   }
 
-  Cluster withClusterName(@Nonnull String clusterName) {
+  public Cluster withClusterName(@Nonnull String clusterName) {
     setClusterName(clusterName);
     return this;
   }
@@ -167,12 +167,17 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     this.serverStartPolicy = serverStartPolicy;
   }
 
-  public KubernetesResource getClusterService() {
+  public ClusterService getClusterService() {
     return clusterService;
   }
 
-  public void setClusterService(KubernetesResource clusterService) {
+  public void setClusterService(ClusterService clusterService) {
     this.clusterService = clusterService;
+  }
+
+  public Cluster withClusterService(ClusterService clusterService) {
+    this.setClusterService(clusterService);
+    return this;
   }
 
   public Map<String, String> getClusterLabels() {
@@ -189,6 +194,10 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
 
   void addClusterAnnotation(String name, String value) {
     clusterService.addAnnotations(name, value);
+  }
+
+  public String getClusterSessionAffinity() {
+    return clusterService.getSessionAffinity();
   }
 
   Integer getMaxUnavailable() {
