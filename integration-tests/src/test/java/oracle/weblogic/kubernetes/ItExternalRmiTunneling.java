@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.CLIENT_HOST_IP;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
@@ -136,6 +137,7 @@ class ItExternalRmiTunneling {
   public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     logger.info("CLIENT_HOST {0} and CLIENT_HOST_IP {1}", CLIENT_HOST, CLIENT_HOST_IP);
+    logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -228,7 +230,7 @@ class ItExternalRmiTunneling {
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
     
     // Create SSL certificate and key using openSSL with SAN extension
-    createCertKeyFiles(CLIENT_HOST_IP);
+    createCertKeyFiles(K8S_NODEPORT_HOST);
     // Create kubernates secret using genereated certificate and key
     createSecretWithTLSCertKey(tlsSecretName);
     // Import the tls certificate into a JKS truststote to be used while
@@ -588,9 +590,8 @@ class ItExternalRmiTunneling {
   private void runExtClient(int httpTunnelingPort, int serverCount, boolean checkConnection) {
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
-    // httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
-    httpUrl.append(CLIENT_HOST + ":" + httpTunnelingPort);
-
+    httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
+    // httpUrl.append(CLIENT_HOST + ":" + httpTunnelingPort);
     StringBuffer javaCmd = new StringBuffer("java -cp ");
     javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javaCmd.append(":");
