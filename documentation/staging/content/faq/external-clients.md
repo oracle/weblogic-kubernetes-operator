@@ -148,12 +148,6 @@ is hosted outside of the Kubernetes cluster, then:
   This can significantly speedup connection creation for EJB and JMS clients.
   See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
 
-- __JTA NOTE__: The operator does not currently support external WebLogic JTA access
-  to a Kubernetes hosted WebLogic cluster. This is because external JTA access
-  requires each server in a cluster to be individually addressable,
-  but this conflicts with the current operator requirement that
-  a network channel in a cluster have the same port across all servers in the cluster.
-
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications
 that call the resource are located within the cluster, then:
@@ -169,8 +163,6 @@ that call the resource are located within the cluster, then:
     JMS resources with a 'server affinity' default load balancer algorithm.
     This can significantly speedup tunneling connection creation for EJB and JMS clients.
     See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
-  - __JTA NOTE__: WebLogic does not support JTA access to a cluster that is exposed using a single port.
-    This is because external JTA requires each server in a cluster to be individually addressable.
 
 {{% notice note %}}
 All DNS addresses must be 'DNS-1123' compliant;
