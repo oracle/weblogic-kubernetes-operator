@@ -5,8 +5,9 @@ package oracle.kubernetes.operator.logging;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,14 +40,13 @@ public class LoggingFormatter extends Formatter {
   private static final String TIME_IN_MILLIS = "timeInMillis";
   private static final String MESSAGE = "message";
   private static final String EXCEPTION = "exception";
-  private static final String DATE_FORMAT = "MM-dd-yyyy'T'HH:mm:ss.SSSZZ";
 
   // For ApiException
   private static final String RESPONSE_CODE = "code";
   private static final String RESPONSE_HEADERS = "headers";
   private static final String RESPONSE_BODY = "body";
 
-  private final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
   @Override
   public String format(LogRecord record) {
@@ -106,8 +106,7 @@ public class LoggingFormatter extends Formatter {
     }
     String level = record.getLevel().getLocalizedName();
     Map<String, Object> map = new LinkedHashMap<>();
-    long rawTime = record.getMillis();
-    final String dateString = dateFormat.format(new Date(rawTime));
+    final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()));
     long thread = Thread.currentThread().getId();
     Fiber fiber = Fiber.getCurrentIfSet();
 
@@ -119,7 +118,6 @@ public class LoggingFormatter extends Formatter {
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
-    map.put(TIME_IN_MILLIS, rawTime);
     // if message or throwable have new lines in them, we need to replace with JSON newline control
     // character \n
     map.put(MESSAGE, message != null ? message.replaceAll("\n", "\\\n") : "");
@@ -134,14 +132,13 @@ public class LoggingFormatter extends Formatter {
 
     } catch (JsonProcessingException e) {
       String tmp =
-          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", \"timeInMillis\":%4$d, "
+          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", "
               + "\"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
       return String.format(
           tmp,
           dateString,
           level,
           LoggingFormatter.class.getName(),
-          rawTime,
           e.getLocalizedMessage());
     }
     return json + "\n";
