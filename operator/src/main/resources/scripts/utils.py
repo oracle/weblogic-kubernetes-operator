@@ -52,8 +52,8 @@ def traceInner(logLevel,object):
   }
   # use FINE as logLevel if logLevel is not a known type
   logLevel=switcher.get(logLevel.upper(),'FINE')
-  print("@[%d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3dZ][%s:%s][%s] %s"
-        % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second,dt.microsecond/1000,
+  print("@[%d-%.2d-%.2dT%.2d:%.2d:%.2d.%dZ][%s:%s][%s] %s"
+        % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second,dt.microsecond,
            filename,lineno,logLevel,object))
 
 def trace(arg1,arg2='SENTINEL'):

@@ -167,7 +167,7 @@ function traceDirs() {
 }
 
 # timestamp
-#   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.mmmZ
+#   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.001Z
 function timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
@@ -175,13 +175,7 @@ function timestamp() {
     # old shell versions don't support %N or --utc
     timestamp="`date -u '+%Y-%m-%dT%H:%M:%SZ' 2>&1`"
   fi
-  local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
-  # convert nano to milli
-  local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
-  local timezone="`echo $timestamp | awk '{ print $4 }'`"
-  echo "${ymdhms}.${milli} ${timezone}"
+  echo "${timestamp}"
 }
 
 # 
