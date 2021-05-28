@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.utils.LogMatcher.containsConfig;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -76,10 +77,10 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoExternalCertificateFile_logWarningMessage() {
+  public void whenNoExternalCertificateFile_logConfigMessage() {
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
 
-    assertThat(logRecords, containsWarning(NO_EXTERNAL_CERTIFICATE));
+    assertThat(logRecords, containsConfig(NO_EXTERNAL_CERTIFICATE));
   }
 
   @Test
@@ -97,10 +98,10 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoInternalCertificateFile_logWarningMessage() {
+  public void whenNoInternalCertificateFile_logConfigMessage() {
     Certificates.getOperatorInternalCertificateData();
 
-    assertThat(logRecords, containsWarning(NO_INTERNAL_CERTIFICATE));
+    assertThat(logRecords, containsConfig(NO_INTERNAL_CERTIFICATE));
   }
 
   @Test
