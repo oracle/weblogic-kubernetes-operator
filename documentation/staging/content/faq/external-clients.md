@@ -24,6 +24,7 @@ description: "This FAQ describes approaches for giving WebLogic applications acc
 - [Enabling unknown host access](#enabling-unknown-host-access)
    - [When is it necessary to enable unknown host access?](#when-is-it-necessary-to-enable-unknown-host-access)
    - [How to enable unknown host access](#how-to-enable-unknown-host-access)
+- [RJVM forwarding](#rjvm-forwarding)  
 - [Configuring WebLogic Server affinity load balancing algorithms](#configuring-a-weblogic-server-affinity-load-balancing-algorithms)
 - [Configuring external listen addresses for WebLogic default channels](#configuring-external-listen-addresses-for-weblogic-default-channels)
 - [Security notes](#security-notes)
@@ -148,6 +149,9 @@ is hosted outside of the Kubernetes cluster, then:
   This can significantly speedup connection creation for EJB and JMS clients.
   See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
 
+- You may need to use the [RJVM forwarding](#rjvm-forwarding) feature to
+  support external WebLogic JTA access.
+
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications
 that call the resource are located within the cluster, then:
@@ -163,6 +167,9 @@ that call the resource are located within the cluster, then:
     JMS resources with a 'server affinity' default load balancer algorithm.
     This can significantly speedup tunneling connection creation for EJB and JMS clients.
     See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
+
+- You may need to use the [RJVM forwarding](#rjvm-forwarding) feature to
+  support external WebLogic JTA access.
 
 {{% notice note %}}
 All DNS addresses must be 'DNS-1123' compliant;
@@ -435,6 +442,55 @@ To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA 
   * Set the `weblogic.rjvm.allowUnknownHost` Java system property to `true` on each target WebLogic Server instance.
     * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
   * Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.
+
+#### RJVM forwarding
+
+##### What does it do?
+
+JTA communication requires that all global transaction server participants require a direct
+point-to-point network connection with all other server participants.
+This requires each server in a cluster to be individually addressable, but this conflicts with
+the current operator requirement that a network channel in a cluster have the same port across
+all servers in the cluster.
+
+This feature allows a proxy URL to be specified for target domains that a WebLogic Server needs
+to communicate with. The proxy URL is the address and port of an ingress, such as a 
+load balancer. When a T3 message is sent from a WebLogic Server to a WebLogic Server in the
+target domain:
+- In the source WebLogic Server, the message is sent to the configured proxy URL for the target 
+  WebLogic domain
+- The ingress or load balancer then forwards the T3 message to one of the WebLogic Servers in the 
+  target domain according to its forwarding rules 
+- In the target WebLogic domain, the target WebLogic Server received the T3 message either directly
+  from the ingress, or by another WebLogic Server in the same domain forwarding the message it
+  received from the ingress.
+
+##### When is it needed?
+
+
+`<BEA-111015> <The commit operation for transaction BEA1-0000993203DB6CDB7DE9 timed out after 30 seconds.>`
+
+With -Dweblogic.debug.DebugJTA2PC=true, 
+`<BEA-000000> <startPrepare FAILED javax.transaction.SystemException: Could not obtain coordinator at managed-server1+domain1-managed-server1:8001+domain1+t3+`
+
+This also allows is also useful when without setting up external DNS address of the ...
+
+
+##### How to enable RJVM forwarding?
+
+- Set the `weblogic.rjvm.proxy.forward.<host-name-prefix>` Java system property to the URL of the ingress into the
+  cluster....<TODO>
+  - For operator hosted WebLogic Server instances, you can set this property by including the system property in the `JAVA_OPTIONS`
+    [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+- Also apply patch 32408938 on each target WebLogic Server instance for versions 12.2.1.3 (PS3) or earlier.
+
+{{% notice note %}}
+The patch for the [enable unknown host access](#enabling-unknown-host-access) is not compatible
+with the patch for the RJVM forwarding feature. Instead of using the `weblogic.rjvm.allowUnknownHost` 
+Java system property, use the Java system property for RJVM forwarding on the target WebLogic Server
+to specify the proxy URL for each source WebLogic domain. Connections from these source WebLogic 
+domains will not be rejected due to failed DNS resolution.
+{{% /notice %}}
 
 #### Configuring WebLogic Server affinity load balancing algorithms
 
