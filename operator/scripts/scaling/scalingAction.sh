@@ -148,7 +148,7 @@ function get_custom_resource_domain() {
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
     -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" \
-    $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$domain_uid)
+    $kubernetes_master/apis/weblogic.oracle/$domain_api_version/namespaces/$wls_domain_namespace/domains/$wls_domain_uid)
   if [ $? -ne 0 ]; then
     trace "Failed to retrieve WebLogic Domain Custom Resource Definition"
     exit 1
@@ -164,7 +164,7 @@ function is_defined_in_clusters() {
   local in_cluster_startup="False"
 
   if jq_available; then
-    local inClusterStartupCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
+    local inClusterStartupCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\"))"
     local clusterDefinedInCRD=$(echo "${DOMAIN}" | jq "${inClusterStartupCmd}"  2>> ${log_file_name})
     if [ "${clusterDefinedInCRD}" != "" ]; then
       in_cluster_startup="True"
@@ -173,13 +173,11 @@ function is_defined_in_clusters() {
 cat > cmds-$$.py << INPUT
 import sys, json
 outer_loop_must_break = False
-for i in json.load(sys.stdin)["items"]:
-  j = i["spec"]["clusters"]
-  for index, cs in enumerate(j):
-    if j[index]["clusterName"] == "$wls_cluster_name":
-      outer_loop_must_break = True
-      print (True)
-      break
+for j in json.load(sys.stdin)["spec"]["clusters"]:
+  if j["clusterName"] == "$wls_cluster_name":
+    outer_loop_must_break = True
+    print (True)
+    break
 if outer_loop_must_break == False:
   print (False)
 INPUT
@@ -195,16 +193,14 @@ function get_num_ms_in_cluster() {
   local DOMAIN="$1"
   local num_ms
   if jq_available; then
-  local numManagedServersCmd="(.items[].spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
+  local numManagedServersCmd="(.spec.clusters[] | select (.clusterName == \"${wls_cluster_name}\") | .replicas)"
   num_ms=$(echo "${DOMAIN}" | jq "${numManagedServersCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
-for i in json.load(sys.stdin)["items"]:
-  j = i["spec"]["clusters"]
-  for index, cs in enumerate(j):
-    if j[index]["clusterName"] == "$wls_cluster_name":
-      print (j[index]["replicas"])
+for j in json.load(sys.stdin)["spec"]["clusters"]:
+  if j["clusterName"] == "$wls_cluster_name":
+    print (j["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -223,12 +219,11 @@ function get_num_ms_domain_scope() {
   local DOMAIN="$1"
   local num_ms
   if jq_available; then
-    num_ms=$(echo "${DOMAIN}" | jq -r '.items[].spec.replicas' 2>> ${log_file_name})
+    num_ms=$(echo "${DOMAIN}" | jq -r '.spec.replicas' 2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
-for i in json.load(sys.stdin)["items"]:
-  print (i["spec"]["replicas"])
+print (json.load(sys.stdin)["spec"]["replicas"])
 INPUT
   num_ms=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
@@ -254,17 +249,15 @@ function get_min_replicas {
 
   eval $__result=0
   if jq_available; then
-    minReplicaCmd="(.items[].status.clusters[] | select (.clusterName == \"${clusterName}\")) \
+    minReplicaCmd="(.status.clusters[] | select (.clusterName == \"${clusterName}\")) \
       | .minimumReplicas"
     minReplicas=$(echo ${domainJson} | jq "${minReplicaCmd}"  2>> ${log_file_name})
   else
 cat > cmds-$$.py << INPUT
 import sys, json
-for i in json.load(sys.stdin)["items"]:
-  j = i["status"]["clusters"]
-  for index, cs in enumerate(j):
-    if j[index]["clusterName"] == "$clusterName":
-      print (j[index]["minimumReplicas"])
+for j in json.load(sys.stdin)["status"]["clusters"]:
+  if j["clusterName"] == "$clusterName":
+    print (j["minimumReplicas"])
 INPUT
   minReplicas=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
   fi
