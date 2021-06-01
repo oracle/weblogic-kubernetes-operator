@@ -151,6 +151,8 @@ public interface ServerSpec {
 
   V1ResourceRequirements getResources();
 
+  List<CommonMount> getCommonMounts();
+
   V1PodSecurityContext getPodSecurityContext();
 
   V1SecurityContext getContainerSecurityContext();

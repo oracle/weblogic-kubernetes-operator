@@ -2422,6 +2422,25 @@ public class CommonTestUtils {
   }
 
   /**
+   * Update a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to update
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword that is being changed to
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void updateRcuAccessSecret(String secretName, String namespace,
+      String rcuPrefix, String password, String rcuDbConnString) {
+
+    assertTrue(Kubernetes.deleteSecret(secretName, namespace),
+        String.format("create secret failed for %s", secretName));
+    createRcuAccessSecret(secretName, namespace, rcuPrefix, password, rcuDbConnString);
+
+  }
+
+  /**
    * Create a secret with username and password and Elasticsearch host and port in the specified namespace.
    *
    * @param secretName secret name to create
@@ -3092,7 +3111,8 @@ public class CommonTestUtils {
       String namespace,
       String username,
       String password,
-      boolean expectValid) {
+      boolean expectValid,
+      String... args) {
     LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
@@ -3108,9 +3128,9 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(
             expectValid
                 ?
-            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password)
+            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password, args)
                 :
-            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password),
+            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password, args),
             String.format(
                 "Failed to validate credentials %s/%s on pod %s in namespace %s",
                 username, password, podName, namespace)));

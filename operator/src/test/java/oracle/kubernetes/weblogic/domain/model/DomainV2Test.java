@@ -1281,6 +1281,24 @@ public class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  public void whenDomain2ReadFromYaml_sessionAffinityIsReadFromClusteredServerSpec()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
+
+    String sessionAffinity = domain.getCluster("cluster1").getClusterSessionAffinity();
+    assertThat(sessionAffinity, is("ClientIP"));
+  }
+
+  @Test
+  public void whenDomain2ReadFromYaml_sessionAffinityIsNotPresent()
+      throws IOException {
+    Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_4);
+
+    String sessionAffinity = domain.getCluster("cluster2").getClusterSessionAffinity();
+    assertThat(sessionAffinity, nullValue());
+  }
+
+  @Test
   public void whenDomain2ReadFromYaml_serviceAnnotationsFound() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML_2);
     ServerSpec serverSpec = domain.getServer("server2", "cluster1");
