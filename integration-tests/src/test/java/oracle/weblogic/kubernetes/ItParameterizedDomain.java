@@ -720,64 +720,64 @@ class ItParameterizedDomain {
 
     //verify domain changed event is logged
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_CHANGED,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_CHANGED, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_CHANGED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_CHANGED, "Normal", timestamp));
 
     // verify the DomainProcessing Starting/Completed event is generated
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_PROCESSING_STARTING,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_STARTING,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
 
     withStandardRetryPolicy
-            .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain event {0} to be logged "
-                                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                            DOMAIN_PROCESSING_COMPLETED,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-                    DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain event {0} to be logged "
+                + "(elapsed time {1}ms, remaining time {2}ms)",
+                DOMAIN_PROCESSING_COMPLETED,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
+            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
         String managedServerPodName =
-                miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+            miiDomainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
 
         logger.info("Checking that managed server pod {0} is terminated and restarted once in namespace {1}",
-                managedServerPodName, miiDomainNamespace);
+            managedServerPodName, miiDomainNamespace);
         withStandardRetryPolicy
-                .conditionEvaluationListener(
-                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                                        + "(elapsed time {2}ms, remaining time {3}ms)",
-                                POD_TERMINATED,
-                                managedServerPodName,
-                                condition.getElapsedTimeInMS(),
-                                condition.getRemainingTimeInMS()))
-                .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                        managedServerPodName, POD_TERMINATED, timestamp));
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                    POD_TERMINATED,
+                    managedServerPodName,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                managedServerPodName, POD_TERMINATED, timestamp));
         withStandardRetryPolicy
-                .conditionEvaluationListener(
-                        condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                                        + "(elapsed time {2}ms, remaining time {3}ms)",
-                                POD_STARTED,
-                                managedServerPodName,
-                                condition.getElapsedTimeInMS(),
-                                condition.getRemainingTimeInMS()))
-                .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                        managedServerPodName, POD_STARTED, timestamp));
+            .conditionEvaluationListener(
+                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                    POD_STARTED,
+                    managedServerPodName,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until(checkPodEventLoggedOnce(miiDomainNamespace,
+                managedServerPodName, POD_STARTED, timestamp));
       }
     }
   }
@@ -1019,7 +1019,7 @@ class ItParameterizedDomain {
         "Failed to write domain properties file");
 
     // shell script to download WDT and run the WDT createDomain script
-    Path wdtScript = get(RESOURCE_DIR, "bash-scripts", "wdt-create-domain-onpv.sh");
+    Path wdtScript = get(RESOURCE_DIR, "bash-scripts", "setup_wdt.sh");
     // WDT model file containing WebLogic domain configuration
     Path wdtModelFile = get(RESOURCE_DIR, "wdt-models", "domain-onpv-wdt-model.yaml");
 
@@ -1208,6 +1208,12 @@ class ItParameterizedDomain {
         .addEnvItem(new V1EnvVar()
             .name("WDT_DIR")
             .value("/u01/shared/wdt"))
+        .addEnvItem(new V1EnvVar()
+            .name("http_proxy")
+            .value(System.getenv("http_proxy")))
+        .addEnvItem(new V1EnvVar()
+            .name("https_proxy")
+            .value(System.getenv("http_proxy")))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
             .value("/u01/shared/domains/" + domainUid));
