@@ -78,10 +78,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -105,6 +107,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -197,7 +200,6 @@ class ItParameterizedDomain {
 
   private String curlCmd = null;
 
-
   /**
    * Install operator and NGINX.
    * Create three different type of domains: model in image, domain in PV and domain in image.
@@ -273,6 +275,18 @@ class ItParameterizedDomain {
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
           true, ADMIN_SERVER_PORT);
     }
+  }
+
+  @Test
+  @DisplayName("verify the operator log")
+  public void testOperatorLog() {
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    logger.info("operator pod log: {0}", operatorPodLog);
+    assertTrue(operatorPodLog.contains("Introspector Job Log"));
+    assertTrue(operatorPodLog.contains(""));
   }
 
   /**
@@ -1210,7 +1224,10 @@ class ItParameterizedDomain {
             .value("/u01/shared/wdt"))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid));
+            .value("/u01/shared/domains/" + domainUid))
+        .addEnvItem(new V1EnvVar()
+            .name("https_proxy")
+            .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);

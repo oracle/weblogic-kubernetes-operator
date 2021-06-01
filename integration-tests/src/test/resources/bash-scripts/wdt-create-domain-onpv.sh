@@ -68,8 +68,8 @@
 # Initialize globals
 
 # using "-" instead of ":-" in case proxy vars are explicitly set to "".
-https_proxy=${https_proxy-""}
-https_proxy2=${https_proxy2-""}
+https_proxy=${https_proxy:-""}
+https_proxy2=${https_proxy2:-""}
 
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
@@ -90,6 +90,8 @@ if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
         curl -Ls -w %{url_effective} --connect-timeout 30 -o /dev/null \
           https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
       curl_res=$?
+      echo "DEBUG: curl respose: ${curl_res}"
+      echo "DEBUG: output from curl response: $(cat out)"
       if [ $curl_res -eq 0 ]; then
         echo "Got URL $(cat out)"
         WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
