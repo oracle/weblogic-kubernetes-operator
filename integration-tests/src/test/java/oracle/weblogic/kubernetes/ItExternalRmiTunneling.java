@@ -19,6 +19,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterService;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
@@ -430,7 +431,6 @@ class ItExternalRmiTunneling {
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
-
   @Order(4)
   @Test
   @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
@@ -810,7 +810,9 @@ class ItExternalRmiTunneling {
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
-                            .serverStartState("RUNNING"))
+                            .serverStartState("RUNNING")
+                            .clusterService(new ClusterService()
+                                .sessionAffinity("ClientIP")))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")
