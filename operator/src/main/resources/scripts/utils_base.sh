@@ -168,7 +168,7 @@ function traceDirs() {
 
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
-#   example:  2018-10-01T14:00:00.001Z
+#   example:  2018-10-01T14:00:00.000001Z
 function timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
@@ -187,9 +187,9 @@ function timestamp() {
 #            (Pass '-q' to suppress FINE tracing.)
 #
 #   sample:  checkEnv HOST NOTSET1 USER NOTSET2
-#            @[2018-10-05T22:48:04.368 UTC][FINE] HOST='esscupcakes'
-#            @[2018-10-05T22:48:04.393 UTC][FINE] USER='friendly'
-#            @[2018-10-05T22:48:04.415 UTC][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
+#            @[2018-10-05T22:48:04.368000Z][FINE] HOST='esscupcakes'
+#            @[2018-10-05T22:48:04.393000Z][FINE] USER='friendly'
+#            @[2018-10-05T22:48:04.415000Z][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
 function checkEnv() {
   local do_fine="true"
