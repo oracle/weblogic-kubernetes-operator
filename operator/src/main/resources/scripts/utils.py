@@ -10,7 +10,7 @@
 #
 # This matches format of bash utils.sh trace and the operator's log format.
 #
-# Sample output:   @[2018-09-28T17:23:55.335Z][introspectDomain.py:614][FINE] Domain introspection complete.
+# Sample output:   @[2018-09-28T17:23:55.335000Z][introspectDomain.py:614][FINE] Domain introspection complete.
 #
 # Importing this file when it's not in sys.path of the calling script:
 #
@@ -52,7 +52,7 @@ def traceInner(logLevel,object):
   }
   # use FINE as logLevel if logLevel is not a known type
   logLevel=switcher.get(logLevel.upper(),'FINE')
-  print("@[%d-%.2d-%.2dT%.2d:%.2d:%.2d.%dZ][%s:%s][%s] %s"
+  print("@[%d-%.2d-%.2dT%.2d:%.2d:%.2d.%.6dZ][%s:%s][%s] %s"
         % (dt.year,dt.month,dt.day,dt.hour,dt.minute,dt.second,dt.microsecond,
            filename,lineno,logLevel,object))
 

@@ -106,6 +106,7 @@ public class LoggingFormatter extends Formatter {
     }
     String level = record.getLevel().getLocalizedName();
     Map<String, Object> map = new LinkedHashMap<>();
+    long rawTime = record.getMillis();
     final String dateString = DATE_FORMAT.format(OffsetDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()));
     long thread = Thread.currentThread().getId();
     Fiber fiber = Fiber.getCurrentIfSet();
@@ -118,6 +119,7 @@ public class LoggingFormatter extends Formatter {
     map.put(LOG_LEVEL, level);
     map.put(SOURCE_CLASS, sourceClassName);
     map.put(SOURCE_METHOD, sourceMethodName);
+    map.put(TIME_IN_MILLIS, rawTime);
     // if message or throwable have new lines in them, we need to replace with JSON newline control
     // character \n
     map.put(MESSAGE, message != null ? message.replaceAll("\n", "\\\n") : "");
@@ -132,13 +134,14 @@ public class LoggingFormatter extends Formatter {
 
     } catch (JsonProcessingException e) {
       String tmp =
-          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", "
+          "{\"@timestamp\":%1$s,\"level\":%2$s, \"class\":%3$s, \"method\":\"format\", \"timeInMillis\":%4$d, "
               + "\"@message\":\"Exception while preparing json object\",\"exception\":%5$s}\n";
       return String.format(
           tmp,
           dateString,
           level,
           LoggingFormatter.class.getName(),
+          rawTime,
           e.getLocalizedMessage());
     }
     return json + "\n";

@@ -33,17 +33,17 @@
 #
 #   examples:
 #     trace "Situation normal."
-#     @[2018-09-28T18:10:52.417Z][myscript.sh:91][FINE] Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] Situation normal.
 #
 #     trace INFO "Situation normal."
-#     @[2018-09-28T18:10:52.417Z][myscript.sh:91][INFO] Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][INFO] Situation normal.
 #
 #     trace "Info: Situation normal."
-#     @[2018-09-28T18:10:52.417Z][myscript.sh:91][INFO] Info: Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][INFO] Info: Situation normal.
 #
 #     ls 2>&1 | tracePipe FINE "ls output: "
-#     @[2018-09-28T18:10:52.417Z][myscript.sh:91][FINE] ls output: file1
-#     @[2018-09-28T18:10:52.417Z][myscript.sh:91][FINE] ls output: file2
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] ls output: file1
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] ls output: file2
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
@@ -173,7 +173,7 @@ function timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
-    timestamp="`date -u '+%Y-%m-%dT%H:%M:%SZ' 2>&1`"
+    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S.000000Z' 2>&1`"
   fi
   echo "${timestamp}"
 }
