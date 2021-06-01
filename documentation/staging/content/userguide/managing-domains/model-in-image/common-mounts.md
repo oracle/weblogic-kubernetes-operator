@@ -12,17 +12,18 @@ pre = "<b> </b>"
  - [References](#references)
  - [Common Mount Volumes Fields](#common-mount-volumes-fields)
  - [Running Model in Image sample initial use case using common mounts](#running-model-in-image-sample-initial-use-case-using-common-mounts)
-    - [Prerequisites](#prerequisites)
+    - [Prerequisite Steps](#prerequisite-steps)
     - [Creating the common mounts image](#creating-the-common-mounts-image)
     - [Prepare and Apply the Domain Resource](#prepare-and-apply-the-domain-resource)
 
 ### Introduction
-Common mounts are an alternative approach for including Model in Image model files, application archive files, Weblogic Deploying Tooling install files, or other types of files, in your pods. This feature eliminates the need to provide these files in the image specified in `domain.spec.image`. Instead:
+Common mounts are an alternative approach for including Model in Image model files, application archive files, Weblogic Deploying Tooling install files, or other types of files, in your pods. The common mounts feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share files from additional images within a WebLogic Server pod or the Introspector job pod. 
+
+This feature eliminates the need to provide these files in the image specified in `domain.spec.image`. Instead:
 - The domain resource's `domain.spec.image` directly reference a base image that only needs to include a WebLogic install and a Java install
 - The domain resource's common mount related fields reference one or more smaller images that contain the desired Model in Image files.
 - The domain resource's `domain.spec.configuration.model.wdtInstallHome` and `domain.spec.configuration.model.modelHome` fields are set to reference a directory that contains the files from the smaller images.
 
-The common mounts feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share files from additional images within a WebLogic Server pod or the Introspector job pod.
 The advantages of the common mounts feature for Model In Image domains are:
 - Use or patch a WebLogic install image without needing to include WDT install, application archive, or model artifacts within the image.
 - Share one large WebLogic install image with multiple different model configurations that are supplied in smaller images.
@@ -63,12 +64,12 @@ For the Model In Image use case using common mounts, you also need to configure 
 
 #### References
 - Run the `kubectl explain domain.spec.commonMountVolumes` and `kubectl explain domain.spec.serverPod.commonMounts` commands.
-- See the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
+- See the `spec.commonMountVolumes` and `serverPod.commonMounts` sections in the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 ### Running Model in Image sample initial use case using common mounts
 The initial use case for the Model in Image is described [here](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). The goal for this section is to create the initial domain using the common mounts feature where you provide the WDT model files and archive ZIP file in a separate container image.
 
-#### Prerequisites
+#### Prerequisite Steps
 - Begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). 
 - Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. 
 - To run the initial use case with common mounts:
@@ -104,21 +105,37 @@ Run the following steps to create the common mounts image containing Model In Im
     $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
     ```
 7. Copy the archive ZIP file from `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory..
-8. Build the docker image by running `docker build --build-arg COMMON_MOUNT_PATH=/common --tag model-in-image:v1 .` command.
-9. Optionally, you can customize the mount path, WDT_MODE_HOME or WDT_INSTALLATION_HOME by using the build arguments.
+8. Build the docker image by running `docker build --build-arg COMMON_MOUNT_PATH=/common --build-arg WDT_MODEL_HOME=/common/models --build-arg WDT_INSTALL_HOME=/common/weblogic-deploy --tag model-in-image:v1 .` command. 
+9. Optionally, you can customize the values of COMMON_MOUNT_PATH, WDT_MODEL_HOME or WDT_INSTALL_HOME build args or use additional docker build-arg as necessary to override the defaults by using --build-arg=NAME=VALUE. See file `/tmp/cm-image/Dockerfile` for an explanation of each --build-arg.
 
 Once the image is created, it will have the WDT executables copied to `/${MOUNT_PATH}/weblogic-deploy`, and all the WDT models, variables, and archives are copied to `/${MOUNT_PATH}/models`. If you use the default mount path '/common', you can verify the contents of the image using the following commands:
 
   ```shell
   $ docker run -it --rm model-in-image:v1 ls -l /common
+    total 8
+    drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
+    drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
   ```
 
   ```shell
   $ docker run -it --rm model-in-image:v1 ls -l /common/models
+    total 16
+    -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
+    -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
+    -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
+
   ```
 
   ```shell
   $ docker run -it --rm model-in-image:v1 ls -l /common/weblogic-deploy
+    total 28
+    -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
+    -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
+    drwxr-x---    1 oracle   root          4096 May 26 22:29 bin
+    drwxr-x---    1 oracle   root          4096 May 25 11:40 etc
+    drwxr-x---    1 oracle   root          4096 May 25 11:40 lib
+    drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
+
   ```
 
 #### Prepare and Apply the Domain Resource

@@ -324,6 +324,7 @@ fi
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER DEPLOY ======"
+  doCommand "export DO_CM=$DO_CM"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 

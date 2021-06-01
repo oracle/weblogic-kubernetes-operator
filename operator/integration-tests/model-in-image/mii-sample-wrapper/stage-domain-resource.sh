@@ -36,7 +36,9 @@ for var in DOMAIN_UID \
            INTROSPECTOR_DEADLINE_SECONDS \
            BASE_IMAGE_NAME \
            BASE_IMAGE_TAG \
-           COMMON_MOUNT_PATH
+           COMMON_MOUNT_PATH \
+           WDT_MODEL_HOME \
+           WDT_INSTALL_HOME
 do
   echo "@@ Info: ${var}=${!var}"
 done
@@ -66,7 +68,9 @@ for template_var in WDT_DOMAIN_TYPE \
                     INTROSPECTOR_DEADLINE_SECONDS \
                     BASE_IMAGE_NAME \
                     BASE_IMAGE_TAG \
-                    COMMON_MOUNT_PATH
+                    COMMON_MOUNT_PATH \
+                    WDT_MODEL_HOME \
+                    WDT_INSTALL_HOME
 do
   sed -i -e "s;@@${template_var}@@;${!template_var};" "$WORKDIR/$DOMAIN_RESOURCE_FILENAME"
 done
