@@ -163,6 +163,11 @@ public class MessageKeys {
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
   public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
   public static final String NO_AVAILABLE_PORT_TO_USE_FOR_REST = "WLSDO-0021";
+  public static final String NO_MATCHING_COMMON_MOUNT_VOLUME_DEFINED = "WLSDO-0022";
+  public static final String NO_COMMON_MOUNT_VOLUME_DEFINED = "WLSDO-0023";
+  public static final String DUPLICATE_COMMON_MOUNT_PATH_FOUND = "WLSDO-0024";
+  public static final String DUPLICATE_COMMON_MOUNT_VOLUME_FOUND = "WLSDO-0025";
+  public static final String COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED = "WLSDO-0026";
 
   private MessageKeys() {
   }

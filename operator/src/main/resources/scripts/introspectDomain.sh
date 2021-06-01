@@ -56,6 +56,11 @@ source ${SCRIPTPATH}/utils.sh
 
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 
+# 
+# if the common mount feature is active, verify the mount, and log mount information
+#
+checkCommonMount || exit 1
+
 #
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for
 # immediate failure during introspection
@@ -158,6 +163,7 @@ function doIntrospect() {
   # log error if dir exists and attribute set
   DOMAIN_CREATED=0
   if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    checkEnv WDT_MODEL_HOME WDT_INSTALL_HOME || exit 1
     trace "Beginning Model In Image"
     command -v gzip
     if [ $? -ne 0 ] ; then

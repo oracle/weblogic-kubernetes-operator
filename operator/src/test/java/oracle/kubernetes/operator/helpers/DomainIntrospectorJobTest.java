@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -11,13 +13,18 @@ import java.util.stream.IntStream;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
@@ -28,12 +35,17 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Model;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,7 +62,10 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
@@ -59,8 +74,13 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
@@ -84,6 +104,7 @@ public class DomainIntrospectorJobTest {
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
   private static final String SEVERE_PROBLEM_1 = "really bad";
   private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
+  public static final String TEST_VOLUME_NAME = "test";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -91,6 +112,7 @@ public class DomainIntrospectorJobTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
+  private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
 
@@ -189,6 +211,21 @@ public class DomainIntrospectorJobTest {
     return NO_CLUSTER_IN_DOMAIN;
   }
 
+  private V1PodSpec getJobPodSpec(V1Job job) {
+    return job.getSpec().getTemplate().getSpec();
+  }
+
+  private List<V1Job> runStepsAndGetJobs() {
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    return testSupport.getResources(KubernetesTestSupport.JOB);
+  }
+
+  DomainConfigurator getConfigurator() {
+    return configurator;
+  }
+
   @Test
   public void whenNoJob_createIt() throws JsonProcessingException {
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-1"));
@@ -256,24 +293,23 @@ public class DomainIntrospectorJobTest {
 
   @Test
   public void whenJobCreated_specHasOneContainer() {
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getPodTemplateContainers(jobs.get(0)), hasSize(1));
   }
 
   @SuppressWarnings("ConstantConditions")
   private List<V1Container> getPodTemplateContainers(V1Job v1Job) {
-    return v1Job.getSpec().getTemplate().getSpec().getContainers();
+    return getJobPodSpec(v1Job).getContainers();
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private List<V1Container> getPodTemplateInitContainers(V1Job v1Job) {
+    return getJobPodSpec(v1Job).getInitContainers();
   }
 
   @Test
   public void whenJobCreated_hasPredefinedEnvVariables() {
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Job> jobs = runStepsAndGetJobs();
     List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
     assertThat(
         podTemplateContainers.get(0).getEnv(),
@@ -292,14 +328,137 @@ public class DomainIntrospectorJobTest {
   public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
     getDomain().getSpec()
         .setConfiguration(new Configuration().withModel(new Model().withModelHome(WDT_MODEL_HOME)));
-    testSupport.runSteps(getStepFactory(), terminalStep);
-    logRecords.clear();
-
-    List<V1Job> jobs = testSupport.getResources(KubernetesTestSupport.JOB);
+    List<V1Job> jobs = runStepsAndGetJobs();
     List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
     assertThat(
         podTemplateContainers.get(0).getEnv(),
         hasEnvVar("WDT_MODEL_HOME", WDT_MODEL_HOME));
+  }
+
+  @Test
+  public void whenJobCreatedWithCommonMountDefined_hasCommonMountInitContainerVolumeAndMounts() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    List<V1Container> podTemplateInitContainers = getPodTemplateInitContainers(job);
+
+    assertThat(
+            podTemplateInitContainers,
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @NotNull
+  List<CommonMountVolume> getCommonMountVolume(String mountPath) {
+    return Collections.singletonList(new CommonMountVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+  }
+
+  private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
+    return getJobPodSpec(jobs.get(0)).getContainers();
+  }
+
+  @NotNull
+  private List<CommonMount> getCommonMounts(String...images) {
+    List<CommonMount> commonMountList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> commonMountList.add(new CommonMount().image(image)
+            .volume(TEST_VOLUME_NAME)));
+    return commonMountList;
+  }
+
+  @NotNull
+  public static CommonMount getCommonMount(String image) {
+    return new CommonMount().image(image).volume(TEST_VOLUME_NAME);
+  }
+
+  @Test
+  public void whenJobCreatedWithCommonMountAndVolumeHavingCustomMountPath_hasVolumeMountWithCustomMountPath() {
+    DomainConfiguratorFactory.forDomain(domain)
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+
+    List<V1Job> jobs = runStepsAndGetJobs();
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenJobCreatedWithCommonMountVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+
+  @Test
+  public void whenJobCreatedWithCommonMountVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withCommonMounts(getCommonMounts());
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  public void whenJobCreatedWithCommonMountWithImagePullPolicy_createJobPodHasImagePullPolicy() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS")));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "ALWAYS", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  @Test
+  public void whenJobCreatedWithCommonMountAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT)));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  public void whenJobCreatedWithMultipleCommonMounts_createdJobPodsHasMultipleInitContainers() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image1:v1", "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
   }
 
   @Test

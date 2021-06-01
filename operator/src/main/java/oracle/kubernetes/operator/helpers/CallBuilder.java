@@ -85,6 +85,7 @@ public class CallBuilder {
   public static final int NOT_FOUND = 404;
 
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
+  private String container;
 
   private static final SynchronousCallDispatcher DEFAULT_DISPATCHER =
       new SynchronousCallDispatcher() {
@@ -240,7 +241,7 @@ public class CallBuilder {
                   usage,
                   requestParams.name,
                   requestParams.namespace,
-                  null,
+                  container,
                   null,
                   null,
                   null,
@@ -491,6 +492,16 @@ public class CallBuilder {
    */
   public CallBuilder withLabelSelectors(String... selectors) {
     this.labelSelector = !isNullOrEmpty(selectors) ? String.join(",", selectors) : null;
+    return this;
+  }
+
+  /**
+   * Set container name for the CallBuilder.
+   * @param containerName container name
+   * @return this CallBuilder
+   */
+  public CallBuilder withContainerName(String containerName) {
+    this.container = containerName;
     return this;
   }
 

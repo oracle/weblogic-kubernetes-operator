@@ -28,6 +28,25 @@ class DomainValidationMessages {
   }
 
   /**
+   * Returns a validation message indicating that more than one common mount volume has same name
+   * after DNS-1123 conversion.
+   * @param volumeName the duplicate volume name
+   * @return the localized message
+   */
+  static String duplicateCommonMountVolumeName(@Nonnull String volumeName) {
+    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_VOLUME_FOUND, volumeName);
+  }
+
+  /**
+   * Returns a validation message indicating that more than one common mount volume has same mountPath.
+   * @param mountPath the duplicate mount path
+   * @return the localized message
+   */
+  static String duplicateCMVMountPath(@Nonnull String mountPath) {
+    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_PATH_FOUND, mountPath);
+  }
+
+  /**
    * Returns a validation message indicating that more than one cluster spec has the same effective name
    * after DNS-1123 conversion.
    * @param clusterName the duplicate cluster name
@@ -117,6 +136,18 @@ class DomainValidationMessages {
 
   public static String exceedMaxIntrospectorJobName(String domainUid, String result, int limit) {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
+  }
+
+  public static String noMatchingCommonMountVolumeDefined(String volumeName) {
+    return getMessage(MessageKeys.NO_MATCHING_COMMON_MOUNT_VOLUME_DEFINED, volumeName);
+  }
+
+  public static String noCommonMountVolumeDefined() {
+    return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUME_DEFINED);
+  }
+
+  public static String commonMountVolumeNameNotDefined() {
+    return getMessage(MessageKeys.COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {

@@ -3,10 +3,13 @@
 
 package oracle.kubernetes.weblogic.domain;
 
+import java.util.List;
+
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -131,4 +134,7 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup);
 
   ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown);
+
+  ClusterConfigurator withCommonMounts(List<CommonMount> commonMountList);
+
 }
