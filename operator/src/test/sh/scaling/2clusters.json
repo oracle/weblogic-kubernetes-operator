@@ -7,6 +7,11 @@
             "clusterName": "cluster-1",
             "replicas": 1,
             "serverStartState": "RUNNING"
+        },
+        {
+            "clusterName": "cluster-2",
+            "replicas": 2,
+            "serverStartState": "RUNNING"
         }
     ],
     "dataHome": "",
@@ -24,7 +29,11 @@
     "clusters": [
        {
             "clusterName": "cluster-1",
-            "minimumReplicas": 3
+            "minimumReplicas": 1
+       },
+       {
+            "clusterName": "cluster-2",
+            "minimumReplicas": 2
        }
     ]
   }
