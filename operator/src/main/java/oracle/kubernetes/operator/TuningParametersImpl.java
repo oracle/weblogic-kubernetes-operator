@@ -95,9 +95,9 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       if (!main.equals(this.main)
           || !callBuilder.equals(this.callBuilder)
           || !watch.equals(this.watch)
-          || !watch.equals(this.pod)
-          || !pod.equals(this.featureGates)) {
-        LOGGER.info(MessageKeys.TUNING_PARAMETERS);
+          || !pod.equals(this.pod)
+          || !featureGates.equals(this.featureGates)) {
+        LOGGER.config(MessageKeys.TUNING_PARAMETERS);
       }
       this.main = main;
       this.callBuilder = callBuilder;

@@ -935,7 +935,7 @@ window.onload = function() {
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "serverPod": {
@@ -952,7 +952,7 @@ window.onload = function() {
           ]
         },
         "adminService": {
-          "description": "Customization affecting the generation of the Kubernetes Service for the Administration Server. These settings can also specify the creation of a second NodePort Service to expose specific channels or network access points outside the Kubernetes cluster.",
+          "description": "Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service.",
           "$ref": "#/definitions/AdminService"
         },
         "restartVersion": {
@@ -972,14 +972,14 @@ window.onload = function() {
           }
         },
         "annotations": {
-          "description": "Annotations to associate with the Administration Server\u0027s Service(s).",
+          "description": "Annotations to associate with the Administration Server\u0027s NodePort Service, if it is created.",
           "additionalProperties": {
             "type": "string"
           },
           "$ref": "#/definitions/Map"
         },
         "labels": {
-          "description": "Labels to associate with the Administration Server\u0027s Service(s).",
+          "description": "Labels to associate with the Administration Server\u0027s NodePort Service, if it is created.",
           "additionalProperties": {
             "type": "string"
           },
@@ -1015,7 +1015,7 @@ window.onload = function() {
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "maxUnavailable": {
@@ -1042,7 +1042,7 @@ window.onload = function() {
         },
         "clusterService": {
           "description": "Customization affecting Kubernetes Service generated for this WebLogic cluster.",
-          "$ref": "#/definitions/KubernetesResource"
+          "$ref": "#/definitions/ClusterService"
         },
         "maxConcurrentShutdown": {
           "description": "The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1.",
@@ -1070,6 +1070,33 @@ window.onload = function() {
       "required": [
         "clusterName"
       ]
+    },
+    "ClusterService": {
+      "type": "object",
+      "properties": {
+        "sessionAffinity": {
+          "description": "Supports \"ClientIP\" and \"None\". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies",
+          "type": "string",
+          "enum": [
+            "ClientIP",
+            "None"
+          ]
+        },
+        "annotations": {
+          "description": "The annotations to be added to generated resources.",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        },
+        "labels": {
+          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "$ref": "#/definitions/Map"
+        }
+      }
     },
     "ClusterStatus": {
       "type": "object",
@@ -1189,7 +1216,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "monitoringExporter": {
-          "description": "Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.",
+          "description": "Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.",
           "$ref": "#/definitions/MonitoringExporterSpecification"
         },
         "configuration": {
@@ -1217,7 +1244,7 @@ window.onload = function() {
           "type": "string"
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
@@ -1246,7 +1273,7 @@ window.onload = function() {
           "$ref": "#/definitions/AdminServer"
         },
         "logHome": {
-          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Ignored if `logHomeEnabled` is false.",
+          "description": "The directory in a server\u0027s container in which to store the domain, Node Manager, server logs, server *.out, introspector .out, and optionally HTTP access log files if `httpAccessLogInLogHome` is true. Default is `/shared/logs/DOMAIN-UID`. Ignored if `logHomeEnabled` is false.",
           "type": "string"
         },
         "includeServerOutInPodLog": {
@@ -1414,25 +1441,6 @@ window.onload = function() {
         }
       }
     },
-    "KubernetesResource": {
-      "type": "object",
-      "properties": {
-        "annotations": {
-          "description": "The annotations to be added to generated resources.",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        },
-        "labels": {
-          "description": "The labels to be added to generated resources. The label names must not start with \"weblogic.\".",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "$ref": "#/definitions/Map"
-        }
-      }
-    },
     "ManagedServer": {
       "type": "object",
       "properties": {
@@ -1445,7 +1453,7 @@ window.onload = function() {
           ]
         },
         "serverService": {
-          "description": "Customization affecting the generation of Kubernetes Services for WebLogic Server instances.",
+          "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",
           "$ref": "#/definitions/ServerService"
         },
         "serverName": {
@@ -1504,6 +1512,10 @@ window.onload = function() {
         "modelHome": {
           "description": "Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.",
           "type": "string"
+        },
+        "wdtInstallHome": {
+          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.",
+          "type": "string"
         }
       }
     },
@@ -1511,11 +1523,11 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "image": {
-          "description": "The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0",
+          "description": "The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.2",
           "type": "string"
         },
         "imagePullPolicy": {
-          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
+          "description": "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise.",
           "type": "string",
           "enum": [
             "Always",
@@ -1525,7 +1537,7 @@ window.onload = function() {
         },
         "configuration": {
           "x-kubernetes-preserve-unknown-fields": "true",
-          "description": "The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter",
+          "description": "The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances.",
           "$ref": "#/definitions/Map"
         }
       }
@@ -1731,7 +1743,7 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "precreateService": {
-          "description": "If true, the operator will create Services even for Managed Server instances without running Pods.",
+          "description": "If true, the operator will create ClusterIP Services even for WebLogic Server instances without running Pods.",
           "type": "boolean"
         },
         "annotations": {

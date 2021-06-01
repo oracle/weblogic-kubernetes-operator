@@ -52,6 +52,10 @@ public class LogMatcher
     return new LogMatcher(Level.SEVERE, expectedMessage);
   }
 
+  public static LogMatcher containsConfig(String expectedMessage) {
+    return new LogMatcher(Level.CONFIG, expectedMessage);
+  }
+
   public static LogMatcher containsFine(String expectedMessage) {
     return new LogMatcher(Level.FINE, expectedMessage);
   }
