@@ -70,7 +70,7 @@ public class ItFmwDiiSample {
   private static String domainNamespace = null;
 
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-sample-testing");
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-diisample-testing");
 
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
