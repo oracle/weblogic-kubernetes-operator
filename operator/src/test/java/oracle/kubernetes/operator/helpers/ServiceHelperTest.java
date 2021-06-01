@@ -81,7 +81,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 @SuppressWarnings("ConstantConditions")
 abstract class ServiceHelperTest extends ServiceHelperTestBase {
 
-  private static final String TEST_CLUSTER = "cluster-1";
   private static final int TEST_NODE_PORT = 30001;
   private static final int TEST_NODE_SSL_PORT = 30002;
   private static final int NAP1_NODE_PORT = 30012;

@@ -53,6 +53,8 @@ spec:
   
   clusters:
   - clusterName: cluster1
+    clusterService:
+      sessionAffinity: ClientIP
     serverPod:
       readinessProbe:
         initialDelaySeconds: 10
