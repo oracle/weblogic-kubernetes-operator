@@ -91,6 +91,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -286,7 +287,9 @@ class ItParameterizedDomain {
     String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("Introspector Job Log"));
-    assertTrue(operatorPodLog.contains(""));
+    assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
+    assertTrue(operatorPodLog.contains("Operator cannot proceed, as the Custom Resource Definition for"
+        + " ''domains.weblogic.oracle'' is not installed."));
   }
 
   /**
