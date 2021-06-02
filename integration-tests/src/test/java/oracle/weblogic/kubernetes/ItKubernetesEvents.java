@@ -824,7 +824,7 @@ public class ItKubernetesEvents {
     //change includeServerOutInPodLog
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
-        + "\"value\": \"" + Boolean.toString(!includeLogInPod) + "\"}"
+        + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
         + "]";
     logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
 
