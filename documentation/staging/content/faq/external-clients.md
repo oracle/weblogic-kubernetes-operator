@@ -152,8 +152,8 @@ is hosted outside of the Kubernetes cluster, then:
   This can significantly speedup connection creation for EJB and JMS clients.
   See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
 
-- You may need to use the [RJVM forwarding](#rjvm-forwarding) feature to
-  support external WebLogic JTA access.
+- You may need to use the [RJVM forwarding](#cross-domain-transactions) feature to
+  support JTA transactions that involve multiple WebLogic Server domains.
 
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications
@@ -171,9 +171,9 @@ that call the resource are located within the cluster, then:
     This can significantly speedup tunneling connection creation for EJB and JMS clients.
     See [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms).
 
-- You may need to use the [RJVM forwarding](#rjvm-forwarding) feature to
-  support external WebLogic JTA access.
-
+- You may need to use the [RJVM forwarding](#cross-domain-transactions) feature to
+  support JTA transactions that involve multiple WebLogic Server domains.
+  
 {{% notice note %}}
 All DNS addresses must be 'DNS-1123' compliant;
 this means that any DNS names created using the name of a service,
@@ -449,25 +449,25 @@ To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA 
 #### Cross-domain transactions
 
 JTA transactions that span WebLogic Server domains are referred to as cross-domain transactions. The
-WebLogic Server Transaction Manager (TM) requires a direct server-to-server communications with all 
+WebLogic Server Transaction Manager (TM) requires direct server-to-server communications with all 
 other global transaction server participants. For a Kubernetes hosted WebLogic cluster, this
-requires each server in a cluster to be individually addressable, but this conflicts 
+requires each server in the cluster to be individually addressable, but this conflicts 
 with the current operator requirement that a network channel in a cluster have the same port across 
 all servers in the cluster.
 
-Cross-domain transactions can be supported with RJVM forwarding.
+Cross-domain transactions can be supported with the RJVM forwarding feature.
 
 ##### What is RJVM forwarding?
 
-RJVM forwarding makes cross-domain transactions possible by ensuring that T3 messages, such as 
-transaction coordination RMI calls issued by the TM, will reach the
-target WebLogic Server without requiring each server in a cluster to be individually addressable.
+RJVM forwarding makes cross-domain transactions possible without requiring each server in a cluster 
+to be individually addressable. 
 
 It requires the use of a proxy, such as a load balancer or an [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) 
-that is configured to route incoming messages to servers in the target WebLogic Server domain.
+that is configured to route messages to servers in the target WebLogic Server domain.
 
-When a T3 message is sent from a source WebLogic Server to a target WebLogic Server in a different WebLogic Server domain:
-1. The source WebLogic Server chooses the URL of a configured proxy based on the destination
+When a T3 message, such as transaction coordination RMI calls issued by the WebLogic Server TM, 
+is sent from a source WebLogic Server to a target WebLogic Server in a different WebLogic Server domain:
+1. The source WebLogic Server chooses the URL of a proxy based on the destination
   address of the message, and sends the message to that URL.
 1. The proxy then routes the message to one of the WebLogic Servers in the
   target WebLogic Server domain according to its routing rules. Note that the message may or may not
@@ -494,24 +494,29 @@ participants not able to reach the transaction coordinator:
 
 ##### How to configure RJVM forwarding?
 
-Configure a proxy, such as an ingress or a load balancer, for each WebLogic Server domain that 
-is a participant in global transactions but is not reachable by all other global transaction participants,
-i.e, the listen addresses of the WebLogic servers in the domain cannot be resolved by the DNS from any other participant. 
+Configure a proxy for each WebLogic Server domain that is a participant in global transactions but
+is not reachable by all other global transaction participants due to the listen addresses of
+the WebLogic servers in the domain cannot be resolved by the DNS from any other participant. 
 For example, if servers in domain1 cannot be reached from servers in domain2, configure a proxy 
 for domain1 such that messages sent from servers in domain2 can be routed to servers in domain1 
 via the proxy.
 
-In each WebLogic Server domain, specify the URL for the proxy for each target WebLogic Server domain
-it needs to communicate with through a proxy:
+In each source WebLogic Server domain, specify the URL for the proxy for each target WebLogic Server domain:
 
+- Apply patch 32408938 on each target WebLogic Server instance for versions 12.2.1.3 (PS3) or earlier.
 - Set the `weblogic.rjvm.domain.proxy.<prefix>` Java system property to the URL of the proxy. `<prefix>`
-  is typically the domain uid of the target WebLogic Server domain. For example, if the URL of the proxy
-  for domain1 is `t3://proxy-host:31234`, specify the following Java system property for WebLogic servers 
-  in domain2:
-  `-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234`
+  is typically the domain uid of the target WebLogic Server domain. Multiple system properties
+  with different values of `<prefix>` can be specified.
 - For operator hosted WebLogic Server instances, you can set this property by including the system property in the `JAVA_OPTIONS`
   [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
-- Also apply patch 32408938 on each target WebLogic Server instance for versions 12.2.1.3 (PS3) or earlier.
+
+For example, if the URL of the proxy for domain1 is t3://proxy-host:31234, specify 
+Java system property `-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234`
+in WebLogic Server domain domain2.
+A message originating from WebLogic servers in domain2 that are addressed to host name that starts 
+with domain1, such as t3://domain1-managed-server1:8001, will be sent to the proxy at 
+t3://proxy-host:31234. The proxy then route the messages to a WebLogic server in domain2, and
+RJVM forwarding will ensure that the message will reach WebLogic Server managed-server1 in domain domain1.
 
 {{% notice note %}}
 Patch 30656708 for the [enable unknown host access](#enabling-unknown-host-access) is not compatible
