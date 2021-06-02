@@ -867,6 +867,8 @@ public class ItKubernetesEvents {
     event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
+    //********** I don't see the following event  **********************
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
   /**
@@ -936,10 +938,18 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    //verify the domainHome and mountPath changes causes the domain roll events to be logged
+    //verify the domainHome,logHome and mountPath changes causes the domain roll events to be logged
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
+
+    CoreV1Event     event = getEvent(opNamespace, domainNamespace1,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("/sharedpv"));
+    assertTrue(event.getMessage().contains("LOG_HOME"));
+    assertTrue(event.getMessage().contains("DOMAIN_HOME"));
+
+    event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the domainHome changed message is logged");
@@ -947,12 +957,7 @@ public class ItKubernetesEvents {
     assertTrue(event.getMessage().contains("logHome"));
     //********** I don't see the following message  **********************
     assertTrue(event.getMessage().contains("mountPath"));
-    event = getEvent(opNamespace, domainNamespace1,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("/sharedpv"));
-    assertTrue(event.getMessage().contains("LOG_HOME"));
-    assertTrue(event.getMessage().contains("DOMAIN_HOME"));
+
     //********** I don't see the following event  **********************
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
