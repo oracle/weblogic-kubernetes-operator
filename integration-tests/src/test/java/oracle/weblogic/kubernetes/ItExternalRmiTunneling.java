@@ -367,6 +367,7 @@ class ItExternalRmiTunneling {
     logger.info("External RMI tunneling works for Traefik");
   }
 
+  @Disabled("NGNIX tls ingress yaml file not ready")
   @Order(3)
   @Test
   @DisplayName("Verify RMI access WLS through Nginx LoadBalancer")
