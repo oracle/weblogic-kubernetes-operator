@@ -19,7 +19,6 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.ClusterService;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
@@ -46,8 +45,6 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.CLIENT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.CLIENT_HOST_IP;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -139,7 +136,6 @@ class ItExternalRmiTunneling {
   @BeforeAll
   public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
-    logger.info("CLIENT_HOST {0} and CLIENT_HOST_IP {1}", CLIENT_HOST, CLIENT_HOST_IP);
     logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -370,59 +366,6 @@ class ItExternalRmiTunneling {
     logger.info("External RMI tunneling works for Traefik");
   }
 
-  @Order(3)
-  @Test
-  @DisplayName("Verify RMI access WLS through Nginx LoadBalancer")
-  public void testExternalRmiAccessThruNginx() {
-
-    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-    // Build the standalone JMS Client to send and receive messages
-    buildClient();
-    buildClientOnPod();
-
-    // Prepare the voyager ingress file from the template file by replacing
-    // domain namespace, domain UID, cluster service name and tls secret
-    Map<String, String> templateMap  = new HashMap();
-    templateMap.put("DOMAIN_NS", domainNamespace);
-    templateMap.put("DOMAIN_UID", domainUid);
-    templateMap.put("CLUSTER", clusterName);
-    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
-
-    Path srcNginxHttpFile = Paths.get(RESOURCE_DIR,
-        "tunneling", "nginx.tunneling.template.yaml");
-    Path targetNginxHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcNginxHttpFile.toString(),
-        "nginx.tunneling.yaml", templateMap));
-    logger.info("Generated Nginx Http Tunneling file {0}", targetNginxHttpFile);
-
-    StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
-    deployIngress.append(Paths.get(RESULTS_ROOT, "nginx.tunneling.yaml"));
-    // Deploy the nginx ingress controller
-    ExecResult result = assertDoesNotThrow(
-        () -> exec(new String(deployIngress), true));
-
-    // Unlike Voyager, there is no such service to check for tunneling
-    logger.info("kubectl apply returned {0}", result.toString());
-
-    // Get the ingress service nodeport corresponding to non-tls service
-    // Get the Traefik Service Name ginx-release-etqg-ingress-nginx-controller
-    String service = 
-        NGINX_RELEASE_NAME + "-" 
-        + nginxNamespace.substring(3) + "-ingress-nginx-controller";
- 
-    logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
-    int httpTunnelingPort =
-        getServiceNodePort(nginxNamespace, service, "http");
-    assertTrue(httpTunnelingPort != -1,
-        "Could not get the Nginx HttpTunnelingPort service node port");
-    logger.info("HttpTunnelingPort for Nginx {0}", httpTunnelingPort);
-
-    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works from RMI client outside of k8s cluster 
-    runExtClient(httpTunnelingPort, 2, false);
-    logger.info("External RMI tunneling works for Nginx");
-  }
-
   /**
    * The external JMS client sends 300 messages to a Uniform Distributed
    * Queue using load balancer HTTPS url which maps to custom channel on
@@ -431,7 +374,7 @@ class ItExternalRmiTunneling {
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
-  @Order(4)
+  @Order(3)
   @Test
   @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
   public void testExternalRmiAccessThruVoyagerHttpsTunneling() {
@@ -472,7 +415,7 @@ class ItExternalRmiTunneling {
     runExtHttpsClient(httpsTunnelingPort, 2, false);
   }
 
-  @Order(5)
+  @Order(4)
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
   public void testExternalRmiAccessThruTraefikHttpsTunneling() {
@@ -593,7 +536,6 @@ class ItExternalRmiTunneling {
     // Generate java command to execute client with classpath
     StringBuffer httpUrl = new StringBuffer("http://");
     httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
-    // httpUrl.append(CLIENT_HOST + ":" + httpTunnelingPort);
     StringBuffer javaCmd = new StringBuffer("java -cp ");
     javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
     javaCmd.append(":");
@@ -810,9 +752,7 @@ class ItExternalRmiTunneling {
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
-                            .serverStartState("RUNNING")
-                            .clusterService(new ClusterService()
-                                .sessionAffinity("ClientIP")))
+                            .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .model(new Model()
                                     .domainType("WLS")
