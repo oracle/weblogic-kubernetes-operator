@@ -1,5 +1,5 @@
 ---
-title: "Set up your environment"
+title: "Setup checklist"
 date: 2019-02-23T16:43:10-05:00
 weight: 1
 

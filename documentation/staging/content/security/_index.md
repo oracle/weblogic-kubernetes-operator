@@ -2,7 +2,7 @@
 title = "Security"
 date = 2019-02-23T17:34:48-05:00
 weight = 9
-pre = "<b>9. </b>"
+pre = "<b> </b>"
 +++
 
 

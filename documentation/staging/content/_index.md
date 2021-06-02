@@ -50,29 +50,3 @@ resource schema, operator Helm chart input values, configuration overrides templ
 by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
-
-### About this documentation
-
-This documentation includes sections targeted to different audiences.  To help you find what you are looking for more easily,
-please consult this table of contents:
-
-* The [Quick Start guide]({{< relref "/quickstart/_index.md" >}}) explains how to quickly get the operator running, using the defaults, nothing special.
-* The [User guide]({{< relref "/userguide/_index.md" >}}) contains detailed usage information, including how to install and configure the operator,
-  and how to use it to create and manage WebLogic domains.  
-* The [Samples]({{< relref "/samples/simple/_index.md" >}}) provide detailed example code and instructions that show you how to perform
-  various tasks related to the operator.
-* The [Developer guide]({{< relref "/developerguide/_index.md" >}}) provides details for people who want to understand how the operator is built, tested, and so on. Those who wish to [contribute]({{< relref "/developerguide/contributing.md" >}}) to the operator code will find useful information here.
-* [Reference]({{< relref "/reference/_index.md" >}}) describes domain resource attributes and the operator REST API.
-* [Security]({{< relref "/security/_index.md" >}}) describes Kubernetes, WebLogic, and OpenShift security requirements.
-* [Frequently asked questions]({{< relref "/faq/_index.md" >}}) provides answers to common questions.
-
-### Oracle support
-
-To access Oracle support for running WebLogic Server domains on Kubernetes platforms, see [WebLogic Server Certifications on Kubernetes in My Oracle Support Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2349228.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
-
-### Need more help? Have a suggestion? Come and say, "Hello!"
-
-We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
-or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
-please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
-details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"

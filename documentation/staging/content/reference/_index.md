@@ -2,7 +2,7 @@
 title = "Reference"
 date = 2019-02-22T16:16:39-05:00
 weight = 8
-pre = "<b>8. </b>"
+pre = "<b> </b>"
 +++
 
 
