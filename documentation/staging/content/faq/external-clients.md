@@ -24,7 +24,10 @@ description: "This FAQ describes approaches for giving WebLogic applications acc
 - [Enabling unknown host access](#enabling-unknown-host-access)
    - [When is it necessary to enable unknown host access?](#when-is-it-necessary-to-enable-unknown-host-access)
    - [How to enable unknown host access](#how-to-enable-unknown-host-access)
-- [RJVM forwarding](#rjvm-forwarding)  
+- [Cross-domain transactions](#cross-domain-transactions)  
+   - [What is RJVM forwarding](#what-is-rjvm-forwarding)
+   - [When is it necessary to configure RJVM forwarding?](#when-is-it-necessary-to-configure-rjvm-forwarding)
+   - [How to configure RJVM forwarding?](#how-to-configure-rjvm-forwarding)
 - [Configuring WebLogic Server affinity load balancing algorithms](#configuring-a-weblogic-server-affinity-load-balancing-algorithms)
 - [Configuring external listen addresses for WebLogic default channels](#configuring-external-listen-addresses-for-weblogic-default-channels)
 - [Security notes](#security-notes)
@@ -443,53 +446,79 @@ To enable an 'unknown host' source WebLogic Server to initiate EJB, JMS, or JTA 
     * For operator hosted WebLogic Server instances, you can set this property by including `-Dweblogic.rjvm.allowUnknownHost=true` in the `JAVA_OPTIONS` [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
   * Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.
 
-#### RJVM forwarding
+#### Cross-domain transactions
 
-##### What does it do?
-
-JTA communication requires that all global transaction server participants require a direct
-point-to-point network connection with all other server participants.
-This requires each server in a cluster to be individually addressable, but this conflicts with
-the current operator requirement that a network channel in a cluster have the same port across
+JTA transactions that span WebLogic Server domains are referred to as cross-domain transactions. The
+WebLogic Server Transaction Manager (TM) requires a direct server-to-server communications with all 
+other global transaction server participants. For a Kubernetes hosted WebLogic cluster, this
+requires each server in a cluster to be individually addressable, but this conflicts 
+with the current operator requirement that a network channel in a cluster have the same port across 
 all servers in the cluster.
 
-This feature allows a proxy URL to be specified for target domains that a WebLogic Server needs
-to communicate with. The proxy URL is the address and port of an ingress, such as a 
-load balancer. When a T3 message is sent from a WebLogic Server to a WebLogic Server in the
-target domain:
-- In the source WebLogic Server, the message is sent to the configured proxy URL for the target 
-  WebLogic domain
-- The ingress or load balancer then forwards the T3 message to one of the WebLogic Servers in the 
-  target domain according to its forwarding rules 
-- In the target WebLogic domain, the target WebLogic Server received the T3 message either directly
-  from the ingress, or by another WebLogic Server in the same domain forwarding the message it
-  received from the ingress.
+Cross-domain transactions can be supported with RJVM forwarding.
 
-##### When is it needed?
+##### What is RJVM forwarding?
 
+RJVM forwarding makes cross-domain transactions possible by ensuring that T3 messages, such as 
+transaction coordination RMI calls issued by the TM, will reach the
+target WebLogic Server without requiring each server in a cluster to be individually addressable.
+
+It requires the use of a proxy, such as a load balancer or an [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) 
+that is configured to route incoming messages to servers in the target WebLogic Server domain.
+
+When a T3 message is sent from a source WebLogic Server to a target WebLogic Server in a different WebLogic Server domain:
+1. The source WebLogic Server chooses the URL of a configured proxy based on the destination
+  address of the message, and sends the message to that URL.
+1. The proxy then routes the message to one of the WebLogic Servers in the
+  target WebLogic Server domain according to its routing rules. Note that the message may or may not
+  be routed to the target WebLogic Server.
+1. If the message is routed to a WebLogic Server other than the target WebLogic Server, 
+  that WebLogic Server will forward the message to the intended recipient
+  within the same WebLogic Server domain.
+  
+##### When is it necessary to configure RJVM forwarding?
+
+RJVM forwarding may be needed when transaction server participants are not able to establish
+connection with one another.
+
+For example, if a cross-domain transaction has failed, and messages such as the following can be found in
+the WebLogic server log files:
 
 `<BEA-111015> <The commit operation for transaction BEA1-0000993203DB6CDB7DE9 timed out after 30 seconds.>`
 
-With -Dweblogic.debug.DebugJTA2PC=true, 
-`<BEA-000000> <startPrepare FAILED javax.transaction.SystemException: Could not obtain coordinator at managed-server1+domain1-managed-server1:8001+domain1+t3+`
+With additional JTA debugging turned on using Java system property `-Dweblogic.debug.DebugJTA2PC=true`,
+messages such as the following confirms that the failed transaction is caused by transaction
+participants not able to reach the transaction coordinator:
 
-This also allows is also useful when without setting up external DNS address of the ...
+`...<startPrepare FAILED javax.transaction.SystemException: Could not obtain coordinator at managed-server1+domain1-managed-server1:8001+domain1+t3+...`
 
+##### How to configure RJVM forwarding?
 
-##### How to enable RJVM forwarding?
+Configure a proxy, such as an ingress or a load balancer, for each WebLogic Server domain that 
+is a participant in global transactions but is not reachable by all other global transaction participants,
+i.e, the listen addresses of the WebLogic servers in the domain cannot be resolved by the DNS from any other participant. 
+For example, if servers in domain1 cannot be reached from servers in domain2, configure a proxy 
+for domain1 such that messages sent from servers in domain2 can be routed to servers in domain1 
+via the proxy.
 
-- Set the `weblogic.rjvm.proxy.forward.<host-name-prefix>` Java system property to the URL of the ingress into the
-  cluster....<TODO>
-  - For operator hosted WebLogic Server instances, you can set this property by including the system property in the `JAVA_OPTIONS`
-    [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+In each WebLogic Server domain, specify the URL for the proxy for each target WebLogic Server domain
+it needs to communicate with through a proxy:
+
+- Set the `weblogic.rjvm.domain.proxy.<prefix>` Java system property to the URL of the proxy. `<prefix>`
+  is typically the domain uid of the target WebLogic Server domain. For example, if the URL of the proxy
+  for domain1 is `t3://proxy-host:31234`, specify the following Java system property for WebLogic servers 
+  in domain2:
+  `-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234`
+- For operator hosted WebLogic Server instances, you can set this property by including the system property in the `JAVA_OPTIONS`
+  [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
 - Also apply patch 32408938 on each target WebLogic Server instance for versions 12.2.1.3 (PS3) or earlier.
 
 {{% notice note %}}
-The patch for the [enable unknown host access](#enabling-unknown-host-access) is not compatible
-with the patch for the RJVM forwarding feature. Instead of using the `weblogic.rjvm.allowUnknownHost` 
+Patch 30656708 for the [enable unknown host access](#enabling-unknown-host-access) is not compatible
+with patch 32408938 for the RJVM forwarding feature. Instead of using the `weblogic.rjvm.allowUnknownHost` 
 Java system property, use the Java system property for RJVM forwarding on the target WebLogic Server
 to specify the proxy URL for each source WebLogic domain. Connections from these source WebLogic 
-domains will not be rejected due to failed DNS resolution.
+domains will not be rejected due to DNS resolution failure.
 {{% /notice %}}
 
 #### Configuring WebLogic Server affinity load balancing algorithms
