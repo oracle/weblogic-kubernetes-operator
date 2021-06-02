@@ -725,17 +725,12 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
-   * Verify all the pods are restarted and back to ready state
-   * Verify the admin server is accessible and cluster members are healthy
-   * This test will be skipped if the image tag is the latest WebLogic image tag
+   * The test modifies the logHome property and verifies the domain roll starting events are logged.
    */
-  @Order(5)
+  @Order(18)
   @Test
-  @DisplayName("Verify server pods are restarted by updating image name")
-  public void testLogHomeChange() {
+  @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
+  public void testLogHomeChangeEvents() {
 
     OffsetDateTime timestamp = now();
 
@@ -750,26 +745,22 @@ public class ItKubernetesEvents {
 
     //print out the original image name
     String logHome = domain1.getSpec().getLogHome();
-    logger.info("Currently the log home used for the domain is: {0}", logHome);
+    logger.info("Currently the log home used by the domain is: {0}", logHome);
 
-    //change logHome to /shared/logs/logHome
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/logHome\",")
-        .append("\"value\": \"")
-        .append("/shared/logs/loghome")
-        .append("\"}]");
-    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+    //change logHome from /shared/logs to /shared/logs/logHome
+    String patchStr = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/loghome\"}"
+        + "]";
+    logger.info("PatchStr for logHome: {0}", patchStr);
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace1, patchStr),
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
         "patchDomainCustomResource(logHome) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace1));
 
-    //print out image name in the new patched domain
+    //print out logHome in the new patched domain
     logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
     assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
 
@@ -787,31 +778,27 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    //verify the logHome change causes the domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the logHome changed messages is logged");
+    assertTrue(event.getMessage().contains("logHome"));
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the resource changed messages is logged");
-    //assertTrue(event.getMessage().contains("imagePullPolicy"));
   }
 
 
   /**
-   * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
-   * Verify all the pods are restarted and back to ready state
-   * Verify the admin server is accessible and cluster members are healthy
-   * This test will be skipped if the image tag is the latest WebLogic image tag
+   * The test modifies the includeServerOutInPodLog property and verifies the domain roll starting events are logged.
    */
-  @Order(5)
+  @Order(19)
   @Test
-  @DisplayName("Verify server pods are restarted by updating image name")
+  @DisplayName("Verify includeServerOutInPodLog property change rolls domain and relevant events are logged")
   public void testIncludeServerOutInPodLog() {
 
     OffsetDateTime timestamp = now();
@@ -825,30 +812,29 @@ public class ItKubernetesEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    //print out the original image name
+    //print out the original includeServerOutInPodLog value
     boolean includeLogInPod = domain1.getSpec().includeServerOutInPodLog();
-    logger.info("Currently the log home used for the domain is: {0}", includeLogInPod);
+    logger.info("Currently the includeServerOutInPodLog used for the domain is: {0}", includeLogInPod);
 
-    //change logHome to /shared/logs/logHome
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/includeServerOutInPodLog\",")
-        .append("\"value\": \"")
-        .append(Boolean.toString(!includeLogInPod))
-        .append("\"}]");
-    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+    //change includeServerOutInPodLog
+    String patchStr = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
+        + "\"value\": \"" + Boolean.toString(!includeLogInPod) + "\"}"
+        + "]";
+    logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
 
-    assertTrue(patchDomainResource(domainUid, domainNamespace1, patchStr),
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
         "patchDomainCustomResource(includeServerOutInPodLog) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace1));
 
-    //print out image name in the new patched domain
-    logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
-    assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
+    //print out includeServerOutInPodLog in the new patched domain
+    logger.info("In the new patched domain includeServerOutInPodLog is: {0}",
+        domain1.getSpec().includeServerOutInPodLog());
+    assertTrue(domain1.getSpec().includeServerOutInPodLog() != includeLogInPod,
+        "includeServerOutInPodLog is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -864,30 +850,25 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    //verify the includeServerOutInPodLog change causes the domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    event = getEvent(opNamespace, domainNamespace1,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
+    assertTrue(event.getMessage().contains("includeServerOutInPodLog"));
+    event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the resource changed messages is logged");
-    //assertTrue(event.getMessage().contains("imagePullPolicy"));
   }
 
   /**
-   * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
-   * Verify all the pods are restarted and back to ready state
-   * Verify the admin server is accessible and cluster members are healthy
-   * This test will be skipped if the image tag is the latest WebLogic image tag
+   * The test modifies the domainHome and mountPath property and verifies the domain roll starting events are logged.
    */
-  @Order(5)
+  @Order(20)
   @Test
-  @DisplayName("Verify server pods are restarted by updating image name")
+  @DisplayName("Verify doaminHome and mountPath property changes rolls domain and relevant events are logged")
   public void testDomainHomeAndMountPathChange() {
 
     OffsetDateTime timestamp = now();
@@ -901,20 +882,20 @@ public class ItKubernetesEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
-    //print out the original image name
+    //print out the original domainHome
     String domainHome = domain1.getSpec().getDomainHome();
-    logger.info("Currently the log home used for the domain is: {0}", domainHome);
+    logger.info("Currently the domain home used for the domain is: {0}", domainHome);
 
     String mountPath = domain1.getSpec().getServerPod().volumeMounts().get(0).getMountPath();
-    logger.info("Currently the mount path used for the domain is: {0}", mountPath);
+    logger.info("Currently the pv mount path used for the domain is: {0}", mountPath);
 
-    //change logHome to /shared/logs/logHome
+    //change domainHome to /sharedpv/domains/domainUid
+    //change mountPath to /sharedpv
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"/sharedpv/domains/" + domainUid + "\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/0/mountPath\", "
-        + "\"value\": \"/sharedpv/domains/" + domainUid + "\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/0/mountPath\", \"value\": \"/sharedpv\"}"
         + "]";
-    logger.info("PatchStr for imageUpdate: {0}", patchStr);
+    logger.info("PatchStr for domainHome and pv mounPath update is : {0}", patchStr);
 
     assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
         "patchDomainCustomResource failed");
@@ -923,10 +904,16 @@ public class ItKubernetesEvents {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace1));
 
-    //print out image name in the new patched domain
+    //print out domain home in the new patched domain
     logger.info("In the new patched domain domainHome is: {0}", domain1.getSpec().getDomainHome());
     assertTrue(domain1.getSpec().getDomainHome().equals("/sharedpv/domains/" + domainUid),
         "domainHome is not updated");
+
+    //print out mountPath in the new patched domain
+    logger.info("In the new patched domain mountPath is: {0}",
+        domain1.getSpec().getServerPod().volumeMounts().get(0).getMountPath());
+    assertTrue(domain1.getSpec().getServerPod().volumeMounts().get(0).getMountPath().equals("/sharedpv"),
+        "mountPath is not updated");
 
     // verify the server pods are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
@@ -942,17 +929,17 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    //verify the domainHome and mountPath changes causes the domain roll events to be logged
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the domainHome changed message is logged");
+    assertTrue(event.getMessage().contains("domainHome"));
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the resource changed messages is logged");
-    //assertTrue(event.getMessage().contains("imagePullPolicy"));
   }
 
   /**

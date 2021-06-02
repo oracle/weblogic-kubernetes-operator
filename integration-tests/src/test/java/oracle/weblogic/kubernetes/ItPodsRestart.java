@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -139,6 +140,7 @@ class ItPodsRestart {
    * The resources tested: resources: limits: cpu: "1", resources: requests: cpu: "0.5"
    * Test fails if any server pod is not restarted and back to ready state or the compute resources in the patched
    * domain custom resource do not match the values we planned to add or modify.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing the resources")
@@ -234,6 +236,7 @@ class ItPodsRestart {
         String.format("server pod compute resources requests was not updated correctly, set cpu request to %s, got %s",
             cpuRequest, requests.get("cpu").getNumber()));
 
+    //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
 
     // verify the server pods are rolling restarted and back to ready state
@@ -242,19 +245,20 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    //verify the resource change causes the domain restart and domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
     assertTrue(event.getMessage().contains("cpu"));
-
   }
 
   /**
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    * The resource tested: includeServerOutInPodLog: true --> includeServerOutInPodLog: false.
    */
   @Test
@@ -298,6 +302,7 @@ class ItPodsRestart {
         includeServerOutInPodLog);
     assertFalse(includeServerOutInPodLog, "IncludeServerOutInPodLog was not updated");
 
+    //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
 
     // verify the server pods are rolling restarted and back to ready state
@@ -306,7 +311,8 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    //verify the includeServerOutInPodLog change causes the domain restart and domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
@@ -319,6 +325,7 @@ class ItPodsRestart {
   /**
    * Modify domain scope serverPod env property on the domain resource.
    * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    * The env property tested: "-Dweblogic.StdoutDebugEnabled=false" --> "-Dweblogic.StdoutDebugEnabled=true".
    */
   @Test
@@ -373,6 +380,7 @@ class ItPodsRestart {
     assertTrue(envValue.equalsIgnoreCase("-Dweblogic.StdoutDebugEnabled=true"), "JAVA_OPTIONS was not updated"
         + " in the new patched domain");
 
+    //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
 
     // verify the server pods are rolling restarted and back to ready state
@@ -381,19 +389,20 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the resource changed messages is logged");
-    assertTrue(event.getMessage().contains("domain resource changed"));
+    logger.info("verify the event message contains the env changed messages is logged");
+    assertTrue(event.getMessage().contains("env"));
 
   }
 
   /**
    * Add domain scope serverPod podSecurityContext on the domain resource.
    * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    * The tested resource: podSecurityContext: runAsUser: 1000.
    */
   @Test
@@ -411,6 +420,9 @@ class ItPodsRestart {
 
     // get the map with server pods and their original creation timestamps
     podsWithTimeStamps = getPodsWithTimeStamps();
+
+    //get current timestamp before domain rolling restart to verify domain roll events
+    OffsetDateTime timestamp = now();
 
     //print out the original podSecurityContext
     logger.info("In the domain1 podSecurityContext is: " + domain1.getSpec().getServerPod().getPodSecurityContext());
@@ -453,11 +465,20 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info("verify the event message contains the security context changed messages is logged");
+    assertTrue(event.getMessage().contains("security"));
+
   }
 
   /**
    * Modify the domain scope property on the domain resource.
    * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    * The resources tested: imagePullPolicy: IfNotPresent --> imagePullPolicy: Never.
    */
   @Test
@@ -502,6 +523,7 @@ class ItPodsRestart {
     assertTrue(imagePullPolicy.equalsIgnoreCase("Never"), "imagePullPolicy was not updated"
         + " in the new patched domain");
 
+    //get current timestamp before domain rolling restart to verify domain roll events
     OffsetDateTime timestamp = now();
 
     // verify the server pods are rolling restarted and back to ready state
@@ -510,16 +532,22 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the resource changed messages is logged");
+    logger.info("verify the event message contains the image pull policy changed message is logged");
     assertTrue(event.getMessage().contains("imagePullPolicy"));
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
 
+  /**
+   * Modify the domain scope restartVersion on the domain resource.
+   * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
+   */
   @Test
   @DisplayName("Restart pods using restartVersion flag")
   public void testRestartVersion() {
@@ -556,7 +584,7 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
@@ -565,11 +593,19 @@ class ItPodsRestart {
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the restartVersion changed message is logged");
+    assertTrue(event.getMessage().contains("restartVersion"));
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
 
+  /**
+   * Modify the image on the domain resource.
+   * Verify all pods are restarted and back to ready state.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
+   */
   @Test
-  @DisplayName("Restart pods using restartVersion flag")
+  @DisplayName("Check restart of pods after image change")
   public void testRestartWithImageChange() {
 
     String newImage = KIND_REPO != null ? KIND_REPO + "mychangedimage:mii" : "mychangedimage:mii";
@@ -607,7 +643,7 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    logger.info("verify domain roll started/pod cycle started events are logged");
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
@@ -616,6 +652,8 @@ class ItPodsRestart {
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("image"));
+    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
 

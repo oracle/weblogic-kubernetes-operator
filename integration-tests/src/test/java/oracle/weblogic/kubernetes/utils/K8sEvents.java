@@ -336,6 +336,7 @@ public class K8sEvents {
   public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
   public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
+  public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
   public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";

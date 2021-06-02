@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -526,6 +527,7 @@ public class ItIntrospectVersion {
    * Updates the admin server listen port using online WLST.
    * Patches the domain custom resource with introSpectVersion.
    * Verifies the introspector runs and pods are restated in a rolling fashion.
+   * Verifies that the domain roll starting/pod cycle starting events are logged.
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
    */
@@ -580,6 +582,7 @@ public class ItIntrospectVersion {
     assertTrue(execResult.exitValue() == 0 || execResult.stderr() == null || execResult.stderr().isEmpty(),
         "Failed to change admin port number");
 
+    //needed for event verification
     OffsetDateTime timestamp = now();
 
     patchDomainResourceWithNewIntrospectVersion(domainUid, introDomainNamespace);
@@ -592,18 +595,6 @@ public class ItIntrospectVersion {
 
     //verify the pods are restarted
     verifyRollingRestartOccurred(pods, 1, introDomainNamespace);
-
-    logger.info("verify domain roll started/pod cycle started events are logged");
-    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    event = getEvent(opNamespace, introDomainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the resource changed messages is logged");
-    //assertTrue(event.getMessage().contains("imagePullPolicy"));
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, introDomainNamespace);
@@ -624,6 +615,20 @@ public class ItIntrospectVersion {
           managedServerPodNamePrefix + i, introDomainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
+
+    //verify the introspectVersion change causes the domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the introspectVersion changed message");
+    assertTrue(event.getMessage().contains("introspectVersion"));
+    event = getEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+
 
     // verify the admin port is changed to newAdminPort
     assertEquals(newAdminPort, assertDoesNotThrow(()
@@ -1186,7 +1191,6 @@ public class ItIntrospectVersion {
   @ExtendWith(WebLogicImageCondition.class)
   @interface AssumeWebLogicImage {
   }
-
 
   // Utility method to check event
   private static void checkEvent(
