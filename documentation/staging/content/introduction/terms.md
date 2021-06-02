@@ -19,7 +19,3 @@ This documentation uses several important terms which are intended to have a spe
 | Job	    | A Kubernetes Job is a type of controller that creates one or more Pods that run to completion to complete a specific task. |
 | Secret	| A Kubernetes Secret is a named object that can store secret information like user names, passwords, X.509 certificates, or any other arbitrary data. |
 | Service	| A Kubernetes Service exposes application endpoints inside a Pod to other Pods, or outside the Kubernetes cluster.  A Service may also provide additional features like load balancing. |
-
-
-### Additional reading
-Before using the operator, you might want to read the [design philosophy]({{< relref "/userguide/introduction/design.md" >}}) to develop an understanding of the operator's design, and the [architectural overview]({{< relref "/userguide/introduction/architecture.md" >}}) to understand its architecture, including how WebLogic domains are deployed in Kubernetes using the operator. Also worth reading are the details of the [Kubernetes RBAC definitions]({{< relref "/security/rbac.md" >}}) required by the operator.

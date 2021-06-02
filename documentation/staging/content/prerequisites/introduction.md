@@ -5,8 +5,6 @@ weight: 1
 ---
 
 
-### Operator prerequisites
-
 For the current production release 3.2.3:
 
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with `kubectl version`).
