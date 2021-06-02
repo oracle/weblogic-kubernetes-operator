@@ -798,11 +798,162 @@ public class ItKubernetesEvents {
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the resource changed messages is logged");
     //assertTrue(event.getMessage().contains("imagePullPolicy"));
-
-
-
   }
 
+
+  /**
+   * Modify the domain scope property
+   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
+   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
+   * Verify all the pods are restarted and back to ready state
+   * Verify the admin server is accessible and cluster members are healthy
+   * This test will be skipped if the image tag is the latest WebLogic image tag
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify server pods are restarted by updating image name")
+  public void testIncludeServerOutInPodLog() {
+
+    OffsetDateTime timestamp = now();
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    // get the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
+
+    //print out the original image name
+    boolean includeLogInPod = domain1.getSpec().includeServerOutInPodLog();
+    logger.info("Currently the log home used for the domain is: {0}", includeLogInPod);
+
+    //change logHome to /shared/logs/logHome
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"/spec/includeServerOutInPodLog\",")
+        .append("\"value\": \"")
+        .append(Boolean.toString(!includeLogInPod))
+        .append("\"}]");
+    logger.info("PatchStr for imageUpdate: {0}", patchStr.toString());
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, patchStr),
+        "patchDomainCustomResource(includeServerOutInPodLog) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    //print out image name in the new patched domain
+    logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
+    assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace1);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace1),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace1));
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+    }
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, domainNamespace1,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the resource changed messages is logged");
+    //assertTrue(event.getMessage().contains("imagePullPolicy"));
+  }
+
+  /**
+   * Modify the domain scope property
+   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
+   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
+   * Verify all the pods are restarted and back to ready state
+   * Verify the admin server is accessible and cluster members are healthy
+   * This test will be skipped if the image tag is the latest WebLogic image tag
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify server pods are restarted by updating image name")
+  public void testDomainHomeAndMountPathChange() {
+
+    OffsetDateTime timestamp = now();
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    // get the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
+
+    //print out the original image name
+    String domainHome = domain1.getSpec().getDomainHome();
+    logger.info("Currently the log home used for the domain is: {0}", domainHome);
+
+    String mountPath = domain1.getSpec().getServerPod().volumeMounts().get(0).getMountPath();
+    logger.info("Currently the mount path used for the domain is: {0}", mountPath);
+
+    //change logHome to /shared/logs/logHome
+    String patchStr = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"/sharedpv/domains/" + domainUid + "\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/0/mountPath\", "
+        + "\"value\": \"/sharedpv/domains/" + domainUid + "\"}"
+        + "]";
+    logger.info("PatchStr for imageUpdate: {0}", patchStr);
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
+        "patchDomainCustomResource failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    //print out image name in the new patched domain
+    logger.info("In the new patched domain domainHome is: {0}", domain1.getSpec().getDomainHome());
+    assertTrue(domain1.getSpec().getDomainHome().equals("/sharedpv/domains/" + domainUid),
+        "domainHome is not updated");
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace1);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace1),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace1));
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+    }
+
+    logger.info("verify domain roll started/pod cycle started events are logged");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, domainNamespace1,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the resource changed messages is logged");
+    //assertTrue(event.getMessage().contains("imagePullPolicy"));
+  }
 
   /**
    * Cleanup the persistent volume and persistent volume claim used by the test.
