@@ -455,12 +455,10 @@ requires each server in the cluster to be individually addressable, but this con
 with the current operator requirement that a network channel in a cluster have the same port across 
 all servers in the cluster.
 
-Cross-domain transactions can be supported with the RJVM forwarding feature.
+##### RJVM forwarding
 
-##### What is RJVM forwarding?
-
-RJVM forwarding makes cross-domain transactions possible without requiring each server in a cluster 
-to be individually addressable. 
+RJVM forwarding makes cross-domain transactions possible without requiring each server in a cluster
+to be individually addressable.
 
 It requires the use of a proxy, such as a load balancer or an [Ingress]({{< relref "/userguide/managing-domains/ingress/_index.md" >}}) 
 that is configured to route messages to servers in the target WebLogic Server domain.
@@ -495,20 +493,24 @@ participants not able to reach the transaction coordinator:
 ##### How to configure RJVM forwarding?
 
 Configure a proxy for each WebLogic Server domain that is a participant in global transactions but
-is not reachable by all other global transaction participants due to the listen addresses of
-the WebLogic servers in the domain cannot be resolved by the DNS from any other participant. 
+is not reachable by all other global transaction participants, due to the listen addresses of
+the WebLogic servers in the domain cannot be resolved by the DNS from other participants. 
 For example, if servers in domain1 cannot be reached from servers in domain2, configure a proxy 
 for domain1 such that messages sent from servers in domain2 can be routed to servers in domain1 
-via the proxy.
+through the proxy.
 
-In each source WebLogic Server domain, specify the URL for the proxy for each target WebLogic Server domain:
+In each source WebLogic Server domain, specify the URL for the proxy configured for each target 
+WebLogic Server domain:
 
-- Apply patch 32408938 on each target WebLogic Server instance for versions 12.2.1.3 (PS3) or earlier.
 - Set the `weblogic.rjvm.domain.proxy.<prefix>` Java system property to the URL of the proxy. `<prefix>`
-  is typically the domain uid of the target WebLogic Server domain. Multiple system properties
+  is typically the domain UID of the target WebLogic Server domain. Multiple Java system properties
   with different values of `<prefix>` can be specified.
 - For operator hosted WebLogic Server instances, you can set this property by including the system property in the `JAVA_OPTIONS`
   [Domain environment variable]({{< relref "/userguide/managing-domains/domain-resource#jvm-memory-and-java-option-environment-variables" >}}) defined in the domain resource's `spec.serverPod.env` attribute.
+
+In each WebLogic Server that participates in cross-domain transactions, or that is the routing
+destination of a proxy, apply patch 32408938. The patch is available for WebLogic versions 12.2.1.3.0 (PS3), 
+12.2.1.4.0 (PS4), and 14.1.1.0.0.
 
 For example, if the URL of the proxy for domain1 is t3://proxy-host:31234, specify 
 Java system property `-Dweblogic.rjvm.domain.proxy.domain1=t3://proxy-host:31234`
