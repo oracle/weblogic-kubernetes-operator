@@ -3,9 +3,9 @@
 
 package oracle.kubernetes.operator.rest;
 
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -24,12 +24,10 @@ public abstract class BaseDebugLoggingFilter {
   protected static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   protected static final String FILTER_REQUEST_START_TIME = "FILTER_REQUEST_START_TIME";
   protected static final String FILTER_REQUEST_ENTITY = "FILTER_REQUEST_ENTITY";
-  private static final String DATE_FORMAT =
-      "yyyy-MM-dd'T'HH:mm:ss.SSSXXX"; // ISO 8610, includes time zone
+  private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-  protected static String formatTime(long time) {
-    // construct a new SimpleDataFormat each time since it is not thread safe:
-    return new SimpleDateFormat(DATE_FORMAT).format(new Date(time));
+  protected static String formatTime(TemporalAccessor time) {
+    return DATE_FORMAT.format(time);
   }
 
   protected String formatEntity(MediaType type, String entityAsString) {
