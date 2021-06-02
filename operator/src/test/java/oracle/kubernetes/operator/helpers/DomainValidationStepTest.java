@@ -388,7 +388,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarning() {
+  public void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(7001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -397,10 +397,14 @@ public class DomainValidationStepTest {
     assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
+            Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarning() {
+  public void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(8001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -409,10 +413,14 @@ public class DomainValidationStepTest {
     assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
+            Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarning() {
+  public void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(9001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -422,6 +430,10 @@ public class DomainValidationStepTest {
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(9001), DYNAMIC_CLUSTER_NAME,
             Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
+            Integer.toString(9001), DYNAMIC_CLUSTER_NAME, Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
   }
 
   @Test
