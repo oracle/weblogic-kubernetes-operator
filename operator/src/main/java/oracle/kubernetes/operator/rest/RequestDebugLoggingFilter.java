@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.time.OffsetDateTime;
 import javax.annotation.Priority;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -38,7 +39,7 @@ public class RequestDebugLoggingFilter extends BaseDebugLoggingFilter
     try {
       // cache the start time and request body so that the response filter
       // can log them too
-      long start = System.currentTimeMillis();
+      OffsetDateTime start = OffsetDateTime.now();
       req.setProperty(FILTER_REQUEST_START_TIME, start);
       Object reqEntity = getRequestEntity(req);
       if (reqEntity != null) {
