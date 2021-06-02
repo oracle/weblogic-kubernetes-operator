@@ -749,7 +749,7 @@ public class ItKubernetesEvents {
 
     //change logHome from /shared/logs to /shared/logs/logHome
     String patchStr = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/loghome\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
         + "]";
     logger.info("PatchStr for logHome: {0}", patchStr);
 
