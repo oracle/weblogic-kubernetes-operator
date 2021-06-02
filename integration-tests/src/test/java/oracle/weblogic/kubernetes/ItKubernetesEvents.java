@@ -96,6 +96,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPL
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
@@ -790,6 +791,10 @@ public class ItKubernetesEvents {
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("LOG_HOME"));
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
 
@@ -861,6 +866,7 @@ public class ItKubernetesEvents {
     assertTrue(event.getMessage().contains("includeServerOutInPodLog"));
     event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
   }
 
   /**
@@ -893,6 +899,7 @@ public class ItKubernetesEvents {
     //change mountPath to /sharedpv
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"/sharedpv/domains/" + domainUid + "\"},"
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/sharedpv/logHome\"},"
         + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/0/mountPath\", \"value\": \"/sharedpv\"}"
         + "]";
     logger.info("PatchStr for domainHome and pv mounPath update is : {0}", patchStr);
@@ -937,9 +944,17 @@ public class ItKubernetesEvents {
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the domainHome changed message is logged");
     assertTrue(event.getMessage().contains("domainHome"));
+    assertTrue(event.getMessage().contains("logHome"));
+    //********** I don't see the following message  **********************
+    assertTrue(event.getMessage().contains("mountPath"));
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("/sharedpv"));
+    assertTrue(event.getMessage().contains("LOG_HOME"));
+    assertTrue(event.getMessage().contains("DOMAIN_HOME"));
+    //********** I don't see the following event  **********************
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
   /**

@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -628,7 +629,7 @@ public class ItIntrospectVersion {
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("ADMIN_PORT"));
     //********** I don't see the following event  **********************
-    //checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
 
     // verify the admin port is changed to newAdminPort
