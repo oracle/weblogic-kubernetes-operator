@@ -82,21 +82,28 @@ dryrun:# using the contents of '$WORKDIR/$MODEL_DIR'.
 dryrun:
 dryrun:set -eux
 dryrun:
+dryrun:rm -f $WORKDIR/$MODEL_DIR/archive.zip
+dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
+dryrun:zip -q -r $WORKDIR/$MODEL_DIR/archive.zip wlsdeploy
+dryrun:
 dryrun:cd "$WORKDIR"
 dryrun:[ -d "cm-image/${MODEL_IMAGE_TAG}" ] && rm -rf cm-image/${MODEL_IMAGE_TAG}
-dryrun:mkdir -p $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
-dryrun:cp $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
-dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
-dryrun:rm $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/weblogic-deploy/bin/*.cmd
-dryrun:cp $MODEL_YAML_FILES $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
-dryrun:cp $MODEL_VARIABLE_FILES $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
-dryrun:cd $WORKDIR/$ARCHIVE_SOURCEDIR
-dryrun:zip -q -r archive.zip wlsdeploy
-dryrun:cp archive.zip $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/models
-dryrun:cp archive.zip  $WORKDIR/$MODEL_DIR
+dryrun:
+dryrun:mkdir -p $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
 dryrun:cd $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
+dryrun:cp $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile .
+dryrun:mkdir ./models
+dryrun:cp $MODEL_YAML_FILES ./models
+dryrun:cp $MODEL_VARIABLE_FILES ./models
+dryrun:cp $WORKDIR/$MODEL_DIR/archive.zip ./models
+dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d .
+dryrun:rm ./weblogic-deploy/bin/*.cmd
+dryrun:
 dryrun:# see file $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:docker build --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} --build-arg WDT_MODEL_HOME=${WDT_MODEL_HOME} --build-arg WDT_INSTALL_HOME=${WDT_INSTALL_HOME} --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
+dryrun:docker build --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} \\
+dryrun:             --build-arg WDT_MODEL_HOME=${WDT_MODEL_HOME} \\
+dryrun:             --build-arg WDT_INSTALL_HOME=${WDT_INSTALL_HOME} \\
+dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
 else
 cat << EOF

@@ -302,24 +302,31 @@ You can compare this domain resource YAML file with the domain resource YAML fil
 
 ```
 $ diff /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+1c1
+< # Copyright (c) 2021, Oracle and/or its affiliates.
+---
+> # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 23c23
 <   image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 ---
 >   image: "model-in-image:WLS-v1"
 53,57d52
-<   # settings for common mount volume, see also 'serverPod.commonMounts'.
+<   # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
 <   commonMountVolumes:
 <   - name: commonMountsVolume1
 <     mountPath: "/common"
 <
-75,80d69
-<     # Settings for common mounts with images containing model, archives and WDT instal. See also 'spec.commonMountVolumes'.
+75,83d69
+<     # Common mount image(s) containing WDT model, archives and install. See also:
+<     #    'spec.commonMountVolumes'.
+<     #    'spec.configuration.model.modelHome'
+<     #    'spec.configuration.model.wdtInstallHome'
 <     commonMounts:
 <     - image: "model-in-image:WLS-CM-v1"
 <       imagePullPolicy: IfNotPresent
 <       volume: commonMountsVolume1
 <
-142,143d130
+145,146d130
 <       modelHome: "/common/models"
 <       wdtInstallHome: "/common/weblogic-deploy"
 ```

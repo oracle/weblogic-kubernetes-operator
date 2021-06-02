@@ -1,16 +1,31 @@
 # Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
+# This is a sample Dockerfile for supplying Model in Image model files
+# and a WDT install in a small separate "common mount" 
+# image. This is an alternative to supplying the files directly
+# in the domain resource `domain.spec.image` image.
+
+# COMMON_MOUNT_PATH arg:
+#   Parent location for Model in Image model and WDT installation files.
+#   Must match domain resource 'domain.spec.commonMountVolumes.mountPath'
+#   Default '/common'.
+#
+# WDT_MODEL_HOME arg:
+#   Location for WebLogic Deploy Tooling model home.
+#   Must match domain resource 'domain.spec.configuration.model.modelHome'
+#   Must be a directory within COMMON_MOUNT_PATH.
+#   Defaults to '${COMMON_MOUNT_PATH}/models'.
+#
+# WDT_INSTALL_HOME arg: 
+#   Location of the WebLogic Deploy Tooling installation.
+#   Must match domain resource 'domain.spec.configuration.model.wdtInstallHome'
+#   Must be a directory within COMMON_MOUNT_PATH.
+#   Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
+
 FROM busybox
-# The COMMON_MOUNT_PATH arg is the path to copy the model in image files and WDT installation files in the common mount image.
-# It maps to 'spec.commonMountVolumes.mountPath' field of the domain resource for the volume referenced by the common mount that uses
-# the generated image. If not overridden by docker build-arg, it defaults to '/common'.
 ARG COMMON_MOUNT_PATH=/common
-# The WDT_MODEL_HOME arg is the location of the WebLogic Deploy Tooling model home. Maps to 'domain.spec.configuration.model.modelHome'
-# field of the domain resource. Defaults to '${COMMON_MOUNT_PATH}/models'.
 ARG WDT_MODEL_HOME=${COMMON_MOUNT_PATH}/models
-# The WDT_INSTALL_HOME arg is the location of the WebLogic Deploy Tooling installation. Maps to 'domain.spec.configuration.model.wdtInstallHome'
-# field of the domain resource. Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
 ARG WDT_INSTALL_HOME=${COMMON_MOUNT_PATH}/weblogic-deploy
 ARG USER=oracle
 ARG USERID=1000

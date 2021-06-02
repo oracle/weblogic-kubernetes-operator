@@ -23,8 +23,9 @@ fi
 if    [ ! "$IMAGE_TYPE" = "WLS" ] \
    && [ ! "$IMAGE_TYPE" = "WLS-CM" ] \
    && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF" ]; then
-  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-CM', 'JRF', or 'RestrictedJRF'."
+   && [ ! "$IMAGE_TYPE" = "JRF" ] \
+   && [ ! "$IMAGE_TYPE" = "JRF-CM" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-CM', 'JRF', 'JRF-CM' or 'RestrictedJRF'."
   exit 1
 fi
 

@@ -50,7 +50,7 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
   serverStartPolicy: "IF_NEEDED"
 
-  # settings for common mount volume, see also 'serverPod.commonMounts'.
+  # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
   commonMountVolumes:
   - name: commonMountsVolume1
     mountPath: "/common"
@@ -72,7 +72,10 @@ spec:
         cpu: "250m"
         memory: "768Mi"
 
-    # Settings for common mounts with images containing model, archives and WDT instal. See also 'spec.commonMountVolumes'.
+    # Common mount image(s) containing WDT model, archives and install. See also:
+    #    'spec.commonMountVolumes'.
+    #    'spec.configuration.model.modelHome'
+    #    'spec.configuration.model.wdtInstallHome'
     commonMounts:
     - image: "model-in-image:WLS-CM-v2"
       imagePullPolicy: IfNotPresent
