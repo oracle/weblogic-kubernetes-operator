@@ -614,7 +614,7 @@ class ItPodsRestart {
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
-    assertTrue(event.getMessage().contains("restartVersion"));
+    assertTrue(event.getMessage().contains("restart version"));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
     event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
