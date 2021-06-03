@@ -471,33 +471,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
   }
 
-  @Test
-  void whenDefaultMonitorPortUsedByServer_relocateIt() {
-    getServerTopology().setListenPort(8080);
-    getServerTopology().setSslListenPort(8081);
-    getServerTopology().setAdminPort(8082);
-    defineExporterConfiguration();
-
-    assertThat(getExporterContainer(), hasJavaOption("-DEXPORTER_PORT=8083"));
-  }
-
-  @Test
-  public void whenDefaultMonitorPortUsedByServer_hasPrometheusAnnotations() {
-    getServerTopology().setListenPort(8080);
-    getServerTopology().setSslListenPort(8081);
-    getServerTopology().setAdminPort(8082);
-    defineExporterConfiguration();
-
-    assertThat(
-        getCreatedPod().getMetadata().getAnnotations(),
-        allOf(
-            hasEntry("prometheus.io/port", "8083"),
-            hasEntry("prometheus.io/path", "/metrics"),
-            hasEntry("prometheus.io/scrape", "true")));
-
-    assertThat(getExporterContainer().getPorts().get(0).getContainerPort(), equalTo(8083));
-  }
-
   abstract void setServerPort(int port);
 
   private Domain createDomain() {

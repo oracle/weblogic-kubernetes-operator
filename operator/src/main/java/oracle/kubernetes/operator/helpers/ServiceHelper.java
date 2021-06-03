@@ -420,7 +420,7 @@ public class ServiceHelper {
 
       Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
         if (specification.getConfiguration() != null) {
-          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort(serverConfig));
+          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort());
         }
       });
     }

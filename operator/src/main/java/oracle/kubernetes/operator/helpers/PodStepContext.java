@@ -1303,7 +1303,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     private final int metricsPort;
 
     public SidecarExporterContext(MonitoringExporterSpecification specification) {
-      metricsPort = specification.getRestPort(scan);
+      metricsPort = specification.getRestPort();
     }
 
     @Override

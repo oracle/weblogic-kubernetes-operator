@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 18f932043e58efa80ba30a74b63e66252596e3053f1c5afbebfb467d6ccd19aa
+    weblogic.sha256: d1191a10f1c4843d11c897002f731292c9f580c6670a84e1ee8b5916e21f0a62
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -61,12 +61,10 @@ spec:
                     x-kubernetes-preserve-unknown-fields: true
                   port:
                     description: The port exposed by the WebLogic Monitoring Exporter
-                      running in the sidecar container. Defaults to 8080 unless that
-                      port value is in use by a channel or network access point (NAP)
-                      of the WebLogic Server instance, in which case the next higher
-                      available port is selected. If a port value is specified then
-                      it must not conflict with a port used by the WebLogic Server
-                      instance.
+                      running in the sidecar container. Defaults to 8080. The port
+                      value must not conflict with a port used by any WebLogic Server
+                      instance, including the ports of built-in channels or network
+                      access points (NAPs).
                     type: number
                 type: object
               configuration:
