@@ -620,14 +620,17 @@ public class ItIntrospectVersion {
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the domain resource changed message");
     assertTrue(event.getMessage().contains("resource changed"));
+
     event = getEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("ADMIN_PORT"));
+
     //********** I don't see the following event  **********************
     checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 

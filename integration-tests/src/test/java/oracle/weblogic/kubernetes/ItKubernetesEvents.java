@@ -726,7 +726,7 @@ public class ItKubernetesEvents {
   }
 
   /**
-   * The test modifies the logHome property and verifies the domain roll starting events are logged.
+   * The test modifies the logHome property and verifies the domain roll events are logged.
    */
   @Order(18)
   @Test
@@ -783,17 +783,18 @@ public class ItKubernetesEvents {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the logHome changed messages is logged");
     assertTrue(event.getMessage().contains("logHome"));
+
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("LOG_HOME"));
+
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 

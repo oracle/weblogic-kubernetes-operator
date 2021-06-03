@@ -260,8 +260,9 @@ class ItPodsRestart {
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("cpu=Quantity"));
 
-    //************* I don't see this event logged****************************************
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+
   }
 
   /**
@@ -335,7 +336,7 @@ class ItPodsRestart {
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
 
-    //************* I don't see this event logged****************************************
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -423,6 +424,7 @@ class ItPodsRestart {
     logger.info("verify the event message contains the JAVA_OPTIONS changed message is logged");
     assertTrue(event.getMessage().contains("JAVA_OPTIONS"));
 
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -508,8 +510,10 @@ class ItPodsRestart {
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the security context changed messages is logged");
     assertTrue(event.getMessage().contains("securityContext"));
+    assertTrue(event.getMessage().contains("runAsUser: 1000"));
 
     //************* I don't see this event logged****************************************
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -588,7 +592,7 @@ class ItPodsRestart {
         + "changed from 'IfNotPresent' to 'Never' message is logged");
     assertTrue(event.getMessage().contains("Never"));
 
-    //************* I don't see this event logged****************************************
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -650,6 +654,7 @@ class ItPodsRestart {
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
 
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -712,7 +717,7 @@ class ItPodsRestart {
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("mychangedimage:mii"));
 
-    //************* I don't see this event logged****************************************
+    logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -800,6 +805,7 @@ class ItPodsRestart {
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
