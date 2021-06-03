@@ -4,6 +4,8 @@
 package oracle.kubernetes.operator.rest;
 
 import java.io.InputStream;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import javax.annotation.Priority;
 
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -38,9 +40,9 @@ public class ResponseDebugLoggingFilter extends BaseDebugLoggingFilter
       LOGGER.fine("method=" + req.getMethod());
       Object prop = req.getProperty(FILTER_REQUEST_START_TIME);
       if (prop != null) {
-        long start = (Long) prop;
-        long end = System.currentTimeMillis();
-        long duration = end - start;
+        OffsetDateTime start = (OffsetDateTime) prop;
+        OffsetDateTime end = OffsetDateTime.now();
+        long duration = start.until(end, ChronoUnit.MILLIS);
         LOGGER.fine("start=" + formatTime(start));
         LOGGER.fine("duration=" + duration + " ms");
       }
