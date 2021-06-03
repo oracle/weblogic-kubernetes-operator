@@ -793,6 +793,7 @@ public class ItKubernetesEvents {
     event = getEvent(opNamespace, domainNamespace1,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the LOG_HOME changed messages is logged");
     assertTrue(event.getMessage().contains("LOG_HOME"));
 
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -860,15 +861,18 @@ public class ItKubernetesEvents {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace1,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
+
     event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the SERVER_OUT_IN_POD_LOG changed messages is logged");
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
-    //********** I don't see the following event  **********************
+
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
@@ -939,7 +943,7 @@ public class ItKubernetesEvents {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    //verify the domainHome,logHome and mountPath changes causes the domain roll events to be logged
+    logger.info("verify the domainHome,logHome and mountPath changes causes the domain roll events to be logged");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
 

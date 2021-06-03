@@ -629,9 +629,9 @@ public class ItIntrospectVersion {
 
     event = getEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the property changed in domain resource");
     assertTrue(event.getMessage().contains("ADMIN_PORT"));
 
-    //********** I don't see the following event  **********************
     checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
 
