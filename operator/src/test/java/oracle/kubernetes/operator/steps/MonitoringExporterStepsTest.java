@@ -51,7 +51,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toPodName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -150,13 +149,13 @@ public class MonitoringExporterStepsTest {
   private V1Container createExporterSidecar() {
     return new V1Container()
           .name(EXPORTER_CONTAINER_NAME)
-          .addPortsItem(new V1ContainerPort().name(EXPORTER_PORT_NAME).containerPort(EXPORTER_PORT));
+          .addPortsItem(new V1ContainerPort().name("metrics").containerPort(EXPORTER_PORT));
   }
 
   private V1Service createServerService(String serverName) {
     return new V1Service()
           .metadata(new V1ObjectMeta().namespace(NS).name(toServerServiceName(DOMAIN_NAME, serverName)))
-          .spec(new V1ServiceSpec().addPortsItem(new V1ServicePort().name(EXPORTER_PORT_NAME).port(EXPORTER_PORT)));
+          .spec(new V1ServiceSpec().addPortsItem(new V1ServicePort().name("metrics").port(EXPORTER_PORT)));
   }
 
   @AfterEach

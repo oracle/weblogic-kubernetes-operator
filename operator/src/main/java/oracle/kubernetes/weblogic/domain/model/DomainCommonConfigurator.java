@@ -176,6 +176,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     return this;
   }
 
+  @Override
+  public DomainConfigurator withMonitoringExporterPort(Integer port) {
+    getDomainSpec().setMonitoringExporterPort(port);
+    return this;
+  }
+
   private AdminServer getOrCreateAdminServer() {
     return getDomainSpec().getOrCreateAdminServer();
   }
