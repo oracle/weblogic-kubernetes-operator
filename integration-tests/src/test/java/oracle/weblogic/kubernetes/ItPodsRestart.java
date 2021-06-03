@@ -249,13 +249,18 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the resource changed messages is logged");
-    assertTrue(event.getMessage().contains("cpu"));
-    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info("verify the event message contains the domain resource changed messages is logged");
+    assertTrue(event.getMessage().contains("domain resource changed"));
+
+    event = getEvent(opNamespace, domainNamespace,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("cpu=Quantity"));
+
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
@@ -319,13 +324,18 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
+
     event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
+
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -400,13 +410,19 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the env changed messages is logged");
-    assertTrue(event.getMessage().contains("env"));
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the env changed messages is logged");
+    assertTrue(event.getMessage().contains("domain resource changed"));
+
+    event = getEvent(opNamespace, domainNamespace,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the JAVA_OPTIONS changed message is logged");
+    assertTrue(event.getMessage().contains("JAVA_OPTIONS"));
+
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -478,15 +494,22 @@ class ItPodsRestart {
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
     logger.info("verify domain roll starting/pod cycle starting events are logged");
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the security context changed messages is logged");
-    assertTrue(event.getMessage().contains("security"));
+    logger.info("verify the event message contains the domain resource changed messages is logged");
+    assertTrue(event.getMessage().contains("domain resource changed"));
+
     event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the security context changed messages is logged");
+    assertTrue(event.getMessage().contains("securityContext"));
+
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -551,14 +574,21 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info("verify the event message contains the image pull policy changed message is logged");
-    assertTrue(event.getMessage().contains("imagePullPolicy"));
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    logger.info("verify the event message contains the 'imagePullPolicy' "
+        + "changed from 'IfNotPresent' to 'Never' message is logged");
+    assertTrue(event.getMessage().contains("Never"));
+
     event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the 'imagePullPolicy' "
+        + "changed from 'IfNotPresent' to 'Never' message is logged");
+    assertTrue(event.getMessage().contains("Never"));
+
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
@@ -670,17 +700,18 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the image changed from mii-basic-image message is logged");
+    assertTrue(event.getMessage().contains("mychangedimage:mii"));
+
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("image"));
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
+    assertTrue(event.getMessage().contains("mychangedimage:mii"));
+
+    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
