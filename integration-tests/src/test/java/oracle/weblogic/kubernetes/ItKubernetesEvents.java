@@ -658,7 +658,7 @@ public class ItKubernetesEvents {
    * The test modifies the domainHome and mountPath property and verifies the domain roll starting events are logged.
    */
   @Order(12)
-  @Test
+  //@Test
   @DisplayName("Verify doaminHome and mountPath property changes rolls domain and relevant events are logged")
   public void testDomainHomeAndMountPathChange() {
 

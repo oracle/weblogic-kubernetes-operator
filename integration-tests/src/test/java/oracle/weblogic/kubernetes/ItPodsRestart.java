@@ -55,7 +55,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -721,72 +720,6 @@ class ItPodsRestart {
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
-  }
-
-  /**
-   * The test modifies the domainHome property and verifies the domain roll starting events are logged.
-   */
-  @Test
-  @DisplayName("Verify doaminHome property changes rolls domain and relevant events are logged")
-  public void testDomainHomeAndMountPathChange() {
-
-    OffsetDateTime timestamp = now();
-
-    // get the original domain resource before update
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    // get the map with server pods and their original creation timestamps
-    podsWithTimeStamps = getPodsWithTimeStamps();
-
-    //print out the original domainHome
-    String domainHome = domain1.getSpec().getDomainHome();
-    logger.info("Currently the domain home used for the domain is: {0}", domainHome);
-
-    //change domainHome to /u01/oracle/mydomains/
-    String patchStr = "["
-        + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", "
-        + "\"value\": \"/u01/oracle/mydomains/" + domainUid + "\"}"
-        + "]";
-    logger.info("PatchStr for domainHome and pv mounPath update is : {0}", patchStr);
-
-    assertTrue(patchDomainResource(domainUid, domainNamespace, new StringBuffer(patchStr)),
-        "patchDomainCustomResource failed");
-
-    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-
-    //print out domain home in the new patched domain
-    logger.info("In the new patched domain domainHome is: {0}", domain1.getSpec().getDomainHome());
-    assertTrue(domain1.getSpec().getDomainHome().equals("/u01/oracle/mydomains/" + domainUid),
-        "domainHome is not updated");
-
-    // verify the server pods are rolling restarted and back to ready state
-    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
-        domainUid, domainNamespace);
-    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
-        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
-
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    logger.info("verify the domainHome,logHome and mountPath changes causes the domain roll events to be logged");
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-
-    CoreV1Event     event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("DOMAIN_HOME"));
-
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
-    logger.info("verify the event message contains the domainHome changed message is logged");
-    assertTrue(event.getMessage().contains("domainHome"));
-
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
   }
 
   private Map getPodsWithTimeStamps() {
