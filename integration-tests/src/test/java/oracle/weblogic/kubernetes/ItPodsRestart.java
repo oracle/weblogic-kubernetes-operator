@@ -106,7 +106,7 @@ class ItPodsRestart {
   private static final ConditionFactory withStandardRetryPolicy
       = with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
+          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -637,18 +637,19 @@ class ItPodsRestart {
     logger.info("verify domain roll starting/pod cycle starting events are logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the restartVersion changed message is logged");
+    assertTrue(event.getMessage().contains("restart version"));
+
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
-    checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    logger.info(Yaml.dump(event));
+
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
 
   }
