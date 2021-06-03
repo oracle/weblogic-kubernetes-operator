@@ -27,9 +27,12 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
+import oracle.kubernetes.weblogic.domain.DomainConfigurator;
+import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
@@ -51,6 +54,8 @@ import static oracle.kubernetes.operator.TuningParametersImpl.DEFAULT_CALL_LIMIT
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTestBase.NS;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER;
+import static oracle.kubernetes.operator.logging.MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
@@ -74,6 +79,15 @@ public class DomainValidationStepTest {
   private static final String TEST_SECRET_PREFIX = "TEST_SECRET";
   private static final String TEST_CONFIGMAP_PREFIX = "TEST_CM";
 
+  private static final String ADMIN_SERVER = "admin-server";
+  private static final String MANAGED_SERVER1 = "managed-server1";
+  private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
+  private static final String SERVER_TEMPLATE_NAME = "server-template";
+  private static final String DOMAIN_NAME = "domain";
+  private static final int ADMIN_SERVER_PORT_NUM = 7001;
+  private static final int MANAGED_SERVER1_PORT_NUM = 8001;
+  private static final int SERVER_TEMPLATE_PORT_NUM = 9001;
+
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final TerminalStep terminalStep = new TerminalStep();
@@ -81,7 +95,14 @@ public class DomainValidationStepTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private TestUtils.ConsoleHandlerMemento consoleControl;
-  private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
+  private final WlsDomainConfig domainConfig =
+      new WlsDomainConfigSupport(DOMAIN_NAME)
+          .withAdminServerName(ADMIN_SERVER)
+          .withWlsServer(ADMIN_SERVER, ADMIN_SERVER_PORT_NUM)
+          .withWlsServer(MANAGED_SERVER1, MANAGED_SERVER1_PORT_NUM)
+          .withDynamicWlsCluster(DYNAMIC_CLUSTER_NAME, SERVER_TEMPLATE_NAME, SERVER_TEMPLATE_PORT_NUM)
+          .createDomainConfig();
+
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
 
@@ -91,7 +112,8 @@ public class DomainValidationStepTest {
   @BeforeEach
   public void setUp() throws Exception {
     consoleControl = TestUtils.silenceOperatorLogger().collectLogMessages(logRecords, DOMAIN_VALIDATION_FAILED,
-        NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN);
+        NO_CLUSTER_IN_DOMAIN, NO_MANAGED_SERVER_IN_DOMAIN,
+        MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER, MONITORING_EXPORTER_CONFLICT_SERVER);
     mementos.add(consoleControl);
     mementos.add(testSupport.install());
 
@@ -340,7 +362,7 @@ public class DomainValidationStepTest {
   @Test
   public void whenClusterDoesNotExistInDomain_logWarning() {
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
@@ -352,7 +374,7 @@ public class DomainValidationStepTest {
   @Test
   public void whenServerDoesNotExistInDomain_logWarning() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
@@ -361,11 +383,64 @@ public class DomainValidationStepTest {
         stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
   }
 
+  private DomainConfigurator configureDomain(Domain domain) {
+    return DomainConfiguratorFactory.forDomain(domain);
+  }
+
+  @Test
+  public void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarningAndGenerateEvent() {
+    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(7001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
+    assertThat(info.getValidationWarningsAsString(),
+        stringContainsInOrder(Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
+            Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
+  }
+
+  @Test
+  public void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarningAndGenerateEvent() {
+    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(8001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_SERVER));
+    assertThat(info.getValidationWarningsAsString(),
+        stringContainsInOrder(Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
+            Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
+  }
+
+  @Test
+  public void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarningAndGenerateEvent() {
+    configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(9001);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
+
+    testSupport.runSteps(topologyValidationStep);
+
+    assertThat(logRecords, containsWarning(MessageKeys.MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER));
+    assertThat(info.getValidationWarningsAsString(),
+        stringContainsInOrder(Integer.toString(9001), DYNAMIC_CLUSTER_NAME,
+            Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
+
+    assertContainsEventWithFormattedMessage(
+        getFormattedMessage(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
+            Integer.toString(9001), DYNAMIC_CLUSTER_NAME, Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
+  }
+
   @Test
   public void whenServerDoesNotExistInDomain_createEvent() {
     consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
@@ -376,7 +451,7 @@ public class DomainValidationStepTest {
   public void whenClusterDoesNotExistInDomain_createEvent() {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
@@ -389,7 +464,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
@@ -402,7 +477,7 @@ public class DomainValidationStepTest {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     setExplicitRecheck();
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
-    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
     testSupport.runSteps(topologyValidationStep);
 
