@@ -1012,8 +1012,6 @@ class ItMiiDynamicUpdate {
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("Introspector Job Log"));
     assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
-    assertTrue(operatorPodLog.contains("Operator cannot proceed, as the Custom Resource Definition for"
-        + " ''domains.weblogic.oracle'' is not installed."));
     assertTrue(operatorPodLog.contains("Job mii-dynamic-update-introspector has failed"));
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
