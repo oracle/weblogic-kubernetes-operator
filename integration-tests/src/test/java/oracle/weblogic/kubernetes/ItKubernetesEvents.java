@@ -673,6 +673,10 @@ public class ItKubernetesEvents {
     Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
         adminServerPodName, managedServerPodNamePrefix, replicaCount);
 
+    String oldVersion = assertDoesNotThrow(()
+        -> getDomainCustomResource(domainUid, domainNamespace1).getSpec().getRestartVersion());
+    int restartVersion = oldVersion == null ? 1 : Integer.valueOf(oldVersion) + 1;
+
     //print out the original domainHome
     String domainHome = domain1.getSpec().getDomainHome();
     logger.info("Currently the domain home used for the domain is: {0}", domainHome);
@@ -685,7 +689,8 @@ public class ItKubernetesEvents {
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"/sharedpv/domains/" + domainUid + "\"},"
         + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/sharedpv/logHome\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/mountPath\", \"value\": \"/sharedpv\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/mountPath\", \"value\": \"/sharedpv\"},"
+        + "{\"op\": \"add\", \"path\": \"/spec/restartVersion\", \"value\": \"" + restartVersion + "\"}"
         + "]";
     logger.info("PatchStr for domainHome and pv mounPath update is : {0}", patchStr);
 
