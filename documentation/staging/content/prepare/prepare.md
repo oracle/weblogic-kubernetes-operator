@@ -11,7 +11,7 @@ weight: 1
 
 1. Set up [Kubernetes]({{< relref "/prepare/k8s-setup.md" >}}).
 
-1. Install [Helm](https://github.com/helm/helm).
+1. Install [Helm]({{< relref "/userguide/managing-operators/_index.md#install-helm" >}}).
 
 1. Run a [database]({{< relref "/prepare/database.md" >}}).
 

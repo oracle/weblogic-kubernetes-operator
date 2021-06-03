@@ -1,5 +1,5 @@
 ---
-title: "Supported environments"
+title: "Supported platforms"
 date: 2019-02-23T16:40:54-05:00
 weight: 3
 ---
