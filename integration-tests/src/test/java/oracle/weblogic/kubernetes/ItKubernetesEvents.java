@@ -863,7 +863,7 @@ public class ItKubernetesEvents {
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
-    assertTrue(event.getMessage().contains("includeServerOutInPodLog"));
+    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
     event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
@@ -902,7 +902,7 @@ public class ItKubernetesEvents {
     String patchStr = "["
         + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"/sharedpv/domains/" + domainUid + "\"},"
         + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/sharedpv/logHome\"},"
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/0/mountPath\", \"value\": \"/sharedpv\"}"
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/volumeMounts/0/mountPath\", \"value\": \"/sharedpv\"}"
         + "]";
     logger.info("PatchStr for domainHome and pv mounPath update is : {0}", patchStr);
 
