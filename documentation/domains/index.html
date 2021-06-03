@@ -1541,7 +1541,7 @@ window.onload = function() {
           "$ref": "#/definitions/Map"
         },
         "port": {
-          "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080 unless that port value is in use by a channel or network access point (NAP) of the WebLogic Server instance, in which case the next higher available port is selected. If a port value is specified then it must not conflict with a port used by the WebLogic Server instance.",
+          "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
           "type": "number"
         }
       }
