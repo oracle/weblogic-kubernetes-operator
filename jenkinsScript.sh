@@ -99,6 +99,9 @@ chmod +x ./kind
 mv ./kind bin/kind
 kind version
 
+echo 'Info: docker info...'
+docker info
+
 export TWO_CLUSTERS=false
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}
