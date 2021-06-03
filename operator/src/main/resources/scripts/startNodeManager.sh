@@ -342,6 +342,8 @@ while [ 1 -eq 1 ]; do
       trace INFO "Node manager process id not found. Cannot create thread dump."
     else
       trace INFO "Node manager process id is '$pid'."
+      trace INFO "Trying to put a node manager thread dump in '$nodemgr_out_file'."
+      kill -3 $pid
       if [ -x "$(command -v $JAVA_HOME/bin/jcmd)" ]; then
         trace INFO "Node manager thread dump:"
         $JAVA_HOME/bin/jcmd $pid Thread.print
@@ -354,7 +356,25 @@ while [ 1 -eq 1 ]; do
     trace INFO "Contents of node manager out '$nodemgr_out_file':"
     cat ${NODEMGR_OUT_FILE}
 
-    trace SEVERE "The node manager failed to start within $max_wait_secs seconds. To increase this timeout, define the NODE_MANAGER_MAX_WAIT environment variable in your domain resource, and set it higher than $max_wait_secs. To diagnose the problem, see the above INFO messages for node manager log contents, stdout contents, pid, thread dump, and entropy. If the log and stdout contents are sparse and reveal no errors, then the node manager may be stalled while generating entropy -- especially if entropy is below 500. If entropy is the problem, then for testing purposes you can temporarily work around this problem by specifying '-Djava.security.egd=file:/dev/./urandom' in a USER_MEM_ARGS environment variable defined via your domain resource, but for production purpose the problem should be solved by following the guidance in 'https://docs.oracle.com/middleware/12213/wls/NODEM/starting_nodemgr.htm' (search for keyword 'rngd'). "
+    trace SEVERE $(cat << EOF
+The node manager failed to start within $max_wait_secs seconds.
+To increase this timeout, define the NODE_MANAGER_MAX_WAIT
+environment variable in your domain resource, and set it higher
+than $max_wait_secs. To diagnose the problem, see the above INFO
+messages for node manager log contents, stdout contents, pid,
+thread dump, and entropy. If the log and stdout contents are
+sparse and reveal no errors, then the node manager may be stalled
+while generating entropy -- especially if entropy is below 500.
+If entropy is the problem, then for testing purposes you can
+temporarily work around this problem by specifying
+'-Djava.security.egd=file:/dev/./urandom' in a USER_MEM_ARGS
+environment variable defined via your domain resource, but
+for production purposes the problem should be solved by following
+the guidance in
+'https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/starting_nodemgr.html#GUID-53961E3A-D8E1-4556-B78A-9A56B676D57E'
+(search for keyword 'rngd').
+EOF
+)
     exit 1
   fi
 done
