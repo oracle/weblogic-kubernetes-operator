@@ -168,6 +168,8 @@ public class MessageKeys {
   public static final String DUPLICATE_COMMON_MOUNT_PATH_FOUND = "WLSDO-0024";
   public static final String DUPLICATE_COMMON_MOUNT_VOLUME_FOUND = "WLSDO-0025";
   public static final String COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED = "WLSDO-0026";
+  public static final String MONITORING_EXPORTER_CONFLICT_SERVER = "WLSDO-0027";
+  public static final String MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER = "WLSDO-0028";
 
   private MessageKeys() {
   }
