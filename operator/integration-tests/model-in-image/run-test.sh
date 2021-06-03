@@ -348,6 +348,10 @@ fi
 if [ "$DO_INITIAL_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-IMAGE ======"
 
+  if [ "$DO_CM" = "true" ]; then
+    doCommand -c "echo Running in common mounts mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  fi
   doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
 fi

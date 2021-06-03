@@ -5,34 +5,75 @@ weight = 70
 pre = "<b> </b>"
 +++
 
-#### Contents
+### Contents
 
  - [Introduction](#introduction)
- - [Configuration](#configuration)
  - [References](#references)
- - [Common Mount Volumes Fields](#common-mount-volumes-fields)
- - [Running Model in Image sample initial use case using common mounts](#running-model-in-image-sample-initial-use-case-using-common-mounts)
-    - [Prerequisite Steps](#prerequisite-steps)
-    - [Creating the common mounts image](#creating-the-common-mounts-image)
-    - [Prepare and Apply the Domain Resource](#prepare-and-apply-the-domain-resource)
+ - [Configuration](#configuration)
+   - [Common mount images](#common-mount-images)
+   - [Common mount volumes and paths](#common-mount-volumes-and-paths)
+   - [Model in Image paths](#model-in-image-paths)
+ - [Sample](#sample)
+    - [Step 1: prerequisites](#step-1-prerequisites)
+    - [Step 2: create the common mounts image](#step-2-create-the-common-mounts-image)
+    - [Step 3: prepare and apply the domain resource](#step-3-prepare-and-apply-the-domain-resource)
+    - [Step 4: invoke the web application](#step-4-invoke-the-web-application)
 
 ### Introduction
-Common mounts are an alternative approach for including Model in Image model files, application archive files, Weblogic Deploying Tooling install files, or other types of files, in your pods. The common mounts feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share files from additional images within a WebLogic Server pod or the Introspector job pod. 
 
-This feature eliminates the need to provide these files in the image specified in `domain.spec.image`. Instead:
-- The domain resource's `domain.spec.image` directly reference a base image that only needs to include a WebLogic install and a Java install
-- The domain resource's common mount related fields reference one or more smaller images that contain the desired Model in Image files.
-- The domain resource's `domain.spec.configuration.model.wdtInstallHome` and `domain.spec.configuration.model.modelHome` fields are set to reference a directory that contains the files from the smaller images.
+Common mounts are an alternative approach for including Model in Image model files,
+application archive files, Weblogic Deploying Tooling install files,
+or other types of files, in your pods.
+This feature eliminates the need to provide these files in the image specified
+in `domain.spec.image`. Instead:
+
+- The domain resource's `domain.spec.image` directly reference a base image
+  that only needs to include a WebLogic install and a Java install.
+- The domain resource's common mount related fields reference one or
+  more smaller images that contain the desired Model in Image files.
+- The domain resource's `domain.spec.configuration.model.wdtInstallHome`
+  and `domain.spec.configuration.model.modelHome` fields are set to
+  reference a directory that contains the files from the smaller images.
 
 The advantages of the common mounts feature for Model In Image domains are:
-- Use or patch a WebLogic install image without needing to include WDT install, application archive, or model artifacts within the image.
-- Share one large WebLogic install image with multiple different model configurations that are supplied in smaller images.
-- Distribute or update model files, application archives, and the WebLogic Deploy Tooling executable using very small images instead of a large image that also contains a WebLogic install.
+
+- Use or patch a WebLogic install image without needing to include WDT install,
+  application archive, or model artifacts within the image.
+- Share one large WebLogic install image with multiple different model
+  configurations that are supplied in smaller images.
+- Distribute or update model files, application archives, and the
+  WebLogic Deploy Tooling executable using very small images
+  instead of a large image that also contains a WebLogic install.
+
+The common mounts feature internally
+uses a Kubernetes `emptyDir` volume and Kubernetes init containers to share files
+from additional images.
+
+### References
+
+- Run the `kubectl explain domain.spec.commonMountVolumes`
+  and `kubectl explain domain.spec.serverPod.commonMounts` commands.
+
+- See the `spec.commonMountVolumes` and `serverPod.commonMounts` sections
+  in the domain resource
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md)
+  and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 ### Configuration
-Here's an example configuration for the Common Mounts. 
+
+This section discusses a typical common mount configuration for the
+Model in Image use case.
+
+#### Common mount images
+
+One or more common mount images can be configured on a domain resource `serverPod`.
+A `serverPod` can be defined at the domain scope which applies to every pod in
+the domain plus the introspector job's pod, at a specific WebLogic cluster's scope,
+or at a specific WebLogic server pod's scope. The domain scope is typically
+the most applicable for the Model in Image use case; for example:
 
 ```
+spec:
   serverPod:
     commonMounts:
     - image: model-in-image:v1
@@ -40,106 +81,209 @@ Here's an example configuration for the Common Mounts.
       volume: commonMountsVolume1
 ```
 
-The `volume` field in the common mounts refers to the name of a common mount volume defined in `spec.commonMountVolumes` section. Here's an example configuration for the common mount volumes.
+{{% notice note %}}
+If image pull secrets are required for pulling common mounts images,
+then the secrets must be referenced using `domain.spec.imagePullSecrets`.
+{{% /notice %}}
+
+#### Common mount volumes and paths
+
+The `serverPod.commonMounts.volume` field refers to the name of a common
+mount volume defined in `domain.spec.commonMountVolumes` section, and
+a common mount volume in turn defines a `mountPath`. The `mountPath`
+is the location of a directory in a common mount image, and
+is also the location in the main pod container (which will automatically contain
+a recursive copy of the common mount image directory). For example:
+
 ```
   spec:
     commonMountVolumes:
     - name: commonMountsVolume1
       mountPath: /common
 ```
-For the Model In Image use case using common mounts, you also need to configure the `configuration.model.modelHome` and `configuration.model.wdtInstallHome` attributes to specify the location of Model In Image files and WebLogic Deploy Tool (WDT) installation files. Here's an example configuration for the `configuration.model.modelHome` and `configuration.model.wdtInstallHome`.
+
+#### Model in Image paths
+
+For the Model In Image common mount use case, you also need to
+configure the `domain.spec.configuration.model.modelHome`
+and `domain.spec.configuration.model.wdtInstallHome` attributes
+to specify the location of the domain's WebLogic Deploy Tool (WDT)
+model files and the domain's WDT install.
+These default to `/u01/wdt/models` and `/u01/wdt/weblogic-deploy`
+respectively, and must be changed to specify a directory in
+`domain.spec.commonMountVolumes.mountPath`. For example:
 
 ```
   configuration:
-
-    # Settings for domainHomeSourceType 'FromModel'
     model:
       modelHome: "/common/models"
       wdtInstallHome: "/common/weblogic-deploy"
 ```
 
-{{% notice note %}}  The `imagePullSecrets` required for pulling the common mounts images should be specified at the Pod level using `spec.imagePullSecrets`.
-{{% /notice %}}
+### Sample
 
+This sample demonstrates deploying a Model in Image domain that leverages
+the common mounts feature to supply the domain's WDT model files,
+application archive ZIP files, and WDT install in a small separate 
+container image.
 
-#### References
-- Run the `kubectl explain domain.spec.commonMountVolumes` and `kubectl explain domain.spec.serverPod.commonMounts` commands.
-- See the `spec.commonMountVolumes` and `serverPod.commonMounts` sections in the Domain Resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
+#### Step 1: prerequisites
 
-### Running Model in Image sample initial use case using common mounts
-The initial use case for the Model in Image is described [here](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). The goal for this section is to create the initial domain using the common mounts feature where you provide the WDT model files and archive ZIP file in a separate container image.
+- First, follow all of the steps in the Model in Image
+  [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). 
+  This will:
+  - Set up the operator and a namespace for the domain.
+  - Download a WebLogic Deploy Tool zip install.
+  - Deploy a domain _without_ common mounts.
 
-#### Prerequisite Steps
-- Begin by following the steps described in the [initial use case sample](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/). 
-- Once you have completed the entire use case, you will have the initial use case resources deployed and a running domain. 
-- To run the initial use case with common mounts:
-  - Delete the existing domain by running the `kubectl delete domain sample-domain1 -n sample-domain1-ns` command to bring down the domain. 
-  - Run the steps described in the [following section](#creating-the-common-mounts-image) to create the common mounts image that will host the model files, application archives, and the WDT installation files. 
-  - Once the image is created, execute the steps in the [Prepare and Apply the Domain Resource](#prepare-and-apply-the-domain-resource) section below to create the new domain. 
-
-#### Creating the common mounts image 
-Run the following steps to create the common mounts image containing Model In Image model files, application archives, and the WDT installation files.
-1. Create a temporary directory for docker build context `/tmp/cm-image`.
-2. Copy the Dockefile in `/tmp/mii-sample/cm-docker-file` directory to the build context root i.e `/tmp/cm-image`.
-3. Unzip the WDT installation zip into the build context root. Remove all the `weblogic-deploy/bin/*.cmd` files which are not used in Unix environment.
-4. Create a `models` directory under the `/tmp/cm-image` directory.
-5. Copy the WDT model YAML files and properties files in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory.
-6. Stage the application archive ZIP in `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory and copy the archive file to `/tmp/cm-image/models` directory.
-  - Run the following commands to create your application archive ZIP file and put it in the expected directory:
-    ```
-    # Delete existing archive.zip in case we have an old leftover version
-    ```
+- Second, shutdown the domain and wait for its pods to exit.
+  - You can use the `wl-pod-wait.sh` script to wait.
+  - For example, assuming that
+    you have setup `/tmp/mii-sample` as your working directory:
     ```shell
-    $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip
+    kubectl delete domain sample-domain1 -n sample-domain1-ns
+    /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
     ```
-    ```
-    # Move to the directory which contains the source files for our archive
-    ```
-    ```shell
-    $ cd /tmp/mii-sample/archives/archive-v1
-    ```
-    ```
-    # Zip the archive to the location will later use when we use docker to build the common mount image.
-    ```
-    ```shell
-    $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
-    ```
-7. Copy the archive ZIP file from `/tmp/mii-sample/model-images/model-in-image__WLS-CM-v1` directory to `/tmp/cm-image/models` directory..
-8. Build the docker image by running `docker build --build-arg COMMON_MOUNT_PATH=/common --build-arg WDT_MODEL_HOME=/common/models --build-arg WDT_INSTALL_HOME=/common/weblogic-deploy --tag model-in-image:v1 .` command. 
-9. Optionally, you can customize the values of COMMON_MOUNT_PATH, WDT_MODEL_HOME or WDT_INSTALL_HOME build args or use additional docker build-arg as necessary to override the defaults by using --build-arg=NAME=VALUE. See file `/tmp/cm-image/Dockerfile` for an explanation of each --build-arg.
 
-Once the image is created, it will have the WDT executables copied to `/${MOUNT_PATH}/weblogic-deploy`, and all the WDT models, variables, and archives are copied to `/${MOUNT_PATH}/models`. If you use the default mount path '/common', you can verify the contents of the image using the following commands:
+#### Step 2: create the common mounts image 
 
-  ```shell
-  $ docker run -it --rm model-in-image:v1 ls -l /common
-    total 8
-    drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
-    drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
-  ```
+Follow these steps to create a common mounts image containing
+Model In Image model files, application archives, and the WDT installation files:
 
-  ```shell
-  $ docker run -it --rm model-in-image:v1 ls -l /common/models
-    total 16
-    -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
-    -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
-    -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
+1. Create a model zip application archive and place it in the same directory 
+   where the model YAML and model properties files are already in place
+   for the initial use case:
+   ```shell
+   $ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip
+   $ cd /tmp/mii-sample/archives/archive-v1
+   $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
+   ```
+   (The above `rm -f` is included in case there's an
+   old version of the archive zip from a 
+   previous run of this sample.)
 
-  ```
+1. Create a temporary directory for staging the common mount image's files and `cd` to this directory:
+   ```shell
+   mkdir /tmp/mii-sample/cm-image/WLS-CM-v1
+   cd /tmp/mii-sample/cm-image/WLS-CM-v1
+   ```
+   (We call this directory `WLS-CM-v1` to correspond with the image version tag that we plan to use for the common mount image.)
 
-  ```shell
-  $ docker run -it --rm model-in-image:v1 ls -l /common/weblogic-deploy
-    total 28
-    -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
-    -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
-    drwxr-x---    1 oracle   root          4096 May 26 22:29 bin
-    drwxr-x---    1 oracle   root          4096 May 25 11:40 etc
-    drwxr-x---    1 oracle   root          4096 May 25 11:40 lib
-    drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
+1. Install WDT in the staging directory and remove its `weblogic-deploy/bin/*.cmd` files (which are not used in Unix environments):
+   ```shell
+   unzip /tmp/mii-sample/model-images/weblogic-deploy.zip -d .
+   rm ./weblogic-deploy/bin/*.cmd
+   ```
+   In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
+   attribute that references this WDT install directory. 
 
-  ```
+   (If the `weblogic-deploy.zip` file is missing, then you have skipped a step in the prerequisites.)
 
-#### Prepare and Apply the Domain Resource
-Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar, or use the file `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml` that is included in the sample source to create the new domain using common mounts.
+1. Create a `models` directory in the staging directory and copy the model YAML, properties, and archive into it:
+   ```shell
+   mkdir ./models
+   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.yaml ./models
+   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.properties ./models
+   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip ./models
+   ```
+   In a later step, we will specify a domain resource `domain.spec.configuration.model.modelHome`
+   attribute that references this directory.
+
+1. Copy `/tmp/mii-sample/cm-docker-file/Dockerfile` to the staging directory
+   and run a docker build to create your common mount image
+   using a small `busybox` image as the base image.
+
+   ```shell
+   cp /tmp/mii-sample/cm-docker-file/Dockerfile .    
+   docker build \
+     --build-arg COMMON_MOUNT_PATH=/common \
+     --build-arg WDT_MODEL_HOME=/common/models \
+     --build-arg WDT_INSTALL_HOME=/common/weblogic-deploy \
+     --tag model-in-image:WLS-CM-v1 .
+   ```
+
+   See `./Dockerfile` for an explanation of each build argument.
+
+   {{%expand "Click here to view the Dockerfile." %}}
+   ```
+   # Copyright (c) 2021, Oracle and/or its affiliates.
+   # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+   
+   # This is a sample Dockerfile for supplying Model in Image model files
+   # and a WDT install in a small separate "common mount"
+   # image. This is an alternative to supplying the files directly
+   # in the domain resource `domain.spec.image` image.
+ 
+   # COMMON_MOUNT_PATH arg:
+   #   Parent location for Model in Image model and WDT installation files.
+   #   Must match domain resource 'domain.spec.commonMountVolumes.mountPath'
+   #   Default '/common'.
+   #
+   # WDT_MODEL_HOME arg:
+   #   Location for WebLogic Deploy Tooling model home.
+   #   Must match domain resource 'domain.spec.configuration.model.modelHome'
+   #   Must be a directory within COMMON_MOUNT_PATH.
+   #   Defaults to '${COMMON_MOUNT_PATH}/models'.
+   #
+   # WDT_INSTALL_HOME arg:
+   #   Location of the WebLogic Deploy Tooling installation.
+   #   Must match domain resource 'domain.spec.configuration.model.wdtInstallHome'
+   #   Must be a directory within COMMON_MOUNT_PATH.
+   #   Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
+ 
+   FROM busybox
+   ARG COMMON_MOUNT_PATH=/common
+   ARG WDT_MODEL_HOME=${COMMON_MOUNT_PATH}/models
+   ARG WDT_INSTALL_HOME=${COMMON_MOUNT_PATH}/weblogic-deploy
+   ARG USER=oracle
+   ARG USERID=1000
+   ARG GROUP=root
+   ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
+   ENV WDT_MODEL_HOME=${WDT_MODEL_HOME}
+   ENV WDT_INSTALL_HOME=${WDT_INSTALL_HOME}
+           RUN adduser -D -u ${USERID} -G $GROUP $USER
+           COPY weblogic-deploy/ ${WDT_INSTALL_HOME}/
+           COPY models/ ${WDT_MODEL_HOME}/
+           RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}/
+   USER $USER
+   ```
+   {{% /expand %}}
+
+1. Once the image is created, it should have the WDT executables in
+   to `/common/weblogic-deploy`, and WDT model, property, and archive
+   files in `/common/models`. You can run `ls` in the docker
+   image to verify this:
+
+   ```shell
+   $ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common
+     total 8
+     drwxr-xr-x    1 oracle   root          4096 Jun  1 21:53 models
+     drwxr-xr-x    1 oracle   root          4096 May 26 22:29 weblogic-deploy
+
+   $ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common/models
+     total 16
+     -rw-rw-r--    1 oracle   root          5112 Jun  1 21:52 archive.zip
+     -rw-rw-r--    1 oracle   root           173 Jun  1 21:59 model.10.properties
+     -rw-rw-r--    1 oracle   root          1515 Jun  1 21:59 model.10.yaml
+
+   $ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common/weblogic-deploy
+     total 28
+     -rw-r-----    1 oracle   root          4673 Oct 22  2019 LICENSE.txt
+     -rw-r-----    1 oracle   root            30 May 25 11:40 VERSION.txt
+     drwxr-x---    1 oracle   root          4096 May 26 22:29 bin
+     drwxr-x---    1 oracle   root          4096 May 25 11:40 etc
+     drwxr-x---    1 oracle   root          4096 May 25 11:40 lib
+     drwxr-x---    1 oracle   root          4096 Jan 22  2019 samples
+
+   ```
+
+#### Step 3: prepare and apply the domain resource
+
+Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or similar,
+or you can directly use the file `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml`
+that is included in the sample source.
+
+TBD/TODO Update the following to the latest:
 
   {{%expand "Click here to view the WLS Domain YAML file using the common mounts feature." %}}
   ```yaml
@@ -298,7 +442,9 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
-You can compare this domain resource YAML file with the domain resource YAML file from the initial use case (`/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`) to see the changes required for the common mounts option. For example:
+You can compare this domain resource YAML file with the domain resource YAML file
+from the original initial use case (`/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml`)
+to see the changes required for the common mounts option. For example:
 
 ```
 $ diff /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
@@ -331,16 +477,18 @@ $ diff /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml /tm
 <       wdtInstallHome: "/common/weblogic-deploy"
 ```
 
-If you created your own YAML file, then you can make the required changes for the common mounts option and create the new domain using the modified YAML file.
-
-Run the following command to create the domain custom resource:
+Run the following command to deploy the domain custom resource:
 
 ```shell
 $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml
 ```
-  > Note: If you are choosing _not_ to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
-  If you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:
+> Note: If you are choosing _not_ to use the predefined Domain YAML file
+  and instead created your own Domain YAML file earlier, then substitute your
+  custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+
+If you now run `kubectl get pods -n sample-domain1-ns --watch`, then you will see
+the introspector job run and your WebLogic Server pods start. The output will look something like this:
 
   {{%expand "Click here to expand." %}}
   ```shell
@@ -379,7 +527,9 @@ $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM
   ```
   {{% /expand %}}
 
-Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that provides useful information about a domain's pods and waits for them to reach a `ready` state, reach their target `restartVersion`, and reach their target `image` before exiting.
+Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is a utility script that
+provides useful information about a domain's pods and waits for them to reach a `ready` state, reach
+their target `restartVersion`, and reach their target `image` before exiting.
 
   {{%expand "Click here to display the `wl-pod-wait.sh` usage." %}}
   ```shell
@@ -422,6 +572,8 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
       -?              : This help.
   ```
   {{% /expand %}}
+
+TBD/TODO: Update the following once wl-pod-wait.sh is updated.
 
   {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```
@@ -501,9 +653,10 @@ Alternatively, you can run `/tmp/mii-sample/utils/wl-pod-wait.sh -p 3`. This is 
   ```
   {{% /expand %}}
 
-
-
 If you see an error, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-#### Invoke the web application
-You can follow the same steps as described in [Invoke the web application](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/#invoke-the-web-application) section of the initial use case to invoke the web application. 
+#### Step 4: invoke the web application
+
+You can follow the same steps as described in
+[Invoke the web application](/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/#invoke-the-web-application)
+section of the initial use case to invoke the web application. 
