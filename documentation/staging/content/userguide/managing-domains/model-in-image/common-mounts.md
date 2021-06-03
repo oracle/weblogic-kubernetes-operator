@@ -22,7 +22,7 @@ pre = "<b> </b>"
 ### Introduction
 
 {{% notice warning %}}
-The common mounts feature is currently unsupported and is a work in progress. To enable this feature, set the `"featureGates=CommonMounts=true"` when installing the operator using the `helm install` command. If you are using a custom YAML file containing the configuration values to be overridden, then you can add `featureGates: CommonMounts=true` in the custom values yaml file to enable this feature.
+The common mounts feature is currently unsupported and is a work in progress. Its configuration or behavior may change between releases and it is disabled by default. If you want to enable this feature, then set your operator's "featureGates" Helm configuration attribute to include "CommonMounts=true". This attribute defaults to being unset and accepts a comma separated list.
 {{% /notice %}}
 
 Common mounts are an alternative approach for including Model in Image model files,
