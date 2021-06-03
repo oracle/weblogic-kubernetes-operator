@@ -283,10 +283,10 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
 or you can directly use the file `/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml`
 that is included in the sample source.
 
-TBD/TODO Update the following to the latest:
-
   {{%expand "Click here to view the WLS Domain YAML file using the common mounts feature." %}}
   ```yaml
+    # Copyright (c) 2021, Oracle and/or its affiliates.
+    # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
     #
     # This is an example of how to define a Domain resource.
     #
@@ -337,7 +337,7 @@ TBD/TODO Update the following to the latest:
       # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
       serverStartPolicy: "IF_NEEDED"
     
-      # settings for common mount volume, see also 'serverPod.commonMounts'.
+      # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
       commonMountVolumes:
       - name: commonMountsVolume1
         mountPath: "/common"
@@ -359,7 +359,10 @@ TBD/TODO Update the following to the latest:
             cpu: "250m"
             memory: "768Mi"
     
-        # Settings for common mounts with images containing model, archives and WDT instal. See also 'spec.commonMountVolumes'.
+        # Common mount image(s) containing WDT model, archives and install. See also:
+        #    'spec.commonMountVolumes'.
+        #    'spec.configuration.model.modelHome'
+        #    'spec.configuration.model.wdtInstallHome'
         commonMounts:
         - image: "model-in-image:WLS-CM-v1"
           imagePullPolicy: IfNotPresent
@@ -572,8 +575,6 @@ their target `restartVersion`, and reach their target `image` before exiting.
       -?              : This help.
   ```
   {{% /expand %}}
-
-TBD/TODO: Update the following once wl-pod-wait.sh is updated.
 
   {{%expand "Click here to view sample output from `wl-pod-wait.sh`." %}}
   ```
