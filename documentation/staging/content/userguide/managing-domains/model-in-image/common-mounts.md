@@ -21,6 +21,10 @@ pre = "<b> </b>"
 
 ### Introduction
 
+{{% notice warning %}}
+The common mounts feature is currently unsupported and is a work in progress. To enable this feature, set the `"featureGates=CommonMounts=true"` when installing the operator using the `helm install` command. If you are using a custom YAML file containing the configuration values to be overridden, then you can add `featureGates: CommonMounts=true` in the custom values yaml file to enable this feature.
+{{% /notice %}}
+
 Common mounts are an alternative approach for including Model in Image model files,
 application archive files, Weblogic Deploying Tooling install files,
 or other types of files, in your pods.
