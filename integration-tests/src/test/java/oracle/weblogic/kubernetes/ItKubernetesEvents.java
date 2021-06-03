@@ -503,232 +503,10 @@ public class ItKubernetesEvents {
     }
   }
 
-
-  /**
-   * Test DomainDeleted event is logged when domain resource is deleted.
-   */
-  @Order(10)
-  @Test
-  @DisplayName("Test domain events for various domain life cycle changes")
-  public void testDomainK8SEventsDelete() {
-    OffsetDateTime timestamp = now();
-
-    deleteDomainCustomResource(domainUid, domainNamespace1);
-    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace1);
-    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
-
-    //verify domain deleted event
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_DELETED, "Normal", timestamp);
-  }
-
-  /**
-   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy default to List and
-   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
-   * when it stops watching a domain namespace.
-   * The test upgrades the operator instance through helm to add or remove another domain namespace
-   * in the operator watch list.
-   * This is a parameterized test with enableClusterRoleBinding set to either true or false.
-   *<p>
-   *<pre>{@literal
-   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
-   * --namespace ns-ipqy
-   * --reuse-values
-   * --set "domainNamespaces={ns-xghr,ns-idir}"
-   * }
-   * </pre>
-   * </p>
-   */
-  @Order(11)
-  @ParameterizedTest
-  @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
-    logger.info("testing testK8SEventsStartStopWatchingNS with enableClusterRoleBinding={0}",
-        enableClusterRoleBinding);
-    OffsetDateTime timestamp = now();
-
-    logger.info("Adding a new domain namespace in the operator watch list");
-    List<String> domainNamespaces = new ArrayList<>();
-    domainNamespaces.add(domainNamespace1);
-    domainNamespaces.add(domainNamespace2);
-    opParams = opParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
-    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-
-    timestamp = now();
-
-    logger.info("Removing domain namespace {0} in the operator watch list", domainNamespace2);
-    domainNamespaces.clear();
-    domainNamespaces.add(domainNamespace1);
-    opParams = opParams.domainNamespaces(domainNamespaces);
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
-        enableClusterRoleBinding);
-  }
-
-  /**
-   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to LabelSelector and
-   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
-   * when it stops watching a domain namespace.
-   * If set to LabelSelector, then the operator will manage the set of namespaces discovered by a list of namespaces
-   * using the value specified by domainNamespaceLabelSelector as a label selector.
-   * The test upgrades the operator instance through helm to add or remove another domain namespace
-   * in the operator watch list.
-   *<p>
-   *<pre>{@literal
-   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
-   * --namespace ns-ipqy
-   * --reuse-values
-   * --set "domainNamespaceSelectionStrategy=LabelSelector"
-   * --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
-   * }
-   * </pre>
-   * </p>
-   */
-  @Order(13)
-  @ParameterizedTest
-  @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
-    logger.info("testing testK8SEventsStartStopWatchingNSWithLabelSelector with enableClusterRoleBinding={0}",
-        enableClusterRoleBinding);
-    OffsetDateTime timestamp = now();
-
-    logger.info("Labeling namespace {0} to enable it in the operator watch list", domainNamespace3);
-    // label domainNamespace3
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
-        .execute();
-
-    // Helm upgrade parameters
-    opParams = opParams
-        .domainNamespaceSelectionStrategy("LabelSelector")
-        .domainNamespaceLabelSelector("weblogic-operator=enabled")
-        .enableClusterRoleBinding(enableClusterRoleBinding);
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace3);
-    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-
-    // verify there is no event logged in domainNamespace4
-    logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
-    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
-        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
-        + domainNamespace4 + ", expected no such event will be logged");
-
-    timestamp = now();
-    logger.info("Labelling namespace {0} to \"weblogic-operator=disabled\" to disable it in the operator "
-        + "watch list", domainNamespace3);
-
-    // label domainNamespace3 to weblogic-operator=disabled
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
-        .execute();
-
-    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
-        enableClusterRoleBinding);
-  }
-
-  /**
-   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
-   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to RegExp and
-   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
-   * when it stops watching a domain namespace.
-   * If set to RegExp, then the operator will manage the set of namespaces discovered by a list of namespaces
-   * using the value specified by domainNamespaceRegExp as a regular expression matched against the namespace names.
-   * The test upgrades the operator instance through helm to add or remove another domain namespace
-   * in the operator watch list.
-   *<p>
-   *<pre>{@literal
-   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
-   * --namespace ns-ipqy
-   * --reuse-values
-   * --set "domainNamespaceSelectionStrategy=RegExp"
-   * --set "domainNamespaceRegExp=abcd"
-   * }
-   * </pre>
-   * </p>
-   */
-  @Order(15)
-  @ParameterizedTest
-  @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
-    OffsetDateTime timestamp = now();
-    logger.info("Adding a new domain namespace {0} in the operator watch list", domainNamespace5);
-    // Helm upgrade parameters
-    opParams = opParams
-        .domainNamespaceSelectionStrategy("RegExp")
-        .domainNamespaceRegExp(domainNamespace5.substring(3))
-        .enableClusterRoleBinding(enableClusterRoleBinding);
-
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in {0}", domainNamespace5);
-    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-
-    // verify there is no event logged in domainNamespace4
-    logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
-    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
-        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
-        + domainNamespace4 + ", expected no such event will be logged");
-
-    timestamp = now();
-    logger.info("Setting the domainNamesoaceRegExp to a new value {0}", domainNamespace4.substring(3));
-
-    // Helm upgrade parameters
-    opParams = opParams
-        .domainNamespaceSelectionStrategy("RegExp")
-        .domainNamespaceRegExp(domainNamespace4.substring(3));
-
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace5);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
-        enableClusterRoleBinding);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace4);
-    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-  }
-
-  /**
-   * Operator helm parameter domainNamespaceSelectionStrategy is set to Dedicated.
-   * If set to Dedicated, then operator will manage WebLogic Domains only in the same namespace which the operator
-   * itself is deployed, which is the namespace of the Helm release.
-   * Operator logs a NamespaceWatchingStopped in the operator domain namespace and
-   * NamespaceWatchingStopped event in the other domain namespaces when it stops watching a domain namespace.
-   *
-   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
-   */
-  @Order(17)
-  @Test
-  public void testK8SEventsStartStopWatchingNSWithDedicated() {
-    OffsetDateTime timestamp = now();
-
-    // Helm upgrade parameters
-    opParams = opParams.domainNamespaceSelectionStrategy("Dedicated")
-                .enableClusterRoleBinding(false);
-
-    upgradeAndVerifyOperator(opNamespace, opParams);
-
-    logger.info("verify NamespaceWatchingStarted event is logged in {0}", opNamespace);
-    checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
-
-    logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
-    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
-  }
-
   /**
    * The test modifies the logHome property and verifies the domain roll events are logged.
    */
-  @Order(18)
+  @Order(10)
   @Test
   @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
   public void testLogHomeChangeEvents() {
@@ -803,7 +581,7 @@ public class ItKubernetesEvents {
   /**
    * The test modifies the includeServerOutInPodLog property and verifies the domain roll starting events are logged.
    */
-  @Order(19)
+  @Order(11)
   @Test
   @DisplayName("Verify includeServerOutInPodLog property change rolls domain and relevant events are logged")
   public void testIncludeServerOutInPodLog() {
@@ -879,7 +657,7 @@ public class ItKubernetesEvents {
   /**
    * The test modifies the domainHome and mountPath property and verifies the domain roll starting events are logged.
    */
-  @Order(20)
+  @Order(12)
   @Test
   @DisplayName("Verify doaminHome and mountPath property changes rolls domain and relevant events are logged")
   public void testDomainHomeAndMountPathChange() {
@@ -965,6 +743,228 @@ public class ItKubernetesEvents {
 
     //********** I don't see the following event  **********************
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+  }
+
+
+  /**
+   * Test DomainDeleted event is logged when domain resource is deleted.
+   */
+  @Order(13)
+  @Test
+  @DisplayName("Test domain events for various domain life cycle changes")
+  public void testDomainK8SEventsDelete() {
+    OffsetDateTime timestamp = now();
+
+    deleteDomainCustomResource(domainUid, domainNamespace1);
+    checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 1, domainUid, domainNamespace1);
+    checkPodDoesNotExist(managedServerPodNamePrefix + 2, domainUid, domainNamespace1);
+
+    //verify domain deleted event
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_DELETED, "Normal", timestamp);
+  }
+
+  /**
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy default to List and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * The test upgrades the operator instance through helm to add or remove another domain namespace
+   * in the operator watch list.
+   * This is a parameterized test with enableClusterRoleBinding set to either true or false.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaces={ns-xghr,ns-idir}"
+   * }
+   * </pre>
+   * </p>
+   */
+  @Order(14)
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
+    logger.info("testing testK8SEventsStartStopWatchingNS with enableClusterRoleBinding={0}",
+        enableClusterRoleBinding);
+    OffsetDateTime timestamp = now();
+
+    logger.info("Adding a new domain namespace in the operator watch list");
+    List<String> domainNamespaces = new ArrayList<>();
+    domainNamespaces.add(domainNamespace1);
+    domainNamespaces.add(domainNamespace2);
+    opParams = opParams.domainNamespaces(domainNamespaces).enableClusterRoleBinding(enableClusterRoleBinding);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace2);
+    checkEvent(opNamespace, domainNamespace2, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    timestamp = now();
+
+    logger.info("Removing domain namespace {0} in the operator watch list", domainNamespace2);
+    domainNamespaces.clear();
+    domainNamespaces.add(domainNamespace1);
+    opParams = opParams.domainNamespaces(domainNamespaces);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace2);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace2, null, "Normal", timestamp,
+        enableClusterRoleBinding);
+  }
+
+  /**
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to LabelSelector and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * If set to LabelSelector, then the operator will manage the set of namespaces discovered by a list of namespaces
+   * using the value specified by domainNamespaceLabelSelector as a label selector.
+   * The test upgrades the operator instance through helm to add or remove another domain namespace
+   * in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaceSelectionStrategy=LabelSelector"
+   * --set "domainNamespaceLabelSelector=weblogic-operator\=enabled"
+   * }
+   * </pre>
+   * </p>
+   */
+  @Order(15)
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
+    logger.info("testing testK8SEventsStartStopWatchingNSWithLabelSelector with enableClusterRoleBinding={0}",
+        enableClusterRoleBinding);
+    OffsetDateTime timestamp = now();
+
+    logger.info("Labeling namespace {0} to enable it in the operator watch list", domainNamespace3);
+    // label domainNamespace3
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=enabled --overwrite"))
+        .execute();
+
+    // Helm upgrade parameters
+    opParams = opParams
+        .domainNamespaceSelectionStrategy("LabelSelector")
+        .domainNamespaceLabelSelector("weblogic-operator=enabled")
+        .enableClusterRoleBinding(enableClusterRoleBinding);
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace3);
+    checkEvent(opNamespace, domainNamespace3, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    // verify there is no event logged in domainNamespace4
+    logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
+        + domainNamespace4 + ", expected no such event will be logged");
+
+    timestamp = now();
+    logger.info("Labelling namespace {0} to \"weblogic-operator=disabled\" to disable it in the operator "
+        + "watch list", domainNamespace3);
+
+    // label domainNamespace3 to weblogic-operator=disabled
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl label ns " + domainNamespace3 + " weblogic-operator=disabled --overwrite"))
+        .execute();
+
+    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
+        enableClusterRoleBinding);
+  }
+
+  /**
+   * Test verifies the operator logs a NamespaceWatchingStarted event in the respective domain namespace
+   * when it starts watching a new domain namespace with domainNamespaceSelectionStrategy set to RegExp and
+   * operator logs a NamespaceWatchingStopped event in the respective domain namespace
+   * when it stops watching a domain namespace.
+   * If set to RegExp, then the operator will manage the set of namespaces discovered by a list of namespaces
+   * using the value specified by domainNamespaceRegExp as a regular expression matched against the namespace names.
+   * The test upgrades the operator instance through helm to add or remove another domain namespace
+   * in the operator watch list.
+   *<p>
+   *<pre>{@literal
+   * helm upgrade weblogic-operator kubernetes/charts/weblogic-operator
+   * --namespace ns-ipqy
+   * --reuse-values
+   * --set "domainNamespaceSelectionStrategy=RegExp"
+   * --set "domainNamespaceRegExp=abcd"
+   * }
+   * </pre>
+   * </p>
+   */
+  @Order(16)
+  @ParameterizedTest
+  @ValueSource(booleans = { true, false })
+  public void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
+    OffsetDateTime timestamp = now();
+    logger.info("Adding a new domain namespace {0} in the operator watch list", domainNamespace5);
+    // Helm upgrade parameters
+    opParams = opParams
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp(domainNamespace5.substring(3))
+        .enableClusterRoleBinding(enableClusterRoleBinding);
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in {0}", domainNamespace5);
+    checkEvent(opNamespace, domainNamespace5, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    // verify there is no event logged in domainNamespace4
+    logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
+    assertFalse(domainEventExists(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED,
+        "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
+        + domainNamespace4 + ", expected no such event will be logged");
+
+    timestamp = now();
+    logger.info("Setting the domainNamesoaceRegExp to a new value {0}", domainNamespace4.substring(3));
+
+    // Helm upgrade parameters
+    opParams = opParams
+        .domainNamespaceSelectionStrategy("RegExp")
+        .domainNamespaceRegExp(domainNamespace4.substring(3));
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace5);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace5, null, "Normal", timestamp,
+        enableClusterRoleBinding);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", domainNamespace4);
+    checkEvent(opNamespace, domainNamespace4, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+  }
+
+  /**
+   * Operator helm parameter domainNamespaceSelectionStrategy is set to Dedicated.
+   * If set to Dedicated, then operator will manage WebLogic Domains only in the same namespace which the operator
+   * itself is deployed, which is the namespace of the Helm release.
+   * Operator logs a NamespaceWatchingStopped in the operator domain namespace and
+   * NamespaceWatchingStopped event in the other domain namespaces when it stops watching a domain namespace.
+   *
+   * Test verifies NamespaceWatchingStopped event is logged when operator stops watching a domain namespace.
+   */
+  @Order(17)
+  @Test
+  public void testK8SEventsStartStopWatchingNSWithDedicated() {
+    OffsetDateTime timestamp = now();
+
+    // Helm upgrade parameters
+    opParams = opParams.domainNamespaceSelectionStrategy("Dedicated")
+                .enableClusterRoleBinding(false);
+
+    upgradeAndVerifyOperator(opNamespace, opParams);
+
+    logger.info("verify NamespaceWatchingStarted event is logged in {0}", opNamespace);
+    checkEvent(opNamespace, opNamespace, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+    logger.info("verify NamespaceWatchingStopped event is logged in {0}", domainNamespace4);
+    checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace4, null, "Normal", timestamp, false);
   }
 
   /**
