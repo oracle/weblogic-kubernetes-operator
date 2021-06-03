@@ -23,10 +23,7 @@ pre = "<b> </b>"
 
 Common mounts are an alternative approach for including Model in Image model files,
 application archive files, Weblogic Deploying Tooling install files,
-or other types of files, in your pods. The common mounts feature internally
-uses a Kubernetes `emptyDir` volume and Kubernetes init containers to share files
-from additional images.
-
+or other types of files, in your pods.
 This feature eliminates the need to provide these files in the image specified
 in `domain.spec.image`. Instead:
 
@@ -47,6 +44,10 @@ The advantages of the common mounts feature for Model In Image domains are:
 - Distribute or update model files, application archives, and the
   WebLogic Deploy Tooling executable using very small images
   instead of a large image that also contains a WebLogic install.
+
+The common mounts feature internally
+uses a Kubernetes `emptyDir` volume and Kubernetes init containers to share files
+from additional images.
 
 ### References
 
@@ -90,10 +91,9 @@ then the secrets must be referenced using `domain.spec.imagePullSecrets`.
 The `serverPod.commonMounts.volume` field refers to the name of a common
 mount volume defined in `domain.spec.commonMountVolumes` section, and
 a common mount volume in turn defines a `mountPath`. The `mountPath`
-is the location of a directory in a common mount image that 
-references this volume, and
-is also the location in the main pod container that will automatically contain
-a recursive copy of this directory. For example:
+is the location of a directory in a common mount image, and
+is also the location in the main pod container (which will automatically contain
+a recursive copy of the common mount image directory). For example:
 
 ```
   spec:
