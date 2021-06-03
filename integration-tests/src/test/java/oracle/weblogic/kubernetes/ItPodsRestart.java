@@ -323,7 +323,7 @@ class ItPodsRestart {
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -404,7 +404,7 @@ class ItPodsRestart {
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the env changed messages is logged");
     assertTrue(event.getMessage().contains("env"));
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -484,7 +484,7 @@ class ItPodsRestart {
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the security context changed messages is logged");
     assertTrue(event.getMessage().contains("security"));
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -556,7 +556,7 @@ class ItPodsRestart {
     logger.info("verify the event message contains the image pull policy changed message is logged");
     assertTrue(event.getMessage().contains("imagePullPolicy"));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -616,7 +616,7 @@ class ItPodsRestart {
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restartVersion"));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
@@ -678,7 +678,7 @@ class ItPodsRestart {
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("image"));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
-        event = getEvent(opNamespace, domainNamespace,
+    event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
