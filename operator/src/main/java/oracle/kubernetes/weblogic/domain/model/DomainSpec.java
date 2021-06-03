@@ -321,6 +321,10 @@ public class DomainSpec extends BaseConfiguration {
       + "have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.")
   private MonitoringExporterSpecification monitoringExporter;
 
+  public MonitoringExporterSpecification getMonitoringExporterSpecification() {
+    return monitoringExporter;
+  }
+
   MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
     return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getConfiguration).orElse(null);
   }
@@ -341,6 +345,10 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
+  public Integer getMonitoringExporterPort() {
+    return monitoringExporter == null ? null : monitoringExporter.getPort();
+  }
+
   /**
    * Specifies the image for the monitoring exporter sidecar.
    * @param imageName the name of the docker image
@@ -359,6 +367,16 @@ public class DomainSpec extends BaseConfiguration {
     assert monitoringExporter != null : "May not set image pull policy without configuration";
 
     monitoringExporter.setImagePullPolicy(pullPolicy);
+  }
+
+  /**
+   * Specifies the port for the exporter sidecar.
+   * @param port port number
+   */
+  public void setMonitoringExporterPort(Integer port) {
+    assert monitoringExporter != null : "May not set exporter port without configuration";
+
+    monitoringExporter.setPort(port);
   }
 
   /**

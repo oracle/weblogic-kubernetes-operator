@@ -119,6 +119,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `configuration` | Map | The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances. |
 | `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.2 |
 | `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `port` | number | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
 
 ### Server Pod
 
