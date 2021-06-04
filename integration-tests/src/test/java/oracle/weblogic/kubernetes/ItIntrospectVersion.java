@@ -122,7 +122,7 @@ import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
@@ -530,6 +530,7 @@ public class ItIntrospectVersion {
    * Verifies that the domain roll starting/pod cycle starting events are logged.
    * Verifies the new admin port of the admin server in services.
    * Verifies accessing sample application in admin server works.
+   * Bugs - OWLS-89879
    */
   @Order(2)
   @Test
@@ -618,8 +619,10 @@ public class ItIntrospectVersion {
 
     //verify the introspectVersion change causes the domain roll events to be logged
     logger.info("verify domain roll starting/pod cycle starting/domain roll completed events are logged");
-    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
-    checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_STARTING,
+        "Normal", timestamp, withStandardRetryPolicy);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, POD_CYCLE_STARTING,
+        "Normal", timestamp, withStandardRetryPolicy);
 
     CoreV1Event event = getEvent(opNamespace, introDomainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
@@ -632,7 +635,8 @@ public class ItIntrospectVersion {
     logger.info("verify the event message contains the property changed in domain resource");
     assertTrue(event.getMessage().contains("ADMIN_PORT"));
 
-    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+    checkEvent(opNamespace, introDomainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
+        "Normal", timestamp, withStandardRetryPolicy);
 
 
     // verify the admin port is changed to newAdminPort
@@ -1197,18 +1201,4 @@ public class ItIntrospectVersion {
   @interface AssumeWebLogicImage {
   }
 
-  // Utility method to check event
-  private static void checkEvent(
-      String opNamespace, String domainNamespace, String domainUid,
-      String reason, String type, OffsetDateTime timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            logger.info("Waiting for domain event {0} to be logged in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                reason,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
-  }
 }

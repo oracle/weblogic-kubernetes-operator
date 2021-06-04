@@ -19,6 +19,7 @@ import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -32,6 +33,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class K8sEvents {
 
   private static final LoggingFacade logger = getLogger();
+
+  /**
+   * Utility method to check event.
+   *
+   * @param opNamespace Operator namespace
+   * @param domainNamespace Domain namespace
+   * @param domainUid domainUid
+   * @param reason EventName
+   * @param type Type of the event
+   * @param timestamp event timestamp
+   * @param withStandardRetryPolicy conditionfactory object
+   */
+  public static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp, ConditionFactory withStandardRetryPolicy) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition
+            -> logger.info("Waiting for domain event {0} to be logged in namespace {1} "
+            + "(elapsed time {2}ms, remaining time {3}ms)",
+            reason,
+            domainNamespace,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
 
   /**
    * Check if a given event is logged by the operator.
