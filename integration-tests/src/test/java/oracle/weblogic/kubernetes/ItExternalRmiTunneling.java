@@ -309,6 +309,9 @@ class ItExternalRmiTunneling {
     logger.info("External RMI tunneling works for Voyager");
   }
 
+  /**
+   * Verify RMI access to WLS through Traefik LoadBalancer
+   */
   @Order(2)
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
@@ -361,10 +364,13 @@ class ItExternalRmiTunneling {
     logger.info("External RMI tunneling works for Traefik");
   }
 
+  /**
+   * Verify RMI access to WLS through NGINX LoadBalancer
+   */
   @Disabled("NGNIX tls ingress yaml file not ready")
   @Order(3)
   @Test
-  @DisplayName("Verify RMI access WLS through Nginx LoadBalancer")
+  @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
   public void testExternalRmiAccessThruNginx() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
@@ -467,6 +473,9 @@ class ItExternalRmiTunneling {
     runExtHttpsClient(httpsTunnelingPort, 2, false);
   }
 
+  /**
+   * Verify tls RMI access to WLS through Traefik LoadBalancer
+   */
   @Order(5)
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
@@ -514,10 +523,13 @@ class ItExternalRmiTunneling {
     runExtHttpsClient(httpsTunnelingPort, 2, false);
   }
 
+  /**
+   * Verify tls RMI access to WLS through NGNIX LoadBalancer
+   */
   @Disabled("NGNIX tls ingress yaml file not ready")
   @Order(6)
   @Test
-  @DisplayName("Verify tls RMI access WLS through Nginx loadBalancer")
+  @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
   public void testExternalRmiAccessThruNginxHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
