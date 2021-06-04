@@ -55,7 +55,7 @@ public class Docker {
   public static boolean push(String image) {
     String cmdToExecute = String.format("docker push %s", image);
     if (KIND_REPO != null) {
-      cmdToExecute = String.format("kind load docker-image %s --n kind", image);
+      cmdToExecute = String.format("kind load docker-image %s --name kind", image);
     }
     return new Command()
         .withParams(new CommandParams()
