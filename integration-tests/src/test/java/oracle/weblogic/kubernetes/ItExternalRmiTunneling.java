@@ -310,7 +310,7 @@ class ItExternalRmiTunneling {
   }
 
   /**
-   * Verify RMI access to WLS through Traefik LoadBalancer
+   * Verify RMI access to WLS through Traefik LoadBalancer.
    */
   @Order(2)
   @Test
@@ -365,7 +365,7 @@ class ItExternalRmiTunneling {
   }
 
   /**
-   * Verify RMI access to WLS through NGINX LoadBalancer
+   * Verify RMI access to WLS through NGINX LoadBalancer.
    */
   @Disabled("NGNIX tls ingress yaml file not ready")
   @Order(3)
@@ -474,7 +474,7 @@ class ItExternalRmiTunneling {
   }
 
   /**
-   * Verify tls RMI access to WLS through Traefik LoadBalancer
+   * Verify tls RMI access to WLS through Traefik LoadBalancer.
    */
   @Order(5)
   @Test
@@ -524,7 +524,7 @@ class ItExternalRmiTunneling {
   }
 
   /**
-   * Verify tls RMI access to WLS through NGNIX LoadBalancer
+   * Verify tls RMI access to WLS through NGNIX LoadBalancer.
    */
   @Disabled("NGNIX tls ingress yaml file not ready")
   @Order(6)
