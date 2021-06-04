@@ -273,19 +273,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           // list images for Kind cluster
           if (KIND_REPO != null) {
-            ExecResult result = new Command()
+            new Command()
                 .withParams(new CommandParams()
                     .command("docker exec kind-worker crictl images")
-                    .redirect(true))
-                .executeAndReturnResult();
-
-            if (result.stdout() != null) {
-              logger.info("Get images on Kind, result out {0}", result.stdout());
-            }
-            if (result.stderr() != null) {
-              logger.info("Get images on Kind, result err {0}", result.stderr());
-            }
-            logger.info("Get images on Kind, exitvalue", result.exitValue());
+                    .verbose(true)
+                    .saveResults(true))
+                .execute();
           }
         }
 
