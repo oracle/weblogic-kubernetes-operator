@@ -269,6 +269,10 @@ public class WlsDynamicServersConfig {
     return serverTemplate;
   }
 
+  public void setServerTemplate(WlsServerConfig serverTemplate) {
+    this.serverTemplate = serverTemplate;
+  }
+
   public String getName() {
     return this.name;
   }
