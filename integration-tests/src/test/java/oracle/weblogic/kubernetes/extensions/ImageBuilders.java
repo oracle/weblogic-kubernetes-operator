@@ -24,6 +24,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -266,6 +268,16 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
                 .until(() -> dockerPush(image));
+          }
+
+          // list images for Kind cluster
+          if (KIND_REPO != null) {
+            new Command()
+                .withParams(new CommandParams()
+                    .command("docker exec -it kind-worker crictl images")
+                    .verbose(true)
+                    .saveResults(true))
+                .execute();
           }
         }
 
