@@ -253,8 +253,15 @@ For online or offline updates:
 
 For offline updates only, there are two additional options:
 
-  - Supply a new image with new or changed model files
-    and use your Domain YAML `spec.image` field to reference the image.
+  - Supply a new image with new or changed model files.
+    - If the files are located in the image specified in Domain YAML `spec.image`,
+      then change this field to reference the image.
+    - If you are using the 
+      [common mounts approach]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+      to supply
+      model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+      value to reference the new image or add a new `serverPod.commonMounts` mount for
+      the new image.
 
   - Change, add, or delete environment variables that are referenced by macros in your model files.
     Environment variables are specified in the Domain YAML `spec.serverPod.env`
@@ -278,7 +285,7 @@ Model updates can include additions, changes, and deletions. For help generating
  - For a discussion about helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image or WDT ConfigMap,
+ - If you specify multiple model files in your image(s) or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
    [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
@@ -298,7 +305,15 @@ Use the following steps to initiate an offline configuration update to your mode
  1. Ensure your updates are supported by checking [Supported](#supported-updates) and [Unsupported](#unsupported-updates) updates.
  1. Modify, add, or delete your model resources as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
-    1. If you have updated your image, change `domain.spec.image` accordingly.
+    1. If you have updated your image:
+       - If the files are located in the image specified in Domain YAML `spec.image`,
+         then change this field to reference the image.
+       - If you are using the
+         [common mounts approach]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+         to supply
+         model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+         value to reference the new image or add a new `serverPod.commonMounts` mount for
+         the new image.
     1. If you are updating environment variables, change `domain.spec.serverPod.env`
        or `domain.spec.adminServer.serverPod.env` accordingly.
     1. If you are specifying a WDT ConfigMap, then set `domain.spec.configuration.model.configMap`
