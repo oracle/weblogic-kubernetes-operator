@@ -137,6 +137,15 @@ case "${kind_version}" in
   "kind v0.9."*)
     kind_series="0.9"
     ;;
+  "kind v0.10."*)
+    kind_series="0.10"
+    ;;
+  "kind v0.11.1"*)
+    kind_series="0.11.1"
+    ;;
+  "kind v0.11."*)
+    kind_series="0.11"
+    ;;
 esac
 
 kind_image=$(versionprop "${kind_series}" "${k8s_version}")
@@ -194,7 +203,7 @@ echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
-    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
 
