@@ -226,8 +226,6 @@ class ItExternalRmiTunneling {
     logger.info("Installing Traefik controller using helm");
     traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
 
-    logger.info("Installing Nginx controller using helm");
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
     
     // Create SSL certificate and key using openSSL with SAN extension
     createCertKeyFiles(K8S_NODEPORT_HOST);
@@ -306,10 +304,6 @@ class ItExternalRmiTunneling {
     logger.info("HttpTunnelingPort for Voyager {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works inside pod
-    // runPodClient(2, true);
-
-    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works from RMI client outside of k8s cluster 
     runExtClient(httpTunnelingPort, 2, false);
     logger.info("External RMI tunneling works for Voyager");
@@ -374,6 +368,9 @@ class ItExternalRmiTunneling {
   public void testExternalRmiAccessThruNginx() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+    logger.info("Installing Nginx controller using helm");
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
     // Build the standalone JMS Client to send and receive messages
     buildClient();
     buildClientOnPod();
@@ -524,6 +521,8 @@ class ItExternalRmiTunneling {
   public void testExternalRmiAccessThruNginxHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+    logger.info("Installing Nginx controller using helm");
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -600,7 +599,7 @@ class ItExternalRmiTunneling {
   }
 
   // Run the RMI client inside K8s Cluster
-  private void runPodClient(int serverCount, boolean checkConnection) {
+  private void runClientInsidePod(int serverCount, boolean checkConnection) {
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works inside pod before scaling the cluster
