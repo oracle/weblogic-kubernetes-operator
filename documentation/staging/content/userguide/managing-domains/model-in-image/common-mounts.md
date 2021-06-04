@@ -3,7 +3,7 @@ title = "Common mounts"
 date = 2019-02-23T16:45:16-05:00
 weight = 25
 pre = "<b> </b>"
-description = "Common mounts are an alternative approach for including Model in Image model files, application archive files, WebLogic Deploying Tooling installation files, or other types of files, in your pods."
+description = "Common mounts are an alternative approach for supplying a domain's model files or other types of files."
 +++
 
 ### Contents
