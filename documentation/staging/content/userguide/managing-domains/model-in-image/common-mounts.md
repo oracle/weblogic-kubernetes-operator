@@ -52,11 +52,11 @@ The advantages of common mounts for Model In Image domains are:
 
 - Use or patch a WebLogic installation image without needing to include a WDT installation,
   application archive, or model artifacts within the image.
-- Share one large WebLogic installation image with multiple different model
-  configurations that are supplied in smaller images.
+- Share one WebLogic installation image with multiple different model
+  configurations that are supplied in specific images.
 - Distribute or update model files, application archives, and the
-  WebLogic Deploy Tooling executable using very small images,
-  instead of a large image that also contains a WebLogic installation.
+  WebLogic Deploy Tooling executable using specific images
+  that do not contain a WebLogic installation.
 
 Common mounts internally
 use a Kubernetes `emptyDir` volume and Kubernetes `init` containers to share files
@@ -156,8 +156,8 @@ container image.
   - For example, assuming that
     you have set up `/tmp/mii-sample` as your working directory:
     ```shell
-    kubectl delete domain sample-domain1 -n sample-domain1-ns
-    /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
+    $ kubectl delete domain sample-domain1 -n sample-domain1-ns
+    $ /tmp/mii-sample/utils/wl-pod-wait.sh -p 0
     ```
 
 #### Step 2: Create the common mounts image
@@ -179,15 +179,15 @@ Model In Image model files, application archives, and the WDT installation files
 
 1. Create a temporary directory for staging the common mount image's files and `cd` to this directory:
    ```shell
-   mkdir /tmp/mii-sample/cm-image/WLS-CM-v1
-   cd /tmp/mii-sample/cm-image/WLS-CM-v1
+   $ mkdir /tmp/mii-sample/cm-image/WLS-CM-v1
+   $ cd /tmp/mii-sample/cm-image/WLS-CM-v1
    ```
    We call this directory `WLS-CM-v1` to correspond with the image version tag that we plan to use for the common mount image.
 
 1. Install WDT in the staging directory and remove its `weblogic-deploy/bin/*.cmd` files, which are not used in UNIX environments:
    ```shell
-   unzip /tmp/mii-sample/model-images/weblogic-deploy.zip -d .
-   rm ./weblogic-deploy/bin/*.cmd
+   $ unzip /tmp/mii-sample/model-images/weblogic-deploy.zip -d .
+   $ rm ./weblogic-deploy/bin/*.cmd
    ```
    In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
    attribute that references this WDT installation directory.
@@ -196,10 +196,10 @@ Model In Image model files, application archives, and the WDT installation files
 
 1. Create a `models` directory in the staging directory and copy the model YAML file, properties, and archive into it:
    ```shell
-   mkdir ./models
-   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.yaml ./models
-   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.properties ./models
-   cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip ./models
+   $ mkdir ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.yaml ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.properties ./models
+   $ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip ./models
    ```
    In a later step, we will specify a domain resource `domain.spec.configuration.model.modelHome`
    attribute that references this directory.
@@ -209,8 +209,8 @@ Model In Image model files, application archives, and the WDT installation files
    using a small `busybox` image as the base image.
 
    ```shell
-   cp /tmp/mii-sample/cm-docker-file/Dockerfile .    
-   docker build \
+   $ cp /tmp/mii-sample/cm-docker-file/Dockerfile .    
+   $ docker build \
      --build-arg COMMON_MOUNT_PATH=/common \
      --build-arg WDT_MODEL_HOME=/common/models \
      --build-arg WDT_INSTALL_HOME=/common/weblogic-deploy \

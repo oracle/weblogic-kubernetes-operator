@@ -26,7 +26,7 @@ It enables:
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
  - Embedding these files in a single image that also contains a WebLogic installation,
    and using the WebLogic Image Tool (WIT) to generate this image. Or, alternatively,
-   embedding the files in one or more small images.
+   embedding the files in one or more application specific images.
  - Optionally, supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models.
    For example, a secret can be used to supply a database credential.
