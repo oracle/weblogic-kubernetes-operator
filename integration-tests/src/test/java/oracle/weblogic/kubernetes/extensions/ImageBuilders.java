@@ -114,6 +114,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
+
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests
@@ -272,12 +273,19 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           // list images for Kind cluster
           if (KIND_REPO != null) {
-            new Command()
+            ExecResult result = new Command()
                 .withParams(new CommandParams()
-                    .command("docker exec -it kind-worker crictl images")
-                    .verbose(true)
-                    .saveResults(true))
-                .execute();
+                    .command("docker exec kind-worker crictl images")
+                    .redirect(true))
+                .executeAndReturnResult();
+
+            if (result.stdout() != null) {
+              logger.info("Get images on Kind, result out {0}", result.stdout());
+            }
+            if (result.stderr() != null) {
+              logger.info("Get images on Kind, result err {0}", result.stderr());
+            }
+            logger.info("Get images on Kind, exitvalue", result.exitValue());
           }
         }
 
