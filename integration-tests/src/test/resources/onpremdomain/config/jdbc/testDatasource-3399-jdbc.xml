@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Copyright (c) 2021, Oracle and/or its affiliates.
+  Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+<jdbc-data-source xmlns="http://xmlns.oracle.com/weblogic/jdbc-data-source" xmlns:sec="http://xmlns.oracle.com/weblogic/security" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wls="http://xmlns.oracle.com/weblogic/security/wls" xsi:schemaLocation="http://xmlns.oracle.com/weblogic/jdbc-data-source http://xmlns.oracle.com/weblogic/jdbc-data-source/1.5/jdbc-data-source.xsd">
+  <name>testDatasource</name>
+  <datasource-type>GENERIC</datasource-type>
+  <jdbc-driver-params>
+    <url>jdbc:oracle:thin:@//xxx.xxx.x.xxx:1521/ORCLCDB</url>
+    <driver-name>oracle.jdbc.OracleDriver</driver-name>
+    <properties>
+      <property>
+        <name>user</name>
+        <value>scott</value>
+      </property>
+    </properties>
+    <password-encrypted>{AES256}z2pEfh7IwXkhsfJ4DKkNmMCDyAXa1/sndBItxJAeUcA=</password-encrypted>
+  </jdbc-driver-params>
+  <jdbc-connection-pool-params>
+    <initial-capacity>0</initial-capacity>
+    <max-capacity>15</max-capacity>
+    <min-capacity>0</min-capacity>
+    <shrink-frequency-seconds>900</shrink-frequency-seconds>
+    <highest-num-waiters>2147483647</highest-num-waiters>
+    <connection-creation-retry-frequency-seconds>0</connection-creation-retry-frequency-seconds>
+    <connection-reserve-timeout-seconds>10</connection-reserve-timeout-seconds>
+    <test-frequency-seconds>120</test-frequency-seconds>
+    <test-connections-on-reserve>false</test-connections-on-reserve>
+    <ignore-in-use-connections-enabled>true</ignore-in-use-connections-enabled>
+    <inactive-connection-timeout-seconds>0</inactive-connection-timeout-seconds>
+    <test-table-name>SQL ISVALID</test-table-name>
+    <login-delay-seconds>0</login-delay-seconds>
+    <statement-cache-size>10</statement-cache-size>
+    <statement-cache-type>LRU</statement-cache-type>
+    <remove-infected-connections>true</remove-infected-connections>
+    <seconds-to-trust-an-idle-pool-connection>10</seconds-to-trust-an-idle-pool-connection>
+    <statement-timeout>23</statement-timeout>
+    <pinned-to-thread>false</pinned-to-thread>
+    <wrap-types>true</wrap-types>
+    <connection-harvest-max-count>1</connection-harvest-max-count>
+    <connection-harvest-trigger-count>-1</connection-harvest-trigger-count>
+    <count-of-test-failures-till-flush>2</count-of-test-failures-till-flush>
+    <count-of-refresh-failures-till-disable>2</count-of-refresh-failures-till-disable>
+  </jdbc-connection-pool-params>
+  <jdbc-data-source-params>
+    <jndi-name>jdbc/testDatasource</jndi-name>
+    <global-transactions-protocol>OnePhaseCommit</global-transactions-protocol>
+  </jdbc-data-source-params>
+</jdbc-data-source>
