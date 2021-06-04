@@ -24,10 +24,10 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
 It enables:
 
  - Defining a WebLogic domain home configuration using WebLogic Deploy Tool (WDT) model files and application archives.
- - Embedding these files in a single image that also contains a WebLogic install,
+ - Embedding these files in a single image that also contains a WebLogic installation,
    and using the WebLogic Image Tool (WIT) to generate this image. Or, alternatively,
    embedding the files in one or more small images.
- - Optionally supplying additional model files using a Kubernetes ConfigMap.
+ - Optionally, supplying additional model files using a Kubernetes ConfigMap.
  - Supplying Kubernetes Secrets that resolve macro references within the models.
    For example, a secret can be used to supply a database credential.
  - Updating WDT model files at runtime. For example, you can add a data source
@@ -42,7 +42,7 @@ For JRF domains, Model in Image provides additional support for initializing the
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
 configuration scripts and templates.
 They compactly define a WebLogic domain using YAML files and support including
-application archives in a ZIP file. For a discussion of the model format
+application archives in a ZIP file. For a description of the model format
 and its integration with Model in Image,
 see [Usage]({{< relref "/userguide/managing-domains/model-in-image/usage.md" >}})
 and [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}).
@@ -60,7 +60,7 @@ When you deploy a Model in Image domain resource YAML file:
 
   - After the introspector job completes:
     - The operator creates a ConfigMap named `DOMAIN_UID-weblogic-domain-introspect-cm`
-      (possibly with some additional maps distinguished serial names) and puts the packaged domain home in it.
+      (possibly with some additional maps distinguished by serial names) and puts the packaged domain home in it.
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 

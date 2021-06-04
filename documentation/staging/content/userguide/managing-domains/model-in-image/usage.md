@@ -13,7 +13,7 @@ This document describes what's needed to create and deploy a typical Model in Im
    - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
    - [WebLogic Server image](#weblogic-server-image)
    - [Directory structure](#directory-structure)
-   - [Supplying initial model files and a WDT install](#supplying-initial-model-files-and-a-WDT-install)
+   - [Supplying initial model files and WDT](#supplying-initial-model-files-and-wdt)
    - [Optional WDT model ConfigMap](#optional-wdt-model-configmap)
    - [Required runtime encryption secret](#required-runtime-encryption-secret)
    - [Secrets for model macros](#secrets-for-model-macros)
@@ -27,11 +27,11 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 ### WebLogic Server image
 
-Model in Image requires an image with a WebLogic Server install.
+Model in Image requires an image with a WebLogic Server installation.
 
 - You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
 
-- Or you can manually build your own base image as per [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
+- Or, you can manually build your own base image, as described in [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
 ### Directory structure
 
@@ -41,14 +41,14 @@ its (optional) WDT model artifacts and (required) WDT binaries:
 | Domain resource attribute  | Default directory          | Contents                              |
 | -------------------------- | -------------------------- | ------------------------------------- |
 | `domain.spec.configuration.model.modelHome` | `/u01/wdt/models` | Zero or more model `.yaml`, `.properties`, and/or archive `.zip` files.|
-| `domain.spec.configuration.model.wdtInstallHome` | `/u01/wdt/weblogic-deploy` | Unzipped WDT install binaries (required)  |
+| `domain.spec.configuration.model.wdtInstallHome` | `/u01/wdt/weblogic-deploy` | Unzipped WDT installation binaries (required).  |
 
-### Supplying initial model files and a WDT install
+### Supplying initial model files and WDT
 
-Model in Image minimally requires an image with a WebLogic install 
+Model in Image minimally requires an image with a WebLogic installation
 (see [WebLogic Server image](#weblogic-server-image)), plus access
 to:
-* A WDT install in `domain.spec.configuration.model.wdtInstallHome`.
+* A WDT installation in `domain.spec.configuration.model.wdtInstallHome`.
 * One or more WDT model `.yaml` files that configure your domain in
   the `domain.spec.configuration.model.modelHome` directory
   or in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
@@ -57,31 +57,33 @@ to:
   or in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
 * Zero or more WDT model application `.zip` archives
   in the `domain.spec.configuration.model.modelHome` directory. Archives
-  must be supplied in the model home because application archive
+  must be supplied in the model home because application archives
   are not supported in the [optional WDT model ConfigMap](#optional-wdt-model-configmap).
 
 There are multiple methods for supplying Model in Image WDT artifacts:
 
   - __Include in main image__:
     You can include the artifacts in your domain resource `domain.spec.image`
-    in its `domain.spec.configuration.model.modelHome` 
+    in its `domain.spec.configuration.model.modelHome`
     and `domain.spec.configuration.model.wdtInstallHome` directories as
     a layer on top of your base image
-    (where the base image includes your WebLogic install).
+    (where the base image includes your WebLogic installation).
+
     Use either of the following methods.
-    - _Manual image creation_ uses Docker commands to layer the WDT artifacts from the above table
+
+    - _Manual image creation_ uses Docker commands to layer the WDT artifacts, described in the previous table,
       on top of your base image into a new image.
     - The _WebLogic Image Tool_ (WIT) has built-in options for layering WDT model files,
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
 
-  - __Use Common Mounts__:
-    Use the [common mounts approach]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
-    to create one or more small images that contain the desired files. This feature automatically copies files
-    from each of the small images into each pod's file system's 
+  - __Use common mounts__:
+    Use [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+    to create one or more small images that contain the desired files. This automatically copies files
+    from each of the small images into each pod's file system's
     `configuration.model.modelHome` or `configuration.model.wdtInstallHome` location.
 
-  - __Use a Persistent Volume Claim__:
+  - __Use a Persistent Volume Claim (PVC)__:
     This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
     in a [Persistent Volume Claim]({{< relref "/faq/volumes.md" >}})
     and modify `configuration.model.modelHome` and `configuration.model.wdtInstallHome` to
@@ -90,7 +92,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
   - __Use a WDT model ConfigMap__:
     Use the [Optional WDT model ConfigMap](#optional-wdt-model-configmap) for
     WDT model YAML and `.properties` files. This can be combined with
-    any of the previous methods and is most often used to facilitate runtime
+    any of the previously mentioned methods and is most often used to facilitate runtime
     updates to models supplied by one of these methods.
 
 For more information about model file syntax,
