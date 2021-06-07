@@ -9,32 +9,25 @@
 # COMMON_MOUNT_PATH arg:
 #   Parent location for Model in Image model and WDT installation files.
 #   Must match domain resource 'domain.spec.commonMountVolumes.mountPath'
+#   For model-in-image, the following two domain resource attributes can
+#   be a directory in the mount path:
+#     1) 'domain.spec.configuration.model.modelHome'
+#     2) 'domain.spec.configuration.model.wdtInstallHome'
 #   Default '/common'.
 #
-# WDT_MODEL_HOME arg:
-#   Location for WebLogic Deploy Tooling model home.
-#   Must match domain resource 'domain.spec.configuration.model.modelHome'
-#   Must be a directory within COMMON_MOUNT_PATH.
-#   Defaults to '${COMMON_MOUNT_PATH}/models'.
+# COMMON_MOUNT_STAGE arg:
+#   Local directory containing files to be copied to the COMMON_MOUNT_PATH.
+#   Default '.'.
 #
-# WDT_INSTALL_HOME arg: 
-#   Location of the WebLogic Deploy Tooling installation.
-#   Must match domain resource 'domain.spec.configuration.model.wdtInstallHome'
-#   Must be a directory within COMMON_MOUNT_PATH.
-#   Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
 
 FROM busybox
 ARG COMMON_MOUNT_PATH=/common
-ARG WDT_MODEL_HOME=${COMMON_MOUNT_PATH}/models
-ARG WDT_INSTALL_HOME=${COMMON_MOUNT_PATH}/weblogic-deploy
+ARG COMMON_MOUNT_STAGE=.
 ARG USER=oracle
 ARG USERID=1000
 ARG GROUP=root
 ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
-ENV WDT_MODEL_HOME=${WDT_MODEL_HOME}
-ENV WDT_INSTALL_HOME=${WDT_INSTALL_HOME}
 RUN adduser -D -u ${USERID} -G $GROUP $USER
-COPY weblogic-deploy/ ${WDT_INSTALL_HOME}/
-COPY models/ ${WDT_MODEL_HOME}/
+COPY ${COMMON_MOUNT_STAGE}/ ${COMMON_MOUNT_PATH}/
 RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}/
 USER $USER

@@ -204,16 +204,13 @@ Model In Image model files, application archives, and the WDT installation files
    In a later step, we will specify a domain resource `domain.spec.configuration.model.modelHome`
    attribute that references this directory.
 
-1. Copy `/tmp/mii-sample/cm-docker-file/Dockerfile` to the staging directory
-   and run `docker build` to create your common mount image
-   using a small `busybox` image as the base image.
+1. Run `docker build` using `/tmp/mii-sample/cm-docker-file/Dockerfile` to create your common mount
+   image using a small `busybox` image as the base image.
 
    ```shell
-   $ cp /tmp/mii-sample/cm-docker-file/Dockerfile .    
-   $ docker build \
+   $ docker build -f /tmp/mii-sample/cm-docker-file/Dockerfile \
      --build-arg COMMON_MOUNT_PATH=/common \
-     --build-arg WDT_MODEL_HOME=/common/models \
-     --build-arg WDT_INSTALL_HOME=/common/weblogic-deploy \
+     --build-arg COMMON_MOUNT_STAGE=. \
      --tag model-in-image:WLS-CM-v1 .
    ```
 
@@ -232,35 +229,27 @@ Model In Image model files, application archives, and the WDT installation files
    # COMMON_MOUNT_PATH arg:
    #   Parent location for Model in Image model and WDT installation files.
    #   Must match domain resource 'domain.spec.commonMountVolumes.mountPath'
+   #   For model-in-image, the following two domain resource attributes can
+   #   be a directory in the mount path:
+   #     1) 'domain.spec.configuration.model.modelHome'
+   #     2) 'domain.spec.configuration.model.wdtInstallHome'
    #   Default '/common'.
    #
-   # WDT_MODEL_HOME arg:
-   #   Location for WebLogic Deploy Tooling model home.
-   #   Must match domain resource 'domain.spec.configuration.model.modelHome'
-   #   Must be a directory within COMMON_MOUNT_PATH.
-   #   Defaults to '${COMMON_MOUNT_PATH}/models'.
+   # COMMON_MOUNT_STAGE arg:
+   #   Local directory containing files to be copied to the COMMON_MOUNT_PATH.
+   #   Default '.'.
    #
-   # WDT_INSTALL_HOME arg:
-   #   Location of the WebLogic Deploy Tooling installation.
-   #   Must match domain resource 'domain.spec.configuration.model.wdtInstallHome'
-   #   Must be a directory within COMMON_MOUNT_PATH.
-   #   Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
 
    FROM busybox
    ARG COMMON_MOUNT_PATH=/common
-   ARG WDT_MODEL_HOME=${COMMON_MOUNT_PATH}/models
-   ARG WDT_INSTALL_HOME=${COMMON_MOUNT_PATH}/weblogic-deploy
+   ARG COMMON_MOUNT_STAGE=.
    ARG USER=oracle
    ARG USERID=1000
    ARG GROUP=root
    ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
-   ENV WDT_MODEL_HOME=${WDT_MODEL_HOME}
-   ENV WDT_INSTALL_HOME=${WDT_INSTALL_HOME}
-           RUN adduser -D -u ${USERID} -G $GROUP $USER
-           COPY weblogic-deploy/ ${WDT_INSTALL_HOME}/
-           COPY models/ ${WDT_MODEL_HOME}/
-           RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}/
-   USER $USER
+   RUN adduser -D -u ${USERID} -G $GROUP $USER
+   COPY ${COMMON_MOUNT_STAGE}/ ${COMMON_MOUNT_PATH}/
+   RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}
    ```
    {{% /expand %}}
 

@@ -91,7 +91,6 @@ dryrun:[ -d "cm-image/${MODEL_IMAGE_TAG}" ] && rm -rf cm-image/${MODEL_IMAGE_TAG
 dryrun:
 dryrun:mkdir -p $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
 dryrun:cd $WORKDIR/cm-image/${MODEL_IMAGE_TAG}
-dryrun:cp $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile .
 dryrun:mkdir ./models
 dryrun:cp $MODEL_YAML_FILES ./models
 dryrun:cp $MODEL_VARIABLE_FILES ./models
@@ -100,9 +99,9 @@ dryrun:unzip ${WORKDIR}/model-images/weblogic-deploy.zip -d .
 dryrun:rm ./weblogic-deploy/bin/*.cmd
 dryrun:
 dryrun:# see file $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
-dryrun:docker build --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} \\
-dryrun:             --build-arg WDT_MODEL_HOME=${WDT_MODEL_HOME} \\
-dryrun:             --build-arg WDT_INSTALL_HOME=${WDT_INSTALL_HOME} \\
+dryrun:docker build -f $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile \\
+dryrun:             --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} \\
+dryrun:             --build-arg COMMON_MOUNT_STAGE=. \\
 dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
 else
