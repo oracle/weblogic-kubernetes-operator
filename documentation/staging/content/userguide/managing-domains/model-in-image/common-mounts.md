@@ -250,6 +250,7 @@ Model In Image model files, application archives, and the WDT installation files
    RUN adduser -D -u ${USERID} -G $GROUP $USER
    COPY ${COMMON_MOUNT_STAGE}/ ${COMMON_MOUNT_PATH}/
    RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}
+   USER $USER
    ```
    {{% /expand %}}
 
