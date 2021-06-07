@@ -1,7 +1,7 @@
 ---
-title: "Use Helm"
+title: "Configure the operator using Helm"
 date: 2019-02-23T17:08:43-05:00
-weight: 1
+weight: 2
 description: "Useful Helm operations."
 ---
 
@@ -221,7 +221,7 @@ $ helm upgrade \
 #### WebLogic domain management
 
 ##### `domainNamespaceSelectionStrategy`
-Specifies how the operator will select the set of namespaces that it will manage. 
+Specifies how the operator will select the set of namespaces that it will manage.
 Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`.
 
 Defaults to `List`.
@@ -345,7 +345,7 @@ domainPresenceFailureRetrySeconds: 30
 ##### `introspectorJobNameSuffix` and `externalServiceNameSuffix`
 Specify the suffixes that the operator uses to form the name of the Kubernetes job for the domain introspector, and the name of the external service for the WebLogic Administration Server, if the external service is enabled.
 
-Defaults to `-introspector` and `-ext` respectively. The values cannot be more than 25 and 10 characters respectively. 
+Defaults to `-introspector` and `-ext` respectively. The values cannot be more than 25 and 10 characters respectively.
 
 {{% notice note %}}
 Prior to the operator 3.1.0 release, the suffixes are hard-coded to `-introspect-domain-job` and `-external`. The defaults are shortened in newer releases to support longer names in the domain resource and WebLogic domain configurations, such as the `domainUID`, and WebLogic cluster and server names.
@@ -356,7 +356,7 @@ In order to work with Kubernetes limits to resource names, the resultant names f
 {{% /notice %}}
 
 ##### `clusterSizePaddingValidationEnabled`
-Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster's size in WebLogic domain configurations. 
+Specifies if the operator needs to reserve additional padding when validating the server service names to account for longer Managed Server names as a result of expanding a cluster's size in WebLogic domain configurations.
 
 Defaults to `true`.
 
@@ -505,12 +505,12 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
    * Kubernetes subject access review API for authorizing a user's operation (`get`, `list`,
       `patch`, and such) on a resource.
    * Update the Domain resource using the operator's privileges.
- 
+
  If set to `false`, the operator's REST API will use the caller's bearer token for any update
  to the Domain resource so that it is done using the caller's privileges.
- 
+
  Defaults to `false`.
- 
+
  Example:
  ```yaml
  tokenReviewAuthentication: true
