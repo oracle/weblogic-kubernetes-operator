@@ -139,11 +139,6 @@
     <target>cluster-1</target>
     <descriptor-file-name>jdbc/testDatasource-3399-jdbc.xml</descriptor-file-name>
   </jdbc-system-resource>
-  <jdbc-system-resource>
-    <name>TAC-Datasource</name>
-    <target>cluster-1</target>
-    <descriptor-file-name>jdbc/TAC-Datasource-1732-jdbc.xml</descriptor-file-name>
-  </jdbc-system-resource>
   <admin-console>
     <cookie-name>ADMINCONSOLESESSION</cookie-name>
     <protected-cookie-enabled>true</protected-cookie-enabled>
