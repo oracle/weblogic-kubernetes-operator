@@ -110,7 +110,7 @@ with UID 1000, and any WebLogic domain it creates will also run with UID 1000.
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
-see [OpenShift]({{<relref  "/prerequisites/environments#openshift">}}).
+see [OpenShift]({{<relref  "/userguide/prerequisites/environments#openshift">}}).
 {{% /notice %}}
 
 #### Using a dedicated namespace
