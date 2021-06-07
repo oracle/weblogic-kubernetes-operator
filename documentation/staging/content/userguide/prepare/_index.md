@@ -6,6 +6,4 @@ chapter = true
 pre = "<b> </b>"
 +++
 
-
-
 # Prepare your environment

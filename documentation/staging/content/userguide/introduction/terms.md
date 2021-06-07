@@ -4,7 +4,7 @@ date: 2019-02-23T16:43:10-05:00
 weight: 3
 ---
 
-### Important terms
+
 
 This documentation uses several important terms which are intended to have a specific meaning.
 

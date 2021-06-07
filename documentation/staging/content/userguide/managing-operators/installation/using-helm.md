@@ -1,5 +1,5 @@
 ---
-title: "Configure the operator using Helm"
+title: "Use the operator's Helm configuration"
 date: 2019-02-23T17:08:43-05:00
 weight: 2
 description: "Useful Helm operations."
