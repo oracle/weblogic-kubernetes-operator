@@ -42,10 +42,10 @@ $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
 The available configuration values are explained by category in
-[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/installation/using-helm#operator-helm-configuration-values">}}).
 
 Helm commands are explained in more detail in
-[Useful Helm operations]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#useful-helm-operations">}}).
+[Useful Helm operations]({{<relref "/userguide/managing-operators/installation/using-helm#useful-helm-operations">}}).
 
 #### Optional: Configure the operator's external REST HTTPS interface
 
@@ -57,7 +57,7 @@ To enable the external REST interface, configure these values in a custom config
 * Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
-For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#rest-interface-configuration">}}) values.
+For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/installation/using-helm#rest-interface-configuration">}}) values.
 
 ##### Sample SSL certificate and private key for the REST interface
 
@@ -90,4 +90,4 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 
-For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
+For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/installation/using-helm#operator-helm-configuration-values">}}).
