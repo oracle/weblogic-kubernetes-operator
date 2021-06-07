@@ -3416,7 +3416,7 @@ public class CommonTestUtils {
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
-                        .imagePullPolicy("Always")
+                        //.imagePullPolicy("Always")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
