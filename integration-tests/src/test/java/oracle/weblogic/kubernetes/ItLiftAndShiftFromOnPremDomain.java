@@ -93,6 +93,7 @@ public class ItLiftAndShiftFromOnPremDomain {
   private static final String DOMAIN_SRC_DIR = RESOURCE_DIR + "/" + ON_PREM_DOMAIN;
   private static final String WKO_IMAGE_FILES = LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR;
   private static final String WKO_IMAGE_NAME = "onprem_to_wko_image";
+  private static final String WKO_DOMAIN_YAML = "wko-domain.yaml";
   private static final String BUILD_SCRIPT = "discover_domain.sh";
   private static final Path BUILD_SCRIPT_SOURCE_PATH = Paths.get(RESOURCE_DIR, "bash-scripts", BUILD_SCRIPT);
   private static final String domainUid = "onprem-domain";
@@ -263,7 +264,7 @@ public class ItLiftAndShiftFromOnPremDomain {
     // Namespace and password needs to be updated in Create_k8s_secrets.sh
     updateCreateSecretsFile();
 
-    // Namespace, domainHome, domainHomeSourceType, imageName and modelHome needs to be updated in model.yaml
+    // Namespace, domainHome, domainHomeSourceType, imageName and modelHome needs to be updated in wko-domain.yaml
     updateDomainYamlFile();
 
     // run create_k8s_secrets.sh that discoverDomain created to create necessary secrets
@@ -278,7 +279,7 @@ public class ItLiftAndShiftFromOnPremDomain {
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
     params.command("kubectl apply -f "
-        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml").toString());
+        + Paths.get(LIFT_AND_SHIFT_WORK_DIR, "/u01/", DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML).toString());
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -421,17 +422,17 @@ public class ItLiftAndShiftFromOnPremDomain {
 
   private static void updateDomainYamlFile() {
     try {
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "namespace: onprem-domain", "namespace: " + domainNamespace);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "domainHome: \\{\\{\\{domainHome\\}\\}\\}", "domainHome: /u01/domains/" + domainUid);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "domainHomeSourceType: \\{\\{\\{domainHomeSourceType\\}\\}\\}", "domainHomeSourceType: FromModel");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "image: \\{\\{\\{imageName\\}\\}\\}", "image: " + imageName);
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "name: ocir", "name: ocir-secret");
-      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/model.yaml",
+      replaceStringInFile(LIFT_AND_SHIFT_WORK_DIR + "/u01/" + DISCOVER_DOMAIN_OUTPUT_DIR + "/" + WKO_DOMAIN_YAML,
           "modelHome: \\{\\{\\{modelHome\\}\\}\\}", "modelHome: /u01/wdt/models");
     } catch (IOException ioex) {
       logger.info("Exception while replacing user password in the script file");

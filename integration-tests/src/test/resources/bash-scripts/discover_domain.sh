@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -79,8 +79,6 @@ app=${APP-""}
 export ORACLE_HOME=${ORACLE_HOME:-/u01/oracle}
 
 SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
-#WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
-#WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
 WDT_DIR=${WDT_DIR:-/u01/wdt}
 if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
@@ -221,18 +219,7 @@ function run_wdt {
     fi
   done
 
-  #for fil in inputs_orig model_orig wdt_createDomain_script; do
-  #  if [ ! -f "${!fil}" ]; then
-  #     echo @@ "Error:  Could not find ${fil} file ${!fil}."
-  #     return 1
-  #  fi
-  #done
-
-  #cp $model_orig $model_final   || return 1
-  #cp $inputs_orig $inputs_final || return 1
-
   local save_dir=`pwd`
-  #cd $WDT_DIR || return 1
   cd $output_dir || return 1
 
   echo @@ "Info:  WDT discoverDomain.sh output will be in $out_file and $wdt_log_dir"
