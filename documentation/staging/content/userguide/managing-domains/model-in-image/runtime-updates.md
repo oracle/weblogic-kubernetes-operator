@@ -253,20 +253,27 @@ For online or offline updates:
 
 For offline updates only, there are two additional options:
 
-  - Supply a new image with new or changed model files
-    and use your Domain YAML `spec.image` field to reference the image.
+  - Supply a new image with new or changed model files.
+    - If the files are located in the image specified in the Domain YAML file `spec.image`,
+      then change this field to reference the image.
+    - If you are using
+      [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+      to supply
+      model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+      value to reference the new image or add a new `serverPod.commonMounts` mount for
+      the new image.
 
   - Change, add, or delete environment variables that are referenced by macros in your model files.
-    Environment variables are specified in the Domain YAML `spec.serverPod.env`
+    Environment variables are specified in the Domain YAML file `spec.serverPod.env`
     or `spec.serverPod.adminServer.env` attributes.
 
 {{% notice note %}}
-It is advisable to defer the last two modification options, or similar Domain YAML changes to
+It is advisable to defer the last two modification options, or similar Domain YAML file changes to
 [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}),
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
-a roll if the job succeeds,
-plus an offline update if there are any accompanying model changes.
+and, if the job succeeds, then a roll of the domain,
+plus, an offline update, if there are any accompanying model changes.
 {{% /notice %}}
 
 Model updates can include additions, changes, and deletions. For help generating model changes:
@@ -278,7 +285,7 @@ Model updates can include additions, changes, and deletions. For help generating
  - For a discussion about helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image or WDT ConfigMap,
+ - If you specify multiple model files in your image or images, or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
    [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
@@ -298,7 +305,15 @@ Use the following steps to initiate an offline configuration update to your mode
  1. Ensure your updates are supported by checking [Supported](#supported-updates) and [Unsupported](#unsupported-updates) updates.
  1. Modify, add, or delete your model resources as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
-    1. If you have updated your image, change `domain.spec.image` accordingly.
+    1. If you have updated your image:
+       - If the files are located in the image specified in the Domain YAML file `spec.image`,
+         then change this field to reference the image.
+       - If you are using
+         [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+         to supply
+         model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+         value to reference the new image or add a new `serverPod.commonMounts` mount for
+         the new image.
     1. If you are updating environment variables, change `domain.spec.serverPod.env`
        or `domain.spec.adminServer.serverPod.env` accordingly.
     1. If you are specifying a WDT ConfigMap, then set `domain.spec.configuration.model.configMap`

@@ -11,6 +11,7 @@ SRCDIR="$( cd "$SCRIPTDIR/../../../.." > /dev/null 2>&1 ; pwd -P )"
 MIISAMPLEDIR="$( cd "$SRCDIR/kubernetes/samples/scripts/create-weblogic-domain/model-in-image" > /dev/null 2>&1 ; pwd -P )"
 
 WDT_DOMAIN_TYPE=${WDT_DOMAIN_TYPE:-WLS}
+IMAGE_TYPE=${IMAGE_TYPE:-$WDT_DOMAIN_TYPE}
 
 if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
    && [ ! "$WDT_DOMAIN_TYPE" = "RestrictedJRF" ] \
@@ -19,11 +20,20 @@ if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
   exit 1
 fi
 
+if    [ ! "$IMAGE_TYPE" = "WLS" ] \
+   && [ ! "$IMAGE_TYPE" = "WLS-CM" ] \
+   && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
+   && [ ! "$IMAGE_TYPE" = "JRF" ] \
+   && [ ! "$IMAGE_TYPE" = "JRF-CM" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-CM', 'JRF', 'JRF-CM' or 'RestrictedJRF'."
+  exit 1
+fi
+
 DOMAIN_UID=${DOMAIN_UID:-sample-domain1}
 DOMAIN_NAMESPACE=${DOMAIN_NAMESPACE:-sample-domain1-ns}
 CUSTOM_DOMAIN_NAME=${CUSTOM_DOMAIN_NAME:-domain1}
 
-DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-mii-domain.yaml.template-$WDT_DOMAIN_TYPE}"
+DOMAIN_RESOURCE_TEMPLATE="${DOMAIN_RESOURCE_TEMPLATE:-mii-domain.yaml.template-$IMAGE_TYPE}"
 DOMAIN_RESOURCE_FILENAME="${DOMAIN_RESOURCE_FILENAME:-domain-resources/mii-${DOMAIN_UID}.yaml}"
 
 DB_NAMESPACE=${DB_NAMESPACE:-default}
@@ -33,7 +43,7 @@ DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
-if [ "$WDT_DOMAIN_TYPE" = "WLS" ]; then
+if [[ "$WDT_DOMAIN_TYPE" = "WLS" || "$WDT_DOMAIN_TYPE" = "WLS-CM" ]]; then
   defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
 else
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
@@ -44,10 +54,14 @@ BASE_IMAGE_TAG=${BASE_IMAGE_TAG:-12.2.1.4}
 BASE_IMAGE="${BASE_IMAGE_NAME}:${BASE_IMAGE_TAG}"
 
 MODEL_IMAGE_NAME=${MODEL_IMAGE_NAME:-model-in-image}
-MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v1}
+MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
 MODEL_DIR=${MODEL_DIR:-model-images/model-in-image__${MODEL_IMAGE_TAG}}
+COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH:-/common}
+WDT_MODEL_HOME=${WDT_MODEL_HOME:-${COMMON_MOUNT_PATH}/models}
+WDT_INSTALL_HOME=${WDT_INSTALL_HOME:-${COMMON_MOUNT_PATH}/weblogic-deploy}
+COMMON_MOUNT_DOCKER_FILE_SOURCEDIR=${COMMON_MOUNT_DOCKER_FILE_SOURCEDIR:-cm-docker-file}
 
 IMAGE_PULL_SECRET_NAME=${IMAGE_PULL_SECRET_NAME:-""}
 
