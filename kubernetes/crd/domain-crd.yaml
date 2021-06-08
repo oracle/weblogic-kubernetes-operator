@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: e091b25f525f2d1a6b90729dcee23d63ead5beb23660912acebf921d1c0499a7
+    weblogic.sha256: d1191a10f1c4843d11c897002f731292c9f580c6670a84e1ee8b5916e21f0a62
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -59,6 +59,13 @@ spec:
                       restart of the WebLogic Server instances.
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
+                  port:
+                    description: The port exposed by the WebLogic Monitoring Exporter
+                      running in the sidecar container. Defaults to 8080. The port
+                      value must not conflict with a port used by any WebLogic Server
+                      instance, including the ports of built-in channels or network
+                      access points (NAPs).
+                    type: number
                 type: object
               configuration:
                 description: Models and overrides affecting the WebLogic domain configuration.

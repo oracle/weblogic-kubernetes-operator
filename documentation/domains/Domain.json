@@ -618,6 +618,10 @@
           "x-kubernetes-preserve-unknown-fields": "true",
           "description": "The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances.",
           "$ref": "#/definitions/Map"
+        },
+        "port": {
+          "description": "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs).",
+          "type": "number"
         }
       }
     },

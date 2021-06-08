@@ -35,6 +35,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -48,15 +49,19 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -65,7 +70,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFr
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -102,8 +109,12 @@ class ItExternalRmiTunneling {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String voyagerNamespace = null;
+  private static String traefikNamespace = null;
+  private static String nginxNamespace = null;
   private static ConditionFactory withStandardRetryPolicy = null;
   private static HelmParams voyagerHelmParams = null;
+  private static HelmParams traefikHelmParams = null;
+  private static HelmParams nginxHelmParams = null;
   private static int replicaCount = 2;
   private static String clusterName = "cluster-1";
   private final String adminServerPodName = domainUid + "-admin-server";
@@ -124,8 +135,9 @@ class ItExternalRmiTunneling {
    JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
+    logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
@@ -143,6 +155,15 @@ class ItExternalRmiTunneling {
     logger.info("Assigning unique namespace for Voyager");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     voyagerNamespace = namespaces.get(2);
+
+    logger.info("Assigning unique namespace for Traefik");
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    traefikNamespace = namespaces.get(3);
+
+    logger.info("Assigning unique namespace for Nginx");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
+    nginxNamespace = namespaces.get(4);
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
@@ -196,10 +217,23 @@ class ItExternalRmiTunneling {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
+    logger.info("Installing Voyager controller using helm");
     String cloudProvider = "baremetal";
     boolean enableValidatingWebhook = false;
     voyagerHelmParams = installAndVerifyVoyager(voyagerNamespace,
         cloudProvider, enableValidatingWebhook);
+
+    logger.info("Installing Traefik controller using helm");
+    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+
+    
+    // Create SSL certificate and key using openSSL with SAN extension
+    createCertKeyFiles(K8S_NODEPORT_HOST);
+    // Create kubernates secret using genereated certificate and key
+    createSecretWithTLSCertKey(tlsSecretName);
+    // Import the tls certificate into a JKS truststote to be used while
+    // running the standalone client.
+    importKeytoTrustStore();
   }
 
   /**
@@ -227,10 +261,11 @@ class ItExternalRmiTunneling {
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
+
   @Order(1)
   @Test
-  @DisplayName("Verify the RMI access WLS through LoadBalancer tunneling port")
-  public void testExternalRmiAccessThruHttpTunneling() {
+  @DisplayName("Verify RMI access to WLS through Voyager LoadBalancer")
+  public void testExternalRmiAccessThruVoyager() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
@@ -243,6 +278,7 @@ class ItExternalRmiTunneling {
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
     templateMap.put("CLUSTER", clusterName);
+    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
     Path srcVoyagerHttpFile = Paths.get(RESOURCE_DIR,
         "tunneling", "voyager.tunneling.template.yaml");
@@ -253,7 +289,6 @@ class ItExternalRmiTunneling {
 
     StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
     deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
-
     // Deploy the voyager ingress controller
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployIngress), true));
@@ -269,112 +304,124 @@ class ItExternalRmiTunneling {
     logger.info("HttpTunnelingPort for Voyager {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works inside pod before scaling the cluster
-    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
-    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
-    javapCmd.append(domainNamespace);
-    javapCmd.append(" -it ");
-    javapCmd.append(adminServerPodName);
-    javapCmd.append(" -- /bin/bash -c \"");
-    javapCmd.append("java -cp ");
-    javapCmd.append(jarLocation);
-    javapCmd.append(":.");
-    javapCmd.append(" JmsTestClient ");
-    javapCmd.append(" t3://");
-    javapCmd.append(domainUid);
-    javapCmd.append("-cluster-");
-    javapCmd.append(clusterName);
-    javapCmd.append(":8001 2 true");
-    javapCmd.append(" \"");
-    logger.info("java command to be run {0}", javapCmd.toString());
+    // works from RMI client outside of k8s cluster 
+    runExtClient(httpTunnelingPort, 2, false);
+    logger.info("External RMI tunneling works for Voyager");
+  }
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javapCmd)));
+  /**
+   * Verify RMI access to WLS through Traefik LoadBalancer.
+   */
+  @Order(2)
+  @Test
+  @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
+  public void testExternalRmiAccessThruTraefik() {
 
-    // Generate java command to execute client with classpath
-    StringBuffer httpUrl = new StringBuffer("http://");
-    httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+    // Build the standalone JMS Client to send and receive messages
+    buildClient();
+    buildClientOnPod();
 
-    StringBuffer javaCmd = new StringBuffer("java -cp ");
-    javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
-    javaCmd.append(":");
-    javaCmd.append(Paths.get(RESULTS_ROOT));
-    javaCmd.append(" JmsTestClient ");
-    javaCmd.append(httpUrl);
-    javaCmd.append(" 2");
-    javaCmd.append(" false");
-    logger.info("java command to be run {0}", javaCmd.toString());
+    // Prepare the voyager ingress file from the template file by replacing
+    // domain namespace, domain UID, cluster service name and tls secret
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("CLUSTER", clusterName);
+    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
 
-    // Note it takes a couples of iterations before the client success
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for Http JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javaCmd)));
+    Path srcTraefikHttpFile = Paths.get(RESOURCE_DIR,
+        "tunneling", "traefik.tunneling.template.yaml");
+    Path targetTraefikHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcTraefikHttpFile.toString(),
+        "traefik.tunneling.yaml", templateMap));
+    logger.info("Generated Traefik Http Tunneling file {0}", targetTraefikHttpFile);
 
-    // Scale the cluster to size 3 
-    boolean scalingSuccess = assertDoesNotThrow(() ->
-        scaleCluster(domainUid, domainNamespace, "cluster-1", 3),
-        String.format("Scaling down cluster cluster-1 of domain %s in namespace %s failed", 
-        domainUid, domainNamespace));
-    assertTrue(scalingSuccess,
-        String.format("Cluster scaling failed for domain %s in namespace %s", domainUid, domainNamespace));
-    checkPodReadyAndServiceExists(managedServerPrefix + "3", domainUid, domainNamespace);
+    StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
+    deployIngress.append(Paths.get(RESULTS_ROOT, "traefik.tunneling.yaml"));
+    // Deploy the traefik ingress controller
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(deployIngress), true));
 
-    // Make sure the destination member at new server (manged-server3) 
-    // get equal number of message
-    javaCmd = new StringBuffer("java -cp ");
-    javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
-    javaCmd.append(":");
-    javaCmd.append(Paths.get(RESULTS_ROOT));
-    javaCmd.append(" JmsTestClient ");
-    javaCmd.append(httpUrl);
-    javaCmd.append(" 3");
-    javaCmd.append(" false");
-    logger.info("java command to be run {0}", javaCmd.toString());
+    // Unlike Voyager There is no such service to check for tunneling
+    logger.info("kubectl apply returned {0}", result.toString());
+    // checkServiceExists("traefik-tunneling", domainNamespace);
 
-    // Note it takes a couples of iterations before the client success
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for Http JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javaCmd)));
+    // Get the ingress service nodeport corresponding to non-tls service
+    // Get the Traefik Service Name traefik-release-{ns}
+    String service = 
+         TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
+    logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
+    int httpTunnelingPort =
+        getServiceNodePort(traefikNamespace, service, "web");
+    assertTrue(httpTunnelingPort != -1,
+        "Could not get the Traefik HttpTunnelingPort service node port");
+    logger.info("HttpTunnelingPort for Traefik {0}", httpTunnelingPort);
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
-    // works inside pod after scaling the cluster
-    javapCmd = new StringBuffer("kubectl exec -n ");
-    javapCmd.append(domainNamespace);
-    javapCmd.append(" -it ");
-    javapCmd.append(adminServerPodName);
-    javapCmd.append(" -- /bin/bash -c \"");
-    javapCmd.append("java -cp ");
-    javapCmd.append(jarLocation);
-    javapCmd.append(":.");
-    javapCmd.append(" JmsTestClient ");
-    javapCmd.append(" t3://");
-    javapCmd.append(domainUid);
-    javapCmd.append("-cluster-");
-    javapCmd.append(clusterName);
-    javapCmd.append(":8001 3 true");
-    javapCmd.append(" \"");
-    logger.info("java command to be run {0}", javapCmd.toString());
+    // works from RMI client outside of k8s cluster 
+    runExtClient(httpTunnelingPort, 2, false);
+    logger.info("External RMI tunneling works for Traefik");
+  }
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javapCmd)));
+  /**
+   * Verify RMI access to WLS through NGINX LoadBalancer.
+   */
+  @Disabled("NGNIX tls ingress yaml file not ready")
+  @Order(3)
+  @Test
+  @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
+  public void testExternalRmiAccessThruNginx() {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+    logger.info("Installing Nginx controller using helm");
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    // Build the standalone JMS Client to send and receive messages
+    buildClient();
+    buildClientOnPod();
+
+    // Prepare the voyager ingress file from the template file by replacing
+    // domain namespace, domain UID, cluster service name and tls secret
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("CLUSTER", clusterName);
+    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+
+    Path srcNginxHttpFile = Paths.get(RESOURCE_DIR,
+        "tunneling", "nginx.tunneling.template.yaml");
+    Path targetNginxHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcNginxHttpFile.toString(),
+        "nginx.tunneling.yaml", templateMap));
+    logger.info("Generated Nginx Http Tunneling file {0}", targetNginxHttpFile);
+
+    StringBuffer deployIngress = new StringBuffer("kubectl apply -f ");
+    deployIngress.append(Paths.get(RESULTS_ROOT, "nginx.tunneling.yaml"));
+    // Deploy the nginx ingress controller
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(deployIngress), true));
+
+    // Unlike Voyager, there is no such service to check for tunneling
+    logger.info("kubectl apply returned {0}", result.toString());
+
+    // Get the ingress service nodeport corresponding to non-tls service
+    // Get the Traefik Service Name ginx-release-etqg-ingress-nginx-controller
+    String service = 
+        NGINX_RELEASE_NAME + "-" 
+        + nginxNamespace.substring(3) + "-ingress-nginx-controller";
+ 
+    logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
+    int httpTunnelingPort =
+        getServiceNodePort(nginxNamespace, service, "http");
+    assertTrue(httpTunnelingPort != -1,
+        "Could not get the Nginx HttpTunnelingPort service node port");
+    logger.info("HttpTunnelingPort for Nginx {0}", httpTunnelingPort);
+
+    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
+    // works from RMI client outside of k8s cluster 
+    runExtClient(httpTunnelingPort, 2, false);
+    logger.info("External RMI tunneling works for Nginx");
   }
 
   /**
@@ -385,13 +432,11 @@ class ItExternalRmiTunneling {
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
-  @Order(2)
+  @Order(4)
   @Test
-  @DisplayName("Verify tls RMI access WLS through loadBalancer tunneling port")
-  public void testExternalRmiAccessThruHttpsTunneling() {
-
+  @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
+  public void testExternalRmiAccessThruVoyagerHttpsTunneling() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
-
     // Build the standalone JMS Client to send and receive messages
     buildClient();
 
@@ -410,22 +455,12 @@ class ItExternalRmiTunneling {
             "voyager.tls.tunneling.yaml", templateMap));
     logger.info("Generated Voyager Https Tunneling file {0}", targetVoyagerHttpsFile);
 
-    // Create SSL certificate and key using openSSL with SAN extension
-    createCertKeyFiles(K8S_NODEPORT_HOST);
-    // Create kubernates secret using genereated certificate and key
-    createSecretWithTLSCertKey(tlsSecretName);
-
-    // Import the tls certificate into a JKS truststote to be used while
-    // running the standalone client.
-    importKeytoTrustStore();
-
     // Deploy the voyager ingress controller with tls enabled service with SSL
     // terminating at Ingress.
     StringBuffer deployTlsIngress = new StringBuffer("kubectl apply -f ");
     deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployTlsIngress), true));
-
     logger.info("kubectl apply returned {0}", result.toString());
     checkServiceExists("voyager-voyager-tls-tunneling", domainNamespace);
 
@@ -435,6 +470,114 @@ class ItExternalRmiTunneling {
     assertTrue(httpsTunnelingPort != -1,
         "Could not get the HttpsTunnelingPort service node port");
     logger.info("HttpsTunnelingPort for Voyager {0}", httpsTunnelingPort);
+    runExtHttpsClient(httpsTunnelingPort, 2, false);
+  }
+
+  /**
+   * Verify tls RMI access to WLS through Traefik LoadBalancer.
+   */
+  @Order(5)
+  @Test
+  @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
+  public void testExternalRmiAccessThruTraefikHttpsTunneling() {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+
+    // Build the standalone JMS Client to send and receive messages
+    buildClient();
+
+    // Prepare the voyager ingress file from the template file by replacing
+    // domain namespace, domain UID, cluster service name and tls secret
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("CLUSTER", clusterName);
+    templateMap.put("TLS_CERT", tlsSecretName);
+    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+
+    Path srcTraefikHttpsFile  = Paths.get(RESOURCE_DIR,
+        "tunneling", "traefik.tls.tunneling.template.yaml");
+    Path targetTraefikHttpsFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcTraefikHttpsFile.toString(),
+            "traefik.tls.tunneling.yaml", templateMap));
+    logger.info("Generated Traefik Https Tunneling file {0}", targetTraefikHttpsFile);
+
+    // Deploy traefik ingress controller with tls enabled service with SSL
+    // terminating at Ingress.
+    StringBuffer deployTraefikIngress = new StringBuffer("kubectl apply -f ");
+    deployTraefikIngress.append(Paths.get(RESULTS_ROOT, "traefik.tls.tunneling.yaml"));
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(deployTraefikIngress), true));
+    logger.info("kubectl apply returned {0}", result.toString());
+
+    // Get the ingress service nodeport corresponding to tls service
+    // Get the Traefik Service Name traefik-release-{ns}
+    String service = 
+         TRAEFIK_RELEASE_NAME + "-" + traefikNamespace.substring(3);
+    logger.info("TRAEFIK_SERVICE {0} in {1}", service, traefikNamespace);
+    int httpsTunnelingPort =
+        getServiceNodePort(traefikNamespace, service, "websecure");
+    assertTrue(httpsTunnelingPort != -1,
+        "Could not get the Traefik HttpsTunnelingPort service node port");
+    logger.info("HttpsTunnelingPort for Traefik {0}", httpsTunnelingPort);
+    runExtHttpsClient(httpsTunnelingPort, 2, false);
+  }
+
+  /**
+   * Verify tls RMI access to WLS through NGNIX LoadBalancer.
+   */
+  @Disabled("NGNIX tls ingress yaml file not ready")
+  @Order(6)
+  @Test
+  @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
+  public void testExternalRmiAccessThruNginxHttpsTunneling() {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
+    logger.info("Installing Nginx controller using helm");
+    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+    // Build the standalone JMS Client to send and receive messages
+    buildClient();
+
+    // Prepare the voyager ingress file from the template file by replacing
+    // domain namespace, domain UID, cluster service name and tls secret
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("DOMAIN_NS", domainNamespace);
+    templateMap.put("DOMAIN_UID", domainUid);
+    templateMap.put("CLUSTER", clusterName);
+    templateMap.put("TLS_CERT", tlsSecretName);
+    templateMap.put("INGRESS_HOST", K8S_NODEPORT_HOST);
+
+    Path srcNginxHttpsFile  = Paths.get(RESOURCE_DIR,
+        "tunneling", "nginx.tls.tunneling.template.yaml");
+    Path targetNginxHttpsFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcNginxHttpsFile.toString(),
+            "nginx.tls.tunneling.yaml", templateMap));
+    logger.info("Generated Nginx Https Tunneling file {0}", targetNginxHttpsFile);
+
+    // Deploy nginx ingress controller with tls enabled service with SSL
+    // terminating at Ingress.
+    StringBuffer deployNginxIngress = new StringBuffer("kubectl apply -f ");
+    deployNginxIngress.append(Paths.get(RESULTS_ROOT, "nginx.tls.tunneling.yaml"));
+    ExecResult result = assertDoesNotThrow(
+        () -> exec(new String(deployNginxIngress), true));
+    logger.info("kubectl apply returned {0}", result.toString());
+
+    // Get the ingress service nodeport corresponding to tls service
+    // Get the Nginx Service Name nginx-release-{ns}
+    String service = 
+         NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3);
+    logger.info("NGINX_SERVICE {0} in {1}", service, nginxNamespace);
+    int httpsTunnelingPort =
+        getServiceNodePort(nginxNamespace, service, "websecure");
+    assertTrue(httpsTunnelingPort != -1,
+        "Could not get the Nginx HttpsTunnelingPort service node port");
+    logger.info("HttpsTunnelingPort for Nginx {0}", httpsTunnelingPort);
+    runExtHttpsClient(httpsTunnelingPort, 2, false);
+  }
+
+  // Run the RMI client inside K8s Cluster
+  private void runExtHttpsClient(int httpsTunnelingPort, int serverCount, boolean checkConnection) {
 
     // Generate java command to execute client with classpath
     StringBuffer httpsUrl = new StringBuffer("https://");
@@ -451,8 +594,10 @@ class ItExternalRmiTunneling {
     javasCmd.append(jksTrustFile);
     javasCmd.append(" JmsTestClient ");
     javasCmd.append(httpsUrl);
-    javasCmd.append(" 3");
-    javasCmd.append(" false");
+    javasCmd.append(" ");
+    javasCmd.append(String.valueOf(serverCount));
+    javasCmd.append(" ");
+    javasCmd.append(String.valueOf(checkConnection));
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success
@@ -463,6 +608,68 @@ class ItExternalRmiTunneling {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(runJmsClient(new String(javasCmd)));
+  }
+
+  // Run the RMI client inside K8s Cluster
+  private void runClientInsidePod(int serverCount, boolean checkConnection) {
+
+    // Make sure the JMS Connection LoadBalancing and message LoadBalancing
+    // works inside pod before scaling the cluster
+    String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
+    StringBuffer javapCmd = new StringBuffer("kubectl exec -n ");
+    javapCmd.append(domainNamespace);
+    javapCmd.append(" -it ");
+    javapCmd.append(adminServerPodName);
+    javapCmd.append(" -- /bin/bash -c \"");
+    javapCmd.append("java -cp ");
+    javapCmd.append(jarLocation);
+    javapCmd.append(":.");
+    javapCmd.append(" JmsTestClient ");
+    javapCmd.append(" t3://");
+    javapCmd.append(domainUid);
+    javapCmd.append("-cluster-");
+    javapCmd.append(clusterName);
+    javapCmd.append(":8001 ");
+    javapCmd.append(String.valueOf(serverCount));
+    javapCmd.append(" ");
+    javapCmd.append(String.valueOf(checkConnection));
+    javapCmd.append(" \"");
+    logger.info("java command to be run {0}", javapCmd.toString());
+
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for t3 JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javapCmd)));
+  }
+
+  // Run the RMI client outside the K8s Cluster
+  private void runExtClient(int httpTunnelingPort, int serverCount, boolean checkConnection) {
+    // Generate java command to execute client with classpath
+    StringBuffer httpUrl = new StringBuffer("http://");
+    httpUrl.append(K8S_NODEPORT_HOST + ":" + httpTunnelingPort);
+    StringBuffer javaCmd = new StringBuffer("java -cp ");
+    javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
+    javaCmd.append(":");
+    javaCmd.append(Paths.get(RESULTS_ROOT));
+    javaCmd.append(" JmsTestClient ");
+    javaCmd.append(httpUrl);
+    javaCmd.append(" ");
+    javaCmd.append(String.valueOf(serverCount));
+    javaCmd.append(" ");
+    javaCmd.append(String.valueOf(checkConnection));
+    logger.info("java command to be run {0}", javaCmd.toString());
+
+    // Note it takes a couples of iterations before the client success
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Wait for Http JMS Client to access WLS "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(runJmsClient(new String(javaCmd)));
   }
 
   // Download the wlthint3client.jar from Adminserver pod to local filesystem.
@@ -491,7 +698,6 @@ class ItExternalRmiTunneling {
 
   // Build JMS Client inside the Admin Server Pod
   private void buildClientOnPod() {
-
     String destLocation = "/u01/oracle/JmsTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
              adminServerPodName, "weblogic-server",
@@ -499,7 +705,6 @@ class ItExternalRmiTunneling {
              Paths.get(destLocation)));
 
     String jarLocation = "/u01/oracle/wlserver/server/lib/wlthint3client.jar";
-
     StringBuffer javacCmd = new StringBuffer("kubectl exec -n ");
     javacCmd.append(domainNamespace);
     javacCmd.append(" -it ");
@@ -530,22 +735,39 @@ class ItExternalRmiTunneling {
   }
 
   @AfterAll
-  void tearDown() {
+  public void tearDownAll() {
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
 
-    StringBuffer deployIngress = new StringBuffer("kubectl delete -f ");
-    deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
-    assertDoesNotThrow(() -> exec(new String(deployIngress), true));
+      StringBuffer deployIngress = new StringBuffer("kubectl delete -f ");
+      deployIngress.append(Paths.get(RESULTS_ROOT, "voyager.tunneling.yaml"));
+      assertDoesNotThrow(() -> exec(new String(deployIngress), true));
+      StringBuffer deployTlsIngress = new StringBuffer("kubectl delete -f ");
+      deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
+      assertDoesNotThrow(() -> exec(new String(deployTlsIngress), true));
 
-    StringBuffer deployTlsIngress = new StringBuffer("kubectl delete -f ");
-    deployTlsIngress.append(Paths.get(RESULTS_ROOT, "voyager.tls.tunneling.yaml"));
-    assertDoesNotThrow(() -> exec(new String(deployTlsIngress), true));
-
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
+      // uninstall Traefik loadbalancer
+      if (traefikHelmParams != null) {
+        assertThat(uninstallTraefik(traefikHelmParams))
+            .as("Test uninstallTraefik returns true")
+            .withFailMessage("uninstallTraefik() did not return true")
+            .isTrue();
+      }
+      // uninstall Voyager
+      if (voyagerHelmParams != null) {
+        assertThat(uninstallVoyager(voyagerHelmParams))
+            .as("Test uninstallVoyager returns true")
+            .withFailMessage("uninstallVoyager() did not return true")
+            .isTrue();
+      }
+      // uninstall NGINX
+      if (nginxHelmParams != null) {
+        assertThat(uninstallNginx(nginxHelmParams))
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
+      }
     }
   }
 
@@ -580,7 +802,7 @@ class ItExternalRmiTunneling {
 
   // Import the certificate into a JKS TrustStore to be used while running
   // external JMS client to send message to WebLogic.
-  private void importKeytoTrustStore() {
+  private static void importKeytoTrustStore() {
 
     jksTrustFile = Paths.get(RESULTS_ROOT, domainNamespace + "-trust.jks");
     String keycmd = "keytool -import -file " + tlsCertFile
@@ -598,7 +820,7 @@ class ItExternalRmiTunneling {
   }
 
   // Create kubernetes secret from the ssl key and certificate
-  private void createSecretWithTLSCertKey(String tlsSecretName) {
+  private static void createSecretWithTLSCertKey(String tlsSecretName) {
     String kcmd = "kubectl create secret tls " + tlsSecretName + " --key "
           + tlsKeyFile + " --cert " + tlsCertFile + " -n " + domainNamespace;
     assertTrue(

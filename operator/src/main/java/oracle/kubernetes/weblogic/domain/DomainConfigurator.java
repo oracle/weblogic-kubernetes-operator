@@ -303,6 +303,8 @@ public abstract class DomainConfigurator {
 
   public abstract DomainConfigurator withMonitoringExporterImage(String imageName);
 
+  public abstract DomainConfigurator withMonitoringExporterPort(Integer port);
+
   /**
    * Adds a default server configuration to the domain, if not already present.
    *
