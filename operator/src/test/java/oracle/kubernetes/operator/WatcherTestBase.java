@@ -40,7 +40,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private final List<Memento> mementos = new ArrayList<>();
   private final List<Watch.Response<?>> callBacks = new ArrayList<>();
   private final AtomicBoolean stopping = new AtomicBoolean(false);
-  final WatchTuning tuning = new WatchTuning(30, 0, 5);
+  final WatchTuning tuning = new WatchTuning(30, 0, 5, 24);
   private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;
 
   private V1ObjectMeta createMetaData() {

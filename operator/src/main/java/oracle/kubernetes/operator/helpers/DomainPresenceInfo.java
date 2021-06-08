@@ -55,6 +55,7 @@ public class DomainPresenceInfo {
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
   private final AtomicInteger retryCount = new AtomicInteger(0);
+  private final AtomicInteger watchBackstopRecheckCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
@@ -557,6 +558,18 @@ public class DomainPresenceInfo {
 
   int getRetryCount() {
     return retryCount.get();
+  }
+
+  public void resetWatchBackstopRecheckCount() {
+    watchBackstopRecheckCount.set(0);
+  }
+
+  public int incrementAndGetWatchBackstopRecheckCount() {
+    return watchBackstopRecheckCount.incrementAndGet();
+  }
+
+  public int getWatchBackstopRecheckCount() {
+    return watchBackstopRecheckCount.get();
   }
 
   /** Sets the last completion time to now. */
