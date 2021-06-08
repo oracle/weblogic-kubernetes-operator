@@ -1,0 +1,23 @@
+# Copyright (c) 2021, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: traefik-tunneling
+  namespace: DOMAIN_NS
+spec:
+  entryPoints: [] 
+  routes:
+  - kind: Rule
+    match: Host(`INGRESS_HOST`)
+    services:
+    - kind: Service
+      name: DOMAIN_UID-cluster-CLUSTER
+      namespace: DOMAIN_NS
+      port: 7788
+      sticky:
+            cookie:
+              httpOnly: true
