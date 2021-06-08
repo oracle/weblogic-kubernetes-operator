@@ -11,9 +11,11 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -22,6 +24,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -58,12 +61,15 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getNextIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -78,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBa
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
@@ -89,13 +96,17 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPL
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_VALIDATION_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWatchingStopped;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -492,11 +503,161 @@ public class ItKubernetesEvents {
     }
   }
 
+  /**
+   * The test modifies the logHome property and verifies the domain roll events are logged.
+   */
+  @Order(10)
+  @Test
+  @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
+  public void testLogHomeChangeEvents() {
+
+    OffsetDateTime timestamp = now();
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    // get the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
+
+    //print out the original image name
+    String logHome = domain1.getSpec().getLogHome();
+    logger.info("Currently the log home used by the domain is: {0}", logHome);
+
+    //change logHome from /shared/logs to /shared/logs/logHome
+    String patchStr = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/logHome\", \"value\": \"/shared/logs/logHome\"}"
+        + "]";
+    logger.info("PatchStr for logHome: {0}", patchStr);
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
+        "patchDomainCustomResource(logHome) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    //print out logHome in the new patched domain
+    logger.info("In the new patched domain logHome is: {0}", domain1.getSpec().getLogHome());
+    assertTrue(domain1.getSpec().getLogHome().equals("/shared/logs/logHome"), "logHome is not updated");
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace1);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace1),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace1));
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+    }
+
+    //verify the logHome change causes the domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
+    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the logHome changed messages is logged");
+    assertTrue(event.getMessage().contains("logHome"));
+
+    event = getEvent(opNamespace, domainNamespace1,
+        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the LOG_HOME changed messages is logged");
+    assertTrue(event.getMessage().contains("LOG_HOME"));
+
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+  }
+
+
+  /**
+   * The test modifies the includeServerOutInPodLog property and verifies the domain roll starting events are logged.
+   */
+  @Order(11)
+  @Test
+  @DisplayName("Verify includeServerOutInPodLog property change rolls domain and relevant events are logged")
+  public void testIncludeServerOutInPodLog() {
+
+    OffsetDateTime timestamp = now();
+
+    // get the original domain resource before update
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    // get the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace1,
+        adminServerPodName, managedServerPodNamePrefix, replicaCount);
+
+    //print out the original includeServerOutInPodLog value
+    boolean includeLogInPod = domain1.getSpec().includeServerOutInPodLog();
+    logger.info("Currently the includeServerOutInPodLog used for the domain is: {0}", includeLogInPod);
+
+    //change includeServerOutInPodLog
+    String patchStr = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/includeServerOutInPodLog\", "
+        + "\"value\": " + Boolean.toString(!includeLogInPod) + "}"
+        + "]";
+    logger.info("PatchStr for includeServerOutInPodLog: {0}", patchStr);
+
+    assertTrue(patchDomainResource(domainUid, domainNamespace1, new StringBuffer(patchStr)),
+        "patchDomainCustomResource(includeServerOutInPodLog) failed");
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace1));
+
+    //print out includeServerOutInPodLog in the new patched domain
+    logger.info("In the new patched domain includeServerOutInPodLog is: {0}",
+        domain1.getSpec().includeServerOutInPodLog());
+    assertTrue(domain1.getSpec().includeServerOutInPodLog() != includeLogInPod,
+        "includeServerOutInPodLog is not updated");
+
+    // verify the server pods are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace1);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace1),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace1));
+
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, domainNamespace1);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+    }
+
+    //verify the includeServerOutInPodLog change causes the domain roll events to be logged
+    logger.info("verify domain roll starting/pod cycle starting events are logged");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+
+    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
+        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
+    assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
+
+    event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    logger.info(Yaml.dump(event));
+    logger.info("verify the event message contains the SERVER_OUT_IN_POD_LOG changed messages is logged");
+    assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
+
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_COMPLETED, "Normal", timestamp);
+  }
 
   /**
    * Test DomainDeleted event is logged when domain resource is deleted.
    */
-  @Order(10)
+  @Order(13)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
   public void testDomainK8SEventsDelete() {
@@ -529,7 +690,7 @@ public class ItKubernetesEvents {
    * </pre>
    * </p>
    */
-  @Order(11)
+  @Order(14)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
   public void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
@@ -580,7 +741,7 @@ public class ItKubernetesEvents {
    * </pre>
    * </p>
    */
-  @Order(13)
+  @Order(15)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
   public void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
@@ -646,7 +807,7 @@ public class ItKubernetesEvents {
    * </pre>
    * </p>
    */
-  @Order(15)
+  @Order(16)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
   public void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
