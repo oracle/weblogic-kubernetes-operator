@@ -1,0 +1,55 @@
+# Copyright (c) 2021, Oracle Corporation and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: traefik
+  name: traefik-tls-tunneling
+  namespace: DOMAIN_NS
+spec:
+  entryPoints: 
+   - websecure
+  routes:
+  - kind: Rule
+    match: Host(`INGRESS_HOST`)
+    middlewares:
+    - name: tls-middleware
+      namespace: DOMAIN_NS
+    services:
+    - kind: Service
+      name: DOMAIN_UID-cluster-CLUSTER
+      namespace: DOMAIN_NS
+      port: 8877
+      sticky:
+        cookie:
+          httpOnly: true
+  tls: {}
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: tls-middleware
+  namespace: DOMAIN_NS
+spec:
+  headers:
+    customRequestHeaders:
+      X-Custom-Request-Header: "" # Removes
+      X-Forwarded-For: "" # Removes
+      WL-Proxy-Client-IP: "" # Removes
+      WL-Proxy-SSL: "" # Removes
+      WL-Proxy-SSL: "true" # Adds
+    sslRedirect: true
+
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: DOMAIN_NS
+spec:
+  defaultCertificate:
+    secretName: TLS_CERT 
+
