@@ -256,6 +256,8 @@ The operator does rolling restarts of clustered servers so that service is maint
 
 The operator will restart servers when any of the follow fields on the Domain that affect the WebLogic Server instance Pod generation are changed:
 
+* `commonMounts`
+* `commonMountVolumes`
 * `containerSecurityContext`
 * `domainHome`
 * `domainHomeInImage`
