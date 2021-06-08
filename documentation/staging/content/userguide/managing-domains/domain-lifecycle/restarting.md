@@ -64,10 +64,7 @@ Otherwise, use of a new image that does not have compatible encryption keys or a
 
 * If you create a new image with the same name, then you must manually initiate either a full domain restart or rolling restart for pods to run with the new image. To initiate a full restart, see [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}). To initiate a rolling restart, change the value of your Domain `restartVersion` field.  See [Restarting servers]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#restarting-servers" >}}) and [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#rolling-restarts" >}}).
 
-* If you are supplying updated models or Secrets for a running domain, and you want the configuration updates to take effect using a rolling restart, then do one of the following:
-  * Supply a new value for the `image` field in the Domain or any of the other [fields affecting WebLogic Server instance Pod generation]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
-  * Change the Domain `restartVersion` field. This will cause the operator to restart all running servers and, prior to the restarts, the operator will introspect any new configuration.
-  * Change the Domain `introspectVersion` field. This will cause the operator to introspect any new configuration and, if needed, restart servers to use that new configuration.
+* If you are supplying updated models or Secrets for a running domain, then see [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
 ##### Domain in PV
 

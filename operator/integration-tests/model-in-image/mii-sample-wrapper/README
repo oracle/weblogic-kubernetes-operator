@@ -60,8 +60,15 @@ IMAGE_PULL_SECRET_NAME ::: Image pull secret name.
   If not set or empty string, defaults the domain resource 
   to a commented out image pull stanza with 'regsecret'
 
+IMAGE_TYPE ::: WDT image type.
+  Defaults to $WDT_DOMAIN_TYPE for a standard WLS domain, 'RestrictedJRF', or 'JRF.
+  For the common mounts mode, this is set to $WDT_DOMAIN_TYPE-CM.
+  This value is used when selecting the domain resource template, to create the value of
+  the MODEL_IMAGE_TAG environment variable and in generate-sample-doc.sh when setting up
+  the domain resource path. See WDT_DOMAIN_TYPE for more info.
+
 MODEL_IMAGE_TAG ::: Model image tag.
-  Defaults to 'WDT_DOMAIN_TYPE-v1'. See MODEL_IMAGE_NAME for more info.
+  Defaults to 'IMAGE_TYPE-v1'. See IMAGE_TYPE and MODEL_IMAGE_NAME for more info.
 
 MODEL_DIR ::: Location of staged model files for the model image relative to WORKDIR.
   Location of staged model .zip, .properties, and .yaml files that are
@@ -129,3 +136,19 @@ INTROSPECTOR_DEADLINE_SECONDS ::: Introspector timeout for JRF runs
 DB_NAMESPACE ::: Namespace for Oracle DB
 
 ?DB_NODEPORT ::: Nodeport for Oracle DB
+
+COMMON_MOUNT_PATH ::: The common mount path
+  The path to copy the model in image files and WDT installation files in the common mount image 
+  for the common mounts use case. Defaults to '/common'.
+
+WDT_MODEL_HOME ::: The Location of the WebLogic Deploy Tooling model home.
+  Maps to 'domain.spec.configuration.model.modelHome' field of the domain resource.
+  Defaults to '${COMMON_MOUNT_PATH}/models'.
+
+WDT_INSTALL_HOME ::: The location of the WebLogic Deploy Tooling installation.
+  Maps to 'domain.spec.configuration.model.wdtInstallHome' field of the domain resource.
+  Defaults to '${COMMON_MOUNT_PATH}/weblogic-deploy'.
+
+COMMON_MOUNT_DOCKER_FILE_SOURCEDIR ::: Source dir for the docker file for the common mounts use case.
+  Source dir for Dockerfile (relative to WORKDIR) for creating common mounts image containing model
+  in image files and WDT installation. Defaults to 'cm-docker-file'.

@@ -152,10 +152,11 @@ for phase in initial update1 update2 update3 update4; do
   # setup ingress yaml files
   $SCRIPTDIR/stage-and-create-ingresses.sh -dry
 
-  for type in WLS JRF; do
+  for IMAGE_TYPE in WLS WLS-CM JRF JRF-CM; do
 
-  export WDT_DOMAIN_TYPE=$type
-  export MODEL_IMAGE_TAG=$type-$image_version
+  export IMAGE_TYPE
+  export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}
+  export MODEL_IMAGE_TAG=$IMAGE_TYPE-$image_version
   export MODEL_DIR=model-images/${MODEL_IMAGE_NAME}__${MODEL_IMAGE_TAG}
 
   # setup image build scripts
@@ -169,7 +170,7 @@ for phase in initial update1 update2 update3 update4; do
 
   # setup domain resource 
 
-  domain_path=domain-resources/$type/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
+  domain_path=domain-resources/$IMAGE_TYPE/mii-$phase-d$domain_num-$MODEL_IMAGE_TAG
   if [ "$configmap" != "None" ]; then
     domain_path=$domain_path-ds
   fi
