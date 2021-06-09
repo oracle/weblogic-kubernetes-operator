@@ -241,13 +241,20 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
     [ ! $? -eq 0 ] && trace SEVERE "Could not remove stale file '$wl_state_file'." && exit 1
   fi
 
+  if [ ${DOMAIN_SOURCE_TYPE} == "FromModel" ]; then
+    # Domain source type is 'FromModel' (MII) then disable Situation config override for WebLogic.
+    failBootOnErrorOption=""
+  else
+    failBootOnErrorOption="-Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}"
+  fi
+
 cat <<EOF > ${wl_props_file}
 # Server startup properties
 AutoRestart=true
 RestartMax=2
 RestartInterval=3600
 NMHostName=${SERVICE_NAME}
-Arguments=${USER_MEM_ARGS} -Dweblogic.SituationalConfig.failBootOnError=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR} ${serverOutOption} ${JAVA_OPTIONS}
+Arguments=${USER_MEM_ARGS} ${failBootOnErrorOption} ${serverOutOption} ${JAVA_OPTIONS}
 
 EOF
  
@@ -322,7 +329,6 @@ logFileRotate ${nodemgr_out_file} ${NODEMGR_LOG_FILE_MAX:-11}
 
 ${stm_script} > ${nodemgr_out_file} 2>&1 &
 
-wait_count=0
 start_secs=$SECONDS
 max_wait_secs=${NODE_MANAGER_MAX_WAIT:-60}
 while [ 1 -eq 1 ]; do
@@ -331,16 +337,46 @@ while [ 1 -eq 1 ]; do
     break
   fi
   if [ $((SECONDS - $start_secs)) -ge $max_wait_secs ]; then
-    trace INFO "Trying to put a node manager thread dump in '$nodemgr_out_file'."
-    kill -3 `jps -l | grep weblogic.NodeManager | awk '{ print $1 }'`
+    pid=$(jps | grep NodeManager | awk '{ print $1 }')
+    if [ -z $pid ]; then
+      trace INFO "Node manager process id not found. Cannot create thread dump."
+    else
+      trace INFO "Node manager process id is '$pid'."
+      trace INFO "Trying to put a node manager thread dump in '$nodemgr_out_file'."
+      kill -3 $pid
+      if [ -x "$(command -v $JAVA_HOME/bin/jcmd)" ]; then
+        trace INFO "Node manager thread dump:"
+        $JAVA_HOME/bin/jcmd $pid Thread.print
+      fi
+    fi
+    trace INFO "Entropy: "
+    cat /proc/sys/kernel/random/entropy_avail
     trace INFO "Contents of node manager log '$nodemgr_log_file':"
     cat ${nodemgr_log_file}
     trace INFO "Contents of node manager out '$nodemgr_out_file':"
-    cat ${nodemgr_out_file}
-    trace SEVERE "Node manager failed to start within $max_wait_secs seconds."
+    cat ${NODEMGR_OUT_FILE}
+
+    trace SEVERE $(cat << EOF
+The node manager failed to start within $max_wait_secs seconds.
+To increase this timeout, define the NODE_MANAGER_MAX_WAIT
+environment variable in your domain resource, and set it higher
+than $max_wait_secs. To diagnose the problem, see the above INFO
+messages for node manager log contents, stdout contents, pid,
+thread dump, and entropy. If the log and stdout contents are
+sparse and reveal no errors, then the node manager may be stalled
+while generating entropy -- especially if entropy is below 500.
+If entropy is the problem, then for testing purposes you can
+temporarily work around this problem by specifying
+'-Djava.security.egd=file:/dev/./urandom' in a USER_MEM_ARGS
+environment variable defined via your domain resource, but
+for production purposes the problem should be solved by following
+the guidance in
+'https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/nodem/starting_nodemgr.html#GUID-53961E3A-D8E1-4556-B78A-9A56B676D57E'
+(search for keyword 'rngd').
+EOF
+)
     exit 1
   fi
-  wait_count=$((wait_count + 1))
 done
 
 trace "Nodemanager started in $((SECONDS - start_secs)) seconds."

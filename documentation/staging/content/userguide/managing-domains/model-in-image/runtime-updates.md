@@ -30,7 +30,7 @@ description = "Updating a running Model in Image domain's images and model files
 
 If you want to make a WebLogic domain home configuration update to a running Model in Image domain,
 and you want the update to survive WebLogic Server pod restarts,
-then you must modify your existing model and instruct the WebLogic Server Kubernetes Operator to propagate the change.
+then you must modify your existing model and instruct the WebLogic Kubernetes Operator to propagate the change.
 
 If instead you make a direct runtime WebLogic configuration update of a Model in Image domain
 using the WebLogic Server Administration Console or WLST scripts,
@@ -101,7 +101,7 @@ documented as [unsupported](#unsupported-updates) below:
              MaxCapacity: 5
    ```
 
-   For more information, see [Using Multiple Models](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#using-multiple-models) in the WebLogic Deploy Tooling documentation.
+   For more information, see [Using Multiple Models](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#using-multiple-models) in the WebLogic Deploy Tooling documentation.
 
  - You can change or add secrets that your model macros reference
    (macros that use the `@@SECRET:secretname:secretkey@@` syntax).
@@ -130,7 +130,7 @@ documented as [unsupported](#unsupported-updates) below:
    There are [some exceptions for online updates](#online-update-handling-of-deletes).
 
    For more information, see
-   [Declaring Named MBeans to Delete](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/model.md#declaring-named-mbeans-to-delete)
+   [Declaring Named MBeans to Delete](https://oracle.github.io/weblogic-deploy-tooling/concepts/model/#declaring-named-mbeans-to-delete)
    in the WebLogic Deploying Tooling documentation.
 
 #### Unsupported updates
@@ -201,13 +201,13 @@ and a description of workarounds and alternatives when applicable:
    `spec.logHomeEnabled`, or `spec.httpAccessLogInLogHome` attributes.
 
  - Embedded LDAP security entries for
-   [users, groups, roles](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-users-groups-and-roles),
-   and [credential mappings](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-weblogic-user-password-credential-mapping).
+   [users, groups, roles](https://oracle.github.io/weblogic-deploy-tooling/samples/usersgroups-model/),
+   and [credential mappings](https://oracle.github.io/weblogic-deploy-tooling/samples/pwcredentialmap-model/).
    For example, you cannot add a user to the default security realm.
    Online update attempts in this area will fail during the introspector job, and offline update attempts
    may result in inconsistent security checks during the offline update's rolling cycle.
    If you need to make these kinds of updates, then shut down your domain entirely before making the change,
-   or switch to an [external security provider](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/use_cases.md#modeling-security-providers).
+   or switch to an [external security provider](https://oracle.github.io/weblogic-deploy-tooling/samples/securityproviders-model/).
 
  - Any Model YAML `topology:` stanza changes,
    for example, `ConsoleEnabled`, `RootDirectory`, `AdminServerName`, and such.
@@ -253,32 +253,39 @@ For online or offline updates:
 
 For offline updates only, there are two additional options:
 
-  - Supply a new image with new or changed model files
-    and use your Domain YAML `spec.image` field to reference the image.
+  - Supply a new image with new or changed model files.
+    - If the files are located in the image specified in the Domain YAML file `spec.image`,
+      then change this field to reference the image.
+    - If you are using
+      [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+      to supply
+      model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+      value to reference the new image or add a new `serverPod.commonMounts` mount for
+      the new image.
 
   - Change, add, or delete environment variables that are referenced by macros in your model files.
-    Environment variables are specified in the Domain YAML `spec.serverPod.env`
+    Environment variables are specified in the Domain YAML file `spec.serverPod.env`
     or `spec.serverPod.adminServer.env` attributes.
 
 {{% notice note %}}
-It is advisable to defer the last two modification options, or similar Domain YAML changes to
+It is advisable to defer the last two modification options, or similar Domain YAML file changes to
 [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}),
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
-a roll if the job succeeds,
-plus an offline update if there are any accompanying model changes.
+and, if the job succeeds, then a roll of the domain,
+plus, an offline update, if there are any accompanying model changes.
 {{% /notice %}}
 
 Model updates can include additions, changes, and deletions. For help generating model changes:
 
  - For a discussion of model file syntax, see the
-   [WebLogic Deploy Tool](https://github.com/oracle/weblogic-deploy-tooling) documentation
+   [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation
    and Model in Image [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-files.md" >}}) documentation.
 
  - For a discussion about helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image or WDT ConfigMap,
+ - If you specify multiple model files in your image or images, or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
    [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
@@ -298,7 +305,15 @@ Use the following steps to initiate an offline configuration update to your mode
  1. Ensure your updates are supported by checking [Supported](#supported-updates) and [Unsupported](#unsupported-updates) updates.
  1. Modify, add, or delete your model resources as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
-    1. If you have updated your image, change `domain.spec.image` accordingly.
+    1. If you have updated your image:
+       - If the files are located in the image specified in the Domain YAML file `spec.image`,
+         then change this field to reference the image.
+       - If you are using
+         [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+         to supply
+         model files in an image, then change the corresponding `serverPod.commonMounts.image` field
+         value to reference the new image or add a new `serverPod.commonMounts` mount for
+         the new image.
     1. If you are updating environment variables, change `domain.spec.serverPod.env`
        or `domain.spec.adminServer.serverPod.env` accordingly.
     1. If you are specifying a WDT ConfigMap, then set `domain.spec.configuration.model.configMap`
@@ -804,9 +819,9 @@ in the Model in Image sample.
 
 Optionally, you can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates.
 The WebLogic Deploy Tooling
-[Discover Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/discover.md)
+[Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/)
 generates model files from an existing domain home,
-and its [Compare Model Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/compare.md)
+and its [Compare Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/compare/)
 compares two domain models and generates the YAML file for updating the first domain to the second domain.
 
 For example, assuming you've installed WDT in `/u01/wdt/weblogic-deploy` and assuming your domain type is `WLS`:
@@ -918,7 +933,7 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
    fi
    ```
 
- - You can use a WebLogic Server Kubernetes Operator sample script that invokes
+ - You can use a WebLogic Kubernetes Operator sample script that invokes
    the same commands that are described in the previous bulleted item.
    - See `patch-restart-version.sh` and `patch-introspect-version.sh` in
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`

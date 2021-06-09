@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -29,6 +31,8 @@ public interface TuningParameters extends Map<String, String> {
 
   PodTuning getPodTuning();
 
+  FeatureGates getFeatureGates();
+
   class MainTuning {
     public final int initializationRetryDelaySeconds;
     public final int domainPresenceFailureRetrySeconds;
@@ -40,6 +44,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int stuckPodRecheckSeconds;
     public final long initialShortDelay;
     public final long eventualLongDelay;
+    public final int weblogicCredentialsSecretRereadIntervalSeconds;
 
     /**
      * create main tuning.
@@ -53,6 +58,7 @@ public interface TuningParameters extends Map<String, String> {
      * @param stuckPodRecheckSeconds time between checks for stuck pods
      * @param initialShortDelay initial short delay
      * @param eventualLongDelay eventual long delay
+     * @param weblogicCredentialsSecretRereadIntervalSeconds credentials secret reread interval
      */
     public MainTuning(
           int initializationRetryDelaySeconds,
@@ -64,7 +70,8 @@ public interface TuningParameters extends Map<String, String> {
           int unchangedCountToDelayStatusRecheck,
           int stuckPodRecheckSeconds,
           long initialShortDelay,
-          long eventualLongDelay) {
+          long eventualLongDelay,
+          int weblogicCredentialsSecretRereadIntervalSeconds) {
       this.initializationRetryDelaySeconds = initializationRetryDelaySeconds;
       this.domainPresenceFailureRetrySeconds = domainPresenceFailureRetrySeconds;
       this.domainPresenceFailureRetryMaxCount = domainPresenceFailureRetryMaxCount;
@@ -75,6 +82,7 @@ public interface TuningParameters extends Map<String, String> {
       this.stuckPodRecheckSeconds = stuckPodRecheckSeconds;
       this.initialShortDelay = initialShortDelay;
       this.eventualLongDelay = eventualLongDelay;
+      this.weblogicCredentialsSecretRereadIntervalSeconds = weblogicCredentialsSecretRereadIntervalSeconds;
     }
 
     @Override
@@ -88,6 +96,7 @@ public interface TuningParameters extends Map<String, String> {
           .append("unchangedCountToDelayStatusRecheck", unchangedCountToDelayStatusRecheck)
           .append("initialShortDelay", initialShortDelay)
           .append("eventualLongDelay", eventualLongDelay)
+          .append("weblogicCredentialsSecretRereadIntervalSeconds", weblogicCredentialsSecretRereadIntervalSeconds)
           .toString();
     }
 
@@ -102,6 +111,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay)
           .append(eventualLongDelay)
+          .append(weblogicCredentialsSecretRereadIntervalSeconds)
           .toHashCode();
     }
 
@@ -123,6 +133,7 @@ public interface TuningParameters extends Map<String, String> {
           .append(unchangedCountToDelayStatusRecheck, mt.unchangedCountToDelayStatusRecheck)
           .append(initialShortDelay, mt.initialShortDelay)
           .append(eventualLongDelay, mt.eventualLongDelay)
+          .append(weblogicCredentialsSecretRereadIntervalSeconds, mt.weblogicCredentialsSecretRereadIntervalSeconds)
           .isEquals();
     }
   }
@@ -304,6 +315,50 @@ public interface TuningParameters extends Map<String, String> {
           .append(livenessProbeInitialDelaySeconds, pt.livenessProbeInitialDelaySeconds)
           .append(livenessProbeTimeoutSeconds, pt.livenessProbeTimeoutSeconds)
           .append(livenessProbePeriodSeconds, pt.livenessProbePeriodSeconds)
+          .isEquals();
+    }
+  }
+
+  class FeatureGates {
+    public final Collection<String> enabledFeatures;
+
+    public FeatureGates(Collection<String> enabledFeatures) {
+      this.enabledFeatures = Collections.unmodifiableCollection(enabledFeatures);
+    }
+
+    public Collection<String> getEnabledFeatures() {
+      return enabledFeatures;
+    }
+
+    public boolean isFeatureEnabled(String featureName) {
+      return enabledFeatures.contains(featureName);
+    }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this)
+          .append("enabledFeatures", enabledFeatures)
+          .toString();
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder()
+          .append(enabledFeatures)
+          .toHashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null) {
+        return false;
+      }
+      if (!(o instanceof FeatureGates)) {
+        return false;
+      }
+      FeatureGates fg = (FeatureGates) o;
+      return new EqualsBuilder()
+          .append(enabledFeatures, fg.enabledFeatures)
           .isEquals();
     }
   }

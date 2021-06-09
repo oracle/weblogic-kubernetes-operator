@@ -37,7 +37,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `managedServers` | array of [Managed Server](#managed-server) | Lifecycle options for individual Managed Servers, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart a named server instance. The `serverName` field of each entry must match a Managed Server that already exists in the WebLogic domain configuration or that matches a dynamic cluster member based on the server template. |
 | `maxClusterConcurrentShutdown` | number | The default maximum number of WebLogic Server instances that a cluster will shut down in parallel when it is being partially shut down by lowering its replica count. You can override this default on a per cluster basis by setting the cluster's `maxConcurrentShutdown` field. A value of 0 means there is no limit. Defaults to 1. |
 | `maxClusterConcurrentStartup` | number | The maximum number of cluster member Managed Server instances that the operator will start in parallel for a given cluster, if `maxConcurrentStartup` is not specified for a specific cluster under the `clusters` field. A value of 0 means there is no configured limit. Defaults to 0. |
-| `monitoringExporter` | [Monitoring Exporter Specification](#monitoring-exporter-specification) | Configuration for the use of the WebLogic Monitoring Exporter as part of this domain. |
+| `monitoringExporter` | [Monitoring Exporter Specification](#monitoring-exporter-specification) | Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, will not be affected until they are restarted. When any given server is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter. |
 | `replicas` | number | The default number of cluster member Managed Server instances to start for each WebLogic cluster in the domain configuration, unless `replicas` is specified for that cluster under the `clusters` field. For each cluster, the operator will sort cluster member Managed Server names from the WebLogic domain configuration by normalizing any numbers in the Managed Server name and then sorting alphabetically. This is done so that server names such as "managed-server10" come after "managed-server9". The operator will then start Managed Servers from the sorted list, up to the `replicas` count, unless specific Managed Servers are specified as starting in their entry under the `managedServers` field. In that case, the specified Managed Servers will be started and then additional cluster members will be started, up to the `replicas` count, by finding further cluster members in the sorted list that are not already started. If cluster members are started because of their entries under `managedServers`, then a cluster may have more cluster members running than its `replicas` count. Defaults to 0. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
@@ -78,7 +78,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Specifies whether the number of running cluster members is allowed to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration. Otherwise, the operator will ensure that the number of running cluster members is not less than the minimum dynamic cluster setting. This setting applies to dynamic clusters only. Defaults to true. |
 | `clusterName` | string | The name of the cluster. This value must match the name of a WebLogic cluster already defined in the WebLogic domain configuration. Required. |
-| `clusterService` | [Kubernetes Resource](#kubernetes-resource) | Customization affecting Kubernetes Service generated for this WebLogic cluster. |
+| `clusterService` | [Cluster Service](#cluster-service) | Customization affecting Kubernetes Service generated for this WebLogic cluster. |
 | `maxConcurrentShutdown` | number | The maximum number of WebLogic Server instances that will shut down in parallel for this cluster when it is being partially shut down by lowering its replica count. A value of 0 means there is no limit. Defaults to `spec.maxClusterConcurrentShutdown`, which defaults to 1. |
 | `maxConcurrentStartup` | number | The maximum number of Managed Servers instances that the operator will start in parallel for this cluster in response to a change in the `replicas` count. If more Managed Server instances must be started, the operator will wait until a Managed Server Pod is in the `Ready` state before starting the next Managed Server instance. A value of 0 means all Managed Server instances will start in parallel. Defaults to 0. |
 | `maxUnavailable` | number | The maximum number of cluster members that can be temporarily unavailable. Defaults to 1. |
@@ -116,9 +116,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `configuration` | Map | The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter |
-| `image` | string | The WebLogic Monitoring Exporter sidecar image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.1 |
-| `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `configuration` | Map | The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances are already running and have the monitoring exporter sidecar container, then changes to this field will be propagated to the exporter without requiring the restart of the WebLogic Server instances. |
+| `image` | string | The WebLogic Monitoring Exporter sidecar container image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.2 |
+| `imagePullPolicy` | string | The image pull policy for the WebLogic Monitoring Exporter sidecar container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `port` | number | The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server instance, including the ports of built-in channels or network access points (NAPs). |
 
 ### Server Pod
 
@@ -197,12 +198,13 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `channels` | array of [Channel](#channel) | Specifies which of the Administration Server's WebLogic channels should be exposed outside the Kubernetes cluster via a NodePort Service, along with the port for each channel. If not specified, the Administration Server's NodePort Service will not be created. |
 | `labels` | Map | Labels to associate with the Administration Server's NodePort Service, if it is created. |
 
-### Kubernetes Resource
+### Cluster Service
 
 | Name | Type | Description |
 | --- | --- | --- |
 | `annotations` | Map | The annotations to be added to generated resources. |
 | `labels` | Map | The labels to be added to generated resources. The label names must not start with "weblogic.". |
+| `sessionAffinity` | string | Supports "ClientIP" and "None". Used to maintain session affinity. Enable client IP based session affinity. Must be ClientIP or None. Defaults to None. More info: https://kubernetes.io/docs/concepts/services-networking/service/#virtual-ips-and-service-proxies |
 
 ### Istio
 
@@ -220,6 +222,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
 | `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
+| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy. |
 
 ### Opss
 

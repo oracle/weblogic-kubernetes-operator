@@ -11,17 +11,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMapKeySelector;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
@@ -48,6 +55,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -56,6 +64,7 @@ import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -70,10 +79,15 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
+import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.hamcrest.junit.MatcherAssert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -81,31 +95,41 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
+import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
+import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
 import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpectedTuning;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
@@ -122,8 +146,14 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -137,10 +167,15 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue", "ConstantConditions", "OctalInteger", "unchecked"})
 public abstract class PodHelperTestBase extends DomainValidationBaseTest {
+  public static final String EXPORTER_IMAGE = "monexp:latest";
+  public static final String CUSTOM_COMMAND_SCRIPT = "customScript.sh";
+  public static final String CUSTOM_MOUNT_PATH = "/custom-common";
+
   static final String NS = "namespace";
   static final String ADMIN_SERVER = "ADMIN_SERVER";
   static final Integer ADMIN_PORT = 7001;
@@ -162,6 +197,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final String TEST_PRODUCT_VERSION = "unit-test";
+  private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -179,6 +215,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1SecurityContext containerSecurityContext = createSecurityContext(222L);
   protected final V1Affinity affinity = createAffinity();
   private Memento hashMemento;
+  private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
+
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -218,6 +257,16 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return envVars;
   }
 
+  static List<V1EnvVar> getCommonMountEnvVariables(String image, String command, String name) {
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_PATH, DEFAULT_COMMON_MOUNT_PATH));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_COMMAND, command));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name));
+    return envVars;
+  }
+
   private static V1EnvVar createEnvVar(String name, String value) {
     return new V1EnvVar().name(name).value(value);
   }
@@ -251,6 +300,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport(DOMAIN_NAME);
     configSupport.addWlsServer(ADMIN_SERVER, ADMIN_PORT);
@@ -300,6 +350,125 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   WlsServerConfig getServerTopology() {
     return domainTopology.getServerConfig(getServerName());
+  }
+
+  @Test
+  public void whenPodCreatedWithoutExportConfiguration_hasPrometheusAnnotations() {
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", Integer.toString(getServerTopology().getListenPort())),
+            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  @Test
+  public void whenPodCreatedWithAdminNap_prometheusAnnotationsSpecifyPlainTextPort() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("test", "admin", 8001, 8001));
+    getServerTopology().setListenPort(7001);
+    getServerTopology().setSslListenPort(7002);
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", "7001"),
+            hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  protected DomainConfigurator defineExporterConfiguration() {
+    return configureDomain()
+          .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
+          .withMonitoringExporterImage(EXPORTER_IMAGE);
+  }
+
+  @Test
+  public void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
+    defineExporterConfiguration();
+
+    assertThat(
+        getCreatedPod().getMetadata().getAnnotations(),
+        allOf(
+            hasEntry("prometheus.io/port", Integer.toString(DEFAULT_EXPORTER_SIDECAR_PORT)),
+            hasEntry("prometheus.io/path", "/metrics"),
+            hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  protected V1Container getExporterContainer() {
+    return getCreatedPodSpecContainers().stream().filter(this::isMonitoringExporterContainer).findFirst().orElse(null);
+  }
+
+  private boolean isMonitoringExporterContainer(V1Container container) {
+    return container.getName().contains(EXPORTER_CONTAINER_NAME);
+  }
+
+  @Test
+  void monitoringExporterContainer_hasExporterName() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getName(), equalTo(EXPORTER_CONTAINER_NAME));
+  }
+
+  @Test
+  void monitoringExporterContainerCommand_isNotDefined() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getCommand(), nullValue());
+  }
+
+  @Test
+  void monitoringExporterContainer_hasDefaultImageName() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getImage(), equalTo(EXPORTER_IMAGE));
+  }
+
+  @Test
+  void monitoringExporterContainer_hasInferredPullPolicy() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
+  }
+
+  @Test
+  void whenExporterContainerCreated_hasMetricsPortsItem() {
+    defineExporterConfiguration();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
+  @Test
+  void whenExporterContainerCreatedWithPort_hasMetricsPortsItem() {
+    defineExporterConfiguration().withMonitoringExporterPort(300);
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(300));
+  }
+
+  @Test
+  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
+    defineExporterConfiguration().withIstio();
+
+    V1ContainerPort metricsPort = getExporterContainerPort("http-metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
+  private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
+    return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
+          .filter(p -> name.equals(p.getName())).findFirst().orElse(null);
+  }
+
+  @Test
+  void whenExporterContainerCreated_specifyOperatorDomain() {
+    defineExporterConfiguration();
+
+    assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
   }
 
   abstract void setServerPort(int port);
@@ -506,6 +675,128 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             readOnlyVolumeMount("weblogic-scripts-cm-volume", "/weblogic-operator/scripts"),
             readOnlyVolumeMount(RUNTIME_ENCRYPTION_SECRET_VOLUME,
                 RUNTIME_ENCRYPTION_SECRET_MOUNT_PATH))); 
+  }
+
+  @Test
+  public void whenDomainHasCommonMount_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @NotNull
+  protected String getCommonMountVolumeName() {
+    return getCommonMountVolumeName(TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  protected String getCommonMountVolumeName(String testVolumeName) {
+    return COMMON_MOUNT_VOLUME_NAME_PREFIX + testVolumeName;
+  }
+
+  @Test
+  public void whenDomainHasCommonMountAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withCommonMounts(getCommonMounts());
+
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountsWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS").volume(TEST_VOLUME_NAME)));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
+                    COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  @Test
+  public void whenDomainHasCommonMountsWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT)));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  public void whenDomainHasMultipleCommonMounts_createPodsWithCommonMountInitContainersInCorrectOrder() {
+    getConfigurator()
+            .withCommonMountVolumes(Collections.singletonList(
+                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
+            .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @NotNull
+  List<CommonMount> getCommonMounts(String... images) {
+    List<CommonMount> commonMountList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> commonMountList
+            .add(new CommonMount().image(image).volume(TEST_VOLUME_NAME)));
+    return commonMountList;
+  }
+
+  @NotNull
+  List<CommonMountVolume> getCommonMountVolume(String... mountPath) {
+    CommonMountVolume cmv = new CommonMountVolume().name(TEST_VOLUME_NAME);
+    return Collections.singletonList(mountPath.length > 0 ? cmv.mountPath(mountPath[0]) : cmv);
+  }
+
+  @NotNull
+  public static CommonMount getCommonMount(String image) {
+    return new CommonMount().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test
@@ -944,6 +1235,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void initializeExistingPod(V1Pod pod) {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(getServerName(), pod);
+  }
+
+  void initializeExistingPodWithMii() {
+    initializeExistingPod(createPodModel());
   }
 
   void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
@@ -1718,6 +2013,274 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .controller(true);
 
     assertThat(getCreatedPod().getMetadata().getOwnerReferences(), contains(expectedReference));
+  }
+
+
+  @Test
+  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domainHome", " changed from", "to", "adfgg"));
+  }
+
+  @Test
+  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectNS()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertContainsEventWithNamespace(DOMAIN_ROLL_STARTING, NS);
+  }
+
+  @Test
+  public void whenDomainHomeChanged_butEventAlreadyGenerated_dontCreateDomainRollStartEvent()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Found unexpected Event " + DOMAIN_ROLL_STARTING,
+        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
+  }
+
+  @Test
+  public void whenImageChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "image", "changed","adfgg"));
+  }
+
+  @Test
+  public void whenImageChanged_expectedLogMessageFound()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
+    logRecords.clear();
+  }
+
+  @Test
+  public void whenInitContainerLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domain resource changed"));
+  }
+
+  @Test
+  public void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withDefaultReadinessProbeSettings(12, 23, 45);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "readiness probe", "changed from", "1", "2", "3", "to", "12", "23", "45"));
+  }
+
+  @Test
+  public void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withDefaultLivenessProbeSettings(12, 23, 45);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "liveness probe", "changed from", "4", "5", "6", "to", "12", "23", "45"));
+  }
+
+  @Test
+  public void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    disableAutoIntrospectOnNewMiiPods();
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "WebLogic domain configuration changed"));
+  }
+
+  @Test
+  public void whenDomainZipHashChanged_butIsMIIDynamicUpdate_dontCreateDomainRollStartEvent() {
+    initializeExistingPod();
+    disableAutoIntrospectOnNewMiiPods();
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    getConfigurator().withMIIOnlineUpdate();
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Found unexpected event " + DOMAIN_ROLL_STARTING,
+        getEventsWithReason(getEvents(), DOMAIN_ROLL_STARTING_EVENT), empty());
+  }
+
+  @Test
+  public void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getDomainRollStartingKey()));
+    logRecords.clear();
+  }
+
+  @Test
+  public void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    getConfigurator().withRestartVersion("domainRestartV1");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    logRecords.clear();
+
+    /*
+      message: Rolling restart the pods in domain uid1 because domain restart version changed,
+      'image' changed from image:latest to adfgg,
+      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345'
+     */
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "domain restart version changed",
+            "image", "changed", "adfgg",
+            "domainHome", "changed", "12345"));
+  }
+
+  @Test
+  public void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setImage("adfgg");
+    getConfiguredDomainSpec().setDomainHome("12345");
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    logRecords.clear();
+
+    /*
+      message: Rolling restart the pods in domain uid1 because domain restart version changed,
+      'image' changed from image:latest to 'adcgg',
+      'domainHome' changed from '/u01/oracle/user_projects/domains' to '12345',
+      WebLogic domain configuration changed
+     */
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID,
+            "image", "changed", "adfgg",
+            "domainHome", "changed", "12345",
+            "WebLogic domain configuration changed"));
+  }
+
+  @Test
+  public void whenInitContainerLivenessProbeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+    initializeExistingPod();
+    getConfigurator()
+        .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
+    testSupport.addToPacket(DOMAINZIP_HASH, "1234");
+    testSupport.addToPacket(MII_DYNAMIC_UPDATE, MII_DYNAMIC_UPDATE_SUCCESS);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_STARTING),
+        stringContainsInOrder("Rolling restart", UID, "domain resource changed",
+            "WebLogic domain configuration changed"));
+  }
+
+  protected static String getCyclePodKey() {
+    return CYCLING_POD;
+  }
+
+  protected static String getDomainRollStartingKey() {
+    return MessageKeys.DOMAIN_ROLL_STARTING;
+  }
+
+  protected void assertContainsEventWithNamespace(EventHelper.EventItem event, String ns) {
+    MatcherAssert.assertThat(
+        "Expected Event " + event.getReason() + " was not created",
+        containsEventWithNamespace(getEvents(), event.getReason(), ns),
+        is(true));
+  }
+
+  protected String getExpectedEventMessage(EventHelper.EventItem event) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    //System.out.println(events);
+    return Optional.ofNullable(events)
+        .filter(list -> list.size() != 0)
+        .map(n -> n.get(0))
+        .map(CoreV1Event::getMessage)
+        .orElse("Event not found");
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
   interface PodMutator {

@@ -6,7 +6,7 @@ description: "Review the operator prerequisites and supported environments."
 ---
 
 An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
-of complex applications. The Oracle WebLogic Server Kubernetes Operator follows the standard Kubernetes operator pattern, and
+of complex applications. The WebLogic Kubernetes Operator follows the standard Kubernetes operator pattern, and
 simplifies the management and operation of WebLogic domains and deployments.
 
 You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each.
@@ -16,14 +16,14 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-For the current production release 3.2.1:
+For the current production release 3.2.3:
 
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
  *or* OpenShift SDN on OpenShift 4.3 systems.
 * Docker 18.9.1 or 19.03.1+ (check with `docker version`) *or* CRI-O 1.14.7+ (check with `crictl version | grep RuntimeVersion`).
 * Helm 3.3.4+ (check with `helm version --client --short`).
-* For domain home source type `Model in Image`, WebLogic Deploy Tooling 1.9.10.
+* For domain home source type `Model in Image`, WebLogic Deploy Tooling 1.9.11.
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
    * The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`,
    has all the necessary patches applied.
@@ -51,7 +51,7 @@ Container Services for use with Kubernetes* on OCI Compute, and on "Authorized C
 
 ### Microsoft Azure Kubernetes Service
 
-[Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Server Kubernetes
+[Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
 referenced above).
 
@@ -67,7 +67,7 @@ AKS support and limitations:
 
 ### VMware Tanzu Kubernetes Service
 
-Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Server Kubernetes
+Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
 Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
 
 TKG support and limitations:
@@ -82,7 +82,7 @@ TKG support and limitations:
 
 [Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
-WebLogic Server and the WebLogic Server Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.
+WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.
 
 
 ### OpenShift

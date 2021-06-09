@@ -11,6 +11,7 @@ public class MessageKeys {
   public static final String OPERATOR_STARTED = "WLSKO-0000";
   public static final String CREATING_API_CLIENT = "WLSKO-0001";
   public static final String K8S_MASTER_URL = "WLSKO-0002";
+  public static final String ENABLED_FEATURES = "WLSKO-0003";
   public static final String OPERATOR_SHUTTING_DOWN = "WLSKO-0005";
   public static final String EXCEPTION = "WLSKO-0006";
   public static final String CREATING_CRD = "WLSKO-0012";
@@ -19,11 +20,9 @@ public class MessageKeys {
   public static final String SECRET_DATA_NOT_FOUND = "WLSKO-0020";
   public static final String WLS_CONFIGURATION_READ = "WLSKO-0021";
   public static final String JSON_PARSING_FAILED = "WLSKO-0026";
-  public static final String SERVICE_URL = "WLSKO-0027";
   public static final String NO_WLS_SERVER_IN_CLUSTER = "WLSKO-0028";
   public static final String VERIFY_ACCESS_START = "WLSKO-0029";
   public static final String VERIFY_ACCESS_DENIED = "WLSKO-0030";
-  public static final String NAMESPACE_IS_DEFAULT = "WLSKO-0031";
   public static final String STARTING_LIVENESS_THREAD = "WLSKO-0034";
   public static final String COULD_NOT_CREATE_LIVENESS_FILE = "WLSKO-0035";
   public static final String REST_AUTHENTICATION_MISSING_ACCESS_TOKEN = "WLSKO-0037";
@@ -138,8 +137,9 @@ public class MessageKeys {
   public static final String CLUSTER_PDB_PATCHED = "WLSKO-0185";
   public static final String BEGIN_MANAGING_NAMESPACE = "WLSKO-0186";
   public static final String END_MANAGING_NAMESPACE = "WLSKO-0187";
-  public static final String MII_DOMAIN_DYNAMICALLY_UPDATED = "WLSKO-0188";
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
+  public static final String DOMAIN_ROLL_STARTING = "WLSKO-0190";
+  public static final String DOMAIN_ROLL_COMPLETED = "WLSKO-0191";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -163,6 +163,13 @@ public class MessageKeys {
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
   public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
   public static final String NO_AVAILABLE_PORT_TO_USE_FOR_REST = "WLSDO-0021";
+  public static final String NO_MATCHING_COMMON_MOUNT_VOLUME_DEFINED = "WLSDO-0022";
+  public static final String NO_COMMON_MOUNT_VOLUME_DEFINED = "WLSDO-0023";
+  public static final String DUPLICATE_COMMON_MOUNT_PATH_FOUND = "WLSDO-0024";
+  public static final String DUPLICATE_COMMON_MOUNT_VOLUME_FOUND = "WLSDO-0025";
+  public static final String COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED = "WLSDO-0026";
+  public static final String MONITORING_EXPORTER_CONFLICT_SERVER = "WLSDO-0027";
+  public static final String MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER = "WLSDO-0028";
 
   private MessageKeys() {
   }

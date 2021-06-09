@@ -29,6 +29,7 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -75,6 +76,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultWitParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
@@ -498,6 +500,21 @@ class ItMiiDomain {
     logger.info("Both of the applications are running correctly after patching");
   }
 
+  @Test
+  @Order(5)
+  @DisplayName("Check admin service annotations and labels")
+  public void testAdminServiceAnnotationsLabels() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertTrue(
+        domain1.getSpec().getAdminServer().getServerService().getAnnotations().containsKey("testkey"),
+        "Missing expected annotation on admin service");
+    assertTrue(
+        domain1.getSpec().getAdminServer().getServerService().getLabels().containsKey("testkey"),
+        "Missing expected label on admin service");
+  }
+
   // This method is needed in this test class, since the cleanup util
   // won't cleanup the images.
   @AfterEach
@@ -745,6 +762,10 @@ class ItMiiDomain {
           String domNamespace, String adminSecretName,
           String repoSecretName, String encryptionSecretName, 
           int replicaCount, String miiImage, String configmapName) {
+
+    Map keyValueMap = new HashMap<String, String>();
+    keyValueMap.put("testkey", "testvalue");
+
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -772,6 +793,9 @@ class ItMiiDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .serverService(new ServerService()
+                    .annotations(keyValueMap)
+                    .labels(keyValueMap))
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")

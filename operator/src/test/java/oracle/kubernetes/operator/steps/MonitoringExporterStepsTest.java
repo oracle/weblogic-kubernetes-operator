@@ -5,7 +5,6 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -51,7 +51,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toPodName;
 import static oracle.kubernetes.operator.helpers.LegalNames.toServerServiceName;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -150,13 +149,13 @@ public class MonitoringExporterStepsTest {
   private V1Container createExporterSidecar() {
     return new V1Container()
           .name(EXPORTER_CONTAINER_NAME)
-          .addPortsItem(new V1ContainerPort().name(EXPORTER_PORT_NAME).containerPort(EXPORTER_PORT));
+          .addPortsItem(new V1ContainerPort().name("metrics").containerPort(EXPORTER_PORT));
   }
 
   private V1Service createServerService(String serverName) {
     return new V1Service()
           .metadata(new V1ObjectMeta().namespace(NS).name(toServerServiceName(DOMAIN_NAME, serverName)))
-          .spec(new V1ServiceSpec().addPortsItem(new V1ServicePort().name(EXPORTER_PORT_NAME).port(EXPORTER_PORT)));
+          .spec(new V1ServiceSpec().addPortsItem(new V1ServicePort().name("metrics").port(EXPORTER_PORT)));
   }
 
   @AfterEach
@@ -173,8 +172,8 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
-                MonitorExporterSteps.createConfigurationUpdateStep()));
+                SecretHelper.createAuthorizationSourceStep(),
+                MonitoringExporterSteps.createConfigurationUpdateStep()));
 
     assertThat(httpSupport.getLastRequestContents(),
           equalTo(domain.getMonitoringExporterConfiguration().asJsonString()));
@@ -204,8 +203,8 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
-                MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
+                SecretHelper.createAuthorizationSourceStep(),
+                MonitoringExporterSteps.createConfigurationTestAndUpdateSteps()));
 
 
     assertThat(httpSupport.getLastRequestContents(),
@@ -240,8 +239,8 @@ public class MonitoringExporterStepsTest {
 
     testSupport.runSteps(
           Step.chain(
-                SecretHelper.createAuthorizationHeaderFactoryStep(),
-                MonitorExporterSteps.createConfigurationTestAndUpdateSteps()));
+                SecretHelper.createAuthorizationSourceStep(),
+                MonitoringExporterSteps.createConfigurationTestAndUpdateSteps()));
 
     assertThat(httpSupport.getLastRequest().method(), equalTo("GET"));
   }
@@ -253,7 +252,7 @@ public class MonitoringExporterStepsTest {
     expectConfigurationQueryAndReturn(MANAGED_SERVER3, OLD_CONFIGURATION);
     forEachServer(this::expectConfigurationUpdate);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE3));
   }
@@ -277,7 +276,7 @@ public class MonitoringExporterStepsTest {
     forEachServer(this::expectConfigurationUpdate);
     setDeletingState(MANAGED_SERVER1);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2, POD_NODE3));
   }
@@ -292,7 +291,7 @@ public class MonitoringExporterStepsTest {
   }
 
   private void setDeletingState(V1ObjectMeta meta) {
-    meta.setDeletionTimestamp(OffsetDateTime.now());
+    meta.setDeletionTimestamp(SystemClock.now());
   }
 
   @Test
@@ -302,7 +301,7 @@ public class MonitoringExporterStepsTest {
     setNotReadyState(MANAGED_SERVER1);
     setNotReadyState(MANAGED_SERVER3);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE2));
   }
@@ -325,7 +324,7 @@ public class MonitoringExporterStepsTest {
 
     testSupport.schedule(() -> setReadyState(MANAGED_SERVER1), 1, TimeUnit.SECONDS);
     testSupport.schedule(() -> setReadyState(MANAGED_SERVER3), 1, TimeUnit.SECONDS);
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
     testSupport.setTime(3, TimeUnit.SECONDS);
 
     assertThat(getServersUpdated(), containsInAnyOrder(POD_NODE1, POD_NODE2, POD_NODE3));
@@ -342,7 +341,7 @@ public class MonitoringExporterStepsTest {
     forEachServer(this::expectQueryAndReturnOldConfiguration);
     forEachServer(this::expectConfigurationUpdate);
 
-    testSupport.runSteps(MonitorExporterSteps.updateExporterSidecars());
+    testSupport.runSteps(MonitoringExporterSteps.updateExporterSidecars());
 
     assertThat(getServersUpdated(), empty());
   }

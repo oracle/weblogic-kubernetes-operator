@@ -143,6 +143,8 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
+  public static final String K8S_NODEPORT_HOSTNAME = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOSTNAME"))
+        .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir") + "/it-testsresults");
 
@@ -185,8 +187,10 @@ public interface TestConstants {
       .orElse("v1.3.3-debian-elasticsearch-1.3");
   public static final String ELASTICSEARCH_IMAGE = ELASTICSEARCH_NAME + ":" + ELK_STACK_VERSION;
   public static final String ELASTICSEARCH_HOST = "elasticsearch.default.svc.cluster.local";
+  public static final int DEFAULT_LISTEN_PORT = 7100;
   public static final int ELASTICSEARCH_HTTP_PORT = 9200;
   public static final int ELASTICSEARCH_HTTPS_PORT = 9300;
+  public static final int DEFAULT_SSL_LISTEN_PORT = 8100;
   public static final String ELKSTACK_NAMESPACE = "default";
   public static final String LOGSTASH_INDEX_KEY = "logstash";
   public static final String FLUENTD_INDEX_KEY = "fluentd";

@@ -272,23 +272,23 @@ function getKubernetesClusterIP {
 function buildServerPodResources {
 
   if [ -n "${serverPodMemoryRequest}" ]; then
-    local memoryRequest="        memory\: \"${serverPodMemoryRequest}\"\n"
+    local memoryRequest="         memory\: \"${serverPodMemoryRequest}\"\n"
   fi
   if [ -n "${serverPodCpuRequest}" ]; then
-    local cpuRequest="       cpu\: \"${serverPodCpuRequest}\"\n"
+    local cpuRequest="        cpu\: \"${serverPodCpuRequest}\"\n"
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
-    local requests="      requests\: \n$memoryRequest $cpuRequest"
+    local requests="       requests\: \n$memoryRequest $cpuRequest"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
-    local memoryLimit="        memory\: \"${serverPodMemoryLimit}\"\n"
+    local memoryLimit="         memory\: \"${serverPodMemoryLimit}\"\n"
   fi
   if [ -n "${serverPodCpuLimit}" ]; then
-    local cpuLimit="       cpu\: \"${serverPodCpuLimit}\"\n"
+    local cpuLimit="        cpu\: \"${serverPodCpuLimit}\"\n"
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
-    local limits="      limits\: \n$memoryLimit $cpuLimit"
+    local limits="       limits\: \n$memoryLimit $cpuLimit"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
@@ -405,17 +405,14 @@ function createFiles {
 
   if [ "${domainHomeInImage}" == "true" ]; then
     domainPropertiesOutput="${domainOutputDir}/domain.properties"
-    domainHome="/u01/oracle/user_projects/domains/${domainName}"
+    domainHome="${domainHome:-/u01/oracle/user_projects/domains/${domainName}}"
 
-    if [ -z $domainHomeImageBuildPath ]; then
-      domainHomeImageBuildPath="./docker-images/OracleWebLogic/samples/12213-domain-home-in-image"
-    fi
- 
     # Generate the properties file that will be used when creating the weblogic domain
-    echo Generating ${domainPropertiesOutput}
+    echo Generating ${domainPropertiesOutput} from ${domainPropertiesInput}
 
     cp ${domainPropertiesInput} ${domainPropertiesOutput}
     sed -i -e "s:%DOMAIN_NAME%:${domainName}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%DOMAIN_HOME%:${domainHome}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_PORT%:${adminPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_SSL_PORT%:${adminServerSSLPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%ADMIN_SERVER_NAME%:${adminServerName}:g" ${domainPropertiesOutput}
@@ -433,15 +430,22 @@ function createFiles {
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
     sed -i -e "s:%FMW_DOMAIN_TYPE%:${fmwDomainType}:g" ${domainPropertiesOutput}
     sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_USER_NAME%:${username}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%ADMIN_USER_PASS%:${password}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%RCU_SCHEMA_PREFIX%:${rcuSchemaPrefix}:g" ${domainPropertiesOutput}
+    sed -i -e "s:%RCU_SCHEMA_PASSWORD%:${rcuSchemaPassword}:g" ${domainPropertiesOutput}
+    sed -i -e "s|%RCU_DB_CONN_STRING%|${rcuDatabaseURL}|g" ${domainPropertiesOutput}
 
     if [ -z "${image}" ]; then
       # calculate the internal name to tag the generated image
-      defaultImageName="`basename ${domainHomeImageBuildPath} | sed 's/^[0-9]*-//'`"
+      defaultImageName="domain-home-in-image"
       baseTag=${domainHomeImageBase#*:}
       defaultImageName=${defaultImageName}:${baseTag:-"latest"}
       sed -i -e "s|%IMAGE_NAME%|${defaultImageName}|g" ${domainPropertiesOutput}
-    else 
+      export BUILD_IMAGE_TAG=${defaultImageName}
+    else
       sed -i -e "s|%IMAGE_NAME%|${image}|g" ${domainPropertiesOutput}
+      export BUILD_IMAGE_TAG=${image}
     fi
   else
     # we're in the domain in PV case
@@ -515,6 +519,7 @@ function createFiles {
     sed -i -e "s:%ISTIO_ENABLED%:${istioEnabled}:g" ${createJobOutput}
     sed -i -e "s:%ISTIO_READINESS_PORT%:${istioReadinessPort}:g" ${createJobOutput}
     sed -i -e "s:%WDT_VERSION%:${wdtVersion}:g" ${createJobOutput}
+    sed -i -e "s|%DOMAIN_TYPE%|${domain_type}|g" ${createJobOutput}
     sed -i -e "s|%PROXY_VAL%|${httpsProxy}|g" ${createJobOutput}
 
     # Generate the yaml to create the kubernetes job that will delete the weblogic domain_home folder
@@ -681,7 +686,7 @@ function updateModelFile {
   sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${modelFile}
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${modelFile}
 
-  #buildServerPodResources
+  buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
     sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${modelFile}
   else

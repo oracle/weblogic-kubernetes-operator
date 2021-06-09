@@ -3,11 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.Gson;
@@ -16,7 +13,6 @@ import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.operator.ImagePullPolicy;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -27,9 +23,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SI
 
 public class MonitoringExporterSpecification {
 
-  public static final String EXPORTER_PORT_NAME = "exporter";
-  @Description("The configuration for the WebLogic Monitoring Exporter sidecar. If specified, the operator will "
-        + "deploy a sidecar alongside each server instance. See https://github.com/oracle/weblogic-monitoring-exporter")
+  @Description("The configuration for the WebLogic Monitoring Exporter. If WebLogic Server instances "
+      + "are already running and have the monitoring exporter sidecar container, then changes to this field will "
+      + "be propagated to the exporter without requiring the restart of the WebLogic Server instances.")
   @PreserveUnknown
   private Map<String,Object> configuration;
 
@@ -37,41 +33,32 @@ public class MonitoringExporterSpecification {
    * The Monitoring Exporter sidecar image.
    */
   @Description(
-        "The WebLogic Monitoring Exporter sidecar image name. Defaults to "
+        "The WebLogic Monitoring Exporter sidecar container image name. Defaults to "
            + DEFAULT_EXPORTER_IMAGE)
   private String image;
   
   @Description(
-      "The image pull policy for the WebLogic Monitoring Exporter sidecar image. "
+      "The image pull policy for the WebLogic Monitoring Exporter sidecar container image. "
           + "Legal values are Always, Never, and IfNotPresent. "
           + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
+  @Description(
+      "The port exposed by the WebLogic Monitoring Exporter running in the sidecar container. "
+          + "Defaults to 8080. The port value must not conflict with a port used by any WebLogic Server "
+          + "instance, including the ports of built-in channels or network access points (NAPs).")
+  private Integer port;
+
   /**
-   * Computes the REST port for the specified server. This port will be used by the
+   * Computes the REST port. This port will be used by the
    * metrics exporter to query runtime data.
-   * @param serverConfig the configuration for a server
    */
-  public static int getRestPort(WlsServerConfig serverConfig) {
-    int restPort = DEFAULT_EXPORTER_SIDECAR_PORT;
-    final Set<Integer> webLogicPorts = getWebLogicPorts(serverConfig);
-    while (webLogicPorts.contains(restPort)) {
-      restPort++;
-    }
-    return restPort;
+  public int getRestPort() {
+    return Optional.ofNullable(port).orElse(DEFAULT_EXPORTER_SIDECAR_PORT);
   }
 
-  @Nonnull
-  private static Set<Integer> getWebLogicPorts(WlsServerConfig serverConfig) {
-    final Set<Integer> ports = new HashSet<>();
-    Optional.ofNullable(serverConfig.getListenPort()).ifPresent(ports::add);
-    Optional.ofNullable(serverConfig.getSslListenPort()).ifPresent(ports::add);
-    Optional.ofNullable(serverConfig.getAdminPort()).ifPresent(ports::add);
-    return ports;
-  }
-
-  MonitoringExporterConfiguration getConfiguration() {
+  public MonitoringExporterConfiguration getConfiguration() {
     return Optional.ofNullable(configuration).map(this::toJson).map(this::toConfiguration).orElse(null);
   }
 
@@ -107,12 +94,21 @@ public class MonitoringExporterSpecification {
     this.imagePullPolicy = imagePullPolicy;
   }
 
+  Integer getPort() {
+    return port;
+  }
+
+  void setPort(Integer port) {
+    this.port = port;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
           .append("configuration", configuration)
           .append("image", image)
           .append("imagePullPolicy", imagePullPolicy)
+          .append("port", port)
           .toString();
   }
 
@@ -127,6 +123,7 @@ public class MonitoringExporterSpecification {
           .append(configuration, that.configuration)
           .append(image, that.image)
           .append(imagePullPolicy, that.imagePullPolicy)
+          .append(port, that.port)
           .isEquals();
   }
 
@@ -136,6 +133,7 @@ public class MonitoringExporterSpecification {
           .append(configuration)
           .append(image)
           .append(imagePullPolicy)
+          .append(port)
           .toHashCode();
   }
 }

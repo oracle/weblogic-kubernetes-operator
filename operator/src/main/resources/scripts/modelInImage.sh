@@ -32,11 +32,12 @@ IMG_MODELS_HOME="${WDT_MODEL_HOME:-/u01/wdt/models}"
 IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
-WDT_ROOT="/u01/wdt/weblogic-deploy"
+WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
 WDT_OUTPUT="/tmp/wdt_output.log"
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
+WDT_MII_FILTER="/weblogic-operator/scripts/model_wdt_mii_filter.py"
 UPDATE_RCUPWD_FLAG=""
 WLSDEPLOY_PROPERTIES="${WLSDEPLOY_PROPERTIES} -Djava.security.egd=file:/dev/./urandom"
 ARCHIVE_ZIP_CHANGED=0
@@ -47,7 +48,7 @@ MII_UPDATE_NO_CHANGES_TO_APPLY=false
 UNSAFE_ONLINE_UPDATE=0
 SAFE_ONLINE_UPDATE=1
 FATAL_MODEL_CHANGES=2
-MODELS_SAME=3
+MERGED_MODEL_ENVVARS_SAME="false"
 SECURITY_INFO_UPDATED=4
 RCU_PASSWORD_CHANGED=5
 NOT_FOR_ONLINE_UPDATE=6
@@ -309,8 +310,19 @@ function createWLDomain() {
        "but the secret does not have this key."
     exitOrLoop
   fi
-  # Check if modelHome (default /u01/wdt/models) and /u01/wdt/weblogic-deploy exists
 
+  if [ ! -f "${WDT_ROOT}/lib/weblogic-deploy-core.jar" ]; then
+    trace SEVERE "The domain resource 'spec.domainHomeSourceType'" \
+         "is 'FromModel' " \
+         "and a WebLogic Deploy Tool (WDT) install is not located at " \
+         "'spec.configuration.model.wdtInstallHome' " \
+         "which is currently set to '${WDT_ROOT}'. A WDT install " \
+         "is normally created when you use the WebLogic Image Tool " \
+         "to create an image for Model in Image."
+     exitOrLoop
+  fi
+
+  # Check if modelHome (default /u01/wdt/models) and wdtInstallHome (default /u01/wdt/weblogic-deploy) exists
   checkDirNotExistsOrEmpty ${IMG_MODELS_HOME}
   checkDirNotExistsOrEmpty ${WDT_BINDIR}
 
@@ -320,9 +332,9 @@ function createWLDomain() {
   fi
 
   # copy the filter related files to the wdt lib
-
-  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json
-  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib
+  cp ${WDT_FILTER_JSON} ${WDT_ROOT}/lib/model_filters.json || logSevereAndExit ${WDT_FILTER_JSON}
+  cp ${WDT_CREATE_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_CREATE_FILTER}
+  cp ${WDT_MII_FILTER} ${WDT_ROOT}/lib || logSevereAndExit ${WDT_MII_FILTER}
 
   # check to see if any model including changed (or first model in image deploy)
   # if yes. then run create domain again
@@ -334,7 +346,7 @@ function createWLDomain() {
 
   local version_changed=0
   local jdk_changed=0
-  local secrets_and_env_changed=0
+  SECRETS_AND_ENV_CHANGED=0
   trace "current version "${current_version}
 
   getSecretsAndEnvMD5
@@ -346,18 +358,9 @@ function createWLDomain() {
     previous_secrets_and_env_md5=$(cat ${INTROSPECTCM_SECRETS_AND_ENV_MD5})
     if [ "${current_secrets_and_env_md5}" != "${previous_secrets_and_env_md5}" ]; then
       trace "Secrets and env different: old_md5=${previous_secrets_and_env_md5} new_md5=${current_secrets_and_env_md5}"
-      secrets_and_env_changed=1
+      SECRETS_AND_ENV_CHANGED=1
     fi
   fi
-
-  # If No WDT artifacts changed but WLS version changed
-#  if [ -f ${INTROSPECTCM_WLS_VERSION} ] ; then
-#    previous_version=$(cat ${INTROSPECTCM_WLS_VERSION})
-#    if [ "${current_version}" != "${previous_version}" ]; then
-#      trace "version different: before: ${previous_version} current: ${current_version}"
-#      version_changed=1
-#    fi
-#  fi
 
   if [ -f ${INTROSPECTCM_JDK_PATH} ] ; then
     previous_jdkpath=$(cat ${INTROSPECTCM_JDK_PATH})
@@ -380,18 +383,20 @@ function createWLDomain() {
 
   compareArtifactsMD5
 
-  # Set this so that the introspectDomain.sh can decidde to call the python script of not
+  # Set this so that the introspectDomain.sh can decide to call the python script of not
   DOMAIN_CREATED=0
 
   # something changed in the wdt artifacts or wls version changed
   # create domain again
 
   if  [ ${WDT_ARTIFACTS_CHANGED} -ne 0 ] || [ ${jdk_changed} -eq 1 ] \
-    || [ ${secrets_and_env_changed} -ne 0 ] ; then
+    || [ ${SECRETS_AND_ENV_CHANGED} -ne 0 ] ; then
 
     trace "Need to create domain ${WDT_DOMAIN_TYPE}"
     createModelDomain
-    DOMAIN_CREATED=1
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+      DOMAIN_CREATED=1
+    fi
   else
     trace "Nothing changed no op"
   fi
@@ -528,26 +533,29 @@ function createModelDomain() {
   trace "Entering createModelDomain"
   createPrimordialDomain
 
-  # if there is a new primordial domain created then use newly created primordial domain otherwise
-  # if the primordial domain already in the configmap, restore it
-  #
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+    # if there is a new primordial domain created then use newly created primordial domain otherwise
+    # if the primordial domain already in the configmap, restore it
+    #
 
-  if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
-    trace "Using newly created domain"
-  elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
-    trace "Using existing primordial domain"
-    cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
-    # create empty lib since we don't archive it in primordial zip and WDT will fail without it
-    mkdir ${DOMAIN_HOME}/lib
-    # Since the SerializedSystem ini is encrypted, restore it first
-    local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
-    encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+    if [ -f "${LOCAL_PRIM_DOMAIN_ZIP}" ] ; then
+      trace "Using newly created domain"
+    elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
+      trace "Using existing primordial domain"
+      cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
+      # create empty lib since we don't archive it in primordial zip and WDT will fail without it
+      mkdir ${DOMAIN_HOME}/lib
+      # Since the SerializedSystem ini is encrypted, restore it first
+      local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
+      encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
+    fi
+
+    wdtUpdateModelDomain
+
+    # This will be a no op if MII_USE_ONLINE_UPDATE is not defined or false
+    wdtHandleOnlineUpdate
+
   fi
-
-  wdtUpdateModelDomain
-
-  # This will be a no op if MII_USE_ONLINE_UPDATE is not defined or false
-  wdtHandleOnlineUpdate
 
   trace "Exiting createModelDomain"
 }
@@ -597,7 +605,6 @@ function diff_model_v1() {
     exitOrLoop
   fi
   trace "Exiting diff_model v1"
-  return ${rc}
 }
 
 # This is WDT compareModel.sh implementation
@@ -608,12 +615,11 @@ function diff_model() {
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
 
-  # no need to redirect output, -output_dir for compareModel will generate the output file
-  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > /dev/null 2>&1
+  ${WDT_BINDIR}/compareModel.sh -oracle_home ${ORACLE_HOME} -output_dir /tmp $1 $2 > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "WDT Compare Model failed:"
-    cat /tmp/compare_model_stdout
+    cat ${WDT_OUTPUT}
     exitOrLoop
   fi
 
@@ -628,29 +634,34 @@ function diff_model() {
         cat /tmp/compare_model_stdout
         exitOrLoop
       else
-        # Model is Identical, but env vars unrelated to the model may have changed (such as JAVA_OPTIONS)
-        MII_USE_ONLINE_UPDATE=false
+        if [ ${SECRETS_AND_ENV_CHANGED} -eq 0 ] ; then
+          # Merged model and env vars are identical, tell introspectDomain.sh not to run python and short circuit
+          trace "Merged models and environment variables are identical, this introspection should be no-op."
+          MERGED_MODEL_ENVVARS_SAME="true"
+        fi
       fi
     fi
   fi
 
-  #
-  local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
-  local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
-  local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
-  local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
-  local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
-  ${JAVA_HOME}/bin/java -cp ${CP} \
-    ${JAVA_PROPS} \
-    org.python.util.jython \
-    ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
-  if [ $? -ne 0 ] ; then
-    trace SEVERE "Failed to compare models. Error output:"
-    cat ${WDT_OUTPUT}
-    exitOrLoop
+  if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
+    # Generate diffed model update compatibility result
+    local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
+    local JAVA_PROPS="-Dpython.cachedir.skip=true ${JAVA_PROPS}"
+    local JAVA_PROPS="-Dpython.path=${ORACLE_SERVER_DIR}/common/wlst/modules/jython-modules.jar/Lib ${JAVA_PROPS}"
+    local JAVA_PROPS="-Dpython.console= ${JAVA_PROPS} -Djava.security.egd=file:/dev/./urandom"
+    local CP=${ORACLE_SERVER_DIR}/server/lib/weblogic.jar
+    ${JAVA_HOME}/bin/java -cp ${CP} \
+      ${JAVA_PROPS} \
+      org.python.util.jython \
+      ${SCRIPTPATH}/model-diff.py $2 > ${WDT_OUTPUT} 2>&1
+    if [ $? -ne 0 ] ; then
+      trace SEVERE "Failed to compare models. Error output:"
+      cat ${WDT_OUTPUT}
+      exitOrLoop
+    fi
   fi
+
   trace "Exiting diff_model"
-  return ${rc}
 }
 
 #
@@ -661,7 +672,6 @@ function createPrimordialDomain() {
   trace "Entering createPrimordialDomain"
   local create_primordial_tgz=0
   local recreate_domain=0
-
   if [  -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
     # If there is an existing domain in the cm - this is update in the lifecycle
     # Call WDT validateModel.sh to generate the new merged mdoel
@@ -691,47 +701,52 @@ function createPrimordialDomain() {
       diff_model_v1 ${NEW_MERGED_MODEL} ${DECRYPTED_MERGED_MODEL}
     fi
 
-    diff_rc=$(cat /tmp/model_diff_rc)
-    rm ${DECRYPTED_MERGED_MODEL}
-    trace "createPrimordialDomain: model diff return code list (can be empty): "${diff_rc}
+    if [ "${MERGED_MODEL_ENVVARS_SAME}" == "false" ] ; then
 
-    local security_info_updated="false"
-    local cannot_perform_online_update="false"
-    security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
-    cannot_perform_online_update=$(contain_returncode ${diff_rc} ${NOT_FOR_ONLINE_UPDATE})
+      diff_rc=$(cat /tmp/model_diff_rc)
+      rm ${DECRYPTED_MERGED_MODEL}
+      trace "createPrimordialDomain: model diff return code list (can be empty): "${diff_rc}
 
-    if [ ${cannot_perform_online_update} == "true" ] ; then
-      trace SEVERE \
-        "The Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true'," \
-        "but there are unsupported model changes for online update. Examples of unsupported" \
-        "changes include: changing ListenPort, ListenAddress, SSL, changing top level Topology attributes," \
-        "or deleting a ServerTemplate."
-      exitOrLoop
-    fi
+      local security_info_updated="false"
+      local cannot_perform_online_update="false"
+      security_info_updated=$(contain_returncode ${diff_rc} ${SECURITY_INFO_UPDATED})
+      cannot_perform_online_update=$(contain_returncode ${diff_rc} ${NOT_FOR_ONLINE_UPDATE})
 
-    # recreate the domain if there is an unsafe security update such as admin password update or security roles
+      if [ ${cannot_perform_online_update} == "true" ] ; then
+        trace SEVERE \
+          "The Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true'," \
+          "but there are unsupported model changes for online update. Examples of unsupported" \
+          "changes include: changing ListenPort, ListenAddress, SSL, changing top level Topology attributes," \
+          "or deleting a ServerTemplate."
+        exitOrLoop
+      fi
 
-    # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
-    # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequenetly any
-    # other updates such as admin credenitals or security roles that caused the re-create of the primordial
-    # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
-    # getDatabaseDefaults).
-    #
-    if [ ${security_info_updated} == "true" ] ; then
-      recreate_domain=1
-      if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
-        UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+      # recreate the domain if there is an unsafe security update such as admin password update or security roles
+
+      # Always use the schema password in RCUDbInfo.  Since once the password is updated by the DBA.  The
+      # RCU cache table SCHEMA_COMPONENT_INFO stored password will never be correct,  and subsequently any
+      # other updates such as admin credentials or security roles that caused the re-create of the primordial
+      # domain will fail since without this flag set, defaults is to use the RCU cached info. (aka. wlst
+      # getDatabaseDefaults).
+      #
+      if [ ${security_info_updated} == "true" ] ; then
+        recreate_domain=1
+        if [ ${WDT_DOMAIN_TYPE} == "JRF" ] ; then
+          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
+        fi
+      fi
+
+      # if the domain is JRF and the schema password has been changed. Set this so that the changes are persisted
+      # in the primordial domain.
+
+      local rcu_password_updated="false"
+      rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
+      if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
+          recreate_domain=1
+          UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
       fi
     fi
 
-    # if the domain is JRF and the schema password has been changed. Set this so that updateDomain will also update
-    # the RCU password using the RCUDnbinfo
-
-    local rcu_password_updated="false"
-    rcu_password_updated=$(contain_returncode ${diff_rc} ${RCU_PASSWORD_CHANGED})
-    if [ ${WDT_DOMAIN_TYPE} == "JRF" ] && [ ${rcu_password_updated} == "true" ] ; then
-        UPDATE_RCUPWD_FLAG="-updateRCUSchemaPassword"
-    fi
   fi
 
   # If there is no primordial domain or needs to recreate one due to security changes
@@ -794,8 +809,14 @@ function generateMergedModel() {
 
   export __WLSDEPLOY_STORE_MODEL__="${NEW_MERGED_MODEL}"
 
-  ${WDT_BINDIR}/validateModel.sh -oracle_home ${ORACLE_HOME} ${model_list} \
-    ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  > ${WDT_OUTPUT} 2>&1
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+
+  trace "About to call '${WDT_BINDIR}/validateModel.sh ${wdtArgs}'."
+
+  ${WDT_BINDIR}/validateModel.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
   if [ $ret -ne 0 ]; then
     trace SEVERE "Model in Image: the WDT validate model tool detected an error with the fully merged model:"
@@ -918,8 +939,16 @@ function wdtUpdateModelDomain() {
   # make sure wdt create write out the merged model to a file in the root of the domain
   export __WLSDEPLOY_STORE_MODEL__=1
 
-  ${WDT_BINDIR}/updateDomain.sh -oracle_home ${ORACLE_HOME} -domain_home ${DOMAIN_HOME} $model_list \
-  ${archive_list} ${variable_list}  -domain_type ${WDT_DOMAIN_TYPE}  ${UPDATE_RCUPWD_FLAG}  >  ${WDT_OUTPUT} 2>&1
+  local wdtArgs=""
+  wdtArgs+=" -oracle_home ${ORACLE_HOME}"
+  wdtArgs+=" -domain_home ${DOMAIN_HOME}"
+  wdtArgs+=" ${model_list} ${archive_list} ${variable_list}"
+  wdtArgs+=" -domain_type ${WDT_DOMAIN_TYPE}"
+  wdtArgs+=" ${UPDATE_RCUPWD_FLAG}"
+
+  trace "About to call '${WDT_BINDIR}/updateDomain.sh ${wdtArgs}'."
+
+  ${WDT_BINDIR}/updateDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
   ret=$?
 
   if [ $ret -ne 0 ]; then
@@ -969,11 +998,12 @@ function wdtHandleOnlineUpdate() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
   stop_trap
-  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] ; then
-    # no op for offline use case'
-    trace "Domain resource specified 'domain.spec.configuration.model.onlineUpdate=false' or not defined - no op"
-    trace "Exiting wdtHandleOnlineUpdate"
-    return
+  if [ -z ${MII_USE_ONLINE_UPDATE} ] || [ "false" == "${MII_USE_ONLINE_UPDATE}" ] || [ ! -f /tmp/diffed_model.yaml ] ; then
+      # no op for offline use case or no change in model with new image
+      trace "Domain resource specified 'domain.spec.configuration.model.onlineUpdate=false' or not defined or no " \
+        " merged model is the same, no need for online update."
+      trace "Exiting wdtHandleOnlineUpdate"
+      return
   fi
 
   # We need to extract all the archives, WDT online checks for file existence
@@ -1271,4 +1301,9 @@ function stop_trap() {
 
 function cleanup_mii() {
   rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
+}
+
+function logSevereAndExit() {
+  trace SEVERE "cp '$1' failed"
+  exitOrLoop
 }

@@ -14,7 +14,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
-import oracle.kubernetes.operator.helpers.AuthorizationHeaderFactory;
+import oracle.kubernetes.operator.helpers.AuthorizationSource;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.HttpResponseStep;
@@ -53,14 +53,14 @@ abstract class HttpRequestProcessing {
     return packet;
   }
 
-  AuthorizationHeaderFactory getAuthorizationHeaderFactory() {
-    return SecretHelper.getAuthorizationHeaderFactory(packet);
+  AuthorizationSource getAuthorizationSource() {
+    return SecretHelper.getAuthorizationSource(packet);
   }
 
   final HttpRequest.Builder createRequestBuilder(String url) {
     return HttpRequest.newBuilder()
           .uri(URI.create(url))
-          .header("Authorization", getAuthorizationHeaderFactory().createBasicAuthorizationString())
+          .header("Authorization", getAuthorizationSource().createBasicAuthorizationString())
           .header("Accept", "application/json")
           .header("Content-Type", "application/json")
           .header("X-Requested-By", "WebLogic Operator");

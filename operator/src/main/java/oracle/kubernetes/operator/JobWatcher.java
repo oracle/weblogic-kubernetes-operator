@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 
 /** Watches for Jobs to become Ready or leave Ready state. */
 public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, JobAwaiterStepFactory {
@@ -322,7 +323,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     private long getJobStartedSeconds() {
       if (job.getStatus() != null && job.getStatus().getStartTime() != null) {
-        return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), OffsetDateTime.now());
+        return ChronoUnit.SECONDS.between(job.getStatus().getStartTime(), SystemClock.now());
       }
       return -1;
     }

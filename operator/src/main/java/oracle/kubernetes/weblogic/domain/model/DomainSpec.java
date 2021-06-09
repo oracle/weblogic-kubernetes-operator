@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -36,6 +37,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -279,6 +281,12 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
+  @Description("Configure common mount volumes including their respective mount paths. Common mount volumes are in "
+          + "turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a "
+          + "Kubernetes 'emptyDir' volume.")
+  @Feature("CommonMounts")
+  private List<CommonMountVolume> commonMountVolumes;
+
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
    *
@@ -305,8 +313,17 @@ public class DomainSpec extends BaseConfiguration {
    *
    * @since 3.2
    */
-  @Description("Configuration for the use of the WebLogic Monitoring Exporter as part of this domain.")
+  @Description("Automatic deployment and configuration of the WebLogic Monitoring Exporter. If specified, the operator "
+      + "will deploy a sidecar container alongside each WebLogic Server instance that runs the exporter. "
+      + "WebLogic Server instances that are already running when the `monitoringExporter` field is created or deleted, "
+      + "will not be affected until they are restarted. When any given server "
+      + "is restarted for another reason, such as a change to the `restartVersion`, then the newly created pod will "
+      + "have the exporter sidecar or not, as appropriate. See https://github.com/oracle/weblogic-monitoring-exporter.")
   private MonitoringExporterSpecification monitoringExporter;
+
+  public MonitoringExporterSpecification getMonitoringExporterSpecification() {
+    return monitoringExporter;
+  }
 
   MonitoringExporterConfiguration getMonitoringExporterConfiguration() {
     return Optional.ofNullable(monitoringExporter).map(MonitoringExporterSpecification::getConfiguration).orElse(null);
@@ -328,6 +345,10 @@ public class DomainSpec extends BaseConfiguration {
     return monitoringExporter == null ? null : monitoringExporter.getImagePullPolicy();
   }
 
+  public Integer getMonitoringExporterPort() {
+    return monitoringExporter == null ? null : monitoringExporter.getPort();
+  }
+
   /**
    * Specifies the image for the monitoring exporter sidecar.
    * @param imageName the name of the docker image
@@ -346,6 +367,16 @@ public class DomainSpec extends BaseConfiguration {
     assert monitoringExporter != null : "May not set image pull policy without configuration";
 
     monitoringExporter.setImagePullPolicy(pullPolicy);
+  }
+
+  /**
+   * Specifies the port for the exporter sidecar.
+   * @param port port number
+   */
+  public void setMonitoringExporterPort(Integer port) {
+    assert monitoringExporter != null : "May not set exporter port without configuration";
+
+    monitoringExporter.setPort(port);
   }
 
   /**
@@ -702,6 +733,14 @@ public class DomainSpec extends BaseConfiguration {
     this.configuration = configuration;
   }
 
+  public List<CommonMountVolume> getCommonMountVolumes() {
+    return commonMountVolumes;
+  }
+
+  public void setCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
+    this.commonMountVolumes = commonMountVolumes;
+  }
+
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -870,6 +909,16 @@ public class DomainSpec extends BaseConfiguration {
   public String getModelHome() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
+  }
+
+  /**
+   * Returns the WDT install home directory of the domain.
+   *
+   * @return WDT install home directory
+   */
+  public String getWdtInstallHome() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(DEFAULT_WDT_INSTALL_HOME);
   }
 
   @Override

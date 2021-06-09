@@ -31,9 +31,9 @@ public class SwaggerBuildHelper {
   public static void main(String[] args) {
 
     try {
-      doBuild("swagger/src/main/resources/operator-swagger.json", "documentation/swagger/index.html");
+      doBuild("swagger-generator/src/main/resources/operator-swagger.json", "documentation/swagger/index.html");
       doDomain(
-          "swagger/src/main/resources/domain-swagger.json",
+          "swagger-generator/src/main/resources/domain-swagger.json",
           "documentation/domains/Domain.json",
           "documentation/domains/index.html");
     } catch (Throwable e) {

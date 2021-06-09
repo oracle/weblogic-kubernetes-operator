@@ -15,6 +15,10 @@ adminServerName: admin-server
 # in a Kubernetes cluster.
 domainUID: domain1
 
+# Path of the WebLogic domain to be created in the generated OracleFMWInfrastructure image
+# If not specified, the value is derived from the domainUID as /u01/oracle/user_projects/domains/<domainUID>
+domainHome: /u01/oracle/user_projects/domains/domain1
+
 # Determines which OracleFMWInfrastructure Servers the operator will start up
 # Legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
 serverStartPolicy: IF_NEEDED
@@ -22,11 +26,12 @@ serverStartPolicy: IF_NEEDED
 # Cluster name
 clusterName: cluster-1
 
-# Number of managed servers to generate for the domain
-configuredManagedServerCount: 5
-
 # Number of managed servers to initially start for the domain
-initialManagedServerReplicas: 2
+initialManagedServerReplicas: 1
+
+# Number of managed servers to generate for the domain
+# This value is ignored when using WDT with a model that creates configured cluster.
+configuredManagedServerCount: 5
 
 # Base string used to generate managed server names
 managedServerNameBase: managed-server
@@ -40,9 +45,8 @@ productionModeEnabled: true
 # OracleFMWInfrastructure Server image that the operator uses to start the domain.
 #
 # The create domain scripts generate a OracleFMWInfrastructure Server image with a domain home in it.
-# By default, the scripts tag the generated OracleFMWInfrastructure server image as either
-# `domain-home-in-image` or `domain-home-in-image-wdt` based on the `domainHomeImageBuildPath`
-# property, and use it to set the `image` element in the generated domain YAML file.
+# By default, the scripts tag the generated OracleFMWInfrastructure server image as 
+# `domain-home-in-image`, and use it to set the `image` element in the generated domain YAML file.
 #
 # If this property is set, the create domain scripts will use the value specified, instead of the
 # default value, to tag the generated image and set the `image` in the domain YAML file.
@@ -135,17 +139,40 @@ domainPVMountPath: /shared
 # See README.md for more help.
 domainHomeImageBase: container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4
 
-# Location of the OracleFMWInfrastructure "domain home in image" image sample in the
-# `https://github.com/oracle/docker-images.git` project.
-# If not specified, use "./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image".
-# Another possible value is "./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image-wdt",
-# which uses WDT, instead of WLST, to generate the domain configuration.
-domainHomeImageBuildPath: ./docker-images/OracleFMWInfrastructure/samples/12213-domain-home-in-image
-
 # Uncomment to customize the WebLogic Deploy Tool (WDT) version used by the WDT
 # "domain home in image" image sample in the Docker images project. See
 # "domainHomeImageBuildPath". Set to "LATEST" to use the latest version.
 # wdtVersion: LATEST
+
+# Uncomment to customize the WebLogic Image Tool (WIT) version.
+# Set to "LATEST" to use the latest version.
+# witVersion: LATEST
+
+# Uncomment to customize the directory where WebLogic Deploy Tool (WDT)
+# and WebLogic Image Tool (WIT) are installed.
+# Default is /tmp/dhii-sample/tools
+# toolsDir: /tmp/dhii-sample/tools
+
+# WLST script that the create domain script uses to create a WebLogic domain
+# when using wlst mode.
+# Defaults to ../../common/createFMWJRFDomain.py or ../../common/createFMWRestrictedJRF.py
+# depending on the value of fmwDomainType if not specified.
+# This value is ignored when WDT is used in creating a WebLogic domain.
+#createDomainWlstScript: ../../common/createFMWJRFDomain.py
+
+# WDT model YAML file that the create domain script uses to create a 
+# WebLogic domain when using wdt mode.
+# Defaults to wdt/wdt_model_configured.yaml or wdt/wdt_model_restricted_jrf_configured.yaml
+# if not specified, depending on the value of fmwDomainType.
+# This value is ignored when WLST script is used in creating a WebLogic domain.
+#createDomainWdtModel: wdt/wdt_model_configured.yaml
+
+# Whether to use the WDT model specified in createDomainWdtModel
+# or the offline WLST script specified in createDomainWlstScript
+# to create a WebLogic domain.
+# Legal values are "wdt" or "wlst"
+# Defaults to "wdt" if not specified.
+mode: wdt
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
@@ -164,7 +191,11 @@ serverPodCpuRequest: "500m"
 # serverPodCpuLimit: "1000m"
 
 #
-# RCU configuration details
+# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
+fmwDomainType: JRF
+
+
+# RCU configuration details (required if fmwDomainType is 'JRF')
 #
 
 # The schema prefix to use in the database, for example `SOA1`.  You may wish to make this
@@ -177,5 +208,4 @@ rcuDatabaseURL: database:1521/service
 # The kubernetes secret containing the database credentials
 rcuCredentialsSecret: domain1-rcu-credentials
 
-# FMW Infrastructure Domain Type. Legal values are JRF or RestrictedJRF
-fmwDomainType: JRF
+

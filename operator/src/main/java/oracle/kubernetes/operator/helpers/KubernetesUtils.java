@@ -234,4 +234,17 @@ public class KubernetesUtils {
   private static boolean useLatestImage(String imageName) {
     return imageName.endsWith(KubernetesConstants.LATEST_IMAGE_SUFFIX);
   }
+
+  /**
+   * Reads operator product version that created a resource, if available.
+   * @param metadata Metadata from a resource
+   * @return Operator product version that created the resource
+   */
+  public static SemanticVersion getProductVersionFromMetadata(V1ObjectMeta metadata) {
+    return Optional.ofNullable(metadata)
+        .map(V1ObjectMeta::getLabels)
+        .map(labels -> labels.get(LabelConstants.OPERATOR_VERSION))
+        .map(SemanticVersion::new)
+        .orElse(null);
+  }
 }

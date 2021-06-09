@@ -57,10 +57,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -74,6 +70,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -84,7 +81,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -97,13 +94,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -191,7 +186,7 @@ class ItMiiUpdateDomainConfig {
     logger.info("Create database secret");
     final String dbSecretName = domainUid  + "-db-secret";
     assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, "scott",
-            "tiger", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
+            "##W%*}!\"'\"`']\\\\//1$$~x", "jdbc:oracle:thin:localhost:/ORCLCDB", domainNamespace),
              String.format("createSecret failed for %s", dbSecretName));
     String configMapName = "jdbc-jms-wldf-configmap";
 
@@ -249,14 +244,61 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
+   * Check the environment variable with special characters.
+   */
+  @Test
+  @Order(0)
+  @DisplayName("Check environment variable with special characters")
+  public void testMiiCustomEnv() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    List<V1EnvVar> envList = domain1.getSpec().getServerPod().getEnv();
+
+    boolean found = false;
+    for (int i = 0; i < envList.size(); i++) {
+      logger.info("The name is: {0}, value is: {1}", envList.get(i).getName(), envList.get(i).getValue());
+      if (envList.get(i).getName().equalsIgnoreCase("CUSTOM_ENV")) {
+        assertTrue(
+            envList.get(i).getValue().equalsIgnoreCase("${DOMAIN_UID}~##!'%*$(ls)"),
+            "Expected value for CUSTOM_ENV variable does not mtach");
+        found = true;
+      }
+    }
+    assertTrue(found, "Couldn't find CUSTOM_ENV variable in domain resource");
+
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+          .append("/management/weblogic/latest/domainConfig")
+          .append("/JMSServers/TestClusterJmsServer")
+          .append("?fields=notes&links=none\"")
+          .append(" --silent ");
+    logger.info("checkJmsServerConfig: curl command {0}", new String(curlString));
+    ExecResult result = null;
+    try {
+      result = exec(new String(curlString), true);
+      getLogger().info("The command returned exit value: "
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
+      assertTrue((result.exitValue() == 0), 
+             "curl command returned non zero value");
+      assertTrue((result.stdout().contains("${DOMAIN_UID}~##!'%*$(ls)")), 
+             "Custom environment variable is not reflected in domin config");
+    } catch (Exception e) {
+      getLogger().info("Got exception, command failed with errors " + e.getMessage());
+    }
+  }
+
+  /**
    * Check server logs are written on PersistentVolume(PV).
-   * The test looks for the string RUNNING in server log
+   * The test looks for the string RUNNING in the server log
    */
   @Test
   @Order(1)
   @DisplayName("Check the server logs are written to PersistentVolume")
   public void testMiiServerLogsAreOnPV() {
-
     // check server logs are written on PV and look for string RUNNING in log
     checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
   }
@@ -296,12 +338,12 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a WebLogic domain with a defined configmap in configuration/model
-   * section of the domain resource.
+   * Create a WebLogic domain with a defined configmap in the 
+   * configuration/model section of the domain resource.
    * The configmap has multiple sparse WDT model files that define
    * a JDBCSystemResource, a JMSSystemResource and a WLDFSystemResource.
    * Verify all the SystemResource configurations using the rest API call
-   * using the public nodeport of the administration server.
+   * using the public node port of the administration server.
    */
   @Test
   @Order(3)
@@ -475,7 +517,7 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are not in running state, because
+   * Verify servers from the new cluster are not in running state, because
    * the spec level replica count to zero(default).
    */
   @Test
@@ -483,7 +525,7 @@ class ItMiiUpdateDomainConfig {
   @DisplayName("Add a dynamic cluster to the domain with default replica count")
   public void testMiiAddDynmicClusteriWithNoReplica() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "noreplicaconfigmap";
@@ -518,8 +560,8 @@ class ItMiiUpdateDomainConfig {
     assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
         "Rolling restart failed");
 
-    // The ServerNamePrefix for the new configured cluster is config-server
-    // Make sure the managed server from new cluster is not running
+    // The ServerNamePrefix for the newly configured cluster is config-server
+    // Make sure the managed server from the new cluster is not running
 
     String newServerPodName = domainUid + "-config-server1";
     checkPodNotCreated(newServerPodName, domainUid, domainNamespace);
@@ -536,14 +578,14 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are in running state.
+   * Verify servers from the new cluster are running.
    */
   @Test
   @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   public void testMiiAddDynamicCluster() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "dynamicclusterconfigmap";
@@ -613,14 +655,14 @@ class ItMiiUpdateDomainConfig {
    * Update the restart version of the domain resource.
    * Verify rolling restart of the domain by comparing PodCreationTimestamp
    * before and after rolling restart.
-   * Verify servers from new cluster are in running state.
+   * Verify servers from the new cluster are running.
    */
   @Test
   @Order(8)
   @DisplayName("Add a configured cluster to the domain")
   public void testMiiAddConfiguredCluster() {
 
-    // This test uses the WebLogic domain created in BeforeAll method
+    // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
     String configMapName = "configclusterconfigmap";
@@ -681,7 +723,7 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Start a WebLogic domain with model-in-imge.
+   * Start a WebLogic domain with model-in-image.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
    * Make sure all the server pods are re-started in a rolling fashion.
@@ -691,56 +733,8 @@ class ItMiiUpdateDomainConfig {
   @Order(9)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   public void testMiiUpdateWebLogicCredential() {
-    final boolean VALID = true;
-    final boolean INVALID = false;
-
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace,adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    logger.info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID);
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, INVALID);
-
-    // create a new secret for admin credentials
-    logger.info("Create a new secret that contains new WebLogic admin credentials");
-    String adminSecretName = "weblogic-credentials-new";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,
-        domainNamespace,
-        ADMIN_USERNAME_PATCH,
-        ADMIN_PASSWORD_PATCH),
-        String.format("createSecret failed for %s", adminSecretName));
-
-    // patch the domain resource with the new secret and verify that the domain resource is patched.
-    logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
-        domainUid, domainNamespace, adminSecretName);
-    String restartVersion = patchDomainWithNewSecretAndVerify(
-        domainUid,
-        domainNamespace,
-        adminServerPodName,
-        managedServerPrefix,
-        replicaCount,
-        adminSecretName);
-
-    logger.info("Wait for domain {0} admin server pod {1} in namespace {2} to be restarted",
-        domainUid, adminServerPodName, domainNamespace);
-
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
-        "Rolling restart failed");
-
-    // check if the new credentials are valid and the old credentials are not valid any more
-    logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
-    verifyCredentials(adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
-
-    logger.info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
-        domainUid, domainNamespace);
+    verifyUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
+        managedServerPrefix, replicaCount);
   }
 
   /**
@@ -749,10 +743,10 @@ class ItMiiUpdateDomainConfig {
    * Set allowReplicasBelowMinDynClusterSize to false.
    * Make sure that the cluster can be scaled up to 5 servers and
    * scaled down to 1 server.
-   * Create a configmap with a sparse model file with following attributes for
+   * Create a configmap with a sparse model file with the following attributes 
    * Cluster/cluster-1/DynamicServers
    *   MaxDynamicClusterSize(4) and MinDynamicClusterSize(2)
-   * Patch the domain resource with the configmap and update restartVersion.
+   * Patch the domain resource with the configmap and update the restartVersion.
    * Make sure a rolling restart is triggered.
    * Now with the modified value
    * Make sure that the cluster can be scaled up to 4 servers.
@@ -970,6 +964,8 @@ class ItMiiUpdateDomainConfig {
     assertTrue(secretCreated, String.format("create secret failed for %s in namespace %s", secretName, domNamespace));
   }
 
+  // Add an environmental variable with special character
+  // Make sure the variable is available in domain resource with right value 
   private static void createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName,
@@ -1004,6 +1000,9 @@ class ItMiiUpdateDomainConfig {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom "))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("CUSTOM_ENV")
+                                    .value("${DOMAIN_UID}~##!'%*$(ls)"))
                             .addVolumesItem(new V1Volume()
                                     .name(pvName)
                                     .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()

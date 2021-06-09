@@ -36,3 +36,6 @@ fi
 if [ "${domain_type}" == "RestrictedJRF" ]; then 
    cp ${externalFilesTmpDir}/wdt_model_restricted_jrf_configured.yaml ${externalFilesTmpDir}/wdt_model.yaml
 fi 
+export DOMAIN_TYPE=${domain_type}
+echo "DOMAIN_TYPE is ${DOMAIN_TYPE}"
+

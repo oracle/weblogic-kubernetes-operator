@@ -137,6 +137,15 @@ case "${kind_version}" in
   "kind v0.9."*)
     kind_series="0.9"
     ;;
+  "kind v0.10."*)
+    kind_series="0.10"
+    ;;
+  "kind v0.11.1"*)
+    kind_series="0.11.1"
+    ;;
+  "kind v0.11."*)
+    kind_series="0.11"
+    ;;
 esac
 
 kind_image=$(versionprop "${kind_series}" "${k8s_version}")
@@ -194,7 +203,7 @@ echo 'Create registry container unless it already exists'
 running="$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)"
 if [ "${running}" != 'true' ]; then
   docker run \
-    -d --restart=always -p "${reg_port}:5000" --name "${reg_name}" \
+    -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
     registry:2
 fi
 
@@ -288,11 +297,11 @@ if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" =
   echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
-  if [ "${test_filter}" = "ItOperatorUpgrade" ] || [ "${parallel_run}" = "false" ]; then
-    echo "Running mvn -Dit.test=${test_filter}, !ItIstioCrossClusters -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+  if [ "${test_filter}" = "ItOperatorWlsUpgrade" ] || [ "${parallel_run}" = "false" ]; then
+    echo "Running mvn -Dit.test=${test_filter}, !ItIstioCrossClusters, !ItOCILoadBalancer -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*, !ItOCILoadBalancer" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
-    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+    echo "Running mvn -Dit.test=${test_filter}, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
+    time mvn -Dit.test="${test_filter}, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi

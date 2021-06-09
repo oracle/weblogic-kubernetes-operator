@@ -5,6 +5,14 @@ topology:
         "cluster-1":
            DataSourceForAutomaticMigration:  LeasingDataSource
            AutoMigrationTableName: ACTIVE
+
+    ServerTemplate:
+        "cluster-1-template":
+            Cluster: 'cluster-1'
+            JTAMigratableTarget:
+                Cluster: 'cluster-1'
+                MigrationPolicy: 'shutdown-recovery'
+                StrictOwnershipCheck: true
 resources:
     FileStore:
         ClusterFileStore:

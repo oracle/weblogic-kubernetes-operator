@@ -8,6 +8,8 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| May 21, 2021 | v3.2.3 | no | Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool. |
+| April 27, 2021 | v3.2.2 | no | Resolved a set of issues with many related to reducing the operator's network utilization. |
 | April 5, 2021 | v3.2.1 | no | Updated several dependencies, including the Oracle Linux base for the container image. |
 | March 31, 2021 | v3.2.0 | no | Online updates for dynamic changes for Model in Image, injection of the WebLogic Monitoring Exporter, other features, and a significant number of additional fixes. |
 | March 1, 2021 | v3.1.4 | no | Resolved an issue where the operator would ignore live data that was older than cached data, such as following an etcd restore and updated Kubernetes Java Client and Bouncy Castle dependencies. |
@@ -37,6 +39,28 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.2.3
+
+* Resolved an issue related to preserving the operator-generated internal certificate ([#2374](https://github.com/oracle/weblogic-kubernetes-operator/pull/2374)).
+* Corrected the monitoring exporter integration to include the Administration Server ([#2365](https://github.com/oracle/weblogic-kubernetes-operator/pull/2365)).
+* Enhanced the model-in-image support to not require the use of configuration overrides ([#2344](https://github.com/oracle/weblogic-kubernetes-operator/pull/2344)).
+* Resolved an issue related to model-in-image domains performing a rolling restart when there had been no change to the model ([#2348](https://github.com/oracle/weblogic-kubernetes-operator/pull/2348)).
+* Resolved an issue related to RCU schema password updates ([#2357](https://github.com/oracle/weblogic-kubernetes-operator/pull/2357)).
+* Resolved an issue related to namespace starting and stopping events ([#2345](https://github.com/oracle/weblogic-kubernetes-operator/pull/2345)).
+* Added support for several new events related to rolling restarts ([#2364](https://github.com/oracle/weblogic-kubernetes-operator/pull/2364)).
+* Added support for customer-defined labels and annotations on the operator's pod ([#2370](https://github.com/oracle/weblogic-kubernetes-operator/pull/2370)).
+
+#### Operator 3.2.2
+
+* Resolved an issue where the operator would retry Kubernetes API requests that timed out without a backoff causing increased network utilization ([#2300](https://github.com/oracle/weblogic-kubernetes-operator/pull/2300)).
+* Resolved an issue where the operator would select the incorrect WebLogic Server port for administrative traffic ([#2301](https://github.com/oracle/weblogic-kubernetes-operator/pull/2301)).
+* Resolved an issue where the operator, when running in a large and heavily loaded Kubernetes cluster, would not properly detect when a domain had been deleted and recreated ([#2305](https://github.com/oracle/weblogic-kubernetes-operator/pull/2305) and [#2314](https://github.com/oracle/weblogic-kubernetes-operator/pull/2314)).
+* Resolved an issue where the operator would fail to recover and begin processing in a namespace if the operator did not immediately have privileges in that namespace when it was first detected ([#2315](https://github.com/oracle/weblogic-kubernetes-operator/pull/2315)).
+* The operator logs a message when it cannot generate a `NamespaceWatchingStopped` Event in a namespace because the operator no longer has privileges in that namespace ([#2323](https://github.com/oracle/weblogic-kubernetes-operator/pull/2323)).
+* Resolved an issue where the operator would repeatedly replace a ConfigMap causing increased network utilization ([#2321](https://github.com/oracle/weblogic-kubernetes-operator/pull/2321)).
+* Resolved an issue where the operator would repeatedly read a Secret causing increased network utilization ([#2326](https://github.com/oracle/weblogic-kubernetes-operator/pull/2326)).
+* Resolved an issue where the operator was not honoring `domain.spec.adminServer.serverService` ([#2334](https://github.com/oracle/weblogic-kubernetes-operator/pull/2334)).
 
 #### Operator 3.2.1
 

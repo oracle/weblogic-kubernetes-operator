@@ -9,11 +9,14 @@ import java.util.List;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.ClusterService;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 
 public class ServiceHelperTestBase {
+  protected static final String TEST_CLUSTER = "cluster-1";
   static final String DOMAIN_NAME = "domain1";
   static final String NS = "namespace";
   static final String UID = "uid1";
@@ -36,6 +39,8 @@ public class ServiceHelperTestBase {
   }
 
   private DomainSpec createDomainSpec() {
-    return new DomainSpec().withDomainUid(UID);
+    return new DomainSpec().withDomainUid(UID)
+        .withCluster(new Cluster().withClusterName(TEST_CLUSTER)
+            .withClusterService(new ClusterService().withSessionAffinity("ClientIP")));
   }
 }

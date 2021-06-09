@@ -10,10 +10,13 @@ import java.util.Map;
 import java.util.Objects;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
@@ -21,12 +24,16 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasInitContainer;
@@ -42,6 +49,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_F
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -51,6 +61,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
@@ -61,6 +72,10 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   private static final String END_VALUE_1 = "value-ADMIN_SERVER";
   private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
+  public static final String CUSTOM_MOUNT_PATH2 = "/common1";
+  public static final String TEST_MEDIUM = "TestMedium";
+
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -572,6 +587,40 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
+  public void whenDomainAndServerHaveCommonMounts_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume())
+            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume())
+            .configureAdminServer()
+            .withCommonMounts(Collections.singletonList((getCommonMount("wdt-image:v2"))));
+
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
+                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
+                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image:v2",
+                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getCommonMountVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName(TEST_VOLUME_NAME))
+                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+  }
+
+  @Test
+  public void whenServerHasCommonMountVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+    getConfigurator()
+            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
+            .configureAdminServer()
+            .withCommonMounts(Collections.singletonList((getCommonMount("wdt-image:v2"))));
+
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
   public void whenServerWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
     getConfigurator().withEnvironmentVariable("item1", "value1")
             .configureAdminServer()
@@ -748,6 +797,47 @@ public class AdminPodHelperTest extends PodHelperTestBase {
     assertThat(podLabels, hasEntry(LabelConstants.DOMAINRESTARTVERSION_LABEL, "domainRestartV1"));
     assertThat(podLabels, hasEntry(LabelConstants.SERVERRESTARTVERSION_LABEL, "adminRestartV1"));
     assertThat(podLabels, hasKey(not(LabelConstants.CLUSTERRESTARTVERSION_LABEL)));
+  }
+
+
+  @Test
+  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + POD_CYCLE_STARTING + " expected with message not found",
+        getExpectedEventMessage(POD_CYCLE_STARTING),
+        stringContainsInOrder("Replacing ", getPodName(), "DOMAIN_HOME", "changed from", "adfgg"));
+  }
+
+  @Test
+  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectNS()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+    logRecords.clear();
+
+    assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
+  }
+
+  @Test
+  public void whenDomainHomeChanged_generateExpectedLogMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(logRecords, containsInfo(getReplacedMessageKey()));
+    assertThat(logRecords, containsInfo(getCyclePodKey()));
   }
 
   private V1Pod createTestPodModel() {

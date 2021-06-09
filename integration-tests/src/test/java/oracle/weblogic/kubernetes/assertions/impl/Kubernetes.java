@@ -25,6 +25,7 @@ import io.kubernetes.client.openapi.models.V1DeploymentList;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
+import io.kubernetes.client.openapi.models.V1LoadBalancerIngress;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeList;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -37,6 +38,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodRestartVersion;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodCreationTimestamp;
@@ -512,6 +514,48 @@ public class Kubernetes {
       exist = true;
     }
     return exist;
+  }
+
+
+  /**
+   * Checks if a Kubernetes service object exists in a given namespace.
+   * @param serviceName name of the service to check for
+   * @param labels the key value pair with which the service is decorated with
+   * @param namespace the namespace in which to check for the service
+   * @return true if the service External IP is found otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static boolean isOCILoadBalancerReady(
+      String serviceName, Map<String, String> labels, String namespace)
+      throws ApiException {
+    if (!OKE_CLUSTER) {
+      throw new ApiException("Can't create OCI Load Balancer in non OKE enviroment");
+    }
+    LoggingFacade logger = getLogger();
+    V1Service service = getService(serviceName, labels, namespace);
+    if (service != null) {
+      logger.info("Found service with name {0} in {1} namespace ", serviceName, namespace);
+
+      if (service.getStatus().getLoadBalancer() != null) {
+        logger.info("LoadBalancer Status " + service.getStatus().getLoadBalancer().toString());
+        List<V1LoadBalancerIngress> ingress = service.getStatus().getLoadBalancer().getIngress();
+        if (ingress != null) {
+          logger.info("LoadBalancer Ingress " + ingress.toString());
+          V1LoadBalancerIngress lbIng = ingress.stream().filter(c ->
+              !c.getIp().equals("pending")
+          ).findAny().orElse(null);
+          if (lbIng != null) {
+            logger.info("OCI LoadBalancer is created with external ip" + lbIng.getIp());
+            return true;
+          }
+        } else {
+          logger.info("LoadBalancer does not have assigned External IP");
+        }
+      }
+    } else {
+      logger.info("Can't find service with name " + serviceName + " in  namespace " + namespace);
+    }
+    return false;
   }
 
   /**

@@ -42,7 +42,6 @@ import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
@@ -62,7 +61,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 
 public class ServiceHelper {
   public static final String CLUSTER_IP_TYPE = "ClusterIP";
@@ -268,12 +266,20 @@ public class ServiceHelper {
 
     @Override
     protected Map<String, String> getServiceLabels() {
-      return getServerSpec().getServiceLabels();
+      Map<String, String> serviceLabels = getServerSpec().getServiceLabels();
+      if (isForAdminServer()) {
+        serviceLabels.putAll(getDomain().getAdminServerSpec().getServiceLabels());
+      }
+      return serviceLabels;
     }
 
     @Override
     protected Map<String, String> getServiceAnnotations() {
-      return getServerSpec().getServiceAnnotations();
+      Map<String, String> serviceAnnotations = getServerSpec().getServiceAnnotations();
+      if (isForAdminServer()) {
+        serviceAnnotations.putAll(getDomain().getAdminServerSpec().getServiceAnnotations());
+      }
+      return serviceAnnotations;
     }
 
     String getServerName() {
@@ -393,11 +399,13 @@ public class ServiceHelper {
     }
 
     protected V1ServiceSpec createServiceSpec() {
-      return new V1ServiceSpec()
+      V1ServiceSpec spec = new V1ServiceSpec()
           .type(getSpecType())
           .putSelectorItem(LabelConstants.DOMAINUID_LABEL, getDomainUid())
           .putSelectorItem(LabelConstants.CREATEDBYOPERATOR_LABEL, "true")
           .ports(createServicePorts());
+      Optional.ofNullable(getSessionAffinity()).ifPresent(spec::setSessionAffinity);
+      return spec;
     }
 
     void addServicePorts(List<V1ServicePort> ports, WlsServerConfig serverConfig) {
@@ -410,9 +418,15 @@ public class ServiceHelper {
         addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
       }
 
-      if (getDomain().getMonitoringExporterConfiguration() != null) {
-        addServicePortIfNeeded(ports, EXPORTER_PORT_NAME, MonitoringExporterSpecification.getRestPort(serverConfig));
-      }
+      Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
+        if (specification.getConfiguration() != null) {
+          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort());
+        }
+      });
+    }
+
+    private String getMetricsPortName() {
+      return getDomain().isIstioEnabled() ? "http-metrics" : "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {
@@ -518,6 +532,10 @@ public class ServiceHelper {
     abstract Map<String, String> getServiceLabels();
 
     abstract Map<String, String> getServiceAnnotations();
+
+    String getSessionAffinity() {
+      return null;
+    }
 
     protected abstract void logServiceCreated(String messageKey);
 
@@ -830,6 +848,11 @@ public class ServiceHelper {
     @Override
     Map<String, String> getServiceAnnotations() {
       return getClusterSpec().getClusterAnnotations();
+    }
+
+    @Override
+    String getSessionAffinity() {
+      return getClusterSpec().getClusterSessionAffinity();
     }
   }
 

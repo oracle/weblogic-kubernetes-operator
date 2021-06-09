@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
@@ -61,8 +62,11 @@ import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
+import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
@@ -174,6 +178,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
@@ -217,6 +222,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPod
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isNginxReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOCILoadBalancerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
@@ -270,7 +276,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String... domainNamespace) {
     HelmParams opHelmParams =
         new HelmParams().releaseName(OPERATOR_RELEASE_NAME)
@@ -289,7 +295,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     int domainPresenceFailureRetryMaxCount,
                                                     int domainPresenceFailureRetrySeconds,
                                                     String... domainNamespace) {
@@ -310,7 +316,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
+  public static OperatorParams installAndVerifyOperator(String opNamespace, HelmParams opHelmParams,
                                                     String... domainNamespace) {
     return installAndVerifyOperator(opNamespace, opNamespace + "-sa", false,
         0, opHelmParams, domainNamespace);
@@ -326,7 +332,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -350,7 +356,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -376,7 +382,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -398,7 +404,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -424,7 +430,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -455,7 +461,7 @@ public class CommonTestUtils {
    * @param domainNamespace the list of the domain namespaces which will be managed by the operator
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opNamespace,
                                                     String opServiceAccount,
                                                     boolean withRestAPI,
                                                     int externalRestHttpsPort,
@@ -591,7 +597,7 @@ public class CommonTestUtils {
           .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
               "operator external service is not running"));
     }
-    return opHelmParams;
+    return opParams;
   }
 
   /**
@@ -606,7 +612,7 @@ public class CommonTestUtils {
    *                        (only in case of List selector)
    * @return the operator Helm installation parameters
    */
-  public static HelmParams installAndVerifyOperator(String opReleaseName, String opNamespace,
+  public static OperatorParams installAndVerifyOperator(String opReleaseName, String opNamespace,
                                                      String domainNamespaceSelectionStrategy,
                                                      String domainNamespaceSelector,
                                                      boolean enableClusterRoleBinding,
@@ -675,6 +681,65 @@ public class CommonTestUtils {
         OPERATOR_RELEASE_NAME, opNamespace);
 
     return true;
+  }
+
+
+  /**
+   * Install OCI Load Balancer and wait up to five minutes until the External IP is ready.
+   *
+   * @param namespace the namespace in which the Noci Load Balancer will be installed
+   * @param portshttp the http port of oci load balancer
+   * @param clusterName name of WLS cluster
+   * @param domainUID domain UID
+   * @param loadBalancerName service name for OCI Load Balancer
+   */
+  public static void installAndVerifyOCILoadBalancer(
+      String namespace,
+      int portshttp,
+      String clusterName,
+      String domainUID,
+      String loadBalancerName) throws ApiException {
+    Map<String, String> annotations = new HashMap<>();
+    annotations.put("service.beta.kubernetes.io/oci-load-balancer-shape", "400Mbps");
+    Map<String, String> selectors = new HashMap<>();
+    Map<String, String> labels = new HashMap<>();
+    labels.put("loadbalancer", loadBalancerName);
+    selectors.put("weblogic.clusterName", clusterName);
+    selectors.put("weblogic.domainUID",domainUID);
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort()
+        .name("http")
+        .port(portshttp)
+        .targetPort(new IntOrString(portshttp))
+        .protocol("TCP"));
+
+    V1Service service = new V1Service()
+        .metadata(new V1ObjectMeta()
+            .name(loadBalancerName)
+            .namespace(namespace)
+            .labels(labels)
+            .annotations(annotations))
+        .spec(new V1ServiceSpec()
+            .ports(ports)
+            .selector(selectors)
+            .sessionAffinity("None")
+            .type("LoadBalancer"));
+    LoggingFacade logger = getLogger();
+    assertNotNull(service, "Can't create ocilb service, returns null");
+    assertDoesNotThrow(() -> createService(service), "Can't create OCI LoadBalancer service");
+    checkServiceExists(loadBalancerName,namespace);
+
+    // wait until the external IP is generated.
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info(
+                "Waiting for external IP to be generated in {0} (elapsed time {1}ms, remaining time {2}ms)",
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isOCILoadBalancerReady(
+            loadBalancerName,
+            labels, namespace), "isOCILoadBalancerReady failed with ApiException"));
   }
 
   /**
@@ -820,6 +885,7 @@ public class CommonTestUtils {
    * @param image the image name of Apache webtier
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
+   * @param managedServerPort the listenport of each managed server in cluster
    * @param domainUid the uid of the domain to which Apache will route the services
    * @return the Apache Helm installation parameters
    */
@@ -827,8 +893,9 @@ public class CommonTestUtils {
                                                   String image,
                                                   int httpNodePort,
                                                   int httpsNodePort,
+                                                  int managedServerPort,
                                                   String domainUid) throws IOException {
-    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, domainUid,
+    return installAndVerifyApache(apacheNamespace, image, httpNodePort, httpsNodePort, managedServerPort, domainUid,
         null, null, 0, null);
   }
 
@@ -839,6 +906,7 @@ public class CommonTestUtils {
    * @param image the image name of Apache webtier
    * @param httpNodePort the http nodeport of Apache
    * @param httpsNodePort the https nodeport of Apache
+   * @param managedServerPort the listenport of each managed server in cluster
    * @param domainUid the uid of the domain to which Apache will route the services
    * @param pvcName name of the Persistent Volume Claim which contains your own custom_mod_wl_apache.conf file
    * @param virtualHostName the VirtualHostName of the Apache HTTP server which is used to enable custom SSL config
@@ -850,6 +918,7 @@ public class CommonTestUtils {
                                                   String image,
                                                   int httpNodePort,
                                                   int httpsNodePort,
+                                                  int managedServerPort,
                                                   String domainUid,
                                                   String pvcName,
                                                   String virtualHostName,
@@ -888,6 +957,9 @@ public class CommonTestUtils {
       apacheParams
           .httpNodePort(httpNodePort)
           .httpsNodePort(httpsNodePort);
+    }
+    if (managedServerPort >= 0) {
+      apacheParams.managedServerPort(managedServerPort);
     }
 
     if (pvcName != null && clusterNamePortMap != null) {
@@ -1127,6 +1199,36 @@ public class CommonTestUtils {
         wlsLoggingExporterYamlFileLoc))
         .as("WebLogic Logging Exporter installation succeeds")
         .withFailMessage("WebLogic Logging Exporter installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Install WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully installed, false otherwise.
+   */
+  public static boolean installAndVerifyWlsRemoteConsole() {
+
+    assertThat(TestActions.installWlsRemoteConsole())
+        .as("WebLogic Remote Console installation succeeds")
+        .withFailMessage("WebLogic Remote Console installation failed")
+        .isTrue();
+
+    return true;
+  }
+
+  /**
+   * Shutdown WebLogic Remote Console.
+   *
+   * @return true if WebLogic Remote Console is successfully shutdown, false otherwise.
+   */
+  public static boolean shutdownWlsRemoteConsole() {
+
+    assertThat(TestActions.shutdownWlsRemoteConsole())
+        .as("WebLogic Remote Console shutdown succeeds")
+        .withFailMessage("WebLogic Remote Console shutdown failed")
         .isTrue();
 
     return true;
@@ -1770,6 +1872,19 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is restarted by comparing the pod's creation timestamp with the last timestamp.
+   *
+   * @param podName pod name to check
+   * @param domNamespace the Kubernetes namespace in which the domain exists
+   * @param lastCreationTime the previous creation time
+   */
+  public static Callable<Boolean> checkIsPodRestarted(String domNamespace,
+                                                      String podName,
+                                                      OffsetDateTime lastCreationTime) {
+    return isPodRestarted(podName, domNamespace, lastCreationTime);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -2096,7 +2211,7 @@ public class CommonTestUtils {
       boolean buildCoherence = false;
 
       for (String appSrcDir : appSrcDirList) {
-        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear")) {
+        if (appSrcDir.contains(".war") || appSrcDir.contains(".ear") || appSrcDir.contains(".jar")) {
           //remove from build
           buildAppDirList.remove(appSrcDir);
           archiveAppsList.add(appSrcDir);
@@ -2450,6 +2565,25 @@ public class CommonTestUtils {
             .namespace(namespace))
         .stringData(secretMap)), "Create secret failed with ApiException");
     assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Update a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to update
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword that is being changed to
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void updateRcuAccessSecret(String secretName, String namespace,
+      String rcuPrefix, String password, String rcuDbConnString) {
+
+    assertTrue(Kubernetes.deleteSecret(secretName, namespace),
+        String.format("create secret failed for %s", secretName));
+    createRcuAccessSecret(secretName, namespace, rcuPrefix, password, rcuDbConnString);
+
   }
 
   /**
@@ -3144,8 +3278,8 @@ public class CommonTestUtils {
       String namespace,
       String username,
       String password,
-      boolean expectValid) {
-
+      boolean expectValid,
+      String... args) {
     LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
@@ -3956,4 +4090,38 @@ public class CommonTestUtils {
     });
   }
 
+  /**
+   * Create an ingress in specified namespace and retry up to maxRetries times if fail.
+   * @param maxRetries max number of retries
+   * @param isTLS whether the ingress uses TLS
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   */
+  public static void createIngressAndRetryIfFail(int maxRetries,
+                                                 boolean isTLS,
+                                                 String ingressName,
+                                                 String namespace,
+                                                 Map<String, String> annotations,
+                                                 List<NetworkingV1beta1IngressRule> ingressRules,
+                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        if (isTLS) {
+          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+        } else {
+          createIngress(ingressName, namespace, annotations, ingressRules, null);
+        }
+        break;
+      } catch (ApiException apiEx) {
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ignore) {
+          //ignore
+        }
+      }
+    }
+  }
 }

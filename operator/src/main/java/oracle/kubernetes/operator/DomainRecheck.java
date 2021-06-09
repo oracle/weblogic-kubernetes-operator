@@ -36,7 +36,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.BEGIN_MANAGING_NAMESPACE;
+import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
 
 class DomainRecheck {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -57,7 +57,7 @@ class DomainRecheck {
     this(domainProcessor, domainNamespaces, false);
   }
 
-  private DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
+  DomainRecheck(DomainProcessor domainProcessor, DomainNamespaces domainNamespaces, boolean fullRecheck) {
     this.domainProcessor = domainProcessor;
     this.domainNamespaces = domainNamespaces;
     this.fullRecheck = fullRecheck;
@@ -94,9 +94,12 @@ class DomainRecheck {
 
       // we don't have the domain presence information yet
       // we add a logging context to pass the namespace information to the LoggingFormatter
-      packet.getComponents().put(
-          LoggingContext.LOGGING_CONTEXT_KEY,
-          Component.createFor(new LoggingContext().namespace(ns)));
+
+      if (isDomainNamespace) {
+        packet.getComponents().put(
+            LoggingContext.LOGGING_CONTEXT_KEY,
+            Component.createFor(new LoggingContext().namespace(ns)));
+      }
 
       V1SubjectRulesReviewStatus status = nss.getRulesReviewStatus().updateAndGet(prev -> {
         if (prev != null) {
@@ -125,7 +128,8 @@ class DomainRecheck {
 
     @Override
     public Step getDedicatedStrategySelection() {
-      return createStartNamespacesStep(Collections.singletonList(getOperatorNamespace()));
+      return Step.chain(new Namespaces.NamespaceListAfterStep(domainNamespaces),
+          createStartNamespacesStep(Collections.singletonList(getOperatorNamespace())));
     }
 
     @Override
@@ -212,10 +216,18 @@ class DomainRecheck {
   }
 
   private Step startNamespaceSteps(String ns) {
-    return Step.chain(
+    try (LoggingContext ignored =
+             setThreadContext().namespace(ns)) {
+      return Step.chain(
           createNamespaceReview(ns),
           new StartNamespaceBeforeStep(ns),
           domainNamespaces.readExistingResources(ns, domainProcessor));
+    }
+  }
+
+  // for testing
+  public Step createStartNamespaceBeforeStep(String ns) {
+    return new StartNamespaceBeforeStep(ns);
   }
 
   private class StartNamespaceBeforeStep extends Step {
@@ -228,11 +240,11 @@ class DomainRecheck {
 
     @Override
     public NextAction apply(Packet packet) {
+      if (domainNamespaces.shouldStartNamespace(ns)) {
+        return doNext(addNSWatchingStartingEventsStep(), packet);
+      }
       if (fullRecheck) {
         return doNext(packet);
-      } else if (domainNamespaces.shouldStartNamespace(ns)) {
-        LOGGER.info(BEGIN_MANAGING_NAMESPACE, ns);
-        return doNext(addNSWatchingStartingEventsStep(), packet);
       } else {
         return doEnd(packet);
       }
@@ -241,7 +253,7 @@ class DomainRecheck {
     private Step addNSWatchingStartingEventsStep() {
       return Step.chain(
           EventHelper.createEventStep(
-              new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns)),
+              domainNamespaces, new EventData(NAMESPACE_WATCHING_STARTED).namespace(ns).resourceName(ns), null),
           EventHelper.createEventStep(
               new EventData(EventHelper.EventItem.START_MANAGING_NAMESPACE)
                   .namespace(getOperatorNamespace()).resourceName(ns)),

@@ -9,7 +9,7 @@ and updates the domain using the [Update Domain Tool](https://github.com/oracle/
 In both cases, the sample uses the [Extract Domain Resource Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/kubernetes.md) to generate the `domain.yaml` file.
 
 **NOTE**: When introspecting an existing domain with WDT, the resulting model might need to be modified for compatibility
-with specific target environments, such as the Oracle WebLogic Server Kubernetes Operator. Also, you should update the
+with specific target environments, such as the WebLogic Kubernetes Operator. Also, you should update the
 `create-domain-inputs.yaml` file for operator specific input.
 
 This Domain in PV sample provides the following new functionality:
