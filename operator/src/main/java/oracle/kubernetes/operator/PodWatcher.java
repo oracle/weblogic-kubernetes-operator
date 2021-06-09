@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -29,9 +28,7 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -39,14 +36,8 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
-import oracle.kubernetes.operator.work.NextAction;
-import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.Domain;
-
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 
 /**
  * Watches for changes to pods.
@@ -331,55 +322,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Pod> responseStep) {
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
-
-    @Override
-    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
-      return new DefaultResponseStep<>(null) {
-        @Override
-        public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
-          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-          Optional.ofNullable(callResponse.getResult()).ifPresent(pod -> setServerPodFromEvent(info, pod));
-          if (isReady(callResponse.getResult())) {
-            resetWatchBackstopRecheckCount(info);
-            return proceedFromWait(packet, callResponse);
-          }
-          if (shouldWait(info)) {
-            // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
-            return doDelay(createReadAndIfReadyCheckStep(callback), packet,
-                    getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
-          } else {
-            // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
-            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
-                    info.getNamespace(), new MakeRightDomainStep(null)), packet);
-          }
-        }
-
-        private void resetWatchBackstopRecheckCount(DomainPresenceInfo info) {
-          Optional.ofNullable(info).ifPresent(DomainPresenceInfo::resetWatchBackstopRecheckCount);
-        }
-
-        private void setServerPodFromEvent(DomainPresenceInfo info, V1Pod pod) {
-          Optional.ofNullable(info).ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod), pod));
-        }
-
-        private NextAction proceedFromWait(Packet packet, CallResponse<V1Pod> callResponse) {
-          callback.proceedFromWait(callResponse.getResult());
-          return doNext(packet);
-        }
-
-        private boolean shouldWait(DomainPresenceInfo info) {
-          return info == null || info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount();
-        }
-
-        private String getPodLabel(V1Pod pod) {
-          return Optional.ofNullable(pod)
-                  .map(V1Pod::getMetadata)
-                  .map(V1ObjectMeta::getLabels)
-                  .map(m -> m.get(LabelConstants.SERVERNAME_LABEL))
-                  .orElse(null);
-        }
-      };
-    }
   }
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
@@ -418,7 +360,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     protected void logWaiting(String name) {
       LOGGER.fine(MessageKeys.WAITING_FOR_POD_READY, name);
     }
-
   }
 
   private class WaitForPodDeleteStep extends WaitForPodStatusStep {
@@ -442,20 +383,4 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       removeOnDeleteCallback(podName, callback);
     }
   }
-
-  private static class MakeRightDomainStep extends DefaultResponseStep {
-    MakeRightDomainStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
-      MakeRightDomainOperation makeRightDomainOperation =
-              (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
-      makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain)callResponse.getResult()));
-      makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
-      return super.onSuccess(packet, callResponse);
-    }
-  }
-
 }
