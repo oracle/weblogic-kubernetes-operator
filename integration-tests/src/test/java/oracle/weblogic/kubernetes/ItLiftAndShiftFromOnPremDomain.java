@@ -148,10 +148,12 @@ public class ItLiftAndShiftFromOnPremDomain {
 
   }
 
-  // Create a MiiDomain from an on prem domain.
-  // This test first uses WDT DiscoverDomain tool on an on-prem domain. This tool when used with
-  // target option wko, will create the necessary wdt model file, properties file, an archive file
-  // and a domain yaml file. The test then use the resulting model file to create an MiiDomain
+  /**
+   * Create a MiiDomain from an on prem domain.
+   * This test first uses WDT DiscoverDomain tool on an on-prem domain. This tool when used with
+   * target option wko, will create the necessary wdt model file, properties file, an archive file
+   * and a domain yaml file. The test then use the resulting model file to create an MiiDomain
+   */
   @Test
   @DisplayName("Create model in image domain and verify external admin services")
   public void testCreateMiiDomainWithClusterFromOnPremDomain() {
