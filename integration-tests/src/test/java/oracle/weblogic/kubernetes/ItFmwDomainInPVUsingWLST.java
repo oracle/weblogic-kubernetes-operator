@@ -151,7 +151,7 @@ public class ItFmwDomainInPVUsingWLST {
     final int managedServerPort = 8001;
     final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(30000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv";
     final String pvcName = domainUid + "-pvc";
@@ -281,7 +281,7 @@ public class ItFmwDomainInPVUsingWLST {
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
-    
+
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 

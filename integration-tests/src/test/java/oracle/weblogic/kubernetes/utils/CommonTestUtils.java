@@ -1304,7 +1304,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain, 
+  public static void createDomainAndVerify(Domain domain,
                                            String domainNamespace,
                                            String... domVersion) {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
@@ -2780,7 +2780,7 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31060, 31200);
+    int grafanaNodePort = getNextFreePort();
     logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
@@ -2793,7 +2793,7 @@ public class CommonTestUtils {
     } catch (AssertionError err) {
       //retry with different nodeport
       uninstallGrafana(grafanaHelmParams);
-      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaNodePort = getNextFreePort();
       grafanaParams = new GrafanaParams()
           .helmParams(grafanaHelmParams)
           .nodePort(grafanaNodePort);

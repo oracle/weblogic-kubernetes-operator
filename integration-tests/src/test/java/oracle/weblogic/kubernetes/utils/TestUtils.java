@@ -20,6 +20,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * The utility class for tests.
@@ -176,6 +177,26 @@ public class TestUtils {
     }
     logger.info("Can not find free port between {0} and {1}", from, to);
     return port;
+  }
+
+  private static int port = 30000;
+  private static final int END_PORT = 32767;
+
+  /**
+   * Get the next free port between port and END_PORT.
+   *
+   * @return the next free port number, if there is no free port between the range, return -1
+   */
+  public static synchronized int getNextFreePort() {
+    LoggingFacade logger = getLogger();
+    for (; port <= END_PORT; port++) {
+      if (isLocalPortFree(port)) {
+        logger.info("next free port is: {0}", port);
+        break;
+      }
+    }
+    assertFalse(port > END_PORT, "Could not find free port between " + port + " and " + END_PORT);
+    return -1;
   }
 
   /**
