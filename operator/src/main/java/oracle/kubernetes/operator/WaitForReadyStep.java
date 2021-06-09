@@ -25,7 +25,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
 abstract class WaitForReadyStep<T> extends Step {
 
   private static final int DEFAULT_RECHECK_SECONDS = 5;
-  private static final int DEFAULT_RECHECK_COUNT = 24;
+  private static final int DEFAULT_RECHECK_COUNT = 60;
 
   static int getWatchBackstopRecheckDelaySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
