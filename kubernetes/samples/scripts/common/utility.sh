@@ -272,23 +272,23 @@ function getKubernetesClusterIP {
 function buildServerPodResources {
 
   if [ -n "${serverPodMemoryRequest}" ]; then
-    local memoryRequest="        memory\: \"${serverPodMemoryRequest}\"\n"
+    local memoryRequest="         memory\: \"${serverPodMemoryRequest}\"\n"
   fi
   if [ -n "${serverPodCpuRequest}" ]; then
-    local cpuRequest="       cpu\: \"${serverPodCpuRequest}\"\n"
+    local cpuRequest="        cpu\: \"${serverPodCpuRequest}\"\n"
   fi
   if [ -n "${memoryRequest}" ] || [ -n "${cpuRequest}" ]; then
-    local requests="      requests\: \n$memoryRequest $cpuRequest"
+    local requests="       requests\: \n$memoryRequest $cpuRequest"
   fi
 
   if [ -n "${serverPodMemoryLimit}" ]; then
-    local memoryLimit="        memory\: \"${serverPodMemoryLimit}\"\n"
+    local memoryLimit="         memory\: \"${serverPodMemoryLimit}\"\n"
   fi
   if [ -n "${serverPodCpuLimit}" ]; then
-    local cpuLimit="       cpu\: \"${serverPodCpuLimit}\"\n"
+    local cpuLimit="        cpu\: \"${serverPodCpuLimit}\"\n"
   fi
   if [ -n "${memoryLimit}" ] || [ -n "${cpuLimit}" ]; then
-    local limits="      limits\: \n$memoryLimit $cpuLimit"
+    local limits="       limits\: \n$memoryLimit $cpuLimit"
   fi
 
   if [ -n "${requests}" ] || [ -n "${limits}" ]; then
@@ -686,7 +686,7 @@ function updateModelFile {
   sed -i -e "s:%MII_CONFIG_MAP%:${miiConfigMap}:g" ${modelFile}
   sed -i -e "s:%WDT_DOMAIN_TYPE%:${wdtDomainType}:g" ${modelFile}
 
-  #buildServerPodResources
+  buildServerPodResources
   if [ -z "${serverPodResources}" ]; then
     sed -i -e "/%OPTIONAL_SERVERPOD_RESOURCES%/d" ${modelFile}
   else
