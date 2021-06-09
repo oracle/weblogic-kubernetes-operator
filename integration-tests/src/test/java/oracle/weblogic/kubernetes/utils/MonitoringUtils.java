@@ -45,10 +45,11 @@ public class MonitoringUtils {
         "%s/get%s.sh", applicationDir, monitoringExporterVersion);
     checkDirectory(applicationDir);
     logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
+    String monitoringExporterRelease = monitoringExporterVersion.equals("2.0") ? "2.0.0" : monitoringExporterVersion;
     String curlDownloadCmd = String.format("cd %s && "
             + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
         applicationDir,
-        monitoringExporterVersion,
+        monitoringExporterRelease,
         monitoringExporterVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(new Command()

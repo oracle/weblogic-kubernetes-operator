@@ -237,7 +237,7 @@ public interface TestConstants {
   //monitoring constants
   public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_VERSION"))
-      .orElse("1.3.0");
+      .orElse("2.0");
   public static final String MONITORING_EXPORTER_BRANCH = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_BRANCH"))
       .orElse("master");
