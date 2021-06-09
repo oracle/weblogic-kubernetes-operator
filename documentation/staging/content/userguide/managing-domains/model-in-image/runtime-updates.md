@@ -168,7 +168,7 @@ and a description of workarounds and alternatives when applicable:
 
  - There is no way to directly change the MBean name of an attribute.
    Instead, you can remove a named MBean using the `!` syntax as described
-   in [Supported Updates](supported-updates), and then add a new one as a replacement.
+   in [Supported Updates](#supported-updates), and then add a new one as a replacement.
 
  - You cannot change the domain name at runtime.
 

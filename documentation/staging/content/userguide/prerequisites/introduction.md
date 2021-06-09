@@ -21,7 +21,7 @@ For the current production release 3.2.3:
 * Container images based on Oracle Linux 8 are now supported. The Oracle Container Registry hosts container images
   based on both Oracle Linux 7 and 8, including Oracle WebLogic Server 14.1.1.0.0 images based on Java 8 and 11.
 * You must have the `cluster-admin` role to install the operator.  The operator does
-  not need the `cluster-admin` role at runtime.
+  not need the `cluster-admin` role at runtime. For more information, see the role-based access control, [RBAC]({{< relref "/security/rbac.md" >}}), documentation.
 * We do not currently support running WebLogic in non-Linux containers.
 
 

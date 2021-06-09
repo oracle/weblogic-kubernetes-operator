@@ -49,7 +49,7 @@ $ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).  
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the envoy container `istio-proxy`.
 

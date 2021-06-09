@@ -16,7 +16,7 @@ weight: 2
   * [Debugging options](#debugging-options)
 * [Common mistakes and solutions](#common-mistakes-and-solutions)
 
-Note that the operator Helm chart is available from the GitHub chart repository. For more details, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation/_index.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
+Note that the operator Helm chart is available from the GitHub chart repository. For more details, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
 
 #### Useful Helm operations
 
