@@ -33,17 +33,17 @@
 #
 #   examples:
 #     trace "Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] Situation normal.
 #
 #     trace INFO "Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][INFO] Situation normal.
 #
 #     trace "Info: Situation normal."
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][INFO] Info: Situation normal.
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][INFO] Info: Situation normal.
 #
 #     ls 2>&1 | tracePipe FINE "ls output: "
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file1
-#     @[2018-09-28T18:10:52.417 UTC][myscript.sh:91][FINE] ls output: file2
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] ls output: file1
+#     @[2018-09-28T18:10:52.417000Z][myscript.sh:91][FINE] ls output: file2
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
@@ -150,7 +150,7 @@ function traceDirs() {
   local indir
   local val_indir
   for indir in $*; do
-    eval "val_indir=\"\$${indir}\""
+    eval "val_indir=\"\${indir}\""
     [ -z "${val_indir}" ] && continue
     trace "Directory trace for $indir=${val_indir} ($keyword)"
     local cnt=0
@@ -167,21 +167,15 @@ function traceDirs() {
 }
 
 # timestamp
-#   purpose:  echo timestamp in the form yyyymmddThh:mm:ss.mmm ZZZ
-#   example:  20181001T14:00:00.001 UTC
+#   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
+#   example:  2018-10-01T14:00:00.000001Z
 function timestamp() {
-  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S %N %s %Z' 2>&1`"
+  local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
-    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S 000000 %s %Z' 2>&1`"
+    timestamp="`date -u '+%Y-%m-%dT%H:%M:%S.000000Z' 2>&1`"
   fi
-  local ymdhms="`echo $timestamp | awk '{ print $1 }'`"
-  # convert nano to milli
-  local milli="`echo $timestamp | awk '{ print $2 }' | sed 's/\(^...\).*/\1/'`"
-  local secs_since_epoch="`echo $timestamp | awk '{ print $3 }'`"
-  local millis_since_opoch="${secs_since_epoch}${milli}"
-  local timezone="`echo $timestamp | awk '{ print $4 }'`"
-  echo "${ymdhms}.${milli} ${timezone}"
+  echo "${timestamp}"
 }
 
 # 
@@ -193,9 +187,9 @@ function timestamp() {
 #            (Pass '-q' to suppress FINE tracing.)
 #
 #   sample:  checkEnv HOST NOTSET1 USER NOTSET2
-#            @[2018-10-05T22:48:04.368 UTC][FINE] HOST='esscupcakes'
-#            @[2018-10-05T22:48:04.393 UTC][FINE] USER='friendly'
-#            @[2018-10-05T22:48:04.415 UTC][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
+#            @[2018-10-05T22:48:04.368000Z][FINE] HOST='esscupcakes'
+#            @[2018-10-05T22:48:04.393000Z][FINE] USER='friendly'
+#            @[2018-10-05T22:48:04.415000Z][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
 function checkEnv() {
   local do_fine="true"

@@ -143,6 +143,8 @@ public interface TestConstants {
 
   public static final String K8S_NODEPORT_HOST = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOST"))
         .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostAddress()));
+  public static final String K8S_NODEPORT_HOSTNAME = Optional.ofNullable(System.getenv("K8S_NODEPORT_HOSTNAME"))
+        .orElse(assertDoesNotThrow(() -> InetAddress.getLocalHost().getHostName()));
   public static final String RESULTS_BASE = System.getenv().getOrDefault("RESULT_ROOT",
       System.getProperty("java.io.tmpdir") + "/it-testsresults");
 
