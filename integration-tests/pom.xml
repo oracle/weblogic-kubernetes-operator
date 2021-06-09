@@ -300,5 +300,31 @@
                </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>kind-sequential</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorWlsUpgrade,
+                  **/ItDedicatedMode,
+                  **/ItT3Channel
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>kind-parallel</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <excludes-failsafe>
+                 **/ItOperatorWlsUpgrade,
+                 **/ItDedicatedMode,
+                 **/ItT3Channel,
+                 **/ItOpUpgradeFmwDomainInPV,
+                 **/ItOCILoadBalancer,
+                 **/ItIstioCrossClusters*
+                </excludes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
