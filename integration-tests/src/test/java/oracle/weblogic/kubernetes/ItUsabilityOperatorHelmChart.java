@@ -9,9 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -107,11 +110,12 @@ class ItUsabilityOperatorHelmChart {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
-
   // domain constants
   private final String domain1Uid = "usabdomain1";
   private final String domain2Uid = "usabdomain2";
   private final String domain3Uid = "usabdomain3";
+  private final String domain4Uid = "usabdomain4";
+
   private final String clusterName = "cluster-1";
   private final int managedServerPort = 8001;
   private final int replicaCount = 2;
@@ -740,6 +744,72 @@ class ItUsabilityOperatorHelmChart {
     }
   }
 
+
+  /**
+   * Install the Operator successfully.
+   * Create domain1 and verify the domain is started
+   * Upgrade the operator helm chart domainNamespaces to include namespace for domain2
+   * Verify both domains are managed by the operator by making a REST API call
+   * Call helm upgrade to remove the first domain from operator domainNamespaces
+   * Verify it can't be managed by operator anymore.
+   * Test fails when an operator fails to manage the domains as expected
+   */
+  @Test
+  @DisplayName("Create domain1, domain2 in the same namespace managed by operator ,"
+      + " verify scaling via script and restAPI")
+  public void testTwoDomainsInSameNameSpaceOnOperator() {
+
+    String opReleaseName = OPERATOR_RELEASE_NAME;
+    HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
+        .namespace(op2Namespace)
+        .chartDir(OPERATOR_CHART_DIR);
+    try {
+      // install operator
+      String opServiceAccount = op2Namespace + "-sa";
+      HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
+          0, op1HelmParams, domain2Namespace).getHelmParams();
+      assertNotNull(opHelmParams, "Can't install operator");
+      int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
+      assertTrue(externalRestHttpsPort != -1,
+          "Could not get the Operator external service node port");
+      logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+      if (!isDomain2Running) {
+        logger.info("Installing and verifying domain");
+        assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
+            "can't start or verify domain in namespace " + domain2Namespace);
+        isDomain2Running = true;
+      }
+      logger.info("Installing and verifying domain");
+      assertTrue(createVerifyDomain(domain2Namespace, domain4Uid),
+          "can't start or verify domain4 in namespace " + domain2Namespace);
+
+      assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain4 " + domain2Namespace + " scaling operation failed");
+      String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName1, domain2Namespace);
+      assertDoesNotThrow(() ->
+              checkPodExists(managedServerPodName1, domain4Uid, domain2Namespace),
+          "operator failed to manage domain1, scaling was not succeeded");
+
+      logger.info("Domain4 scaled to 3 servers");
+      assertDoesNotThrow(() ->
+      scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
+          "scaling was not succeeded");
+      assertDoesNotThrow(() ->
+              checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
+          "operator failed to manage domain1, scaling was not succeeded");
+      logger.info("Domain4 scaled to 2 servers");
+    } finally {
+      uninstallOperator(op1HelmParams);
+      deleteSecret(OCIR_SECRET_NAME,op2Namespace);
+      cleanUpSA(op2Namespace);
+    }
+  }
+
+
+
   private boolean createVerifyDomain(String domainNamespace, String domainUid) {
 
     // create and verify the domain
@@ -767,12 +837,12 @@ class ItUsabilityOperatorHelmChart {
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
+    String adminSecretName = "weblogic-credentials-" + domainUid;
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
+    String encryptionSecretName = "encryptionsecret" + domainUid;
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     // construct a list of oracle.weblogic.domain.Cluster objects to be used in the domain custom resource
@@ -1109,5 +1179,49 @@ class ItUsabilityOperatorHelmChart {
     } else {
       return false;
     }
+  }
+  private void scaleViaScript(String opNamespace, String domainNamespace,
+                              String domainUid, String scalingAction, String clusterName, String opServiceAccount
+  , int scalingSize) throws ApiException, InterruptedException {
+    StringBuffer scalingCommand = new StringBuffer("export INTERNAL_OPERATOR_CERT=")
+        .append("`cat ./internal-identity/internalOperatorCert`")
+        .append("   && ./scalingAction.sh ")
+        .append(" --action=")
+        .append(scalingAction)
+        .append(" --domain_uid=")
+        .append(domainUid)
+        .append(" --wls_domain_namespace=")
+        .append(domainNamespace)
+        .append(" --cluster_name=")
+        .append(clusterName)
+        .append(" --operator_namespace=")
+        .append(opNamespace)
+        .append(" --operator_service_account=")
+        .append(opServiceAccount)
+        .append(" --scaling_size=")
+        .append(scalingSize);
+
+
+    String commandToExecuteInsidePod = scalingCommand.toString();
+
+    String labelSelector = String.format("weblogic.operatorName in (%s)", opNamespace);
+    V1Pod operatorPod = assertDoesNotThrow(() ->
+            Kubernetes.getPod(opNamespace, labelSelector, "weblogic-operator-"),
+        String.format("Could not get the server Pod {0} in namespace {1}",
+            "weblogic-operator", opNamespace));
+
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
+        "/bin/sh", "-c", commandToExecuteInsidePod),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
+
   }
 }
