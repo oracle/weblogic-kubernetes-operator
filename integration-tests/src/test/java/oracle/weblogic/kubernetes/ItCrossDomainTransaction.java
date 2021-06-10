@@ -421,7 +421,7 @@ public class ItCrossDomainTransaction {
 
     // No extra header info 
     assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,domain1AdminServiceNodePort,
-                 "mdbtopic","cluster-1","",
+                 "", "mdbtopic","cluster-1",
                  ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
              "MDB application can not be activated on domain1/cluster");
 

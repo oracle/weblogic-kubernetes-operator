@@ -3282,8 +3282,9 @@ public class CommonTestUtils {
     logger.info("curl command {0}", curlString);
     withStandardRetryPolicy 
         .conditionEvaluationListener(
-            condition -> logger.info("Waiting for local queue to be updated "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition -> logger.info("Waiting for Application {0} to be active "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+                application,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> {
