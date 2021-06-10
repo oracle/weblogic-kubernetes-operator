@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -795,7 +794,7 @@ class ItUsabilityOperatorHelmChart {
 
       logger.info("Domain4 scaled to 3 servers");
       assertDoesNotThrow(() ->
-      scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
+          scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
@@ -1180,9 +1179,10 @@ class ItUsabilityOperatorHelmChart {
       return false;
     }
   }
+
   private void scaleViaScript(String opNamespace, String domainNamespace,
-                              String domainUid, String scalingAction, String clusterName, String opServiceAccount
-  , int scalingSize) throws ApiException, InterruptedException {
+                              String domainUid, String scalingAction, String clusterName,
+                              String opServiceAccount, int scalingSize) throws ApiException, InterruptedException {
     StringBuffer scalingCommand = new StringBuffer("export INTERNAL_OPERATOR_CERT=")
         .append("`cat ./internal-identity/internalOperatorCert`")
         .append("   && ./scalingAction.sh ")
