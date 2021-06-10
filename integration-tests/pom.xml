@@ -315,15 +315,15 @@
         <profile>
             <id>kind-parallel</id>
             <properties>
-                <skipITs>true</skipITs>
-                <excludes-failsafe>
-                 **/ItOperatorWlsUpgrade,
-                 **/ItDedicatedMode,
-                 **/ItT3Channel,
-                 **/ItOpUpgradeFmwDomainInPV,
-                 **/ItOCILoadBalancer,
-                 **/ItIstioCrossClusters*
-                </excludes-failsafe>
+                <skipITs>false</skipITs>
+                <excludes>
+                    <exclude>**/ItOperatorWlsUpgrade</exclude>
+                    <exclude>**/ItDedicatedMode</exclude>
+                    <exclude>**/ItT3Channel</exclude>
+                    <exclude>**/ItOpUpgradeFmwDomainInPV</exclude>
+                    <exclude>**/ItOCILoadBalancer</exclude>
+                    <exclude>**/ItIstioCrossClusters</exclude>
+                </excludes>
             </properties>
         </profile>
     </profiles>
