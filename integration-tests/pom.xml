@@ -315,7 +315,7 @@
         <profile>
             <id>kind-parallel</id>
             <properties>
-                <skipITs>false</skipITs>
+                <skipITs>true</skipITs>
                 <excludes-failsafe>
                  **/ItOperatorWlsUpgrade,
                  **/ItDedicatedMode,
