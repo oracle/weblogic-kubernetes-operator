@@ -212,7 +212,7 @@ public class BuildApplication {
    * @return V1Pod created pod object
    * @throws ApiException when create pod fails
    */
-  private static V1Pod setupWebLogicPod(String namespace, V1Container container) {
+  public static V1Pod setupWebLogicPod(String namespace, V1Container container) {
     final LoggingFacade logger = getLogger();
     ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
         .and().with().pollInterval(2, SECONDS)
