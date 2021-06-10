@@ -22,6 +22,7 @@
         <wdt.download.url>https://github.com/oracle/weblogic-deploy-tooling/releases/latest</wdt.download.url>
         <wit.download.url>https://github.com/oracle/weblogic-image-tool/releases/latest</wit.download.url>
         <includes-failsafe>**/It*</includes-failsafe>
+        <excludes-failsafe></excludes-failsafe>
         <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
@@ -85,7 +86,9 @@
                         </include>
                     </includes>
                     <excludes>
-                        <exclude/>
+                        <exclude>
+                            ${excludes-failsafe}
+                        </exclude>
                     </excludes>
                 </configuration>
 
@@ -316,14 +319,14 @@
             <id>kind-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
-                <excludes>
-                    <exclude>**/ItOperatorWlsUpgrade</exclude>
-                    <exclude>**/ItDedicatedMode</exclude>
-                    <exclude>**/ItT3Channel</exclude>
-                    <exclude>**/ItOpUpgradeFmwDomainInPV</exclude>
-                    <exclude>**/ItOCILoadBalancer</exclude>
-                    <exclude>**/ItIstioCrossClusters</exclude>
-                </excludes>
+                <excludes-failsafe>
+                  **/ItOperatorWlsUpgrade,
+                  **/ItDedicatedMode,
+                  **/ItT3Channel,
+                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOCILoadBalancer,
+                  **/ItIstioCrossClusters>
+                </excludes-failsafe>
             </properties>
         </profile>
     </profiles>
