@@ -746,16 +746,13 @@ class ItUsabilityOperatorHelmChart {
 
   /**
    * Install the Operator successfully.
-   * Create domain1 and verify the domain is started
-   * Upgrade the operator helm chart domainNamespaces to include namespace for domain2
+   * Create domain1, domain2 in the same namespace and verify the domains are started
    * Verify both domains are managed by the operator by making a REST API call
-   * Call helm upgrade to remove the first domain from operator domainNamespaces
-   * Verify it can't be managed by operator anymore.
-   * Test fails when an operator fails to manage the domains as expected
+   * Verify domains scaling by calling scalingAction.sh script
    */
   @Test
   @DisplayName("Create domain1, domain2 in the same namespace managed by operator ,"
-      + " verify scaling via script and restAPI")
+      + " verify scaling via scalingAction.sh script and restAPI")
   public void testTwoDomainsInSameNameSpaceOnOperator() {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
@@ -790,16 +787,35 @@ class ItUsabilityOperatorHelmChart {
           managedServerPodName1, domain2Namespace);
       assertDoesNotThrow(() ->
               checkPodExists(managedServerPodName1, domain4Uid, domain2Namespace),
-          "operator failed to manage domain1, scaling was not succeeded");
-
+          "operator failed to manage domain4, scaling was not succeeded");
       logger.info("Domain4 scaled to 3 servers");
+
+      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,3,
+          externalRestHttpsPort,op2Namespace, opServiceAccount),
+          "Domain2 " + domain2Namespace + " scaling operation failed");
+      String managedServerPodName2 = domain2Uid + managedServerPrefix + 3;
+      logger.info("Checking that the managed server pod {0} exists in namespace {1}",
+          managedServerPodName2, domain2Namespace);
+      assertDoesNotThrow(() ->
+              checkPodExists(managedServerPodName2, domain2Uid, domain2Namespace),
+          "operator failed to manage domain2, scaling was not succeeded");
+
+      logger.info("Domain2 scaled to 3 servers");
+
       assertDoesNotThrow(() ->
           scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
-          "operator failed to manage domain1, scaling was not succeeded");
+          " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
+      assertDoesNotThrow(() ->
+              scaleViaScript(op2Namespace,domain2Namespace,domain2Uid,"scaleDown",clusterName,opServiceAccount,1),
+          "scaling was not succeeded");
+      assertDoesNotThrow(() ->
+              checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
+          " scaling via scalingAction.sh script was not succeeded for domain2");
+      logger.info("Domain2 scaled to 2 servers");
     } finally {
       uninstallOperator(op1HelmParams);
       deleteSecret(OCIR_SECRET_NAME,op2Namespace);
