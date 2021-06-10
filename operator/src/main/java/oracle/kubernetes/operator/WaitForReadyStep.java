@@ -232,8 +232,9 @@ abstract class WaitForReadyStep<T> extends Step {
       }
 
       private boolean shouldWait(CallResponse<T> callResponse, DomainPresenceInfo info) {
-        return info == null || (info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount())
-                || ((callResponse != null) && (callResponse.getResult() instanceof V1Job));
+        return ((callResponse != null) && (callResponse.getResult() instanceof V1Job))
+                || (info == null)
+                || (info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount());
       }
 
       private String getPodLabel(V1Pod pod, String labelName) {
