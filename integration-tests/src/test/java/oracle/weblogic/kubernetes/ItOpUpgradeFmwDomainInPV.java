@@ -214,7 +214,7 @@ public class ItOpUpgradeFmwDomainInPV {
    * Delete Operator and install latest Operator.
    * Verify Domain resource version is updated while domain is in running state.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 2.6.0 to main")
   public void testOperatorFmwUpgradeFrom260ToMain() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -223,7 +223,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.0.3 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   public void testOperatorFmwUpgradeFrom303ToMain() {
     this.namespaces = namespaces;
@@ -233,7 +233,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.0.4 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.0.4 to main")
   public void testOperatorFmwUpgradeFrom304ToMain() {
     this.namespaces = namespaces;
@@ -243,7 +243,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.1.3 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   public void testOperatorFmwUpgradeFrom313ToMain() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -252,7 +252,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.1.4 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.1.4 to main")
   public void testOperatorFmwUpgradeFrom314ToMain() {
     installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -261,7 +261,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.2.0 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   public void testOperatorFmwUpgradeFrom320ToMain() {
     installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -270,7 +270,7 @@ public class ItOpUpgradeFmwDomainInPV {
   /**
    * Operator upgrade from 3.2.1 to latest with a FMW Domain.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 3.2.1 to main")
   public void testOperatorFmwUpgradeFrom321ToMain() {
     installAndUpgradeOperator("3.2.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);

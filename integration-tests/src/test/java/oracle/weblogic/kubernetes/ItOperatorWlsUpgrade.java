@@ -26,7 +26,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
+//import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -136,7 +136,7 @@ public class ItOperatorWlsUpgrade {
    * Delete Operator and install latest Operator 
    * Verify Domain resource version is updated while domain is in running state.
    */
-  @Test
+  //@Test
   @DisplayName("Upgrade Operator from 2.6.0 to main")
   public void testOperatorWlsUpgradeFrom260ToMain() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -145,7 +145,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.0.3 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
@@ -156,7 +156,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.0.4 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
@@ -167,7 +167,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.1.3 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
@@ -178,7 +178,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.1.4 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
@@ -189,7 +189,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.2.0 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
@@ -200,7 +200,7 @@ public class ItOperatorWlsUpgrade {
   /**
    * Operator upgrade from 3.2.1 to latest.
    */
-  @ParameterizedTest
+  //@ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.1 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   public void testOperatorWlsUpgradeFrom321ToMain(String domainType) {

@@ -305,10 +305,10 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                  **/ItOpUpgradeFmwDomainInPV,
-                  **/ItOperatorWlsUpgrade,
+                  **/ItT3Channel,
                   **/ItDedicatedMode,
-                  **/ItT3Channel
+                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorWlsUpgrade
                 </includes-failsafe>
             </properties>
         </profile>

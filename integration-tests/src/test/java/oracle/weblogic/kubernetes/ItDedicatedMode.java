@@ -173,7 +173,7 @@ class ItDedicatedMode {
    *   Create a WebLogic Domain with the same namespace as Operator's namespace.
    *   Verify that the WebLogic domain whose namespace is same as Operator's namespace comes up.
    */
-  @Test
+  //@Test
   @Order(2)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that the domain deployed in the operator's namespace comes up")
@@ -188,7 +188,7 @@ class ItDedicatedMode {
    * Test that when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart,
    * scaling up cluster-1 in domain1Namespace succeeds.
    */
-  @Test
+  //@Test
   @Order(3)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify it succeeds")
   public void testDedicatedModeSameNamespaceScale() {
@@ -209,7 +209,7 @@ class ItDedicatedMode {
    * the CRD with a lower than expected version is present, Operator fails with error
    * if it has no permission to overwrite the CRD.
    */
-  @Test
+  //@Test
   @Order(4)
   @Disabled("Disable the test because the Operator has permission to overwrite the CRD")
   @DisplayName("Create a CRD with a lower than expected version and verify that Operator fails with error")
@@ -247,7 +247,7 @@ class ItDedicatedMode {
    * Test when domainNamespaceSelectionStrategy is set to Dedicated for the Operator Helm Chart and
    * the CRD is not present or is deleted, Operator fails with error if it has no permission to create the CRD.
    */
-  @Test
+  //@Test
   @Order(5)
   @Disabled("Disable the test because the Operator has permission to create the CRD")
   @DisplayName("Delete the CRD and verify that Operator fails with error")
