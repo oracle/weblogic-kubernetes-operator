@@ -3249,6 +3249,52 @@ public class CommonTestUtils {
 
   }
 
+  /**
+   * Check if the the application is active for a given weblogic target.
+   * @param host hostname to construct the REST url
+   * @param port the port construct the REST url
+   * @param headers extra header info to pass to the REST url
+   * @param application name of the application
+   * @param target the weblogic target for the application
+   * @param username username to log into the system 
+   * @param password password for the username
+   */
+  public static boolean checkAppIsActive(
+      String host,
+      int    port,
+      String headers,
+      String application,
+      String target,
+      String username,
+      String password
+  ) {
+
+    LoggingFacade logger = getLogger();
+    String curlString = String.format("curl -v --show-error --noproxy '*' "
+           + "--user " + username + ":" + password + " " + headers  
+           + " -H X-Requested-By:MyClient -H Accept:application/json "
+           + "-H Content-Type:application/json " 
+           + " -d \"{ target: '" + target + "' }\" "
+           + " -X POST "
+           + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
+           + application + "/getState", host, port);
+
+    logger.info("curl command {0}", curlString);
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for Application {0} to be active "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+                application,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("STATE_ACTIVE");
+          };
+        }));
+    return true;
+  }
+
   /** Create a persistent volume.
    * @param pvName name of the persistent volume to create
    * @param domainUid domain UID
