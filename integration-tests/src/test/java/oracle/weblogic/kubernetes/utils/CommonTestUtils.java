@@ -3385,6 +3385,7 @@ public class CommonTestUtils {
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
   }
 
+
   /**
    * Create a job to create a domain in persistent volume.
    *
@@ -3397,11 +3398,33 @@ public class CommonTestUtils {
    */
   public static void createDomainJob(String image, String pvName,
                                String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
+    createDomainJob(image, pvName, pvcName, domainScriptCM, namespace, jobContainer, null);
+  }
+
+  /**
+   * Create a job to create a domain in persistent volume.
+   *
+   * @param image             image name used to create the domain
+   * @param pvName            name of the persistent volume to create domain in
+   * @param pvcName           name of the persistent volume claim
+   * @param domainScriptCM    configmap holding domain creation script files
+   * @param namespace         name of the domain namespace in which the job is created
+   * @param jobContainer      V1Container with job commands to create domain
+   * @param podAnnotationsMap annotations for the job pod
+   */
+  public static void createDomainJob(String image, String pvName, String pvcName, String domainScriptCM,
+                                     String namespace, V1Container jobContainer, Map podAnnotationsMap) {
 
     LoggingFacade logger = getLogger();
     logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
+
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+    if (podAnnotationsMap != null) {
+      podTemplateSpec.metadata(new V1ObjectMeta()
+          .annotations(podAnnotationsMap));
+    }
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -3409,7 +3432,7 @@ public class CommonTestUtils {
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
+            .template(podTemplateSpec
                 .spec(new V1PodSpec()
                     .restartPolicy("Never")
                     .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))

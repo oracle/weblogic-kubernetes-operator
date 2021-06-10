@@ -14,19 +14,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
-import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobCondition;
-import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
-import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -61,21 +53,16 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
-import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
@@ -89,7 +76,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests to create domain in persistent volume using WLST.
@@ -407,105 +393,11 @@ public class ItIstioDomainInPV  {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
-
-  }
-
-  /**
-   * Create a job to create a domain in persistent volume.
-   *
-   * @param pvName         name of the persistent volume to create domain in
-   * @param pvcName        name of the persistent volume claim
-   * @param domainScriptCM configmap holding domain creation script files
-   * @param namespace      name of the domain namespace in which the job is created
-   * @param jobContainer   V1Container with job commands to create domain
-   */
-  private void createDomainJob(String pvName,
-                               String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
-    logger.info("Running Kubernetes job to create domain");
     Map<String, String> annotMap = new HashMap<String, String>();
     annotMap.put("sidecar.istio.io/inject", "false");
-
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .metadata(new V1ObjectMeta()
-                    .annotations(annotMap))
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
-                    .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
-                        .name("create-weblogic-domain-onpv-container")
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .imagePullPolicy("Always")
-                        .ports(Arrays.asList(new V1ContainerPort()
-                            .containerPort(7001)))
-                        .volumeMounts(Arrays.asList(
-                            new V1VolumeMount()
-                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
-                            new V1VolumeMount()
-                                .name(pvName) // location to write domain
-                                .mountPath("/shared"))))) // mounted under /shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName)),
-                        new V1Volume()
-                            .name("create-weblogic-domain-job-cm-volume")
-                            .configMap(
-                                new V1ConfigMapVolumeSource()
-                                    .name(domainScriptCM)))) //config map containing domain scripts
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));    // this secret is used only on non-kind cluster
-
-    String jobName = assertDoesNotThrow(()
-        -> createNamespacedJob(jobBody), "Failed to create Job");
-
-    logger.info("Checking if the domain creation job {0} completed in namespace {1}",
-        jobName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                    + "(elapsed time {2} ms, remaining time {3} ms)",
-                jobName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(jobCompleted(jobName, null, namespace));
-
-    // check job status and fail test if the job failed to create domain
-    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
-        "Getting the job failed");
-    if (job != null) {
-      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
-          .findAny()
-          .orElse(null);
-      if (jobCondition != null) {
-        logger.severe("Job {0} failed to create domain", jobName);
-        List<V1Pod> pods = assertDoesNotThrow(()
-            -> listPods(namespace, "job-name=" + jobName).getItems(),
-            "Listing pods failed");
-        if (!pods.isEmpty()) {
-          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
-              "Failed to get pod log");
-          logger.severe(podLog);
-          fail("Domain create job failed");
-        }
-      }
-    }
+    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
+        namespace, jobCreationContainer, annotMap);
 
   }
-
-
 
 }
