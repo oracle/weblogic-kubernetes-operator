@@ -36,6 +36,8 @@ spec:
             prefix: /cdttxservlet
         - uri:
             prefix: /jmsservlet
+        - uri:
+            prefix: /management
         - port: 7001
       route:
         - destination:
