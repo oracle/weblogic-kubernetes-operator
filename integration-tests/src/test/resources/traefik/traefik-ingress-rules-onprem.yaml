@@ -1,0 +1,33 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: @domainuid@-http-ingress-rule
+  namespace: @NS@
+  annotations:
+    kubernetes.io/ingress.class: traefik
+spec:
+  routes:
+  - kind: Rule
+    match: PathPrefix(`/opdemo`)
+    services:
+    - kind: Service
+      name: @domainuid@-cluster-cluster-1
+      namespace: @NS@
+      port: 8001
+  - kind: Rule
+    match: PathPrefix(`/console`)
+    services:
+    - kind: Service
+      name: @domainuid@-admin-server
+      namespace: @NS@
+      port: 7001
+  - kind: Rule
+    match: PathPrefix(`/`)
+    services:
+    - kind: Service
+      name: @domainuid@-admin-server
+      namespace: @NS@
+      port: 7001
