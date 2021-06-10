@@ -215,7 +215,7 @@ abstract class WaitForReadyStep<T> extends Step {
           Optional.ofNullable(info)
                   .ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod, LabelConstants.SERVERNAME_LABEL), pod));
         }
-        if (isReady(callResponse.getResult())) {
+        if (isReady(callResponse.getResult()) || callback.didResume.get()) {
           callback.proceedFromWait(callResponse.getResult());
           Optional.ofNullable(info).ifPresent(i -> i.resetWatchBackstopRecheckCount());
           return doNext(packet);
@@ -227,7 +227,7 @@ abstract class WaitForReadyStep<T> extends Step {
         } else {
           // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
           return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
-                  info.getNamespace(), new MakeRightDomainStep(null)), packet);
+                  info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
         }
       }
 
@@ -267,8 +267,11 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   private class MakeRightDomainStep extends DefaultResponseStep {
-    MakeRightDomainStep(Step next) {
+    private final Callback callback;
+
+    MakeRightDomainStep(Callback callback, Step next) {
       super(next);
+      this.callback = callback;
     }
 
     @Override
@@ -276,6 +279,7 @@ abstract class WaitForReadyStep<T> extends Step {
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain)callResponse.getResult()));
+      callback.fiber.terminate(null, packet);
       makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
       return super.onSuccess(packet, callResponse);
     }
