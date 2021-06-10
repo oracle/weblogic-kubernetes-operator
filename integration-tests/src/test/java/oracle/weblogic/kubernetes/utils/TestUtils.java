@@ -185,7 +185,7 @@ public class TestUtils {
   /**
    * Get the next free port between port and END_PORT.
    *
-   * @return the next free port number, if there is no free port between the range, return -1
+   * @return the next free port number, if there is no free port between the range.
    */
   public static synchronized int getNextFreePort() {
     LoggingFacade logger = getLogger();
@@ -196,7 +196,7 @@ public class TestUtils {
       }
     }
     assertFalse(port > END_PORT, "Could not find free port between " + port + " and " + END_PORT);
-    return -1;
+    return port;
   }
 
   /**
