@@ -687,7 +687,8 @@ class ItPodsRestart {
   @DisplayName("Check restart of pods after image change")
   public void testRestartWithImageChange() {
 
-    String newImage = MII_BASIC_IMAGE_NAME + ":" + TestUtils.getDateAndTimeStamp();
+    String tag = TestUtils.getDateAndTimeStamp();
+    String newImage = MII_BASIC_IMAGE_NAME + ":" + tag;
     dockerTag(miiImage, newImage);
     dockerLoginAndPushImageToRegistry(newImage);
 
@@ -734,7 +735,7 @@ class ItPodsRestart {
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("mychangedimage:mii"));
+    assertTrue(event.getMessage().contains("tag"));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
