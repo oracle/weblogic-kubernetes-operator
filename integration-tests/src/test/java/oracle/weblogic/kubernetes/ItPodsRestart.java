@@ -689,8 +689,7 @@ class ItPodsRestart {
   public void testRestartWithImageChange() {
 
     String newImage = KIND_REPO != null ? KIND_REPO + "mychangedimage:mii" : "mychangedimage:mii";
-    String originalImage = KIND_REPO != null ? miiImage : miiImage.substring(KIND_REPO.length());
-    dockerTag(originalImage, newImage);
+    dockerTag(miiImage, newImage);
     if (KIND_REPO != null) {
       dockerPush(newImage);
     }

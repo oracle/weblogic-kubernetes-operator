@@ -59,6 +59,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -455,7 +456,13 @@ public class ItIstioCrossDomainTransaction {
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
   public void testIstioCrossDomainTranscatedMDB() {
+    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,istioIngressPort, 
+                 "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
+                "mdbtopic","cluster-1",
+                 ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
+             "MDB application can not be activated on domain1/cluster");
 
+    logger.info("MDB application is activated on domain1/cluster");
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
             + "\"http://%s:%s/jmsservlet/jmstest?"  
