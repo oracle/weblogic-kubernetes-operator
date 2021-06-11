@@ -1215,7 +1215,9 @@ class ItUsabilityOperatorHelmChart {
         .append(" --operator_service_account=")
         .append(opServiceAccount)
         .append(" --scaling_size=")
-        .append(scalingSize);
+        .append(scalingSize)
+        .append(" --kubernetes_master=")
+        .append("https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT");
 
 
     String commandToExecuteInsidePod = scalingCommand.toString();
