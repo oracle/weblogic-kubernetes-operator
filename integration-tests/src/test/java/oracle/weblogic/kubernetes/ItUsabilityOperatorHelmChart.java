@@ -803,14 +803,14 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain2 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
-          scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
+          scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,3),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
           " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
       assertDoesNotThrow(() ->
-              scaleViaScript(op2Namespace,domain2Namespace,domain2Uid,"scaleDown",clusterName,opServiceAccount,1),
+              scaleViaScript(op2Namespace,domain2Namespace,domain2Uid,"scaleDown",clusterName,opServiceAccount,3),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
@@ -1235,6 +1235,7 @@ class ItUsabilityOperatorHelmChart {
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+
     assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
         String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
             commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
