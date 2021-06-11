@@ -40,20 +40,20 @@ public class MonitoringUtils {
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     LoggingFacade logger = getLogger();
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
-    String monitoring_exporter_webapp_version = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
+    String monitoringExporterWebAppVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
         .orElse(MONITORING_EXPORTER_WEBAPP_VERSION);
 
     String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", applicationDir, monitoring_exporter_webapp_version);
+        "%s/get%s.sh", applicationDir, monitoringExporterWebAppVersion);
     checkDirectory(applicationDir);
     logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
     String monitoringExporterRelease =
-        monitoring_exporter_webapp_version.equals("2.0") ? "2.0.0" : monitoring_exporter_webapp_version;
+        monitoringExporterWebAppVersion.equals("2.0") ? "2.0.0" : monitoringExporterWebAppVersion;
     String curlDownloadCmd = String.format("cd %s && "
             + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
         applicationDir,
         monitoringExporterRelease,
-        monitoring_exporter_webapp_version);
+        monitoringExporterWebAppVersion);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(new Command()
         .withParams(new CommandParams()
