@@ -18,7 +18,7 @@ import org.awaitility.core.ConditionFactory;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
@@ -39,18 +39,21 @@ public class MonitoringUtils {
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
     LoggingFacade logger = getLogger();
-    String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
-        .orElse(MONITORING_EXPORTER_VERSION);
+    //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
+    String monitoring_exporter_webapp_version = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
+        .orElse(MONITORING_EXPORTER_WEBAPP_VERSION);
+
     String monitoringExporterBuildFile = String.format(
-        "%s/get%s.sh", applicationDir, monitoringExporterVersion);
+        "%s/get%s.sh", applicationDir, monitoring_exporter_webapp_version);
     checkDirectory(applicationDir);
     logger.info("Download a monitoring exporter build file {0} ", monitoringExporterBuildFile);
-    String monitoringExporterRelease = monitoringExporterVersion.equals("2.0") ? "2.0.0" : monitoringExporterVersion;
+    String monitoringExporterRelease =
+        monitoring_exporter_webapp_version.equals("2.0") ? "2.0.0" : monitoring_exporter_webapp_version;
     String curlDownloadCmd = String.format("cd %s && "
             + "curl -O -L -k https://github.com/oracle/weblogic-monitoring-exporter/releases/download/v%s/get%s.sh",
         applicationDir,
         monitoringExporterRelease,
-        monitoringExporterVersion);
+        monitoring_exporter_webapp_version);
     logger.info("execute command  a monitoring exporter curl command {0} ", curlDownloadCmd);
     assertTrue(new Command()
         .withParams(new CommandParams()
