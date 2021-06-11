@@ -1235,6 +1235,13 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
         commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
 
+    ExecResult result1 = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
+        "/bin/sh", "-c", "cat scalingAction.log"),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        "cat scalingAction.log", result1.exitValue(), result1.stderr(), result1.stdout());
+
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
 
