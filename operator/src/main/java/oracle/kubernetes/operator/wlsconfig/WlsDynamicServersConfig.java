@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -237,7 +238,7 @@ public class WlsDynamicServersConfig {
    * @return minimum size of the dynamic cluster
    */
   public Integer getMinDynamicClusterSize() {
-    return minDynamicClusterSize;
+    return Optional.ofNullable(minDynamicClusterSize).orElse(-1);
   }
 
   public void setMinDynamicClusterSize(Integer minDynamicClusterSize) {
