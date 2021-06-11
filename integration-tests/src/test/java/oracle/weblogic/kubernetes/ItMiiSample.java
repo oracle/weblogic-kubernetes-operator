@@ -164,7 +164,9 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   public void testCheckMiiSampleSource() {
+    envMap.remove("BASE_IMAGE_NAME");
     execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
+    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
   }
 
   /**

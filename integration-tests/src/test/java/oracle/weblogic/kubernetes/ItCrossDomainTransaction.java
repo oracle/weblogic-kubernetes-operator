@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -417,6 +418,14 @@ public class ItCrossDomainTransaction {
   @Test
   @DisplayName("Check cross domain transcated MDB communication ")
   public void testCrossDomainTranscatedMDB() {
+
+    // No extra header info 
+    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,domain1AdminServiceNodePort,
+                 "", "mdbtopic","cluster-1",
+                 ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
+             "MDB application can not be activated on domain1/cluster");
+
+    logger.info("MDB application is activated on domain1/cluster");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "\"http://%s:%s/jmsservlet/jmstest?"  
