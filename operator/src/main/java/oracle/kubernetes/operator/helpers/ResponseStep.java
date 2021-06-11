@@ -135,16 +135,13 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for retry or null, if no retry is warranted
    */
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
-    RetryStrategy retryStrategy = packet.getSpi(RetryStrategy.class);
-    if (retryStrategy != null) {
-      return retryStrategy.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode());
-    }
-
-    LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-        callResponse.getExceptionString(),
-        callResponse.getStatusCode(),
-        callResponse.getHeadersString());
-    return null;
+    return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
+        .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
+        .orElseGet(() -> {
+          LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
+              callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+          return null;
+        });
   }
 
   /**
