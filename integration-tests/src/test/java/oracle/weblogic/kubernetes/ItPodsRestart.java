@@ -730,12 +730,12 @@ class ItPodsRestart {
     CoreV1Event event = getEvent(opNamespace, domainNamespace,
         domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the image changed from mii-basic-image message is logged");
-    assertTrue(event.getMessage().contains("mychangedimage:mii"));
+    assertTrue(event.getMessage().contains(tag));
 
     event = getEvent(opNamespace, domainNamespace,
         domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
-    assertTrue(event.getMessage().contains("tag"));
+    assertTrue(event.getMessage().contains(tag));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
