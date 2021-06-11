@@ -803,14 +803,14 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain2 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
-          scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,3),
+          scaleViaScript(op2Namespace,domain2Namespace,domain4Uid,"scaleDown",clusterName,opServiceAccount,1),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
           " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
       assertDoesNotThrow(() ->
-              scaleViaScript(op2Namespace,domain2Namespace,domain2Uid,"scaleDown",clusterName,opServiceAccount,3),
+              scaleViaScript(op2Namespace,domain2Namespace,domain2Uid,"scaleDown",clusterName,opServiceAccount,1),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
               checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
