@@ -75,11 +75,11 @@ abstract class WaitForReadyStep<T> extends Step {
   abstract boolean isReady(T resource);
 
   /**
-   * Returns true if the cached pod is not found during periodic listing.
+   * Returns true if the cached resource is not found during periodic listing.
    * @param cachedResource cached resource to check
    * @param isNotFoundOnRead Boolean indicating if resource is not found in call response.
    *
-   * @return true if cached pod not found on read
+   * @return true if cached resource not found on read
    */
   abstract boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead);
 
@@ -221,14 +221,13 @@ abstract class WaitForReadyStep<T> extends Step {
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
 
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        if (callResponse != null) {
-          if ((info != null) && (callResponse.getResult() instanceof V1Pod)) {
-            String serverName = (String)packet.get(SERVER_NAME);
+        String serverName = (String)packet.get(SERVER_NAME);
+        if ((info != null) && (callResponse != null)) {
+          if (callResponse.getResult() instanceof V1Pod) {
             info.setServerPodFromEvent(serverName, (V1Pod) callResponse.getResult());
-            if (onReadNotFoundForCachedResource((T) info.getServerPod(serverName), isNotFoundOnRead(callResponse))) {
+          } else if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
               return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
-            }
           }
         }
 
@@ -246,6 +245,10 @@ abstract class WaitForReadyStep<T> extends Step {
           return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                   info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
         }
+      }
+
+      private T getServerPod(DomainPresenceInfo info, String serverName) {
+        return (T) info.getServerPod(serverName);
       }
 
       private boolean isNotFoundOnRead(CallResponse callResponse) {
