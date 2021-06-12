@@ -28,7 +28,9 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -360,11 +362,27 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     protected void logWaiting(String name) {
       LOGGER.fine(MessageKeys.WAITING_FOR_POD_READY, name);
     }
+
+    @Override
+    protected boolean onReadNotFoundForCachedPod(CallResponse callResponse,
+                                                 DomainPresenceInfo info, String serverName) {
+      if ((info.getServerPod(serverName) != null) && callResponse.getResult() == null) {
+        // Initial resource is not null but live info is null.
+        return true;
+      }
+      return false;
+    }
+
   }
 
   private class WaitForPodDeleteStep extends WaitForPodStatusStep {
     private WaitForPodDeleteStep(V1Pod pod, Step next) {
       super(pod, next);
+    }
+
+    @Override
+    protected boolean onReadNotFoundForCachedPod(CallResponse callResponse, DomainPresenceInfo info, String name) {
+      return false;
     }
 
     // A pod is considered deleted when reading its value from Kubernetes returns null.

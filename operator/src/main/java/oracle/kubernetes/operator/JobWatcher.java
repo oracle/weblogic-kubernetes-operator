@@ -25,7 +25,9 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -241,6 +243,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     @Override
     boolean isReady(V1Job job) {
       return isComplete(job) || isFailed(job);
+    }
+
+    @Override
+    boolean onReadNotFoundForCachedPod(CallResponse callResponse, DomainPresenceInfo info, String serverName) {
+      return false;
     }
 
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those

@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -72,6 +73,8 @@ abstract class WaitForReadyStep<T> extends Step {
    * @return true if processing can proceed
    */
   abstract boolean isReady(T resource);
+
+  abstract boolean onReadNotFoundForCachedPod(CallResponse callResponse, DomainPresenceInfo info, String serverName);
 
   /**
    * Returns true if the callback for this resource should be processed. This is typically used to exclude
@@ -209,12 +212,19 @@ abstract class WaitForReadyStep<T> extends Step {
     return new DefaultResponseStep<>(null) {
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
+
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        if ((callResponse != null) && (callResponse.getResult() instanceof V1Pod)) {
-          V1Pod pod = (V1Pod) callResponse.getResult();
-          Optional.ofNullable(info)
-                  .ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod, LabelConstants.SERVERNAME_LABEL), pod));
+        if (callResponse != null) {
+          if (callResponse.getResult() instanceof V1Pod) {
+            Optional.ofNullable(info)
+                  .ifPresent(i -> i.setServerPodFromEvent(getPodLabel((V1Pod) callResponse.getResult(),
+                          LabelConstants.SERVERNAME_LABEL), (V1Pod) callResponse.getResult()));
+          }
+          if (isMakeRightNeeded(callResponse, info, (String)packet.get(SERVER_NAME)))
+            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
+                    info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
         }
+
         if (isReady(callResponse.getResult()) || callback.didResume.get()) {
           callback.proceedFromWait(callResponse.getResult());
           Optional.ofNullable(info).ifPresent(i -> i.resetWatchBackstopRecheckCount());
@@ -229,6 +239,14 @@ abstract class WaitForReadyStep<T> extends Step {
           return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                   info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
         }
+      }
+
+      private boolean isMakeRightNeeded(CallResponse<T> callResponse,
+                                        DomainPresenceInfo info, String name) {
+        if ((info != null) && onReadNotFoundForCachedPod(callResponse, info, name)) {
+          return true;
+        }
+        return false;
       }
 
       private boolean shouldWait(CallResponse<T> callResponse, DomainPresenceInfo info) {
@@ -276,11 +294,13 @@ abstract class WaitForReadyStep<T> extends Step {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+      String name = initialResource == null ? resourceName : getMetadata(initialResource).getName();
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain)callResponse.getResult()));
-      callback.fiber.terminate(null, packet);
       makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
+      removeCallback(name, callback);
+      callback.fiber.terminate(null, packet);
       return super.onSuccess(packet, callResponse);
     }
   }
