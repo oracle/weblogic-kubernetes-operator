@@ -28,9 +28,7 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
-import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -364,13 +362,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     @Override
-    protected boolean onReadNotFoundForCachedPod(CallResponse callResponse,
-                                                 DomainPresenceInfo info, String serverName) {
-      if ((info.getServerPod(serverName) != null) && callResponse.getResult() == null) {
-        // Initial resource is not null but live info is null.
-        return true;
-      }
-      return false;
+    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
+      // Return true if cached pod is not null but pod not found in explicit read, false otherwise.
+      return ((cachedPod != null) && isNotFoundOnRead) ? true : false;
     }
 
   }
@@ -381,7 +375,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     @Override
-    protected boolean onReadNotFoundForCachedPod(CallResponse callResponse, DomainPresenceInfo info, String name) {
+    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
       return false;
     }
 

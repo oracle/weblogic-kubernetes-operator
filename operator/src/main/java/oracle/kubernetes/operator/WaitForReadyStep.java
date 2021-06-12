@@ -33,7 +33,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  */
 abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
-  private static final int DEFAULT_RECHECK_COUNT = 24;
+  private static final int DEFAULT_RECHECK_COUNT = 60;
 
   static int getWatchBackstopRecheckDelaySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
@@ -74,7 +74,14 @@ abstract class WaitForReadyStep<T> extends Step {
    */
   abstract boolean isReady(T resource);
 
-  abstract boolean onReadNotFoundForCachedPod(CallResponse callResponse, DomainPresenceInfo info, String serverName);
+  /**
+   * Returns true if the cached pod is not found during periodic listing.
+   * @param cachedResource cached resource to check
+   * @param isNotFoundOnRead Boolean indicating if resource is not found in call response.
+   *
+   * @return true if cached pod not found on read
+   */
+  abstract boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead);
 
   /**
    * Returns true if the callback for this resource should be processed. This is typically used to exclude
@@ -215,14 +222,13 @@ abstract class WaitForReadyStep<T> extends Step {
 
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         if (callResponse != null) {
-          if (callResponse.getResult() instanceof V1Pod) {
-            Optional.ofNullable(info)
-                  .ifPresent(i -> i.setServerPodFromEvent(getPodLabel((V1Pod) callResponse.getResult(),
-                          LabelConstants.SERVERNAME_LABEL), (V1Pod) callResponse.getResult()));
-          }
-          if (isMakeRightNeeded(callResponse, info, (String)packet.get(SERVER_NAME))) {
-            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
+          if ((info != null) && (callResponse.getResult() instanceof V1Pod)) {
+            String serverName = (String)packet.get(SERVER_NAME);
+            info.setServerPodFromEvent(serverName, (V1Pod) callResponse.getResult());
+            if (onReadNotFoundForCachedResource((T) info.getServerPod(serverName), isNotFoundOnRead(callResponse))) {
+              return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
+            }
           }
         }
 
@@ -242,26 +248,14 @@ abstract class WaitForReadyStep<T> extends Step {
         }
       }
 
-      private boolean isMakeRightNeeded(CallResponse<T> callResponse,
-                                        DomainPresenceInfo info, String name) {
-        if ((info != null) && onReadNotFoundForCachedPod(callResponse, info, name)) {
-          return true;
-        }
-        return false;
+      private boolean isNotFoundOnRead(CallResponse callResponse) {
+        return callResponse.getResult() == null;
       }
 
       private boolean shouldWait(CallResponse<T> callResponse, DomainPresenceInfo info) {
         return ((callResponse != null) && (callResponse.getResult() instanceof V1Job))
                 || (info == null)
                 || (info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount());
-      }
-
-      private String getPodLabel(V1Pod pod, String labelName) {
-        return Optional.ofNullable(pod)
-                .map(V1Pod::getMetadata)
-                .map(V1ObjectMeta::getLabels)
-                .map(m -> m.get(labelName))
-                .orElse(null);
       }
     };
   }
