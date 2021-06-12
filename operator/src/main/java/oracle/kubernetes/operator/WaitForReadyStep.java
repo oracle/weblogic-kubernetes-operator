@@ -220,9 +220,10 @@ abstract class WaitForReadyStep<T> extends Step {
                   .ifPresent(i -> i.setServerPodFromEvent(getPodLabel((V1Pod) callResponse.getResult(),
                           LabelConstants.SERVERNAME_LABEL), (V1Pod) callResponse.getResult()));
           }
-          if (isMakeRightNeeded(callResponse, info, (String)packet.get(SERVER_NAME)))
+          if (isMakeRightNeeded(callResponse, info, (String)packet.get(SERVER_NAME))) {
             return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
+          }
         }
 
         if (isReady(callResponse.getResult()) || callback.didResume.get()) {
