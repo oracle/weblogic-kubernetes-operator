@@ -10,19 +10,13 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ClusterRole;
-import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PolicyRule;
-import io.kubernetes.client.openapi.models.V1RoleBinding;
-import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
-import io.kubernetes.client.openapi.models.V1Subject;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -60,14 +54,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_CLUSTER_ROLE;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_CLUSTER_ROLE_BINDING;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_ROLE_BINDING;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_BINDING_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_CLUSTER_ROLE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WLDF_ROLE_BINDING_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
@@ -79,17 +65,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.actions.impl.ClusterRole.createClusterRole;
-import static oracle.weblogic.kubernetes.actions.impl.ClusterRoleBinding.createClusterRoleBinding;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespacedRoleBinding;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
-import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
-import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
@@ -827,7 +807,7 @@ class ItUsabilityOperatorHelmChart {
 
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain2Namespace,
-                  domainHomeLocation, "scaleDown", 1,
+                  "/u01/domains/" + domain4Uid, "scaleDown", 1,
                   op2Namespace,opServiceAccount),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
@@ -836,7 +816,7 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Domain4 scaled to 2 servers");
       assertDoesNotThrow(() ->
               TestActions.scaleClusterWithScalingActionScript(clusterName, domain2Uid, domain2Namespace,
-                  domainHomeLocation, "scaleDown", 1,
+                  "/u01/domains/" + domain2Uid, "scaleDown", 1,
                   op2Namespace,opServiceAccount),
           " scaling via scalingAction.sh script was not succeeded for domain2");
 
@@ -969,7 +949,6 @@ class ItUsabilityOperatorHelmChart {
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);
       checkServiceExists(managedServerPodName, domainNamespace);
-      domainHomeLocation = domain.getSpec().getDomainHome();
     }
     //check the access to managed server mbean via rest api
     checkManagedServerConfiguration(domainNamespace, domainUid);

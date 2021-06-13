@@ -377,8 +377,6 @@ public class TestActions {
    * @param scalingSize number of servers to be scaled up or down
    * @param opNamespace namespace of WebLogic operator
    * @param opServiceAccount service account of operator
-   * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
-   * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    * @throws IOException if an I/O error occurs
@@ -391,10 +389,10 @@ public class TestActions {
                                              String scalingAction,
                                              int scalingSize,
                                              String opNamespace,
-                                             String opServiceAccount
-                                             )
+                                             String opServiceAccount)
       throws ApiException, InterruptedException {
-    return Domain.scaleClusterWithScalingActionScript(clusterName, domainUid, domainNamespace, domainHomeLocation, scalingAction,
+    return Domain.scaleClusterWithScalingActionScript(clusterName,
+        domainUid, domainNamespace, domainHomeLocation, scalingAction,
         scalingSize, opNamespace, opServiceAccount);
   }
 

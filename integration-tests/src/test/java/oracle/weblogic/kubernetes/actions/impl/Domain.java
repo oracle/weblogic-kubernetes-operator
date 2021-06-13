@@ -693,8 +693,6 @@ public class Domain {
    * @param scalingSize number of servers to be scaled up or down
    * @param opNamespace namespace of WebLogic operator
    * @param opServiceAccount service account of operator
-   * @param myWebAppName web app name deployed to the domain used in the WLDF policy expression
-   * @param curlCommand curl command to call the web app used in the WLDF policy expression
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    * @throws IOException if an I/O error occurs
@@ -770,22 +768,9 @@ public class Domain {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
       return false;
     }
-    assertDoesNotThrow(()->scaleViaScript(opNamespace,domainNamespace,
-        domainUid,scalingAction,clusterName,opServiceAccount,scalingSize),
+    assertDoesNotThrow(() -> scaleViaScript(opNamespace,domainNamespace,
+        domainUid,scalingAction,clusterName,opServiceAccount,scalingSize,domainHomeLocation, adminPod),
         "scaling failed");
-
-    // copy scalingAction.log to local
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileFromPod(domainNamespace, adminServerPodName, null,
-              domainHomeLocation + "/bin/scripts/scalingAction.log",
-              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
-        });
     return true;
   }
 
@@ -979,11 +964,14 @@ public class Domain {
 
   private static void scaleViaScript(String opNamespace, String domainNamespace,
                                      String domainUid, String scalingAction, String clusterName,
-                                     String opServiceAccount, int scalingSize) throws ApiException, InterruptedException {
+                                     String opServiceAccount, int scalingSize,
+                                     String domainHomeLocation,
+                                     V1Pod adminPod) throws ApiException, InterruptedException {
     LoggingFacade logger = getLogger();
-    StringBuffer scalingCommand = new StringBuffer("export INTERNAL_OPERATOR_CERT=")
-        .append("`cat ./internal-identity/internalOperatorCert`")
-        .append("   && ./scalingAction.sh ")
+    StringBuffer scalingCommand = new StringBuffer()
+        //.append(" export INTERNAL_OPERATOR_CERT=")
+        //.append("`cat ./internal-identity/internalOperatorCert`")
+        .append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
         .append(" --action=")
         .append(scalingAction)
         .append(" --domain_uid=")
@@ -1006,25 +994,25 @@ public class Domain {
 
     String commandToExecuteInsidePod = scalingCommand.toString();
 
-    String labelSelector = String.format("weblogic.operatorName in (%s)", opNamespace);
-    V1Pod operatorPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(opNamespace, labelSelector, "weblogic-operator-"),
-        String.format("Could not get the server Pod {0} in namespace {1}",
-            "weblogic-operator", opNamespace));
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
         "/bin/sh", "-c", commandToExecuteInsidePod),
         String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
+            commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
     logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
         commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
 
-    ExecResult result1 = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
-        "/bin/sh", "-c", "cat scalingAction.log"),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        "cat scalingAction.log", result1.exitValue(), result1.stderr(), result1.stdout());
+    // copy scalingAction.log to local
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+              domainHomeLocation + "/bin/scripts/scalingAction.log",
+              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
+        });
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
