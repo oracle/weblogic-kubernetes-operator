@@ -103,7 +103,7 @@ for i in json.load(sys.stdin)["spec"]["ports"]:
 INPUT
 port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
-  echo "get_operator_internal_rest_port $port"
+  echo "$port"
 }
 
 # Retrieve the api version of the deployed Custom Resource Domain
