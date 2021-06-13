@@ -89,6 +89,7 @@ function get_operator_internal_rest_port() {
     exit 1
   fi
 
+  trace "STATUS: $STATUS"
   local port
   if jq_available; then
     local extractPortCmd="(.spec.ports[] | select (.name == \"rest\") | .port)"
@@ -102,7 +103,7 @@ for i in json.load(sys.stdin)["spec"]["ports"]:
 INPUT
 port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
   fi
-  echo "$port"
+  echo "get_operator_internal_rest_port $port"
 }
 
 # Retrieve the api version of the deployed Custom Resource Domain
@@ -431,7 +432,7 @@ logScalingParameters
 
 # Retrieve the operator's REST endpoint port
 port=$(get_operator_internal_rest_port)
-trace "port: $port"
+trace "get_operator_internal_rest_port port: $port"
 
 # Retrieve the api version of the deployed CRD
 domain_api_version=$(get_domain_api_version)
