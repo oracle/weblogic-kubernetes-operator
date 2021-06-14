@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
-import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
@@ -309,8 +308,7 @@ abstract class WaitForReadyStep<T> extends Step {
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
       String name = initialResource == null ? resourceName : getMetadata(initialResource).getName();
       MakeRightDomainOperation makeRightDomainOperation =
-              (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
-      makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain)callResponse.getResult()));
+              Main.createMakeRightOperation(new DomainPresenceInfo((Domain)callResponse.getResult()));
       makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
       removeCallback(name, callback);
       callback.fiber.terminate(null, packet);

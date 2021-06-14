@@ -33,6 +33,7 @@ import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.CrdHelper;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -78,7 +79,7 @@ public class Main {
       new AtomicReference<>(SystemClock.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
-
+  private static final Main main;
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
   private NamespaceWatcher namespaceWatcher;
@@ -103,6 +104,7 @@ public class Main {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
+    main = createMain(getBuildProperties());
   }
 
   static {
@@ -121,6 +123,10 @@ public class Main {
 
   Object getOperatorNamespaceEventWatcher() {
     return operatorNamespaceEventWatcher;
+  }
+
+  public static MakeRightDomainOperation createMakeRightOperation(DomainPresenceInfo info) {
+    return main.delegate.getDomainProcessor().createMakeRightOperation(info);
   }
 
   static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
@@ -256,7 +262,6 @@ public class Main {
    * @param args none, ignored
    */
   public static void main(String[] args) {
-    Main main = createMain(getBuildProperties());
 
     try {
       main.startOperator(main::completeBegin);

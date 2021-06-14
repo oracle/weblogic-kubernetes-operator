@@ -746,7 +746,7 @@ public class DomainProcessorImpl implements DomainProcessor {
    */
   class MakeRightDomainOperationImpl implements MakeRightDomainOperation {
 
-    private DomainPresenceInfo liveInfo;
+    private final DomainPresenceInfo liveInfo;
     private boolean explicitRecheck;
     private boolean deleting;
     private boolean willInterrupt;
@@ -850,12 +850,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     public void setInspectionRun() {
       inspectionRun = true;
     }
-
-    @Override
-    public void setLiveInfo(DomainPresenceInfo info) {
-      this.liveInfo = info;
-    }
-
 
     @Override
     public boolean wasInspectionRun() {
