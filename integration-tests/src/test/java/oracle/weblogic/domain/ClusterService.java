@@ -89,6 +89,11 @@ public class ClusterService {
     this.annotations = annotations;
   }
 
+  public ClusterService sessionAffinity(String sessionAffinity) {
+    this.sessionAffinity = sessionAffinity;
+    return this;
+  }
+
   public String getSessionAffinity() {
     return sessionAffinity;
   }

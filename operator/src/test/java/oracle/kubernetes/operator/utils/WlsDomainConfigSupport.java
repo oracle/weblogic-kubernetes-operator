@@ -47,6 +47,11 @@ public class WlsDomainConfigSupport {
     return this;
   }
 
+  public WlsDomainConfigSupport withDynamicWlsCluster(String clusterName, String serverTemplateName, Integer port) {
+    addDynamicWlsCluster(clusterName, serverTemplateName, port);
+    return this;
+  }
+
   public WlsDomainConfigSupport withAdminServerName(String adminServerName) {
     setAdminServerName(adminServerName);
     return this;
@@ -163,6 +168,18 @@ public class WlsDomainConfigSupport {
   }
 
   /**
+   * Adds a dynamic WLS cluster to the configuration with the server template.
+   *
+   * @param clusterName the name of the cluster
+   * @param serverTemplateName the names of the server template
+   * @param port the default listen port
+   */
+  public void addDynamicWlsCluster(String clusterName, String serverTemplateName, int port) {
+    ClusterConfigBuilder builder = new DynamicClusterConfigBuilder(clusterName, serverTemplateName, port);
+    wlsClusters.put(clusterName, builder.build());
+  }
+
+  /**
    * Creates a domain configuration, based on the defined servers and clusters.
    *
    * @return a domain configuration, or null
@@ -227,14 +244,22 @@ public class WlsDomainConfigSupport {
   }
 
   static class DynamicClusterConfigBuilder extends ClusterConfigBuilder {
+    private WlsServerConfig serverTemplate;
+
     DynamicClusterConfigBuilder(String name) {
+      this(name, null, 0);
+    }
+
+    DynamicClusterConfigBuilder(String name, String serverTemplateName, int port) {
       super(name);
+      serverTemplate = new WlsServerConfig(serverTemplateName, null, port);
     }
 
     WlsClusterConfig build() {
       WlsDynamicServersConfig wlsDynamicServersConfig = new WlsDynamicServersConfig();
       wlsDynamicServersConfig.setServerConfigs(serverConfigs);
       wlsDynamicServersConfig.setDynamicClusterSize(serverConfigs.size());
+      wlsDynamicServersConfig.setServerTemplate(serverTemplate);
       WlsClusterConfig wlsClusterConfig = new WlsClusterConfig(getName(), wlsDynamicServersConfig);
       return wlsClusterConfig;
     }

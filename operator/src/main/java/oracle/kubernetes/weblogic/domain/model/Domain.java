@@ -274,6 +274,10 @@ public class Domain implements KubernetesObject {
     return spec.getMonitoringExporterConfiguration();
   }
 
+  public MonitoringExporterSpecification getMonitoringExporterSpecification() {
+    return spec.getMonitoringExporterSpecification();
+  }
+
   public String getMonitoringExporterImage() {
     return spec.getMonitoringExporterImage();
   }
