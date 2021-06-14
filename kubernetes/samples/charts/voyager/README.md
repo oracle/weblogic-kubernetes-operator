@@ -196,9 +196,9 @@ Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `k
 
 To install Voyager:
 ```shell
-$ ./ setupLoadBalancer.sh create voyager [voyager-version]
+$ ./ setupLoadBalancer.sh -c -t voyager [-v voyager-version]
 ```
 To uninstall Voyager:
 ```shell
-$ ./ setupLoadBalancer.sh delete voyager
+$ ./ setupLoadBalancer.sh -d -t voyager
 ```
