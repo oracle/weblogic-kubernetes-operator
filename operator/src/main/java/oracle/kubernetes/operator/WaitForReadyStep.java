@@ -15,6 +15,8 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
@@ -25,6 +27,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 
 /**
  * This class is the base for steps that must suspend while waiting for a resource to become ready. It is typically
@@ -32,6 +35,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
@@ -221,12 +225,14 @@ abstract class WaitForReadyStep<T> extends Step {
       public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
 
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-        String serverName = (String)packet.get(SERVER_NAME);
         if ((info != null) && (callResponse != null)) {
+          String serverName = (String)packet.get(SERVER_NAME);
           if (callResponse.getResult() instanceof V1Pod) {
-            info.setServerPodFromEvent(serverName, (V1Pod) callResponse.getResult());
+            info.setServerPodFromEvent(getPodLabel((V1Pod) callResponse.getResult(),
+                    LabelConstants.SERVERNAME_LABEL), (V1Pod) callResponse.getResult());
           } else if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
-              return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
+            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
+            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
           }
         }
@@ -241,14 +247,23 @@ abstract class WaitForReadyStep<T> extends Step {
           return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                   getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
         } else {
+          LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
           // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
           return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                   info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
         }
       }
 
+      private String getPodLabel(V1Pod pod, String labelName) {
+        return Optional.ofNullable(pod)
+                .map(V1Pod::getMetadata)
+                .map(V1ObjectMeta::getLabels)
+                .map(m -> m.get(labelName))
+                .orElse(null);
+      }
+
       private T getServerPod(DomainPresenceInfo info, String serverName) {
-        return (T) info.getServerPod(serverName);
+        return Optional.ofNullable(serverName).map(s -> (T) info.getServerPod(s)).orElse(null);
       }
 
       private boolean isNotFoundOnRead(CallResponse callResponse) {
