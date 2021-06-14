@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -28,7 +29,9 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -36,8 +39,14 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 
 /**
  * Watches for changes to pods.
@@ -322,6 +331,63 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Pod> responseStep) {
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
+
+    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
+      return new DefaultResponseStep<>(null) {
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          if ((info != null) && (callResponse != null)) {
+            String serverName = (String)packet.get(SERVER_NAME);
+            info.setServerPodFromEvent(getPodLabel(callResponse.getResult()), callResponse.getResult());
+            if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
+              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
+              return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
+                      info.getNamespace(), new MakeRightDomainStep(callback,null)), packet);
+            }
+          }
+
+          if (isReady(callResponse.getResult()) || callback.didResume.get()) {
+            callback.proceedFromWait(callResponse.getResult());
+            info.resetWatchBackstopRecheckCount();
+            return doNext(packet);
+          }
+
+          if (shouldWait(info)) {
+            // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
+            return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                    getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+          } else {
+            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
+            // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
+            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
+                    info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
+          }
+        }
+
+        private String getPodLabel(V1Pod pod) {
+          return Optional.ofNullable(pod)
+                  .map(V1Pod::getMetadata)
+                  .map(V1ObjectMeta::getLabels)
+                  .map(m -> m.get(LabelConstants.SERVERNAME_LABEL))
+                  .orElse(null);
+        }
+
+        private V1Pod getServerPod(DomainPresenceInfo info, String serverName) {
+          return Optional.ofNullable(serverName).map(info::getServerPod).orElse(null);
+        }
+
+        private boolean isNotFoundOnRead(CallResponse callResponse) {
+          return callResponse.getResult() == null;
+        }
+
+        private boolean shouldWait(DomainPresenceInfo info) {
+          return info == null || (info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount());
+        }
+      };
+    }
+
   }
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
@@ -364,7 +430,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     @Override
     protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
       // Return true if cached pod is not null but pod not found in explicit read, false otherwise.
-      return ((cachedPod != null) && isNotFoundOnRead) ? true : false;
+      return (cachedPod != null) && isNotFoundOnRead;
     }
 
   }
