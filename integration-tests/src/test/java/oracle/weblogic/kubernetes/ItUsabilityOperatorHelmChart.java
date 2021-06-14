@@ -110,12 +110,14 @@ class ItUsabilityOperatorHelmChart {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
+  private static String domain4Namespace = null;
   private static String CLUSTER_ROLE_NAME = "operator_cluster_role";
   // domain constants
   private final String domain1Uid = "usabdomain1";
   private final String domain2Uid = "usabdomain2";
   private final String domain3Uid = "usabdomain3";
   private final String domain4Uid = "usabdomain4";
+  private final String domain5Uid = "usabdomain5";
   private String domainHomeLocation;
 
   private final String clusterName = "cluster-1";
@@ -143,7 +145,7 @@ class ItUsabilityOperatorHelmChart {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -165,10 +167,15 @@ class ItUsabilityOperatorHelmChart {
     assertNotNull(namespaces.get(3), "Namespace list is null");
     domain3Namespace = namespaces.get(3);
 
+    // get a unique domain namespace
+    logger.info("Getting a unique namespace for WebLogic domain 4");
+    assertNotNull(namespaces.get(4), "Namespace list is null");
+    domain4Namespace = namespaces.get(4);
+
     // get a unique operator 2 namespace
     logger.info("Getting a unique namespace for operator 2");
-    assertNotNull(namespaces.get(4), "Namespace list is null");
-    op2Namespace = namespaces.get(4);
+    assertNotNull(namespaces.get(5), "Namespace list is null");
+    op2Namespace = namespaces.get(5);
   }
 
   @AfterAll
@@ -749,7 +756,7 @@ class ItUsabilityOperatorHelmChart {
 
   /**
    * Install the Operator successfully.
-   * Create domain1, domain2 in the same namespace and verify the domains are started
+   * Create domain4, domain5 in the same namespace and verify the domains are started
    * Verify both domains are managed by the operator by making a REST API call
    * Verify domains scaling by calling scalingAction.sh script
    */
@@ -766,64 +773,62 @@ class ItUsabilityOperatorHelmChart {
       // install operator
       String opServiceAccount = op2Namespace + "-sa";
       HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
-          0, op1HelmParams, domain2Namespace).getHelmParams();
+          0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
-      if (!isDomain2Running) {
-        logger.info("Installing and verifying domain");
-        assertTrue(createVerifyDomain(domain2Namespace, domain2Uid),
-            "can't start or verify domain in namespace " + domain2Namespace);
-        isDomain2Running = true;
-      }
-      logger.info("Installing and verifying domain");
-      assertTrue(createVerifyDomain(domain2Namespace, domain4Uid),
-          "can't start or verify domain4 in namespace " + domain2Namespace);
+
+      logger.info("Installing and verifying domain4");
+      assertTrue(createVerifyDomain(domain4Namespace, domain4Uid),
+            "can't start or verify domain4 in namespace " + domain4Namespace);
+      logger.info("Installing and verifying domain5");
+      assertTrue(createVerifyDomain(domain4Namespace, domain5Uid),
+          "can't start or verify domain5 in namespace " + domain4Namespace);
 
       assertTrue(scaleClusterWithRestApi(domain4Uid, clusterName,3,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain4 " + domain2Namespace + " scaling operation failed");
+          "Domain4 " + domain4Namespace + " scaling operation failed");
       String managedServerPodName1 = domain4Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
-          managedServerPodName1, domain2Namespace);
+          managedServerPodName1, domain4Namespace);
       assertDoesNotThrow(() ->
-              checkPodExists(managedServerPodName1, domain4Uid, domain2Namespace),
+              checkPodExists(managedServerPodName1, domain4Uid, domain4Namespace),
           "operator failed to manage domain4, scaling was not succeeded");
       logger.info("Domain4 scaled to 3 servers");
 
-      assertTrue(scaleClusterWithRestApi(domain2Uid, clusterName,3,
+      assertTrue(scaleClusterWithRestApi(domain5Uid, clusterName,3,
           externalRestHttpsPort,op2Namespace, opServiceAccount),
-          "Domain2 " + domain2Namespace + " scaling operation failed");
-      String managedServerPodName2 = domain2Uid + managedServerPrefix + 3;
+          "Domain2 " + domain4Namespace + " scaling operation failed");
+      String managedServerPodName2 = domain5Uid + managedServerPrefix + 3;
       logger.info("Checking that the managed server pod {0} exists in namespace {1}",
-          managedServerPodName2, domain2Namespace);
+          managedServerPodName2, domain4Namespace);
       assertDoesNotThrow(() ->
-              checkPodExists(managedServerPodName2, domain2Uid, domain2Namespace),
+              checkPodExists(managedServerPodName2, domain5Uid, domain4Namespace),
           "operator failed to manage domain2, scaling was not succeeded");
 
-      logger.info("Domain2 scaled to 3 servers");
+      logger.info("Domain4 scaled to 3 servers");
 
       assertDoesNotThrow(() ->
-              TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain2Namespace,
+              TestActions.scaleClusterWithScalingActionScript(clusterName, domain4Uid, domain4Namespace,
                   "/u01/domains/" + domain4Uid, "scaleDown", 1,
                   op2Namespace,opServiceAccount),
           "scaling was not succeeded");
       assertDoesNotThrow(() ->
-              checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain2Namespace),
+              checkPodDoesNotExist(managedServerPodName1, domain4Uid, domain4Namespace),
           " scaling via scalingAction.sh script was not succeeded for domain4");
       logger.info("Domain4 scaled to 2 servers");
       assertDoesNotThrow(() ->
-              TestActions.scaleClusterWithScalingActionScript(clusterName, domain2Uid, domain2Namespace,
-                  "/u01/domains/" + domain2Uid, "scaleDown", 1,
+              TestActions.scaleClusterWithScalingActionScript(clusterName, domain5Uid, domain4Namespace,
+                  "/u01/domains/" + domain5Uid, "scaleDown", 1,
                   op2Namespace,opServiceAccount),
-          " scaling via scalingAction.sh script was not succeeded for domain2");
+          " scaling via scalingAction.sh script was not succeeded for domain5");
 
       assertDoesNotThrow(() ->
-              checkPodDoesNotExist(managedServerPodName2, domain2Uid, domain2Namespace),
-          " scaling via scalingAction.sh script was not succeeded for domain2");
-      logger.info("Domain2 scaled to 2 servers");
+              checkPodDoesNotExist(managedServerPodName2, domain5Uid, domain4Namespace),
+          " scaling via scalingAction.sh script was not succeeded for domain5");
+      logger.info("Domain5 scaled to 2 servers");
     } finally {
       uninstallOperator(op1HelmParams);
       deleteSecret(OCIR_SECRET_NAME,op2Namespace);
