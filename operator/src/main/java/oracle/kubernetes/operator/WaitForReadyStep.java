@@ -5,6 +5,7 @@ package oracle.kubernetes.operator;
 
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -260,7 +261,8 @@ abstract class WaitForReadyStep<T> extends Step {
   class Callback implements Consumer<T> {
     private final AsyncFiber fiber;
     private final Packet packet;
-    final AtomicBoolean didResume = new AtomicBoolean(false);
+    private final AtomicBoolean didResume = new AtomicBoolean(false);
+    private final AtomicInteger recheckCount = new AtomicInteger(0);
 
     Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
@@ -288,6 +290,18 @@ abstract class WaitForReadyStep<T> extends Step {
     // This method will return true only the first time it is called.
     private boolean mayResumeFiber() {
       return didResume.compareAndSet(false, true);
+    }
+
+    boolean didResumeFiber() {
+      return didResume.get();
+    }
+
+    int incrementAndGetRecheckCount() {
+      return recheckCount.incrementAndGet();
+    }
+
+    int getRecheckCount() {
+      return recheckCount.get();
     }
   }
 

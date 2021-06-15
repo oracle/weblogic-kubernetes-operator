@@ -317,7 +317,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-          if (isReady(callResponse.getResult()) || callback.didResume.get()) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }

@@ -340,27 +340,26 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           if ((info != null) && (callResponse != null)) {
             String serverName = (String)packet.get(SERVER_NAME);
-            Optional.ofNullable(callResponse.getResult())
-                    .ifPresent(result -> info.setServerPodFromEvent(getPodLabel(result), result));
+            Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
+                    info.setServerPodFromEvent(getPodLabel(result), result));
             if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
-              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
+              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, callback.getRecheckCount());
               return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                       info.getNamespace(), new MakeRightDomainStep(callback,null)), packet);
             }
           }
 
-          if (isReady(callResponse.getResult()) || callback.didResume.get()) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
-            info.resetWatchBackstopRecheckCount();
             return doNext(packet);
           }
 
-          if (shouldWait(info)) {
+          if (shouldWait()) {
             // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
             return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                     getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
           } else {
-            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
+            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, callback.getRecheckCount());
             // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
             return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
@@ -383,8 +382,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           return callResponse.getResult() == null;
         }
 
-        private boolean shouldWait(DomainPresenceInfo info) {
-          return info == null || (info.incrementAndGetWatchBackstopRecheckCount() <= getWatchBackstopRecheckCount());
+        private boolean shouldWait() {
+          return callback.incrementAndGetRecheckCount() <= getWatchBackstopRecheckCount();
         }
       };
     }
