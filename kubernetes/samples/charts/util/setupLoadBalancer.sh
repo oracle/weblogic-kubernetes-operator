@@ -66,11 +66,23 @@ EOF
 exit $1
 }
 
+actionchoosen=false
+
 while getopts "cdt:n:r:v:h" opt; do
   case $opt in
     c) action="create"
+       if [ $actionchoosen = "true" ]; then
+        printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
+        usage 1
+       fi 
+       actionchoosen=true
     ;;
     d) action="delete"
+       if [ $actionchoosen = "true" ]; then
+        printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
+        usage 1
+       fi 
+       actionchoosen=true
     ;;
     n) namespace="${OPTARG}"
     ;;
@@ -256,6 +268,7 @@ function createTraefik() {
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
     # https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
+    purgeDefaultResources
     helm install $chart traefik/traefik --namespace ${ns} \
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
@@ -272,12 +285,19 @@ function createTraefik() {
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
   traefik_image=$(${kubernetesCli} get ${tpod} -n ${ns} -o jsonpath='{.spec.containers[0].image}')
   printInfo "Traefik image choosen [${traefik_image}]"
-
 }
 
+# Remove ingress related resources from default Namespace ( if any )
+function purgeDefaultResources() {
+   printInfo "Remove ingress related resources from default Namespace (if any)"
+   ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole 
+  ${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRoleBinding 
+}
+
+# Remove voyager related resources from default Namespace ( if any )
 function purgeVoyagerResources() {
   # get rid of Voyager CRD deletion deadlock:  https://github.com/kubernetes/kubernetes/issues/60538
-  printInfo "Delete extra resources assocaited with Voyager Ingress Controller"
+  printInfo "Delete extra resources associated with Voyager Ingress Controller"
   crds=(certificates ingresses)
   for crd in "${crds[@]}"; do
     pairs=($(${kubernetesCli} get ${crd}.voyager.appscode.com --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {end}' || true))
@@ -321,10 +341,16 @@ function deleteIngress() {
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else
-    printInfo "${type} controller has already been deleted from ${ns}." 
+    printInfo "${type} controller has already been deleted from namespace [${ns}] or not installed in the namespace [${ns}]." 
   fi
 
-  [[ ${type} = "voyager" ]] && purgeVoyagerResources
+  if [ "${ingressType}" = traefik ]; then
+      purgeDefaultResources
+    elif [ "${ingressType}" = voyager ]; then
+      purgeVoyagerResources
+    elif [ "${ingressType}" = nginx ]; then
+      purgeDefaultResources
+    fi
 }
 
 function createNginx() {
@@ -343,6 +369,7 @@ function createNginx() {
   fi
 
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
+    purgeNginxResources
     helm install $chart ingress-nginx/ingress-nginx \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
