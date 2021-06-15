@@ -347,16 +347,14 @@ public class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
    */
-  @Order(7)
+  @Order(9)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   public void testTraefikIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
-
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
     setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
-
   }
 
   /**
@@ -375,13 +373,13 @@ public class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
    */
-  @Order(9)
+  @Order(7)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   public void testNginxIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "nginx", " -c -n" + nginxNamespace);
+    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);
     setupLoadBalancer(scriptBase, "nginx", " -d -n " + nginxNamespace);
   }
 

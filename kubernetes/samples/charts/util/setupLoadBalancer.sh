@@ -132,12 +132,7 @@ case  ${ingressType} in
                exit -1  ;;
 esac
 
-echo "Action [${action}]"
-echo "Type [${ingressType}]"
-echo "NameSpace [${namespace}]"
-echo "Release [${release}]"
-echo "Repository [$repository]"
-echo "Chart [$chart]"
+printInfo "Action [${action}] Type [${ingressType}] NameSpace [${namespace}] Release [${release}] Chart [$chart]"
 
 # Validate Kubernetes CLI availability
 # Try to execute kubernetes cli to see whether cli is available
@@ -177,7 +172,8 @@ function waitForIngressPod() {
   count=0
   while test $count -lt $max; do
     status=$(${kubernetesCli} get ${ipod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    if [ ${status} == "1/1" ]; then
+    printInfo "[Ingress Pod Status: ${status}]"
+    if [ x${status} == "1/1" ]; then
       printInfo "${type} controller pod is running now."
       ${kubernetesCli} get ${ipod} -n ${ns}
       break;
@@ -292,6 +288,8 @@ function purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
    ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole 
   ${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRoleBinding 
+  ${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}' | xargs kubectl delete ValidatingWebhookConfiguration 
+  return 0;
 }
 
 # Remove voyager related resources from default Namespace ( if any )
@@ -334,7 +332,6 @@ function deleteIngress() {
   type=${1}
   ns=${1}
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
-    printInfo "Deleting ${type} controller on ${ns}" 
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
     ${kubernetesCli} delete ns ${ns}
@@ -369,7 +366,7 @@ function createNginx() {
   fi
 
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
-    purgeNginxResources
+    purgeDefaultResources
     helm install $chart ingress-nginx/ingress-nginx \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
@@ -381,30 +378,9 @@ function createNginx() {
     exit 0;
   fi
 
-  printInfo "Wait until Nginx controller pod is running."
+  waitForIngressPod nginx ${ns}
   tpod=$(${kubernetesCli} -o name get po -n ${ns})
-  if [[ "${tpod}" != *$chart* ]]; then
-   printError "Couldn't find the pod associated with Nginx helm deployment. List helm deployment status on namespace [${ns}]. "
-   exit -1;
-  fi
-  printInfo "Found pod [${tpod}] associated with Nginx helm deployment on namespace [${ns}]."
-
-  max=20
-  count=0
-  while test $count -lt $max; do
-    status=$(${kubernetesCli} get ${tpod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    if [ ${status} == "1/1" ]; then
-      printInfo "Nginx controller pod is running now."
-      ${kubernetesCli} get ${tpod} -n ${ns}
-      ${kubernetesCli} exec -it $tpod -n ${ns} -- /nginx-ingress-controller --version``
-      exit 0;
-    fi
-    count=`expr $count + 1`
-    sleep 2
-  done
-  printError "Nginx controller pod failed to start."
   ${kubernetesCli} describe ${tpod} -n ${ns}
-  exit 1
 }
 
 function main() {
@@ -422,11 +398,11 @@ function main() {
     fi
   else
     if [ "${ingressType}" = traefik ]; then
-      deleteIngress ${namespace} traefik
+      deleteIngress traefik ${namespace}
     elif [ "${ingressType}" = voyager ]; then
-      deleteIngress ${namespace} voyager
+      deleteIngress  voyager ${namespace}
     elif [ "${ingressType}" = nginx ]; then
-      deleteIngress ${namespace} nginx
+      deleteIngress  nginx ${namespace}
     fi
   fi
 }
