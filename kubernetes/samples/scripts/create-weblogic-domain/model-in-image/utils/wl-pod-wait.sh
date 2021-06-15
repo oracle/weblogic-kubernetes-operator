@@ -173,8 +173,8 @@ sortCMImagesUnitTest
 
 function getDomainValue() {
   # get domain value specified by $1 and put in env var named by $2
-  #  if get fails, and global expected is >0, then echo an Error and exit script non-zero
-  #  example: getDomainValue '.spec.introspectVersion' DOM_VERSION
+  #   - if get fails, and global expected is >0, then echo an Error and exit script non-zero
+  #   - example: getDomainValue '.spec.introspectVersion' DOM_VERSION
   local attvalue
   local ljpath="{$1}"
   local __retvar=$2
@@ -195,8 +195,8 @@ function getDomainValue() {
 
 function getDomainCMImages() {
   # get list of domain common mount images (if any) and place result in the env var named by $1
-  #   if expected>0 and get fails, then echo an Error and exit script non-zero
-  #   result is a sorted comma separated list
+  #   - if expected>0 and get fails, then echo an Error and exit script non-zero
+  #   - result is a sorted comma separated list
   local attvalue
   local __retvar=$1
   set +e
