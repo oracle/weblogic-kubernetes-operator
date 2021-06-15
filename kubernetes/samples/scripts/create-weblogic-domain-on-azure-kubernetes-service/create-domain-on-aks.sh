@@ -44,7 +44,7 @@ function usage {
 # Parse the command line options
 #
 executeIt=false
-while getopts "ehi:o:u:" opt; do
+while getopts "ehi:o:u:d:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -332,7 +332,7 @@ function createFileShare {
     # Create the file share
     echo Check if file share exists
     ret=$( az storage share exists --name ${azureStorageShareName} --account-name ${storageAccountName} --connection-string $azureStorageConnectionString | grep "exists" | grep false)
-    if [ $ret == true ];then 
+    if [[ "$ret" == "true" ]];then 
       fail "File share name  ${azureStorageShareName} is unavaliable."
     fi
 
