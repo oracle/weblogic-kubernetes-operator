@@ -785,7 +785,7 @@ public class ItConfigDistributionStrategy {
     createPV(pvName, domainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    t3ChannelPort = getNextFreePort(31518, 32767);
+    t3ChannelPort = getNextFreePort();
 
     // create a temporary WebLogic domain property file
     File domainPropertiesFile = assertDoesNotThrow(()
