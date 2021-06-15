@@ -47,6 +47,7 @@ import oracle.kubernetes.operator.work.Step;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.LOG_WAITING_COUNT;
 
 /**
  * Watches for changes to pods.
@@ -314,6 +315,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
   private abstract static class WaitForPodStatusStep extends WaitForReadyStep<V1Pod> {
 
+    public static final int RECHECK_DEBUG_COUNT = 10;
+
     private WaitForPodStatusStep(V1Pod pod, Step next) {
       super(pod, next);
     }
@@ -338,12 +341,12 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          String serverName = (String)packet.get(SERVER_NAME);
           if ((info != null) && (callResponse != null)) {
-            String serverName = (String)packet.get(SERVER_NAME);
             Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
                     info.setServerPodFromEvent(getPodLabel(result), result));
             if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
-              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, callback.getRecheckCount());
+              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
               return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                       info.getNamespace(), new MakeRightDomainStep(callback,null)), packet);
             }
@@ -355,11 +358,14 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           }
 
           if (shouldWait()) {
+            if ((callback.getRecheckCount() % RECHECK_DEBUG_COUNT) == 0) {
+              LOGGER.fine(LOG_WAITING_COUNT,  serverName, callback.getRecheckCount());
+            }
             // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
             return doDelay(createReadAndIfReadyCheckStep(callback), packet,
                     getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
           } else {
-            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, callback.getRecheckCount());
+            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
             // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
             return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
                     info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);

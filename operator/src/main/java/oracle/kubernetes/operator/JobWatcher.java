@@ -204,7 +204,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        dispatchCallback(getJobName(item), item.object);
+        //dispatchCallback(getJobName(item), item.object);
         break;
       case "DELETED":
       case "ERROR":
