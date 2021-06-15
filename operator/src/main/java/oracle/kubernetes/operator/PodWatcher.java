@@ -340,7 +340,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           if ((info != null) && (callResponse != null)) {
             String serverName = (String)packet.get(SERVER_NAME);
-            info.setServerPodFromEvent(getPodLabel(callResponse.getResult()), callResponse.getResult());
+            Optional.ofNullable(callResponse.getResult())
+                    .ifPresent(result -> info.setServerPodFromEvent(getPodLabel(result), result));
             if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
               LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, info.getWatchBackstopRecheckCount());
               return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
