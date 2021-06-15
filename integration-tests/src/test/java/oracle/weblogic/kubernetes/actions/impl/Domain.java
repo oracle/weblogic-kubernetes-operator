@@ -695,7 +695,6 @@ public class Domain {
    * @param opServiceAccount service account of operator
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithScalingActionScript(String clusterName,
@@ -969,8 +968,6 @@ public class Domain {
                                      V1Pod adminPod) throws ApiException, InterruptedException {
     LoggingFacade logger = getLogger();
     StringBuffer scalingCommand = new StringBuffer()
-        //.append(" export INTERNAL_OPERATOR_CERT=")
-        //.append("`cat ./internal-identity/internalOperatorCert`")
         .append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
         .append(" --action=")
         .append(scalingAction)

@@ -379,7 +379,6 @@ public class TestActions {
    * @param opServiceAccount service account of operator
    * @return true if scaling the cluster succeeds, false otherwise
    * @throws ApiException if Kubernetes client API call fails
-   * @throws IOException if an I/O error occurs
    * @throws InterruptedException if any thread has interrupted the current thread
    */
   public static boolean scaleClusterWithScalingActionScript(String clusterName,

@@ -9,11 +9,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -111,14 +109,13 @@ class ItUsabilityOperatorHelmChart {
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
   private static String domain4Namespace = null;
-  private static String CLUSTER_ROLE_NAME = "operator_cluster_role";
+
   // domain constants
   private final String domain1Uid = "usabdomain1";
   private final String domain2Uid = "usabdomain2";
   private final String domain3Uid = "usabdomain3";
   private final String domain4Uid = "usabdomain4";
   private final String domain5Uid = "usabdomain5";
-  private String domainHomeLocation;
 
   private final String clusterName = "cluster-1";
   private final int managedServerPort = 8001;
@@ -761,7 +758,7 @@ class ItUsabilityOperatorHelmChart {
    * Verify domains scaling by calling scalingAction.sh script
    */
   @Test
-  @DisplayName("Create domain1, domain2 in the same namespace managed by operator ,"
+  @DisplayName("Create domain4, domain5 in the same namespace managed by operator ,"
       + " verify scaling via scalingAction.sh script and restAPI")
   public void testTwoDomainsInSameNameSpaceOnOperator() {
 
@@ -1207,63 +1204,5 @@ class ItUsabilityOperatorHelmChart {
     } else {
       return false;
     }
-  }
-
-  private static void scaleViaScript(String opNamespace, String domainNamespace,
-                              String domainUid, String scalingAction, String clusterName,
-                              String opServiceAccount, int scalingSize) throws ApiException, InterruptedException {
-
-    StringBuffer scalingCommand = new StringBuffer("export INTERNAL_OPERATOR_CERT=")
-        .append("`cat ./internal-identity/internalOperatorCert`")
-        .append("   && ./scalingAction.sh ")
-        .append(" --action=")
-        .append(scalingAction)
-        .append(" --domain_uid=")
-        .append(domainUid)
-        .append(" --wls_domain_namespace=")
-        .append(domainNamespace)
-        .append(" --cluster_name=")
-        .append(clusterName)
-        .append(" --operator_namespace=")
-        .append(opNamespace)
-        .append(" --operator_service_account=")
-        .append(opServiceAccount)
-        .append(" --operator_service_name=")
-        .append("internal-weblogic-operator-svc")
-        .append(" --scaling_size=")
-        .append(scalingSize)
-        .append(" --kubernetes_master=")
-        .append("https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT");
-
-
-    String commandToExecuteInsidePod = scalingCommand.toString();
-
-    String labelSelector = String.format("weblogic.operatorName in (%s)", opNamespace);
-    V1Pod operatorPod = assertDoesNotThrow(() ->
-            Kubernetes.getPod(opNamespace, labelSelector, "weblogic-operator-"),
-        String.format("Could not get the server Pod {0} in namespace {1}",
-            "weblogic-operator", opNamespace));
-
-    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
-        "/bin/sh", "-c", commandToExecuteInsidePod),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
-
-    ExecResult result1 = assertDoesNotThrow(() -> Kubernetes.exec(operatorPod, null, true,
-        "/bin/sh", "-c", "cat scalingAction.log"),
-        String.format("Could not execute the command %s in pod %s, namespace %s",
-            commandToExecuteInsidePod, "weblogic-operator", opNamespace));
-    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
-        "cat scalingAction.log", result1.exitValue(), result1.stderr(), result1.stdout());
-
-    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
-    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
-
-    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
-        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
-            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
-
   }
 }
