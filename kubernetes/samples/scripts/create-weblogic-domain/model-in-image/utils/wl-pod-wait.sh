@@ -2,19 +2,12 @@
 # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-#
-# This is a utility script that waits until a domain's pods have all exited,
-# or waits until a domain's pods have all reached the ready state plus have
-# have the same domain restart version, introspect version, image, and
-# common mount images as the pod's domain resource.
-# 
-# See 'usage()' below for  details.
-#
-
 set -eu
 set -o pipefail
 
-timeout_secs_def=1000
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
+timeout_secs=1000
 
 function usage() {
 
@@ -23,17 +16,30 @@ function usage() {
   Usage:
 
     $(basename $0) [-n mynamespace] [-d mydomainuid] \\
-       [-p expected_pod_count] \\
-       [-t timeout_secs] \\
-       [-q]
+       [-p expected_pod_count] [-t timeout_secs] [-q]
 
-    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+  Description:
+
+    This utility script exits successfully when the designated number of
+    WebLogic Server pods in the given WebLogic Kubernetes Operator domain
+    reach a 'ready' state and have 'restartVersion', 'introspectVersion',
+    'spec.image', and 'spec.serverPod.commonMounts.image' values that match
+    their corresponding values in their domain resource.
+
+    If the designated number of pods is zero, then this script exits
+    successfully when all pods for the given domain have exited.
+
+    This script exits non-zero if a configurable timeout is reached
+    before the target pod count is reached (default $timeout_secs
+    seconds). It also exists non-zero if the specified domain
+    cannot be found and the target pod count is at least one.
 
   Parameters:
 
-    -d <domain_uid> : Defaults to 'sample-domain1'.
+    -d <domain_uid> : WKO Domain UID. Defaults to '$DOMAIN_UID'.
 
-    -n <namespace>  : Defaults to 'sample-domain1-ns'.
+    -n <namespace>  : Kubernetes namespace.
+                      Defaults to '$DOMAIN_NAMESPACE'.
 
     -p 0            : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
@@ -47,10 +53,10 @@ function usage() {
                       - same 'weblogic.introspectVersion' label value as
                         the domain resource's 'spec.introspectVersion'
                       - same image as the domain resource's 'spec.image'
-                      - same common mount images as
-                        the domain resource's 'spec.serverPod.commonMounts'
+                      - same image(s) as specified in the domain resource's
+                        optional 'spec.serverPod.commonMounts.image'
 
-    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
+    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs'.
 
     -q              : Quiet mode. Show only a count of wl pods that
                       have reached the desired criteria.
@@ -60,13 +66,7 @@ function usage() {
 EOF
 }
 
-DOMAIN_UID="sample-domain1"
-DOMAIN_NAMESPACE="sample-domain1-ns"
-
 expected=0
-
-timeout_secs=$timeout_secs_def
-
 syntax_error=false
 verbose=true
 report_interval=120
