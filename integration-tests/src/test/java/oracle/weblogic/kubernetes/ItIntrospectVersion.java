@@ -185,8 +185,8 @@ public class ItIntrospectVersion {
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
     // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30109, 30405);
-    int nodeportshttps = getNextFreePort(30143, 30543);
+    nodeportshttp = getNextFreePort();
+    int nodeportshttps = getNextFreePort();
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
@@ -230,10 +230,7 @@ public class ItIntrospectVersion {
 
     int replicaCount = 2;
 
-    // in general the node port range has to be between 30,000 to 32,767
-    // to avoid port conflict because of the delay in using it, the port here
-    // starts with 30100
-    final int t3ChannelPort = getNextFreePort(30172, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
