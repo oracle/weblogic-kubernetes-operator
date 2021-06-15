@@ -153,7 +153,7 @@ public class ItFmwDomainInPVUsingWDT {
   public void testFmwDomainOnPVUsingWdt() {
     final String pvName = domainUid + "-" + domainNamespace + "-pv";
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
-    final int t3ChannelPort = getNextFreePort(30000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     // create FMW domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,

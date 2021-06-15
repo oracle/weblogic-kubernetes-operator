@@ -45,7 +45,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBa
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.DbUtils.getNewSuffixCount;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -118,7 +117,7 @@ public class ItFmwSample {
     assertNotNull(namespaces.get(2), "Namespace is null");
     domainNamespace = namespaces.get(2);
 
-    int dbPort = 30011 + getNewSuffixCount();
+    int dbPort = getNextFreePort();
     logger.info("Start DB and for namespace: {0}, "
             + "dbImage: {2},  fmwImage: {3}, dbPort: {4} ", dbNamespace,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC, dbPort);
@@ -358,8 +357,8 @@ public class ItFmwSample {
     // in general the node port range has to be between 30,100 to 32,767
     // to avoid port conflict because of the delay in using it, the port here
     // starts with 30172
-    final int t3ChannelPort = getNextFreePort(30172, 32767);
-    final int adminNodePort = getNextFreePort(30701, 32767);
+    final int t3ChannelPort = getNextFreePort();
+    final int adminNodePort = getNextFreePort();
 
     // change namespace from default to custom, domain name, and t3PublicAddress
     assertDoesNotThrow(() -> {
