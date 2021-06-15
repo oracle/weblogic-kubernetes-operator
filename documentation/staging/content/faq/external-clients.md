@@ -153,7 +153,7 @@ is hosted outside of the Kubernetes cluster, then:
   requires each server in a cluster to be individually addressable,
   but this conflicts with the current operator requirement that
   a network channel in a cluster have the same port across all servers in the cluster.
-  If this is a requirement, then contact the WebLogic Operator team for potential solutions.
+  If this is a requirement, then contact the WebLogic Kubenetes Operator team for potential solutions.
 
 If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications
@@ -174,7 +174,7 @@ that call the resource are located within the cluster, then:
 - __JTA NOTE__: WebLogic does not directly support JTA access to a cluster that is exposed
   using a single port. This is because external JTA requires each server in a cluster
   to be individually addressable.
-  If this is a requirement, then contact the WebLogic Operator team for potential solutions.
+  If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.
 
 {{% notice note %}}
 All DNS addresses must be 'DNS-1123' compliant;
