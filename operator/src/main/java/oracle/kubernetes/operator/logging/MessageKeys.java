@@ -140,6 +140,8 @@ public class MessageKeys {
   public static final String HTTP_REQUEST_GOT_THROWABLE = "WLSKO-0189";
   public static final String DOMAIN_ROLL_STARTING = "WLSKO-0190";
   public static final String DOMAIN_ROLL_COMPLETED = "WLSKO-0191";
+  public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
+  public static final String LOG_WAITING_COUNT = "WLSKO-0193";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

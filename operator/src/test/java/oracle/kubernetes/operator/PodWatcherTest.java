@@ -34,7 +34,9 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
+import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
@@ -69,12 +71,17 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
 
   private String[] getMessageKeys() {
     return new String[] {
-        getPodFailedMessageKey()
+        getPodFailedMessageKey(),
+        getMakeRightDomainStepKey()
     };
   }
 
   private String getPodFailedMessageKey() {
     return INTROSPECTOR_POD_FAILED;
+  }
+
+  private String getMakeRightDomainStepKey() {
+    return EXECUTE_MAKE_RIGHT_DOMAIN;
   }
 
   @Override
@@ -246,6 +253,16 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
+  public void whenPodCreatedAndNotReadyAfterTimeout_executeMakeRightDomain() {
+    executeWaitForReady();
+
+    testSupport.setTime(10, TimeUnit.SECONDS);
+
+    assertThat(terminalStep.wasRun(), is(true));
+    assertThat(logRecords, containsFine(getMakeRightDomainStepKey()));
+  }
+
+  @Test
   public void whenPodNotReadyLater_dontRunNextStep() {
     sendPodModifiedWatchAfterWaitForReady(this::dontChangePod);
 
@@ -313,6 +330,19 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
       for (Function<V1Pod,V1Pod> modifier : modifiers) {
         watcher.receivedResponse(new Watch.Response<>("MODIFIED", modifier.apply(createPod())));
       }
+    } finally {
+      stopping.set(true);
+    }
+  }
+
+  // Starts the waitForReady step with an uncreated pod and sends a watch indicating that the pod has changed
+  private void executeWaitForReady() {
+    AtomicBoolean stopping = new AtomicBoolean(false);
+    PodWatcher watcher = createWatcher(stopping);
+
+    try {
+      testSupport.addDomainPresenceInfo(new DomainPresenceInfo(NS, "domain1"));
+      testSupport.runSteps(watcher.waitForReady(NAME, terminalStep));
     } finally {
       stopping.set(true);
     }
