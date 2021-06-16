@@ -44,7 +44,7 @@ function usage {
 # Parse the command line options
 #
 executeIt=false
-while getopts "ehi:o:u:" opt; do
+while getopts "ehi:o:u:d:" opt; do
   case $opt in
     i) valuesInputFile="${OPTARG}"
     ;;
@@ -77,7 +77,7 @@ if [ "${missingRequiredOption}" == "true" ]; then
   usage 1
 fi
 
-if [ -z "${azureResourceUID}" ];then 
+if [ -z "${azureResourceUID}" ];then
   azureResourceUID=`date +%s`
 fi
 
@@ -205,7 +205,7 @@ function createYamlFiles {
   if [ -z ${domainInputFile} ]; then
     domainInputFile="${dirCreateDomain}/create-domain-inputs.yaml"
   fi
-  
+
   cp ${domainInputFile} ${domain1Output}
   sed -i -e "s;^image\:.*;image\: ${weblogicDockerImage};g" ${domain1Output}
   sed -i -e "s:#imagePullSecretName.*:imagePullSecretName\: ${imagePullSecretName}:g" ${domain1Output}
@@ -215,7 +215,7 @@ function createYamlFiles {
 
   # Parse domain configuration yaml for usage in load balancer
   exportValuesFile=$(mktemp /tmp/export-values-XXXXXXXXX.sh)
-  tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat) 
+  tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)
   parseYaml ${domain1Output} ${exportValuesFile}
   if [ ! -f ${exportValuesFile} ]; then
     echo Unable to locate the parsed output of ${domain1Output}.
@@ -227,7 +227,7 @@ function createYamlFiles {
   cat ${exportValuesFile}
   echo
   # javaOptions may contain tokens that are not allowed in export command
-  # we need to handle it differently. 
+  # we need to handle it differently.
   # we set the javaOptions variable that can be used later
   tmpStr=`grep "javaOptions" ${exportValuesFile}`
   javaOptions=${tmpStr//"javaOptions="/}
@@ -240,7 +240,7 @@ function createYamlFiles {
   # Generate the yaml to create load balancer for Administration Server.
   echo Generating ${adminLbOutput}
 
-  cp ${wlsLbInput} ${adminLbOutput}  
+  cp ${wlsLbInput} ${adminLbOutput}
   sed -i -e "s:%SELECTOR_SERVER_TYPE%:${selectorAdminServerName}:g" ${adminLbOutput}
   sed -i -e "s:%DOMAIN_UID%:${domainUID}:g" ${adminLbOutput}
   sed -i -e "s:%SERVER_PORT%:${adminPort}:g" ${adminLbOutput}
@@ -275,7 +275,7 @@ function createResourceGroup {
     # Create a resource group
     echo Check if ${azureResourceGroupName} exists
     ret=$(az group exists --name ${azureResourceGroupName})
-    if [ $ret != false ];then 
+    if [ $ret != false ];then
       fail "${azureResourceGroupName} exists, please change value of namePrefix to generate a new resource group name."
     fi
 
@@ -287,7 +287,7 @@ function createAndConnectToAKSCluster {
     # Create aks cluster
     echo Check if ${aksClusterName} exists
     ret=$(az aks list -g ${azureResourceGroupName} | grep "${aksClusterName}")
-    if [ -n "$ret" ];then 
+    if [ -n "$ret" ];then
       fail "AKS instance with name ${aksClusterName} exists."
     fi
 
@@ -313,7 +313,7 @@ function createFileShare {
     echo Check if the storage account ${storageAccountName} exists.
     ret=$(az storage account check-name --name ${storageAccountName})
     nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
-    if [ -n "$nameAvailable" ];then 
+    if [ -n "$nameAvailable" ];then
       echo $ret
       fail "Storage account ${aksClusterName} is unavaliable."
     fi
@@ -332,7 +332,7 @@ function createFileShare {
     # Create the file share
     echo Check if file share exists
     ret=$( az storage share exists --name ${azureStorageShareName} --account-name ${storageAccountName} --connection-string $azureStorageConnectionString | grep "exists" | grep false)
-    if [ $ret == true ];then 
+    if [[ "$ret" == "true" ]];then
       fail "File share name  ${azureStorageShareName} is unavaliable."
     fi
 
@@ -508,7 +508,7 @@ createYamlFiles
 # All done if the execute option is true
 if [ "${executeIt}" = true ]; then
 
-  # Login Azure with service pricipal
+  # Login Azure with service principal
   loginAzure
 
   # Create resource group
