@@ -366,6 +366,35 @@ public class TestActions {
         scalingSize, opNamespace, opServiceAccount, myWebAppName, curlCommand);
   }
 
+  /**
+   * Scale the cluster of the domain in the specified namespace with WLDF policy.
+   *
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param domainUid domainUid of the domain to be scaled
+   * @param domainNamespace domain namespace in which the domain exists
+   * @param domainHomeLocation domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize number of servers to be scaled up or down
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount service account of operator
+   * @return true if scaling the cluster succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean scaleClusterWithScalingActionScript(String clusterName,
+                                             String domainUid,
+                                             String domainNamespace,
+                                             String domainHomeLocation,
+                                             String scalingAction,
+                                             int scalingSize,
+                                             String opNamespace,
+                                             String opServiceAccount)
+      throws ApiException, InterruptedException {
+    return Domain.scaleClusterWithScalingActionScript(clusterName,
+        domainUid, domainNamespace, domainHomeLocation, scalingAction,
+        scalingSize, opNamespace, opServiceAccount);
+  }
+
   // ------------------------   Ingress Controller ----------------------
 
   /**
