@@ -247,6 +247,7 @@ abstract class WaitForReadyStep<T> extends Step {
   }
 
   static class MakeRightDomainStep extends DefaultResponseStep {
+    public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
     private final WaitForReadyStep.Callback callback;
     private final String name;
 
@@ -265,9 +266,10 @@ abstract class WaitForReadyStep<T> extends Step {
         makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain) callResponse.getResult()));
         makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
       }
-      callback.fiber.terminate(new Exception("timeout exceeded"), packet);
+      callback.fiber.terminate(new Exception(WAIT_TIMEOUT_EXCEEDED), packet);
       return super.onSuccess(packet, callResponse);
     }
+
   }
 
   class Callback implements Consumer<T> {
