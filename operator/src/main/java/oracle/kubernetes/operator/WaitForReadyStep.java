@@ -36,12 +36,12 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
   static NextStepFactory NEXT_STEP_FACTORY =
-          (callback, info, name, next) -> createMakeDomainRightStep(callback, info, name, next);
+          (callback, info, next) -> createMakeDomainRightStep(callback, info, next);
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
-                                           DomainPresenceInfo info, String name, Step next) {
+                                           DomainPresenceInfo info, Step next) {
     return new CallBuilder().readDomainAsync(info.getDomainUid(),
-            info.getNamespace(), new MakeRightDomainStep(callback, name, null));
+            info.getNamespace(), new MakeRightDomainStep(callback, null));
   }
 
   static int getWatchBackstopRecheckDelaySeconds() {
@@ -249,12 +249,10 @@ abstract class WaitForReadyStep<T> extends Step {
   static class MakeRightDomainStep extends DefaultResponseStep {
     public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
     private final WaitForReadyStep.Callback callback;
-    private final String name;
 
-    MakeRightDomainStep(WaitForReadyStep.Callback callback, String name, Step next) {
+    MakeRightDomainStep(WaitForReadyStep.Callback callback, Step next) {
       super(next);
       this.callback = callback;
-      this.name = name;
     }
 
     @Override
@@ -329,7 +327,7 @@ abstract class WaitForReadyStep<T> extends Step {
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
     Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
-                                                   DomainPresenceInfo info, String name, Step next);
+                                                   DomainPresenceInfo info, Step next);
   }
 
 }

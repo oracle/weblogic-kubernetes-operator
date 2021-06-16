@@ -270,7 +270,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
     @Override
     public Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
-                                                  DomainPresenceInfo info, String name, Step next) {
+                                                  DomainPresenceInfo info, Step next) {
       return next;
     }
   }
