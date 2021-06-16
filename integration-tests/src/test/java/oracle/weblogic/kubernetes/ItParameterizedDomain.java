@@ -186,6 +186,7 @@ class ItParameterizedDomain {
   private static final String DATA_HOME_OVERRIDE = "/u01/oracle/mydata";
   private static final String miiImageName = "mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
+  private static final String miiDomainUid = "miidomain";
 
   private static String opNamespace = null;
   private static String opServiceAccount = null;
@@ -200,9 +201,9 @@ class ItParameterizedDomain {
   private static int t3ChannelPort = 0;
   private static String miiDomainNamespace = null;
   private static String miiDomainNegativeNamespace = null;
-  private static final String miiDomainUid = "miidomain";
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
+
   private String curlCmd = null;
 
   /**
@@ -1551,10 +1552,10 @@ class ItParameterizedDomain {
    * The admin server service/pod will not be created.
    * The error message should be logged in the operator log.
    *
+   * @param domainUid the uid of the domain to be created
    * @param domainNamespace namespace in which the domain will be created
-   * @return oracle.weblogic.domain.Domain objects
    */
-  private Domain createMiiDomainNegative(String domainUid, String domainNamespace) {
+  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
 
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -1620,8 +1621,6 @@ class ItParameterizedDomain {
       // ignore
     }
     checkServiceDoesNotExist(adminServerPodName, domainNamespace);
-
-    return domain;
   }
 
   /**
