@@ -110,7 +110,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
@@ -1397,12 +1396,9 @@ class ItMonitoringExporter {
 
     monitoringExporterSrcDir = monitoringTemp.toString();
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
-    String monitoringExporterVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_VERSION"))
-        .orElse(MONITORING_EXPORTER_VERSION);
 
     //adding ability to build monitoring exporter if branch is not master
     boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
-    logger.info("create a monitoring exporter version {0} ",monitoringExporterVersion);
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
