@@ -453,7 +453,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
     defineExporterConfiguration().withIstio();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("http-metrics");
+    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo("TCP"));
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
