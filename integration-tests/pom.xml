@@ -325,7 +325,7 @@
                   **/ItT3Channel,
                   **/ItOpUpgradeFmwDomainInPV,
                   **/ItOCILoadBalancer,
-                  **/ItIstioCrossClusters*>
+                  **/ItIstioCrossClusters*
                 </excludes-failsafe>
             </properties>
         </profile>
