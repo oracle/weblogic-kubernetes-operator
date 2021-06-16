@@ -79,7 +79,7 @@ public abstract class TuningParametersStub implements TuningParameters {
 
   @Override
   public WatchTuning getWatchTuning() {
-    return null;
+    return new TuningParameters.WatchTuning(30, 0, 5, 1);
   }
 
   @Override

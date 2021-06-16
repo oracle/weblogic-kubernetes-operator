@@ -95,7 +95,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   private final AtomicBoolean stopping = new AtomicBoolean(false);
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private final PodWatcher watcher = createWatcher(NS, stopping, INITIAL_RESOURCE_VERSION);
-  final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0, 5);
+  final TuningParameters.WatchTuning tuning = new TuningParameters.WatchTuning(30, 0, 5, 24);
 
   @Nonnull
   private static String getManagedServerName(int n) {
