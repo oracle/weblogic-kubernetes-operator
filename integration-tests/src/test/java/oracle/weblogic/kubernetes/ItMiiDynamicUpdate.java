@@ -1001,6 +1001,12 @@ class ItMiiDynamicUpdate {
 
   }
 
+  /**
+   * Verify the operator log contains the introspector job logs.
+   * When the introspector fails, it should log the correct error msg. For example,
+   * the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true',
+   * but there are unsupported model changes for online update.
+   */
   @Test
   @Order(15)
   @DisplayName("verify the operator log")
