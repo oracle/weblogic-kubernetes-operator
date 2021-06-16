@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -28,7 +29,9 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -36,8 +39,15 @@ import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.NextAction;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
+import static oracle.kubernetes.operator.logging.MessageKeys.LOG_WAITING_COUNT;
 
 /**
  * Watches for changes to pods.
@@ -305,6 +315,8 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
   private abstract static class WaitForPodStatusStep extends WaitForReadyStep<V1Pod> {
 
+    public static final int RECHECK_DEBUG_COUNT = 10;
+
     private WaitForPodStatusStep(V1Pod pod, Step next) {
       super(pod, next);
     }
@@ -322,6 +334,67 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     Step createReadAsyncStep(String name, String namespace, String domainUid, ResponseStep<V1Pod> responseStep) {
       return new CallBuilder().readPodAsync(name, namespace, domainUid, responseStep);
     }
+
+    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
+      return new DefaultResponseStep<>(getNext()) {
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          String serverName = (String)packet.get(SERVER_NAME);
+          String resource = initialResource == null ? resourceName : getMetadata(initialResource).getName();
+          if ((info != null) && (callResponse != null)) {
+            Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
+                    info.setServerPodFromEvent(getPodLabel(result), result));
+            if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
+              LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
+              removeCallback(resource, callback);
+              return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, getNext()), packet);
+            }
+          }
+
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return null;
+          }
+
+          if (shouldWait()) {
+            if ((callback.getRecheckCount() % RECHECK_DEBUG_COUNT) == 0) {
+              LOGGER.fine(LOG_WAITING_COUNT,  serverName, callback.getRecheckCount());
+            }
+            // Watch backstop recheck count is less than or equal to the configured recheck count, delay.
+            return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                    getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+          } else {
+            LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
+            removeCallback(resource, callback);
+            // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
+            return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, getNext()), packet);
+          }
+        }
+
+        private String getPodLabel(V1Pod pod) {
+          return Optional.ofNullable(pod)
+                  .map(V1Pod::getMetadata)
+                  .map(V1ObjectMeta::getLabels)
+                  .map(m -> m.get(LabelConstants.SERVERNAME_LABEL))
+                  .orElse(null);
+        }
+
+        private V1Pod getServerPod(DomainPresenceInfo info, String serverName) {
+          return Optional.ofNullable(serverName).map(info::getServerPod).orElse(null);
+        }
+
+        private boolean isNotFoundOnRead(CallResponse callResponse) {
+          return callResponse.getResult() == null;
+        }
+
+        private boolean shouldWait() {
+          return callback.incrementAndGetRecheckCount() <= getWatchBackstopRecheckCount();
+        }
+      };
+    }
+
   }
 
   private class WaitForPodReadyStep extends WaitForPodStatusStep {
@@ -360,11 +433,23 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     protected void logWaiting(String name) {
       LOGGER.fine(MessageKeys.WAITING_FOR_POD_READY, name);
     }
+
+    @Override
+    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
+      // Return true if cached pod is not null but pod not found in explicit read, false otherwise.
+      return (cachedPod != null) && isNotFoundOnRead;
+    }
+
   }
 
   private class WaitForPodDeleteStep extends WaitForPodStatusStep {
     private WaitForPodDeleteStep(V1Pod pod, Step next) {
       super(pod, next);
+    }
+
+    @Override
+    protected boolean onReadNotFoundForCachedResource(V1Pod cachedPod, boolean isNotFoundOnRead) {
+      return false;
     }
 
     // A pod is considered deleted when reading its value from Kubernetes returns null.

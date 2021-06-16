@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBinding
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
@@ -682,6 +683,97 @@ public class Domain {
   }
 
   /**
+   * Scale the cluster of the domain in the specified namespace with WLDF.
+   *
+   * @param clusterName name of the WebLogic cluster to be scaled in the domain
+   * @param domainUid domainUid of the domain to be scaled
+   * @param domainNamespace domain namespace in which the domain exists
+   * @param domainHomeLocation domain home location of the domain
+   * @param scalingAction scaling action, accepted value: scaleUp or scaleDown
+   * @param scalingSize number of servers to be scaled up or down
+   * @param opNamespace namespace of WebLogic operator
+   * @param opServiceAccount service account of operator
+   * @return true if scaling the cluster succeeds, false otherwise
+   * @throws ApiException if Kubernetes client API call fails
+   * @throws InterruptedException if any thread has interrupted the current thread
+   */
+  public static boolean scaleClusterWithScalingActionScript(String clusterName,
+                                             String domainUid,
+                                             String domainNamespace,
+                                             String domainHomeLocation,
+                                             String scalingAction,
+                                             int scalingSize,
+                                             String opNamespace,
+                                             String opServiceAccount)
+      throws ApiException, InterruptedException {
+    LoggingFacade logger = getLogger();
+    // create RBAC API objects for WLDF script
+    logger.info("Creating RBAC API objects for scaling script");
+    if (!createRbacApiObjectsForWLDFScript(domainNamespace, opNamespace)) {
+      logger.info("failed to create RBAC objects for scaling script in namespace {0} and {1}",
+          domainNamespace, opNamespace);
+      return false;
+    }
+
+    // copy scalingAction.sh to Admin Server pod
+    // NOTE: you must copy scalingAction.sh to $DOMAIN_HOME/bin/scripts on admin server pod
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    V1Pod adminPod = Kubernetes.getPod(domainNamespace, null, adminServerPodName);
+    if (adminPod == null) {
+      logger.info("The admin pod {0} does not exist in namespace {1}!", adminServerPodName, domainNamespace);
+      return false;
+    }
+
+    // create $DOMAIN_HOME/bin/scripts directory on admin server pod
+    logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Creating directory {0}/bin/scripts on admin server pod, waiting for success"
+                    + " (elapsed time {1}ms, remaining time {2}ms)",
+                domainHomeLocation,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true,
+              "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
+        });
+
+    logger.info("Copying scalingAction.sh to admin server pod");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying scalingAction.sh to admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileToPod(domainNamespace, adminServerPodName, null,
+              Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
+              Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
+        });
+
+    logger.info("Adding execute mode for scalingAction.sh");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Adding execute mode for scalingAction.sh, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return executeCommandOnPod(adminPod, null, true,
+              "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
+        });
+
+    if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
+      logger.info("Set scaleAction to either scaleUp or scaleDown");
+      return false;
+    }
+    assertDoesNotThrow(() -> scaleViaScript(opNamespace,domainNamespace,
+        domainUid,scalingAction,clusterName,opServiceAccount,scalingSize,domainHomeLocation, adminPod),
+        "scaling failed");
+    return true;
+  }
+
+  /**
    * Create cluster role, cluster role binding and role binding used by WLDF script action.
    *
    * @param domainNamespace WebLogic domain namespace
@@ -867,5 +959,64 @@ public class Domain {
       return false;
     }
     return true;
+  }
+
+  private static void scaleViaScript(String opNamespace, String domainNamespace,
+                                     String domainUid, String scalingAction, String clusterName,
+                                     String opServiceAccount, int scalingSize,
+                                     String domainHomeLocation,
+                                     V1Pod adminPod) throws ApiException, InterruptedException {
+    LoggingFacade logger = getLogger();
+    StringBuffer scalingCommand = new StringBuffer()
+        .append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
+        .append(" --action=")
+        .append(scalingAction)
+        .append(" --domain_uid=")
+        .append(domainUid)
+        .append(" --wls_domain_namespace=")
+        .append(domainNamespace)
+        .append(" --cluster_name=")
+        .append(clusterName)
+        .append(" --operator_namespace=")
+        .append(opNamespace)
+        .append(" --operator_service_account=")
+        .append(opServiceAccount)
+        .append(" --operator_service_name=")
+        .append("internal-weblogic-operator-svc")
+        .append(" --scaling_size=")
+        .append(scalingSize)
+        .append(" --kubernetes_master=")
+        .append("https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT");
+
+
+    String commandToExecuteInsidePod = scalingCommand.toString();
+
+    ExecResult result = assertDoesNotThrow(() -> Kubernetes.exec(adminPod, null, true,
+        "/bin/sh", "-c", commandToExecuteInsidePod),
+        String.format("Could not execute the command %s in pod %s, namespace %s",
+            commandToExecuteInsidePod, adminPod.getMetadata().getName(), domainNamespace));
+    logger.info("Command {0} returned with exit value {1}, stderr {2}, stdout {3}",
+        commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
+
+    // copy scalingAction.log to local
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
+                    + "(elapsed time {0}ms, remaining time {1}ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          return copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+              domainHomeLocation + "/bin/scripts/scalingAction.log",
+              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
+        });
+
+    // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
+    // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
+
+    assertFalse(result.exitValue() != 0 && result.stderr() != null && !result.stderr().isEmpty(),
+        String.format("Command %s failed with exit value %s, stderr %s, stdout %s",
+            commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout()));
+
   }
 }
