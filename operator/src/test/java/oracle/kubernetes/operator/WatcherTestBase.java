@@ -9,11 +9,15 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.builders.WatchEvent;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.utils.TestUtils.ConsoleHandlerMemento;
 import org.junit.jupiter.api.AfterEach;
@@ -40,7 +44,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   private final List<Memento> mementos = new ArrayList<>();
   private final List<Watch.Response<?>> callBacks = new ArrayList<>();
   private final AtomicBoolean stopping = new AtomicBoolean(false);
-  final WatchTuning tuning = new WatchTuning(30, 0, 5);
+  final WatchTuning tuning = new WatchTuning(30, 0, 5, 24);
   private BigInteger resourceVersion = INITIAL_RESOURCE_VERSION;
 
   private V1ObjectMeta createMetaData() {
@@ -80,8 +84,10 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
     return TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(hasNextException);
   }
 
-  final void addMemento(Memento memento) {
+  final void addMemento(Memento memento) throws NoSuchFieldException {
     mementos.add(memento);
+    mementos.add(TuningParametersStub.install());
+    mementos.add(TestStepFactory.install());
   }
 
   @AfterEach
@@ -253,4 +259,19 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   protected abstract Watcher<?> createWatcher(String ns, AtomicBoolean stopping, BigInteger rv);
+
+  static class TestStepFactory implements WaitForReadyStep.NextStepFactory {
+
+    private static TestStepFactory factory = new TestStepFactory();
+
+    private static Memento install() throws NoSuchFieldException {
+      return StaticStubSupport.install(WaitForReadyStep.class, "NEXT_STEP_FACTORY", factory);
+    }
+
+    @Override
+    public Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+                                                  DomainPresenceInfo info, Step next) {
+      return next;
+    }
+  }
 }

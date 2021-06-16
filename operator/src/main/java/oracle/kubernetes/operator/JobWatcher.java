@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import javax.annotation.Nonnull;
@@ -25,13 +26,16 @@ import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
+import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.watcher.WatchListener;
+import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
@@ -243,6 +247,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return isComplete(job) || isFailed(job);
     }
 
+    @Override
+    boolean onReadNotFoundForCachedResource(V1Job cachedJob, boolean isNotFoundOnRead) {
+      return false;
+    }
+
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those
     // where the job is not yet ready.
     @Override
@@ -301,6 +310,21 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     @Override
     void logWaiting(String name) {
       LOGGER.fine(MessageKeys.WAITING_FOR_JOB_READY, name);
+    }
+
+    @Override
+    protected DefaultResponseStep<V1Job> resumeIfReady(Callback callback) {
+      return new DefaultResponseStep<>(null) {
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return doNext(packet);
+          }
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                  getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      };
     }
   }
 

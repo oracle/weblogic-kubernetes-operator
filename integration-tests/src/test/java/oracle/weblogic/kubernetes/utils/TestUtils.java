@@ -178,6 +178,28 @@ public class TestUtils {
     return port;
   }
 
+  private static int port = 30000;
+  private static final int END_PORT = 32767;
+
+  /**
+   * Get the next free port between port and END_PORT.
+   *
+   * @return the next free port number, if there is no free port below END_PORT return -1.
+   */
+  public static synchronized int getNextFreePort() {
+    LoggingFacade logger = getLogger();
+    int freePort = 0;
+    while (port <= END_PORT) {
+      freePort = port++;
+      if (isLocalPortFree(freePort)) {
+        logger.info("next free port is: {0}", freePort);
+        return freePort;
+      }
+    }
+    logger.warning("Could not get free port below " + END_PORT);
+    return -1;
+  }
+
   /**
    * Get current date and timestamp in format yyyy-MM-dd-currentimemillis.
    * @return string with date and timestamp
