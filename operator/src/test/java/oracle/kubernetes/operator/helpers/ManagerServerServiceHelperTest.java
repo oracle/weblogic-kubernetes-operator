@@ -83,6 +83,6 @@ public class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
-    assertThat(service, containsPort("http-metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
+    assertThat(service, containsPort("tcp-metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 }
