@@ -1009,8 +1009,8 @@ class ItMiiDynamicUpdate {
    */
   @Test
   @Order(15)
-  @DisplayName("verify the operator log")
-  public void testOperatorLog() {
+  @DisplayName("verify the operator logs introspector job messages")
+  public void testOperatorLogIntrospectorMsg() {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);

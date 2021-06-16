@@ -917,12 +917,14 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Test Operator log can log warning messages.
+   * Verify Operator log can log warning messages.
+   * When the sample script tries to start a server that exceeds the max cluster size, the operator will log a warning
+   * messages.
    */
   @Order(15)
   @Test
-  @DisplayName("verify the operator log")
-  public void testOperatorLog() {
+  @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
+  public void testOperatorLogWarningMsg() {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);

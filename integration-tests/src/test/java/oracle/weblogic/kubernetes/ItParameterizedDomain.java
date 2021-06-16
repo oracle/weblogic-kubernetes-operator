@@ -297,7 +297,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
-  public void testOperatorLog() {
+  public void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
