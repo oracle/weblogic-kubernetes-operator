@@ -10,6 +10,7 @@ import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -34,6 +35,15 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
+  static NextStepFactory NEXT_STEP_FACTORY =
+          (callback, info, name, next) -> createMakeDomainRightStep(callback, info, name, next);
+
+  protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+                                           DomainPresenceInfo info, String name, Step next) {
+    return new CallBuilder().readDomainAsync(info.getDomainUid(),
+            info.getNamespace(), new MakeRightDomainStep(callback, name, null));
+  }
+
   static int getWatchBackstopRecheckDelaySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
             .map(TuningParameters::getWatchTuning)
@@ -48,8 +58,8 @@ abstract class WaitForReadyStep<T> extends Step {
             .orElse(DEFAULT_RECHECK_COUNT);
   }
 
-  private final T initialResource;
-  private final String resourceName;
+  final T initialResource;
+  final String resourceName;
 
   /**
    * Creates a step which will only proceed once the specified resource is ready.
@@ -236,24 +246,26 @@ abstract class WaitForReadyStep<T> extends Step {
 
   }
 
-  class MakeRightDomainStep extends DefaultResponseStep {
-    private final Callback callback;
+  static class MakeRightDomainStep extends DefaultResponseStep {
+    private final WaitForReadyStep.Callback callback;
+    private final String name;
 
-    MakeRightDomainStep(Callback callback, Step next) {
+    MakeRightDomainStep(WaitForReadyStep.Callback callback, String name, Step next) {
       super(next);
       this.callback = callback;
+      this.name = name;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
-      String name = initialResource == null ? resourceName : getMetadata(initialResource).getName();
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
-      makeRightDomainOperation.clear();
-      makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain)callResponse.getResult()));
-      makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
-      removeCallback(name, callback);
-      callback.fiber.terminate(null, packet);
+      if (makeRightDomainOperation != null) {
+        makeRightDomainOperation.clear();
+        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain) callResponse.getResult()));
+        makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
+      }
+      callback.fiber.terminate(new Exception("timeout exceeded"), packet);
       return super.onSuccess(packet, callResponse);
     }
   }
@@ -311,4 +323,11 @@ abstract class WaitForReadyStep<T> extends Step {
       fiber.terminate(createTerminationException(resource), packet);
     }
   }
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+                                                   DomainPresenceInfo info, String name, Step next);
+  }
+
 }

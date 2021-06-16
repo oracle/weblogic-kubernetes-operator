@@ -336,19 +336,20 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     }
 
     protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
-      return new DefaultResponseStep<>(null) {
+      return new DefaultResponseStep<>(getNext()) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
 
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           String serverName = (String)packet.get(SERVER_NAME);
+          String resource = initialResource == null ? resourceName : getMetadata(initialResource).getName();
           if ((info != null) && (callResponse != null)) {
             Optional.ofNullable(callResponse.getResult()).ifPresent(result ->
                     info.setServerPodFromEvent(getPodLabel(result), result));
             if (onReadNotFoundForCachedResource(getServerPod(info, serverName), isNotFoundOnRead(callResponse))) {
               LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
-              return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
-                      info.getNamespace(), new MakeRightDomainStep(callback,null)), packet);
+              removeCallback(resource, callback);
+              return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, resource, getNext()), packet);
             }
           }
 
@@ -366,9 +367,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
                     getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
           } else {
             LOGGER.fine(EXECUTE_MAKE_RIGHT_DOMAIN, serverName, callback.getRecheckCount());
+            removeCallback(resource, callback);
             // Watch backstop recheck count is more than configured recheck count, proceed to make-right step.
-            return doNext(new CallBuilder().readDomainAsync(info.getDomainUid(),
-                    info.getNamespace(), new MakeRightDomainStep(callback, null)), packet);
+            return doNext(NEXT_STEP_FACTORY.createMakeDomainRightStep(callback, info, resource, getNext()), packet);
           }
         }
 
