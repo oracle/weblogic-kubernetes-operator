@@ -50,7 +50,6 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioPrometheus;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -129,7 +128,7 @@ class ItIstioMonitoringExporter {
       + "it can monitor Weblogic domain via weblogic exporter webapp")
   public void testIstioPrometheus() {
     assertDoesNotThrow(() -> setupIstioModelInImageDomain(), "setup for istio based domain failed");
-    int prometheusPort = getNextFreePort(30510, 30600);
+    int prometheusPort = getNextFreePort();
     assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
         String.valueOf(prometheusPort)), "failed to install istio prometheus");
 

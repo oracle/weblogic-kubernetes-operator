@@ -276,7 +276,7 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Scale the cluster by patching domain resource for three different 
+   * Scale the cluster by patching domain resource for three different
    * type of domains i.e. domain-on-pv, domain-in-image and model-in-image
    *
    * @param domain oracle.weblogic.domain.Domain object
@@ -677,10 +677,10 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Test rolling restart for a multi-clusters domain. 
+   * Test rolling restart for a multi-clusters domain.
    * Make sure pods are restarted only once.
    * Verify all pods are terminated and restarted only once
-   * Rolling restart triggered by changing: 
+   * Rolling restart triggered by changing:
    * imagePullPolicy: IfNotPresent --> imagePullPolicy: Never
    * Verify domain changed event is logged.
    */
@@ -952,7 +952,7 @@ class ItParameterizedDomain {
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-    t3ChannelPort = getNextFreePort(31111, 32767);  // the port range has to be between 30,000 to 32,767
+    t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
