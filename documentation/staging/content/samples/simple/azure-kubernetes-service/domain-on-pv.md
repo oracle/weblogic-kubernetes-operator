@@ -301,6 +301,9 @@ We need to set up the domain configuration for the WebLogic domain.
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
+    {{% notice note %}} This sample creates WLS pods with 1.5Gi memory and 250m CPU, you can edit the resource parameters to increase resource. Edit `~/azure/weblogic-on-aks/domain1.yaml` and input expected values for `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, `serverPodCpuLimit` before running `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v`. For an example, create servers with 2Gi memory with `serverPodMemoryRequest: 2Gi` and `serverPodMemoryLimit: 3Gi`. Make sure you have provisioned enough AKS node resource. Refer to [configuration parameters]({{< relref "/samples/simple/domains/domain-home-on-pv/#configuration-parameters" >}}) for more information. You can also find more configurations from [Java heap size and memory resource considerations]({{< relref "/faq/resource-settings.md" >}}). If you want further advanced domain configuration, run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit `domain.yaml` and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
+    {{% /notice%}}
+
 4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
    Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
