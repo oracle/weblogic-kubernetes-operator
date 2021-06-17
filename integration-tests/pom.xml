@@ -319,6 +319,7 @@
             <id>kind-parallel</id>
             <properties>
                 <skipITs>false</skipITs>
+                <includes-failsafe>**/It*</includes-failsafe>
                 <excludes-failsafe>
                   **/ItOperatorWlsUpgrade,
                   **/ItDedicatedMode,
