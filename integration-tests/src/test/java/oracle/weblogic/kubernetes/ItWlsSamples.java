@@ -129,8 +129,8 @@ public class ItWlsSamples {
     nginxNamespace = namespaces.get(3);
 
     logger.info("Assign a unique namespace for Voyager controller");
-    assertNotNull(namespaces.get(3), "Namespace is null");
-    voyagerNamespace = namespaces.get(3);
+    assertNotNull(namespaces.get(4), "Namespace is null");
+    voyagerNamespace = namespaces.get(4);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -347,7 +347,7 @@ public class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
    */
-  @Order(9)
+  @Order(7)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   public void testTraefikIngressController() {
@@ -373,7 +373,7 @@ public class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
    */
-  @Order(7)
+  @Order(9)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   public void testNginxIngressController() {
@@ -410,7 +410,6 @@ public class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);
   }
-
 
   // generates the stream of objects used by parametrized test.
   private static Stream<String> paramProvider() {

@@ -172,8 +172,8 @@ function waitForIngressPod() {
   count=0
   while test $count -lt $max; do
     status=$(${kubernetesCli} get ${ipod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    printInfo "[Ingress Pod Status: ${status}]"
-    if [ x${status} == "1/1" ]; then
+    printInfo "[${type} Ingress controller pod status: ${status}]"
+    if [ x${status} == "x1/1" ]; then
       printInfo "${type} controller pod is running now."
       ${kubernetesCli} get ${ipod} -n ${ns}
       break;
