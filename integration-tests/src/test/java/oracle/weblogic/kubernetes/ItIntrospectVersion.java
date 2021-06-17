@@ -164,7 +164,7 @@ public class ItIntrospectVersion {
 
   private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "intros-sample-testing");
   private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
   // create standard, reusable retry/backoff policy
