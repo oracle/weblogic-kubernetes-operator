@@ -931,8 +931,8 @@ class ItServerStartPolicy {
     String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("WARNING"));
-    assertTrue(operatorPodLog.contains("management/weblogic/latest/serverRuntime/search failed with exception "
-        + "java.net.ConnectException: No route to host"));
+    assertTrue(operatorPodLog.contains(
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
   }
 
   /**
