@@ -44,7 +44,7 @@ without first shutting down the domain:
    then you can optionally propagate changes to WebLogic pods without a roll using an [online update](#online-updates).
    If an online update request includes non-dynamic model updates that can only be achieved
    using an offline update,
-   then the resulting behavior is controlled by the Domain YAML
+   then the resulting behavior is controlled by the domain resource YAML
    `domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges` attribute,
    which is discussed in detail later in this document.
 
@@ -65,7 +65,7 @@ _It is the administrator's responsibility to make the necessary changes to a dom
 
 {{% notice warning %}}
 Custom configuration overrides, which are WebLogic configuration overrides
-specified using a Domain YAML file `configuration.overridesConfigMap`, as described in
+specified using a domain resource YAML file `configuration.overridesConfigMap`, as described in
 [Configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}),
 are _not_ supported in combination with Model in Image.
 Model in Image will generate an error if custom overrides are specified.
@@ -177,9 +177,9 @@ and a description of workarounds and alternatives when applicable:
    - Adding WebLogic Servers to a configured cluster.
      As an alternative, consider using dynamic clusters instead of configured clusters.
    - Removing WebLogic Servers from a configured cluster.
-     As an alternative, you can lower your cluster's Domain YAML `replicas` attribute.
+     As an alternative, you can lower your cluster's domain resource YAML `replicas` attribute.
    - Decreasing the size of a dynamic cluster.
-     As an alternative, you can lower your cluster's Domain YAML `replicas` attribute.
+     As an alternative, you can lower your cluster's domain resource YAML `replicas` attribute.
 
  - You cannot change, add, or remove network listen address, port, protocol, and enabled configuration
    for existing clusters or servers at runtime.
@@ -243,18 +243,18 @@ then you can use the following approaches.
 For online or offline updates:
 
   - Specify a new or changed WDT ConfigMap that contains model files
-    and use your Domain YAML file `configuration.model.configMap` field to reference the map.
+    and use your domain resource YAML file `configuration.model.configMap` field to reference the map.
     The model files in the ConfigMap will be merged with any model files in the image.
     Ensure the ConfigMap is deployed to the same namespace as your domain.
 
   - Change, add, or delete secrets that are referenced by macros in your model files
-    and use your Domain YAML file `configuration.secrets` field to reference the secrets.
+    and use your domain resource YAML file `configuration.secrets` field to reference the secrets.
     Ensure the secrets are deployed to the same namespace as your domain.
 
 For offline updates only, there are two additional options:
 
   - Supply a new image with new or changed model files.
-    - If the files are located in the image specified in the Domain YAML file `spec.image`,
+    - If the files are located in the image specified in the domain resource YAML file `spec.image`,
       then change this field to reference the image.
     - If you are using
       [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
@@ -264,11 +264,11 @@ For offline updates only, there are two additional options:
       the new image.
 
   - Change, add, or delete environment variables that are referenced by macros in your model files.
-    Environment variables are specified in the Domain YAML file `spec.serverPod.env`
+    Environment variables are specified in the domain resource YAML file `spec.serverPod.env`
     or `spec.serverPod.adminServer.env` attributes.
 
 {{% notice note %}}
-It is advisable to defer the last two modification options, or similar Domain YAML file changes to
+It is advisable to defer the last two modification options, or similar domain resource YAML file changes to
 [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}),
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
@@ -285,7 +285,7 @@ Model updates can include additions, changes, and deletions. For help generating
  - For a discussion about helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image or images, or WDT ConfigMap,
+ - If you specify multiple model files in your image, volumes (including those based on images from the [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}}) feature), or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
    [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
@@ -306,7 +306,7 @@ Use the following steps to initiate an offline configuration update to your mode
  1. Modify, add, or delete your model resources as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
     1. If you have updated your image:
-       - If the files are located in the image specified in the Domain YAML file `spec.image`,
+       - If the files are located in the image specified in the domain resource YAML file `spec.image`,
          then change this field to reference the image.
        - If you are using
          [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
@@ -326,7 +326,7 @@ Use the following steps to initiate an offline configuration update to your mode
        For examples, see
        [change the domain `spec.restartVersion`](#changing-a-domain-restartversion-or-introspectversion)
        or change any of the other
-       [Domain YAML fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
+       [Domain resource YAML fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}}).
 
 The operator will subsequently rerun the domain's introspector job.
 This job will reload all of your secrets and environment variables,
@@ -359,7 +359,7 @@ Use the following steps to initiate an online configuration update to your model
  1. Modify, add, or delete your model secrets or WDT ConfigMap
     as per [Updating an existing model](#updating-an-existing-model).
  1. Modify your domain resource YAML file:
-    1. **Do not** change `domain.spec.image`, `domain.spec.serverPod.env`, or any other Domain YAML
+    1. **Do not** change `domain.spec.image`, `domain.spec.serverPod.env`, or any other domain resource YAML
        [fields that cause servers to be restarted]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#fields-that-cause-servers-to-be-restarted" >}});
        this will automatically and immediately result in a rerun of your introspector job,
        a roll if the job succeeds, plus an offline update if there are any accompanying model changes.
