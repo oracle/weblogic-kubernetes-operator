@@ -63,7 +63,7 @@ domainNamespaces:
 enableClusterRoleBinding: false
 
 # image specifies the container image containing the operator.
-image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3"
+image: "ghcr.io/oracle/weblogic-kubernetes-operator:3.2.4"
 
 # imagePullPolicy specifies the image pull policy for the operator's container image.
 imagePullPolicy: IfNotPresent

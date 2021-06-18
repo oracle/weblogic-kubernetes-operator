@@ -102,7 +102,7 @@ javaLoggingLevel:  "FINE"
 ##### `image`
 Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.2.4`.
 
 Example:
 ```yaml
