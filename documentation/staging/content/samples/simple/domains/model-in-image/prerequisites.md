@@ -23,7 +23,7 @@ weight: 1
    $ cd /tmp
    ```
    ```shell
-   $ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git clone --branch v3.2.4 https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.

@@ -7,7 +7,7 @@
 
   <groupId>oracle.kubernetes</groupId>
   <artifactId>operator-parent</artifactId>
-  <version>3.2.3</version>
+  <version>3.2.4</version>
 
   <modules>
     <module>operator</module>
@@ -24,7 +24,7 @@
     <developerConnection>scm:git:git@github.com:oracle/weblogic-kubernetes-operator.git
     </developerConnection>
     <url>https://github.com/oracle/weblogic-kubernetes-operator</url>
-    <tag>v3.2.3</tag>
+    <tag>v3.2.4</tag>
   </scm>
 
   <description>Oracle WebLogic Server Kubernetes Operator</description>

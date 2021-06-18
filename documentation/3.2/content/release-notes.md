@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| June 18, 2021 | v3.2.4 | no | Resolved several issues related to Istio, diagnostics, and recovery. |
 | May 21, 2021 | v3.2.3 | no | Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool. |
 | April 27, 2021 | v3.2.2 | no | Resolved a set of issues with many related to reducing the operator's network utilization. |
 | April 5, 2021 | v3.2.1 | no | Updated several dependencies, including the Oracle Linux base for the container image. |
@@ -39,6 +40,18 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.2.4
+
+* Added support for the sessionAffinity field for the clusterService ([#2383](https://github.com/oracle/weblogic-kubernetes-operator/pull/2383)).
+* Moved several logging messages to the CONFIG level ([#2387](https://github.com/oracle/weblogic-kubernetes-operator/pull/2387)).
+* Resolved an issue related to scalingAction.sh when there were multiple domains in the same namespace ([#2388](https://github.com/oracle/weblogic-kubernetes-operator/pull/2388)).
+* Updated operator logging and related scripts to consistently use ISO-8601 timestamp formatting ([#2386](https://github.com/oracle/weblogic-kubernetes-operator/pull/2386)).
+* Resolved an issue related to monitoring exporter integration and Istio ([#2390](https://github.com/oracle/weblogic-kubernetes-operator/pull/2390)).
+* Additional diagnostics when container start scripts fail to start the WebLogic Server instance ([#2393](https://github.com/oracle/weblogic-kubernetes-operator/pull/2393)).
+* Ensure Kubernetes API failures are logged after the final retry ([#2406](https://github.com/oracle/weblogic-kubernetes-operator/pull/2406)).
+* Resolved an issue related to failing to recover when a node drain or repaving occurred while waiting for the Administration Server to start ([#2398](https://github.com/oracle/weblogic-kubernetes-operator/pull/2398)).
+* Resolved an issue related to Istio and WDT models that use default listen and SSL ports ([#2379](https://github.com/oracle/weblogic-kubernetes-operator/pull/2379)).
 
 #### Operator 3.2.3
 
