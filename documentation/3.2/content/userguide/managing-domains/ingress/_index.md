@@ -23,7 +23,7 @@ For example, if the `domainUID` is `domain1` and the cluster name is `cluster-1`
 will be named `domain1-cluster-cluster-1`.
 
 The service name must comply with standard Kubernetes rules for naming of objects and in particular with DNS-1035:
-> A DNS-1035 label must consist of lower case alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. `my-name`,  or `abc-123`, regex used for validation is `[a-z]([-a-z0-9]*[a-z0-9])?`).
+> A DNS-1035 label must consist of lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character (e.g. `my-name`,  or `abc-123`, regex used for validation is `[a-z]([-a-z0-9]*[a-z0-9])?`).
 
 To comply with these requirements, if the `domainUID` or the cluster name contains some upper-case characters or underscores, then
 in the service name the upper-case characters will be converted to lower-case and underscores will be converted to hyphens.
