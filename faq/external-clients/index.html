@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="This FAQ describes approaches for giving WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernentes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes.">
+    <meta name="description" content="This FAQ describes approaches for giving WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernetes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,20 +12,20 @@
     <title>External WebLogic clients :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1623857809" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1623857809" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624050333" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624050333" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1623857809"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624050333"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1623857809"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1623857809"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624050333"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624050333"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1623857809"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624050333"></script>
 
     
   </div>
@@ -855,6 +855,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/">
         <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+        <b> </b>Common mounts
         
         </a>
     </li>
@@ -3297,7 +3318,6 @@
 <ul>
 <li><a href="#overview">Overview</a></li>
 <li><a href="#load-balancer-tunneling">Load balancer tunneling</a></li>
-<li><a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a></li>
 <li><a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>
 <ul>
 <li><a href="#when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</a></li>
@@ -3305,20 +3325,25 @@
 <li><a href="#weblogic-custom-channel-notes">WebLogic custom channel notes</a></li>
 </ul>
 </li>
-<li><a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a>
+<li><a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a>
 <ul>
-<li><a href="#getting-started">Getting started</a></li>
+<li><a href="#nodeport-overview"><code>NodePort</code> overview</a></li>
+<li><a href="#nodeport-warnings"><code>NodePort</code> warnings</a></li>
+<li><a href="#nodeport-steps"><code>NodePort</code> steps</a></li>
+<li><a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a></li>
 <li><a href="#sample-nodeport-resource">Sample <code>NodePort</code> resource</a></li>
 <li><a href="#table-of-nodeport-attributes">Table of <code>NodePort</code> attributes</a></li>
 </ul>
 </li>
-<li><a href="#security-notes">Security notes</a></li>
 <li><a href="#enabling-unknown-host-access">Enabling unknown host access</a>
 <ul>
 <li><a href="#when-is-it-necessary-to-enable-unknown-host-access">When is it necessary to enable unknown host access?</a></li>
 <li><a href="#how-to-enable-unknown-host-access">How to enable unknown host access</a></li>
 </ul>
 </li>
+<li><a href="#configuring-a-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a></li>
+<li><a href="#configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</a></li>
+<li><a href="#security-notes">Security notes</a></li>
 <li><a href="#optional-reading">Optional reading</a></li>
 </ul>
 <h4 id="overview">Overview</h4>
@@ -3332,28 +3357,37 @@ Kubernetes namespace as an application that calls the resource, then:</p>
 <p>The URL that the application specifies depends on both the location
 of the application and the location of its target resource.</p>
 <ul>
-<li>If the application is running in a WebLogic Server JVM, and the
+<li>
+<p>If the application is running in a WebLogic Server JVM, and the
 JVM hosts the target resource or the JVM
 is located within the same WebLogic cluster
 as the target resource, then the application
 can simply specify the JNDI name of the resource and
-<em>it should not specify a URL</em>.</li>
-<li>If the application is running outside of one of the above locations,
+<em>it should not specify a URL</em>.</p>
+</li>
+<li>
+<p>If the application is running outside of one of the above locations,
 but is still in the same Kubernetes namespace as the target resource,
 then, in addition to a JNDI name, the application must also specify a <code>t3</code>
 or <code>t3s</code> URL that includes the DNS name of the target
 resource&rsquo;s Kubernetes ClusterIP service. To see the service DNS names
-for a deployed domain, run <code>kubectl -n MYNS get services</code>.
-Example URLs:
+for a deployed domain, run <code>kubectl -n MYNS get services</code>.</p>
+<p>Example URLs:</p>
 <ul>
-<li>For a target resource that&rsquo;s hosted anywhere
+<li>
+<p>For a target resource that&rsquo;s hosted anywhere
 in WebLogic cluster <code>mycluster</code>
 with domain UID <code>myuid</code> where the cluster is listening
-on port <code>7001</code>: <code>t3://myuid-cluster-mycluster:7001</code>.</li>
-<li>For a target resource that&rsquo;s hosted in a non-clustered
+on port <code>7001</code>:</p>
+<p><code>t3://myuid-cluster-mycluster:7001</code></p>
+</li>
+<li>
+<p>For a target resource that&rsquo;s hosted in a non-clustered
 WebLogic Server <code>myserver</code> that is part
-of domain with a domain UID <code>myuid</code> where the server
-is listening on port <code>7001</code>: <code>t3://myuid-myserver:7001</code>.</li>
+of a domain with a domain UID <code>myuid</code> where the server
+is listening on port <code>7001</code>:</p>
+<p><code>t3://myuid-myserver:7001</code></p>
+</li>
 </ul>
 </li>
 </ul>
@@ -3365,32 +3399,43 @@ the application and resource are in different Kubernetes namespaces, then:</p>
 <ul>
 <li>
 <p>The URL used by the application can begin with <code>t3</code> or <code>t3s</code>, and the
-DNS address in the URL must be fully specified to differentiate the namespace.</p>
+DNS address in the URL must be fully specified to differentiate the namespace.
+For example:</p>
 <ul>
-<li>For example,
-if the target resource is in WebLogic cluster <code>mycluster</code> with
+<li>If the target resource is in WebLogic cluster <code>mycluster</code> with
 domain UID <code>myuid</code> in namespace <code>myns</code>, and the cluster is
 listening on port <code>8001</code>, then the cluster service name
 that is generated by the operator will
 be <code>myuid-cluster-mycluster</code> and the full URL will be
-<code>t3://myuid-cluster-mycluster.myns.service.cluster.local:8001</code>.</li>
+<code>t3://myuid-cluster-mycluster.myns:8001</code>.</li>
+<li>If the target resource is a WebLogic Server <code>myserver</code> with
+domain UID <code>myuid</code> in namespace <code>myns</code>, and the server is
+listening on port <code>7001</code>, then the server service name
+that is generated by the operator will
+be <code>myuid-myserver</code> and the full URL will be
+<code>t3://myuid-myserver.myns:7001</code>.</li>
 </ul>
 </li>
 <li>
 <p>The applications should access their target WebLogic Server or cluster
-using <a href="#adding-a-weblogic-custom-channel">a WebLogic custom T3 or T3S channel</a>
+using a <a href="#adding-a-weblogic-custom-channel">WebLogic custom T3 or T3S channel</a>
 that is configured on the target with the following configuration:</p>
 <ul>
 <li>Specify a public address that matches the same fully decorated
-DNS address that the applications will use.
+DNS address that the applications will use. For example:
 <ul>
-<li>For example,
-if the target resource is in WebLogic cluster <code>mycluster</code> that
+<li>If the target resource is in WebLogic cluster <code>mycluster</code> that
 is part of domain with a domain UID <code>myuid</code> running in domain
 <code>myns</code>, then
 the cluster service name will be <code>myuid-cluster-mycluster</code>
 and the fully decorated name will be
-<code>myuid-cluster-mycluster.myns.service.cluster.local</code>.</li>
+<code>myuid-cluster-mycluster.myns</code>.</li>
+<li>If the target resource is in WebLogic Server <code>myserver</code> that
+is part of domain with a domain UID <code>myuid</code> running in domain
+<code>myns</code>, then
+the server service name will be <code>myuid-myserver</code>
+and the fully decorated name will be
+<code>myuid-myserver.myns</code>.</li>
 </ul>
 </li>
 <li>Do not specify a public port. It should be the same as the
@@ -3404,11 +3449,20 @@ Application URLs must specify the channel&rsquo;s port.</li>
 </li>
 <li>
 <p>If the applications run within a WebLogic
-Server JVM, then the WebLogic Servers that host the target
+Server JVM, then the WebLogic Server instances that host the target
 EJB or JMS resources may need to be configured to
 <a href="#enabling-unknown-host-access">enable unknown host access</a>.
 This should not be needed when the public address on the
-network channel is configured as directed in the previous bullet.</p>
+network channel is configured, as directed in the previous bulleted item.</p>
+</li>
+<li>
+<p>If JTA transactions span between domains
+in different namespaces, then additional configuration
+is required to ensure that JTA transaction managers
+can communicate with each-other between the domains:
+configure each server&rsquo;s default channel <code>External Listen Address</code>
+to a service name that is decorated with the server&rsquo;s namespace.
+For more information, see <a href="#configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</a>.</p>
 </li>
 </ul>
 <p>If a WebLogic EJB or JMS resource is hosted inside a Kubernetes
@@ -3431,25 +3485,60 @@ For example, <code>http://my-lb-address:my-lb-port</code>.</p>
 </li>
 <li>
 <p>You may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>
-on the WebLogic Servers that host the EJB or JMS resources.</p>
+on the WebLogic Server instances that host the EJB or JMS resources.</p>
+</li>
+<li>
+<p>If tunneling, then you may need to configure clusters that host EJB or
+JMS resources with a &lsquo;server affinity&rsquo; default load balancer algorithm.
+This can significantly speedup connection creation for EJB and JMS clients.
+See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</p>
+</li>
+<li>
+<p><strong>JTA NOTE</strong>: The operator does not directly support external WebLogic JTA access
+to a Kubernetes hosted WebLogic cluster. This is because external JTA access
+requires each server in a cluster to be individually addressable,
+but this conflicts with the current operator requirement that
+a network channel in a cluster have the same port across all servers in the cluster.
+If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
 </li>
 </ul>
 <p>If a WebLogic EJB or JMS resource is hosted outside of
 a Kubernetes cluster, and the EJB or JMS applications
 that call the resource are located within the cluster, then:</p>
 <ul>
-<li>You may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>
-on the external WebLogic Server(s).</li>
-<li>Plus, if the target server(s) can be accessed only through a load balancer using HTTP:
+<li>
+<p>You may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>
+on the external WebLogic Server instance or instances.</p>
+</li>
+<li>
+<p>Plus, if the target server or servers can be accessed only by tunneling through a load balancer using HTTP:</p>
 <ul>
-<li><a href="#adding-a-weblogic-custom-channel">Set up an HTTP tunneling-enabled custom channel</a> on the external WebLogic Servers.</li>
+<li><a href="#adding-a-weblogic-custom-channel">Set up an HTTP tunneling-enabled custom channel</a> on the external WebLogic Server instances.</li>
 <li>Specify URLs on the source server that resolve to the load balancer&rsquo;s address and that start with <code>http</code> instead of <code>t3</code>.</li>
 <li>Ensure the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo;.</li>
+<li>You may need to configure clusters that host EJB or
+JMS resources with a &lsquo;server affinity&rsquo; default load balancer algorithm.
+This can significantly speedup tunneling connection creation for EJB and JMS clients.
+See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</li>
 </ul>
+</li>
+<li>
+<p><strong>JTA NOTE</strong>: WebLogic does not directly support JTA access to a cluster that is exposed
+using a single port. This is because external JTA requires each server in a cluster
+to be individually addressable.
+If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
 </li>
 </ul>
 
-<div class="notices note" ><p>The operator does not currently support external WebLogic JTA access to a Kubernetes hosted WebLogic cluster. This is because external JTA access requires each server in a cluster to be individually addressable, but this conflicts with the current operator requirement that a network channel in a cluster have the same port across all servers in the cluster.</p>
+<div class="notices note" ><p>All DNS addresses must be &lsquo;DNS-1123&rsquo; compliant;
+this means that any DNS names created using the name of a service,
+pod, WebLogic Server, WebLogic cluster, and such,
+must be lowercase with underscores converted to dashes (hyphens).
+For example, if a WebLogic Server instance is named <code>My_Server</code>
+and the domain UID is <code>MyUid</code>, then its listen
+address within the namespace will be <code>myuid-my-server</code>.
+For more information on Kubernetes resource compliant naming,
+please see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 </div>
 
 <h4 id="load-balancer-tunneling">Load balancer tunneling</h4>
@@ -3466,7 +3555,10 @@ on the external WebLogic Server(s).</li>
 <p><strong>Important</strong>: Ensure that the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo; - for example, a Traefik load balancer has a <code>sticky sessions</code> option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.</p>
 </li>
 <li>
-<p>If you are adding access for applications that are hosted on remote WebLogic Servers, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
+<p><strong>Important</strong>: For EJB and JMS resources that are targeted to a cluster, we recommend that you configure a default load balancer algorithm that provides server affinity (round-robin-affinity, weight-based-affinity, random-affinity) to speedup connection creation for EJB and JMS clients. See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</p>
+</li>
+<li>
+<p>If you are adding access for applications that are hosted on remote WebLogic Server instances, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
 </li>
 <li>
 <p>Remote applications can then access the custom channel using an <code>http://</code> URL instead of a <code>t3://</code> URL.</p>
@@ -3475,30 +3567,10 @@ on the external WebLogic Server(s).</li>
 <p>Review the <a href="#security-notes">Security notes</a>.</p>
 </li>
 </ul>
-<h4 id="kubernetes-nodeports">Kubernetes <code>NodePorts</code></h4>
-<p>Kubernetes <code>NodePorts</code> provide an alternative approach for giving external WebLogic EJB or JMS applications access to a Kubernetes hosted WebLogic cluster. This approach involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes <code>NodePort</code> that redirects external network traffic on the Kubernetes Nodes to the network channel.</p>
-
-<div class="notices note" ><p>The <code>NodePort</code> approach is available only when worker nodes are accessible by the applications, for example, when they have public IP addresses. If private worker nodes are used and access to them is possible only through a load balancer or bastion, then the <code>NodePort</code> approach is not a valid option to provide access to external applications.</p>
-</div>
-
-<p>Here are the steps:</p>
-<ul>
-<li>
-<p>In WebLogic, configure a custom channel for the T3 protocol that specifies an external address and port that are suitable for remote application use. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
-</li>
-<li>
-<p>Define a Kubernetes <code>NodePort</code> to publicly expose the WebLogic ports. See <a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a>.</p>
-</li>
-<li>
-<p>If you are adding access for remote WebLogic Servers, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
-</li>
-<li>
-<p>Review the <a href="#security-notes">Security notes</a>.</p>
-</li>
-</ul>
 <h4 id="adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</h4>
+<p>The following sections describe WebLogic custom channel considerations and configuration.</p>
 <h5 id="when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</h5>
-<p>WebLogic implicitly creates a multi-protocol default channel that spans the <code>Listen Address</code> and <code>Port</code> fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS applications. Instead, you may need to configure an additional dedicated WebLogic custom channel to handle remote EJB or JMS application network traffic.</p>
+<p>WebLogic implicitly creates a multi-protocol default channel that spans the <code>Listen Address</code> and <code>Port</code> fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS applications. Instead, you may need to configure an additional, dedicated WebLogic custom channel to handle remote EJB or JMS application network traffic.</p>
 <p>A custom channel provides a way to configure an external listen address and port for use by external applications, unlike a default channel. External listen address or port configuration is needed when a channel&rsquo;s configured listen address or port would not work if used to form a URL in the remote application. This is because remote EJB and JMS applications internally use their application&rsquo;s channel&rsquo;s configured network information to reconnect to WebLogic when needed. (The EJB and JMS applications do not always use the initial URL specified in the application&rsquo;s JNDI context.)</p>
 <p>A custom channel can be locked down using two-way SSL as a way to prevent access by unauthorized external JMS and EJB applications, only accepts protocols that are explicitly enabled for the channel, and can be configured to be the only channel that accepts EJB/JMS applications that tunnel over HTTP. A default channel may often be deliberately unencrypted for convenient internal use, or, if used externally, is used for web traffic (not tunneling traffic) only. In addition, a default channel supports several protocols but it&rsquo;s a best practice to limit the protocols that can be accessed by external applications. Finally, external applications may require access using HTTP tunneling in order to make connections, but it&rsquo;s often inadvisable to enable tunneling for an unsecured default channel that&rsquo;s already servicing external HTTP traffic. This is because enabling HTTP tunneling would potentially allow unauthorized external JMS and EJB applications unsecured access to the WebLogic cluster through the same HTTP path.</p>
 <h5 id="configuring-a-weblogic-custom-channel">Configuring a WebLogic custom channel</h5>
@@ -3520,7 +3592,7 @@ on the external WebLogic Server(s).</li>
 <p>For operator controlled WebLogic clusters, ensure you haven&rsquo;t enabled <code>calculated-listen-ports</code> for WebLogic dynamic cluster servers. The operator requires that a channel have the same port on each server in a cluster, but <code>calculated-listen-ports</code> causes the port to be different on each server.</p>
 </li>
 <li>
-<p>For clusters that are <em>not</em> operator controlled, minimally ensure that the server&rsquo;s default channel <code>ListenAddress</code> is configured. Oracle strongly recommends configuring a <code>ListenAddress</code> on all WebLogic Servers. Note that if a NAP&rsquo;s <code>ListenAddress</code> is left blank, then it will use the default channel&rsquo;s <code>ListenAddress</code>. (This is not a concern for operator controlled clusters as the operator sets the listen addresses on every WebLogic Server.)</p>
+<p>For clusters that are <em>not</em> operator controlled, minimally ensure that the server&rsquo;s default channel <code>ListenAddress</code> is configured. Oracle strongly recommends configuring a <code>ListenAddress</code> on all WebLogic Server instances. Note that if a NAP&rsquo;s <code>ListenAddress</code> is left blank, then it will use the default channel&rsquo;s <code>ListenAddress</code>. (This is not a concern for operator controlled clusters as the operator sets the listen addresses on every WebLogic Server instance.)</p>
 </li>
 </ul>
 <p>For example, here is a snippet of a WebLogic domain <code>config.xml</code> file for channel <code>MyChannel</code> defined for an operator controlled WebLogic dynamic cluster named <code>cluster-1</code>:</p>
@@ -3607,7 +3679,7 @@ on the external WebLogic Server(s).</li>
 <p>The operator will automatically create a Kubernetes Service named <code>DOMAIN_UID-cluster-cluster-1</code> for both the custom and default channel.</p>
 </li>
 <li>
-<p>The operator will automatically set the <code>ListenAddress</code> on each WebLogic Server for each of its channels.</p>
+<p>The operator will automatically set the <code>ListenAddress</code> on each WebLogic Server instance for each of its channels.</p>
 </li>
 <li>
 <p>Internal applications running in the same Kubernetes cluster as the channel can access the cluster using <code>t3://DOMAIN_UID-cluster-cluster-1:8001</code>.</p>
@@ -3625,12 +3697,44 @@ on the external WebLogic Server(s).</li>
 <p>Additional steps are required for external applications beyond configuring the custom channel - see <a href="#overview">Overview</a>.</p>
 </li>
 </ul>
-<h4 id="setting-up-a-nodeport">Setting up a <code>NodePort</code></h4>
-<h5 id="getting-started">Getting started</h5>
+<h4 id="kubernetes-nodeports">Kubernetes <code>NodePorts</code></h4>
+<p>The following sections provide detailed information about Kubernetes <code>NodePorts</code>.</p>
+<h5 id="nodeport-overview"><code>NodePort</code> overview</h5>
+<p>Kubernetes <code>NodePorts</code> provide an alternative approach for giving external WebLogic EJB or JMS applications access to a Kubernetes hosted WebLogic cluster. This approach involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes <code>NodePort</code> that redirects external network traffic on the Kubernetes Nodes to the network channel.</p>
+<h5 id="nodeport-warnings"><code>NodePort</code> warnings</h5>
+<p>Although <a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a> are good for use in demos and getting-started guides, they are usually not suited for production systems for multiple reasons, including:</p>
+<ul>
+<li>They can directly expose internal applications to the outside world.</li>
+<li>They bypass almost all network security in Kubernetes.</li>
+<li>They allow all protocols (load balancers can limit to the HTTP protocol).</li>
+<li>They cannot expose standard, low-numbered ports like 80 and 443 (or even 8080 and 8443).</li>
+<li>Some Kubernetes cloud environments cannot expose usable <code>NodePorts</code> because their Kubernetes clusters run on a private network that cannot be reached by external clients.</li>
+</ul>
+<p><a href="#load-balancer-tunneling">Load balancer tunneling</a> is the preferred approach over <a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a>.</p>
+<h5 id="nodeport-steps"><code>NodePort</code> steps</h5>
+<p>Here are the high level steps:</p>
+<ul>
+<li>
+<p>Review <a href="#nodeport-warnings"><code>NodePort</code> warnings</a>.</p>
+</li>
+<li>
+<p>In WebLogic, configure a custom channel for the T3 protocol that specifies an external address and port that are suitable for remote application use. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
+</li>
+<li>
+<p>Define a Kubernetes <code>NodePort</code> to publicly expose the WebLogic ports. See <a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a>.</p>
+</li>
+<li>
+<p>If you are adding access for remote WebLogic Server instances, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
+</li>
+<li>
+<p>Review the <a href="#security-notes">Security notes</a>.</p>
+</li>
+</ul>
+<h5 id="setting-up-a-nodeport">Setting up a <code>NodePort</code></h5>
 <p>A Kubernetes <code>NodePort</code> exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes <code>NodePort</code> is one approach for giving external WebLogic applications access to JMS or EJBs.</p>
 <p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/weblogic-kubernetes-operator/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
 
-<div class="notices note" ><p>Setting up a <code>NodePort</code> usually also requires setting up a custom network channel. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic Custom Channel</a>.</p>
+<div class="notices note" ><p>Setting up a <code>NodePort</code> usually also requires setting up a custom network channel. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
 </div>
 
 <h5 id="sample-nodeport-resource">Sample <code>NodePort</code> resource</h5>
@@ -3666,7 +3770,7 @@ on the external WebLogic Server(s).</li>
 <tbody>
 <tr>
 <td><code>metadata.name</code></td>
-<td>For this particular use case, the <code>NodePort</code> name can be arbitrary as long as it is DNS compatible. But, as a convention, it&rsquo;s recommended to use <code>DOMAIN_UID-cluster-CLUSTER_NAME-ext</code>. To ensure the name is DNS compatible, use all lower case and convert any underscores (<code>_</code>) to dashes (<code>-</code>).</td>
+<td>For this particular use case, the <code>NodePort</code> name can be arbitrary as long as it is DNS compatible. But, as a convention, it&rsquo;s recommended to use <code>DOMAIN_UID-cluster-CLUSTER_NAME-ext</code>. To ensure the name is DNS compatible, use all lowercase and convert any underscores (<code>_</code>) to dashes (<code>-</code>).</td>
 </tr>
 <tr>
 <td><code>metadata.namespace</code></td>
@@ -3707,27 +3811,96 @@ on the external WebLogic Server(s).</li>
 </tbody>
 </table>
 <h4 id="enabling-unknown-host-access">Enabling unknown host access</h4>
+<p>The following sections describe when and how to enable unknown host access.</p>
 <h5 id="when-is-it-necessary-to-enable-unknown-host-access">When is it necessary to enable unknown host access?</h5>
-<p>If a source WebLogic Server attempts to initiate an EJB, JMS, or JTA connection with a target WebLogic Server, then the target WebLogic Server will reject the connection by default if it cannot find the source server&rsquo;s listen address in its DNS. Such a failed connection attempt can yield log messages or exceptions like <code>&quot;...RJVM has already been shutdown...&quot;</code> or <code>&quot;...address was valid earlier, but now we get...&quot;</code>.</p>
-<p>This means that it&rsquo;s usually necessary to enable unknown host access on an external WebLogic Server so that it can support EJB, JMS, or JTA communication that is initated by an operator hosted WebLogic Server. For example, if an operator hosted WebLogic Server with service address <code>mydomainuid-myservername</code> initiates a JMS connection to a remote WebLogic Server, then the remote server will implicitly attempt to lookup <code>mydomainuid-myservername</code> in its DNS as part of the connection setup, and this lookup will typically fail.</p>
-<p>Similarly, this also means that it&rsquo;s necessary to enable unknown host access on an operator hosted WebLogic Server that accepts EJB or JMS connection requests from external WebLogic Servers when the external WebLogic Server&rsquo;s listen addresses cannot be resolved by the DNS running in the Kuberneters cluster.</p>
+<p>If a source WebLogic Server attempts to initiate an EJB, JMS, or JTA connection with a target WebLogic Server, then the target WebLogic Server will reject the connection by default, if it cannot find the source server&rsquo;s listen address in its DNS. Such a failed connection attempt can yield log messages or exceptions like <code>&quot;...RJVM has already been shutdown...&quot;</code> or <code>&quot;...address was valid earlier, but now we get...&quot;</code>.</p>
+<p>This means that it&rsquo;s usually necessary to enable unknown host access on an external WebLogic Server instance so that it can support EJB, JMS, or JTA communication that is initiated by an operator hosted WebLogic Server. For example, if an operator hosted WebLogic Server with service address <code>mydomainuid-myservername</code> initiates a JMS connection to a remote WebLogic Server, then the remote server will implicitly attempt to look up <code>mydomainuid-myservername</code> in its DNS as part of the connection setup, and this lookup will typically fail.</p>
+<p>Similarly, this also means that it&rsquo;s necessary to enable unknown host access on an operator hosted WebLogic Server that accepts EJB or JMS connection requests from external WebLogic Server instances when the external WebLogic Server&rsquo;s listen addresses cannot be resolved by the DNS running in the Kuberneters cluster.</p>
 <h5 id="how-to-enable-unknown-host-access">How to enable unknown host access</h5>
 <p>To enable an &lsquo;unknown host&rsquo; source WebLogic Server to initiate EJB, JMS, or JTA communication with a target WebLogic Server:</p>
 <ul>
-<li>Set the <code>weblogic.rjvm.allowUnknownHost</code> Java system property to <code>true</code> on each target WebLogic Server.
+<li>Set the <code>weblogic.rjvm.allowUnknownHost</code> Java system property to <code>true</code> on each target WebLogic Server instance.
 <ul>
-<li>For operator hosted WebLogic Servers, you can set this property by including <code>-Dweblogic.rjvm.allowUnknownHost=true</code> in the <code>JAVA_OPTIONS</code> <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain environment variable</a> defined in the domain resource&rsquo;s <code>spec.serverPod.env</code> attribute.</li>
+<li>For operator hosted WebLogic Server instances, you can set this property by including <code>-Dweblogic.rjvm.allowUnknownHost=true</code> in the <code>JAVA_OPTIONS</code> <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain environment variable</a> defined in the domain resource&rsquo;s <code>spec.serverPod.env</code> attribute.</li>
 </ul>
 </li>
-<li>Also apply patch 30656708 on each target WebLogic Server for versions 12.2.1.4 (PS4) or earlier.</li>
+<li>Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.</li>
 </ul>
+<h4 id="configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</h4>
+<p>When providing external clients access to EJB and JMS resources using load balancer tunneling, we recommend that you configure a server affinity load balancing algorithm for the cluster in which the resources are targeted.  Using a server affinity based algorithm reduces the amount of time it takes for EJB and JMS standalone or server hosted clients to establish a connection through a tunneling port. It does this by ensuring that the clients prefer communicating with a target server instance which already has an established connection to the client, where this server instance is implicitly picked when such clients create their JNDI context.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6">Load Balancing for EJBs and RMI Objects</a> in <em>Load Balancing in a Cluster</em>.</p>
+<p>Here is a snippet of offline WLST code for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">clusterName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Clusters/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">clusterName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DefaultLoadAlgorithm&#39;</span>, <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>)
+</code></pre></div><p>Here is a snippet of WDT model YAML file configuration for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+            <span style="color:#f92672">DynamicServers</span>:
+                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+            <span style="color:#f92672">DefaultLoadAlgorithm</span>: <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>
+</code></pre></div><h4 id="configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</h4>
+<p>WebLogic Server provides an external listen address/DNS name feature to enable external JMS and EJB clients to properly reestablish and/or load balance connections to servers with listen addresses that aren&rsquo;t directly available in the client&rsquo;s DNS (such as through a firewall or a load balancer, or between different namespaces in Kubernetes). For more information on external listen addresses, see the <code>ExternalDNSName</code> attribute in the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/wlmbr/mbeans/ServerMBean.html#ExternalDNSName"> ServerMBean </a> reference.</p>
+<p>Here is a snippet of offline WLST code for setting the external listen address for a standalone server named <code>AdminServer</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AdminServer&#34;</span>
+<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Servers/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">serverName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</code></pre></div><p>Here is a snippet of offline WLST code for setting the external listen address for a server template named <code>cluster-1-template</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+<span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;managed-server${id}&#34;</span>
+<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</code></pre></div>
+<div class="notices note" ><p>The server name contains the server template macro &ldquo;${id}&rdquo; in which the correct instance ID will be substituted by the WebLogic Server runtime.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/domcf/server_templates.html#GUID-EA003F89-C8E4-4CE1-81DF-6FF25F92D21B">Using Macros</a> in <em>Server Templates</em>.</p>
+</div>
+
+<p>Here is a snippet of WDT model YAML file configuration to set the <code>ExternalDNSName</code> attribute for both a standalone server and for a server template:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#e6db74">&#34;cluster-1&#34;</span>:
+          <span style="color:#f92672">DynamicServers</span>:
+            <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+            <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#34;managed-server&#34;</span>
+            <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+            <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+            <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+      <span style="color:#f92672">Server</span>:
+        <span style="color:#e6db74">&#34;admin-server&#34;</span>:
+          <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
+          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-admin-server.@@ENV:NAMESPACE@@&#39;</span>
+      <span style="color:#f92672">ServerTemplate</span>:
+        <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>:
+          <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+          <span style="color:#f92672">ListenPort </span>: <span style="color:#ae81ff">8001</span>
+          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-managed-server${id}.@@ENV:NAMESPACE@@&#39;</span>
+</code></pre></div>
+<div class="notices note" ><p>In the previous example, <code>DOMAIN_UID</code> and <code>NAMESPACE</code> are assumed to already be &lsquo;DNS-1123&rsquo; compliant.
+Alternatively, you can substitute the macros with DNS-1123 acceptable values
+(changed to lowercase and underscores converted to dashes).
+For more information on Kubernetes resource compliant naming,
+please see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+</div>
+
 <h4 id="security-notes">Security notes</h4>
 <ul>
 <li>
-<p>With some cloud providers, a load balancer or <code>NodePort</code> may implicitly expose a port to the public Internet.</p>
+<p>With some cloud providers, a load balancer or <code>NodePort</code> may implicitly expose a port to the public Internet. See also <a href="#nodeport-warnings"><code>NodePort</code> warnings</a>.</p>
 </li>
 <li>
-<p>If such a port supports a protocol suitable for WebLogic applications, note that WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.</p>
+<p>If an externally available port supports a protocol suitable for WebLogic applications, note that WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.</p>
 </li>
 <li>
 <p>You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted applications. See <a href="#when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</a>.</p>
@@ -3748,7 +3921,7 @@ and these local JNDI names should be configured in WebLogic to map to the remote
 location using a Foreign JMS Server. A Foreign JMS Server maps the local
 JNDI name of a JMS Connection Factory or JMS Destination
 to a remote JNDI name located at a
-different URL, where the local JNDI name, remote JNDI name, remote username,
+different URL, where the local JNDI name, remote JNDI name, remote user name,
 remote password, and remote URL are all configurable.
 See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-9F7CF546-2649-4E5E-B117-ABBB445EA7C1">Integrating Remote JMS Destinations</a>.</p>
 </li>
@@ -4267,6 +4440,22 @@ See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-se
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5871,19 +6060,19 @@ See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-se
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624050334"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624050334"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1623857810"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624050334"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

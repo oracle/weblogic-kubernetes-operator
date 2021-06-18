@@ -107,7 +107,7 @@ Useful Helm operations Show the available operator configuration values and thei
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/prepare/</guid>
       <description>Perform these steps to prepare your Kubernetes cluster to run a WebLogic domain:
   Create the domain namespace or namespaces. One or more domains can share a namespace. A single instance of the operator can manage multiple namespaces.
-$ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lower case, numbers, and hyphens.
+$ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with name you want to use. The name must follow standard Kubernetes naming conventions, that is, lowercase, numbers, and hyphens.
   Create a Kubernetes Secret containing the Administration Server boot credentials.</description>
     </item>
     
@@ -411,7 +411,7 @@ The Oracle Database images are only supported for non-production use. For more d
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.3   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.4   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -790,7 +790,7 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
+      <description>Contents  Overview Load balancer tunneling Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Kubernetes NodePorts  NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes   Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Configuring WebLogic Server affinity load balancing algorithms Configuring external listen addresses for WebLogic default channels Security notes Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
     </item>
     
     <item>
@@ -820,7 +820,16 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/</guid>
       <description>This document describes what&amp;rsquo;s needed to create and deploy a typical Model in Image domain.
-Contents  WebLogic Kubernetes Operator WebLogic Server image Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state Requirements for JRF domain types  WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See Manage operators and Quick Start.</description>
+Contents  WebLogic Kubernetes Operator WebLogic Server image Directory structure Supplying initial model files and WDT Optional WDT model ConfigMap Required runtime encryption secret Secrets for model macros Domain fields Always use external state Requirements for JRF domain types  WebLogic Kubernetes Operator Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain.</description>
+    </item>
+    
+    <item>
+      <title>Common mounts</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/</link>
+      <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/</guid>
+      <description>Contents  Introduction References Configuration  Common mount images Common mount volumes and paths Model in Image paths   Sample  Step 1: Prerequisites Step 2: Create the common mounts image Step 3: Prepare and apply the domain resource Step 4: Invoke the web application    Introduction The common mounts feature is a work in progress and is currently unsupported. Its configuration or behavior may change between releases and it is disabled by default.</description>
     </item>
     
     <item>
@@ -859,7 +868,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     May 21, 2021 v3.2.3 no Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.   April 27, 2021 v3.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     June 18, 2021 v3.2.4 no Resolved several issues related to Istio, diagnostics, and recovery.   May 21, 2021 v3.2.3 no Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.</description>
     </item>
     
   </channel>

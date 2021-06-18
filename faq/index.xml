@@ -126,7 +126,7 @@ OKE Kubernetes worker nodes typically do not have public IP addresses. This mean
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
-      <description>Contents  Overview Load balancer tunneling Kubernetes NodePorts Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Setting up a NodePort  Getting started Sample NodePort resource Table of NodePort attributes   Security notes Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
+      <description>Contents  Overview Load balancer tunneling Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Kubernetes NodePorts  NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes   Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Configuring WebLogic Server affinity load balancing algorithms Configuring external listen addresses for WebLogic default channels Security notes Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
     </item>
     
     <item>

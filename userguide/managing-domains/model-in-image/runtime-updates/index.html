@@ -12,20 +12,20 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1623857810" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624050334" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624050334"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1623857810"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624050334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624050334"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624050334"></script>
 
     
   </div>
@@ -855,6 +855,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/">
         <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+        <b> </b>Common mounts
         
         </a>
     </li>
@@ -3278,7 +3299,14 @@
   <ul>
     <li>
       <ul>
-        <li></li>
+        <li><a href="#contents">Contents</a></li>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#supported-updates">Supported updates</a></li>
+        <li><a href="#unsupported-updates">Unsupported updates</a></li>
+        <li><a href="#updating-an-existing-model">Updating an existing model</a></li>
+        <li><a href="#offline-updates">Offline updates</a></li>
+        <li><a href="#online-updates">Online updates</a></li>
+        <li><a href="#appendices">Appendices</a></li>
       </ul>
     </li>
   </ul>
@@ -3305,7 +3333,7 @@
         
 
 
-<h4 id="contents">Contents</h4>
+<h3 id="contents">Contents</h3>
 <ul>
 <li><a href="#overview">Overview</a></li>
 <li><a href="#supported-updates">Supported updates</a></li>
@@ -3334,7 +3362,7 @@
 </ul>
 </li>
 </ul>
-<h4 id="overview">Overview</h4>
+<h3 id="overview">Overview</h3>
 <p>If you want to make a WebLogic domain home configuration update to a running Model in Image domain,
 and you want the update to survive WebLogic Server pod restarts,
 then you must modify your existing model and instruct the WebLogic Kubernetes Operator to propagate the change.</p>
@@ -3350,7 +3378,7 @@ without first shutting down the domain:</p>
 then you can optionally propagate changes to WebLogic pods without a roll using an <a href="#online-updates">online update</a>.
 If an online update request includes non-dynamic model updates that can only be achieved
 using an offline update,
-then the resulting behavior is controlled by the Domain YAML
+then the resulting behavior is controlled by the domain resource YAML
 <code>domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges</code> attribute,
 which is discussed in detail later in this document.</p>
 </li>
@@ -3371,7 +3399,7 @@ Supported and unsupported changes are discussed in
 <p><em>It is the administrator&rsquo;s responsibility to make the necessary changes to a domain resource in order to initiate the correct approach for an update.</em></p>
 
 <div class="notices warning" ><p>Custom configuration overrides, which are WebLogic configuration overrides
-specified using a Domain YAML file <code>configuration.overridesConfigMap</code>, as described in
+specified using a domain resource YAML file <code>configuration.overridesConfigMap</code>, as described in
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">Configuration overrides</a>,
 are <em>not</em> supported in combination with Model in Image.
 Model in Image will generate an error if custom overrides are specified.
@@ -3381,7 +3409,7 @@ Unlike configuration overrides, the syntax for a model file update exactly match
 the syntax for specifying your model file originally.</p>
 </div>
 
-<h4 id="supported-updates">Supported updates</h4>
+<h3 id="supported-updates">Supported updates</h3>
 <p>The following updates are <em>supported</em> for offline or online updates,
 except when they reference an area that is specifically
 documented as <a href="#unsupported-updates">unsupported</a> below:</p>
@@ -3438,7 +3466,7 @@ small model file looks like this:</p>
 in the WebLogic Deploying Tooling documentation.</p>
 </li>
 </ul>
-<h4 id="unsupported-updates">Unsupported updates</h4>
+<h3 id="unsupported-updates">Unsupported updates</h3>
 
 <div class="notices warning" ><p>It is important to avoid applying unsupported model updates to a running domain. An attempt to use an unsupported update may not always result in a clear error message, and the expected behavior may be undefined. If you need to make an unsupported update and no workaround is documented, then shut down your domain entirely before making the change. See <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#full-domain-restarts">Full domain restarts</a>.</p>
 </div>
@@ -3489,9 +3517,9 @@ Specifically, do not apply runtime updates for:</p>
 <li>Adding WebLogic Servers to a configured cluster.
 As an alternative, consider using dynamic clusters instead of configured clusters.</li>
 <li>Removing WebLogic Servers from a configured cluster.
-As an alternative, you can lower your cluster&rsquo;s Domain YAML <code>replicas</code> attribute.</li>
+As an alternative, you can lower your cluster&rsquo;s domain resource YAML <code>replicas</code> attribute.</li>
 <li>Decreasing the size of a dynamic cluster.
-As an alternative, you can lower your cluster&rsquo;s Domain YAML <code>replicas</code> attribute.</li>
+As an alternative, you can lower your cluster&rsquo;s domain resource YAML <code>replicas</code> attribute.</li>
 </ul>
 </li>
 <li>
@@ -3554,7 +3582,7 @@ Such changes included security changes in <code>domainInfo.Admin*</code>,
 Any online update changes in these sections will result in a failure.</p>
 </li>
 </ul>
-<h4 id="updating-an-existing-model">Updating an existing model</h4>
+<h3 id="updating-an-existing-model">Updating an existing model</h3>
 <p>If you have verified your proposed model updates to a running
 Model in Image domain are supported by consulting
 <a href="#supported-and-unsupported-updates">Supported and unsupported updates</a>,
@@ -3563,35 +3591,44 @@ then you can use the following approaches.</p>
 <ul>
 <li>
 <p>Specify a new or changed WDT ConfigMap that contains model files
-and use your Domain YAML file <code>configuration.model.configMap</code> field to reference the map.
+and use your domain resource YAML file <code>configuration.model.configMap</code> field to reference the map.
 The model files in the ConfigMap will be merged with any model files in the image.
 Ensure the ConfigMap is deployed to the same namespace as your domain.</p>
 </li>
 <li>
 <p>Change, add, or delete secrets that are referenced by macros in your model files
-and use your Domain YAML file <code>configuration.secrets</code> field to reference the secrets.
+and use your domain resource YAML file <code>configuration.secrets</code> field to reference the secrets.
 Ensure the secrets are deployed to the same namespace as your domain.</p>
 </li>
 </ul>
 <p>For offline updates only, there are two additional options:</p>
 <ul>
 <li>
-<p>Supply a new image with new or changed model files
-and use your Domain YAML <code>spec.image</code> field to reference the image.</p>
+<p>Supply a new image with new or changed model files.</p>
+<ul>
+<li>If the files are located in the image specified in the domain resource YAML file <code>spec.image</code>,
+then change this field to reference the image.</li>
+<li>If you are using
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a>
+to supply
+model files in an image, then change the corresponding <code>serverPod.commonMounts.image</code> field
+value to reference the new image or add a new <code>serverPod.commonMounts</code> mount for
+the new image.</li>
+</ul>
 </li>
 <li>
 <p>Change, add, or delete environment variables that are referenced by macros in your model files.
-Environment variables are specified in the Domain YAML <code>spec.serverPod.env</code>
+Environment variables are specified in the domain resource YAML file <code>spec.serverPod.env</code>
 or <code>spec.serverPod.adminServer.env</code> attributes.</p>
 </li>
 </ul>
 
-<div class="notices note" ><p>It is advisable to defer the last two modification options, or similar Domain YAML changes to
+<div class="notices note" ><p>It is advisable to defer the last two modification options, or similar domain resource YAML file changes to
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>,
 until all of your other modifications are ready.
 This is because such changes automatically and immediately result in a rerun of your introspector job,
-a roll if the job succeeds,
-plus an offline update if there are any accompanying model changes.</p>
+and, if the job succeeds, then a roll of the domain,
+plus, an offline update, if there are any accompanying model changes.</p>
 </div>
 
 <p>Model updates can include additions, changes, and deletions. For help generating model changes:</p>
@@ -3606,7 +3643,7 @@ and Model in Image <a href="/weblogic-kubernetes-operator/userguide/managing-dom
 see <a href="#using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover and Compare Model Tools</a>.</p>
 </li>
 <li>
-<p>If you specify multiple model files in your image or WDT ConfigMap,
+<p>If you specify multiple model files in your image, volumes (including those based on images from the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a> feature), or WDT ConfigMap,
 then the order in which they&rsquo;re loaded and merged is determined as described in
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
 </li>
@@ -3618,15 +3655,26 @@ see <a href="#online-update-handling-of-deletes">Online update handling of delet
 <p>After your model updates are prepared, you can instruct the operator to propagate the changed model
 to a running domain by following the steps in <a href="#offline-updates">Offline updates</a>
 or <a href="#online-updates">Online updates</a>.</p>
-<h4 id="offline-updates">Offline updates</h4>
-<h5 id="offline-update-steps">Offline update steps</h5>
+<h3 id="offline-updates">Offline updates</h3>
+<h4 id="offline-update-steps">Offline update steps</h4>
 <p>Use the following steps to initiate an offline configuration update to your model:</p>
 <ol>
 <li>Ensure your updates are supported by checking <a href="#supported-updates">Supported</a> and <a href="#unsupported-updates">Unsupported</a> updates.</li>
 <li>Modify, add, or delete your model resources as per <a href="#updating-an-existing-model">Updating an existing model</a>.</li>
 <li>Modify your domain resource YAML file:
 <ol>
-<li>If you have updated your image, change <code>domain.spec.image</code> accordingly.</li>
+<li>If you have updated your image:
+<ul>
+<li>If the files are located in the image specified in the domain resource YAML file <code>spec.image</code>,
+then change this field to reference the image.</li>
+<li>If you are using
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a>
+to supply
+model files in an image, then change the corresponding <code>serverPod.commonMounts.image</code> field
+value to reference the new image or add a new <code>serverPod.commonMounts</code> mount for
+the new image.</li>
+</ul>
+</li>
 <li>If you are updating environment variables, change <code>domain.spec.serverPod.env</code>
 or <code>domain.spec.adminServer.serverPod.env</code> accordingly.</li>
 <li>If you are specifying a WDT ConfigMap, then set <code>domain.spec.configuration.model.configMap</code>
@@ -3639,7 +3687,7 @@ otherwise, change an attribute that instructs the operator to roll the domain.
 For examples, see
 <a href="#changing-a-domain-restartversion-or-introspectversion">change the domain <code>spec.restartVersion</code></a>
 or change any of the other
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">Domain YAML fields that cause servers to be restarted</a>.</li>
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">Domain resource YAML fields that cause servers to be restarted</a>.</li>
 </ol>
 </li>
 </ol>
@@ -3655,12 +3703,12 @@ then proceeds to restart each Managed Server in the domain.</p>
 <p>If the job reports a failure, see
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/">Debugging</a>
 for advice.</p>
-<h5 id="offline-update-sample">Offline update sample</h5>
+<h4 id="offline-update-sample">Offline update sample</h4>
 <p>For an offline update sample which adds a data source, see the
 <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/">Update 1 use case</a>
 in the Model in Image sample.</p>
-<h4 id="online-updates">Online updates</h4>
-<h5 id="online-update-steps">Online update steps</h5>
+<h3 id="online-updates">Online updates</h3>
+<h4 id="online-update-steps">Online update steps</h4>
 <p>Use the following steps to initiate an online configuration update to your model:</p>
 <ol>
 <li>Ensure your updates are supported by checking <a href="#supported-updates">Supported</a> and <a href="#unsupported-updates">Unsupported</a> updates.</li>
@@ -3669,7 +3717,7 @@ as per <a href="#updating-an-existing-model">Updating an existing model</a>.</li
 <li>Modify your domain resource YAML file:
 <ol>
 <li>
-<p><strong>Do not</strong> change <code>domain.spec.image</code>, <code>domain.spec.serverPod.env</code>, or any other Domain YAML
+<p><strong>Do not</strong> change <code>domain.spec.image</code>, <code>domain.spec.serverPod.env</code>, or any other domain resource YAML
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#fields-that-cause-servers-to-be-restarted">fields that cause servers to be restarted</a>;
 this will automatically and immediately result in a rerun of your introspector job,
 a roll if the job succeeds, plus an offline update if there are any accompanying model changes.</p>
@@ -3766,7 +3814,7 @@ plus, if the introspector job has stopped retrying, you must also change your do
     <span style="color:#f92672">secrets</span>:
     - <span style="color:#ae81ff">sample-domain1-datasource-secret</span>
     - <span style="color:#ae81ff">sample-domain1-another-secret</span>
-</code></pre></div><h5 id="online-update-handling-of-non-dynamic-weblogic-configuration-changes">Online update handling of non-dynamic WebLogic configuration changes</h5>
+</code></pre></div><h4 id="online-update-handling-of-non-dynamic-weblogic-configuration-changes">Online update handling of non-dynamic WebLogic configuration changes</h4>
 <p>The domain resource YAML <code>domain.spec.configuration.model.onlineUpdate.onNonDynamicChanges</code> attribute
 controls behavior when
 non-dynamic WebLogic configuration changes are detected during an online update introspector job.
@@ -3797,7 +3845,7 @@ then the new servers will start with the new non-dynamic changes
 and the domain will then be running in an inconsistent state until its older servers are restarted.</p>
 </div>
 
-<h5 id="online-update-handling-of-deletes">Online update handling of deletes</h5>
+<h4 id="online-update-handling-of-deletes">Online update handling of deletes</h4>
 <p>The primary use case for online updates is to make small additions,
 deletions of single resources or MBeans that have no dependencies,
 or changes to non-dynamic MBean attributes.</p>
@@ -3899,7 +3947,7 @@ example, first perform an online update to omit the Work Manager but not the con
         <span style="color:#f92672">WorkManager</span>:
         <span style="color:#f92672">MinThreadsConstraint</span>:
         <span style="color:#f92672">MaxThreadsConstraint</span>:
-</code></pre></div><h5 id="online-update-status-and-labels">Online update status and labels</h5>
+</code></pre></div><h4 id="online-update-status-and-labels">Online update status and labels</h4>
 <p>During an online update, the operator will rerun the introspector job, which
 in turn attempts online WebLogic configuration changes to the running domain.
 You can monitor an update&rsquo;s status using its domain resource&rsquo;s status conditions
@@ -4052,7 +4100,7 @@ successful online model update.</li>
 </ul>
 </li>
 </ol>
-<h5 id="online-update-scenarios">Online update scenarios</h5>
+<h4 id="online-update-scenarios">Online update scenarios</h4>
 <ol>
 <li>
 <p><em>Successful online update that includes only dynamic WebLogic MBean changes.</em></p>
@@ -4195,12 +4243,12 @@ successful online model update.</li>
 </ul>
 </li>
 </ol>
-<h5 id="online-update-sample">Online update sample</h5>
+<h4 id="online-update-sample">Online update sample</h4>
 <p>For an online update sample which alters a data source and Work Manager, see the
 <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update4/">Update 4 use case</a>
 in the Model in Image sample.</p>
-<h4 id="appendices">Appendices</h4>
-<h5 id="using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover Domain and Compare Model Tools</h5>
+<h3 id="appendices">Appendices</h3>
+<h4 id="using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover Domain and Compare Model Tools</h4>
 <p>Optionally, you can use the WDT Discover Domain and Compare Domain Tools to help generate your model file updates.
 The WebLogic Deploy Tooling
 <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/">Discover Domain Tool</a>
@@ -4248,7 +4296,7 @@ compares two domain models and generates the YAML file for updating the first do
 </code></pre><blockquote>
 <p><strong>Note</strong>: If your domain type isn&rsquo;t <code>WLS</code>, remember to change the domain type to <code>JRF</code> or <code>RestrictedJRF</code> in the above <code>discoverDomain.sh</code> commands.</p>
 </blockquote>
-<h5 id="changing-a-domain-restartversion-or-introspectversion">Changing a Domain <code>restartVersion</code> or <code>introspectVersion</code></h5>
+<h4 id="changing-a-domain-restartversion-or-introspectversion">Changing a Domain <code>restartVersion</code> or <code>introspectVersion</code></h4>
 <p>As was mentioned in the <a href="#offline-updates">offline updates</a> section, one way to tell the operator to
 apply offline configuration changes to a running domain is by altering the Domain
 <code>spec.restartVersion</code>. Similarly, an <a href="#online-updates">online update</a> is initiated by altering
@@ -4835,6 +4883,22 @@ the <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">Do
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -6430,19 +6494,19 @@ the <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">Do
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624050334"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624050334"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1623857810"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624050334"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

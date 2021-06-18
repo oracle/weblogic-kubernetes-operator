@@ -12,20 +12,20 @@
     <title>Usage :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1623857810" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624050334" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624050334"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1623857810"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624050334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624050334"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624050334"></script>
 
     
   </div>
@@ -855,6 +855,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/">
         <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+        <b> </b>Common mounts
         
         </a>
     </li>
@@ -3281,6 +3302,8 @@
         <li><a href="#contents">Contents</a></li>
         <li><a href="#weblogic-kubernetes-operator">WebLogic Kubernetes Operator</a></li>
         <li><a href="#weblogic-server-image">WebLogic Server image</a></li>
+        <li><a href="#directory-structure">Directory structure</a></li>
+        <li><a href="#supplying-initial-model-files-and-wdt">Supplying initial model files and WDT</a></li>
         <li><a href="#optional-wdt-model-configmap">Optional WDT model ConfigMap</a></li>
         <li><a href="#required-runtime-encryption-secret">Required runtime encryption secret</a></li>
         <li><a href="#secrets-for-model-macros">Secrets for model macros</a></li>
@@ -3318,6 +3341,8 @@
 <ul>
 <li><a href="#weblogic-kubernetes-operator">WebLogic Kubernetes Operator</a></li>
 <li><a href="#weblogic-server-image">WebLogic Server image</a></li>
+<li><a href="#directory-structure">Directory structure</a></li>
+<li><a href="#supplying-initial-model-files-and-wdt">Supplying initial model files and WDT</a></li>
 <li><a href="#optional-wdt-model-configmap">Optional WDT model ConfigMap</a></li>
 <li><a href="#required-runtime-encryption-secret">Required runtime encryption secret</a></li>
 <li><a href="#secrets-for-model-macros">Secrets for model macros</a></li>
@@ -3328,69 +3353,98 @@
 <h3 id="weblogic-kubernetes-operator">WebLogic Kubernetes Operator</h3>
 <p>Deploy the operator and ensure that it is monitoring the desired namespace for your Model in Image domain. See <a href="/weblogic-kubernetes-operator/userguide/managing-operators/">Manage operators</a> and <a href="/weblogic-kubernetes-operator/quickstart/">Quick Start</a>.</p>
 <h3 id="weblogic-server-image">WebLogic Server image</h3>
-<p>Model in Image requires creating an image that has WebLogic Server and WDT installed, plus optionally, your model and application files.</p>
-<p>First, obtain a base image:</p>
+<p>Model in Image requires an image with a WebLogic Server installation.</p>
 <ul>
-<li>You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code> for WLS domains or <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3</code> for JRF domains. For an example of this approach for both WLS and JRF domains, see the <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/">Model in Image</a> sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this <a href="/weblogic-kubernetes-operator/userguide/base-images/#obtain-standard-images-from-the-oracle-container-registry">document</a>.</li>
-<li>Or you can manually build your own base image as per <a href="/weblogic-kubernetes-operator/userguide/base-images/#create-a-custom-image-with-patches-applied">Preparing a Base Image</a>. This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).</li>
+<li>
+<p>You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as <code>container-registry.oracle.com/middleware/weblogic:12.2.1.3</code> for WLS domains or <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3</code> for JRF domains. For an example of this approach for both WLS and JRF domains, see the <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/">Model in Image</a> sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this <a href="/weblogic-kubernetes-operator/userguide/base-images/#obtain-standard-images-from-the-oracle-container-registry">document</a>.</p>
+</li>
+<li>
+<p>Or, you can manually build your own base image, as described in <a href="/weblogic-kubernetes-operator/userguide/base-images/#create-a-custom-image-with-patches-applied">Preparing a Base Image</a>. This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).</p>
+</li>
 </ul>
-<p>After you have a base image, Model in Image requires the following directory structure for its (optional) WDT model artifacts and (required) WDT binaries:</p>
+<h3 id="directory-structure">Directory structure</h3>
+<p>Model in Image requires the following directory structure in its pods for
+its (optional) WDT model artifacts and (required) WDT binaries:</p>
 <table>
 <thead>
 <tr>
-<th>Directory</th>
+<th>Domain resource attribute</th>
+<th>Default directory</th>
 <th>Contents</th>
-<th>Extension</th>
 </tr>
 </thead>
 <tbody>
 <tr>
+<td><code>domain.spec.configuration.model.modelHome</code></td>
 <td><code>/u01/wdt/models</code></td>
-<td>Optional domain model YAML files</td>
-<td><code>.yaml</code></td>
+<td>Zero or more model <code>.yaml</code>, <code>.properties</code>, and/or archive <code>.zip</code> files.</td>
 </tr>
 <tr>
-<td><code>/u01/wdt/models</code></td>
-<td>Optional model variable files</td>
-<td><code>.properties</code></td>
-</tr>
-<tr>
-<td><code>/u01/wdt/models</code></td>
-<td>Application archives</td>
-<td><code>.zip</code></td>
-</tr>
-<tr>
+<td><code>domain.spec.configuration.model.wdtInstallHome</code></td>
 <td><code>/u01/wdt/weblogic-deploy</code></td>
-<td>Unzipped WDT install binaries</td>
-<td></td>
+<td>Unzipped WDT installation binaries (required).</td>
 </tr>
 </tbody>
 </table>
-<p>Notes:</p>
+<h3 id="supplying-initial-model-files-and-wdt">Supplying initial model files and WDT</h3>
+<p>Model in Image minimally requires an image with a WebLogic installation
+(see <a href="#weblogic-server-image">WebLogic Server image</a>), plus access
+to:</p>
+<ul>
+<li>A WDT installation in <code>domain.spec.configuration.model.wdtInstallHome</code>.</li>
+<li>One or more WDT model <code>.yaml</code> files that configure your domain in
+the <code>domain.spec.configuration.model.modelHome</code> directory
+or in the <a href="#optional-wdt-model-configmap">optional WDT model ConfigMap</a>.</li>
+<li>Zero or more WDT model <code>.properties</code> files in the
+<code>domain.spec.configuration.model.modelHome</code> directory
+or in the <a href="#optional-wdt-model-configmap">optional WDT model ConfigMap</a>.</li>
+<li>Zero or more WDT model application <code>.zip</code> archives
+in the <code>domain.spec.configuration.model.modelHome</code> directory. Archives
+must be supplied in the model home because application archives
+are not supported in the <a href="#optional-wdt-model-configmap">optional WDT model ConfigMap</a>.</li>
+</ul>
+<p>There are multiple methods for supplying Model in Image WDT artifacts:</p>
 <ul>
 <li>
-<p>The <code>/u01/wdt/models</code> directory is the Model in Image <em>model home</em>; for advanced use cases, you can customize its location using the Domain YAML file <code>configuration.model.modelHome</code> field.</p>
-</li>
-<li>
-<p>Model YAML and variable files are optional in a Model in Image image model home directory because Model in Image also supports <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">supplying them dynamically</a> using a ConfigMap referenced by the Domain YAML file <code>spec.model.configMap</code> field.</p>
-</li>
-<li>
-<p>Application archives, if any, must be supplied in the model home. Application archives are not supported in a <code>spec.model.configMap</code>.</p>
-</li>
-</ul>
-<p>There are three methods for layering Model in Image artifacts on top of a base image:</p>
+<p><strong>Include in main image</strong>:
+You can include the artifacts in your domain resource <code>domain.spec.image</code>
+in its <code>domain.spec.configuration.model.modelHome</code>
+and <code>domain.spec.configuration.model.wdtInstallHome</code> directories as
+a layer on top of your base image
+(where the base image includes your WebLogic installation).</p>
+<p>Use either of the following methods.</p>
 <ul>
-<li>
-<p>Manual Image Creation: Use Docker commands to layer the WDT artifacts from the above table on top of your base image into a new image.</p>
+<li><em>Manual image creation</em> uses Docker commands to layer the WDT artifacts, described in the previous table,
+on top of your base image into a new image.</li>
+<li>The <em>WebLogic Image Tool</em> (WIT) has built-in options for layering WDT model files,
+WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
+The <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/">Model in Image</a> sample uses the WIT approach.</li>
+</ul>
 </li>
 <li>
-<p>WebLogic Image Tool: Use the <a href="https://oracle.github.io/weblogic-image-tool/">WebLogic Image Tool</a>. The WebLogic Image Tool (WIT) has built-in options for layering WDT model files, WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image. The <a href="/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/">Model in Image</a> sample uses the WIT approach.</p>
+<p><strong>Use common mounts</strong>:
+Use <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a>
+to create one or more small images that contain the desired files. This automatically copies files
+from each of the small images into each pod&rsquo;s file system&rsquo;s
+<code>configuration.model.modelHome</code> or <code>configuration.model.wdtInstallHome</code> location.</p>
 </li>
 <li>
-<p>Persistent Volume Claim: This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files in a <a href="/weblogic-kubernetes-operator/faq/volumes/">Persistent Volume Claim</a> and modify <code>configuration.model.modelHome</code> to the corresponding directory within the PVC&rsquo;s mount location. This method does not address the requirement to include unzipped WDT install binaries in the <code>/u01/wdt/weblogic-deploy</code> directory (use either of the previous two methods).</p>
+<p><strong>Use a Persistent Volume Claim (PVC)</strong>:
+This method is for advanced use cases only. Supply WDT model YAML, variable, or archive files
+in a <a href="/weblogic-kubernetes-operator/faq/volumes/">Persistent Volume Claim</a>
+and modify <code>configuration.model.modelHome</code> and <code>configuration.model.wdtInstallHome</code> to
+the corresponding directory within the PVC&rsquo;s mount location.</p>
+</li>
+<li>
+<p><strong>Use a WDT model ConfigMap</strong>:
+Use the <a href="#optional-wdt-model-configmap">Optional WDT model ConfigMap</a> for
+WDT model YAML and <code>.properties</code> files. This can be combined with
+any of the previously mentioned methods and is most often used to facilitate runtime
+updates to models supplied by one of these methods.</p>
 </li>
 </ul>
-<p>For more information about model file syntax, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/">Model files</a>.</p>
+<p>For more information about model file syntax,
+see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/">Model files</a>.</p>
 <h3 id="optional-wdt-model-configmap">Optional WDT model ConfigMap</h3>
 <p>You can create a WDT model ConfigMap that defines additional model <code>.yaml</code> and <code>.properties</code> files beyond what you&rsquo;ve already supplied in your image, and then reference this ConfigMap using your Domain YAML file&rsquo;s <code>configuration.model.configMap</code> attribute. This is optional if the supplied image already fully defines your model.</p>
 <p>WDT model ConfigMap files will be merged with the WDT files defined in your image at runtime before your domain home is created. The ConfigMap files can add to, remove from, or alter the model configuration that you supplied within your image.</p>
@@ -3459,6 +3513,10 @@
 <tr>
 <td><code>configuration.model.modelHome</code></td>
 <td>Optional. Location of the WDT model home, which can include model YAML files, <code>.properties</code> files, and application <code>.zip</code> archives. Defaults to <code>/u01/wdt/models</code>.</td>
+</tr>
+<tr>
+<td><code>configuration.model.wdtInstallHome</code></td>
+<td>Optional. Location of the WDT install. Defaults to <code>/u01/wdt/weblogic-deploy</code>.</td>
 </tr>
 </tbody>
 </table>
@@ -4148,6 +4206,22 @@ The <code>WLS</code> and <code>JRF</code> subdirectories in this directory corre
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -5697,7 +5771,7 @@ The <code>WLS</code> and <code>JRF</code> subdirectories in this directory corre
 			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/overview/" title="Overview"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/" title="Model files" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -5707,19 +5781,19 @@ The <code>WLS</code> and <code>JRF</code> subdirectories in this directory corre
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624050334"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624050334"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1623857810"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624050334"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

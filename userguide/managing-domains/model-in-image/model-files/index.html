@@ -12,20 +12,20 @@
     <title>Model files :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1623857810" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1623857810" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624050334" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624050334"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1623857810"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624050334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624050334"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1623857810"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624050334"></script>
 
     
   </div>
@@ -855,6 +855,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/">
         <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+        <b> </b>Common mounts
         
         </a>
     </li>
@@ -3278,7 +3299,12 @@
   <ul>
     <li>
       <ul>
-        <li></li>
+        <li><a href="#contents">Contents</a></li>
+        <li><a href="#introduction">Introduction</a></li>
+        <li><a href="#sample-model-file">Sample model file</a></li>
+        <li><a href="#important-notes-about-model-in-image-model-files">Important notes about Model in Image model files</a></li>
+        <li><a href="#model-file-naming-and-loading-order">Model file naming and loading order</a></li>
+        <li><a href="#model-file-macros">Model file macros</a></li>
       </ul>
     </li>
   </ul>
@@ -3305,7 +3331,7 @@
         
 
 
-<h4 id="contents">Contents</h4>
+<h3 id="contents">Contents</h3>
 <ul>
 <li><a href="#introduction">Introduction</a></li>
 <li><a href="#sample-model-file">Sample model file</a></li>
@@ -3319,13 +3345,13 @@
 </ul>
 </li>
 </ul>
-<h4 id="introduction">Introduction</h4>
+<h3 id="introduction">Introduction</h3>
 <p>This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the <a href="https://oracle.github.io/weblogic-deploy-tooling/">WebLogic Deploy Tool</a> documentation.</p>
 
 <div class="notices tip" ><p>The WDT <a href="https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/">Discover Domain Tool</a> is particularly useful for generating model files from an existing domain home.</p>
 </div>
 
-<h4 id="sample-model-file">Sample model file</h4>
+<h3 id="sample-model-file">Sample model file</h3>
 <p>Here&rsquo;s an example of a model YAML file that defines a WebLogic Server Administration Server and dynamic cluster.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainInfo</span>:
   <span style="color:#f92672">AdminUserName</span>: <span style="color:#e6db74">&#39;@@SECRET:__weblogic-credentials__:username@@&#39;</span>
@@ -3356,7 +3382,7 @@
 <li>Derives its domain name from the predefined environment variable <code>DOMAIN_UID</code>, but note that this is not required.</li>
 </ul>
 <p>For a description of model file macro references to secrets and environment variables, see <a href="#model-file-macros">Model file macros</a>.</p>
-<h4 id="important-notes-about-model-in-image-model-files">Important notes about Model in Image model files</h4>
+<h3 id="important-notes-about-model-in-image-model-files">Important notes about Model in Image model files</h3>
 <ul>
 <li>
 <p>Using model file macros</p>
@@ -3393,7 +3419,7 @@
 <p>You can control the order that WDT uses to load your model files, see <a href="#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
 </li>
 </ul>
-<h4 id="model-file-naming-and-loading-order">Model file naming and loading order</h4>
+<h3 id="model-file-naming-and-loading-order">Model file naming and loading order</h3>
 <p>Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that&rsquo;s loaded has the highest precedence.</p>
 <p>During domain home creation, model, and property files are first loaded from the <code>configuration.models.modelHome</code> directory within the image, which defaults to <code>/u01/wdt/models</code>, and are then loaded from the optional WDT ConfigMap, described in <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/#optional-wdt-model-configmap">Optional WDT model ConfigMap</a>.</p>
 <p>The loading order within each of these locations is first determined using the convention <code>filename.##.yaml</code> and <code>filename.##.properties</code>, where <code>##</code> are digits that specify the desired order when sorted numerically. Additional details:</p>
@@ -3420,8 +3446,8 @@ z.yaml
 </code></pre><p>Then the combined model files list is passed to the WebLogic Deploy Tool as:</p>
 <pre><code>y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops.10.yaml
 </code></pre><p>Property files (ending in <code>.properties</code>) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.</p>
-<h4 id="model-file-macros">Model file macros</h4>
-<h5 id="using-secrets-in-model-files">Using secrets in model files</h5>
+<h3 id="model-file-macros">Model file macros</h3>
+<h4 id="using-secrets-in-model-files">Using secrets in model files</h4>
 <p>You can use WDT model <code>@@SECRET</code> macros to reference the WebLogic administrator <code>username</code> and <code>password</code> keys that are stored in a Kubernetes Secret and to optionally reference additional secrets. Here is the macro pattern for accessing these secrets:</p>
 <table>
 <thead>
@@ -3451,10 +3477,10 @@ z.yaml
   <span style="color:#f92672">configuration</span>:
     <span style="color:#f92672">secrets</span>: [ <span style="color:#ae81ff">my-custom-secret1,my-custom-secret2 ]</span>
 ...
-</code></pre></div><h5 id="using-environment-variables-in-model-files">Using environment variables in model files</h5>
+</code></pre></div><h4 id="using-environment-variables-in-model-files">Using environment variables in model files</h4>
 <p>You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file using <code>domain.spec.serverPod.env</code> or <code>domain.spec.adminServer.serverPod.env</code>, or the built-in <code>DOMAIN_UID</code> environment variable.</p>
 <p>For example, the <code>@@ENV:DOMAIN_UID@@</code> macro resolves to the current domain&rsquo;s domain UID.</p>
-<h5 id="combining-secrets-and-environment-variables-in-model-files">Combining secrets and environment variables in model files</h5>
+<h4 id="combining-secrets-and-environment-variables-in-model-files">Combining secrets and environment variables in model files</h4>
 <p>You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you&rsquo;ve named based on your domain&rsquo;s <code>domainUID</code>.</p>
 <p>For example, if your <code>domainUID</code> is <code>domain1</code>, then the macro <code>@@SECRET:@@ENV:DOMAIN_UID@@-super-double-secret:mykey@@</code> resolves to the value stored in <code>mykey</code> for secret <code>domain1-super-double-secret</code>.</p>
 
@@ -4018,6 +4044,22 @@ z.yaml
             
                 
                     
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
                     
                 
                 
@@ -5567,7 +5609,7 @@ z.yaml
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts"> <i class="fa fa-chevron-left"></i></a>
 		
 		
 			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/" title="Runtime updates" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
@@ -5580,19 +5622,19 @@ z.yaml
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624050334"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1623857810"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1623857810"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624050334"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1623857810"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624050334"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

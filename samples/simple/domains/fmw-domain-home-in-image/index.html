@@ -12,20 +12,20 @@
     <title>FMW Infrastructure domain home in image :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1623857811" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1623857811" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624050334" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624050334" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1623857811"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624050334"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1623857811"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1623857811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624050334"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624050334"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1623857811"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624050334"></script>
 
     
   </div>
@@ -855,6 +855,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/">
         <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+        <b> </b>Common mounts
         
         </a>
     </li>
@@ -3279,6 +3300,7 @@
     <li>
       <ul>
         <li></li>
+        <li><a href="#troubleshooting">Troubleshooting</a></li>
       </ul>
     </li>
   </ul>
@@ -3418,7 +3440,7 @@ or <code>kubectl apply -f</code> command:</p>
 which in turn results in the creation of the corresponding WebLogic Server pods and services as well.</p>
 <p>The usage of the create script is as follows:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ sh create-domain.sh -h
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-n encryption-key] [-e] [-v] [-h]
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-b buildNetworkParam] [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -u WebLogic administrator user name for the WebLogic domain.
@@ -3427,6 +3449,7 @@ which in turn results in the creation of the corresponding WebLogic Server pods 
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
+  -b Value to be used in the buildNetwork parameter when invoking WebLogic Image Tool, optional.
   -h Help
 </code></pre></div><p>If you copy the sample scripts to a different location, make sure that you copy everything in
 the <code>&lt;weblogic-kubernetes-operator-project&gt;/kubernetes/samples/scripts</code> directory together
@@ -3931,7 +3954,36 @@ If the image is in a local repository, use the following command to delete an im
 <p>When no longer needed, delete the directory where WebLogic Deploy Tool and WebLogic Image Tool are installed.
 By default, they are installed under <code>/tmp/dhii-sample/tools</code> directory.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -rf /tmp/dhii-sample/tools/
-</code></pre></div>
+</code></pre></div><h3 id="troubleshooting">Troubleshooting</h3>
+<p><em><strong>Message</strong></em>: <code>Failed to build JDBC Connection object</code></p>
+<p>If the WebLogic Image Tool failed to create a domain and the following error is seen in the output:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">Configuring the Service Table DataSource...
+fmwDatabase  jdbc:oracle:thin:@172.18.0.2:30012/devpdb.k8s
+Getting Database Defaults...
+Error: getDatabaseDefaults<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
+Error: runCmd<span style="color:#f92672">()</span> failed. Do dumpStack<span style="color:#f92672">()</span> to see details.
+Problem invoking WLST - Traceback <span style="color:#f92672">(</span>innermost last<span style="color:#f92672">)</span>:
+File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 332, in ?
+File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 44, in createInfraDomain
+File <span style="color:#e6db74">&#34;/u01/oracle/createFMWDomain.py&#34;</span>, line 151, in extendDomain
+File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 267, in getDatabaseDefaults
+File <span style="color:#e6db74">&#34;/tmp/WLSTOfflineIni1609018487056199846.py&#34;</span>, line 19, in command
+Failed to build JDBC Connection object:
+at com.oracle.cie.domain.script.jython.CommandExceptionHandler.handleException<span style="color:#f92672">(</span>CommandExceptionHandler.java:69<span style="color:#f92672">)</span>
+at com.oracle.cie.domain.script.jython.WLScriptContext.handleException<span style="color:#f92672">(</span>WLScriptContext.java:3085<span style="color:#f92672">)</span>
+at com.oracle.cie.domain.script.jython.WLScriptContext.runCmd<span style="color:#f92672">(</span>WLScriptContext.java:738<span style="color:#f92672">)</span>
+at sun.reflect.GeneratedMethodAccessor131.invoke<span style="color:#f92672">(</span>Unknown Source<span style="color:#f92672">)</span>
+at sun.reflect.DelegatingMethodAccessorImpl.invoke<span style="color:#f92672">(</span>DelegatingMethodAccessorImpl.java:43<span style="color:#f92672">)</span>
+at java.lang.reflect.Method.invoke<span style="color:#f92672">(</span>Method.java:498<span style="color:#f92672">)</span>
+
+com.oracle.cie.domain.script.jython.WLSTException: com.oracle.cie.domain.script.jython.WLSTException: Got exception when auto configuring the schema component<span style="color:#f92672">(</span>s<span style="color:#f92672">)</span> with data obtained from shadow table:
+Failed to build JDBC Connection object:
+</code></pre></div><p>First, verify that the JDBC connection URL shown in the output is correct. Update the <code>rcuDatabaseURL</code> parameter in the inputs YAML file to the correct value if necessary.</p>
+<p>If the JDBC connection URL is correct, it is possible that the container in which the WebLogic Image Tool is running for creating a WebLogic domain, is not using the correct networking stack.
+The optional <code>-b</code> option in the <code>create-domain.sh</code> script can be used to specify the networking mode for the RUN instruction during image build.
+For example, to use the host&rsquo;s network stack, invoke <code>create-domain.sh</code> with <code>-b host</code>.
+Please refer to Docker Network Settings references for supported networking options.</p>
+
 
 
 
@@ -4445,6 +4497,22 @@ By default, they are installed under <code>/tmp/dhii-sample/tools</code> directo
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -6054,19 +6122,19 @@ By default, they are installed under <code>/tmp/dhii-sample/tools</code> directo
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1623857811"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624050334"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1623857811"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1623857811"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624050334"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624050334"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1623857811"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624050334"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
