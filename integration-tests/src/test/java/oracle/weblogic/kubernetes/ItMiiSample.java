@@ -118,7 +118,6 @@ public class ItMiiSample {
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
     envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    envMap.put("DO_CM", "true");
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
@@ -357,6 +356,26 @@ public class ItMiiSample {
   }
 
   /**
+   * Test to verify MII sample WLS initial use case using common mount.
+   * Builds image required for the initial use case, creates secrets, and
+   * creates domain resource.
+   * Verifies all WebLogic Server pods are ready, are at the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * (response includes "Hello World!").
+   */
+  @Test
+  @Order(12)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS initial use case using common mount")
+  public void testCMWlsInitialUseCase() {
+    previousTestSuccessful = true;
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
+  }
+
+  /**
    * Delete DB deployment and Uninstall traefik.
    */
   @AfterAll
@@ -382,17 +401,19 @@ public class ItMiiSample {
   private static void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
+    String decoration = (envMap.get("DO_CM") != null && envMap.get("DO_CM").equalsIgnoreCase("true"))  ? "CM-" : "";
+
     if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-v1"; 
+      imageVer = "WLS-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) { 
-      imageVer = "WLS-v2"; 
+    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
+      imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) { 
-      imageVer = "JRF-v1"; 
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
+      imageVer = "JRF-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) { 
-      imageVer = "JRF-v2"; 
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
+      imageVer = "JRF-" + decoration + "v2";
     }
     String image = imageName + ":" + imageVer;
 
