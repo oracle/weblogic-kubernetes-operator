@@ -376,6 +376,80 @@ public class ItMiiSample {
   }
 
   /**
+   * Test to verify WLS update1 use case.
+   * Adds a data source to initial domain via a configmap and updates the
+   * domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and detects the new datasource (response includes
+   * "mynewdatasource").
+   */
+  @Test
+  @Order(13)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update1 use case")
+  public void testCMWlsUpdate1UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
+  }
+
+  /**
+   * Test to verify WLS update2 use case.
+   * Deploys a second domain 'domain2' with a different domain UID,
+   * different secrets, and different datasource config map,
+   * but that is otherwise the same as the update1 domain.
+   * Verifies all WebLogic Server pods are ready, have the expected
+   * restartVersion, and have the expected image.
+   * For each domain, verifies the sample application is running
+   * (response includes "domain1" or "domain2" depending on domain).
+   */
+  @Test
+  @Order(14)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update2 use case")
+  public void tesCMtWlsUpdate2UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
+  }
+
+  /**
+   * Test to verify update3 use case.
+   * Deploys an updated WebLogic application to the running
+   * domain from update1 using an updated Docker image,
+   * and updates the domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and is at the new version (response includes "v2").
+   */
+  @Test
+  @Order(15)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update3 use case")
+  public void testCMWlsUpdate3UseCase() {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
+  }
+
+  /**
+   * Test to verify WLS update4 use case.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(16)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update4 use case")
+  public void testCMWlsUpdate4UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+  }
+
+  /**
    * Delete DB deployment and Uninstall traefik.
    */
   @AfterAll
