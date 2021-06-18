@@ -450,6 +450,107 @@ public class ItMiiSample {
   }
 
   /**
+   * Test to verify MII sample JRF initial use case.
+   * Deploys a database and initializes it for RCU,
+   * uses an FMW infra base image instead of WLS
+   * base image, and uses a WDT model that's
+   * specialized for JRF, but is otherwise similar to
+   * the WLS initial use case.
+   * @see #testWlsInitialUseCase for more...
+   */
+  @Test
+  @Order(17)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF initial use case")
+  public void testCMFmwInitialUseCase() {
+    String dbImageName = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
+    String jrfBaseImageName = (KIND_REPO != null
+        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
+
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
+    envMap.put("DB_IMAGE_NAME", dbImageName);
+    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+    envMap.put("DB_NODE_PORT", "none");
+    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
+    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
+    envMap.put("DB_NAMESPACE", dbNamespace);
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
+    envMap.put("DO_CM", "true");
+    // run JRF use cases irrespective of WLS use cases fail/pass
+    previousTestSuccessful = true;
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-initial-image,-check-image-and-push,-initial-main",
+        "Initial use case failed"
+    );
+  }
+
+  /**
+   * Test to verify JRF update1 use case.
+   * @see #testWlsUpdate1UseCase for more...
+   */
+  @Test
+  @Order(18)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update1 use case")
+  public void testCMFmwUpdate1UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
+  }
+
+  /**
+   * Test to verify JRF update2 use case.
+   * @see #testWlsUpdate2UseCase for more...
+   */
+  @Test
+  @Order(19)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update2 use case")
+  public void testCMFmwUpdate2UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
+  }
+
+  /**
+   * Test to verify JRF update3 use case.
+   * @see #testWlsUpdate3UseCase for more...
+   */
+  @Test
+  @Order(20)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update3 use case")
+  public void testCMFmwUpdate3UseCase() {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-update3-image,-check-image-and-push,-update3-main",
+        "Update3 use case failed"
+    );
+  }
+
+  /**
+   * Test to verify WLS update4 use case.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(21)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update4 use case")
+  public void testCMFmwUpdate4UseCase() {
+    envMap.put("DO_CM", "true");
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
+  }
+
+
+  /**
    * Delete DB deployment and Uninstall traefik.
    */
   @AfterAll
