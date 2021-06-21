@@ -11,10 +11,16 @@ and uninstall the operator.
 
 #### Contents
 
+ - [Operator image](#operator-image)
  - [Install the operator Helm chart](#install-the-operator-helm-chart)
  - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
  - [Upgrade the operator](#upgrade-the-operator)
  - [Uninstall the operator](#uninstall-the-operator)
+
+ #### Operator image
+
+ You can find the operator image in
+ [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 
 #### Install the operator Helm chart
 

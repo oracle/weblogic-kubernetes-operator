@@ -23,9 +23,3 @@ For the current production release 3.2.3:
 * You must have the `cluster-admin` role to install the operator.  The operator does
   not need the `cluster-admin` role at runtime. For more information, see the role-based access control, [RBAC]({{< relref "/security/rbac.md" >}}), documentation.
 * We do not currently support running WebLogic in non-Linux containers.
-
-
-### Operator image
-
-You can find the operator image in
-[GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
