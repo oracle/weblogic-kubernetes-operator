@@ -16,7 +16,7 @@ Detailed instructions are available [here]({{< relref "/userguide/managing-opera
 
 ### Operator prerequisites
 
-For the current production release 3.2.3:
+For the current production release 3.2.4:
 
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
