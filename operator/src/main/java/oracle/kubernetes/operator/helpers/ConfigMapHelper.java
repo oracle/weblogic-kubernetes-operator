@@ -328,8 +328,8 @@ public class ConfigMapHelper {
           return doNext(replaceConfigMap(getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
           return doNext(patchCurrentMap(existingMap, getNext()), packet);
-        } else if (mustPatchImageVersionInMap(existingMap, packet)) {
-          return doNext(patchImageVersionInCurrentMap(existingMap, packet, getNext()), packet);
+        } else if (mustPatchImageHashInMap(existingMap, packet)) {
+          return doNext(patchImageHashInCurrentMap(existingMap, packet, getNext()), packet);
         } else {
           logConfigMapExists();
           recordCurrentMap(packet, existingMap);
@@ -356,9 +356,9 @@ public class ConfigMapHelper {
         return KubernetesUtils.isMissingValues(getMapLabels(currentMap), getLabels());
       }
 
-      private boolean mustPatchImageVersionInMap(V1ConfigMap currentMap, Packet packet) {
+      private boolean mustPatchImageHashInMap(V1ConfigMap currentMap, Packet packet) {
         return (currentMap.getData() != null) && Optional.ofNullable((String)packet.get(DOMAIN_INPUTS_HASH))
-                .map(dih -> !dih.equals(currentMap.getData().get(DOMAIN_INPUTS_HASH))).orElse(false);
+                .map(hash -> !hash.equals(currentMap.getData().get(DOMAIN_INPUTS_HASH))).orElse(false);
       }
 
       private Map<String, String> getMapLabels(@NotNull V1ConfigMap map) {
@@ -381,7 +381,7 @@ public class ConfigMapHelper {
                 new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
 
-      private Step patchImageVersionInCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
+      private Step patchImageHashInCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
         JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
 
         patchBuilder.add("/data/" + DOMAIN_INPUTS_HASH, (String)packet.get(DOMAIN_INPUTS_HASH));
