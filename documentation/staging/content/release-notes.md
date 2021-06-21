@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
-| June 22, 2021 | v3.2.5 | no | Updated Oracle Linux libraries and resolved an issue related to repeated introspection. |
+| June 21, 2021 | v3.2.5 | no | Updated Oracle Linux libraries and resolved an issue related to repeated introspection. |
 | June 18, 2021 | v3.2.4 | no | Resolved several issues related to Istio, diagnostics, and recovery. |
 | May 21, 2021 | v3.2.3 | no | Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool. |
 | April 27, 2021 | v3.2.2 | no | Resolved a set of issues with many related to reducing the operator's network utilization. |
