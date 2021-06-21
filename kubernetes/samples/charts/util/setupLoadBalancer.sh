@@ -3,7 +3,10 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This script create or delete an Ingress controller. 
-# The script supports ingress controllers: Traefik, Voyager, and Nginx.
+#  The script supports ingress controllers: Traefik, Voyager, and Nginx.
+
+set -eu
+set -o pipefail
 
 UTILDIR="$(dirname "$(readlink -f "$0")")"
 
@@ -66,23 +69,23 @@ EOF
 exit $1
 }
 
-actionchoosen=false
+action_chosen=false
 
 while getopts "cdt:n:r:v:h" opt; do
   case $opt in
     c) action="create"
-       if [ $actionchoosen = "true" ]; then
+       if [ $action_chosen = "true" ]; then
         printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
         usage 1
        fi 
-       actionchoosen=true
+       action_chosen=true
     ;;
     d) action="delete"
-       if [ $actionchoosen = "true" ]; then
+       if [ $action_chosen = "true" ]; then
         printError " Both -c (create) and -d (delete) option can not be specified for ingress controller."
         usage 1
        fi 
-       actionchoosen=true
+       action_chosen=true
     ;;
     n) namespace="${OPTARG}"
     ;;
@@ -92,9 +95,9 @@ while getopts "cdt:n:r:v:h" opt; do
     ;;
     m) kubernetesCli="${OPTARG}"
     ;;
-    h) usage 1
+    h) usage 0
     ;;
-    *) usage 1
+    * ) usage 0
     ;;
   esac
 done
@@ -132,7 +135,7 @@ case  ${ingressType} in
                exit -1  ;;
 esac
 
-printInfo "Action [${action}] Type [${ingressType}] NameSpace [${namespace}] Release [${release}] Chart [$chart]"
+printInfo "Action [${action}], Type [${ingressType}], NameSpace [${namespace}], Release [${release}], Chart [$chart]"
 
 # Validate Kubernetes CLI availability
 # Try to execute kubernetes cli to see whether cli is available
@@ -164,6 +167,7 @@ function waitForIngressPod() {
   ipod=$(${kubernetesCli} -o name get po -n ${ns})
   if [[ "${ipod}" != *$chart* ]]; then
    printError "Couldn't find the pod associated with ${type} helm deployment. List helm deployment status on namespace [${ns}]. "
+   helm list -n ${ns}
    exit -1;
   fi
   printInfo "Found pod [${ipod}] associated with ${type} helm deployment on namespace [${ns}]."
@@ -193,7 +197,7 @@ function waitForIngressPod() {
 function createVoyager() {
   ns=${1}
   release=${2}
-  createNameSpace $ns
+  createNameSpace $ns || true
 
   printInfo "Creating Voyager controller on namespace ${ns}"
   if [ "$(helm search repo appscode/voyager | grep voyager | wc -l)" = 0 ]; then
@@ -207,7 +211,7 @@ function createVoyager() {
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 0 ]; then
     printInfo "Installing Voyager controller"
     # remove resources from previous run if any  
-    purgeVoyagerResources
+    purgeVoyagerResources || true
     helm install $chart appscode/voyager --version ${release}  \
       --namespace ${ns} \
       --set cloudProvider=baremetal \
@@ -250,7 +254,7 @@ function createTraefik() {
   ns=${1}
   rel=${2}
 
-  createNameSpace $ns
+  createNameSpace $ns || true
   if [ "$(helm search repo traefik/traefik | grep traefik |  wc -l)" = 0 ]; then
     # https://containous.github.io/traefik-helm-chart/
     # https://docs.traefik.io/getting-started/install-traefik/
@@ -264,7 +268,7 @@ function createTraefik() {
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
     # https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
-    purgeDefaultResources
+    purgeDefaultResources || true 
     helm install $chart traefik/traefik --namespace ${ns} \
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
@@ -274,7 +278,6 @@ function createTraefik() {
     fi
   else
     printInfo "Traefik controller is already installed."
-    exit 0;
   fi
 
   waitForIngressPod traefik ${ns}
@@ -286,10 +289,20 @@ function createTraefik() {
 # Remove ingress related resources from default Namespace ( if any )
 function purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
-   ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole 
+   crole=$(${kubernetesCli} get ClusterRole | grep ${chart})
+   if [ "x${crole}" != "x" ]; then 
+   ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole --ignore-not-found
+   fi
+
+   crb=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart})
+   if [ x${crb} != "x" ]; then 
   ${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRoleBinding 
+   fi
+
+   vwc=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart})
+   if [ x${vwc} != "x" ]; then 
   ${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}' | xargs kubectl delete ValidatingWebhookConfiguration 
-  return 0;
+   fi
 }
 
 # Remove voyager related resources from default Namespace ( if any )
@@ -342,11 +355,11 @@ function deleteIngress() {
   fi
 
   if [ "${ingressType}" = traefik ]; then
-      purgeDefaultResources
+      purgeDefaultResources || true
     elif [ "${ingressType}" = voyager ]; then
-      purgeVoyagerResources
+      purgeVoyagerResources || true
     elif [ "${ingressType}" = nginx ]; then
-      purgeDefaultResources
+      purgeDefaultResources || true
     fi
 }
 
@@ -354,7 +367,7 @@ function createNginx() {
   ns=${1}
   release=${2}
   chart="nginx-release"
-  createNameSpace $ns
+  createNameSpace $ns || true
   printInfo "Creating Nginx controller on namespace ${ns}" 
 
   if [ "$(helm search repo ingress-nginx | grep nginx | wc -l)" = 0 ]; then
@@ -366,7 +379,7 @@ function createNginx() {
   fi
 
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
-    purgeDefaultResources
+    purgeDefaultResources || true
     helm install $chart ingress-nginx/ingress-nginx \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
