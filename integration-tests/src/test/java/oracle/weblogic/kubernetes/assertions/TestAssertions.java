@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 
-
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
  */
@@ -366,6 +365,23 @@ public class TestAssertions {
                                                       Map<String, String> label,
                                                       String namespace) {
     return () -> !Kubernetes.doesServiceExist(serviceName, label, namespace);
+  }
+
+  /**
+   * Check the status reason of the domain matches the given reason.
+   * @param domain  oracle.weblogic.domain.Domain object
+   * @param statusReason the expected status reason of the domain
+   * @return true if the status reason matches, false otherwise
+   */
+  public static Callable<Boolean> domainStatusReasonMatches(oracle.weblogic.domain.Domain domain,
+                                                            String statusReason) {
+    return () -> {
+      if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
+        return domain.getStatus().getReason().equalsIgnoreCase(statusReason);
+      }
+
+      return false;
+    };
   }
 
   /**

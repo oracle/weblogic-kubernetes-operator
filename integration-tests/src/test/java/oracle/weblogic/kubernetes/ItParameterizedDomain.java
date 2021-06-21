@@ -119,9 +119,9 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
@@ -1614,13 +1614,9 @@ class ItParameterizedDomain {
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
 
-    // sleep for a while and check that the admin server service does not exist since the encryption secret not created
-    try {
-      Thread.sleep(60000);
-    } catch (InterruptedException ie) {
-      // ignore
-    }
-    checkServiceDoesNotExist(adminServerPodName, domainNamespace);
+    // wait and check for the domain status reason matches the expected string
+    checkDomainStatusReasonMatches(
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace)), domainNamespace, "ErrBadDomain");
   }
 
   /**
