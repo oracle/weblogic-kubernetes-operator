@@ -411,7 +411,7 @@ The Oracle Database images are only supported for non-production use. For more d
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.4   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.5   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -868,7 +868,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     June 18, 2021 v3.2.4 no Resolved several issues related to Istio, diagnostics, and recovery.   May 21, 2021 v3.2.3 no Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     June 21, 2021 v3.2.5 no Updated Oracle Linux libraries and resolved an issue related to repeated introspection.   June 18, 2021 v3.2.4 no Resolved several issues related to Istio, diagnostics, and recovery.   May 21, 2021 v3.2.3 no Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.</description>
     </item>
     
   </channel>
