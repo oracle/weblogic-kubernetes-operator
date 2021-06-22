@@ -10,7 +10,7 @@ description: "Run a database in Kubernetes."
 
 This section describes how to run an
 ephemeral [Oracle database](#oracle-database-in-kubernetes)
-or a [MySQL database](#mysql-database-in-kubernetes)
+or [MySQL database](#mysql-database-in-kubernetes)
 in your Kubernetes cluster
 using approaches suitable for sample or basic testing purposes. 
 
@@ -107,7 +107,7 @@ The following example shows how to set up an ephemeral MySQL database with the f
 | image | `mysql:5.6` |
 | root user (with full privileges) | `root` |
 | root password | `password` |
-| database URL inside Kubernetes cluster (from any namespace) | `jdbc:mysql://mysql-db:3306/mysql` |
+| database URL inside Kubernetes cluster (from any namespace) | `jdbc:mysql://mysql-db.default.svc.cluster.local:3306/mysql` |
 
 Copy the following YAML into a file named `mysql.yaml`:
 
