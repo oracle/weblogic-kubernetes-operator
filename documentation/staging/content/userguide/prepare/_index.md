@@ -26,3 +26,5 @@ description: "Follow these steps to set up your environment."
 this [sample script]({{< relref "/samples/simple/elastic-stack/_index.md" >}}) to configure Elasticsearch and Kibana deployments and services.
 
 1. Optional. Create persistent file storage. For example, a Kubernetes [PersistentVolume (PV) and PersistentVolumeClaim (PVC)]({{< relref "/samples/simple/storage/_index.md" >}}).
+
+1. Set up your domain. For information, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
