@@ -75,7 +75,7 @@ Updated several dependencies, including the Oracle Linux base for the container 
 * [Online updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#online-updates">}}) of dynamic configuration changes for Model in Image.
 * Automatic injection of the [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter) as a sidecar container.  
 * [Events]({{< relref "/userguide/managing-domains/domain-events.md" >}}) are generated at important moments in the life cycle of the operator or a domain.
-* [PodDisruptionBudgets]({{<relref "/userguide/introduction/architecture/_index.md#draining-a-node-and-poddisruptionbudget">}}) are generated for clusters improving the ability to maintain cluster availability during planned node shutdowns and Kubernetes upgrade.
+* [PodDisruptionBudgets]({{<relref "/userguide/managing-domains/domain-lifecycle/startup.md#draining-a-node-and-poddisruptionbudget">}}) are generated for clusters improving the ability to maintain cluster availability during planned node shutdowns and Kubernetes upgrade.
 * Additional scripts to assist with common tasks, such as the `scaleCluster.sh` script.
 * Support for TCP and UDP on the same channel when the SIP protocol is used.
 

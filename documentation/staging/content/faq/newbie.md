@@ -17,7 +17,8 @@ WebLogic Server is not open source. Licensing is required for each running WebLo
 
 #### How can I get help?
 
-We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
+You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
+To learn how, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
 
 #### WebLogic Server Certification
 
