@@ -7,13 +7,29 @@ pre = "<b> </b>"
 
 When using the operator to start WebLogic Server instances from a domain, you have the choice of the following WebLogic domain home source types:
 
- - **Domain in PV**: Supply your domain home configuration in a persistent volume.
- - **Domain in Image**: Supply your domain home in an image.
- - **Model in Image**: Supply a WebLogic Deployment Tool (WDT) model file in an image.
+ - **[Domain in PV]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}})**:
+   - Supply a WebLogic install in an image and supply WebLogic configuration as a domain home in a persistent volume.
+   - Supply WebLogic applications in the persistent volume.
+   - Mutate WebLogic configuration using WLST, the WebLogic console, or [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}) supplied in a Kubernetes ConfigMap.
 
-There are advantages for each domain home source type, but sometimes there are also technical limitations of various cloud providers that may make one type better suited to your needs.
+ - **[Domain in Image]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}})**:
+   - Supply a WebLogic install in an image and supply WebLogic configuration as a domain home layered on this image.
+   - Supply WebLogic applications layered on the install image.
+   - Mutate WebLogic configuration by supplying a new image and rolling, or by configuration overrides supplied in a Kubernetes ConfigMap.
+
+ - **[Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})**:
+   - Supply a WebLogic install in an image and supply WebLogic configuration in one of three ways:
+     - As WebLogic Deployment Tool (WDT) model YAML layered on the WebLogic install image.
+     - As WDT model YAML supplied in separate [common mount images]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}}).
+     - As WDT model YAML in a Kubernetes ConfigMap.
+   - Supply WebLogic applications in one of two ways:
+     - Layered on the install image.
+     - In common mount images.
+   - Mutate WebLogic configuration by supplying a new image and rolling, or [model updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) supplied in a Kubernetes ConfigMap.
 
 Note that you can use different domain home types for different domains; there's no restriction on having domains with different domain home types in the same Kubernetes cluster or namespace.
+
+There are advantages for each domain home source type where Model in Image is the most popular choice, but sometimes there are also technical limitations of various cloud providers that may make one type better suited to your needs. The following table compares the types:
 
 | Domain in PV | Domain in Image | Model in Image |
 | --- | --- | --- |

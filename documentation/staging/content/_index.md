@@ -50,3 +50,7 @@ resource schema, operator Helm chart input values, configuration overrides templ
 by the operator Helm chart, Kubernetes resources created by the operator, and the operator REST interface. We intend to
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
+
+#### Getting help
+
+See [Get help]({{< relref "userguide/introduction/get-help.md" >}}).

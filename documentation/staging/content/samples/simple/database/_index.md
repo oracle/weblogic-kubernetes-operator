@@ -2,131 +2,162 @@
 title: "Run a database"
 date: 2019-02-23T16:43:10-05:00
 weight: 2
-description: "Run the Oracle database in Kubernetes."
+description: "Run a database in Kubernetes."
 
 ---
 
-#### Run the Oracle database in Kubernetes
+### Overview
 
-If you want to run the Oracle database inside your Kubernetes cluster, in order to place
-your state store, leasing tables, and such, in that database, then you can use this
-sample to install the database.
+This section describes how to run an
+ephemeral [Oracle database](#oracle-database-in-kubernetes)
+or a [MySQL database](#mysql-database-in-kubernetes)
+in your Kubernetes cluster
+using approaches suitable for sample or basic testing purposes. 
 
-{{% notice warning %}}
-The Oracle Database images are only supported for non-production use.
-For more details, see My Oracle Support note:
-Oracle Support for Database Running on Docker (Doc ID 2216342.1)
-{{% /notice %}}
+**Notes:**
 
-You must configure your database to store its DB files
-on persistent storage.  Refer to your cloud vendor's documentation for details of
-available storage providers and how to create a persistent volume and attach it to a pod.
+- The databases are configured with ephemeral storage, which means all 
+  information will be lost on any shutdown or pod failure.
 
-First, create a namespace for the database:
+- The Oracle Database images are supported only for non-production use.
+  For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
 
-```shell
-$ kubectl create namespace database-namespace
-```
+### Oracle database in Kubernetes
 
-Next, create a file called `database.yml` with the following content.  Make sure you update the
-password field with your chosen administrator password for the database.
+The following example shows how to set up an ephemeral Oracle database with the following attributes:
+
+| Attribute | Value |
+| --------- | ----- |
+| Kubernetes namespace | `default` |
+| Kubernetes pod | `oracle-db` |
+| Kubernetes service name | `oracle-db` |
+| Kubernetes service port | `1521` |
+| Kubernetes node port | `30011` |
+| image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
+| DBA user (with full privileges) | `sys as sysdba` |
+| DBA password | `Oradoc_db1` |
+| database URL inside Kubernetes cluster (from any namespace) | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
+| database URL outside Kubernetes cluster | `dns-name-that-resolves-to-node-location:30011/devpdb.k8s` |
+
+1. Get the operator source and put it in `/tmp/weblogic-kubernetes-operator`.
+
+   For example:
+
+   ```shell
+   $ cd /tmp
+   ```
+   ```shell
+   $ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
+   ```
+
+   > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
+
+   For additional information about obtaining the operator source, see the [Developer Guide Requirements](https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/).
+
+1. Ensure that you have access to the database image:
+
+   - Use a browser to log in to `https://container-registry.oracle.com`, select `Database -> enterprise` and accept the license agreement.
+
+   - Get the database image:
+     - In the local shell, `docker login container-registry.oracle.com`.
+     - In the local shell, `docker pull container-registry.oracle.com/database/enterprise:12.2.0.1-slim`.
+
+   - If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then:
+     - Deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`:
+       ```shell
+       kubectl create secret docker-registry docker-secret \
+               --docker-server=container-registry.oracle.com \
+               --docker-username=your.email@some.com \
+               --docker-password=your-password \
+               --docker-email=your.email@some.com \
+               -n default
+       ```
+       Pass the name of this secret as a parameter to the `start-db-service.sh`
+       in the following step using `-s your-image-pull-secret`.
+     - Alternatively, copy the database image to each local Docker cache in the cluster.
+     - For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+
+   **WARNING:** The Oracle Database images are supported only for non-production use.
+   For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1).
+
+1. Create a deployment using the database image:
+
+   Use the sample script in `/tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service`
+   to create an Oracle database running in the pod, `oracle-db`.
+
+   ```shell
+   $ cd /tmp/weblogic-kubernetes-operator/kubernetes/samples/scripts/create-oracle-db-service
+   ```
+   ```shell
+   $ start-db-service.sh
+   ```
+
+   This step is based on the steps documented in [Run a Database]({{< relref "/samples/simple/database/_index.md" >}}).
+
+### MySQL database in Kubernetes
+
+The following example shows how to set up an ephemeral MySQL database with the following attributes:
+
+| Attribute | Value |
+| --------- | ----- |
+| Kubernetes namespace | `default` |
+| Kubernetes pod | `mysql-db` |
+| Kubernetes service name | `mysql-db` |
+| Kubernetes service port | `3306` |
+| image | `mysql:5.6` |
+| root user (with full privileges) | `root` |
+| root password | `password` |
+| database URL inside Kubernetes cluster (from any namespace) | `jdbc:mysql://mysql-db:3306/mysql` |
+
+Copy the following YAML into a file named `mysql.yaml`:
 
 ```yaml
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: Pod
 metadata:
-  name: database
-  namespace: database-namespace
+  name: mysql-db
+  namespace: default
   labels:
-    app: database
-    version: 12.1.0.2
+    app: mysql-db
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: database
-      version: 12.1.0.2
-  template:
-    metadata:
-      name: database
-      labels:
-        app: database
-        version: 12.1.0.2
-    spec:
-      volumes:
-      - name: dshm
-        emptyDir:
-          medium: Memory
-      # add your volume mount for your persistent storage here
-      containers:
-      - name: database
-        command:
-        - /home/oracle/setup/dockerInit.sh
-        image: container-registry.oracle.com/database/enterprise:12.1.0.2
-        imagePullPolicy: IfNotPresent
-        resources:
-          requests:
-            memory: 10Gi
-        ports:
-        - containerPort: 1521
-          hostPort: 1521
-        volumeMounts:
-          - mountPath: /dev/shm
-            name: dshm
-          # add your persistent storage for DB files here
-        env:
-          - name: DB_SID
-            value: OraDoc
-          - name: DB_PDB
-            value: OraPdb
-          - name: DB_PASSWD
-            value: *password*
-          - name: DB_DOMAIN
-            value: my.domain.com
-          - name: DB_BUNDLE
-            value: basic
-          - name: DB_MEMORY
-            value: 8g
-      imagePullSecrets:
-      - name: regsecret
+  terminationGracePeriodSeconds: 5
+  containers:
+  - image: mysql:5.6
+    name: mysql
+    env:
+    - name: MYSQL_ROOT_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: mysql-secret
+          key: root-password
+    ports:
+    - containerPort: 3306
+      name: mysql
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: database
-  namespace: database-namespace
+  name: mysql-db
+  namespace: default
 spec:
-  selector:
-    app: database
-    version: 12.1.0.2
   ports:
-  - protocol: TCP
-    port: 1521
-    targetPort: 1521
+  - port: 3306
+  selector:
+    app: mysql-db
+  clusterIP: None
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  namespace: default
+data:
+  # echo -n "root" | base64
+  root-user: cm9vdA==
+  # echo -n "password" | base64
+  root-password: cGFzc3dvcmQ=
 ```
 
-If you have not previously done so, you will need to go to the [Oracle Container Registry](https://container-registry.oracle.com)
-and accept the license for the [Oracle database image](https://container-registry.oracle.com/pls/apex/f?p=113:4:11538835301670).
+Deploy MySQL using the command `kubectl create -f mysql.yaml`.
 
-Create a container registry secret so that Kubernetes can pull the database image:
-
-```shell
-kubectl create secret docker-registry regsecret \
-        --docker-server=container-registry.oracle.com \
-        --docker-username=your.email@some.com \
-        --docker-password=your-password \
-        --docker-email=your.email@some.com \
-        -n database-namespace
-```
-
-Now, use the following command to install the database:
-
-```shell
-$ kubectl apply -f database.yml
-```
-
-This will start up the database and expose it in the cluster at the following address:
-
-```
-database.database-namespace.svc.cluster.local:1521
-```
+To shutdown and cleanup the resources, use `kubectl delete -f mysql.yaml`.
