@@ -78,10 +78,12 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.HTTPS_PROXY;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
@@ -105,6 +107,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -116,6 +119,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -180,6 +184,9 @@ class ItParameterizedDomain {
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
   private static final String DATA_HOME_OVERRIDE = "/u01/oracle/mydata";
+  private static final String miiImageName = "mii-image";
+  private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
+  private static final String miiDomainUid = "miidomain";
 
   private static String opNamespace = null;
   private static String opServiceAccount = null;
@@ -193,10 +200,11 @@ class ItParameterizedDomain {
   private static Domain domainOnPV = null;
   private static int t3ChannelPort = 0;
   private static String miiDomainNamespace = null;
-  private static final String miiDomainUid = "miidomain";
+  private static String miiDomainNegativeNamespace = null;
+  private static String miiImage = null;
+  private static String encryptionSecretName = "encryptionsecret";
 
   private String curlCmd = null;
-
 
   /**
    * Install operator and NGINX.
@@ -207,7 +215,7 @@ class ItParameterizedDomain {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -228,13 +236,18 @@ class ItParameterizedDomain {
     String domainOnPVNamespace = namespaces.get(3);
     assertNotNull(namespaces.get(4));
     String domainInImageNamespace = namespaces.get(4);
+    assertNotNull(namespaces.get(5));
+    miiDomainNegativeNamespace = namespaces.get(5);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
 
+    // create mii image
+    miiImage = createAndPushMiiImage();
+
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace);
+        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, miiDomainNegativeNamespace);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
@@ -244,6 +257,7 @@ class ItParameterizedDomain {
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);
+
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
@@ -273,6 +287,26 @@ class ItParameterizedDomain {
       createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
           true, ADMIN_SERVER_PORT);
     }
+
+  }
+
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * Verify the error message should be logged in the operator log.
+   */
+  @Test
+  @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
+  public void testOperatorLogSevereMsg() {
+    createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    logger.info("operator pod log: {0}", operatorPodLog);
+    assertTrue(operatorPodLog.contains(
+        "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
+            + "' not found in namespace '" + miiDomainNegativeNamespace + "'"));
   }
 
   /**
@@ -796,34 +830,37 @@ class ItParameterizedDomain {
    */
   @AfterAll
   public void tearDownAll() {
-
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
-    }
-
-    for (Domain domain : domains) {
-      assertDomainNotNull(domain);
-
-      String domainNamespace = domain.getMetadata().getNamespace();
-
-      // delete cluster role binding created for WLDF policy
-      if (assertDoesNotThrow(
-          () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
-        assertTrue(deleteClusterRoleBinding(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME));
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      // uninstall NGINX release
+      if (nginxHelmParams != null) {
+        assertThat(uninstallNginx(nginxHelmParams))
+            .as("Test uninstallNginx returns true")
+            .withFailMessage("uninstallNginx() did not return true")
+            .isTrue();
       }
-    }
 
-    // delete cluster role created for WLDF policy
-    if (assertDoesNotThrow(() -> clusterRoleExists(WLDF_CLUSTER_ROLE_NAME))) {
-      assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
-          "deleteClusterRole failed with ApiException"))
-          .as("Test delete cluster role returns true")
-          .withFailMessage("deleteClusterRole() did not return true")
-          .isTrue();
+      for (Domain domain : domains) {
+        assertDomainNotNull(domain);
+
+        String domainNamespace = domain.getMetadata().getNamespace();
+
+        // delete cluster role binding created for WLDF policy
+        if (assertDoesNotThrow(
+            () -> clusterRoleBindingExists(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME))) {
+          assertTrue(deleteClusterRoleBinding(domainNamespace + "-" + WLDF_CLUSTER_ROLE_BINDING_NAME));
+        }
+      }
+
+      // delete cluster role created for WLDF policy
+      if (assertDoesNotThrow(() -> clusterRoleExists(WLDF_CLUSTER_ROLE_NAME))) {
+        assertThat(assertDoesNotThrow(() -> deleteClusterRole(WLDF_CLUSTER_ROLE_NAME),
+            "deleteClusterRole failed with ApiException"))
+            .as("Test delete cluster role returns true")
+            .withFailMessage("deleteClusterRole() did not return true")
+            .isTrue();
+      }
     }
   }
 
@@ -835,23 +872,8 @@ class ItParameterizedDomain {
    */
   private static Domain createMiiDomainWithMultiClusters(String domainUid, String domainNamespace) {
 
-    final String miiImageName = "mii-image";
-    final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
-
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
-    // create image with model files
-    logger.info("Creating image with model file {0} and verify", wdtModelFileForMiiDomain);
-    List<String> appSrcDirList = new ArrayList<>();
-    appSrcDirList.add(MII_BASIC_APP_NAME);
-    appSrcDirList.add(WLDF_OPENSESSION_APP);
-    String miiImage =
-        createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
-            appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -865,7 +887,6 @@ class ItParameterizedDomain {
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
     // construct the cluster list used for domain custom resource
@@ -1216,7 +1237,10 @@ class ItParameterizedDomain {
             .value(System.getenv("http_proxy")))
         .addEnvItem(new V1EnvVar()
             .name("DOMAIN_HOME_DIR")
-            .value("/u01/shared/domains/" + domainUid));
+            .value("/u01/shared/domains/" + domainUid))
+        .addEnvItem(new V1EnvVar()
+            .name("https_proxy")
+            .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
     createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
@@ -1521,5 +1545,98 @@ class ItParameterizedDomain {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
             "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
+  }
+
+  /**
+   * Negative test case for creating a model-in-image domain without encryption secret created.
+   * The admin server service/pod will not be created.
+   * The error message should be logged in the operator log.
+   *
+   * @param domainUid the uid of the domain to be created
+   * @param domainNamespace namespace in which the domain will be created
+   */
+  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
+
+    // admin/managed server name here should match with WDT model yaml file
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+
+    // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create the domain CR without encryption secret created
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/u01/domains/" + domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(OCIR_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))));
+
+    setPodAntiAffinity(domain);
+
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domainNamespace, miiImage);
+    createDomainAndVerify(domain, domainNamespace);
+
+    // wait and check for the domain status reason matches the expected string
+    checkDomainStatusReasonMatches(
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace)), domainNamespace, "ErrBadDomain");
+  }
+
+  /**
+   * Create mii image and push it to the registry.
+   *
+   * @return mii image created
+   */
+  private static String createAndPushMiiImage() {
+    // create image with model files
+    logger.info("Creating image with model file {0} and verify", wdtModelFileForMiiDomain);
+    List<String> appSrcDirList = new ArrayList<>();
+    appSrcDirList.add(MII_BASIC_APP_NAME);
+    appSrcDirList.add(WLDF_OPENSESSION_APP);
+    miiImage =
+        createMiiImageAndVerify(miiImageName, Collections.singletonList(MODEL_DIR + "/" + wdtModelFileForMiiDomain),
+            appSrcDirList, WEBLOGIC_IMAGE_NAME, WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, false);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    return miiImage;
   }
 }
