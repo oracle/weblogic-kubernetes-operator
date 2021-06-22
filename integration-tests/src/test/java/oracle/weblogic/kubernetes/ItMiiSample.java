@@ -450,7 +450,7 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify MII sample JRF initial use case.
+   * Test to verify MII sample JRF initial use case using common mount.
    * Deploys a database and initializes it for RCU,
    * uses an FMW infra base image instead of WLS
    * base image, and uses a WDT model that's
@@ -490,7 +490,7 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify JRF update1 use case.
+   * Test to verify JRF update1 use case using common mount.
    * @see #testWlsUpdate1UseCase for more...
    */
   @Test
@@ -503,7 +503,7 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify JRF update2 use case.
+   * Test to verify JRF update2 use case using common mount.
    * @see #testWlsUpdate2UseCase for more...
    */
   @Test
@@ -516,7 +516,7 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify JRF update3 use case.
+   * Test to verify JRF update3 use case using common mount.
    * @see #testWlsUpdate3UseCase for more...
    */
   @Test
@@ -534,7 +534,7 @@ public class ItMiiSample {
   }
 
   /**
-   * Test to verify WLS update4 use case.
+   * Test to verify WLS update4 use case using common mount.
    * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
    * domain resource introspectVersion.
    * Verifies the sample application is running
