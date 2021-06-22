@@ -923,7 +923,7 @@ public class Domain {
       return false;
     }
 
-    if (result.exitValue() != 0 && !result.stderr().isEmpty()) {
+    if (result.exitValue() != 0 || !result.stderr().isEmpty()) {
       getLogger().info("failed to execute command {0} in pod {1}, exit value: {2}, stderr: {3}",
           command, pod, result.exitValue(), result.stderr());
       return false;
