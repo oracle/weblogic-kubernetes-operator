@@ -176,14 +176,16 @@ function waitForIngressPod() {
   count=0
   while test $count -lt $max; do
     status=$(${kubernetesCli} get ${ipod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    printInfo "[${type} Ingress controller pod status: ${status}]"
+    #printInfo "[${type} Ingress controller pod status: ${status}]"
     if [ x${status} == "x1/1" ]; then
+      echo " "
       printInfo "${type} controller pod is running now."
       ${kubernetesCli} get ${ipod} -n ${ns}
       break;
     fi
     count=`expr $count + 1`
     sleep 2
+    echo -n "."
   done
   if test $count -eq $max; then
     ${kubernetesCli} describe ${ipod} -n ${ns}
@@ -234,13 +236,15 @@ function createVoyager() {
   crd="ingresses.voyager.appscode.com"
   printInfo "Checking availability of voyager ingress resource [${crd}]"
   while test $count -lt $max; do
-   obj=$(${kubernetesCli} get crd ${crd} -n ${ns} --no-headers 2>/dev/null | awk '{print $1}')
-   if [ "${obj}" == "${crd}" ];  then
+   obj=$(${kubernetesCli} get crd ${crd} -n ${ns} --no-headers 2> /dev/null | awk '{print $1}' || true)
+   if [ "${obj}" == "$crd" ];  then
+      echo " "
       printInfo "voyager ingress resource [${crd}] is available now."
       ${kubernetesCli} get crd ${crd} -n ${ns} --no-headers
       break;
    fi
    count=`expr $count + 1`
+   echo -n "."
    sleep 2
   done
   if test $count -eq $max; then
@@ -289,17 +293,17 @@ function createTraefik() {
 # Remove ingress related resources from default Namespace ( if any )
 function purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
-   crole=$(${kubernetesCli} get ClusterRole | grep ${chart})
+   crole=$(${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}')
    if [ "x${crole}" != "x" ]; then 
    ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole --ignore-not-found
    fi
 
-   crb=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart})
+   crb=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}')
    if [ x${crb} != "x" ]; then 
   ${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRoleBinding 
    fi
 
-   vwc=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart})
+   vwc=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}')
    if [ x${vwc} != "x" ]; then 
   ${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}' | xargs kubectl delete ValidatingWebhookConfiguration 
    fi
@@ -343,7 +347,7 @@ function purgeVoyagerResources() {
 
 function deleteIngress() {
   type=${1}
-  ns=${1}
+  ns=${2}
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
