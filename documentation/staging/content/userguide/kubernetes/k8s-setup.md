@@ -1,6 +1,7 @@
 ---
 title: "Set up Kubernetes"
 date: 2019-02-23T16:43:10-05:00
+description: "Get help for setting up a Kubernetes environment"
 weight: 10
 
 ---
