@@ -19,7 +19,7 @@ details of how to access our Slack workspace.  After you are logged in, please c
 ### Oracle support
 
 We strongly recommend leveraging [Oracle slack](#Oracle slack) in order to quickly get help
-from dedicated operator experts for most issues. If this is insufficient, and it is necessary 
+from dedicated operator experts for most issues. If this is insufficient, then feel free 
 to access Oracle support for help running WebLogic Server domains on Kubernetes platforms.
 
 To access Oracle support,
