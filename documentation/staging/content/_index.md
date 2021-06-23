@@ -53,6 +53,4 @@ maintained for one release after a replacement is available.
 
 #### Getting help
 
-The WebLogic Kubernetes Operator is open source, licensed under the Universal Permissive License (UPL), Version 1.0. WebLogic Kubernetes Operator support is available via community support and via Oracle Support for Oracle WebLogic Server. To access Oracle support for running WebLogic Server domains on Kubernetes platforms, see [WebLogic Server Certifications on Kubernetes in My Oracle Support Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2349228.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
-
-For additional options, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
+See [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
