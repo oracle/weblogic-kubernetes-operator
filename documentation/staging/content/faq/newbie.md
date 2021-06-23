@@ -11,7 +11,7 @@ It's all [here]({{< relref "/_index.md" >}}).
 
 #### How much does it cost?
 
-The WebLogic Kubernetes Operator (the “operator”) is open source and free.
+The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
