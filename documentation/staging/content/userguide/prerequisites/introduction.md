@@ -1,6 +1,7 @@
 ---
 title: "Operator prerequisites"
 date: 2019-02-23T16:40:54-05:00
+description: "Review the prerequisites for the current release of the operator."
 weight: 2
 ---
 
