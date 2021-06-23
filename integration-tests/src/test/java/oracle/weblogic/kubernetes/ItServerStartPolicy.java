@@ -50,11 +50,14 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
@@ -113,6 +116,7 @@ class ItServerStartPolicy {
   public static final String CLUSTER_2 = "cluster-2";
 
   private static String domainNamespace = null;
+  private static String opNamespace = null;
 
   private static final int replicaCount = 1;
   private static final String domainUid = "mii-start-policy";
@@ -141,7 +145,7 @@ class ItServerStartPolicy {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    String opNamespace = namespaces.get(0);
+    opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
@@ -913,6 +917,25 @@ class ItServerStartPolicy {
   }
 
   /**
+   * Verify Operator log can log warning messages.
+   * When the sample script tries to start a server that exceeds the max cluster size, the operator will log a warning
+   * messages.
+   */
+  @Order(15)
+  @Test
+  @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
+  public void testOperatorLogWarningMsg() {
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    logger.info("operator pod log: {0}", operatorPodLog);
+    assertTrue(operatorPodLog.contains("WARNING"));
+    assertTrue(operatorPodLog.contains(
+        "management/weblogic/latest/serverRuntime/search failed with exception java.net.ConnectException"));
+  }
+
+  /**
    * Refer JIRA OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed 
    * server from scratch if it has never been started earlier with 
@@ -928,7 +951,7 @@ class ItServerStartPolicy {
    * adminserver. Here the operator tries to start the managed server but it 
    * will keep on failing  until administration server is available.   
    */
-  @Order(15)
+  @Order(16)
   @Test
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
   public void testDynamicServerLifeCycleWithoutAdmin() {
@@ -1011,7 +1034,7 @@ class ItServerStartPolicy {
    * server but it will keep on failing  until administration server is 
    * available.   
    */
-  @Order(16)
+  @Order(17)
   @Test
   @DisplayName("Manage configured cluster server in absence of Administration Server")
   public void testConfiguredServerLifeCycleWithoutAdmin() {
@@ -1083,7 +1106,7 @@ class ItServerStartPolicy {
    * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
    * is set at the managed server level but serverStartPolicy is not set at the managed server level.
    */
-  @Order(17)
+  @Order(18)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
   public void testRestartingMSWithExplicitServerStartStateWhileKeepingReplicaConstant() {
@@ -1108,7 +1131,7 @@ class ItServerStartPolicy {
    * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
    * is set at the managed server level but serverStartPolicy is not set at the managed server level.
    */
-  @Order(18)
+  @Order(19)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
   public void testRestartingMSWithExplicitServerStartStateWhileVaryingReplicaCount() {
@@ -1139,7 +1162,7 @@ class ItServerStartPolicy {
    * Verify that server(s) in the configured cluster are restarted and in RUNNING state.
    * Verify that server(s) in the dynamic cluster are not affected.
    */
-  @Order(19)
+  @Order(20)
   @Test
   @DisplayName("Rolling restart the configured cluster with rollCluster.sh script")
   public void testConfigClusterRollingRestart() {
@@ -1189,7 +1212,7 @@ class ItServerStartPolicy {
    * Verify that server(s) in the dynamic cluster are restarted and in RUNNING state.
    * Verify that server(s) in the configured cluster are not affected.
    */
-  @Order(20)
+  @Order(21)
   @Test
   @DisplayName("Rolling restart the dynamic cluster with rollCluster.sh script")
   public void testDynamicClusterRollingRestart() {
@@ -1238,7 +1261,7 @@ class ItServerStartPolicy {
    * Rolling restart the domain using the sample script rollDomain.sh script
    * Verify that server(s) in the domain is restarted and all servers are in RUNNING state.
    */
-  @Order(21)
+  @Order(22)
   @Test
   @DisplayName("Rolling restart the domain with rollDomain.shscript")
   public void testConfigDomainRollingRestart() {
@@ -1280,7 +1303,7 @@ class ItServerStartPolicy {
    * Verify that server(s) in the dynamic cluster are not affected.
    * Restore the env using the sample script stopServer.sh.
    */
-  @Order(22)
+  @Order(23)
   @Test
   @DisplayName("Scale the configured cluster with scaleCluster.sh script")
   public void testConfigClusterScale() {
@@ -1329,7 +1352,7 @@ class ItServerStartPolicy {
    * Verify that server(s) in the configured cluster are not affected.
    * Restore the env using the sample script stopServer.sh.
    */
-  @Order(23)
+  @Order(24)
   @Test
   @DisplayName("Scale the dynamic cluster with scaleCluster.sh script")
   public void testDynamicClusterScale() {

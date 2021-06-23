@@ -212,6 +212,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -1817,6 +1818,27 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check the status reason of the domain matches the given reason.
+   *
+   * @param domain  oracle.weblogic.domain.Domain object
+   * @param namespace the namespace in which the domain exists
+   * @param statusReason the expected status reason of the domain
+   */
+  public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for the status reason of the domain {0} in namespace {1} "
+                    + "is {2} (elapsed time {3}ms, remaining time {4}ms)",
+                domain,
+                namespace,
+                statusReason,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)));
   }
 
   /**
