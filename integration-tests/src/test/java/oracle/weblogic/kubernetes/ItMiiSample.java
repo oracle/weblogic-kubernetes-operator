@@ -183,9 +183,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testWlsInitialUseCase() {
-    previousTestSuccessful = true;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
-    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
+    callWlsInitialUseCase("false");
   }
 
   /**
@@ -203,7 +201,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testWlsUpdate1UseCase() {
-    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
+    callWlsUpdate1UseCase("false");
   }
 
   /**
@@ -221,7 +219,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testWlsUpdate2UseCase() {
-    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
+    callWlsUpdate2UseCase("false");
   }
 
   /**
@@ -239,8 +237,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testWlsUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
-    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
+    callWlsUpdate3UseCase("false");
   }
 
   /**
@@ -255,7 +252,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case")
   public void testWlsUpdate4UseCase() {
-    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+    callWlsUpdate4UseCase("false");
   }
 
   /**
@@ -586,6 +583,34 @@ public class ItMiiSample {
     }
   }
 
+  private void callWlsInitialUseCase(String useCommonMount) {
+    previousTestSuccessful = true;
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
+  }
+
+  private void callWlsUpdate1UseCase(String useCommomMount) {
+    envMap.put("DO_CM", useCommomMount);
+    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
+  }
+
+  private void callWlsUpdate2UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
+  }
+
+  private void callWlsUpdate3UseCase(String useCommonMount) {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
+  }
+
+  private void callWlsUpdate4UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+  }
+
   private void callFmwInitialUseCase(String useCommonMount) {
     String dbImageName = (KIND_REPO != null
         ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
@@ -614,11 +639,6 @@ public class ItMiiSample {
     );
   }
 
-  private void callWlsUpdate2UseCase(String useCommonMount) {
-    envMap.put("DO_CM", useCommonMount);
-    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
-  }
-
   private void callFmwUpdate1UseCase(String useCommonMount) {
     envMap.put("DO_CM", useCommonMount);
     execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
@@ -644,26 +664,4 @@ public class ItMiiSample {
     execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
   }
 
-  private void callWlsInitialUseCase(String useCommonMount) {
-    previousTestSuccessful = true;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
-    envMap.put("DO_CM", useCommonMount);
-    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
-  }
-
-  private void callWlsUpdate1UseCase(String useCommomMount) {
-    envMap.put("DO_CM", useCommomMount);
-    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
-  }
-
-  private void callWlsUpdate3UseCase(String useCommonMount) {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
-    envMap.put("DO_CM", useCommonMount);
-    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
-  }
-
-  private void callWlsUpdate4UseCase(String useCommonMount) {
-    envMap.put("DO_CM", useCommonMount);
-    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
-  }
 }
