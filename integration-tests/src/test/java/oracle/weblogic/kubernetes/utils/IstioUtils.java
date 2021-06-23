@@ -317,6 +317,7 @@ public class IstioUtils {
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @param miiImage used image name
+   * @param configmapName used configmap name
    * @param clusterName name of the cluster to add in domain
    * @return domain object of the domain resource
    */
@@ -341,6 +342,7 @@ public class IstioUtils {
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @param miiImage used image name
+   * @param configmapName used configmap name
    * @param clusterName name of the cluster to add in domain
    * @param monexpConfig path to exporter configuration yaml file
    * @param monexpImage name of monitoring exporter sidecar image
