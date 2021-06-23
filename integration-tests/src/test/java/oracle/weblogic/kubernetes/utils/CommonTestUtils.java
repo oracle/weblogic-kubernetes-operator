@@ -4034,6 +4034,7 @@ public class CommonTestUtils {
    * @param baseImageName base image name
    * @param namespace image namespace
    * @param secretName docker secretname for image
+   * @param extraDockerArgs user specified extra docker args
    * @return image name
    */
   public static String createPushImage(String dockerFileDir, String baseImageName,

@@ -130,7 +130,6 @@ class ItIstioMonitoringExporter {
    * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress port.
    * Deploy a web application thru istio http ingress port using REST api.
-   * Access web application thru istio http ingress port using curl.
    * Deploy Istio provided Promethues
    * Verify Weblogic metrics can be processed via istio based prometheus
    */
@@ -163,15 +162,13 @@ class ItIstioMonitoringExporter {
   }
 
   /**
-   * Create a domain using model-in-image model.
+   * Create a domain using model-in-image model with monitoring exporter sidecar.
    * Add istio configuration with default readinessPort.
    * Do not add any AdminService under AdminServer configuration.
    * Deploy istio gateways and virtual service.
    * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress port.
-   * Deploy a web application thru istio http ingress port using REST api.
-   * Access web application thru istio http ingress port using curl.
-   * Deploy Istio provided Promethues
+   * Deploy Istio provided Prometheus
    * Verify Weblogic metrics can be processed via istio based prometheus
    */
   @Test
@@ -368,8 +365,6 @@ class ItIstioMonitoringExporter {
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
-    //boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    //890assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
 }
