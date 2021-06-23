@@ -97,7 +97,7 @@ while getopts "cdt:n:r:v:h" opt; do
     ;;
     h) usage 0
     ;;
-    * ) usage 0
+    * ) usage 1
     ;;
   esac
 done
