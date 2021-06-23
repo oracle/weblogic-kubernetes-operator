@@ -576,7 +576,7 @@ public class ItIntrospectVersion {
     //change admin port from 7001 to 7005
     String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
 
-    String curlCmd = "curl -v"
+    String curlCmd = "curl -v -m 60"
         + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " -H X-Requested-By:MyClient "
         + " -H Accept:application/json "
