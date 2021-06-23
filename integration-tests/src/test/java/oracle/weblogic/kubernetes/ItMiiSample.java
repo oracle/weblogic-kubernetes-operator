@@ -60,7 +60,7 @@ public class ItMiiSample {
       "../operator/integration-tests/model-in-image/run-test.sh";
 
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
+  static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
   private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
   private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
@@ -272,30 +272,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testFmwInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF, 
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
+    callFmwInitialUseCase(false);
   }
 
 
@@ -463,30 +440,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case using common mount")
   public void testCMFmwInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-    envMap.put("DO_CM", "true");
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
+    callFmwInitialUseCase(true);
   }
 
   /**
@@ -590,6 +544,7 @@ public class ItMiiSample {
     if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
       imageVer = "JRF-" + decoration + "v2";
     }
+
     String image = imageName + ":" + imageVer;
 
     // Check image exists using docker images | grep image image.
@@ -651,5 +606,34 @@ public class ItMiiSample {
 
       previousTestSuccessful = true;
     }
+  }
+
+  private void callFmwInitialUseCase(boolean useCommonMount) {
+    String dbImageName = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
+    String jrfBaseImageName = (KIND_REPO != null
+        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
+
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
+    envMap.put("DB_IMAGE_NAME", dbImageName);
+    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+    envMap.put("DB_NODE_PORT", "none");
+    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
+    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
+    envMap.put("DB_NAMESPACE", dbNamespace);
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
+    if (useCommonMount) {
+      envMap.put("DO_CM", "true");
+    }
+    // run JRF use cases irrespective of WLS use cases fail/pass
+    previousTestSuccessful = true;
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-initial-image,-check-image-and-push,-initial-main",
+        "Initial use case failed"
+    );
   }
 }
