@@ -1,7 +1,7 @@
 ---
 title: "Manage operators"
 date: 2019-02-23T16:43:38-05:00
-weight: 3
+weight: 4
 description: "Helm is used to create and deploy necessary operator resources and to run the operator in a Kubernetes cluster. Use the operator's Helm chart to install and manage the operator."
 ---
 
@@ -9,19 +9,7 @@ description: "Helm is used to create and deploy necessary operator resources and
 ### Overview
 
 Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
-
-**Important note for users of operator releases before 2.0**
-
-{{% notice warning %}}
-If you have an older version of the operator installed on your cluster, for example, a 1.x version or one of the 2.0 release
-candidates, then you must remove it before installing this version. This includes the 2.0-rc1 version; it must be completely removed. You should remove the deployment (for example, `kubectl delete deploy weblogic-operator -n your-namespace`) and the custom
-resource definition (for example, `kubectl delete crd domain`).  If you do not remove
-the custom resource definition, then you might see errors like this:
-```
-Error from server (BadRequest): error when creating "/scratch/output/uidomain/weblogic-domains/uidomain/domain.yaml":
-the API version in the data (weblogic.oracle/v2) does not match the expected API version (weblogic.oracle/v1
-```
-{{% /notice %}}      
+  
 
 ### Install Helm
 
@@ -42,10 +30,10 @@ $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
 The available configuration values are explained by category in
-[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 Helm commands are explained in more detail in
-[Useful Helm operations]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#useful-helm-operations">}}).
+[Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
 
 #### Optional: Configure the operator's external REST HTTPS interface
 
@@ -57,7 +45,7 @@ To enable the external REST interface, configure these values in a custom config
 * Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
-For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#rest-interface-configuration">}}) values.
+For more detailed information, see the [REST interface configuration]({{<relref "/userguide/managing-operators/using-helm#rest-interface-configuration">}}) values.
 
 ##### Sample SSL certificate and private key for the REST interface
 
@@ -90,4 +78,4 @@ As part of the Elastic Stack integration, Logstash configuration occurs for each
 * Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
 
-For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values">}}).
+For more detailed information, see the [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
