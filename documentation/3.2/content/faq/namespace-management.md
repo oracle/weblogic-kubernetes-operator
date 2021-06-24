@@ -6,7 +6,7 @@ weight: 2
 description: "Considerations for managing namespaces while the operator is running."
 ---
 
-Each operator deployment manages a number of Kubernetes namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+Each operator deployment manages a number of Kubernetes namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
 must be present in a namespace before any WebLogic Server instances can be successfully
 started.
 Those Kubernetes resources are created either as part of the installation
@@ -19,7 +19,7 @@ This FAQ describes some considerations to be aware of when you manage the namesp
 * [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
 * [Delete and recreate a Kubernetes Namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
 
-For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#common-mistakes-and-solutions" >}}).
+For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-helm#common-mistakes-and-solutions" >}}).
 
 {{% notice note %}}
 There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that the namespaces managed by these operators do not overlap.

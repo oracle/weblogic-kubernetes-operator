@@ -7,15 +7,40 @@ description: "There are fields on the Domain that specify which WebLogic Server 
 started, or restarted. To start, stop, or restart servers, modify these fields on the Domain."
 ---
 
-#### Contents
+### Contents
 
-* [Starting and stopping servers](#starting-and-stopping-servers)
-    * [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
-    * [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
-* [Shutdown options](#shutdown-options)
-* [Restarting servers](#restarting-servers)
-    * [Rolling restarts](#rolling-restarts)
-    * [Common restarting scenarios](#common-restarting-scenarios)
+- [Introduction](#introduction)
+- [Starting and stopping servers](#starting-and-stopping-servers)
+  - [`serverStartPolicy` rules](#serverstartpolicy-rules)
+  - [Available `serverStartPolicy` values](#available-serverstartpolicy-values)
+  - [Administration Server start and stop rules](#administration-server-start-and-stop-rules)
+  - [Standalone Managed Server start and stop rules](#standalone-managed-server-start-and-stop-rules)
+  - [Clustered Managed Server start and stop rules](#clustered-managed-server-start-and-stop-rules)
+- [Server start state](#server-start-state)
+- [Common starting and stopping scenarios](#common-starting-and-stopping-scenarios)
+  - [Normal running state](#normal-running-state)
+  - [Shut down all the servers](#shut-down-all-the-servers)
+  - [Only start the Administration Server](#only-start-the-administration-server)
+  - [Shut down a cluster](#shut-down-a-cluster)
+  - [Shut down a specific standalone server](#shut-down-a-specific-standalone-server)
+  - [Force a specific clustered Managed Server to start](#force-a-specific-clustered-managed-server-to-start)
+- [Shutdown options](#shutdown-options)
+  - [Shutdown environment variables](#shutdown-environment-variables)
+  - [`shutdown` rules](#shutdown-rules)
+- [Restarting servers](#restarting-servers)
+  - [Fields that cause servers to be restarted](#fields-that-cause-servers-to-be-restarted)
+- [Rolling restarts](#rolling-restarts)
+- [Draining a node and PodDisruptionBudget](#draining-a-node-and-poddisruptionbudget)
+- [Common restarting scenarios](#common-restarting-scenarios)
+  - [Using `restartVersion` to force the operator to restart servers](#using-restartversion-to-force-the-operator-to-restart-servers)
+  - [Restart all the servers in the domain](#restart-all-the-servers-in-the-domain)
+  - [Restart all the servers in the cluster](#restart-all-the-servers-in-the-cluster)
+  - [Restart the Administration Server](#restart-the-administration-server)
+  - [Restart a standalone or clustered Managed Server](#restart-a-standalone-or-clustered-managed-server)
+  - [Full domain restarts](#full-domain-restarts)
+- [Domain lifecycle sample scripts](#domain-lifecycle-sample-scripts)
+
+### Introduction
 
 There are fields on the Domain that specify which servers should be running,
 which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain
@@ -83,13 +108,6 @@ updates before advancing the server to the running state.
 
 Changes to the `serverStartState` property do not affect already started servers.
 
-### Domain lifecycle sample scripts
-Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
-
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
-
-The scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. They are helpful when scripting the life cycle of a WebLogic Server domain. For more information, see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/domain-lifecycle/README.md).
-
 ### Common starting and stopping scenarios
 
 #### Normal running state
@@ -155,7 +173,7 @@ To shut down a specific standalone server, add it to the Domain and set its `ser
 ```
 {{% notice note %}}
 The Administration Server can be shut down by setting the `serverStartPolicy` of the `adminServer` to `NEVER`.
-Care should be taken when shutting down the Administration Server. If a Managed Server cannot connect 
+Care should be taken when shutting down the Administration Server. If a Managed Server cannot connect
 to the Administration Server during startup, it will try to start up in
 [*Managed Server Independence (MSI)* mode](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/start/failures.html#GUID-CA4696B6-B462-4FD8-92A9-F27DEA8A2E87)
 but this could fail due to reasons such as no accessible
@@ -308,6 +326,12 @@ servers are shut down at the same time during the rolling restart process.
 If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this chapter.
 {{% /notice %}}
 
+### Draining a node and PodDisruptionBudget
+
+A Kubernetes cluster administrator can [drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) for repair, upgrade, or scaling down the Kubernetes cluster.
+
+Beginning in version 3.2, the operator takes advantage of the [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets) feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster's server pods evicted simultaneously is determined by the `maxUnavailable` field on the Domain resource. The `.spec.minAvailable` field of the PDB for a cluster is calculated from the difference of the current `replicas` count and `maxUnavailable` value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a `maxUnavailable` of `1`, the `.spec.minAvailable` for PDB is set to `2`. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster's Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see [Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) and [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
+
 ### Common restarting scenarios
 
 #### Using `restartVersion` to force the operator to restart servers
@@ -416,3 +440,10 @@ have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
 ```
 
 4. The operator will restart all the servers in the domain.
+
+### Domain lifecycle sample scripts
+Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
+
+**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
+
+The scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. They are helpful when scripting the life cycle of a WebLogic Server domain. For more information, see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/domain-lifecycle/README.md).
