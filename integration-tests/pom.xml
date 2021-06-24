@@ -300,5 +300,17 @@
                </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>kind-sequential</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItT3Channel,
+                  **/ItDedicatedMode,
+                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorWlsUpgrade
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
