@@ -4037,9 +4037,9 @@ public class CommonTestUtils {
    * @param extraDockerArgs user specified extra docker args
    * @return image name
    */
-  public static String createPushImage(String dockerFileDir, String baseImageName,
-                                       String namespace, String secretName,
-                                       String extraDockerArgs) throws ApiException {
+  public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
+                                                String namespace, String secretName,
+                                                String extraDockerArgs) throws ApiException {
     // create unique image name with date
     final String imageTag = TestUtils.getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
@@ -4050,7 +4050,7 @@ public class CommonTestUtils {
     //build image
     assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
     logger.info("image is created with name {0}", image);
-    if (!new Namespace().exists(namespace)) {
+    if (!Namespace.exists(namespace)) {
       createNamespace(namespace);
     }
 

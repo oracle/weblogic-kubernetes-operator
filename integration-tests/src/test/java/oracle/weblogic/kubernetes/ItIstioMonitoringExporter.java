@@ -38,9 +38,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPushImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
@@ -84,6 +84,9 @@ class ItIstioMonitoringExporter {
   // create standard, reusable retry/backoff policy
   private static ConditionFactory withStandardRetryPolicy = null;
   private static LoggingFacade logger = null;
+  private static String oldRegex;
+  private static String sessionAppPrometheusSearchKey =
+      "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
 
   /**
    * Install Operator.
@@ -123,7 +126,7 @@ class ItIstioMonitoringExporter {
   }
 
   /**
-   * Create a domain using model-in-image model.
+   * Create a domain using model-in-image model and monitoring exporter webapp.
    * Add istio configuration with default readinessPort.
    * Do not add any AdminService under AdminServer configuration.
    * Deploy istio gateways and virtual service.
@@ -144,21 +147,8 @@ class ItIstioMonitoringExporter {
     String managedServerPrefix = domain1Uid + "-cluster-1-managed-server";
     assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage,
         domain1Namespace,domain1Uid, managedServerPrefix), "setup for istio based domain failed");
-    if (!isPrometheusDeployed) {
-      assertTrue(deployIstioPrometheus(domain1Namespace, domain1Uid,
-          String.valueOf(prometheusPort)), "failed to install istio prometheus");
-      isPrometheusDeployed = true;
-    } else {
-      String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
-      String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-      assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, "istio-system","prometheus"),
-          "Can't modify Prometheus CM, not possible to monitor " + domain1Uid);
-    }
-
-    //verify metrics via prometheus
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    assertDoesNotThrow(() -> checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",prometheusPort));
+    assertDoesNotThrow(() -> deployPrometheusAndVerify(domain1Namespace, domain1Uid, sessionAppPrometheusSearchKey),
+        "failed to fetch expected metrics from Prometheus using monitoring exporter webapp");
   }
 
   /**
@@ -191,27 +181,30 @@ class ItIstioMonitoringExporter {
 
     String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
-    String exporterImage = assertDoesNotThrow(() -> createPushImage(monitoringExporterSrcDir, "exporter",
+    String exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain2Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
     String managedServerPrefix = domain2Uid + "-managed-server";
     assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage, domain2Namespace, domain2Uid, exporterConfig,
         exporterImage, managedServerPrefix), "setup for istio based domain failed");
+    assertDoesNotThrow(() -> deployPrometheusAndVerify(domain2Namespace, domain2Uid, sessionAppPrometheusSearchKey),
+        "failed to fetch expected metrics from Prometheus using monitoring exporter sidecar");
+  }
+
+  private void deployPrometheusAndVerify(String domainNamespace, String domainUid, String searchKey) throws Exception {
     if (!isPrometheusDeployed) {
       assertTrue(deployIstioPrometheus(domain2Namespace, domain2Uid,
           String.valueOf(prometheusPort)), "failed to install istio prometheus");
       isPrometheusDeployed = true;
+      oldRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
     } else {
-      String oldRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-      String newRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
+      String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
       assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, "istio-system", "prometheus"),
-          "Can't modify Prometheus CM, not possible to monitor " + domain2Uid);
+          "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
     //verify metrics via prometheus
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    assertDoesNotThrow(() -> checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",prometheusPort));
+    checkMetricsViaPrometheus(searchKey, "sessmigr", prometheusPort);
   }
 
   /**

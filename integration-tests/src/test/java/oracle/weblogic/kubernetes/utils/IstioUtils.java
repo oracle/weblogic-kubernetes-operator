@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The istio utility class for tests.
@@ -403,6 +404,7 @@ public class IstioUtils {
         contents = new String(Files.readAllBytes(Paths.get(monexpConfig)));
       } catch (IOException e) {
         e.printStackTrace();
+        fail("Failed to read configuration file");
       }
       String imagePullPolicy = "IfNotPresent";
       if (!DOMAIN_IMAGES_REPO.isEmpty()) {
