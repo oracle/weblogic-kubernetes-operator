@@ -499,7 +499,8 @@ public class CommonTestUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(opServiceAccount);
+        .serviceAccount(opServiceAccount)
+        .featureGates("CommonMounts=true");
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);

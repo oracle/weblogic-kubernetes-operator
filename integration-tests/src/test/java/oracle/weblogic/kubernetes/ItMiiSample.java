@@ -183,9 +183,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   public void testWlsInitialUseCase() {
-    previousTestSuccessful = true;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
-    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
+    callWlsInitialUseCase("false");
   }
 
   /**
@@ -203,7 +201,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testWlsUpdate1UseCase() {
-    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
+    callWlsUpdate1UseCase("false");
   }
 
   /**
@@ -221,7 +219,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testWlsUpdate2UseCase() {
-    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
+    callWlsUpdate2UseCase("false");
   }
 
   /**
@@ -239,8 +237,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testWlsUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
-    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
+    callWlsUpdate3UseCase("false");
   }
 
   /**
@@ -255,7 +252,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case")
   public void testWlsUpdate4UseCase() {
-    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+    callWlsUpdate4UseCase("false");
   }
 
   /**
@@ -272,30 +269,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   public void testFmwInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF, 
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
+    callFmwInitialUseCase("false");
   }
 
 
@@ -308,7 +282,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   public void testFmwUpdate1UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
+    callFmwUpdate1UseCase("false");
   }
 
   /**
@@ -320,7 +294,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   public void testFmwUpdate2UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
+    callFmwUpdate2UseCase("false");
   }
 
   /**
@@ -332,12 +306,7 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
   public void testFmwUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-update3-image,-check-image-and-push,-update3-main", 
-        "Update3 use case failed"
-    );
+    callFmwUpdate3UseCase("false");
   }
 
   /**
@@ -352,7 +321,162 @@ public class ItMiiSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case")
   public void testFmwUpdate4UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
+    callFmwUpdate4UseCase("false");
+  }
+
+  /**
+   * Test to verify MII sample WLS initial use case using common mount.
+   * Builds image required for the initial use case, creates secrets, and
+   * creates domain resource.
+   * Verifies all WebLogic Server pods are ready, are at the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * (response includes "Hello World!").
+   */
+  @Test
+  @Order(12)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS initial use case using common mount")
+  public void testCMWlsInitialUseCase() {
+    callWlsInitialUseCase("true");
+  }
+
+  /**
+   * Test to verify WLS update1 use case using common mount.
+   * Adds a data source to initial domain via a configmap and updates the
+   * domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and detects the new datasource (response includes
+   * "mynewdatasource").
+   */
+  @Test
+  @Order(13)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update1 use case using common mount")
+  public void testCMWlsUpdate1UseCase() {
+    callWlsUpdate1UseCase("true");
+  }
+
+  /**
+   * Test to verify WLS update2 use case using common mount.
+   * Deploys a second domain 'domain2' with a different domain UID,
+   * different secrets, and different datasource config map,
+   * but that is otherwise the same as the update1 domain.
+   * Verifies all WebLogic Server pods are ready, have the expected
+   * restartVersion, and have the expected image.
+   * For each domain, verifies the sample application is running
+   * (response includes "domain1" or "domain2" depending on domain).
+   */
+  @Test
+  @Order(14)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update2 use case using common mount")
+  public void tesCMWlsUpdate2UseCase() {
+    callWlsUpdate2UseCase("true");
+  }
+
+  /**
+   * Test to verify update3 use case using common mount.
+   * Deploys an updated WebLogic application to the running
+   * domain from update1 using an updated Docker image,
+   * and updates the domain resource restartVersion.
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * restartVersion, and have the expected image.
+   * Verifies the sample application is running
+   * and is at the new version (response includes "v2").
+   */
+  @Test
+  @Order(15)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update3 use case using common mount")
+  public void testCMWlsUpdate3UseCase() {
+    callWlsUpdate3UseCase("true");
+  }
+
+  /**
+   * Test to verify WLS update4 use case using common mount.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(16)
+  @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample WLS update4 use case using common mount")
+  public void testCMWlsUpdate4UseCase() {
+    callWlsUpdate4UseCase("true");
+  }
+
+
+  /**
+   * Test to verify MII sample JRF initial use case using common mount.
+   * Deploys a database and initializes it for RCU,
+   * uses an FMW infra base image instead of WLS
+   * base image, and uses a WDT model that's
+   * specialized for JRF, but is otherwise similar to
+   * the WLS initial use case.
+   * @see #testWlsInitialUseCase for more...
+   */
+  @Test
+  @Order(17)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF initial use case using common mount")
+  public void testCMFmwInitialUseCase() {
+    callFmwInitialUseCase("true");
+  }
+
+  /**
+   * Test to verify JRF update1 use case using common mount.
+   * @see #testWlsUpdate1UseCase for more...
+   */
+  @Test
+  @Order(18)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update1 use case using common mount")
+  public void testCMFmwUpdate1UseCase() {
+    callFmwUpdate1UseCase("true");
+  }
+
+  /**
+   * Test to verify JRF update2 use case using common mount.
+   * @see #testWlsUpdate2UseCase for more...
+   */
+  @Test
+  @Order(19)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update2 use case using common mount")
+  public void testCMFmwUpdate2UseCase() {
+    callFmwUpdate2UseCase("true");
+  }
+
+  /**
+   * Test to verify JRF update3 use case using common mount.
+   * @see #testWlsUpdate3UseCase for more...
+   */
+  @Test
+  @Order(20)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update3 use case using common mount")
+  public void testCMFmwUpdate3UseCase() {
+    callFmwUpdate3UseCase("true");
+  }
+
+  /**
+   * Test to verify WLS update4 use case using common mount.
+   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
+   * domain resource introspectVersion.
+   * Verifies the sample application is running
+   * and detects the updated configured count for the Min and Max Threads Constraints.
+   */
+  @Test
+  @Order(21)
+  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
+  @DisplayName("Test to verify MII sample JRF update4 use case using common mount")
+  public void testCMFmwUpdate4UseCase() {
+    callFmwUpdate4UseCase("true");
   }
 
   /**
@@ -381,18 +505,21 @@ public class ItMiiSample {
   private static void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
+    String decoration = (envMap.get("DO_CM") != null && envMap.get("DO_CM").equalsIgnoreCase("true"))  ? "CM-" : "";
+
     if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-v1"; 
+      imageVer = "WLS-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) { 
-      imageVer = "WLS-v2"; 
+    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
+      imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) { 
-      imageVer = "JRF-v1"; 
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
+      imageVer = "JRF-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) { 
-      imageVer = "JRF-v2"; 
+    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
+      imageVer = "JRF-" + decoration + "v2";
     }
+
     String image = imageName + ":" + imageVer;
 
     // Check image exists using docker images | grep image image.
@@ -455,4 +582,86 @@ public class ItMiiSample {
       previousTestSuccessful = true;
     }
   }
+
+  private void callWlsInitialUseCase(String useCommonMount) {
+    previousTestSuccessful = true;
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
+  }
+
+  private void callWlsUpdate1UseCase(String useCommomMount) {
+    envMap.put("DO_CM", useCommomMount);
+    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
+  }
+
+  private void callWlsUpdate2UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
+  }
+
+  private void callWlsUpdate3UseCase(String useCommonMount) {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
+  }
+
+  private void callWlsUpdate4UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
+  }
+
+  private void callFmwInitialUseCase(String useCommonMount) {
+    String dbImageName = (KIND_REPO != null
+        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
+    String jrfBaseImageName = (KIND_REPO != null
+        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
+
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
+    envMap.put("DB_IMAGE_NAME", dbImageName);
+    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
+    envMap.put("DB_NODE_PORT", "none");
+    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
+    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
+    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
+    envMap.put("DB_NAMESPACE", dbNamespace);
+    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
+    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
+    envMap.put("DO_CM", useCommonMount);
+
+    // run JRF use cases irrespective of WLS use cases fail/pass
+    previousTestSuccessful = true;
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-initial-image,-check-image-and-push,-initial-main",
+        "Initial use case failed"
+    );
+  }
+
+  private void callFmwUpdate1UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
+  }
+
+  private void callFmwUpdate2UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
+  }
+
+  private void callFmwUpdate3UseCase(String useCommonMount) {
+    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess(
+        DomainType.JRF,
+        "-update3-image,-check-image-and-push,-update3-main",
+        "Update3 use case failed"
+    );
+  }
+
+  private void callFmwUpdate4UseCase(String useCommonMount) {
+    envMap.put("DO_CM", useCommonMount);
+    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
+  }
+
 }
