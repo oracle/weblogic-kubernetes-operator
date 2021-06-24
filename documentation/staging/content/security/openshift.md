@@ -110,9 +110,9 @@ with UID 1000, and any WebLogic domain it creates will also run with UID 1000.
 
 {{% notice note %}}
 For additional information about OpenShift requirements and the operator,
-see the [OpenShift]({{<relref  "/userguide/introduction/introduction#openshift">}}) section in the User Guide.
+see [OpenShift]({{<relref  "/userguide/platforms/environments#openshift">}}).
 {{% /notice %}}
 
 #### Using a dedicated namespace
 
-When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#operator-helm-configuration-values" >}}).
+When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values" >}}).

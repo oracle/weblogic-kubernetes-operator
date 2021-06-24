@@ -1,10 +1,22 @@
 ---
 title: "Set up Kubernetes"
 date: 2019-02-23T16:43:10-05:00
-weight: 2
+description: "Get help for setting up a Kubernetes environment"
+weight: 10
 
 ---
-#### Cheat sheet for setting up Kubernetes
+
+### Contents
+
+- [Cheat sheet for setting up Kubernetes](#cheat-sheet-for-setting-up-kubernetes)
+- [Set up Kubernetes on bare compute resources in a cloud](#set-up-kubernetes-on-bare-compute-resources-in-a-cloud)
+   - [Prerequisites](#prerequisites)
+   - [Quick start](#quick-start)
+- [Install Kubernetes on your own compute resources](#install-kubernetes-on-your-own-compute-resources)
+- [Install Docker for Mac with Kubernetes](#install-docker-for-mac-with-kubernetes)
+
+
+### Cheat sheet for setting up Kubernetes
 
 If you need some help setting up a Kubernetes environment to experiment with the operator, please read on!  The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, [Microsoft Azure](/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/), Google, or Amazon.  Cloud providers allow you to provision a managed Kubernetes environment from their management consoles.  You could also set up Kubernetes manually using compute resources on a cloud.  There are also a number of ways to run a Kubernetes single-node cluster that are suitable for development or testing purposes.  Your options include:
 
@@ -21,7 +33,7 @@ If you need some help setting up a Kubernetes environment to experiment with the
 
 We have provided our hints and tips for several of these options in the sections below.
 
-#### Set up Kubernetes on bare compute resources in a cloud
+### Set up Kubernetes on bare compute resources in a cloud
 
 Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Cloud Infrastructure](https://github.com/oracle/terraform-kubernetes-installer).
 
@@ -37,7 +49,7 @@ Follow the basic steps from the  [Terraform Kubernetes installer for Oracle Clou
    ```
 4.  Ensure that you have [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) installed if you plan to interact with the cluster locally.
 
-#### Quick Start
+#### Quick start
 
 1. Do a `git clone` of the Terraform Kubernetes installer project:
 
@@ -166,7 +178,9 @@ worker-2# exit
 worker-2$ exit
 ```
 
-#### Install Kubernetes on your own compute resources (for example, Oracle Linux servers outside a cloud)
+### Install Kubernetes on your own compute resources
+
+For example, on Oracle Linux servers outside a cloud.
 
 These instructions are for Oracle Linux 7u2+.  If you are using a different flavor of Linux, you will need to adjust them accordingly.
 
@@ -417,7 +431,7 @@ These instructions are for Oracle Linux 7u2+.  If you are using a different flav
     Congratulations!  Docker and Kubernetes are installed and configured!
 
 
-#### Install Docker for Mac with Kubernetes
+### Install Docker for Mac with Kubernetes
 
 Docker for Mac 18+ provides an [embedded Kubernetes environment](https://docs.docker.com/docker-for-mac/#kubernetes) that is a quick and easy way to get a simple test environment set up on your Mac.  To set it up, follow these instructions:
 
