@@ -65,7 +65,7 @@ azureStorageClassName: azurefile
 azureStorageShareNameSuffix: weblogic
 
 #Java Option for WebLogic Server
-javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0 -Djava.security.egd=file:/dev/./urandom
+javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
 
 # The suffix of the Kubernetes secret name, the complete value is ${namePrefix}${imagePullSecretNameSuffix}. The secret name is used to access the container registry to pull the WebLogic Server image
 # Used to create Kubernetes secret for container registry account.
