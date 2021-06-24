@@ -194,9 +194,9 @@ Alternatively, you can run the helper script `setupLoadBalancer.sh` under the `k
 
 To install NGINX:
 ```shell
-$ ./setupLoadBalancer.sh create nginx [nginx-version]
+$ ./setupLoadBalancer.sh -c -t nginx [-v nginx-version]
 ```
 To uninstall NGINX:
 ```shell
-$ ./setupLoadBalancer.sh delete nginx
+$ ./setupLoadBalancer.sh -d  -t nginx
 ```
