@@ -101,7 +101,7 @@ $ helm install my-weblogic-operator kubernetes/charts/weblogic-operator \
 
 {{% notice info %}}
 For more information, see
-[Install the operator Helm chart]({{<relref "/userguide/managing-operators/installation/_index.md#install-the-operator-helm-chart">}}).
+[Install the operator Helm chart]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}).
 {{% /notice %}}
 
 #### Operator configuration override secrets

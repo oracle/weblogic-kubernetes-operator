@@ -36,7 +36,7 @@ For more information, see [Domain events]({{< relref "/userguide/managing-domain
 If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
 
 {{% notice tip %}}
-To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-the-operator/using-helm">}}).
+To prevent the introspector job from retrying while you are debugging a failure, set the operator's Helm `domainPresenceFailureRetryMaxCount` parameter to `0`. For more information, see  [Manage operators -> Use the operator -> Use Helm]({{<relref "/userguide/managing-operators/using-helm">}}).
 {{% /notice %}}
 
 For example, assuming your domain UID is `sample-domain1` and your domain namespace is `sample-domain1-ns`:

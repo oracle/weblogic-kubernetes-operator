@@ -440,7 +440,7 @@ Look for lines similar to:
 ```
 weblogic-operator1   pod/weblogic-operator-
 ```
-   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
+   If you do not find something similar in the output, the WebLogic Kubernetes Operator might not have been installed completely. Review the operator [installation instructions]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
 
 **Message**: `ERROR: Unable to create folder /shared/domains`  

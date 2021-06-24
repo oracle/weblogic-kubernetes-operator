@@ -1,7 +1,7 @@
 ---
 title: "Manage WebLogic domains"
 date: 2019-02-23T16:43:45-05:00
-weight: 4
+weight: 6
 description: "Important considerations for WebLogic domains in Kubernetes."
 ---
 
@@ -94,10 +94,10 @@ Kubernetes requires that the names of some resource types follow the DNS label s
 
 The following is a list of such Kubernetes resources that the operator generates when a domain resource is deployed, including how their names are constructed.
 
-* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+* A domain introspector job named `<domainUID>-<introspectorJobNameSuffix>`. The default suffix is `-introspector`, which can be overridden using the operator's Helm configuration `introspectorJobNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-helm#weblogic-domain-management" >}})).
 * A ClusterIP type service and a pod for each WebLogic Server named `<domainUID>-<serverName>`.
 * A ClusterIP type service for each WebLogic cluster named `<domainUID>-cluster-<clusterName>`.
-* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-the-operator/using-helm#weblogic-domain-management" >}})).
+* An optional NodePort type service, also known as an external service, for the WebLogic Administration Server named `<domainUID>-<adminServerName>-<externalServiceNameSuffix>`. The default suffix is `-ext`, which can be overridden using the operator's Helm configuration `externalServiceNameSuffix` (see [WebLogic domain management]({{< relref "/userguide/managing-operators/using-helm#weblogic-domain-management" >}})).
 
 The operator puts in place certain validation checks and conversions to prevent these resources from violating Kubernetes restrictions.
 * All the names previously described can contain only the characters `A-Z`, `a-z`, `0-9`, `-`, or `_`, and must start and end with an alphanumeric character. Note that when generating pod and service names, the operator will convert configured names to lowercase and substitute a hyphen (`-`) for each underscore (`_`).
