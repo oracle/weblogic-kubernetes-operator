@@ -1,41 +1,11 @@
 ---
-title: "Get started"
+title: "Supported platforms"
 date: 2019-02-23T16:40:54-05:00
-weight: 1
-description: "Review the operator prerequisites and supported environments."
+description: "See the operator supported environments."
+weight: 3
 ---
 
-An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances
-of complex applications. The WebLogic Kubernetes Operator follows the standard Kubernetes operator pattern, and
-simplifies the management and operation of WebLogic domains and deployments.
-
-You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each.
-We provide a Helm chart to manage the installation and configuration of the operator.
-Detailed instructions are available [here]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
-
-
-### Operator prerequisites
-
-For the current production release 3.2.5:
-
-* Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with `kubectl version`).
-* Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
- *or* OpenShift SDN on OpenShift 4.3 systems.
-* Docker 18.9.1 or 19.03.1+ (check with `docker version`) *or* CRI-O 1.14.7+ (check with `crictl version | grep RuntimeVersion`).
-* Helm 3.3.4+ (check with `helm version --client --short`).
-* For domain home source type `Model in Image`, WebLogic Deploy Tooling 1.9.11.
-* Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
-   * The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`,
-   has all the necessary patches applied.
-   * Check the WLS version with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'`.
-   * Check the WLS patches with `docker run container-registry.oracle.com/middleware/weblogic:12.2.1.3 sh -c` `'$ORACLE_HOME/OPatch/opatch lspatches'`.
-* Container images based on Oracle Linux 8 are now supported. The Oracle Container Registry hosts container images
-  based on both Oracle Linux 7 and 8, including Oracle WebLogic Server 14.1.1.0.0 images based on Java 8 and 11.
-* You must have the `cluster-admin` role to install the operator.  The operator does
-  not need the `cluster-admin` role at runtime.
-* We do not currently support running WebLogic in non-Linux containers.
-
-### Cloud providers
+### Oracle Cloud Infrastructure
 
 The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
 provides details about licensing practices and policies.
@@ -48,6 +18,12 @@ The official document that defines the supported configurations is [here](https:
 In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
 Container Services for use with Kubernetes* on OCI Compute, and on "Authorized Cloud Environments".
+
+### Oracle Linux Cloud Native Environment (OLCNE)
+
+[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
+
+WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.
 
 ### Microsoft Azure Kubernetes Service
 
@@ -78,13 +54,6 @@ TKG support and limitations:
 * The ingress used for certification is NGINX, with MetalLB load balancer.
 
 
-### Oracle Linux Cloud Native Environment (OLCNE)
-
-[Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
-
-WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment. Operator 2.6.0 provides certified support of OLCNE 1.1 with Kubernetes 1.17.0.
-
-
 ### OpenShift
 
 Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  
@@ -110,8 +79,3 @@ provide support for WebLogic or the operator running in these distributions.
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development/test option.
-
-### Operator image
-
-You can find the operator image in
-[GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).

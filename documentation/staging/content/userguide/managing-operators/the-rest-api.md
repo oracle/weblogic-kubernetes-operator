@@ -1,11 +1,11 @@
 ---
-title: "The REST API"
+title: "Use the operator's REST services"
 date: 2019-02-23T17:08:32-05:00
 weight: 3
 Description: "Use the operator's REST services."
 ---
 
-#### Use the operator's REST services
+
 
 The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations.  Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
 
@@ -14,7 +14,7 @@ You can access most of the REST services using `GET`, for example:
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`
 
-All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  In previous operator versions, the operator performed authentication and authorization checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/userguide/managing-operators/using-the-operator/using-helm.md#rest-interface-configuration" >}})).  
+All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  In previous operator versions, the operator performed authentication and authorization checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/userguide/managing-operators/using-helm.md#rest-interface-configuration" >}})).  
 {{% notice note %}}
 When using the operator's REST services to scale up or down a WebLogic cluster, you may need to grant `patch` access to the user or service account associated with the caller's bearer token. This can be done with an RBAC ClusterRoleBinding between the user or service account and the ClusterRole that defines the permissions for the WebLogic `domains` resource.
 {{% /notice %}}

@@ -55,6 +55,6 @@ On the Kubernetes server:
 $ docker load < /some/path/operator.tar
 ```
 
-Use the Helm charts to [install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).
+Use the Helm charts to [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
-If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options]({{< relref "/userguide/managing-operators/using-the-operator/using-helm/_index.md#debugging-options" >}}).
+If the operator's behavior or pod log is insufficient to diagnose and resolve failures, then you can connect a Java debugger to the operator using the [debugging options]({{< relref "/userguide/managing-operators/using-helm#debugging-options" >}}).
