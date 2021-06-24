@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  Copyright (c) 2021, Oracle and/or its affiliates.
+  Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+-->
+
+<domain xmlns="http://xmlns.oracle.com/weblogic/domain" xmlns:sec="http://xmlns.oracle.com/weblogic/security" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:wls="http://xmlns.oracle.com/weblogic/security/wls" xsi:schemaLocation="http://xmlns.oracle.com/weblogic/security/wls http://xmlns.oracle.com/weblogic/security/wls/1.0/wls.xsd http://xmlns.oracle.com/weblogic/domain http://xmlns.oracle.com/weblogic/1.0/domain.xsd http://xmlns.oracle.com/weblogic/security/xacml http://xmlns.oracle.com/weblogic/security/xacml/1.0/xacml.xsd http://xmlns.oracle.com/weblogic/security/providers/passwordvalidator http://xmlns.oracle.com/weblogic/security/providers/passwordvalidator/1.0/passwordvalidator.xsd http://xmlns.oracle.com/weblogic/security http://xmlns.oracle.com/weblogic/1.0/security.xsd">
+  <name>onprem_domain</name>
+  <domain-version>12.2.1.4.0</domain-version>
+  <security-configuration>
+    <name>onprem_domain</name>
+    <realm>
+      <sec:authentication-provider xsi:type="wls:default-authenticatorType">
+        <sec:name>DefaultAuthenticator</sec:name>
+      </sec:authentication-provider>
+      <sec:authentication-provider xsi:type="wls:default-identity-asserterType">
+        <sec:name>DefaultIdentityAsserter</sec:name>
+        <sec:active-type>AuthenticatedUser</sec:active-type>
+        <sec:active-type>weblogic-jwt-token</sec:active-type>
+      </sec:authentication-provider>
+      <sec:role-mapper xmlns:xac="http://xmlns.oracle.com/weblogic/security/xacml" xsi:type="xac:xacml-role-mapperType">
+        <sec:name>XACMLRoleMapper</sec:name>
+      </sec:role-mapper>
+      <sec:authorizer xmlns:xac="http://xmlns.oracle.com/weblogic/security/xacml" xsi:type="xac:xacml-authorizerType">
+        <sec:name>XACMLAuthorizer</sec:name>
+      </sec:authorizer>
+      <sec:adjudicator xsi:type="wls:default-adjudicatorType">
+        <sec:name>DefaultAdjudicator</sec:name>
+      </sec:adjudicator>
+      <sec:credential-mapper xsi:type="wls:default-credential-mapperType">
+        <sec:name>DefaultCredentialMapper</sec:name>
+      </sec:credential-mapper>
+      <sec:cert-path-provider xsi:type="wls:web-logic-cert-path-providerType">
+        <sec:name>WebLogicCertPathProvider</sec:name>
+      </sec:cert-path-provider>
+      <sec:cert-path-builder>WebLogicCertPathProvider</sec:cert-path-builder>
+      <sec:name>myrealm</sec:name>
+      <sec:password-validator xmlns:pas="http://xmlns.oracle.com/weblogic/security/providers/passwordvalidator" xsi:type="pas:system-password-validatorType">
+        <sec:name>SystemPasswordValidator</sec:name>
+        <pas:min-password-length>8</pas:min-password-length>
+        <pas:min-numeric-or-special-characters>1</pas:min-numeric-or-special-characters>
+      </sec:password-validator>
+    </realm>
+    <default-realm>myrealm</default-realm>
+    <credential-encrypted>{AES256}VmY7btWzszdeP00Tsum0sn2kgekq+08cOQ9HTinshZcOPL/BhhGF0jv211IKFv2+Teqvi+rWI/UFAq+JHkLBdx/JIvnD6awllEyECnytYMGatK3cv2AQQz58pHfm59hb</credential-encrypted>
+    <node-manager-username>weblogic</node-manager-username>
+    <node-manager-password-encrypted>{AES256}HYCdlj4+cuu5JvY3z9bqkWNfh74sge0fXAyXbUl5gm4=</node-manager-password-encrypted>
+  </security-configuration>
+  <deployment-configuration></deployment-configuration>
+  <console-enabled>true</console-enabled>
+  <console-context-path>console</console-context-path>
+  <console-extension-directory>console-ext</console-extension-directory>
+  <server>
+    <name>admin-server</name>
+    <ssl>
+      <name>admin-server</name>
+      <listen-port>7003</listen-port>
+    </ssl>
+    <listen-address></listen-address>
+    <server-life-cycle-timeout-val>30</server-life-cycle-timeout-val>
+    <startup-timeout>0</startup-timeout>
+  </server>
+  <server-template>
+    <name>server-template_1</name>
+    <ssl>
+      <name>new_ServerTemplate_1</name>
+      <listen-port>8100</listen-port>
+    </ssl>
+    <listen-port>8001</listen-port>
+    <cluster>cluster-1</cluster>
+    <jta-migratable-target>
+      <cluster>cluster-1</cluster>
+      <migration-policy>manual</migration-policy>
+      <strict-ownership-check>false</strict-ownership-check>
+    </jta-migratable-target>
+    <server-life-cycle-timeout-val>30</server-life-cycle-timeout-val>
+    <startup-timeout>0</startup-timeout>
+  </server-template>
+  <cluster>
+    <name>cluster-1</name>
+    <cluster-messaging-mode>unicast</cluster-messaging-mode>
+    <dynamic-servers>
+      <server-template>server-template_1</server-template>
+      <maximum-dynamic-server-count>5</maximum-dynamic-server-count>
+      <calculated-listen-ports>false</calculated-listen-ports>
+      <calculated-machine-names>false</calculated-machine-names>
+      <machine-match-type>name</machine-match-type>
+      <server-name-prefix>managed-server</server-name-prefix>
+      <dynamic-cluster-size>5</dynamic-cluster-size>
+      <min-dynamic-cluster-size>1</min-dynamic-cluster-size>
+      <max-dynamic-cluster-size>8</max-dynamic-cluster-size>
+      <dynamic-cluster-cooloff-period-seconds>900</dynamic-cluster-cooloff-period-seconds>
+      <dynamic-cluster-shutdown-timeout-seconds>0</dynamic-cluster-shutdown-timeout-seconds>
+      <ignore-sessions-during-shutdown>false</ignore-sessions-during-shutdown>
+      <wait-for-all-sessions-during-shutdown>false</wait-for-all-sessions-during-shutdown>
+    </dynamic-servers>
+  </cluster>
+  <production-mode-enabled>false</production-mode-enabled>
+  <embedded-ldap>
+    <name>onprem_domain</name>
+    <credential-encrypted>{AES256}sk/lXRmHmtGWDv8KK1kp76xxwGwgg2M6Mtf73bOpixV70qXNflHXs4i4gnRhGFMs</credential-encrypted>
+  </embedded-ldap>
+  <administration-port-enabled>false</administration-port-enabled>
+  <exalogic-optimizations-enabled>false</exalogic-optimizations-enabled>
+  <config-backup-enabled>false</config-backup-enabled>
+  <configuration-version>12.2.1.4.0</configuration-version>
+  <configuration-audit-type>none</configuration-audit-type>
+  <cluster-constraints-enabled>false</cluster-constraints-enabled>
+  <app-deployment>
+    <name>opdemo</name>
+    <target>cluster-1,admin-server</target>
+    <module-type>ear</module-type>
+    <source-path>/u01/onpremdomain/opdemo.ear</source-path>
+    <security-dd-model>DDOnly</security-dd-model>
+    <staging-mode xsi:nil="true"></staging-mode>
+    <plan-staging-mode xsi:nil="true"></plan-staging-mode>
+    <cache-in-app-directory>false</cache-in-app-directory>
+  </app-deployment>
+  <machine>
+    <name>machine_1</name>
+    <node-manager>
+      <name>machine_1</name>
+    </node-manager>
+  </machine>
+  <cdi-container>
+    <implicit-bean-discovery-enabled>false</implicit-bean-discovery-enabled>
+  </cdi-container>
+  <jmx>
+    <compatibility-m-bean-server-enabled>true</compatibility-m-bean-server-enabled>
+    <management-ejb-enabled>true</management-ejb-enabled>
+    <platform-m-bean-server-enabled>false</platform-m-bean-server-enabled>
+    <invocation-timeout-seconds>0</invocation-timeout-seconds>
+    <platform-m-bean-server-used>true</platform-m-bean-server-used>
+  </jmx>
+  <admin-server-name>admin-server</admin-server-name>
+  <administration-protocol>t3s</administration-protocol>
+  <jdbc-system-resource>
+    <name>testDatasource</name>
+    <target>cluster-1</target>
+    <descriptor-file-name>jdbc/testDatasource-3399-jdbc.xml</descriptor-file-name>
+  </jdbc-system-resource>
+  <admin-console>
+    <cookie-name>ADMINCONSOLESESSION</cookie-name>
+    <protected-cookie-enabled>true</protected-cookie-enabled>
+    <session-timeout>3600</session-timeout>
+    <min-threads>101</min-threads>
+  </admin-console>
+  <internal-apps-deploy-on-demand-enabled>true</internal-apps-deploy-on-demand-enabled>
+  <log-format-compatibility-enabled>false</log-format-compatibility-enabled>
+  <restful-management-services>
+    <enabled>true</enabled>
+  </restful-management-services>
+  <webservice-testpage>
+    <enabled>false</enabled>
+  </webservice-testpage>
+  <partition-uri-space>/partitions</partition-uri-space>
+  <diagnostic-context-compatibility-mode-enabled>true</diagnostic-context-compatibility-mode-enabled>
+  <lifecycle-manager-config>
+    <deployment-type>none</deployment-type>
+    <out-of-band-enabled>false</out-of-band-enabled>
+  </lifecycle-manager-config>
+  <enable-ee-compliant-classloading-for-embedded-adapters>true</enable-ee-compliant-classloading-for-embedded-adapters>
+</domain>

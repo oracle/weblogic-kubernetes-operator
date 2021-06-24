@@ -8,7 +8,7 @@ description = "Debugging a deployed Model in Image domain."
 
 Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.
 
-#### Contents
+### Contents
 
  - [Check the Domain status](#check-the-domain-status)
  - [Check the Domain events](#check-the-domain-events)
@@ -18,20 +18,20 @@ Here are some suggestions for debugging problems with Model in Image after your 
  - [Check the FAQ](#check-the-faq)
 
 
-#### Check the Domain status
+### Check the Domain status
 
 To check the Domain status: `kubectl -n MY_NAMESPACE describe domain MY_DOMAINUID`.
 
 If you are performing an online update to a running domain's WebLogic configuration,
 then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
 
-#### Check the Domain events
+### Check the Domain events
 
 To check events for the Domain: `kubectl -n MY_NAMESPACE get events --sort-by='.lastTimestamp'`.
 
 For more information, see [Domain events]({{< relref "/userguide/managing-domains/domain-events.md" >}}).
 
-#### Check the introspector job
+### Check the introspector job
 
 If your introspector job failed, then examine the `kubectl describe` of the job and its pod, and also examine its log, if one exists.
 
@@ -92,7 +92,7 @@ when `spec.logHome` is configured and `spec.logHomeEnabled` is true.
 If a model file error references a model file in your `spec.configuration.model.configMap`, then you can correct the error by redeploying the ConfigMap with a corrected model file and then initiating a domain restart or roll. Similarly, if a model file error references a model file in your model image, then you can correct the error by deploying a corrected image, modifying your Domain YAML file to reference the new image, and then initiating a domain restart or roll.
 {{% /notice %}}
 
-#### Check the WebLogic Server pods
+### Check the WebLogic Server pods
 
 If your introspector job succeeded, then there will be no introspector job or pod, the operator will create a `MY_DOMAIN_UID-weblogic-domain-introspect-cm` ConfigMap for your domain, and the operator will then run the domain's WebLogic Server pods.
 
@@ -101,7 +101,7 @@ If `kubectl -n MY_NAMESPACE get pods` reveals that your WebLogic Server pods hav
 If you are performing an online update to a running domain's WebLogic configuration,
 then see [Online update status and labels]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates#online-update-status-and-labels">}}).
 
-#### Check the operator log
+### Check the operator log
 
 Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 
@@ -133,7 +133,7 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
     | grep "domainUID...sample-domain1"
   ```
 
-#### Check the FAQ
+### Check the FAQ
 
 Common issues that have corresponding FAQ entries include:
 - When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "/faq/namespace-management">}}).

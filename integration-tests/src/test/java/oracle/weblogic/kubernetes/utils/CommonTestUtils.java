@@ -212,6 +212,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -498,7 +499,8 @@ public class CommonTestUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(opServiceAccount);
+        .serviceAccount(opServiceAccount)
+        .featureGates("CommonMounts=true");
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
@@ -1304,7 +1306,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain, 
+  public static void createDomainAndVerify(Domain domain,
                                            String domainNamespace,
                                            String... domVersion) {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
@@ -1817,6 +1819,27 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check the status reason of the domain matches the given reason.
+   *
+   * @param domain  oracle.weblogic.domain.Domain object
+   * @param namespace the namespace in which the domain exists
+   * @param statusReason the expected status reason of the domain
+   */
+  public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for the status reason of the domain {0} in namespace {1} "
+                    + "is {2} (elapsed time {3}ms, remaining time {4}ms)",
+                domain,
+                namespace,
+                statusReason,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)));
   }
 
   /**
@@ -2780,7 +2803,7 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31060, 31200);
+    int grafanaNodePort = getNextFreePort();
     logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
@@ -2793,7 +2816,7 @@ public class CommonTestUtils {
     } catch (AssertionError err) {
       //retry with different nodeport
       uninstallGrafana(grafanaHelmParams);
-      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaNodePort = getNextFreePort();
       grafanaParams = new GrafanaParams()
           .helmParams(grafanaHelmParams)
           .nodePort(grafanaNodePort);
@@ -3247,6 +3270,52 @@ public class CommonTestUtils {
             appPath,
             expectedStr));
 
+  }
+
+  /**
+   * Check if the the application is active for a given weblogic target.
+   * @param host hostname to construct the REST url
+   * @param port the port construct the REST url
+   * @param headers extra header info to pass to the REST url
+   * @param application name of the application
+   * @param target the weblogic target for the application
+   * @param username username to log into the system 
+   * @param password password for the username
+   */
+  public static boolean checkAppIsActive(
+      String host,
+      int    port,
+      String headers,
+      String application,
+      String target,
+      String username,
+      String password
+  ) {
+
+    LoggingFacade logger = getLogger();
+    String curlString = String.format("curl -v --show-error --noproxy '*' "
+           + "--user " + username + ":" + password + " " + headers  
+           + " -H X-Requested-By:MyClient -H Accept:application/json "
+           + "-H Content-Type:application/json " 
+           + " -d \"{ target: '" + target + "' }\" "
+           + " -X POST "
+           + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
+           + application + "/getState", host, port);
+
+    logger.info("curl command {0}", curlString);
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for Application {0} to be active "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+                application,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("STATE_ACTIVE");
+          };
+        }));
+    return true;
   }
 
   /** Create a persistent volume.

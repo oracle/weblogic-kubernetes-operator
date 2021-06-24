@@ -33,6 +33,7 @@ public class OperatorParams {
   private static final String ENABLE_CLUSTER_ROLE_BINDING = "enableClusterRoleBinding";
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
+  private static final String FEATURE_GATES = "featureGates";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -55,6 +56,7 @@ public class OperatorParams {
   private String domainNamespaceRegExp;
   private int domainPresenceFailureRetryMaxCount = 5;
   private int domainPresenceFailureRetrySeconds = 10;
+  private String featureGates;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -156,12 +158,21 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams featureGates(String featureGates) {
+    this.featureGates = featureGates;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
 
   public HelmParams getHelmParams() {
     return helmParams;
+  }
+
+  public String getFeatureGates() {
+    return featureGates;
   }
 
   /**
@@ -185,6 +196,7 @@ public class OperatorParams {
     values.put(IMAGE_PULL_SECRETS, imagePullSecrets);
     values.put(ELK_INTEGRATION_ENABLED, Boolean.valueOf(elkIntegrationEnabled));
     values.put(ENABLE_CLUSTER_ROLE_BINDING, Boolean.valueOf(enableClusterRoleBinding));
+    values.put(FEATURE_GATES, featureGates);
 
     if (elasticSearchHost != null) {
       values.put(ELASTICSEARCH_HOST, elasticSearchHost);

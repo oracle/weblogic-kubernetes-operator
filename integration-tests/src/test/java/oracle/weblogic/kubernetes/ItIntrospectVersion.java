@@ -10,6 +10,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
@@ -39,6 +40,8 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -61,6 +64,9 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -78,7 +84,9 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LATEST_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
@@ -121,10 +129,13 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
+import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -151,6 +162,11 @@ public class ItIntrospectVersion {
   private final String wlSecretName = "weblogic-credentials";
 
   private Map<String, OffsetDateTime> podsWithTimeStamps = null;
+
+  private static final String INTROSPECT_DOMAIN_SCRIPT = "introspectDomain.sh";
+  private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "intros-sample-testing");
+  private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -185,8 +201,8 @@ public class ItIntrospectVersion {
     installAndVerifyOperator(opNamespace, introDomainNamespace);
 
     // get a free node port for NGINX
-    nodeportshttp = getNextFreePort(30109, 30405);
-    int nodeportshttps = getNextFreePort(30143, 30543);
+    nodeportshttp = getNextFreePort();
+    int nodeportshttps = getNextFreePort();
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
@@ -203,6 +219,7 @@ public class ItIntrospectVersion {
         "Application archive is not available");
     clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
 
+    setupSample();
   }
 
   /**
@@ -230,10 +247,7 @@ public class ItIntrospectVersion {
 
     int replicaCount = 2;
 
-    // in general the node port range has to be between 30,000 to 32,767
-    // to avoid port conflict because of the delay in using it, the port here
-    // starts with 30100
-    final int t3ChannelPort = getNextFreePort(30172, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -562,7 +576,7 @@ public class ItIntrospectVersion {
     //change admin port from 7001 to 7005
     String restUrl = "/management/weblogic/latest/edit/servers/" + adminServerName;
 
-    String curlCmd = "curl -v"
+    String curlCmd = "curl -v -m 60"
         + " -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " -H X-Requested-By:MyClient "
         + " -H Accept:application/json "
@@ -570,10 +584,11 @@ public class ItIntrospectVersion {
         + " -X POST http://" + adminServerPodName + ":7001" + restUrl;
     logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
 
-    ExecResult execResult = assertDoesNotThrow(() -> execCommand(introDomainNamespace, adminServerPodName, null, true,
-        "/bin/sh", "-c", curlCmd));
-    assertTrue(execResult.exitValue() == 0 || execResult.stderr() == null || execResult.stderr().isEmpty(),
-        "Failed to change admin port number");
+    try {
+      execCommand(introDomainNamespace, adminServerPodName, null, true, "/bin/sh", "-c", curlCmd);
+    } catch (Exception ex) {
+      logger.severe(ex.getMessage());
+    }
 
     //needed for event verification
     OffsetDateTime timestamp = now();
@@ -1027,6 +1042,66 @@ public class ItIntrospectVersion {
   }
 
   /**
+   * Rerun a WebLogic domain's introspect job by explicitly initiating the introspection
+   * using the sample script introspectDomain.sh script.
+   * Test that after running introspectDomain.sh w/wo a introspectVersion value specified,
+   * the introspection is explicitly initiating and introspectVersion in the domain is changed.
+   * Use ParameterizedTest to test introspectVersion = "", "v1", "8v", "v.1"
+   * Verify the introspector pod is created and runs
+   * Verifies introspection is changed.
+   * Verifies accessing sample application in admin server works.
+   */
+  @Order(7)
+  @ParameterizedTest
+  @EmptySource
+  @ValueSource(strings = {"v1", "8v", "v.1"})
+  @DisplayName("Test to use sample scripts to explicitly initiate introspection")
+  public void testInitiateIntrospection(String introspectVersion) {
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String managedServerNameBase = "managed-server";
+    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    final int replicaCount = 3;
+
+    // verify admin server pods are ready
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, introDomainNamespace);
+    // verify managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Checking managed server service {0} is created in namespace {1}",
+          managedServerPodNamePrefix + i, introDomainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
+    }
+
+    // get introspectVersion before running introspectDomain.sh
+    String introspectVersionBf =
+        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+
+    // use introspectDomain.sh to initiate introspection
+    logger.info("Initiate introspection with introspectDomain.sh script");
+    String extraParam = (introspectVersion.isEmpty()) ? "" : " -i " + introspectVersion;
+
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+    checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    String introspectVersionAf =
+        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+
+    // verify that introspectVersion is changed after running introspectDomain.sh
+    assertFalse(introspectVersionBf.equals(introspectVersionAf),
+        "introspectVersion should change from " + introspectVersionBf + " to " + introspectVersionAf);
+
+    // verify when a domain resource has spec.introspectVersion configured,
+    // after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
+    verifyIntrospectVersionLabelInPod(replicaCount);
+  }
+
+  /**
    * Create a WebLogic domain on a persistent volume by doing the following.
    * Create a configmap containing WLST script and property file.
    * Create a Kubernetes job to create domain on persistent volume.
@@ -1195,4 +1270,31 @@ public class ItIntrospectVersion {
   @interface AssumeWebLogicImage {
   }
 
+  // copy samples directory to a temporary location
+  private static void setupSample() {
+    assertDoesNotThrow(() -> {
+      logger.info("Deleting and recreating {0}", tempSamplePath);
+      Files.createDirectories(tempSamplePath);
+      deleteDirectory(tempSamplePath.toFile());
+      Files.createDirectories(tempSamplePath);
+      logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
+      copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+    });
+  }
+
+  // Function to execute domain lifecyle scripts
+  private String executeLifecycleScript(String script, String extraParams) {
+    String commonParameters = " -d " + domainUid + " -n " + introDomainNamespace + extraParams;
+    CommandParams params = new CommandParams().defaults();
+
+    params.command("sh "
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
+        + commonParameters);
+
+    ExecResult execResult = Command.withParams(params).executeAndReturnResult();
+    assertEquals(0, execResult.exitValue(),
+        String.format("Failed to execute script  %s ", script));
+
+    return execResult.toString();
+  }
 }

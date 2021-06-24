@@ -19,6 +19,7 @@ LABEL "org.opencontainers.image.authors"="Ryan Eberhard <ryan.eberhard@oracle.co
 
 RUN set -eux; \
     microdnf -y install gzip tar openssl jq; \
+    microdnf -y update; \
     microdnf clean all
 
 ENV LANG="en_US.UTF-8" \

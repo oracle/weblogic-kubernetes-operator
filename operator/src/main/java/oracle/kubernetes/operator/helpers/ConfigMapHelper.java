@@ -328,6 +328,8 @@ public class ConfigMapHelper {
           return doNext(replaceConfigMap(getNext()), packet);
         } else if (mustPatchCurrentMap(existingMap)) {
           return doNext(patchCurrentMap(existingMap, getNext()), packet);
+        } else if (mustPatchImageHashInMap(existingMap, packet)) {
+          return doNext(patchImageHashInCurrentMap(existingMap, packet, getNext()), packet);
         } else {
           logConfigMapExists();
           recordCurrentMap(packet, existingMap);
@@ -354,6 +356,11 @@ public class ConfigMapHelper {
         return KubernetesUtils.isMissingValues(getMapLabels(currentMap), getLabels());
       }
 
+      private boolean mustPatchImageHashInMap(V1ConfigMap currentMap, Packet packet) {
+        return (currentMap.getData() != null) && Optional.ofNullable((String)packet.get(DOMAIN_INPUTS_HASH))
+                .map(hash -> !hash.equals(currentMap.getData().get(DOMAIN_INPUTS_HASH))).orElse(false);
+      }
+
       private Map<String, String> getMapLabels(@NotNull V1ConfigMap map) {
         return Optional.ofNullable(map.getMetadata()).map(V1ObjectMeta::getLabels).orElseGet(Collections::emptyMap);
       }
@@ -372,6 +379,17 @@ public class ConfigMapHelper {
             .patchConfigMapAsync(name, namespace,
                 getDomainUidLabel(Optional.of(currentMap).map(V1ConfigMap::getMetadata).orElse(null)),
                 new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
+      }
+
+      private Step patchImageHashInCurrentMap(V1ConfigMap currentMap, Packet packet, Step next) {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+
+        patchBuilder.add("/data/" + DOMAIN_INPUTS_HASH, (String)packet.get(DOMAIN_INPUTS_HASH));
+
+        return new CallBuilder()
+                .patchConfigMapAsync(name, namespace,
+                        getDomainUidLabel(Optional.of(currentMap).map(V1ConfigMap::getMetadata).orElse(null)),
+                        new V1Patch(patchBuilder.build().toString()), createPatchResponseStep(next));
       }
 
       private boolean labelsNotDefined(V1ConfigMap currentMap) {
@@ -476,6 +494,7 @@ public class ConfigMapHelper {
       if (loader.isTopologyNotValid()) {
         return doNext(reportTopologyErrorsAndStop(), packet);
       } else if (loader.getDomainConfig() == null)  {
+        loader.updateImageHashInPacket();
         return doNext(loader.createIntrospectionVersionUpdateStep(), packet);
       } else {
         LOGGER.fine(MessageKeys.WLS_CONFIGURATION_READ, timeSinceJobStart(packet), loader.getDomainConfig());
@@ -551,6 +570,10 @@ public class ConfigMapHelper {
       copyFileToPacketIfPresent(DOMAINZIP_HASH, DOMAINZIP_HASH);
       copyFileToPacketIfPresent(SECRETS_MD_5, SECRETS_MD_5);
       copyToPacketAndFileIfPresent(DOMAIN_RESTART_VERSION, info.getDomain().getRestartVersion());
+      copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
+    }
+
+    private void updateImageHashInPacket() {
       copyToPacketAndFileIfPresent(DOMAIN_INPUTS_HASH, getModelInImageSpecHash());
     }
 

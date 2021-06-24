@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Model file requirements, macros, and loading order."
 +++
 
-#### Contents
+### Contents
 
  - [Introduction](#introduction)
  - [Sample model file](#sample-model-file)
@@ -17,14 +17,14 @@ description = "Model file requirements, macros, and loading order."
    - [Using environment variables in model files](#using-environment-variables-in-model-files)
    - [Combining secrets and environment variables in model files](#combining-secrets-and-environment-variables-in-model-files)
 
-#### Introduction
+### Introduction
 
 This document describes basic Model in Image model file syntax, naming, and macros. For additional information, see the [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) documentation.
 
 {{% notice tip %}} The WDT [Discover Domain Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/discover/) is particularly useful for generating model files from an existing domain home.
 {{% /notice %}}
 
-#### Sample model file
+### Sample model file
 
 Here's an example of a model YAML file that defines a WebLogic Server Administration Server and dynamic cluster.
 
@@ -60,7 +60,7 @@ This sample model file:
 
 For a description of model file macro references to secrets and environment variables, see [Model file macros](#model-file-macros).
 
-#### Important notes about Model in Image model files
+### Important notes about Model in Image model files
 
   - Using model file macros
 
@@ -86,7 +86,7 @@ For a description of model file macro references to secrets and environment vari
 
 - You can control the order that WDT uses to load your model files, see [Model file naming and loading order](#model-file-naming-and-loading-order).
 
-#### Model file naming and loading order
+### Model file naming and loading order
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
@@ -127,9 +127,9 @@ y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops
 
 Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.
 
-#### Model file macros
+### Model file macros
 
-##### Using secrets in model files
+#### Using secrets in model files
 
 You can use WDT model `@@SECRET` macros to reference the WebLogic administrator `username` and `password` keys that are stored in a Kubernetes Secret and to optionally reference additional secrets. Here is the macro pattern for accessing these secrets:
 
@@ -155,13 +155,13 @@ Here's a sample snippet from a Domain YAML file that sets a `webLogicCredentials
   ...
   ```
 
-##### Using environment variables in model files
+#### Using environment variables in model files
 
 You can reference operator environment variables in model files. This includes any that you define yourself in your Domain YAML file using `domain.spec.serverPod.env` or `domain.spec.adminServer.serverPod.env`, or the built-in `DOMAIN_UID` environment variable.
 
 For example, the `@@ENV:DOMAIN_UID@@` macro resolves to the current domain's domain UID.
 
-##### Combining secrets and environment variables in model files
+#### Combining secrets and environment variables in model files
 
 You can embed an environment variable macro in a secret macro. This is useful for referencing secrets that you've named based on your domain's `domainUID`.
 

@@ -4,21 +4,25 @@
 package oracle.kubernetes.operator;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.AsyncFiber;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
 
+import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -27,7 +31,18 @@ import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLab
  * @param <T> the type of resource handled by this step
  */
 abstract class WaitForReadyStep<T> extends Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int DEFAULT_RECHECK_SECONDS = 5;
+  private static final int DEFAULT_RECHECK_COUNT = 60;
+
+  static NextStepFactory NEXT_STEP_FACTORY =
+          (callback, info, next) -> createMakeDomainRightStep(callback, info, next);
+
+  protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+                                           DomainPresenceInfo info, Step next) {
+    return new CallBuilder().readDomainAsync(info.getDomainUid(),
+            info.getNamespace(), new MakeRightDomainStep(callback, null));
+  }
 
   static int getWatchBackstopRecheckDelaySeconds() {
     return Optional.ofNullable(TuningParameters.getInstance())
@@ -36,8 +51,15 @@ abstract class WaitForReadyStep<T> extends Step {
             .orElse(DEFAULT_RECHECK_SECONDS);
   }
 
-  private final T initialResource;
-  private final String resourceName;
+  static int getWatchBackstopRecheckCount() {
+    return Optional.ofNullable(TuningParameters.getInstance())
+            .map(TuningParameters::getWatchTuning)
+            .map(t -> t.watchBackstopRecheckCount)
+            .orElse(DEFAULT_RECHECK_COUNT);
+  }
+
+  final T initialResource;
+  final String resourceName;
 
   /**
    * Creates a step which will only proceed once the specified resource is ready.
@@ -60,6 +82,15 @@ abstract class WaitForReadyStep<T> extends Step {
    * @return true if processing can proceed
    */
   abstract boolean isReady(T resource);
+
+  /**
+   * Returns true if the cached resource is not found during periodic listing.
+   * @param cachedResource cached resource to check
+   * @param isNotFoundOnRead Boolean indicating if resource is not found in call response.
+   *
+   * @return true if cached resource not found on read
+   */
+  abstract boolean onReadNotFoundForCachedResource(T cachedResource, boolean isNotFoundOnRead);
 
   /**
    * Returns true if the callback for this resource should be processed. This is typically used to exclude
@@ -173,13 +204,15 @@ abstract class WaitForReadyStep<T> extends Step {
             null);
   }
 
-  private Step createReadAndIfReadyCheckStep(Callback callback) {
+  Step createReadAndIfReadyCheckStep(Callback callback) {
     if (initialResource != null) {
       return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
-      return new ReadAndIfReadyCheckStep(getName(), callback, getNext());
+      return new ReadAndIfReadyCheckStep(getName(), resumeIfReady(callback), getNext());
     }
   }
+
+  protected abstract ResponseStep resumeIfReady(Callback callback);
 
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
@@ -193,56 +226,55 @@ abstract class WaitForReadyStep<T> extends Step {
     return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
-  private DefaultResponseStep<T> resumeIfReady(Callback callback) {
-    return new DefaultResponseStep<>(null) {
-      @Override
-      public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
-        if ((callResponse != null) && (callResponse.getResult() instanceof V1Pod)) {
-          V1Pod pod = (V1Pod) callResponse.getResult();
-          Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-                  .ifPresent(i -> i.setServerPodFromEvent(getPodLabel(pod, LabelConstants.SERVERNAME_LABEL), pod));
-        }
-        if (isReady(callResponse.getResult())) {
-          callback.proceedFromWait(callResponse.getResult());
-          return doNext(packet);
-        }
-        return doDelay(createReadAndIfReadyCheckStep(callback), packet,
-                getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
-      }
-
-      private String getPodLabel(V1Pod pod, String labelName) {
-        return Optional.ofNullable(pod)
-                .map(V1Pod::getMetadata)
-                .map(V1ObjectMeta::getLabels)
-                .map(m -> m.get(labelName))
-                .orElse(null);
-      }
-    };
-  }
 
   private class ReadAndIfReadyCheckStep extends Step {
-    private final Callback callback;
     private final String resourceName;
+    private final ResponseStep responseStep;
 
-    ReadAndIfReadyCheckStep(String resourceName, Callback callback, Step next) {
+    ReadAndIfReadyCheckStep(String resourceName, ResponseStep responseStep, Step next) {
       super(next);
-      this.callback = callback;
       this.resourceName = resourceName;
+      this.responseStep = responseStep;
     }
 
     @Override
     public NextAction apply(Packet packet) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       return doNext(createReadAsyncStep(resourceName, info.getNamespace(),
-              info.getDomainUid(), resumeIfReady(callback)), packet);
+              info.getDomainUid(), responseStep), packet);
     }
 
   }
 
-  private class Callback implements Consumer<T> {
+  static class MakeRightDomainStep extends DefaultResponseStep {
+    public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
+    private final WaitForReadyStep.Callback callback;
+
+    MakeRightDomainStep(WaitForReadyStep.Callback callback, Step next) {
+      super(next);
+      this.callback = callback;
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+      MakeRightDomainOperation makeRightDomainOperation =
+              (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
+      if (makeRightDomainOperation != null) {
+        makeRightDomainOperation.clear();
+        makeRightDomainOperation.setLiveInfo(new DomainPresenceInfo((Domain) callResponse.getResult()));
+        makeRightDomainOperation.withExplicitRecheck().interrupt().execute();
+      }
+      callback.fiber.terminate(new Exception(WAIT_TIMEOUT_EXCEEDED), packet);
+      return super.onSuccess(packet, callResponse);
+    }
+
+  }
+
+  class Callback implements Consumer<T> {
     private final AsyncFiber fiber;
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
+    private final AtomicInteger recheckCount = new AtomicInteger(0);
 
     Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
@@ -258,7 +290,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
 
     // The resource has now either completed or failed, so we can continue processing.
-    private void proceedFromWait(T resource) {
+    void proceedFromWait(T resource) {
       removeCallback(getName(), this);
       if (mayResumeFiber()) {
         handleResourceReady(fiber, packet, resource);
@@ -271,6 +303,18 @@ abstract class WaitForReadyStep<T> extends Step {
     private boolean mayResumeFiber() {
       return didResume.compareAndSet(false, true);
     }
+
+    boolean didResumeFiber() {
+      return didResume.get();
+    }
+
+    int incrementAndGetRecheckCount() {
+      return recheckCount.incrementAndGet();
+    }
+
+    int getRecheckCount() {
+      return recheckCount.get();
+    }
   }
 
   private void handleResourceReady(AsyncFiber fiber, Packet packet, T resource) {
@@ -279,4 +323,11 @@ abstract class WaitForReadyStep<T> extends Step {
       fiber.terminate(createTerminationException(resource), packet);
     }
   }
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
+                                                   DomainPresenceInfo info, Step next);
+  }
+
 }

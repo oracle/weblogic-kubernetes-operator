@@ -6,7 +6,7 @@ pre = "<b> </b>"
 description = "Introduction to Model in Image, description of its runtime behavior, and references."
 +++
 
-#### Contents
+### Contents
 
  - [Introduction](#introduction)
  - [WebLogic Deploy Tool models](#weblogic-deploy-tool-models)
@@ -15,7 +15,7 @@ description = "Introduction to Model in Image, description of its runtime behavi
  - [Continuous integration and delivery (CI/CD)](#continuous-integration-and-delivery-cicd)
  - [References](#references)
 
-#### Introduction
+### Introduction
 
 Model in Image is an alternative to the operator's Domain in Image and Domain in PV domain types. See [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) for a comparison of operator domain types.
 
@@ -37,7 +37,7 @@ This feature is supported for standard WLS domains, Restricted JRF domains, and 
 
 For JRF domains, Model in Image provides additional support for initializing the infrastructure database for a domain when a domain is started for the first time, supplying an database password, and obtaining an database wallet for re-use in subsequent restarts of the same domain. See [Requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
 
-#### WebLogic Deploy Tool models
+### WebLogic Deploy Tool models
 
 WDT models are a convenient and simple alternative to WebLogic Scripting Tool (WLST)
 configuration scripts and templates.
@@ -49,7 +49,7 @@ and [Model files]({{< relref "/userguide/managing-domains/model-in-image/model-f
 The WDT model format is fully described in the open source,
 [WebLogic Deploy Tool](https://oracle.github.io/weblogic-deploy-tooling/) GitHub project.
 
-#### Runtime behavior
+### Runtime behavior
 
 When you deploy a Model in Image domain resource YAML file:
 
@@ -64,7 +64,7 @@ When you deploy a Model in Image domain resource YAML file:
     - The operator subsequently boots your domain's WebLogic Server pods.
     - The pods will obtain their domain home from the ConfigMap.
 
-#### Runtime updates
+### Runtime updates
 
 Model updates can be applied at runtime by changing an image, secrets, a domain resource, or a WDT model ConfigMap after initial deployment.
 
@@ -75,11 +75,11 @@ _It is the administrator's responsibility to make the necessary changes to a dom
 
 See [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
-#### Continuous integration and delivery (CI/CD)
+### Continuous integration and delivery (CI/CD)
 
 To understand how Model in Image works with CI/CD, see [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
-#### References
+### References
 
  - [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}})
  - [WebLogic Deploy Tool (WDT)](https://oracle.github.io/weblogic-deploy-tooling/)
