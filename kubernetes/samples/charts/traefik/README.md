@@ -180,9 +180,9 @@ Alternatively, you can run the helper script `setupLoadBalancer.sh`, under the `
 
 To install Traefik:
 ```shell
-$ ./setupLoadBalancer.sh create traefik [traefik-version]
+$ ./setupLoadBalancer.sh -c -t traefik [-v traefik-version]
 ```
 To uninstall Traefik:
 ```shell
-$ ./setupLoadBalancer.sh delete traefik
+$ ./setupLoadBalancer.sh -d -t traefik
 ```
