@@ -74,6 +74,8 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -129,12 +131,12 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPushImage;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
@@ -305,7 +307,7 @@ class ItMonitoringExporter {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter();
-    exporterImage = assertDoesNotThrow(() -> createPushImage(monitoringExporterSrcDir, "exporter",
+    exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain5Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     //this is temporary untill image is released
@@ -1002,7 +1004,7 @@ class ItMonitoringExporter {
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       imagePullPolicy = "Always";
     }
-    String image = createPushImage(dockerFileDir,baseImageName, namespace, secretName, "");
+    String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
@@ -1294,10 +1296,10 @@ class ItMonitoringExporter {
     monitoringExporterSrcDir = monitoringTemp.toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
     Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
-    assertDoesNotThrow(() -> org.apache.commons.io.FileUtils.deleteDirectory(monitoringApp.toFile()));
+    assertDoesNotThrow(() -> deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
     Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
-    assertDoesNotThrow(() -> org.apache.commons.io.FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
 
@@ -1346,8 +1348,8 @@ class ItMonitoringExporter {
               + monitoringExporterSrcDir);
     }
     logger.info("Executing command " + command);
-    assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
-        .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
+    assertTrue(new Command()
+        .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter image");
     // docker login and push image to docker registry if necessary
