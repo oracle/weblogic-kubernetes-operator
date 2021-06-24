@@ -86,8 +86,8 @@ serverPodCpuRequest: "250m"
 # Please refer to the kubernetes documentation on Managing Compute
 # Resources for Containers for details.
 # Parameter "serverPodMemoryLimit" and "serverPodCpuLimit" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
-serverPodMemoryLimit: "2Gi"
-serverPodCpuLimit: "1000m"
+serverPodMemoryLimit: "1.5Gi"
+serverPodCpuLimit: "250m"
 
 # The suffix of the persistent volume claim name, the complete value is ${namePrefix}-${persistentVolumeClaimNameSuffix}-<timestamp>.
 # Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
