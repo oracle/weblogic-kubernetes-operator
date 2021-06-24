@@ -1,7 +1,8 @@
 ---
 title: "Istio support"
 date: 2019-08-15T13:30:04-04:00
-weight: 6
+weight: 9
+description: "Lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains."
 ---
 
 #### Overview
@@ -48,7 +49,7 @@ $ kubectl create namespace weblogic-operator
 $ kubectl label namespace weblogic-operator istio-injection=enabled
 ```
 
-After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation/_index.md" >}}).  
+After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
 and the envoy container `istio-proxy`.
 

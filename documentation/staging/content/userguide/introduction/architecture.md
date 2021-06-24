@@ -3,16 +3,36 @@ title: "Architecture"
 date: 2019-02-23T20:51:45-05:00
 draft: false
 weight: 3
-description: "The operator consists of several parts: the operator runtime, the model for a Kubernetes custom resource definition (CRD), a Helm chart for installing the operator, a variety of sample shell scripts for preparing or packaging WebLogic domains for running in Kubernetes, and sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster."
+description: "An architectural overview of the operator runtime and related resources."
 ---
+
+### Contents
+
+- [Overall architecture](#overall-architecture)
+- [Domain architecture](#domain-architecture)
+- [Domain UID](#domain-uid)
+- [Network name predictability](#network-name-predictability)
+- [Domain state stored outside container images](#domain-state-stored-outside-container-images)
+
+### Overall architecture
 
 The operator consists of the following parts:
 
-* The operator runtime, a process that runs in a container deployed into a Kubernetes Pod and which performs the actual management tasks.
-* The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.
-* A Helm chart for installing the operator runtime and related resources.
-* A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.
-* A variety of sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.
+* The operator runtime, which is a process that:
+  - Runs in a container deployed
+    into a Kubernetes Pod and that monitors one
+    or more Kubernetes namespaces.
+  - Performs the actual management tasks
+    for domain resources deployed to these namespaces.
+* A Helm chart for installing the operator runtime and its related resources.
+* A Kubernetes custom resource definition (CRD) that,
+  when installed, enables the Kubernetes API server
+  and the operator to monitor and manage domain resource instances.
+* Domain resources that reference WebLogic 
+  domain configuration, a WebLogic install, and
+  anything else necessary to run the domain.
+* A variety of samples for preparing or packaging
+  WebLogic domains for running in Kubernetes.
 
 The operator is packaged in a [container image](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator) which you can access using the following `docker pull` commands:  
 
@@ -28,12 +48,61 @@ The diagram below shows the general layout of high-level components, including o
 
 {{< img "High level architecture" "images/high-level-architecture.png" >}}
 
-The Kubernetes cluster has several namespaces.  Components may be deployed into namespaces as follows:
+The Kubernetes cluster has several namespaces. Components may be deployed into namespaces as follows:
 
-*	The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a Logstash pod will also be deployed in the operator’s namespace.
-*	WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace, if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.
-* Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a system, shared namespace such as the `kube-system` namespace.
-*	Customers are responsible for Elasticsearch and Kibana deployment, which are typically deployed in the `default` namespace.
+* One or more operators, each deployed into its own namespace.
+  * There can be more than one operator in a Kubernetes cluster but
+    only a single operator per namespace.
+  * Each operator is configured with
+    the specific namespaces that it is responsible for.
+    * The operator will not take any action on any domain
+      that is not in one of the namespaces the operator is configured to manage.
+    * Multiple operators cannot manage the same namespace.
+    * The operator can be configured to monitor
+      its own namespace.
+  * There is no limit on the number of domains or namespaces that an operator can manage.  
+  * If the Elastic Stack integration option is configured to monitor the operator,
+    then a Logstash pod will also be deployed in the operator’s namespace.
+* WebLogic domain resources deployed into various namespaces. 
+  * There can be more than one domain in a namespace, if desired.
+  * Every domain resource must be configured with a [domain unique identifier](domain-uid).
+* Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.
+* Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.
+
+### Domain UID
+
+Every domain resource must be configured with a domain unique identifier
+which is a string and may also be called a `Domain UID`,
+`domainUID`, or `DOMAIN_UID` depending on the context.
+This value is distinct and need not match the domain name from
+the WebLogic domain configuration. The operator will
+use this as a name prefix for the domain related resources 
+that it creates for you (such as services and pods).
+
+A Domain UID is set on a domain resource using `spec.domainUID`,
+and defaults to the value of `metadata.name`. The
+`spec.domainUID` domain resource field is usually 
+left unset in order to take advantage of this default.
+
+It is recommended that a Domain UID be configured to be unique 
+across all Kubernetes namespaces and even across different Kubernetes
+clusters in order to assist in future work to identify 
+related domains in active-passive scenarios across data centers;
+however, it is only required that this value
+be unique within a namespace, similarly to the names of Kubernetes
+resources.
+
+As a convention, any resource that is associated with a particular Domain UID
+is typically given a Kubernetes label named `weblogic.domainUID` that
+is assigned to that UID. If the operator creates a resource for
+you on behalf of a particular domain, it will follow this 
+convention. For example, to see all pods created with
+the `weblogic.domainUID` label in a Kubernetes cluster try:
+`kubectl get pods -l weblogic.domainUID --all-namespaces=true --show-labels=true`.
+
+A Domain UID may be up to 45 characters long. For
+more details about Domain UID name requirements, see
+[Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
 
 ### Domain architecture
 
@@ -44,11 +113,12 @@ The diagram below shows how the various parts of a WebLogic domain are manifest 
 This diagram shows the following details:
 
 *	An optional, persistent volume is created by the customer using one of the available providers.  If the persistent volume is shared across the domain or members of a cluster, then the chosen provider must support “Read Write Many” access mode.  The shared state on the persistent volume may include the `domain` directory, the `applications` directory, a directory for storing logs, and a directory for any file-based persistence stores.
-*	A pod is created for the WebLogic Server Administration Server.  This pod is labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.
-*	A `ClusterIP` type service is created for the Administration Server pod.  This service provides a stable, well-known network (DNS) name for the Administration Server.  This name is derived from the `domainUID` and the Administration Server name, and it is known before starting up any pod.  The Administration Server `ListenAddress` is set to this well-known name.  `ClusterIP` type services are only visible inside the Kubernetes cluster.  They are used to provide the well-known names that all of the servers in a domain use to communicate with each other.  This service is labeled with `weblogic.domainUID` and `weblogic.domainName`.
+*	A pod is created for the WebLogic Server Administration Server.  This pod is named `DOMAIN_UID-wlservername` and is labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe which we will descibe in more detail later, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.
+*	A `ClusterIP` type service is created for the Administration Server pod.  This service provides a stable, well-known network (DNS) name for the Administration Server.  This name is derived from the `domainUID` and the Administration Server name as described [here](#network-name-predictability), and it is known before starting up any pod.  The Administration Server `ListenAddress` is set to this well-known name.  `ClusterIP` type services are only visible inside the Kubernetes cluster.  They are used to provide the well-known names that all of the servers in a domain use to communicate with each other.  This service is labeled with `weblogic.domainUID` and `weblogic.domainName`.
 *	A `NodePort` type service is optionally created for the Administration Server pod.  This service provides HTTP access to the Administration Server to clients that are outside the Kubernetes cluster.  This service is intended to be used to access the WebLogic Server Administration Console or for the T3 protocol for WLST connections.  This service is labeled with `weblogic.domainUID` and `weblogic.domainName`.
-*	A pod is created for each WebLogic Server Managed Server.  These pods are labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe.  It is not intended to be used for other purposes, and it may be removed in some future release.
-*	A `ClusterIP` type service is created for each Managed Server pod that contains a Managed Server that is not part of a WebLogic cluster.  These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with `weblogic.domainUID` and `weblogic.domainName`.  Customers must expose these services using a load balancer or `NodePort` type service to expose these endpoints outside the Kubernetes cluster.
+*	A pod is created for each WebLogic Server Managed Server.  These pods are named `DOMAIN_UID-wlservername` and are labeled with `weblogic.domainUID`, `weblogic.serverName`, and `weblogic.domainName`.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe which we will describe in more detail later.  It is not intended to be used for other purposes, and it may be removed in some future release.
+*	A `ClusterIP` type service is created for each Managed Server pod as described [here](#network-name-predictability). These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with `weblogic.domainUID` and `weblogic.domainName`.
+*	A `ClusterIP` type service is also created for each WebLogic cluster as described [here](#network-name-predictability).  Customers can expose these services using a load balancer or `NodePort` type service to expose these endpoints outside the Kubernetes cluster.
 *	A `PodDisruptionBudget` is created for each WebLogic cluster. These pod disruption budgets are labeled with `weblogic.domainUID`, `weblogic.clusterName` and `weblogic.domainName`.
 *	An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.
 
@@ -71,8 +141,21 @@ Within the container, the following aspects are configured by the operator:
 *	The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see [Readiness probe customization]({{< relref "/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization#readiness-probe-customization" >}}).
 *	A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.
 
+### Network name predictability
+The operator deploys services with predictable well-defined DNS names
+for each WebLogic server and cluster in your WebLogic configuration.
+The name of a WebLogic server service is `DOMAIN_UID-wlservername`
+and the name of a WebLogic server cluster is `DOMAIN_UID-cluster-wlclustername`,
+all in lowercase, with underscores `_` converted to hyphens `-`.
+
+The operator also automatically overrides the `ListenAddress` fields in each
+running WebLogic Server to match its service name in order 
+to ensure that the servers will always be able to find each other.
+
+For details, see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/managing-domains/_index.md#meet-kubernetes-resource-name-restrictions" >}}).
+
 ### Domain state stored outside container images
-The operator expects (and requires) that all state be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
+The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.
 
 It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.
 
@@ -85,12 +168,3 @@ When users wish to apply a binary patch to WebLogic Server, it is necessary to c
 It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.
 
 The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.
-
-### Network name predictability
-
-The operator uses services to provide stable, well-known DNS names for each server.  These names are known in advance of starting up a pod to run a server, and are used in the `ListenAddress` fields in the WebLogic Server configuration to ensure that servers will always be able to find each other.  This also eliminates the need for pod names or the actual WebLogic Server instance names to be the same as the DNS addresses.
-
-### Draining a node and PodDisruptionBudget
-A Kubernetes cluster administrator can [drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) for repair, upgrade, or scaling down the Kubernetes cluster.
-
-Beginning in version 3.2, the operator takes advantage of the [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets) feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster's server pods evicted simultaneously is determined by the `maxUnavailable` field on the Domain resource. The `.spec.minAvailable` field of the PDB for a cluster is calculated from the difference of the current `replicas` count and `maxUnavailable` value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a `maxUnavailable` of 1, the `.spec.minAvailable` for PDB is set to 2. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster's Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see [Safely Drain a Node](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/) and [PodDisruptionBudget](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/).
