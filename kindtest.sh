@@ -293,7 +293,7 @@ echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
 echo "Run tests..."
-if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-image-cert" ]; then
+if [ "${maven_profile_name}" = "wls-image-cert" ] || [ "${maven_profile_name}" = "fmw-image-cert" ] || [ "${maven_profile_name}" = "kind-sequential" ] || [ "${maven_profile_name}" = "kind-parallel" ]; then
   echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -pl integration-tests -P ${maven_profile_name} verify"
   time mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log"
 else
