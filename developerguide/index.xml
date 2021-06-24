@@ -23,7 +23,7 @@ If you want to submit a pull request to fix a bug or enhance an existing feature
       <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/</guid>
-      <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
+      <description>In addition to the requirements listed here, the following software is also required to obtain and build the operator:
  Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.</description>
     </item>

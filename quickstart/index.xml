@@ -8,27 +8,6 @@
     <language>en-us</language>
     <lastBuildDate>Fri, 22 Feb 2019 15:27:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/quickstart/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Introduction</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/introduction/</link>
-      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/introduction/</guid>
-      <description>Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
-All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
-    </item>
-    
-    <item>
-      <title>Before you begin</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prerequisites/</link>
-      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prerequisites/</guid>
-      <description>For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our cheat sheet. This guide assumes a single node cluster.
-The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see Install Helm.
-You should clone this repository to your local machine so that you have access to the various sample files mentioned throughout this guide:</description>
-    </item>
-    
-    <item>
       <title>Get images</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</link>
       <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>

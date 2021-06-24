@@ -14,9 +14,8 @@
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</guid>
       <description>What is the WebLogic Kubernetes Operator, how can I get started with it, where is its documentation? It&amp;rsquo;s all here.
-How much does it cost? The WebLogic Kubernetes Operator (the “operator”) is open source and free.
-WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
-How can I get help?</description>
+How much does it cost? The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
+WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.</description>
     </item>
     
     <item>
@@ -75,19 +74,9 @@ If you want to submit a pull request to fix a bug or enhance an existing feature
       <pubDate>Sat, 23 Feb 2019 17:19:19 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/</guid>
-      <description>In addition to the requirements listed in the User guide, the following software is also required to obtain and build the operator:
+      <description>In addition to the requirements listed here, the following software is also required to obtain and build the operator:
  Git (1.8 or later recommended) Java Developer Kit (11 required, 11.0.2 recommended) Apache Maven (3.5.3 min, 3.6 recommended)  The operator is written primarily in Java, BASH shell scripts, and WLST scripts.
 Because the target runtime environment for the operator is Oracle Linux, no particular effort has been made to ensure the build or tests run on any other operating system.</description>
-    </item>
-    
-    <item>
-      <title>Use Helm</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/</link>
-      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/</guid>
-      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository. For more details, see Alternatively, install the operator Helm chart from the GitHub chart repository.
-Useful Helm operations Show the available operator configuration values and their defaults:</description>
     </item>
     
     <item>
@@ -96,7 +85,18 @@ Useful Helm operations Show the available operator configuration values and thei
       <pubDate>Sat, 23 Feb 2019 17:04:41 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/</guid>
-      <description>Contents  Starting and stopping servers  Common starting and stopping scenarios Domain lifecycle sample scripts   Shutdown options Restarting servers  Rolling restarts Common restarting scenarios    There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state. To start, stop, or restart servers, modify these fields on the Domain (for example, by using kubectl or the Kubernetes REST API).</description>
+      <description>Contents  Introduction Starting and stopping servers  serverStartPolicy rules Available serverStartPolicy values Administration Server start and stop rules Standalone Managed Server start and stop rules Clustered Managed Server start and stop rules   Server start state Common starting and stopping scenarios  Normal running state Shut down all the servers Only start the Administration Server Shut down a cluster Shut down a specific standalone server Force a specific clustered Managed Server to start   Shutdown options  Shutdown environment variables shutdown rules   Restarting servers  Fields that cause servers to be restarted   Rolling restarts Draining a node and PodDisruptionBudget Common restarting scenarios  Using restartVersion to force the operator to restart servers Restart all the servers in the domain Restart all the servers in the cluster Restart the Administration Server Restart a standalone or clustered Managed Server Full domain restarts   Domain lifecycle sample scripts  Introduction There are fields on the Domain that specify which servers should be running, which servers should be restarted, and the desired initial state.</description>
+    </item>
+    
+    <item>
+      <title>Install the operator</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/installation/</link>
+      <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/installation/</guid>
+      <description>The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade, and uninstall the operator.
+Contents  Operator image Install the operator Helm chart Alternatively, install the operator Helm chart from the GitHub chart repository Upgrade the operator Uninstall the operator  Operator image You can find the operator image in GitHub Container Registry.
+Install the operator Helm chart Use the helm install command to install the operator Helm chart.</description>
     </item>
     
     <item>
@@ -112,34 +112,13 @@ $ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with na
     </item>
     
     <item>
-      <title>Prepare your environment</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/prepare/</link>
+      <title>Important terms</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/terms/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/prepare/</guid>
-      <description>Set up your Kubernetes cluster If you need help setting up a Kubernetes environment, check our cheat sheet.
-After creating Kubernetes clusters, you can optionally:
- Create load balancers to direct traffic to backend domains. Configure Kibana and Elasticsearch for your operator logs.  Load balance with an ingress controller or a web server You can choose a load balancer provider for your WebLogic domains running in a Kubernetes cluster. For information about the current capabilities and setup instructions for each of the supported load balancers, see the WebLogic Operator Load Balancer Samples.</description>
-    </item>
-    
-    <item>
-      <title>Get started</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/</link>
-      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/introduction/</guid>
-      <description>An operator is an application-specific controller that extends Kubernetes to create, configure, and manage instances of complex applications. The WebLogic Kubernetes Operator follows the standard Kubernetes operator pattern, and simplifies the management and operation of WebLogic domains and deployments.
-You can have one or more operators in your Kubernetes cluster that manage one or more WebLogic domains each. We provide a Helm chart to manage the installation and configuration of the operator.</description>
-    </item>
-    
-    <item>
-      <title>Introduction</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/introduction/</link>
-      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/introduction/</guid>
-      <description>Use this Quick Start guide to create a WebLogic Server deployment in a Kubernetes cluster with the WebLogic Kubernetes Operator. Please note that this walk-through is for demonstration purposes only, not for use in production. These instructions assume that you are already familiar with Kubernetes. If you need more detailed instructions, please refer to the User guide.
-All Kubernetes distributions and managed services have small differences. In particular, the way that persistent storage and load balancers are managed varies significantly.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/terms/</guid>
+      <description>This documentation uses several important terms which are intended to have a specific meaning.
+   Term Definition     Cluster Because this term is ambiguous, it will be prefixed to indicate which type of cluster is meant. A WebLogic cluster is a group of WebLogic Managed Servers that together host some application or component and which are able to share load and state between them; a single WebLogic domain can define multiple WebLogic clusters.</description>
     </item>
     
     <item>
@@ -206,13 +185,13 @@ One of the operator&amp;rsquo;s most important jobs is to start and stop WebLogi
     </item>
     
     <item>
-      <title>Demo</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/demo/</link>
-      <pubDate>Sat, 23 Feb 2019 20:51:59 -0500</pubDate>
+      <title>Design philosophy</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/design/</link>
+      <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/demo/</guid>
-      <description>This video provides a demonstration of the WebLogic Kubernetes Operator.
-   This video provides a demonstration of the WebLogic Kubernetes Operator.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/design/</guid>
+      <description>The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
+Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
     </item>
     
     <item>
@@ -236,6 +215,16 @@ A major benefit of using the Remote Console is that it runs in your browser or a
     </item>
     
     <item>
+      <title>Configure the operator using Helm</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/</guid>
+      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository. For more details, see Alternatively, install the operator Helm chart from the GitHub chart repository.
+Useful Helm operations Show the available operator configuration values and their defaults:</description>
+    </item>
+    
+    <item>
       <title>Domain resource</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</link>
       <pubDate>Sat, 23 Feb 2019 16:43:45 -0500</pubDate>
@@ -245,12 +234,13 @@ A major benefit of using the Remote Console is that it runs in your browser or a
     </item>
     
     <item>
-      <title>Set up Kubernetes</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/k8s-setup/</link>
-      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      <title>Operator prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/k8s-setup/</guid>
-      <description>Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon. Cloud providers allow you to provision a managed Kubernetes environment from their management consoles. You could also set up Kubernetes manually using compute resources on a cloud.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
+      <description>For the current production release 3.2.5:
+ Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.14.7+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
     <item>
@@ -260,17 +250,6 @@ A major benefit of using the Remote Console is that it runs in your browser or a
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/reference/swagger/</guid>
       <description>View the Swagger REST API documentation here.</description>
-    </item>
-    
-    <item>
-      <title>Before you begin</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prerequisites/</link>
-      <pubDate>Fri, 22 Feb 2019 15:44:42 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/prerequisites/</guid>
-      <description>For this exercise, you’ll need a Kubernetes cluster. If you need help setting one up, check out our cheat sheet. This guide assumes a single node cluster.
-The operator uses Helm to create and deploy the necessary resources and then run the operator in a Kubernetes cluster. For Helm installation and usage information, see Install Helm.
-You should clone this repository to your local machine so that you have access to the various sample files mentioned throughout this guide:</description>
     </item>
     
     <item>
@@ -319,8 +298,8 @@ When your domain home source type is Domain in PV or Domain in Image, the operat
       <pubDate>Sat, 23 Feb 2019 20:51:45 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/architecture/</guid>
-      <description>The operator consists of the following parts:
- The operator runtime, a process that runs in a container deployed into a Kubernetes Pod and which performs the actual management tasks. The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains. A Helm chart for installing the operator runtime and related resources.</description>
+      <description>Contents  Overall architecture Domain architecture Domain UID Network name predictability Domain state stored outside container images  Overall architecture The operator consists of the following parts:
+ The operator runtime, which is a process that:  Runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. Performs the actual management tasks for domain resources deployed to these namespaces.   A Helm chart for installing the operator runtime and its related resources.</description>
     </item>
     
     <item>
@@ -366,12 +345,12 @@ Contributions must conform to coding and formatting standards.</description>
     </item>
     
     <item>
-      <title>The REST API</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/</link>
+      <title>Use the operator&#39;s REST services</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/</link>
       <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/</guid>
-      <description>Use the operator&amp;rsquo;s REST services The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/</guid>
+      <description>The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
 You can access most of the REST services using GET, for example:
  To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters  All of the REST services require authentication.</description>
     </item>
@@ -386,13 +365,14 @@ You can access most of the REST services using GET, for example:
     </item>
     
     <item>
-      <title>Run a database</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/</link>
-      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      <title>Supported platforms</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/</guid>
-      <description>Run the Oracle database in Kubernetes If you want to run the Oracle database inside your Kubernetes cluster, in order to place your state store, leasing tables, and such, in that database, then you can use this sample to install the database.
-The Oracle Database images are only supported for non-production use. For more details, see My Oracle Support note: Oracle Support for Database Running on Docker (Doc ID 2216342.1)</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
+      <description>Oracle Cloud Infrastructure The Oracle Global Pricing and Licensing site provides details about licensing practices and policies. WebLogic Server and the operator are supported on &amp;ldquo;Authorized Cloud Environments&amp;rdquo; as defined in this Oracle licensing policy and this list of eligible products.
+The official document that defines the supported configurations is here.
+In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud Infrastructure using Oracle Container Engine for Kubernetes, or in a cluster running Oracle Linux Container Services for use with Kubernetes on OCI Compute, and on &amp;ldquo;Authorized Cloud Environments&amp;rdquo;.</description>
     </item>
     
     <item>
@@ -440,16 +420,6 @@ The first option is to implement each mutation as a delta to the previous state.
     </item>
     
     <item>
-      <title>Design philosophy</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/design/</link>
-      <pubDate>Sat, 23 Feb 2019 20:51:51 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/design/</guid>
-      <description>The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment. It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
-Human operators are typically responsible for starting and stopping environments, performing scaling operations, performing manual tasks associated with disaster recovery and high availability needs and coordinating actions with other operators in other data centers.</description>
-    </item>
-    
-    <item>
       <title>Service accounts</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/</link>
       <pubDate>Sat, 23 Feb 2019 17:36:12 -0500</pubDate>
@@ -487,6 +457,16 @@ You will need to obtain the kube.config file for an administrative user and make
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/branching/</guid>
       <description>The main branch is protected and contains source for the latest completed features and bug fixes. While this branch contains active work, we expect to keep it always &amp;ldquo;ready to release.&amp;rdquo; Therefore, longer running feature work will be performed on specific branches, such as feature/dynamic-clusters.
 Because we want to balance separating destabilizing work into feature branches against the possibility of later difficult merges, we encourage developers working on features to pull out any necessary refactoring or improvements that are general purpose into their own shorter-lived branches and create pull requests to main when these smaller work items are completed.</description>
+    </item>
+    
+    <item>
+      <title>Get help</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/get-help/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/get-help/</guid>
+      <description>Oracle Slack We have a closely monitored public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. We can also create dedicated private channels upon request. We would love to hear from you.
+To join our public channel, please visit this site to get an invitation. The invitation email will include details of how to access our Slack workspace.</description>
     </item>
     
     <item>
@@ -579,15 +559,6 @@ $ helm upgrade traefik-operator traefik/traefik \  --namespace traefik \  --reus
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/</guid>
       <description>To support Fast Application Notifications (FAN), Oracle databases configure GRID (Oracle Grid Infrastructure). GRID is typically associated with (and required by) Oracle RAC databases but can also be used in other configurations. Oracle Autonomous Database-Serverless (ATP-S) does not provide GRID.
 When connecting to a database that does not have GRID, the only type of WebLogic Server data source that is supported is the Generic Data Sources. Multi Data Sources and Active GridLink data sources cannot be used because they work with RAC.</description>
-    </item>
-    
-    <item>
-      <title>Istio support</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</link>
-      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
-      <description>Overview WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
     </item>
     
     <item>
@@ -735,6 +706,15 @@ After this, the operator starts watches for changes to Domains and any changes t
     </item>
     
     <item>
+      <title>Istio support</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
+      <description>Overview WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
+    </item>
+    
+    <item>
       <title>Documentation</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/documentation/</link>
       <pubDate>Tue, 19 Mar 2019 07:13:22 -0400</pubDate>
@@ -782,6 +762,15 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/configmaps/</guid>
       <description>I need to provide an instance with access to a ConfigMap.
  Configuration files can be supplied to Kubernetes Pods and Jobs by a ConfigMap, which consists of a set of key-value pairs. Each entry may be accessed by one or more operator-managed nodes as a read-only text file. Access can be provided across the domain, within a single cluster, or for a single server. In each case, the access is configured within the serverPod element of the desired scope.</description>
+    </item>
+    
+    <item>
+      <title>Set up Kubernetes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</guid>
+      <description>Contents  Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud  Prerequisites Quick start   Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes  Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
     
     <item>

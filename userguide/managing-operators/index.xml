@@ -7,5 +7,37 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <lastBuildDate>Sat, 23 Feb 2019 16:43:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Install the operator</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/installation/</link>
+      <pubDate>Sat, 23 Feb 2019 16:47:21 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/installation/</guid>
+      <description>The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade, and uninstall the operator.
+Contents  Operator image Install the operator Helm chart Alternatively, install the operator Helm chart from the GitHub chart repository Upgrade the operator Uninstall the operator  Operator image You can find the operator image in GitHub Container Registry.
+Install the operator Helm chart Use the helm install command to install the operator Helm chart.</description>
+    </item>
+    
+    <item>
+      <title>Configure the operator using Helm</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:43 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/</guid>
+      <description>Contents  Useful Helm operations Operator Helm configuration values  Overall operator information Creating the operator pod WebLogic domain management Elastic Stack integration REST interface configuration Debugging options   Common mistakes and solutions  Note that the operator Helm chart is available from the GitHub chart repository. For more details, see Alternatively, install the operator Helm chart from the GitHub chart repository.
+Useful Helm operations Show the available operator configuration values and their defaults:</description>
+    </item>
+    
+    <item>
+      <title>Use the operator&#39;s REST services</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/</link>
+      <pubDate>Sat, 23 Feb 2019 17:08:32 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/</guid>
+      <description>The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations. Swagger documentation for the REST API is available here.
+You can access most of the REST services using GET, for example:
+ To obtain a list of domains, send a GET request to the URL /operator/latest/domains To obtain a list of clusters in a domain, send a GET request to the URL /operator/latest/domains/&amp;lt;domainUID&amp;gt;/clusters  All of the REST services require authentication.</description>
+    </item>
+    
   </channel>
 </rss>

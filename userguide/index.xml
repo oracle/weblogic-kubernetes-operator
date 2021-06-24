@@ -8,12 +8,42 @@
     <language>en-us</language>
     <lastBuildDate>Fri, 22 Feb 2019 15:27:48 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>Operator prerequisites</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
+      <description>For the current production release 3.2.5:
+ Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, and 1.19.7+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.14.7+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+    </item>
+    
+    <item>
+      <title>Supported platforms</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
+      <description>Oracle Cloud Infrastructure The Oracle Global Pricing and Licensing site provides details about licensing practices and policies. WebLogic Server and the operator are supported on &amp;ldquo;Authorized Cloud Environments&amp;rdquo; as defined in this Oracle licensing policy and this list of eligible products.
+The official document that defines the supported configurations is here.
+In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud Infrastructure using Oracle Container Engine for Kubernetes, or in a cluster running Oracle Linux Container Services for use with Kubernetes on OCI Compute, and on &amp;ldquo;Authorized Cloud Environments&amp;rdquo;.</description>
+    </item>
+    
+    <item>
       <title>Istio support</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</link>
       <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
       <description>Overview WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
+    </item>
+    
+    <item>
+      <title>Set up Kubernetes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</guid>
+      <description>Contents  Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud  Prerequisites Quick start   Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes  Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
     
   </channel>

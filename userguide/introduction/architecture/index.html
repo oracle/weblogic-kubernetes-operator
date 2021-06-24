@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="The operator consists of several parts: the operator runtime, the model for a Kubernetes custom resource definition (CRD), a Helm chart for installing the operator, a variety of sample shell scripts for preparing or packaging WebLogic domains for running in Kubernetes, and sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.">
+    <meta name="description" content="An architectural overview of the operator runtime and related resources.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
@@ -12,20 +12,20 @@
     <title>Architecture :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624538545" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624538545" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1624538896" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1624538896" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624538545"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1624538896"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624538545"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624538545"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1624538896"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1624538896"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624538545"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1624538896"></script>
 
     
   </div>
@@ -90,7 +90,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/quickstart/">
-          <b>1. </b>Quick Start
+          <b> </b>Quick Start
           
       </a>
       
@@ -101,48 +101,6 @@
           
 
         
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/introduction/" title="Introduction" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/quickstart/introduction/">
-        Introduction
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/quickstart/prerequisites/" title="Before you begin" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/quickstart/prerequisites/">
-        Before you begin
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
           
             
             
@@ -271,7 +229,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/">
-          <b>2. </b>User Guide
+          <b> </b>User Guide
           
       </a>
       
@@ -300,7 +258,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/introduction/">
-          Introduction
+          <b> </b>Introduction
           
       </a>
       
@@ -321,9 +279,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/introduction/" title="Get started" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/introduction/introduction/">
-        Get started
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/terms/" title="Important terms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/terms/">
+        Important terms
         
         </a>
     </li>
@@ -342,9 +300,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/demo/" title="Demo" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/introduction/demo/">
-        Demo
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/design/">
+        Design philosophy
         
         </a>
     </li>
@@ -384,9 +342,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/introduction/design/">
-        Design philosophy
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/introduction/get-help/" title="Get help" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/introduction/get-help/">
+        Get help
         
         </a>
     </li>
@@ -414,89 +372,58 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/" title="Overview" class="dd-item
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/" title="Operator prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/">
+        Operator prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
+        Supported platforms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" class="dd-item
         
         
         
         ">
-      <a href="/weblogic-kubernetes-operator/userguide/overview/">
-          Overview
+      <a href="/weblogic-kubernetes-operator/userguide/prepare/">
+          Setup checklist
           
       </a>
       
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/prepare/" title="Prepare your environment" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/overview/prepare/">
-        Prepare your environment
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/overview/k8s-setup/">
-        Set up Kubernetes
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/overview/database/" title="Run a database" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/overview/database/">
-        Run a database
-        
-        </a>
-    </li>
-     
-  
- 
-
-            
-          
-        
-        </ul>
       
     </li>
   
@@ -527,8 +454,6 @@
         <ul>
           
           
-            
-          
           
 
         
@@ -542,62 +467,9 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator" class="dd-item
-        
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">
-          Install the operator
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/" title="Use the operator" class="dd-item
-        
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/">
-          <b> </b>Use the operator
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/" title="Use Helm" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/using-helm/">
-        Use Helm
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/installation/" title="Install the operator" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/installation/">
+        Install the operator
         
         </a>
     </li>
@@ -616,9 +488,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/" title="The REST API" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-the-operator/the-rest-api/">
-        The REST API
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/" title="Configure the operator using Helm" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/">
+        Configure the operator using Helm
         
         </a>
     </li>
@@ -628,10 +500,22 @@
 
             
           
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/" title="Use the operator&#39;s REST services" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-operators/the-rest-api/">
+        Use the operator&#39;s REST services
         
-        </ul>
-      
+        </a>
     </li>
+     
   
  
 
@@ -1267,54 +1151,16 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/" title="Manage FMW domains" class="dd-item
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/" title="Manage FMW Infrastructure domains" class="dd-item
         
         
         
         ">
       <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/">
-          Manage FMW domains
-          
-      </a>
-      
-      
-        <ul>
-          
-          
-            
-          
-          
-
-        
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/" title="Manage FMW Infrastructure domains" class="dd-item
-        
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/fmw-infra/">
           Manage FMW Infrastructure domains
           
       </a>
       
-      
-    </li>
-  
- 
-
-            
-          
-        
-        </ul>
       
     </li>
   
@@ -1505,6 +1351,27 @@
 
             
           
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
         
         </ul>
       
@@ -1527,7 +1394,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/samples/">
-          <b>3. </b>Samples
+          <b> </b>Samples
           
       </a>
       
@@ -1612,6 +1479,32 @@
         ">
       <a href="/weblogic-kubernetes-operator/samples/simple/storage/">
           Storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/samples/simple/database/" title="Run a database" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/samples/simple/database/">
+          Run a database
           
       </a>
       
@@ -2323,7 +2216,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/developerguide/">
-          <b>4. </b>Developer Guide
+          <b> </b>Developer Guide
           
       </a>
       
@@ -2588,7 +2481,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/reference/">
-          <b>5. </b>Reference
+          <b> </b>Reference
           
       </a>
       
@@ -2664,7 +2557,7 @@
         
         ">
       <a href="/weblogic-kubernetes-operator/security/">
-          <b>6. </b>Security
+          <b> </b>Security
           
       </a>
       
@@ -3293,10 +3186,12 @@
   <ul>
     <li>
       <ul>
+        <li><a href="#contents">Contents</a></li>
+        <li><a href="#overall-architecture">Overall architecture</a></li>
+        <li><a href="#domain-uid">Domain UID</a></li>
         <li><a href="#domain-architecture">Domain architecture</a></li>
-        <li><a href="#domain-state-stored-outside-container-images">Domain state stored outside container images</a></li>
         <li><a href="#network-name-predictability">Network name predictability</a></li>
-        <li><a href="#draining-a-node-and-poddisruptionbudget">Draining a node and PodDisruptionBudget</a></li>
+        <li><a href="#domain-state-stored-outside-container-images">Domain state stored outside container images</a></li>
       </ul>
     </li>
   </ul>
@@ -3323,13 +3218,35 @@
         
 
 
+<h3 id="contents">Contents</h3>
+<ul>
+<li><a href="#overall-architecture">Overall architecture</a></li>
+<li><a href="#domain-architecture">Domain architecture</a></li>
+<li><a href="#domain-uid">Domain UID</a></li>
+<li><a href="#network-name-predictability">Network name predictability</a></li>
+<li><a href="#domain-state-stored-outside-container-images">Domain state stored outside container images</a></li>
+</ul>
+<h3 id="overall-architecture">Overall architecture</h3>
 <p>The operator consists of the following parts:</p>
 <ul>
-<li>The operator runtime, a process that runs in a container deployed into a Kubernetes Pod and which performs the actual management tasks.</li>
-<li>The model for a Kubernetes custom resource definition (CRD) that when installed in a Kubernetes cluster allows the Kubernetes API server to manage instances of this new type representing the operational details and status of WebLogic domains.</li>
-<li>A Helm chart for installing the operator runtime and related resources.</li>
-<li>A variety of sample shell scripts for preparing or packaging  WebLogic domains for running in Kubernetes.</li>
-<li>A variety of sample Helm charts or shell scripts for conditionally exposing WebLogic endpoints outside the Kubernetes cluster.</li>
+<li>The operator runtime, which is a process that:
+<ul>
+<li>Runs in a container deployed
+into a Kubernetes Pod and that monitors one
+or more Kubernetes namespaces.</li>
+<li>Performs the actual management tasks
+for domain resources deployed to these namespaces.</li>
+</ul>
+</li>
+<li>A Helm chart for installing the operator runtime and its related resources.</li>
+<li>A Kubernetes custom resource definition (CRD) that,
+when installed, enables the Kubernetes API server
+and the operator to monitor and manage domain resource instances.</li>
+<li>Domain resources that reference WebLogic
+domain configuration, a WebLogic install, and
+anything else necessary to run the domain.</li>
+<li>A variety of samples for preparing or packaging
+WebLogic domains for running in Kubernetes.</li>
 </ul>
 <p>The operator is packaged in a <a href="https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator">container image</a> which you can access using the following <code>docker pull</code> commands:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.2.5
@@ -3337,24 +3254,77 @@
 <p>The operator registers a Kubernetes custom resource definition called <code>domain.weblogic.oracle</code> (shortname <code>domain</code>, plural <code>domains</code>).  More details about the Domain type defined by this CRD, including its schema, are available <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">here</a>.</p>
 <p>The diagram below shows the general layout of high-level components, including optional components, in a Kubernetes cluster that is hosting WebLogic domains and the operator:</p>
 <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/high-level-architecture.png" alt="High level architecture">
-<p>The Kubernetes cluster has several namespaces.  Components may be deployed into namespaces as follows:</p>
+<p>The Kubernetes cluster has several namespaces. Components may be deployed into namespaces as follows:</p>
 <ul>
-<li>The operator is deployed into its own namespace.  If the Elastic Stack integration option is configured, then a Logstash pod will also be deployed in the operator’s namespace.</li>
-<li>WebLogic domains will be deployed into various namespaces.  There can be more than one domain in a namespace, if desired.  There is no limit on the number of domains or namespaces that an operator can manage.  Note that there can be more than one operator in a Kubernetes cluster, but each operator is configured with a list of the specific namespaces that it is responsible for.  The operator will not take any action on any domain that is not in one of the namespaces the operator is configured to manage.</li>
-<li>Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a system, shared namespace such as the <code>kube-system</code> namespace.</li>
-<li>Customers are responsible for Elasticsearch and Kibana deployment, which are typically deployed in the <code>default</code> namespace.</li>
+<li>One or more operators, each deployed into its own namespace.
+<ul>
+<li>There can be more than one operator in a Kubernetes cluster but
+only a single operator per namespace.</li>
+<li>Each operator is configured with
+the specific namespaces that it is responsible for.
+<ul>
+<li>The operator will not take any action on any domain
+that is not in one of the namespaces the operator is configured to manage.</li>
+<li>Multiple operators cannot manage the same namespace.</li>
+<li>The operator can be configured to monitor
+its own namespace.</li>
 </ul>
+</li>
+<li>There is no limit on the number of domains or namespaces that an operator can manage.</li>
+<li>If the Elastic Stack integration option is configured to monitor the operator,
+then a Logstash pod will also be deployed in the operator’s namespace.</li>
+</ul>
+</li>
+<li>WebLogic domain resources deployed into various namespaces.
+<ul>
+<li>There can be more than one domain in a namespace, if desired.</li>
+<li>Every domain resource must be configured with a <a href="domain-uid">domain unique identifier</a>.</li>
+</ul>
+</li>
+<li>Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.</li>
+<li>Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.</li>
+</ul>
+<h3 id="domain-uid">Domain UID</h3>
+<p>Every domain resource must be configured with a domain unique identifier
+which is a string and may also be called a <code>Domain UID</code>,
+<code>domainUID</code>, or <code>DOMAIN_UID</code> depending on the context.
+This value is distinct and need not match the domain name from
+the WebLogic domain configuration. The operator will
+use this as a name prefix for the domain related resources
+that it creates for you (such as services and pods).</p>
+<p>A Domain UID is set on a domain resource using <code>spec.domainUID</code>,
+and defaults to the value of <code>metadata.name</code>. The
+<code>spec.domainUID</code> domain resource field is usually
+left unset in order to take advantage of this default.</p>
+<p>It is recommended that a Domain UID be configured to be unique
+across all Kubernetes namespaces and even across different Kubernetes
+clusters in order to assist in future work to identify
+related domains in active-passive scenarios across data centers;
+however, it is only required that this value
+be unique within a namespace, similarly to the names of Kubernetes
+resources.</p>
+<p>As a convention, any resource that is associated with a particular Domain UID
+is typically given a Kubernetes label named <code>weblogic.domainUID</code> that
+is assigned to that UID. If the operator creates a resource for
+you on behalf of a particular domain, it will follow this
+convention. For example, to see all pods created with
+the <code>weblogic.domainUID</code> label in a Kubernetes cluster try:
+<code>kubectl get pods -l weblogic.domainUID --all-namespaces=true --show-labels=true</code>.</p>
+<p>A Domain UID may be up to 45 characters long. For
+more details about Domain UID name requirements, see
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 <h3 id="domain-architecture">Domain architecture</h3>
 <p>The diagram below shows how the various parts of a WebLogic domain are manifest in Kubernetes by the operator.</p>
 <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/domain-architecture2.png" alt="Domain architecture">
 <p>This diagram shows the following details:</p>
 <ul>
 <li>An optional, persistent volume is created by the customer using one of the available providers.  If the persistent volume is shared across the domain or members of a cluster, then the chosen provider must support “Read Write Many” access mode.  The shared state on the persistent volume may include the <code>domain</code> directory, the <code>applications</code> directory, a directory for storing logs, and a directory for any file-based persistence stores.</li>
-<li>A pod is created for the WebLogic Server Administration Server.  This pod is labeled with <code>weblogic.domainUID</code>, <code>weblogic.serverName</code>, and <code>weblogic.domainName</code>.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.</li>
-<li>A <code>ClusterIP</code> type service is created for the Administration Server pod.  This service provides a stable, well-known network (DNS) name for the Administration Server.  This name is derived from the <code>domainUID</code> and the Administration Server name, and it is known before starting up any pod.  The Administration Server <code>ListenAddress</code> is set to this well-known name.  <code>ClusterIP</code> type services are only visible inside the Kubernetes cluster.  They are used to provide the well-known names that all of the servers in a domain use to communicate with each other.  This service is labeled with <code>weblogic.domainUID</code> and <code>weblogic.domainName</code>.</li>
+<li>A pod is created for the WebLogic Server Administration Server.  This pod is named <code>DOMAIN_UID-wlservername</code> and is labeled with <code>weblogic.domainUID</code>, <code>weblogic.serverName</code>, and <code>weblogic.domainName</code>.  One container runs in this pod.  WebLogic Node Manager and Administration Server processes are run inside this container.  The Node Manager process is used as an internal implementation detail for the liveness probe which we will descibe in more detail later, for patching, and to provide monitoring and control capabilities to the Administration Console.  It is not intended to be used for other purposes, and it may be removed in some future release.</li>
+<li>A <code>ClusterIP</code> type service is created for the Administration Server pod.  This service provides a stable, well-known network (DNS) name for the Administration Server.  This name is derived from the <code>domainUID</code> and the Administration Server name as described <a href="#network-name-predictability">here</a>, and it is known before starting up any pod.  The Administration Server <code>ListenAddress</code> is set to this well-known name.  <code>ClusterIP</code> type services are only visible inside the Kubernetes cluster.  They are used to provide the well-known names that all of the servers in a domain use to communicate with each other.  This service is labeled with <code>weblogic.domainUID</code> and <code>weblogic.domainName</code>.</li>
 <li>A <code>NodePort</code> type service is optionally created for the Administration Server pod.  This service provides HTTP access to the Administration Server to clients that are outside the Kubernetes cluster.  This service is intended to be used to access the WebLogic Server Administration Console or for the T3 protocol for WLST connections.  This service is labeled with <code>weblogic.domainUID</code> and <code>weblogic.domainName</code>.</li>
-<li>A pod is created for each WebLogic Server Managed Server.  These pods are labeled with <code>weblogic.domainUID</code>, <code>weblogic.serverName</code>, and <code>weblogic.domainName</code>.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe.  It is not intended to be used for other purposes, and it may be removed in some future release.</li>
-<li>A <code>ClusterIP</code> type service is created for each Managed Server pod that contains a Managed Server that is not part of a WebLogic cluster.  These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with <code>weblogic.domainUID</code> and <code>weblogic.domainName</code>.  Customers must expose these services using a load balancer or <code>NodePort</code> type service to expose these endpoints outside the Kubernetes cluster.</li>
+<li>A pod is created for each WebLogic Server Managed Server.  These pods are named <code>DOMAIN_UID-wlservername</code> and are labeled with <code>weblogic.domainUID</code>, <code>weblogic.serverName</code>, and <code>weblogic.domainName</code>.  One container runs in each pod.  WebLogic Node Manager and Managed Server processes are run inside each of these containers.  The Node Manager process is used as an internal implementation detail for the liveness probe which we will describe in more detail later.  It is not intended to be used for other purposes, and it may be removed in some future release.</li>
+<li>A <code>ClusterIP</code> type service is created for each Managed Server pod as described <a href="#network-name-predictability">here</a>. These services are intended to be used to access applications running on the Managed Servers.  These services are labeled with <code>weblogic.domainUID</code> and <code>weblogic.domainName</code>.</li>
+<li>A <code>ClusterIP</code> type service is also created for each WebLogic cluster as described <a href="#network-name-predictability">here</a>.  Customers can expose these services using a load balancer or <code>NodePort</code> type service to expose these endpoints outside the Kubernetes cluster.</li>
 <li>A <code>PodDisruptionBudget</code> is created for each WebLogic cluster. These pod disruption budgets are labeled with <code>weblogic.domainUID</code>, <code>weblogic.clusterName</code> and <code>weblogic.domainName</code>.</li>
 <li>An Ingress may optionally be created by the customer for each WebLogic cluster.  An Ingress provides load balanced HTTP access to all Managed Servers in that WebLogic cluster.  The load balancer updates its routing table for an Ingress every time a Managed Server in the WebLogic cluster becomes “ready” or ceases to be able to service requests, such that the Ingress always points to just those Managed Servers that are able to handle user requests.</li>
 </ul>
@@ -3376,19 +3346,24 @@ Within the container, the following aspects are configured by the operator:</p>
 <li>The readiness probe is configured to use the WebLogic Server ReadyApp framework.  The readiness probe determines if a server is ready to accept user requests.  The readiness probe is used to determine when a server should be included in a load balancer&rsquo;s endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes. For details about readiness probe customization, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/#readiness-probe-customization">Readiness probe customization</a>.</li>
 <li>A shutdown hook is configured that will execute a script that performs a graceful shutdown of the server.  This ensures that servers have an opportunity to shut down cleanly before they are killed.</li>
 </ul>
+<h3 id="network-name-predictability">Network name predictability</h3>
+<p>The operator deploys services with predictable well-defined DNS names
+for each WebLogic server and cluster in your WebLogic configuration.
+The name of a WebLogic server service is <code>DOMAIN_UID-wlservername</code>
+and the name of a WebLogic server cluster is <code>DOMAIN_UID-cluster-wlclustername</code>,
+all in lowercase, with underscores <code>_</code> converted to hyphens <code>-</code>.</p>
+<p>The operator also automatically overrides the <code>ListenAddress</code> fields in each
+running WebLogic Server to match its service name in order
+to ensure that the servers will always be able to find each other.</p>
+<p>For details, see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
 <h3 id="domain-state-stored-outside-container-images">Domain state stored outside container images</h3>
-<p>The operator expects (and requires) that all state be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.</p>
+<p>The operator expects (and requires) that all state that is expected to outlive the life of a pod be stored outside of the images that are used to run the domain.  This means either in a persistent file system, or in a database.  The WebLogic configuration, that is, the domain directory and the applications directory may come from the image or a persistent volume.  However, other state, such as file-based persistent stores, and such, must be stored on a persistent volume or in a database.  All of the containers that are participating in the WebLogic domain use the same image, and take on their personality; that is, which server they execute, at startup time. Each Pod mounts storage, according to the Domain, and has access to the state information that it needs to fulfill its role in the domain.</p>
 <p>It is worth providing some background information on why this approach was adopted, in addition to the fact that this separation is consistent with other existing operators (for other products) and the Kubernetes “cattle, not pets” philosophy when it comes to containers.</p>
 <p>The external state approach allows the operator to treat the images as essentially immutable, read-only, binary images.  This means that the image needs to be pulled only once, and that many domains can share the same image.  This helps to minimize the amount of bandwidth and storage needed for WebLogic Server images.</p>
 <p>This approach also eliminates the need to manage any state created in a running container, because all of the state that needs to be preserved is written into either the persistent volume or a database backend. The containers and pods are completely throwaway and can be replaced with new containers and pods, as necessary.  This makes handling failures and rolling restarts much simpler because there is no need to preserve any state inside a running container.</p>
 <p>When users wish to apply a binary patch to WebLogic Server, it is necessary to create only a single new, patched image.  If desired, any domains that are running may be updated to this new patched image with a rolling restart, because there is no state in the containers.</p>
 <p>It is envisaged that in some future release of the operator, it will be desirable to be able to “move” or “copy” domains in order to support scenarios like Kubernetes federation, high availability, and disaster recovery.  Separating the state from the running containers is seen as a way to greatly simplify this feature, and to minimize the amount of data that would need to be moved over the network, because the configuration is generally much smaller than the size of WebLogic Server images.</p>
 <p>The team developing the operator felt that these considerations provided adequate justification for adopting the external state approach.</p>
-<h3 id="network-name-predictability">Network name predictability</h3>
-<p>The operator uses services to provide stable, well-known DNS names for each server.  These names are known in advance of starting up a pod to run a server, and are used in the <code>ListenAddress</code> fields in the WebLogic Server configuration to ensure that servers will always be able to find each other.  This also eliminates the need for pod names or the actual WebLogic Server instance names to be the same as the DNS addresses.</p>
-<h3 id="draining-a-node-and-poddisruptionbudget">Draining a node and PodDisruptionBudget</h3>
-<p>A Kubernetes cluster administrator can <a href="https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/">drain a Node</a> for repair, upgrade, or scaling down the Kubernetes cluster.</p>
-<p>Beginning in version 3.2, the operator takes advantage of the <a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/#pod-disruption-budgets">PodDisruptionBudget</a> feature offered by Kubernetes for high availability during a Node drain operation. The operator creates a PodDisruptionBudget (PDB) for each WebLogic cluster in the Domain namespace to limit the number of WebLogic Server pods simultaneously evicted when draining a node. The maximum number of WebLogic cluster&rsquo;s server pods evicted simultaneously is determined by the <code>maxUnavailable</code> field on the Domain resource. The <code>.spec.minAvailable</code> field of the PDB for a cluster is calculated from the difference of the current <code>replicas</code> count and <code>maxUnavailable</code> value configured for the cluster. For example, if you have a WebLogic cluster with three replicas and a <code>maxUnavailable</code> of 1, the <code>.spec.minAvailable</code> for PDB is set to 2. In this case, Kubernetes ensures that at least two pods for the WebLogic cluster&rsquo;s Managed Servers are available at any given time, and it only evicts a pod when all three pods are ready. For details about safely draining a node and the PodDisruptionBudget concept, see <a href="https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/">Safely Drain a Node</a> and <a href="https://kubernetes.io/docs/concepts/workloads/pods/disruptions/">PodDisruptionBudget</a>.</p>
 
 
 <footer class="footline">
@@ -3517,38 +3492,6 @@ Within the container, the following aspects are configured by the operator:</p>
             
         
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
             
         
                     
@@ -3669,19 +3612,6 @@ Within the container, the following aspects are configured by the operator:</p>
                     
 
                     
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
             
         
                     
@@ -3700,40 +3630,6 @@ Within the container, the following aspects are configured by the operator:</p>
                     
             
         
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                        
-                    
-                    
-
                     
                         
             
@@ -3795,6 +3691,19 @@ Within the container, the following aspects are configured by the operator:</p>
                     
             
         
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
                     
             
         
@@ -4214,26 +4123,8 @@ Within the container, the following aspects are configured by the operator:</p>
 
                     
                     
-                        
-                    
                     
 
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
                     
             
         
@@ -4366,6 +4257,22 @@ Within the container, the following aspects are configured by the operator:</p>
             
         
                     
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
             
         
                     
@@ -4398,6 +4305,22 @@ Within the container, the following aspects are configured by the operator:</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5508,10 +5431,10 @@ Within the container, the following aspects are configured by the operator:</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/introduction/demo/" title="Demo"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/introduction/design/" title="Design philosophy" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/introduction/get-help/" title="Get help" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -5521,19 +5444,19 @@ Within the container, the following aspects are configured by the operator:</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624538545"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1624538896"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1624538545"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624538545"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1624538896"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1624538896"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624538545"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1624538896"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
