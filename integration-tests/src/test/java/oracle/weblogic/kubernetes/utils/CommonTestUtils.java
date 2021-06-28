@@ -76,6 +76,7 @@ import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
@@ -83,6 +84,7 @@ import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -170,6 +172,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJ
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
@@ -4023,5 +4026,80 @@ public class CommonTestUtils {
         }
       }
     }
+  }
+
+  /**
+   * Build image with unique name, create corresponding docker secret and push to registry.
+   *
+   * @param dockerFileDir directory where dockerfile is located
+   * @param baseImageName base image name
+   * @param namespace image namespace
+   * @param secretName docker secretname for image
+   * @param extraDockerArgs user specified extra docker args
+   * @return image name
+   */
+  public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
+                                                String namespace, String secretName,
+                                                String extraDockerArgs) throws ApiException {
+    // create unique image name with date
+    final String imageTag = TestUtils.getDateAndTimeStamp();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
+
+    final String image = imageName + ":" + imageTag;
+    LoggingFacade logger = getLogger();
+    //build image
+    assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
+    logger.info("image is created with name {0}", image);
+    if (!Namespace.exists(namespace)) {
+      createNamespace(namespace);
+    }
+
+    //create registry docker secret
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, secretName, namespace);
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(image);
+
+    return image;
+  }
+
+  /**
+   * Adds proxy extra arguments for docker command.
+   **/
+  public static String getDockerExtraArgs() {
+    StringBuffer extraArgs = new StringBuffer("");
+
+    String httpsproxy = Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
+    String httpproxy = Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
+    String noproxy = Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
+    LoggingFacade logger = getLogger();
+    logger.info(" httpsproxy : " + httpsproxy);
+    String proxyHost = "";
+    StringBuffer mvnArgs = new StringBuffer("");
+    if (httpsproxy != null) {
+      logger.info(" httpsproxy : " + httpsproxy);
+      proxyHost = httpsproxy.substring(httpsproxy.lastIndexOf("www"), httpsproxy.lastIndexOf(":"));
+      logger.info(" proxyHost: " + proxyHost);
+      mvnArgs.append(String.format(" -Dhttps.proxyHost=%s -Dhttps.proxyPort=80 ",
+          proxyHost));
+      extraArgs.append(String.format(" --build-arg https_proxy=%s", httpsproxy));
+    }
+    if (httpproxy != null) {
+      logger.info(" httpproxy : " + httpproxy);
+      proxyHost = httpproxy.substring(httpproxy.lastIndexOf("www"), httpproxy.lastIndexOf(":"));
+      logger.info(" proxyHost: " + proxyHost);
+      mvnArgs.append(String.format(" -Dhttp.proxyHost=%s -Dhttp.proxyPort=80 ",
+          proxyHost));
+      extraArgs.append(String.format(" --build-arg http_proxy=%s", httpproxy));
+    }
+    if (noproxy != null) {
+      logger.info(" noproxy : " + noproxy);
+      extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
+    }
+    if (!mvnArgs.equals("")) {
+      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
+    }
+    return extraArgs.toString();
   }
 }
