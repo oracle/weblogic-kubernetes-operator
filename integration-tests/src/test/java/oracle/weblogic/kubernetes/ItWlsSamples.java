@@ -36,6 +36,7 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -54,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyO
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -93,6 +95,8 @@ public class ItWlsSamples {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path tempSamplePath = Paths.get(WORK_DIR, "wls-sample-testing");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+  private static String UPDATE_MODEL_FILE = "model-samples-update-domain.yaml";
+  private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
 
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
@@ -246,6 +250,11 @@ public class ItWlsSamples {
 
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     createDomainAndVerify(domainName, sampleBase);
+
+    if (script.equals("wdt")) {
+      copyModelFileForUpdateDomain(sampleBase);
+      updateDomainAndVerify(domainName, sampleBase, domainNamespace);
+    }
   }
 
 
@@ -392,7 +401,14 @@ public class ItWlsSamples {
   private void executeLifecycleScript(String script, String scriptType, String entityName, String extraParams) {
     CommandParams params;
     boolean result;
-    String commonParameters = " -d " + domainName + " -n " + domainNamespace;
+    String commonParameters;
+    // This method assumes that the domain lifecycle is run on on domain1 only. The update-domain.sh is only
+    // for domain-on-pv with wdt use case. So, setting the domain name and namespace using the extraParams args
+    if (scriptType.equals("INTROSPECT_DOMAIN")) {
+      commonParameters = extraParams;
+    } else {
+      commonParameters = " -d " + domainName + " -n " + domainNamespace;
+    }
     params = new CommandParams().defaults();
     if (scriptType.equals(SERVER_LIFECYCLE)) {
       params.command("sh "
@@ -427,6 +443,15 @@ public class ItWlsSamples {
 
       logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
       copyDirectory(samplePath.toFile(), tempSamplePath.toFile());
+    });
+  }
+
+  private void copyModelFileForUpdateDomain(Path sampleBase) {
+    assertDoesNotThrow(() -> {
+      copyFile(Paths.get(MODEL_DIR, UPDATE_MODEL_FILE).toFile(),
+               Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile());
+      copyFile(Paths.get(MODEL_DIR, UPDATE_MODEL_PROPERTIES).toFile(),
+          Paths.get(sampleBase.toString(),UPDATE_MODEL_PROPERTIES).toFile());
     });
   }
 
@@ -566,8 +591,8 @@ public class ItWlsSamples {
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
     withStandardRetryPolicy
             .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                            + "(elapsed time {2}ms, remaining time {3}ms)",
                             domainName,
                             domainNamespace,
                             condition.getElapsedTimeInMS(),
@@ -578,6 +603,69 @@ public class ItWlsSamples {
     final String adminServerPodName = domainName + "-" + adminServerName;
 
     final String managedServerNameBase = "managed-server";
+    String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
+    int replicaCount = 2;
+
+    // verify the admin server service and pod is created
+    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+
+    // verify managed server services created and pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
+    }
+  }
+
+  private void updateDomainAndVerify(String domainName, Path sampleBase, String domainNamespace) {
+    //First copy the update model file to wdt dir and rename it wdt-model_dynamic.yaml
+    assertDoesNotThrow(() -> {
+      copyFile(Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile(),
+          Paths.get(sampleBase.toString(), "wdt/wdt_model_dynamic.yaml").toFile());
+    });
+    // run create-domain.sh to create domain.yaml file
+    CommandParams params = new CommandParams().defaults();
+    params.command("sh "
+        + Paths.get(sampleBase.toString(), "update-domain.sh").toString()
+        + " -i " + Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString()
+        + "," + Paths.get(sampleBase.toString(), UPDATE_MODEL_PROPERTIES).toString()
+        + " -o "
+        + Paths.get(sampleBase.toString()));
+
+    logger.info("Run update-domain.sh to create domain.yaml file");
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain.yaml");
+
+    // Have to initiate introspection of the domain to start the second cluster that was just added
+    // Call introspectDomain.sh
+    String extraParams = " -d " + domainName + " -n " + domainNamespace;
+    executeLifecycleScript("introspectDomain.sh", "INTROSPECT_DOMAIN", "", extraParams);
+
+    /*
+    // run kubectl to create the domain
+    logger.info("Run kubectl to create the domain");
+    params = new CommandParams().defaults();
+    params.command("kubectl apply -f "
+        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create domain custom resource");
+
+    // wait for the domain to exist
+    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainName,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+
+     */
+    final String adminServerName = "admin-server";
+    final String adminServerPodName = domainName + "-" + adminServerName;
+
+    final String managedServerNameBase = "c2-managed-server";
     String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
     int replicaCount = 2;
 
@@ -601,8 +689,8 @@ public class ItWlsSamples {
 
     withStandardRetryPolicy
             .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
+                            + "(elapsed time {2}ms, remaining time {3}ms)",
                             domainName,
                             domainNamespace,
                             condition.getElapsedTimeInMS(),
