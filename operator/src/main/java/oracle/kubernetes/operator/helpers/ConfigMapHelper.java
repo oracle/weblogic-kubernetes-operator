@@ -504,7 +504,11 @@ public class ConfigMapHelper {
     }
 
     private long timeSinceJobStart(Packet packet) {
-      return System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME));
+      return System.currentTimeMillis() - getStartTime(packet);
+    }
+
+    private Long getStartTime(Packet packet) {
+      return Optional.ofNullable((Long) packet.get(JobHelper.START_TIME)).orElse(0L);
     }
 
   }
