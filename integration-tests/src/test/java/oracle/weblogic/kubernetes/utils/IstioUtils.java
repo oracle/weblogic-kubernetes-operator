@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -20,12 +21,14 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -40,6 +43,7 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The istio utility class for tests.
@@ -314,13 +318,42 @@ public class IstioUtils {
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @param miiImage used image name
+   * @param configmapName used configmap name
    * @param clusterName name of the cluster to add in domain
+   * @return domain object of the domain resource
+   */
+  public static Domain createIstioDomainResource(String domainUid, String domNamespace,
+                                                 String adminSecretName, String repoSecretName,
+                                                 String encryptionSecretName, int replicaCount,
+                                                 String miiImage, String configmapName, String clusterName) {
+    return createIstioDomainResource(domainUid,
+        domNamespace, adminSecretName,repoSecretName,
+        encryptionSecretName, replicaCount, miiImage,
+        configmapName, clusterName, null, null);
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource for istio using the basic model-in-image
+   * image with exporter sidecar.
+   *
+   * @param domainUid uid of the domain
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param miiImage used image name
+   * @param configmapName used configmap name
+   * @param clusterName name of the cluster to add in domain
+   * @param monexpConfig path to exporter configuration yaml file
+   * @param monexpImage name of monitoring exporter sidecar image
    * @return domain object of the domain resource
    */
   public static Domain createIstioDomainResource(String domainUid, String domNamespace,
                                       String adminSecretName, String repoSecretName,
                                       String encryptionSecretName, int replicaCount,
-                                      String miiImage, String configmapName, String clusterName) {
+                                      String miiImage, String configmapName, String clusterName,
+                                      String monexpConfig, String monexpImage) {
 
     // create the domain CR
     Domain domain = new Domain()
@@ -363,6 +396,28 @@ public class IstioUtils {
                     .onlineUpdate(new OnlineUpdate().enabled(true))
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    if (monexpConfig != null) {
+      LoggingFacade logger = getLogger();
+      logger.info("yaml config file path : " + monexpConfig);
+      String contents = null;
+      try {
+        contents = new String(Files.readAllBytes(Paths.get(monexpConfig)));
+      } catch (IOException e) {
+        e.printStackTrace();
+        fail("Failed to read configuration file");
+      }
+      String imagePullPolicy = "IfNotPresent";
+      if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+        imagePullPolicy = "Always";
+      }
+      domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
+          .image(monexpImage)
+          .imagePullPolicy(imagePullPolicy)
+          .configuration(contents));
+
+      logger.info("Created domain CR with Monitoring exporter configuration : "
+          + domain.getSpec().getMonitoringExporter().toString());
+    }
     setPodAntiAffinity(domain);
     return domain;
   }

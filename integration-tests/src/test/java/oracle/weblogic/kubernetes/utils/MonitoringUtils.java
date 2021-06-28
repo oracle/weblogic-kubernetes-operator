@@ -7,11 +7,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
@@ -19,12 +24,15 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -105,6 +113,31 @@ public class MonitoringUtils {
   }
 
   /**
+   * Clone monitoring exporter github src.
+   * @param monitoringExporterSrcDir directory containing github monitoring exporter
+   */
+  public static void cloneMonitoringExporter(String monitoringExporterSrcDir) {
+    LoggingFacade logger = getLogger();
+    logger.info("create a staging location for monitoring exporter github");
+    Path monitoringTemp = Paths.get(monitoringExporterSrcDir);
+    assertDoesNotThrow(() -> deleteDirectory(monitoringTemp.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
+
+    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
+        .orElse("master");
+    CommandParams params = Command.defaultCommandParams()
+        .command("git clone -b "
+            + monitoringExporterBranch
+            + " "
+            + MONITORING_EXPORTER_DOWNLOAD_URL
+            + " " + monitoringTemp)
+        .saveResults(true)
+        .redirect(false);
+    assertTrue(() -> Command.withParams(params)
+        .execute());
+  }
+
+  /**
    * Check metrics using Prometheus.
    *
    * @param searchKey   - metric query expression
@@ -167,4 +200,42 @@ public class MonitoringUtils {
   public static Callable<Boolean> searchForKey(String cmd, String searchKey) {
     return () -> execCommandCheckResponse(cmd, searchKey);
   }
+
+  /**
+   * Edit Prometheus Config Map.
+   * @param oldRegex search for existed value to replace
+   * @param newRegex new value
+   * @param prometheusNS namespace for prometheus pod
+   * @param cmName name of Config Map to modify
+   * @throws ApiException when update fails
+   */
+  public static void editPrometheusCM(String oldRegex, String newRegex,
+                                      String prometheusNS, String cmName) throws ApiException {
+    List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(prometheusNS).getItems();
+    V1ConfigMap promCm = cmList.stream()
+        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    assertNotNull(promCm,"Can't find cm for " + cmName);
+    Map<String, String> cmData = promCm.getData();
+    String values = cmData.get("prometheus.yml").replace(oldRegex,newRegex);
+    assertNotNull(values, "can't find values for key prometheus.yml");
+    cmData.replace("prometheus.yml", values);
+
+    promCm.setData(cmData);
+    Kubernetes.replaceConfigMap(promCm);
+
+    cmList = Kubernetes.listConfigMaps(prometheusNS).getItems();
+
+    promCm = cmList.stream()
+        .filter(cm -> cmName.equals(cm.getMetadata().getName()))
+        .findAny()
+        .orElse(null);
+
+    assertNotNull(promCm,"Can't find cm for " + cmName);
+    assertNotNull(promCm.getData(), "Can't retreive the cm data for " + cmName + " after modification");
+
+  }
+
 }
