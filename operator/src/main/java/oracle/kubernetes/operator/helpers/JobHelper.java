@@ -408,19 +408,15 @@ public class JobHelper {
 
     private Step replaceOrCreateJob(Packet packet, Step next) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      java.lang.String domainUid = info.getDomain().getDomainUid();
-      java.lang.String namespace = info.getNamespace();
-      String jobName = JobHelper.createJobName(domainUid);
-      return new CallBuilder().readJobAsync(jobName, namespace, domainUid,
-              new ReplaceOrCreateStep(jobName, next));
+      return new CallBuilder().readJobAsync(JobHelper.createJobName(info.getDomain().getDomainUid()),
+              info.getNamespace(), info.getDomain().getDomainUid(),
+              new ReplaceOrCreateStep(next));
     }
 
     private class ReplaceOrCreateStep extends DefaultResponseStep {
-      private final String jobName;
 
-      ReplaceOrCreateStep(String jobName, Step next) {
+      ReplaceOrCreateStep(Step next) {
         super(next);
-        this.jobName = jobName;
       }
 
       @Override
