@@ -515,28 +515,26 @@ public class JobHelper {
         if (jobConditionsReason.size() == 0) {
           jobConditionsReason.add(DomainStatusUpdater.ERR_INTROSPECTOR);
         }
-        if (System.currentTimeMillis() > getJobDeleteTime(domainIntrospectorJob)) {
-          return doNext(
-                  DomainStatusUpdater.createFailureRelatedSteps(
-                          onSeparateLines(jobConditionsReason),
-                          onSeparateLines(severeStatuses),
-                          getNext()),
-                  packet);
+        //Introspector job is incomplete, update domain status and terminate processing
+        Step nextStep = null;
+        if (System.currentTimeMillis() > getJobLazyDeletionTime(domainIntrospectorJob)) {
+          //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
+          //execute the next step
+          nextStep = getNext();
         }
 
-        //Introspector job is incomplete, update domain status and terminate processing
         return doNext(
                 DomainStatusUpdater.createFailureRelatedSteps(
                         onSeparateLines(jobConditionsReason),
                         onSeparateLines(severeStatuses),
-                        null),
+                        nextStep),
                 packet);
       }
 
       return doNext(packet);
     }
 
-    private Long getJobDeleteTime(V1Job domainIntrospectorJob) {
+    private Long getJobLazyDeletionTime(V1Job domainIntrospectorJob) {
       int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
       return Optional.ofNullable(domainIntrospectorJob.getMetadata())
               .map(m -> m.getCreationTimestamp()).map(t -> t.toInstant().toEpochMilli()).orElse(0L)
