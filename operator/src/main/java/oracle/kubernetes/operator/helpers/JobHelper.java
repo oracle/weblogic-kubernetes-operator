@@ -429,6 +429,8 @@ public class JobHelper {
         }
 
         if (job != null) {
+          packet.putIfAbsent(START_TIME, Optional.ofNullable(job.getMetadata())
+                  .map(m -> m.getCreationTimestamp()).map(t -> t.toInstant().toEpochMilli()).orElse(0L));
           return doNext(Step.chain(
                   createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                   readDomainIntrospectorPodLogStep(null),
