@@ -537,10 +537,10 @@ public class JobHelper {
     }
 
     private Long getJobDeleteTime(V1Job domainIntrospectorJob) {
-      Long retryIntervalMillis = 120 * 1000L; //Retry interval is same as make-right interval
+      int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
       return Optional.ofNullable(domainIntrospectorJob.getMetadata())
               .map(m -> m.getCreationTimestamp()).map(t -> t.toInstant().toEpochMilli()).orElse(0L)
-              + retryIntervalMillis;
+              + (retryIntervalSeconds * 1000L);
     }
 
     private boolean isNotComplete(V1Job domainIntrospectorJob) {
