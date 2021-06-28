@@ -180,7 +180,7 @@ public class ItOpUpgradeFmwDomainInPV {
         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
             + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 

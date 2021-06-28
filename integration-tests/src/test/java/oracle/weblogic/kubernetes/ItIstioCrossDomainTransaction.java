@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -150,7 +151,7 @@ public class ItIstioCrossDomainTransaction {
 
     //Start oracleDB
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, 0, domain2Namespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace);
       String.format("Failed to start Oracle DB");
     });
 
@@ -240,7 +241,7 @@ public class ItIstioCrossDomainTransaction {
     String appSource1 = distDir.toString() + "/cdttxservlet.war";
     logger.info("Application is in {0}", appSource1);
 
-    //build application archive for JMS Send/Receive 
+    //build application archive for JMS Send/Receive
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
         "build", domain1Namespace);
     logger.info("distDir is {0}", distDir.toString());
@@ -257,7 +258,7 @@ public class ItIstioCrossDomainTransaction {
          mdbSrcDir.toString(), mdbDestDir.toString()),
         "Could not copy mdbtopic application directory");
 
-    Path template = Paths.get(PROPS_TEMP_DIR, 
+    Path template = Paths.get(PROPS_TEMP_DIR,
            "mdbtopic/src/application/MdbTopic.java");
 
     // Add the domain2 namespace decorated URL to the providerURL of MDB
@@ -345,35 +346,35 @@ public class ItIstioCrossDomainTransaction {
     istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort 
+    // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = 
+      boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, "domain1-" + domain1Namespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console on domain1");
       logger.info("WebLogic console on domain1 is accessible");
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-  
+
   }
 
 
   /*
    * Test verifies a cross-domain transaction in a istio enabled environment.
-   * domain-in-image using wdt is used to create 2 domains in different 
+   * domain-in-image using wdt is used to create 2 domains in different
    * namespaces. An app is deployed to both the domains and the servlet
    * is invoked which starts a transaction that spans both domains.
-   * The application consists of 
-   *  (a) servlet 
-   *  (b) a remote object that defines a method to register a 
-   *      simple javax.transaction.Synchronization object. 
-   * When the servlet is invoked, a global transaction is started, and the 
-   * specified list of server URLs is used to look up the remote objects and 
-   * register a Synchronization object on each server. 
-   * Finally, the transaction is committed.  
-   * If the server listen-addresses are resolvable between the transaction 
+   * The application consists of
+   *  (a) servlet
+   *  (b) a remote object that defines a method to register a
+   *      simple javax.transaction.Synchronization object.
+   * When the servlet is invoked, a global transaction is started, and the
+   * specified list of server URLs is used to look up the remote objects and
+   * register a Synchronization object on each server.
+   * Finally, the transaction is committed.
+   * If the server listen-addresses are resolvable between the transaction
    * participants, then the transaction should complete successfully
    */
   @Order(1)
@@ -403,15 +404,15 @@ public class ItIstioCrossDomainTransaction {
   }
 
   /*
-   * Test verifies a cross-domain transaction with re-connection is istio env. 
-   * It makes sure the disitibuted transaction is completed successfully 
+   * Test verifies a cross-domain transaction with re-connection is istio env.
+   * It makes sure the disitibuted transaction is completed successfully
    * when a coordinator server is re-started after writing to transcation log
-   * A servlet is deployed to the admin server of domain1. 
-   * The servlet starts a transaction with TMAfterTLogBeforeCommitExit 
-   * transaction property set. The servlet inserts data into an Oracle DB 
-   * table and sends a message to a JMS queue as part of the same transaction. 
-   * The coordinator (server in domain2) should exit before commit and the 
-   * domain1 admin server should be able to re-establish the connection with 
+   * A servlet is deployed to the admin server of domain1.
+   * The servlet starts a transaction with TMAfterTLogBeforeCommitExit
+   * transaction property set. The servlet inserts data into an Oracle DB
+   * table and sends a message to a JMS queue as part of the same transaction.
+   * The coordinator (server in domain2) should exit before commit and the
+   * domain1 admin server should be able to re-establish the connection with
    * domain2 and the transaction should commit.
    */
   @Order(2)
@@ -438,25 +439,25 @@ public class ItIstioCrossDomainTransaction {
 
   /*
    * Test verifies cross-domain MessageDrivenBean communication in istio env.
-   * A transacted MDB on Domain D1 listen on a replicated Distributed Topic 
-   * on Domain D2. 
-   * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode 
-   * set to One-Copy-Per-Server. The OnMessage() routine sends a message to 
+   * A transacted MDB on Domain D1 listen on a replicated Distributed Topic
+   * on Domain D2.
+   * The MDB is deployed to cluster on domain D1 with MessagesDistributionMode
+   * set to One-Copy-Per-Server. The OnMessage() routine sends a message to
    * local queue on receiving the message.
    * An application servlet is deployed to Administration Server on D1 which
    * send/receive message from a JMS destination based on a given URL.
    * (a) app servlet send message to Distributed Topic on D2
    * (b) mdb puts a message into local Queue for each received message
-   * (c) make sure local Queue gets 2X times messages sent to Distributed Topic 
-   * Since the MessagesDistributionMode is set to One-Copy-Per-Server and 
-   * targeted to a cluster of two servers, onMessage() will be triggered 
-   * for both instance of MDB for a message sent to Distributed Topic   
+   * (c) make sure local Queue gets 2X times messages sent to Distributed Topic
+   * Since the MessagesDistributionMode is set to One-Copy-Per-Server and
+   * targeted to a cluster of two servers, onMessage() will be triggered
+   * for both instance of MDB for a message sent to Distributed Topic
    */
   @Order(3)
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
   public void testIstioCrossDomainTranscatedMDB() {
-    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,istioIngressPort, 
+    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,istioIngressPort,
                  "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
                 "mdbtopic","cluster-1",
                  ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
@@ -465,7 +466,7 @@ public class ItIstioCrossDomainTransaction {
     logger.info("MDB application is activated on domain1/cluster");
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
-            + "\"http://%s:%s/jmsservlet/jmstest?"  
+            + "\"http://%s:%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
@@ -496,7 +497,7 @@ public class ItIstioCrossDomainTransaction {
         K8S_NODEPORT_HOST, istioIngressPort);
 
     logger.info("curl command {0}", curlString);
-    withStandardRetryPolicy 
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for local queue to be updated "
                 + "(elapsed time {0} ms, remaining time {1} ms)",
