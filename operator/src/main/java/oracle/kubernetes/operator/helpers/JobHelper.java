@@ -519,7 +519,7 @@ public class JobHelper {
         Step nextStep = null;
         if (System.currentTimeMillis() > getJobLazyDeletionTime(domainIntrospectorJob)) {
           //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
-          //execute the next step
+          //update the domain status and execute the next step
           nextStep = getNext();
         }
 
