@@ -104,7 +104,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
-class ItExternalRmiTunneling {
+class ItExternalLbTunneling {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
