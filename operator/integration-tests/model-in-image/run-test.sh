@@ -39,7 +39,7 @@ DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
 DO_UPDATE4=false
-DO_CM=false
+DO_CM=${DO_CM:-false}
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -63,6 +63,7 @@ function usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
+    DO_CM                 : false (run the tests in common mounts mode)
 
     (see test-env.sh for full list)
 

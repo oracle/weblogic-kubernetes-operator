@@ -23,7 +23,7 @@ weight: 1
    $ cd /tmp
    ```
    ```shell
-   $ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git clone --branch v3.2.5 https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.
@@ -238,7 +238,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password `Oradoc_db1`.
 
-     This step is based on the steps documented in [Run a Database](https://oracle.github.io/weblogic-kubernetes-operator/userguide/overview/database/).
+     This step is based on the steps documented in [Run a Database]({{< relref "/samples/simple/database/_index.md" >}}).
 
      __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 

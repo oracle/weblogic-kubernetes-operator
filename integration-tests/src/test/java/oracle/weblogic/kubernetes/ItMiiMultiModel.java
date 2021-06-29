@@ -45,8 +45,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+//import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+//import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -222,10 +222,12 @@ class ItMiiMultiModel {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         configMapName);
 
+    /*
     String serviceName = adminServerPodName + "-ext";
     if (OKD) {
-      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+      createRouteForOKD(serviceName, domainNamespace);
     }
+    */
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -245,6 +247,7 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
             domainUid1, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
+    ingressHost = null;
   }
 
   /**
@@ -277,11 +280,12 @@ class ItMiiMultiModel {
         miiImageMultiModel,
         null);
 
+    /*
     String serviceName = adminServerPodName + "-ext";
     if (OKD) {
       createRouteForOKD(serviceName, domainNamespace);
     }
-
+    */
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -300,6 +304,7 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid2, domainNamespace, dsName2));
 
+    ingressHost = null;
   }
 
   /**
@@ -353,10 +358,12 @@ class ItMiiMultiModel {
         miiImageMultiModel,
         configMapName);
 
+    /*
     String serviceName = adminServerPodName + "-ext";
     if (OKD) {
       createRouteForOKD(serviceName, domainNamespace);
     }
+    */
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -383,7 +390,8 @@ class ItMiiMultiModel {
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid3, domainNamespace, dsName2));
-
+    
+    ingressHost = null;
   }
 
   /**
@@ -432,6 +440,7 @@ class ItMiiMultiModel {
 
   @AfterAll
   public void tearDownAll() {
+    /*
     // Delete domain custom resources
     logger.info("Delete domain custom resource {0} in namespace {1}", domainUid1, domainNamespace);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace),
@@ -452,6 +461,7 @@ class ItMiiMultiModel {
     if (miiImageMultiModel != null) {
       deleteImage(miiImageMultiModel);
     }
+    */
   }
 
   /**
@@ -516,11 +526,16 @@ class ItMiiMultiModel {
       String adminServerPodName,
       String namespace,
       String dsName) {
+
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
-    //String hostAndPort = (OKD) ? adminServerPodName + "-ext-" + namespace
-    String hostAndPort = (OKD) ? adminServerPodName + "-ext-"
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD && (ingressHost == null)) {
+      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+    }
+
+    String hostAndPort = (OKD) ? ingressHost
         : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
@@ -550,8 +565,12 @@ class ItMiiMultiModel {
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
-    //String hostAndPort = (OKD) ? adminServerPodName + "-ext-" + namespace
-    String hostAndPort = (OKD) ? adminServerPodName + "-ext"
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD && (ingressHost == null)) {
+      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+    }
+
+    String hostAndPort = (OKD) ? ingressHost
         : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)

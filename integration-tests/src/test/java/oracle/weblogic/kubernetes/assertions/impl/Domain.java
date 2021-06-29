@@ -307,7 +307,7 @@ public class Domain {
     StringBuffer cmdString = new StringBuffer()
         .append("status=$(curl --user " + username + ":" + password)
         .append(" http://" + url)
-        .append("/management/tenant-monitoring/servers/managed-server1")
+        .append("/management/tenant-monitoring/servers/" + managedServer1)
         .append(" --silent --show-error")
         .append(" --noproxy '*'")
         .append(" -o /dev/null")

@@ -194,6 +194,7 @@ public interface TuningParameters extends Map<String, String> {
     public final int watchLifetime;
     public final int watchMinimumDelay;
     public final int watchBackstopRecheckDelay;
+    public final int watchBackstopRecheckCount;
 
     /**
      * Create watch tuning.
@@ -201,10 +202,12 @@ public interface TuningParameters extends Map<String, String> {
      * @param watchMinimumDelay Minimum delay before accepting new events to prevent hot loops
      * @param watchBackstopRecheckDelay Recheck delay for get while waiting for a status to backstop missed watch events
      */
-    public WatchTuning(int watchLifetime, int watchMinimumDelay, int watchBackstopRecheckDelay) {
+    public WatchTuning(int watchLifetime, int watchMinimumDelay, int watchBackstopRecheckDelay,
+                       int watchBackstopRecheckCount) {
       this.watchLifetime = watchLifetime;
       this.watchMinimumDelay = watchMinimumDelay;
       this.watchBackstopRecheckDelay = watchBackstopRecheckDelay;
+      this.watchBackstopRecheckCount = watchBackstopRecheckCount;
     }
 
     @Override

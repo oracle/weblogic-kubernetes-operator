@@ -131,7 +131,7 @@ public class ItFmwDynamicDomainInPV {
         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
             + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
@@ -158,7 +158,7 @@ public class ItFmwDynamicDomainInPV {
   private void createFmwDomainAndVerify() {
     final String pvName = domainUid + "-" + domainNamespace + "-pv";
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
-    final int t3ChannelPort = getNextFreePort(30000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

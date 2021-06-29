@@ -36,6 +36,10 @@ public interface MakeRightDomainOperation {
 
   void setInspectionRun();
 
+  void setLiveInfo(DomainPresenceInfo info);
+
+  void clear();
+
   boolean wasInspectionRun();
 
   private static boolean wasInspectionRun(Packet packet) {

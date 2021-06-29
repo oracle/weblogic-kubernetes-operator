@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyV
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isVoyagerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -303,22 +304,25 @@ class ItStickySession {
     final String serviceName = domainUid + "-cluster-" + clusterName;
     //final String channelName = "web";
 
-    // create Traefik ingress resource
+    // create route for cluster service
     String ingressHost = createRouteForOKD(serviceName, domainNamespace);
 
-    //String ingressServiceName = serviceName + "-" + domainNamespace;
-    /*
-    String ingressServiceName = serviceName;
-    String hostName = new StringBuffer()
-        .append(domainUid)
-        .append(".")
-        .append(domainNamespace)
-        .append(".")
-        .append(clusterName)
-        .append(".test").toString();
-
-     */
-
+    // Since the app seems to take a bit longer to be available, 
+    // checking if the app is running by executing the curl command
+    String curlString =
+        buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
+    logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking if app is available "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("managed-server");
+          };
+        }));
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
   }

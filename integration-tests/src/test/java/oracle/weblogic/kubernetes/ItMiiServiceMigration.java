@@ -58,6 +58,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -65,22 +66,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies JMS Service migration with JMS messages stored in 
+ * This test class verifies JMS Service migration with JMS messages stored in
  * (a) Persistent FileStore (b) Persistent JDBC Store accessible from all pods.
- * The dynamic cluster is scaled down to trigger the Service migration from 
+ * The dynamic cluster is scaled down to trigger the Service migration from
  * a stopped pod/managed server to a live pod/managed server.
- * Configuration : 
+ * Configuration :
  *   MII cluster domain with 2 managed servers
  *   Two sets of JMS Resources with FileStore and JDBC Store
  *   All resources are targeted to cluster with enabled JMS service migration
  *   Two Distributed Queue(s) one with FileStore and the other with JDBC Store
  *   Separate ORACLE Datasource for cluster leasing
- * UseCase :  
+ * UseCase :
  * (a) Test client sends 100 messages to member queue@managed-server2
  * (b) Scale down the cluster with replica count 1 to shutdown managed-server2
  * (c) Make sure the JMS Service@managed-server2 is migrated to managed-server1
- * (d) Make sure all 100 messages got recovered once the 
- *     JMS Service@managed-server2 is migrated to managed-server1 
+ * (d) Make sure all 100 messages got recovered once the
+ *     JMS Service@managed-server2 is migrated to managed-server1
  * Above steps are repeated for both FileStore and JDBCStore based Distributed Queue.
  * This test class verifies the JTA Service Migration with shutdown-recovery
  * migration policy by verifying the JTA Recovery Service runtime MBean
@@ -96,8 +97,8 @@ class ItMiiServiceMigration {
   private static ConditionFactory withStandardRetryPolicy = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-jms-recovery";
-  private static String pvName = domainUid + "-pv"; 
-  private static String pvcName = domainUid + "-pvc"; 
+  private static String pvName = domainUid + "-pv";
+  private static String pvcName = domainUid + "-pvc";
   private static final String adminServerPodName = domainUid + "-admin-server";
   private static final String managedServerPrefix = domainUid + "-managed-server";
   private static LoggingFacade logger = null;
@@ -110,7 +111,7 @@ class ItMiiServiceMigration {
   /**
    * Install Operator.
    * Create domain resource definition.
-   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the 
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *     JUnit engine parameter resolution mechanism
    */
   @BeforeAll
@@ -129,14 +130,14 @@ class ItMiiServiceMigration {
     logger.info("Creating unique namespace for Domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
- 
+
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
     //Start oracleDB
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, 0, domainNamespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domainNamespace);
       String.format("Failed to start Oracle Database Service");
     });
     dbNodePort = getDBNodePort(domainNamespace, "oracledb");
@@ -148,7 +149,7 @@ class ItMiiServiceMigration {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
@@ -164,7 +165,7 @@ class ItMiiServiceMigration {
     cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
                          + dbNodePort + "/devpdb.k8s";
     logger.info("ConnectionPool URL = {0}", cpUrl);
-    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName, 
+    assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName,
             "sys as sysdba", "Oradoc_db1", cpUrl, domainNamespace),
             String.format("createSecret failed for %s", dbSecretName));
     String configMapName = "jdbc-jms-recovery-configmap";
@@ -207,7 +208,7 @@ class ItMiiServiceMigration {
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
-    createLeasingTable(adminServerPodName, domainNamespace, dbNodePort); 
+    createLeasingTable(adminServerPodName, domainNamespace, dbNodePort);
     // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -224,7 +225,7 @@ class ItMiiServiceMigration {
   @Order(1)
   @DisplayName("Verify JMS Service migration with FileStore")
   public void testMiiJmsServiceMigrationWithFileStore() {
-   
+
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsSendReceiveClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
@@ -232,11 +233,11 @@ class ItMiiServiceMigration {
         Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
-    
-    assertTrue(checkJmsServerRuntime("managed-server2"), 
+
+    assertTrue(checkJmsServerRuntime("managed-server2"),
          "JMSService@managed-server2 is on managed-server2 before migration");
 
-    runJmsClientOnAdminPod("send", 
+    runJmsClientOnAdminPod("send",
             "ClusterJmsServer@managed-server2@jms.testUniformQueue");
 
     boolean psuccess = assertDoesNotThrow(() ->
@@ -246,9 +247,9 @@ class ItMiiServiceMigration {
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
     // Make sure the JMSService@managed-server2 is migrated to managed-server1
-    assertTrue(checkJmsServerRuntime("managed-server1"), 
+    assertTrue(checkJmsServerRuntime("managed-server1"),
             "JMSService@managed-server2 is NOT migrated to managed-server1");
-    runJmsClientOnAdminPod("receive", 
+    runJmsClientOnAdminPod("receive",
             "ClusterJmsServer@managed-server2@jms.testUniformQueue");
   }
 
@@ -261,11 +262,11 @@ class ItMiiServiceMigration {
   @DisplayName("Verify JMS Service migration with JDBCStore")
   public void testMiiJmsServiceMigrationWithJdbcStore() {
 
-    // Restart the managed server(2) if shutdown by previous test method 
-    // Make sure that JMS server runtime JMSService@managed-server2 is 
+    // Restart the managed server(2) if shutdown by previous test method
+    // Make sure that JMS server runtime JMSService@managed-server2 is
     // hosted on managed server 'managed-server2'
     restartManagedServer("managed-server2");
-    assertTrue(checkJmsServerRuntime("managed-server2"), 
+    assertTrue(checkJmsServerRuntime("managed-server2"),
          "JMSService@managed-server2 is on managed-server2 before migration");
 
     // build the standalone JMS Client on Admin pod after rolling restart
@@ -275,8 +276,8 @@ class ItMiiServiceMigration {
         Paths.get(RESOURCE_DIR, "jms", "JmsSendReceiveClient.java"),
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
-    
-    runJmsClientOnAdminPod("send", 
+
+    runJmsClientOnAdminPod("send",
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
     boolean psuccess3 = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
@@ -285,9 +286,9 @@ class ItMiiServiceMigration {
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
 
-    assertTrue(checkJmsServerRuntime("managed-server1"), 
+    assertTrue(checkJmsServerRuntime("managed-server1"),
            "JMSService@managed-server2 is NOT migrated to managed-server1");
-    runJmsClientOnAdminPod("receive", 
+    runJmsClientOnAdminPod("receive",
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
   }
 
@@ -296,22 +297,22 @@ class ItMiiServiceMigration {
    * when a server is shutdown ( cluster is scaled down )
    * The MigrationPolicy on the ServerTemplate is set to 'shutdown-recovery'
    * so that the JTA recovery service is migrated to an active server in the
-   * cluster when a server is shutdown. This can be checked by verifying the 
-   * JTARecoveryService runtime MBean for the stopped server in an active 
-   * server. For example say managed server ms2 is down, make sure that the JTA 
+   * cluster when a server is shutdown. This can be checked by verifying the
+   * JTARecoveryService runtime MBean for the stopped server in an active
+   * server. For example say managed server ms2 is down, make sure that the JTA
    * recovery service for ms2 is active on the running managed server ms1
-   * Also make sure that the JTA Recovery service (ms2) is migrated back to 
-   * server ms2 when the server ms2 is re-started. 
+   * Also make sure that the JTA Recovery service (ms2) is migrated back to
+   * server ms2 when the server ms2 is re-started.
    */
   @Test
   @Order(3)
   @DisplayName("Verify JTA Recovery Service migration to an active server")
   public void testMiiJtaServiceMigration() {
 
-    // Restart the managed server(2) if shutdown by previous test method 
-    // Make sure that JTA Recovery service is active on managed-server2  
+    // Restart the managed server(2) if shutdown by previous test method
+    // Make sure that JTA Recovery service is active on managed-server2
     restartManagedServer("managed-server2");
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"), 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"),
          "JTARecoveryService@managed-server2 is not on managed-server2 before migration");
 
     // Stop the server managed-server2 by patching the cluster
@@ -322,17 +323,17 @@ class ItMiiServiceMigration {
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
 
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "true"), 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "true"),
            "JTA RecoveryService@managed-server2 is not migrated to managed-server1");
     logger.info("JTA RecoveryService@managed-server2 is migrated to managed-server1");
 
     // Restart the managed server(2) to make sure the JTA Recovery Service is
-    // migrated back to original hosting server 
+    // migrated back to original hosting server
     restartManagedServer("managed-server2");
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"), 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", "managed-server2", "true"),
          "JTARecoveryService@managed-server2 is not on managed-server2 after restart");
     logger.info("JTA RecoveryService@managed-server2 is migrated back to managed-server1");
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "false"), 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", "managed-server2", "false"),
          "JTARecoveryService@managed-server2 is not deactivated on managed-server1 after restart");
     logger.info("JTA RecoveryService@managed-server2 is deactivated on managed-server1 after restart");
   }
@@ -344,14 +345,14 @@ class ItMiiServiceMigration {
     CommandParams params = new CommandParams().defaults();
     String script = "startServer.sh";
     params.command("sh "
-        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString() 
+        + Paths.get(domainLifecycleSamplePath.toString(), "/" + script).toString()
         + commonParameters + " -s " + serverName);
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);
     checkPodReadyAndServiceExists(managedServerPrefix + "2", domainUid, domainNamespace);
   }
 
-  // Run standalone JMS Client to send/receive message from 
+  // Run standalone JMS Client to send/receive message from
   // Distributed Destination Member
   private void runJmsClientOnAdminPod(String action, String queue) {
     withStandardRetryPolicy
@@ -366,7 +367,7 @@ class ItMiiServiceMigration {
 
   /*
    * Verify the JMS Server Runtime through REST API.
-   * Get the JMSServer Runtime ClusterJmsServer@managed-server2 found on 
+   * Get the JMSServer Runtime ClusterJmsServer@managed-server2 found on
    * specified managed server.
    * @param managedServer name of the managed server to look for JMSServerRuntime
    * @returns true if MBean is found otherwise false
@@ -375,7 +376,7 @@ class ItMiiServiceMigration {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("status=$(curl --user " 
+    StringBuffer curlString = new StringBuffer("status=$(curl --user "
            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
@@ -386,7 +387,7 @@ class ItMiiServiceMigration {
           .append(" -w %{http_code});")
           .append("echo ${status}");
     logger.info("checkJmsServerRuntime: curl command {0}", new String(curlString));
-    withStandardRetryPolicy 
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for JMS Service to migrate "
                 + "(elapsed time {0} ms, remaining time {1} ms)",
@@ -402,10 +403,10 @@ class ItMiiServiceMigration {
 
   /*
    * Verify the JTA Recovery Service Runtime through REST API.
-   * Get the JTA Recovery Service Runtime for a server on a 
+   * Get the JTA Recovery Service Runtime for a server on a
    * specified managed server.
    * @param managedServer name of the server to look for RecoveyServerRuntime
-   * @param recoveryService name of RecoveyServerRuntime (managed server) 
+   * @param recoveryService name of RecoveyServerRuntime (managed server)
    * @param active is the recovery active (true or false )
    * @returns true if MBean is found otherwise false
    **/
@@ -413,7 +414,7 @@ class ItMiiServiceMigration {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("curl --user " 
+    StringBuffer curlString = new StringBuffer("curl --user "
            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
@@ -423,7 +424,7 @@ class ItMiiServiceMigration {
           .append("?fields=active&links=none\"")
           .append(" --show-error ");
     logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
-    withStandardRetryPolicy 
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for JTA Recovery Service to migrate "
                 + "(elapsed time {0} ms, remaining time {1} ms)",

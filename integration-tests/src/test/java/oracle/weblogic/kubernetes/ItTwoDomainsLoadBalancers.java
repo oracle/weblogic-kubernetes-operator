@@ -939,7 +939,7 @@ public class ItTwoDomainsLoadBalancers {
       // this secret is used only for non-kind cluster
       createSecretForBaseImages(domainNamespaces.get(i));
 
-      t3ChannelPort = getNextFreePort(32001, 32700);
+      t3ChannelPort = getNextFreePort();
       logger.info("t3ChannelPort for domain {0} is {1}", domainUids.get(i), t3ChannelPort);
 
       String domainUid = domainUids.get(i);
@@ -1423,7 +1423,7 @@ public class ItTwoDomainsLoadBalancers {
       String domainScriptConfigMapName = "create-domain" + i + "-scripts-cm";
       String createDomainInPVJobName = "create-domain" + i + "-onpv-job";
 
-      t3ChannelPort = getNextFreePort(32003 + i, 32700);
+      t3ChannelPort = getNextFreePort();
       logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
 
       // run create a domain on PV job using WLST
@@ -2094,7 +2094,7 @@ public class ItTwoDomainsLoadBalancers {
    */
   private static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
-    if (WEBLOGIC_SLIM) { 
+    if (WEBLOGIC_SLIM) {
       getLogger().info("Check REST Console for WebLogic slim image");
       StringBuffer curlCmd  = null;
       curlCmd  = new StringBuffer("status=$(curl --user ");

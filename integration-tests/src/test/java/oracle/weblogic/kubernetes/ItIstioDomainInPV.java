@@ -147,7 +147,7 @@ public class ItIstioDomainInPV  {
 
   /**
    * Create a WebLogic domain using WLST in a persistent volume.
-   * Add istio configuration. 
+   * Add istio configuration.
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress Port.
@@ -161,7 +161,7 @@ public class ItIstioDomainInPV  {
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(31000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -221,7 +221,7 @@ public class ItIstioDomainInPV  {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid) 
+            .domainHome("/shared/domains/" + domainUid)
             .domainHomeSourceType("PersistentVolume")
             .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
@@ -308,24 +308,24 @@ public class ItIstioDomainInPV  {
     int istioIngressPort = getIstioHttpIngressPort();
     logger.info("Istio http ingress Port is {0}", istioIngressPort);
 
-    // We can not verify Rest Management console thru Adminstration NodePort 
+    // We can not verify Rest Management console thru Adminstration NodePort
     // in istio, as we can not enable Adminstration NodePort
     if (!WEBLOGIC_SLIM) {
       String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
-      boolean checkConsole = 
+      boolean checkConsole =
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-  
+
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     for (int i = 1; i <= 10; i++) {
-      result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
+      result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
         String.valueOf(istioIngressPort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         clusterName, archivePath, domainNamespace + ".org", "testwebapp");
       assertNotNull(result, "Application deployment failed");
       logger.info("(Loop:{0}) Application deployment returned {1}", i, result.toString());
@@ -393,7 +393,7 @@ public class ItIstioDomainInPV  {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> CommonTestUtils.createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles, 
+        () -> CommonTestUtils.createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles,
            namespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 

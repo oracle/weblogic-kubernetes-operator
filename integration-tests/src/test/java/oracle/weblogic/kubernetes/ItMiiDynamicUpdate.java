@@ -43,10 +43,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
@@ -999,13 +1002,34 @@ class ItMiiDynamicUpdate {
   }
 
   /**
+   * Verify the operator log contains the introspector job logs.
+   * When the introspector fails, it should log the correct error msg. For example,
+   * the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true',
+   * but there are unsupported model changes for online update.
+   */
+  @Test
+  @Order(15)
+  @DisplayName("verify the operator logs introspector job messages")
+  public void testOperatorLogIntrospectorMsg() {
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    logger.info("operator pod log: {0}", operatorPodLog);
+    assertTrue(operatorPodLog.contains("Introspector Job Log"));
+    assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
+    assertTrue(operatorPodLog.contains("Job mii-dynamic-update-introspector has failed"));
+    assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
+  }
+
+  /**
    * Modify MaxDynamicClusterSize and MinDynamicClusterSize using dynamic update.
    * Verify the cluster cannot be scaled beyond the modified MaxDynamicClusterSize value
    * and cannot be scaled below MinDynamicClusterSize when allowReplicasBelowMinDynClusterSize is set false.
    * Verify JMS message and connection distribution/load balance after scaling the cluster.
    */
   @Test
-  @Order(15)
+  @Order(16)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   public void testMiiUpdateDynamicClusterSize() {
 
@@ -1132,7 +1156,7 @@ class ItMiiDynamicUpdate {
    * Verify application target is changed by accessing the application runtime using REST API.
    */
   @Test
-  @Order(16)
+  @Order(17)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
   public void testMiiRemoveTarget() {
 

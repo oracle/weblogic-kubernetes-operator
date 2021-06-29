@@ -79,6 +79,7 @@ import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.NginxParams;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
@@ -86,6 +87,7 @@ import oracle.weblogic.kubernetes.actions.impl.TraefikParams;
 import oracle.weblogic.kubernetes.actions.impl.VoyagerParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
@@ -140,6 +142,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -174,6 +177,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDockerConfigJ
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
@@ -217,6 +221,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
@@ -503,7 +508,8 @@ public class CommonTestUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(opServiceAccount);
+        .serviceAccount(opServiceAccount)
+        .featureGates("CommonMounts=true");
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
@@ -1309,7 +1315,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param domVersion custom resource's version
    */
-  public static void createDomainAndVerify(Domain domain, 
+  public static void createDomainAndVerify(Domain domain,
                                            String domainNamespace,
                                            String... domVersion) {
     String domainVersion = (domVersion.length == 0) ? DOMAIN_VERSION : domVersion[0];
@@ -1630,26 +1636,37 @@ public class CommonTestUtils {
    * @param namespace - Namespace where the route is exposed
    */
   public static String createRouteForOKD(String serviceName, String namespace) {
-    //String hostName = serviceName + "-" + namespace;
-    String hostName = serviceName;
     assertTrue(new Command()
         .withParams(new CommandParams()
-            .command("oc expose service " + serviceName + " -n " + namespace
-                + " --hostname=" + hostName))
+            .command("oc expose service " + serviceName + " -n " + namespace))
         .execute(), "oc expose service failed");
-    /*
-    String routeCommand = "oc expose service -n " + namespace;
-    logger.info("Exposing the service as a route using {0}", routeCommand);
-    ExecResult result = new Command()
-        .withParams(new CommandParams().command(routeCommand))
-        .executeAndReturnResult();
-    logger.info("Route exists? - {0}", result.toString());
-    */
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("sudo sed -i \"/192.168.130.11/s/$/ ${serviceName}/\" /etc/hosts"))
-        .execute(), "added service name " + serviceName + " to etc hosts file");
-    // In OKD, it takes a little while for the route to be fully functional
+    String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
+
+    ExecResult result = Command.withParams(
+                         new CommandParams()
+                          .command(command))
+                          .executeAndReturnResult();
+
+    boolean success =
+            result != null
+            && result.exitValue() == 0
+            && result.stdout() != null
+            && result.stdout().contains(serviceName);
+
+    String outStr = "Did not get the route hostName \n";
+    outStr += ", command=\n{\n" + command + "\n}\n";
+    outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+    outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+    assertTrue(success, outStr);
+
+    getLogger().info("exitValue = {0}", result.exitValue());
+    getLogger().info("stdout = {0}", result.stdout());
+    getLogger().info("stderr = {0}", result.stderr());
+
+    String hostName = result.stdout();
+    getLogger().info("route hostname = {0}", hostName);
+
     try {
       Thread.sleep(10 * 1000);
     } catch (InterruptedException iex) {
@@ -1963,6 +1980,27 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
             String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
                 serviceName, namespace)));
+  }
+
+  /**
+   * Check the status reason of the domain matches the given reason.
+   *
+   * @param domain  oracle.weblogic.domain.Domain object
+   * @param namespace the namespace in which the domain exists
+   * @param statusReason the expected status reason of the domain
+   */
+  public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
+    LoggingFacade logger = getLogger();
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for the status reason of the domain {0} in namespace {1} "
+                    + "is {2} (elapsed time {3}ms, remaining time {4}ms)",
+                domain,
+                namespace,
+                statusReason,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)));
   }
 
   /**
@@ -2926,7 +2964,7 @@ public class CommonTestUtils {
     }
     // install grafana
     logger.info("Installing grafana in namespace {0}", grafanaNamespace);
-    int grafanaNodePort = getNextFreePort(31060, 31200);
+    int grafanaNodePort = getNextFreePort();
     logger.info("Installing grafana with node port {0}", grafanaNodePort);
     // grafana chart values to override
     GrafanaParams grafanaParams = new GrafanaParams()
@@ -2939,7 +2977,7 @@ public class CommonTestUtils {
     } catch (AssertionError err) {
       //retry with different nodeport
       uninstallGrafana(grafanaHelmParams);
-      grafanaNodePort = getNextFreePort(31060, 31200);
+      grafanaNodePort = getNextFreePort();
       grafanaParams = new GrafanaParams()
           .helmParams(grafanaHelmParams)
           .nodePort(grafanaNodePort);
@@ -3297,9 +3335,9 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(
             expectValid
                 ?
-            () -> credentialsValid(finalHost, podName, namespace, username, password)
+            () -> credentialsValid(finalHost, podName, namespace, username, password, args)
                 :
-            () -> credentialsNotValid(finalHost, podName, namespace, username, password),
+            () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
             String.format(
                 "Failed to validate credentials %s/%s on pod %s in namespace %s",
                 username, password, podName, namespace)));
@@ -3476,7 +3514,7 @@ public class CommonTestUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       try {
         pvHostPath = Files.createDirectories(Paths.get(
             PV_ROOT, className, pvName));
@@ -3505,6 +3543,13 @@ public class CommonTestUtils {
           .storageClassName("oci-fss")
           .nfs(new V1NFSVolumeSource()
           .path(FSS_DIR)
+          .server(NFS_SERVER)
+          .readOnly(false));
+    } else if (OKD) {
+      v1pv.getSpec()
+          .storageClassName("okd-nfsmnt")
+          .nfs(new V1NFSVolumeSource()
+          .path(PV_ROOT)
           .server(NFS_SERVER)
           .readOnly(false));
     } else {
@@ -3546,6 +3591,9 @@ public class CommonTestUtils {
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
+    } else if (OKD) {
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
     } else {
       v1pvc.getSpec()
           .storageClassName("weblogic-domain-storage-class");
@@ -3613,17 +3661,8 @@ public class CommonTestUtils {
     logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
+    V1PodSpec podSpec = new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
@@ -3633,7 +3672,7 @@ public class CommonTestUtils {
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                                .mountPath("/u01/weblogic"), // available under /u01/weblogic inside pod
                             new V1VolumeMount()
                                 .name(pvName) // location to write domain
                                 .mountPath("/shared"))))) // mounted under /shared inside pod
@@ -3650,7 +3689,19 @@ public class CommonTestUtils {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET)));
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")));
+    }
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(podSpec)));
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
@@ -4169,5 +4220,80 @@ public class CommonTestUtils {
         }
       }
     }
+  }
+
+  /**
+   * Build image with unique name, create corresponding docker secret and push to registry.
+   *
+   * @param dockerFileDir directory where dockerfile is located
+   * @param baseImageName base image name
+   * @param namespace image namespace
+   * @param secretName docker secretname for image
+   * @param extraDockerArgs user specified extra docker args
+   * @return image name
+   */
+  public static String createImageAndPushToRepo(String dockerFileDir, String baseImageName,
+                                                String namespace, String secretName,
+                                                String extraDockerArgs) throws ApiException {
+    // create unique image name with date
+    final String imageTag = TestUtils.getDateAndTimeStamp();
+    // Add repository name in image name for Jenkins runs
+    final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
+
+    final String image = imageName + ":" + imageTag;
+    LoggingFacade logger = getLogger();
+    //build image
+    assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
+    logger.info("image is created with name {0}", image);
+    if (!Namespace.exists(namespace)) {
+      createNamespace(namespace);
+    }
+
+    //create registry docker secret
+    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
+        OCIR_REGISTRY, secretName, namespace);
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(image);
+
+    return image;
+  }
+
+  /**
+   * Adds proxy extra arguments for docker command.
+   **/
+  public static String getDockerExtraArgs() {
+    StringBuffer extraArgs = new StringBuffer("");
+
+    String httpsproxy = Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
+    String httpproxy = Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
+    String noproxy = Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
+    LoggingFacade logger = getLogger();
+    logger.info(" httpsproxy : " + httpsproxy);
+    String proxyHost = "";
+    StringBuffer mvnArgs = new StringBuffer("");
+    if (httpsproxy != null) {
+      logger.info(" httpsproxy : " + httpsproxy);
+      proxyHost = httpsproxy.substring(httpsproxy.lastIndexOf("www"), httpsproxy.lastIndexOf(":"));
+      logger.info(" proxyHost: " + proxyHost);
+      mvnArgs.append(String.format(" -Dhttps.proxyHost=%s -Dhttps.proxyPort=80 ",
+          proxyHost));
+      extraArgs.append(String.format(" --build-arg https_proxy=%s", httpsproxy));
+    }
+    if (httpproxy != null) {
+      logger.info(" httpproxy : " + httpproxy);
+      proxyHost = httpproxy.substring(httpproxy.lastIndexOf("www"), httpproxy.lastIndexOf(":"));
+      logger.info(" proxyHost: " + proxyHost);
+      mvnArgs.append(String.format(" -Dhttp.proxyHost=%s -Dhttp.proxyPort=80 ",
+          proxyHost));
+      extraArgs.append(String.format(" --build-arg http_proxy=%s", httpproxy));
+    }
+    if (noproxy != null) {
+      logger.info(" noproxy : " + noproxy);
+      extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
+    }
+    if (!mvnArgs.equals("")) {
+      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
+    }
+    return extraArgs.toString();
   }
 }

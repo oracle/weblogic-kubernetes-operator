@@ -74,8 +74,8 @@ public class Secret {
         }
       }
     } else {
-      logger.info("BR: service account = {0}", serviceAccountName);
-      logger.info("BR: namespace = {0}", namespace);
+      logger.info("service account = {0}", serviceAccountName);
+      logger.info("namespace = {0}", namespace);
       V1ServiceAccountList serviceAccountList = listServiceAccounts(namespace);
       if (serviceAccountList != null) {
         v1ServiceAccounts = serviceAccountList.getItems();
@@ -89,7 +89,7 @@ public class Secret {
               for (V1ObjectReference reference : saSecretList) {
                 // Get the secret.
                 V1Secret secret = readSecretByReference(reference, namespace);
-                logger.info("BR: secret token = {0}", secret.getMetadata().getName());
+                logger.info("secret token = {0}", secret.getMetadata().getName());
                 return secret.getMetadata().getName();
               }
             }

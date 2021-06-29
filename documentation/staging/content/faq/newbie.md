@@ -11,13 +11,14 @@ It's all [here]({{< relref "/_index.md" >}}).
 
 #### How much does it cost?
 
-The WebLogic Kubernetes Operator (the “operator”) is open source and free.
+The WebLogic Kubernetes Operator (the “operator”) is open source and free, licensed under the Universal Permissive license (UPL), Version 1.0.
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
 #### How can I get help?
 
-We have a public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. To join our channel, please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
+You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
+To learn how, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
 
 #### WebLogic Server Certification
 

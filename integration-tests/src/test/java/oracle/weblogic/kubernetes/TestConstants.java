@@ -235,9 +235,9 @@ public interface TestConstants {
   public static final String WDT_BASIC_APP_NAME = "sample-app";
 
   //monitoring constants
-  public static final String MONITORING_EXPORTER_VERSION = Optional.ofNullable(System.getenv(
-      "MONITORING_EXPORTER_VERSION"))
-      .orElse("1.3.0");
+  public static final String MONITORING_EXPORTER_WEBAPP_VERSION = Optional.ofNullable(System.getenv(
+      "MONITORING_EXPORTER_WEBAPP_VERSION"))
+      .orElse("2.0");
   public static final String MONITORING_EXPORTER_BRANCH = Optional.ofNullable(System.getenv(
       "MONITORING_EXPORTER_BRANCH"))
       .orElse("master");
@@ -295,4 +295,7 @@ public interface TestConstants {
 
   public static final boolean WEBLOGIC_SLIM =
       WEBLOGIC_IMAGE_TAG.contains("slim") ? true : false;
+
+  public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
+  public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
 }

@@ -22,7 +22,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
   For details on how to obtain or create the image, refer to
-  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
+  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain
   home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples
@@ -35,7 +35,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:  
-  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
+  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
@@ -129,7 +129,7 @@ The following parameters can be provided in the inputs file.
 | `exposeAdminT3Channel` | Boolean indicating if the T3 administrative channel is exposed outside the Kubernetes cluster. | `false` |
 | `fmwDomainType` | FMW Infrastructure Domain Type. Legal values are `JRF` or `RestrictedJRF`. | `JRF` |
 | `httpAccessLogInLogHome` | Boolean indicating if server HTTP access log files should be written to the same directory as `logHome`. Otherwise, server HTTP access log files will be written to the directory specified in the WebLogic domain home configuration. | `true` |
-| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `image` | FMW Infrastructure image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `imagePullPolicy` | WebLogic Server image pull policy. Legal values are `IfNotPresent`, `Always`, or `Never`. | `IfNotPresent` |
 | `imagePullSecretName` | Name of the Kubernetes Secret to access the container registry to pull the WebLogic Server image. The presence of the secret will be validated when this parameter is specified. |  |
 | `includeServerOutInPodLog` | Boolean indicating whether to include the server `.out` in the pod's `stdout`. | `true` |

@@ -78,6 +78,9 @@ public class ItWlsSamples {
   public static final String STOP_DOMAIN_SCRIPT = "stopDomain.sh";
   public static final String START_DOMAIN_SCRIPT = "startDomain.sh";
 
+  private static String traefikNamespace = null;
+  private static String nginxNamespace = null;
+  private static String voyagerNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
@@ -107,7 +110,7 @@ public class ItWlsSamples {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -117,12 +120,25 @@ public class ItWlsSamples {
     assertNotNull(namespaces.get(1), "Namespace is null");
     domainNamespace = namespaces.get(1);
 
+    logger.info("Assign a unique namespace for Traefik controller");
+    assertNotNull(namespaces.get(2), "Namespace is null");
+    traefikNamespace = namespaces.get(2);
+
+    logger.info("Assign a unique namespace for Nginx controller");
+    assertNotNull(namespaces.get(3), "Namespace is null");
+    nginxNamespace = namespaces.get(3);
+
+    logger.info("Assign a unique namespace for Voyager controller");
+    assertNotNull(namespaces.get(4), "Namespace is null");
+    voyagerNamespace = namespaces.get(4);
+
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
+
   }
 
   /**
@@ -328,6 +344,45 @@ public class ItWlsSamples {
     checkPodExists(adminServerPodName, domainName, domainNamespace);
   }
 
+  /**
+   * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
+   */
+  @Order(7)
+  @Test
+  @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
+  public void testTraefikIngressController() {
+    setupSample();
+    Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
+    setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
+    setupLoadBalancer(scriptBase, "traefik", " -d -n " + traefikNamespace);
+  }
+
+  /**
+   * Verify setupLoadBalancer scripts for managing Voyager LoadBalancer.
+   */
+  @Order(8)
+  @Test
+  @DisplayName("Manage Voyager Ingress Controller with setupLoadBalancer")
+  public void testVoyagerIngressController() {
+    setupSample();
+    Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
+    setupLoadBalancer(scriptBase, "voyager", " -c -n " + voyagerNamespace);
+    setupLoadBalancer(scriptBase, "voyager", " -d -n " + voyagerNamespace);
+  }
+
+  /**
+   * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
+   */
+  @Order(9)
+  @Test
+  @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
+  public void testNginxIngressController() {
+    setupSample();
+    Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
+    setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);
+    setupLoadBalancer(scriptBase, "nginx", " -d -n " + nginxNamespace);
+  }
+
   // Function to execute domain lifecyle scripts
   private void executeLifecycleScript(String script, String scriptType, String entityName) {
     executeLifecycleScript(script, scriptType, entityName, "");
@@ -355,7 +410,6 @@ public class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to execute script " + script);
   }
-
 
   // generates the stream of objects used by parametrized test.
   private static Stream<String> paramProvider() {
@@ -555,4 +609,17 @@ public class ItWlsSamples {
                             condition.getRemainingTimeInMS()))
             .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
   }
+
+  private void setupLoadBalancer(Path sampleBase, String ingressType, String additionalOptions) {
+    // run setupLoadBalancer.sh to install/uninstall ingress controller 
+    CommandParams params = new CommandParams().defaults();
+    params.command("sh "
+           + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
+           + " -t " + ingressType 
+           + additionalOptions);
+    logger.info("Run setupLoadBalancer.sh to manage {0} ingress controller", ingressType);
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to manage ingress controller");
+  }
+
 }

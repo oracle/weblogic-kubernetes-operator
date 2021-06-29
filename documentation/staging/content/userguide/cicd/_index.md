@@ -1,7 +1,7 @@
 ---
 title: "CI/CD considerations"
 date: 2019-04-11T13:01:55-04:00
-weight: 5
+weight: 8
 description: "Learn about managing domain images with continuous integration and continuous delivery (CI/CD)."
 draft: false
 ---
