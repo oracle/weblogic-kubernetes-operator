@@ -42,7 +42,6 @@ import oracle.kubernetes.weblogic.domain.model.AdminService;
 import oracle.kubernetes.weblogic.domain.model.Channel;
 import oracle.kubernetes.weblogic.domain.model.ClusterSpec;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
@@ -62,7 +61,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SE
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 
 public class ServiceHelper {
   public static final String CLUSTER_IP_TYPE = "ClusterIP";
@@ -420,9 +418,15 @@ public class ServiceHelper {
         addServicePortIfNeeded(ports, "default-admin", serverConfig.getAdminPort());
       }
 
-      if (getDomain().getMonitoringExporterConfiguration() != null) {
-        addServicePortIfNeeded(ports, EXPORTER_PORT_NAME, MonitoringExporterSpecification.getRestPort(serverConfig));
-      }
+      Optional.ofNullable(getDomain().getMonitoringExporterSpecification()).ifPresent(specification -> {
+        if (specification.getConfiguration() != null) {
+          addServicePortIfNeeded(ports, getMetricsPortName(), specification.getRestPort());
+        }
+      });
+    }
+
+    private String getMetricsPortName() {
+      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     List<NetworkAccessPoint> getNetworkAccessPoints(@Nonnull WlsServerConfig config) {

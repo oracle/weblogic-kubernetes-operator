@@ -129,7 +129,7 @@ public class ItFmwDomainInPVUsingWDT {
         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
             + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
     logger.info("DB image: {0}, FMW image {1} used in the test",
@@ -153,7 +153,7 @@ public class ItFmwDomainInPVUsingWDT {
   public void testFmwDomainOnPVUsingWdt() {
     final String pvName = domainUid + "-" + domainNamespace + "-pv";
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
-    final int t3ChannelPort = getNextFreePort(30000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     // create FMW domain credential secret
     createSecretWithUsernamePassword(wlSecretName, domainNamespace,

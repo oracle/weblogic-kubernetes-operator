@@ -124,7 +124,7 @@ public class ItFmwDomainInPVUsingWLST {
         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, 0, dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
         + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
 
@@ -151,7 +151,7 @@ public class ItFmwDomainInPVUsingWLST {
     final int managedServerPort = 8001;
     final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
     final int replicaCount = 2;
-    final int t3ChannelPort = getNextFreePort(30000, 32767);
+    final int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv";
     final String pvcName = domainUid + "-pvc";
@@ -281,7 +281,7 @@ public class ItFmwDomainInPVUsingWLST {
 
     // verify the admin server service created
     checkServiceExists(adminServerPodName, jrfDomainNamespace);
-    
+
     // verify admin server pod is ready
     checkPodReady(adminServerPodName, domainUid, jrfDomainNamespace);
 

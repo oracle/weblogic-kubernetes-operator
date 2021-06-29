@@ -2,19 +2,12 @@
 # Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-#
-# This is a utility script that waits until a domain's pods have all exited,
-# or waits until a domain's pods have all reached the ready state plus have
-# have the same domain restart version, introspect version, and image as the
-# pod's domain resource.
-# 
-# See 'usage()' below for  details.
-#
-
 set -eu
 set -o pipefail
 
-timeout_secs_def=1000
+DOMAIN_UID="sample-domain1"
+DOMAIN_NAMESPACE="sample-domain1-ns"
+timeout_secs=1000
 
 function usage() {
 
@@ -23,17 +16,30 @@ function usage() {
   Usage:
 
     $(basename $0) [-n mynamespace] [-d mydomainuid] \\
-       [-p expected_pod_count] \\
-       [-t timeout_secs] \\
-       [-q]
+       [-p expected_pod_count] [-t timeout_secs] [-q]
 
-    Exits non-zero if 'timeout_secs' is reached before 'pod_count' is reached.
+  Description:
+
+    This utility script exits successfully when the designated number of
+    WebLogic Server pods in the given WebLogic Kubernetes Operator domain
+    reach a 'ready' state and have 'restartVersion', 'introspectVersion',
+    'spec.image', and 'spec.serverPod.commonMounts.image' values that match
+    their corresponding values in their domain resource.
+
+    If the designated number of pods is zero, then this script exits
+    successfully when all pods for the given domain have exited.
+
+    This script exits non-zero if a configurable timeout is reached
+    before the target pod count is reached (default $timeout_secs
+    seconds). It also exists non-zero if the specified domain
+    cannot be found and the target pod count is at least one.
 
   Parameters:
 
-    -d <domain_uid> : Defaults to 'sample-domain1'.
+    -d <domain_uid> : WKO Domain UID. Defaults to '$DOMAIN_UID'.
 
-    -n <namespace>  : Defaults to 'sample-domain1-ns'.
+    -n <namespace>  : Kubernetes namespace.
+                      Defaults to '$DOMAIN_NAMESPACE'.
 
     -p 0            : Wait until there are no running WebLogic Server pods
                       for a domain. The default.
@@ -46,9 +52,11 @@ function usage() {
                         the domain resource's 'spec.restartVersion'
                       - same 'weblogic.introspectVersion' label value as
                         the domain resource's 'spec.introspectVersion'
-                      - same image as the the domain resource's image
+                      - same image as the domain resource's 'spec.image'
+                      - same image(s) as specified in the domain resource's
+                        optional 'spec.serverPod.commonMounts.image'
 
-    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs_def'.
+    -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs'.
 
     -q              : Quiet mode. Show only a count of wl pods that
                       have reached the desired criteria.
@@ -58,13 +66,7 @@ function usage() {
 EOF
 }
 
-DOMAIN_UID="sample-domain1"
-DOMAIN_NAMESPACE="sample-domain1-ns"
-
 expected=0
-
-timeout_secs=$timeout_secs_def
-
 syntax_error=false
 verbose=true
 report_interval=120
@@ -118,71 +120,61 @@ function tempfile() {
   mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
 }
 
-
-# prints a formatted table from the data in file $1, this assumes:
-#   - delimiter is 'space'
-#   - all rows have same number of columns
-#   - first row is column headers
-function print_table() {
-  file=$1
-
-  rm -f $tmpfiletab
-
-  # first, get the column widths and number of columns
-  # we don't use arrays since this needs to work in Mac's ancient bash
-  local coltot=0
-  cat $file | while read line; do
-    local colcur=0
-    for token in $line; do
-      colcur=$((colcur + 1))
-      curvar=colwidth$colcur
-      eval "local $curvar=\$((${#token} > ${!curvar:-0} ? ${#token} : ${!curvar:-0}))"
-      echo "local $curvar=${!curvar}" >> $tmpfiletab
-    done
-    echo "local coltot=$colcur" >> $tmpfiletab
-  done
-
-  source $tmpfiletab
-
-  # now build the printfexp and separator
-  local colcur=1
-  local printfexp=""
-  local separator=""
-  while [ $colcur -le $coltot ]; do
-    local curvar=colwidth$colcur
-    local width=$(( ${!curvar} ))
-
-    printfexp="${printfexp}%-$((width))s  "
-
-    local pos=0
-    while [ $pos -lt $width ]; do
-      separator="$separator-"
-      pos=$((pos + 1))
-    done
-    separator="$separator "
-
-    colcur=$((colcur+1))
-  done
-  printfexp="${printfexp}\n"
-
-  # now print the table
-  local row=1
-  cat $file | while read line; do
-    printf "$printfexp" $line
-    if [ $row -eq 1 ]; then
-      printf "$printfexp" $separator
-    fi
-    row=$((row + 1))
+function sortlist() {
+  # sort a comma or space separated list
+  #   - stdin input, stdout output
+  #   - spaces replaced with commas
+  #   - blank fields ignored
+  #   - output removes any trailing comma
+  #   - examples: ""->"" "c,b"->"b,c" "c,b,"->"b,c" "c b"->"b,c"
+  tr ' ' '\n'    | \
+  tr ',' '\n'    | \
+  sort -V        | \
+  xargs echo -n  | \
+  tr ' ' ','
+}
+function sortCMImages() {
+  # sort "cmimages=;im2,im1;" field assuming comma or space sep list
+  #   - stdin input, stdout output
+  #   - spaces replaced with commas
+  #   - input ignores trailing comma, output removes any trailing comma
+  #   - examples: see sortCMImagesUnitTest()
+  while read line
+  do
+    echo -n "$line" | sed 's/\(^.*cmimages=;\).*/\1/'
+    echo -n "$line" | sed 's/.*cmimages=;\([^;]*\).*/\1/' | sortlist
+    echo "$line"    | sed 's/.*cmimages=;[^;]*\(;.*\)/\1/'
   done
 }
+function _sortCMImagesUnitTest() {
+  local res=$(echo "$1" | sortCMImages)
+  if [ ! "$res" = "$2" ]; then
+    echo "unit test fail"
+    echo " input ='$1'"
+    echo " expect='$2'"
+    echo " actual='$res'"
+    exit 1
+  fi
+}
+function sortCMImagesUnitTest() {
+  _sortCMImagesUnitTest "foo=;bar; cmimages=;c,b; bar=;foo;"   "foo=;bar; cmimages=;b,c; bar=;foo;"
+  _sortCMImagesUnitTest "foo=;bar; cmimages=; c,b,; bar=;foo;" "foo=;bar; cmimages=;b,c; bar=;foo;"
+  _sortCMImagesUnitTest "foo=;bar; cmimages=;; bar=;foo;"      "foo=;bar; cmimages=;; bar=;foo;"
+  _sortCMImagesUnitTest "foo=;bar; cmimages=;a ; bar=;foo;"    "foo=;bar; cmimages=;a; bar=;foo;"
+  _sortCMImagesUnitTest "cmimages=;c b; bar=;foo; foo=;bar;"   "cmimages=;b,c; bar=;foo; foo=;bar;"
+  _sortCMImagesUnitTest "bar=;foo; foo=;bar; cmimages=; c b ;" "bar=;foo; foo=;bar; cmimages=;b,c;"
+  _sortCMImagesUnitTest "cmimages=;;"                          "cmimages=;;"
+  _sortCMImagesUnitTest "cmimages=; ;"                         "cmimages=;;"
+  _sortCMImagesUnitTest "cmimages=;,,;"                        "cmimages=;;"
+  return 0
+}
+sortCMImagesUnitTest
 
-#
-# get domain value specified by $1:
-#   for example '.spec.introspectVersion' or '.spec.restartVersion'
-# and place result in the env var named by $2
-# if expected>0 and echo an Error and exit script non-zero
-#
+
 function getDomainValue() {
+  # get domain value specified by $1 and put in env var named by $2
+  #   - if get fails, and global expected is >0, then echo an Error and exit script non-zero
+  #   - example: getDomainValue '.spec.introspectVersion' DOM_VERSION
   local attvalue
   local ljpath="{$1}"
   local __retvar=$2
@@ -193,7 +185,7 @@ function getDomainValue() {
       echo "@@ Error: Could not obtain '$1' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
       exit 1
     else
-      # We're waiting for 0 pods - it doesn't matter what the value is
+      # We're waiting for 0 pods - domain might have been deleted, and it doesn't matter what the value is
       attvalue='':
     fi
   fi
@@ -201,22 +193,50 @@ function getDomainValue() {
   set -e
 }
 
+function getDomainCMImages() {
+  # get list of domain common mount images (if any) and place result in the env var named by $1
+  #   - if expected>0 and get fails, then echo an Error and exit script non-zero
+  #   - result is a sorted comma separated list
+  local attvalue
+  local __retvar=$1
+  set +e
+  attvalue=$(
+    kubectl \
+      get domain ${DOMAIN_UID} \
+      -n ${DOMAIN_NAMESPACE} \
+      -o=jsonpath="{range .spec.serverPod.commonMounts[*]}{.image}{','}{end}" \
+      2>&1
+  )
+  if [ $? -ne 0 ]; then
+    if [ $expected -ne 0 ]; then
+      echo "@@ Error: Could not obtain '.spec.serverPod' from '${DOMAIN_UID}' in namespace '${DOMAIN_NAMESPACE}'. Is your domain resource deployed? Err='$attvalue'"
+      exit 1
+    else
+      # We're waiting for 0 pods - it doesn't matter what the value is
+      attvalue='':
+    fi
+  fi
+  set -e
+  attvalue=$(echo "$attvalue" | sortlist)
+  eval "$__retvar='$attvalue'"
+}
+
 tmpfileorig=$(tempfile)
 tmpfilecur=$(tempfile)
-tmpfiletmp=$(tempfile)
-tmpfiletab=$(tempfile)
 
-trap "rm -f $tmpfileorig $tmpfilecur $tmpfiletmp $tmpfiletab" EXIT
+trap "rm -f $tmpfileorig $tmpfilecur" EXIT
 
 cur_pods=0
 reported=0
 last_pod_count_secs=$SECONDS
-origRV="--not-known--"
-origIV="--not-known--"
-origImage="--not-known--"
+goal_RV_orig="--not-known--"
+goal_IV_orig="--not-known--"
+goal_image_orig="--not-known--"
+goal_cmimages_orig="--not-known--"
 
 # col_headers must line up with the jpath
-col_headers="NAME RVERSION IVERSION IMAGE READY PHASE"
+col_headers1="NAME RVER IVER IMAGE CMIMAGES READY PHASE"
+col_headers2="---- ---- ---- ----- -------- ----- -----"
 
 # be careful! if changing jpath, then it must
 # correspond with the regex below and col_headers above
@@ -231,6 +251,8 @@ jpath+='{range .items[*]}'
   jpath+='{";"}{.metadata.labels.weblogic\.introspectVersion}{";"}'
   jpath+='{" image="}'
   jpath+='{";"}{.spec.containers[?(@.name=="weblogic-server")].image}{";"}'
+  jpath+='{" cmimages="}'
+  jpath+='{";"}{.spec.initContainers[?(@.command[0]=="/weblogic-operator/scripts/commonMount.sh")].image}{";"}'
   jpath+='{" ready="}'
   jpath+='{";"}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{";"}'
   jpath+='{" phase="}'
@@ -243,17 +265,19 @@ jpath+='{end}'
 
 while [ 1 -eq 1 ]; do
 
-
   #
   # Get the current domain resource's spec.restartVersion, spec.introspectVersion,
-  # and spec.image. If this fails then assume the domain resource isn't deployed.
+  # spec.image, and cm images. If any of these fail then these functions
+  # fail we assume that domain resource was not found and "exit 1" if goal pods != 0,
+  # or return "" if goal pods == 0.
   #
 
-  getDomainValue ".spec.restartVersion"    currentRV
-  getDomainValue ".spec.introspectVersion" currentIV
-  getDomainValue ".spec.image"             currentImage
+  getDomainValue ".spec.restartVersion"    goal_RV_current
+  getDomainValue ".spec.introspectVersion" goal_IV_current
+  getDomainValue ".spec.image"             goal_image_current
+  getDomainCMImages                        goal_cmimages_current
  
-  ret="${currentRV}${currentIV}${currentImage}"
+  ret="${goal_RV_current}${goal_IV_current}${goal_image_current}${goal_cmimages_current}^M"
   if [ ! "${ret/Error:/}" = "${ret}" ]; then
     echo $ret
     exit 1
@@ -264,15 +288,17 @@ while [ 1 -eq 1 ]; do
   # image changed since we last reported.
   #
 
-  if [ ! "$origRV" = "$currentRV" ] \
-     || [ ! "$origIV" = "$currentIV" ] \
-     || [ ! "$origImage" = "$currentImage" ]
+  if [ ! "$goal_RV_orig" = "$goal_RV_current" ] \
+     || [ ! "$goal_IV_orig" = "$goal_IV_current" ] \
+     || [ ! "$goal_image_orig" = "$goal_image_current" ] \
+     || [ ! "$goal_cmimages_orig" = "$goal_cmimages_current" ]
   then
     [ "$reported" = "1" ] && echo
     reported=0
-    origIV="$currentIV"
-    origRV="$currentRV"
-    origImage="$currentImage"
+    goal_IV_orig="$goal_IV_current"
+    goal_RV_orig="$goal_RV_current"
+    goal_image_orig="$goal_image_current"
+    goal_cmimages_orig="$goal_cmimages_current"
   fi
 
   #
@@ -298,23 +324,26 @@ while [ 1 -eq 1 ]; do
 
   else
 
-    regex="domainRestartVersion=;$currentRV;"
-    regex+=" introspectVersion=;$currentIV;"
-    regex+=" image=;$currentImage;"
+    regex="domainRestartVersion=;$goal_RV_current;"
+    regex+=" introspectVersion=;$goal_IV_current;"
+    regex+=" image=;$goal_image_current;"
+    regex+=" cmimages=;$goal_cmimages_current;"
     regex+=" ready=;true;"
 
     set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath="$jpath" \
+        | sortCMImages \
         | grep "$regex" | wc -l )
     set -e
 
     lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic Server pods to reach the following criteria:"
     criteria="ready='true'"
-    criteria+=" image='$currentImage' "
-    criteria+=" domainRestartVersion='$currentRV'"
-    criteria+=" introspectVersion='$currentIV'"
+    criteria+=" image='$goal_image_current'"
+    criteria+=" commonMountImages='$goal_cmimages_current'"
+    criteria+=" domainRestartVersion='$goal_RV_current'"
+    criteria+=" introspectVersion='$goal_IV_current'"
     criteria+=" namespace='$DOMAIN_NAMESPACE'"
     criteria+=" domainUID='$DOMAIN_UID'"
 
@@ -347,7 +376,7 @@ while [ 1 -eq 1 ]; do
 
     kubectl -n ${DOMAIN_NAMESPACE} get pods \
       -l weblogic.domainUID="${DOMAIN_UID}" \
-      -o=jsonpath="$jpath" > $tmpfilecur
+      -o=jsonpath="$jpath" | sortCMImages > $tmpfilecur
 
     set +e
     diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null
@@ -375,9 +404,11 @@ while [ 1 -eq 1 ]; do
       #  - first strip out the var= and replace with "val". 
       #  - note that the quotes are necessary so that 'print_table' 
       #    doesn't get confused by col entries that are missing values
-      echo $col_headers > $tmpfiletmp
-      cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g" >> $tmpfiletmp
-      print_table $tmpfiletmp
+      (
+        echo $col_headers1
+        echo $col_headers2
+        cat $tmpfilecur | sed "s|[^ ]*=;\([^;]*\);|'\1'|g"
+      ) | column -t
       echo
    
       cp $tmpfilecur $tmpfileorig

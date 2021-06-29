@@ -2,8 +2,8 @@
 title: "Design philosophy"
 date: 2019-02-23T20:51:51-05:00
 draft: false
-weight: 4
-description: "The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly."
+weight: 2
+description: "Define the expected roles of an administrator, the operator, and domain resources."
 ---
 
 The WebLogic Kubernetes Operator (the “operator”) is designed to fulfill a similar role to that which a human operator would fill in a traditional data center deployment.  It contains a set of useful built-in knowledge about how to perform various life cycle operations on a domain correctly.
@@ -29,7 +29,5 @@ The operator is designed with security in mind from the outset.  Some examples o
 The operator is designed to avoid imposing any arbitrary restriction on how WebLogic Server may be configured or used in Kubernetes.  Where there are restrictions, these are based on the availability of some specific feature in Kubernetes; for example, multicast support.
 
 The operator learns of WebLogic domains through instances of a domain Kubernetes resource.  When the operator is installed, it creates a Kubernetes [Custom Resource Definition](https://kubernetes.io/docs/concepts/api-extension/custom-resources/).  This custom resource definition defines the Domain type.  After this type is defined, you can manage Domains using `kubectl` just like any other resource type.  For instance, `kubectl get domain` or `kubectl edit domain domain1`.  
-
-Schema for Domains is [here](https://oracle.github.io/weblogic-kubernetes-operator/domains/Domain.json).
 
 The schema for the Domain type is designed to be as sparse as possible.  It includes the connection details for the Administration Server, but all of the other content is operational details about which servers should be started, environment variables, and details about what should be exposed outside the Kubernetes cluster.  This way, the WebLogic domain's configuration remains the normative configuration.

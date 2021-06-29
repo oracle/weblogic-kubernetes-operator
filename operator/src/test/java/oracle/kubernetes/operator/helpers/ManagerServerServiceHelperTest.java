@@ -11,7 +11,6 @@ import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.c
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ManagerServerServiceHelperTest extends ServiceHelperTest {
@@ -66,6 +65,24 @@ public class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
     V1Service service = createService();
 
-    assertThat(service, containsPort(EXPORTER_PORT_NAME, DEFAULT_EXPORTER_SIDECAR_PORT));
+    assertThat(service, containsPort("metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
+  @Test
+  void whenDomainHasMonitoringExporterConfigurationWithPort_serviceHasExporterPort() {
+    configureDomain().withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(300);
+
+    V1Service service = createService();
+
+    assertThat(service, containsPort("metrics", 300));
+  }
+
+  @Test
+  void whenDomainHasMonitoringExporterConfigurationAndIstio_serviceHasExporterPort() {
+    configureDomain().withMonitoringExporterConfiguration("queries:\n").withIstio();
+
+    V1Service service = createService();
+
+    assertThat(service, containsPort("tcp-metrics", DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 }

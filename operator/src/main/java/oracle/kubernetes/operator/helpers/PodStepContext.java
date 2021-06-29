@@ -155,7 +155,8 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   ExporterContext createExporterContext() {
-    return useSidecar() ? new SidecarExporterContext() : new WebAppExporterContext();
+    return useSidecar()
+        ? new SidecarExporterContext(getMonitoringExporterSpecification()) : new WebAppExporterContext();
   }
 
   // Use the monitoring exporter sidecar if an exporter configuration is part of the domain.
@@ -217,6 +218,10 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
+  }
+
+  MonitoringExporterSpecification getMonitoringExporterSpecification() {
+    return getDomain().getMonitoringExporterSpecification();
   }
 
   /**
@@ -1295,11 +1300,10 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   class SidecarExporterContext extends ExporterContext {
-    private static final int DEBUG_PORT = 30055;
     private final int metricsPort;
 
-    public SidecarExporterContext() {
-      metricsPort = MonitoringExporterSpecification.getRestPort(scan);
+    public SidecarExporterContext(MonitoringExporterSpecification specification) {
+      metricsPort = specification.getRestPort();
     }
 
     @Override
@@ -1328,8 +1332,12 @@ public abstract class PodStepContext extends BasePodStepContext {
             .image(getDomain().getMonitoringExporterImage())
             .imagePullPolicy(getDomain().getMonitoringExporterImagePullPolicy())
             .addEnvItem(new V1EnvVar().name("JAVA_OPTS").value(createJavaOptions()))
-            .addPortsItem(new V1ContainerPort().name("metrics").protocol("TCP").containerPort(getPort()))
-            .addPortsItem(new V1ContainerPort().name("debugger").protocol("TCP").containerPort(DEBUG_PORT));
+            .addPortsItem(new V1ContainerPort()
+                .name(getMetricsPortName()).protocol("TCP").containerPort(getPort()));
+    }
+
+    private String getMetricsPortName() {
+      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     private String createJavaOptions() {
@@ -1342,13 +1350,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (metricsPort != DEFAULT_EXPORTER_SIDECAR_PORT) {
         args.add("-DEXPORTER_PORT=" + metricsPort);
       }
-      args.add(getDebugOption());
 
       return String.join(" ", args);
-    }
-
-    private String getDebugOption() {
-      return "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:" + DEBUG_PORT;
     }
   }
 }

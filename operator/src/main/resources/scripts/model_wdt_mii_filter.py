@@ -385,6 +385,11 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   if istio_readiness_port is None:
     return
   admin_server_port = server['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
+
+  if admin_server_port is None:
+    admin_server_port = 7001
+
   # readiness probe
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                       listen_port=istio_readiness_port, protocol='http', http_enabled="true")
@@ -413,8 +418,11 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   model = env.getModel()
   if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
     ssl_listen_port = ssl['ListenPort']
+    if ssl_listen_port is None:
+      ssl_listen_port = "7002"
   elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
     ssl_listen_port = "7002"
+
 
   if ssl_listen_port is not None:
     _writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
@@ -445,6 +453,9 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   if istio_readiness_port is None:
     return
   listen_port = template['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
+  if listen_port is None:
+    listen_port = 7001
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                  listen_port=istio_readiness_port, protocol='http', http_enabled="true")
@@ -473,6 +484,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   model = env.getModel()
   if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
     ssl_listen_port = ssl['ListenPort']
+    if ssl_listen_port is None:
+      ssl_listen_port = "7002"
   elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
     ssl_listen_port = "7002"
 

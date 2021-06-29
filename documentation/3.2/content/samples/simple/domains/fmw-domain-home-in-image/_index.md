@@ -22,13 +22,13 @@ The following prerequisites must be met prior to running the create domain scrip
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires an image with either FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0.
   For details on how to obtain or create the image, refer to
-  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}).
+  [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * If `logHomeOnPV` is enabled, create the Kubernetes PersistentVolume where the log home will be hosted, and the Kubernetes PersistentVolumeClaim for the domain in the same Kubernetes Namespace. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes
   namespace as the domain.
 * Unless you are creating a Restricted-JRF domain, you also need to:
-  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/fmw-infra/_index.md#configuring-access-to-your-database" >}}).  
+  * Configure access to your database. For details, see [here]({{< relref "/userguide/managing-fmw-domains/_index.md#configuring-access-to-your-database" >}}).  
   * Create a Kubernetes Secret with the RCU credentials. For details, refer to this [document](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-rcu-credentials/README.md).
 
 #### Use the script to create a domain
@@ -121,7 +121,7 @@ The usage of the create script is as follows:
 $ sh create-domain.sh -h
 ```
 ```text
-usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-n encryption-key] [-e] [-v] [-h]
+usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPassword] [-b buildNetworkParam] [-n encryption-key] [-e] [-v] [-h]
   -i Parameter inputs file, must be specified.
   -o Output directory for the generated YAML files, must be specified.
   -u WebLogic administrator user name for the WebLogic domain.
@@ -130,6 +130,7 @@ usage: create-domain.sh -o dir -i file -u username -p password [-q rcuSchemaPass
   -e Also create the resources in the generated YAML files, optional.
   -v Validate the existence of persistentVolumeClaim, optional.
   -n Encryption key for encrypting passwords in the WDT model and properties files, optional.
+  -b Value to be used in the buildNetwork parameter when invoking WebLogic Image Tool, optional.
   -h Help
 ```
 
@@ -162,7 +163,7 @@ The following parameters can be provided in the inputs file.
 | `createDomainWdtModel` | WDT model YAML file that the create domain script uses to create a WebLogic domain when using wdt `mode`. This value is ignored when the `mode` is set to `wlst`. | `wdt/wdt_model_configured.yaml` or `wdt/wdt_model_restricted_jrf_configured.yaml` depending on the value of `fmwDomainType` |
 | `createDomainWlstScript` | WLST script that the create domain script uses to create a WebLogic domain when using wlst `mode`. This value is ignored when the `mode` is set to `wdt` (which is the default `mode`). | `../../common/createFMWJRFDomain.py` or `../../common/createFMWRestrictedJRFDomain.py` depending on the value of `fmwDomainType` |
 | `domainHome` | Domain home directory of the WebLogic domain to be created in the generated WebLogic Server image. | `/u01/oracle/user_projects/domains/<domainUID>` |
-| `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/fmw-infra/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
+| `domainHomeImageBase` | Base OracleFMWInfrastructure binary image used to build the OracleFMWInfrastructure domain image. The operator requires FMW Infrastructure 12.2.1.3.0 with patch 29135930 applied or FMW Infrastructure 12.2.1.4.0. For details on how to obtain or create the image, see [FMW Infrastructure domains]({{< relref "/userguide/managing-fmw-domains/#obtaining-the-fmw-infrastructure-image" >}}). | `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4` |
 | `domainPVMountPath` | Mount path of the domain persistent volume. | `/shared` |
 | `domainUID` | Unique ID that will be used to identify this particular domain. Used as the name of the generated WebLogic domain as well as the name of the Domain. This ID must be unique across all domains in a Kubernetes cluster. This ID cannot contain any character that is not valid in a Kubernetes Service name. | `domain1` |
 | `exposeAdminNodePort` | Boolean indicating if the Administration Server is exposed outside of the Kubernetes cluster. | `false` |
@@ -531,3 +532,37 @@ By default, they are installed under `/tmp/dhii-sample/tools` directory.
 ```shell
 $ rm -rf /tmp/dhii-sample/tools/
 ```
+### Troubleshooting
+***Message***: `Failed to build JDBC Connection object`
+
+If the WebLogic Image Tool failed to create a domain and the following error is seen in the output:
+```shell
+Configuring the Service Table DataSource...
+fmwDatabase  jdbc:oracle:thin:@172.18.0.2:30012/devpdb.k8s
+Getting Database Defaults...
+Error: getDatabaseDefaults() failed. Do dumpStack() to see details.
+Error: runCmd() failed. Do dumpStack() to see details.
+Problem invoking WLST - Traceback (innermost last):
+File "/u01/oracle/createFMWDomain.py", line 332, in ?
+File "/u01/oracle/createFMWDomain.py", line 44, in createInfraDomain
+File "/u01/oracle/createFMWDomain.py", line 151, in extendDomain
+File "/tmp/WLSTOfflineIni1609018487056199846.py", line 267, in getDatabaseDefaults
+File "/tmp/WLSTOfflineIni1609018487056199846.py", line 19, in command
+Failed to build JDBC Connection object:
+at com.oracle.cie.domain.script.jython.CommandExceptionHandler.handleException(CommandExceptionHandler.java:69)
+at com.oracle.cie.domain.script.jython.WLScriptContext.handleException(WLScriptContext.java:3085)
+at com.oracle.cie.domain.script.jython.WLScriptContext.runCmd(WLScriptContext.java:738)
+at sun.reflect.GeneratedMethodAccessor131.invoke(Unknown Source)
+at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+at java.lang.reflect.Method.invoke(Method.java:498)
+
+com.oracle.cie.domain.script.jython.WLSTException: com.oracle.cie.domain.script.jython.WLSTException: Got exception when auto configuring the schema component(s) with data obtained from shadow table:
+Failed to build JDBC Connection object:
+```
+
+First, verify that the JDBC connection URL shown in the output is correct. Update the `rcuDatabaseURL` parameter in the inputs YAML file to the correct value if necessary.
+
+If the JDBC connection URL is correct, it is possible that the container in which the WebLogic Image Tool is running for creating a WebLogic domain, is not using the correct networking stack.
+The optional `-b` option in the `create-domain.sh` script can be used to specify the networking mode for the RUN instruction during image build.
+For example, to use the host's network stack, invoke `create-domain.sh` with `-b host`.
+Please refer to Docker Network Settings references for supported networking options.

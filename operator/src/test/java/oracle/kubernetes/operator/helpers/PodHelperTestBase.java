@@ -375,8 +375,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             hasEntry("prometheus.io/scrape", "true")));
   }
 
-  protected void defineExporterConfiguration() {
-    configureDomain()
+  protected DomainConfigurator defineExporterConfiguration() {
+    return configureDomain()
           .withMonitoringExporterConfiguration(NOOP_EXPORTER_CONFIG)
           .withMonitoringExporterImage(EXPORTER_IMAGE);
   }
@@ -439,19 +439,29 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
   }
 
-  private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
-    return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
-          .filter(p -> name.equals(p.getName())).findFirst().orElse(null);
+  @Test
+  void whenExporterContainerCreatedWithPort_hasMetricsPortsItem() {
+    defineExporterConfiguration().withMonitoringExporterPort(300);
+
+    V1ContainerPort metricsPort = getExporterContainerPort("metrics");
+    assertThat(metricsPort, notNullValue());
+    assertThat(metricsPort.getProtocol(), equalTo("TCP"));
+    assertThat(metricsPort.getContainerPort(), equalTo(300));
   }
 
   @Test
-  void whenExporterContainerCreated_hasDebugPortsItem() {
-    defineExporterConfiguration();
+  void whenExporterContainerCreatedAndIstioEnabled_hasMetricsPortsItem() {
+    defineExporterConfiguration().withIstio();
 
-    V1ContainerPort metricsPort = getExporterContainerPort("debugger");
+    V1ContainerPort metricsPort = getExporterContainerPort("tcp-metrics");
     assertThat(metricsPort, notNullValue());
     assertThat(metricsPort.getProtocol(), equalTo("TCP"));
-    assertThat(metricsPort.getContainerPort(), equalTo(30055));
+    assertThat(metricsPort.getContainerPort(), equalTo(DEFAULT_EXPORTER_SIDECAR_PORT));
+  }
+
+  private V1ContainerPort getExporterContainerPort(@Nonnull String name) {
+    return Optional.ofNullable(getExporterContainer().getPorts()).orElse(Collections.emptyList()).stream()
+          .filter(p -> name.equals(p.getName())).findFirst().orElse(null);
   }
 
   @Test
@@ -459,33 +469,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     defineExporterConfiguration();
 
     assertThat(getExporterContainer(), hasJavaOption("-DDOMAIN=" + getDomain().getDomainUid()));
-  }
-
-  @Test
-  void whenDefaultMonitorPortUsedByServer_relocateIt() {
-    getServerTopology().setListenPort(8080);
-    getServerTopology().setSslListenPort(8081);
-    getServerTopology().setAdminPort(8082);
-    defineExporterConfiguration();
-
-    assertThat(getExporterContainer(), hasJavaOption("-DEXPORTER_PORT=8083"));
-  }
-
-  @Test
-  public void whenDefaultMonitorPortUsedByServer_hasPrometheusAnnotations() {
-    getServerTopology().setListenPort(8080);
-    getServerTopology().setSslListenPort(8081);
-    getServerTopology().setAdminPort(8082);
-    defineExporterConfiguration();
-
-    assertThat(
-        getCreatedPod().getMetadata().getAnnotations(),
-        allOf(
-            hasEntry("prometheus.io/port", "8083"),
-            hasEntry("prometheus.io/path", "/metrics"),
-            hasEntry("prometheus.io/scrape", "true")));
-
-    assertThat(getExporterContainer().getPorts().get(0).getContainerPort(), equalTo(8083));
   }
 
   abstract void setServerPort(int port);

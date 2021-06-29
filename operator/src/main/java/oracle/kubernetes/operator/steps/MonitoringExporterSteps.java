@@ -35,7 +35,6 @@ import oracle.kubernetes.weblogic.domain.model.MonitoringExporterConfiguration;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createRequestStep;
-import static oracle.kubernetes.weblogic.domain.model.MonitoringExporterSpecification.EXPORTER_PORT_NAME;
 
 public class MonitoringExporterSteps {
 
@@ -235,9 +234,11 @@ public class MonitoringExporterSteps {
   }
 
   private static class ExporterRequestProcessing extends HttpRequestProcessing {
+    private final DomainPresenceInfo info;
 
     ExporterRequestProcessing(Packet packet) {
       super(packet, getServerService(packet), getServerPod(packet));
+      info = packet.getSpi(DomainPresenceInfo.class);
     }
 
     private static V1Service getServerService(Packet packet) {
@@ -269,7 +270,15 @@ public class MonitoringExporterSteps {
     }
 
     private boolean isExporterPort(V1ServicePort servicePort) {
-      return EXPORTER_PORT_NAME.equals(servicePort.getName());
+      return getMetricsPortName().equals(servicePort.getName());
+    }
+
+    Domain getDomain() {
+      return info.getDomain();
+    }
+
+    private String getMetricsPortName() {
+      return getDomain().isIstioEnabled() ? "tcp-metrics" : "metrics";
     }
 
     private HttpRequest createConfigurationQueryRequest() {
