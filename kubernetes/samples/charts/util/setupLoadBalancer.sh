@@ -91,7 +91,7 @@ while getopts "cdt:n:r:v:h" opt; do
     ;;
     t) ingressType="${OPTARG}"
     ;;
-    r) release="${OPTARG}"
+    v) release="${OPTARG}"
     ;;
     m) kubernetesCli="${OPTARG}"
     ;;
