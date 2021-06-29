@@ -34,7 +34,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -204,13 +203,12 @@ class ItExternalNodePortService {
 
   /**
    * The external JMS client sends 300 messages to a Uniform Distributed
-   * Queue using load balancer HTTP url which maps to custom channel on
+   * Queue using Nodeport service http url which maps to custom channel on
    * cluster member server on WebLogic cluster. The test also make sure that
    * each member destination gets an equal number of messages.
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
-  @Order(2)
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
   public void testExternalRmiAccessThruNodePortService() {
@@ -220,8 +218,8 @@ class ItExternalNodePortService {
     buildClient();
     buildClientOnPod();
 
-    // Prepare the voyager ingress file from the template file by replacing
-    // domain namespace, domain UID, cluster service name and tls secret
+    // Prepare the Nodeport service yaml file from the template file by 
+    // replacing domain namespace, domain UID, cluster name and host name 
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("DOMAIN_NS", domainNamespace);
     templateMap.put("DOMAIN_UID", domainUid);
@@ -353,8 +351,9 @@ class ItExternalNodePortService {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      StringBuffer deployIngress = new StringBuffer("kubectl delete -f ");
-      deployIngress.append(Paths.get(RESULTS_ROOT, "cluster.nodeport.svc.yaml"));
+      StringBuffer removeNodePort = new StringBuffer("kubectl delete -f ");
+      removeNodePort.append(Paths.get(RESULTS_ROOT, "cluster.nodeport.svc.yaml"));
+      assertDoesNotThrow(() -> exec(new String(removeNodePort), true));
     }
   }
 
