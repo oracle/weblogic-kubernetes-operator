@@ -38,11 +38,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
@@ -51,7 +53,9 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestination
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioPrometheus;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -65,27 +69,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItIstioMonitoringExporter {
 
   private static String opNamespace = null;
-  private static String domainNamespace = null;
+  private static String domain1Namespace = null;
+  private static String domain2Namespace = null;
 
-  private String domainUid = "istio-mii";
+  private String domain1Uid = "istio1-mii";
+  private String domain2Uid = "istio2-mii";
   private String configMapName = "dynamicupdate-istio-configmap";
   private final String clusterName = "cluster-1"; // do not modify
-  private final String adminServerPodName = domainUid + "-admin-server";
-  private final String managedServerPrefix = domainUid + "-cluster-1-managed-server";
   private final String workManagerName = "newWM";
   private final int replicaCount = 2;
+  private static int prometheusPort;
 
-
+  private boolean isPrometheusDeployed = false;
   // create standard, reusable retry/backoff policy
   private static ConditionFactory withStandardRetryPolicy = null;
   private static LoggingFacade logger = null;
+  private static String oldRegex;
+  private static String sessionAppPrometheusSearchKey =
+      "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
 
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     // create standard, reusable retry/backoff policy
     withStandardRetryPolicy = with().pollDelay(2, SECONDS)
@@ -97,46 +105,106 @@ class ItIstioMonitoringExporter {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Assign unique namespace for Domain");
+    logger.info("Assign unique namespace for Domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
-    domainNamespace = namespaces.get(1);
+    domain1Namespace = namespaces.get(1);
+
+    logger.info("Assign unique namespace for Domain2");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domain2Namespace = namespaces.get(2);
 
     // Label the domain/operator namespace with istio-injection=enabled
     Map<String, String> labelMap = new HashMap();
     labelMap.put("istio-injection", "enabled");
-    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
+    prometheusPort = getNextFreePort();
   }
 
   /**
-   * Create a domain using model-in-image model.
+   * Create a domain using model-in-image model and monitoring exporter webapp.
    * Add istio configuration with default readinessPort.
    * Do not add any AdminService under AdminServer configuration.
    * Deploy istio gateways and virtual service.
    * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress port.
    * Deploy a web application thru istio http ingress port using REST api.
-   * Access web application thru istio http ingress port using curl.
    * Deploy Istio provided Promethues
    * Verify Weblogic metrics can be processed via istio based prometheus
    */
   @Test
   @DisplayName("Create istio provided prometheus and verify "
       + "it can monitor Weblogic domain via weblogic exporter webapp")
-  public void testIstioPrometheus() {
-    assertDoesNotThrow(() -> setupIstioModelInImageDomain(), "setup for istio based domain failed");
-    int prometheusPort = getNextFreePort();
-    assertTrue(deployIstioPrometheus(domainNamespace, domainUid,
-        String.valueOf(prometheusPort)), "failed to install istio prometheus");
+  public void testIstioPrometheusViaExporterWebApp() {
+    assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
+        + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
+    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
+        MODEL_DIR + "/model.monexp.yaml");
+    String managedServerPrefix = domain1Uid + "-cluster-1-managed-server";
+    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage,
+        domain1Namespace,domain1Uid, managedServerPrefix), "setup for istio based domain failed");
+    assertDoesNotThrow(() -> deployPrometheusAndVerify(domain1Namespace, domain1Uid, sessionAppPrometheusSearchKey),
+        "failed to fetch expected metrics from Prometheus using monitoring exporter webapp");
+  }
 
+  /**
+   * Create a domain using model-in-image model with monitoring exporter sidecar.
+   * Add istio configuration with default readinessPort.
+   * Do not add any AdminService under AdminServer configuration.
+   * Deploy istio gateways and virtual service.
+   * Verify server pods are in ready state and services are created.
+   * Verify login to WebLogic console is successful thru istio ingress port.
+   * Deploy Istio provided Prometheus
+   * Verify Weblogic metrics can be processed via istio based prometheus
+   */
+  @Test
+  @DisplayName("Create istio provided prometheus and verify "
+      + "it can monitor Weblogic domain via weblogic exporter sidecar")
+  public void testIstioPrometheusWithSideCar() {
+    // create image with model files
+    logger.info("Create image with model file and verify");
+
+    List<String> appList = new ArrayList();
+    appList.add("sessmigr-app");
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/model.sessmigr.yaml");
+    String miiImage =
+        createMiiImageAndVerify("miimonexp-istio-image", modelList, appList);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(miiImage);
+
+    String monitoringExporterSrcDir = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir").toString();
+    cloneMonitoringExporter(monitoringExporterSrcDir);
+    String exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
+        domain2Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
+        "Failed to create image for exporter");
+    String exporterConfig = RESOURCE_DIR + "/exporter/exporter-config.yaml";
+    String managedServerPrefix = domain2Uid + "-managed-server";
+    assertDoesNotThrow(() -> setupIstioModelInImageDomain(miiImage, domain2Namespace, domain2Uid, exporterConfig,
+        exporterImage, managedServerPrefix), "setup for istio based domain failed");
+    assertDoesNotThrow(() -> deployPrometheusAndVerify(domain2Namespace, domain2Uid, sessionAppPrometheusSearchKey),
+        "failed to fetch expected metrics from Prometheus using monitoring exporter sidecar");
+  }
+
+  private void deployPrometheusAndVerify(String domainNamespace, String domainUid, String searchKey) throws Exception {
+    if (!isPrometheusDeployed) {
+      assertTrue(deployIstioPrometheus(domain2Namespace, domain2Uid,
+          String.valueOf(prometheusPort)), "failed to install istio prometheus");
+      isPrometheusDeployed = true;
+      oldRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
+    } else {
+      String newRegex = String.format("regex: %s;%s", domainNamespace, domainUid);
+      assertDoesNotThrow(() -> editPrometheusCM(oldRegex, newRegex, "istio-system", "prometheus"),
+          "Can't modify Prometheus CM, not possible to monitor " + domainUid);
+    }
     //verify metrics via prometheus
-    String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22testwebapp%22%7D%5B15s%5D";
-    assertDoesNotThrow(() -> checkMetricsViaPrometheus(testappPrometheusSearchKey,
-        "testwebapp", prometheusPort));
+    checkMetricsViaPrometheus(searchKey, "sessmigr", prometheusPort);
   }
 
   /**
@@ -161,7 +229,15 @@ class ItIstioMonitoringExporter {
     return myImage;
   }
 
-  private void setupIstioModelInImageDomain() {
+  private void setupIstioModelInImageDomain(String miiImage, String domainNamespace,
+                                            String domainUid, String managedServerPrefix) {
+    setupIstioModelInImageDomain(miiImage, domainNamespace,
+        domainUid, null, null,managedServerPrefix);
+  }
+
+  private void setupIstioModelInImageDomain(String miiImage, String domainNamespace, String domainUid,
+                                            String exporterConfig, String exporterImage,
+                                            String managedServerPrefix) {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -189,10 +265,7 @@ class ItIstioMonitoringExporter {
 
     // create WDT config map without any files
     createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
-    assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
-        + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
-    String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
-        MODEL_DIR + "/model.monexp.yaml");
+
     // create the domain object
     Domain domain = createIstioDomainResource(domainUid,
         domainNamespace,
@@ -202,11 +275,13 @@ class ItIstioMonitoringExporter {
         replicaCount,
         miiImage,
         configMapName,
-        clusterName);
+        clusterName,
+        exporterConfig,
+        exporterImage);
 
     // create model in image domain
     createDomainAndVerify(domain, domainNamespace);
-
+    String adminServerPodName = domainUid + "-admin-server";
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
@@ -283,8 +358,6 @@ class ItIstioMonitoringExporter {
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
-    assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
 }

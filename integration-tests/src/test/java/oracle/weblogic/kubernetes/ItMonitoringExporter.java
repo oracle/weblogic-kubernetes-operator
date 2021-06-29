@@ -35,7 +35,6 @@ import com.google.gson.Gson;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -74,11 +73,9 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
-import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -89,7 +86,6 @@ import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
@@ -110,11 +106,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_EMAIL;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -122,7 +114,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLS;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
@@ -133,15 +124,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.createNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerRegistrySecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -150,6 +140,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVer
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -159,7 +150,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinit
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -314,7 +307,7 @@ class ItMonitoringExporter {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter();
-    exporterImage = assertDoesNotThrow(() -> createPushImage(monitoringExporterSrcDir, "exporter",
+    exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain5Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
     //this is temporary untill image is released
@@ -391,7 +384,7 @@ class ItMonitoringExporter {
 
       String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
       String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-      editPrometheusCM(oldRegex, newRegex);
+      editPrometheusCM(oldRegex, newRegex, monitoringNS, "prometheus-server");
       String sessionAppPrometheusSearchKey =
               "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
       checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
@@ -763,40 +756,6 @@ class ItMonitoringExporter {
   }
 
   /**
-   * Edit Prometheus Config Map.
-   * @param oldRegex search for existed value to replace
-   * @param newRegex new value
-   * @throws ApiException when update fails
-   */
-  private void editPrometheusCM(String oldRegex, String newRegex) throws ApiException {
-    List<V1ConfigMap> cmList = Kubernetes.listConfigMaps(monitoringNS).getItems();
-    V1ConfigMap promCm = cmList.stream()
-            .filter(cm -> "prometheus-server".equals(cm.getMetadata().getName()))
-            .findAny()
-            .orElse(null);
-
-    assertNotNull(promCm,"Can't find cm for prometheus-server");
-    Map<String, String> cmData = promCm.getData();
-    String values = cmData.get("prometheus.yml").replace(oldRegex,newRegex);
-    assertNotNull(values, "can't find values for key prometheus.yml");
-    cmData.replace("prometheus.yml", values);
-
-    promCm.setData(cmData);
-    Kubernetes.replaceConfigMap(promCm);
-
-    cmList = Kubernetes.listConfigMaps(monitoringNS).getItems();
-
-    promCm = cmList.stream()
-            .filter(cm -> "prometheus-server".equals(cm.getMetadata().getName()))
-            .findAny()
-            .orElse(null);
-
-    assertNotNull(promCm,"Can't find cm for prometheus-server");
-    assertNotNull(promCm.getData(), "Can't retreive the cm data for prometheus-server after modification");
-
-  }
-
-  /**
    * Install Prometheus, Grafana using specified helm chart version, and verify that pods are running.
    * @throws ApiException when creating helm charts or pods fails
    */
@@ -841,7 +800,7 @@ class ItMonitoringExporter {
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
       logger.info("update prometheus Config Map with domain info");
-      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue);
+      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS, "prometheus-server");
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
@@ -1045,7 +1004,7 @@ class ItMonitoringExporter {
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       imagePullPolicy = "Always";
     }
-    String image = createPushImage(dockerFileDir,baseImageName, namespace, secretName, "");
+    String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
       webhookImage = image;
@@ -1318,41 +1277,6 @@ class ItMonitoringExporter {
   }
 
   /**
-   * Build image with unique name, create corresponding docker secret and push to registry.
-   *
-   * @param dockerFileDir directory where dockerfile is located
-   * @param baseImageName base image name
-   * @param namespace image namespace
-   * @param secretName docker secretname for image
-   * @return image name
-   */
-  public static String createPushImage(String dockerFileDir, String baseImageName,
-                                       String namespace, String secretName,
-                                       String extraDockerArgs) throws ApiException {
-    // create unique image name with date
-    final String imageTag = TestUtils.getDateAndTimeStamp();
-    // Add repository name in image name for Jenkins runs
-    final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
-
-    final String image = imageName + ":" + imageTag;
-
-    //build image
-    assertTrue(Docker.createImage(dockerFileDir, image, extraDockerArgs), "Failed to create image " + baseImageName);
-    logger.info("image is created with name {0}", image);
-    if (!new Namespace().exists(namespace)) {
-      createNamespace(namespace);
-    }
-
-    //create registry docker secret
-    createDockerRegistrySecret(OCIR_USERNAME, OCIR_PASSWORD, OCIR_EMAIL,
-        OCIR_REGISTRY, secretName, namespace);
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
-
-    return image;
-  }
-
-  /**
    * Check if Pod is running.
    *
    * @param namespace in which is pod is running
@@ -1368,35 +1292,19 @@ class ItMonitoringExporter {
 
   //download src from monitoring exporter github project and build webapp.
   private static void installMonitoringExporter() {
-    logger.info("create a staging location for monitoring exporter github");
     Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
+    monitoringExporterSrcDir = monitoringTemp.toString();
+    cloneMonitoringExporter(monitoringExporterSrcDir);
     Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
+    assertDoesNotThrow(() -> deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
     Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringAppNoRestPort.toFile()));
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
-
-
-
-    CommandParams params = Command.defaultCommandParams()
-        .command("git clone -b "
-            + monitoringExporterBranch
-            + " "
-            + MONITORING_EXPORTER_DOWNLOAD_URL
-            + " " + monitoringTemp)
-        .saveResults(true)
-        .redirect(false);
-    assertTrue(() -> Command.withParams(params)
-        .execute());
-
-    monitoringExporterSrcDir = monitoringTemp.toString();
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
 
+    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
+        .orElse("master");
     //adding ability to build monitoring exporter if branch is not master
     boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
     monitoringExporterAppDir = monitoringApp.toString();
@@ -1440,49 +1348,12 @@ class ItMonitoringExporter {
               + monitoringExporterSrcDir);
     }
     logger.info("Executing command " + command);
-    assertTrue(new oracle.weblogic.kubernetes.actions.impl.primitive.Command()
-        .withParams(new oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams()
+    assertTrue(new Command()
+        .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to build monitoring exporter image");
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(imageName);
-  }
-
-  private static String getDockerExtraArgs() {
-    StringBuffer extraArgs = new StringBuffer("");
-
-    String httpsproxy = Optional.ofNullable(System.getenv("HTTPS_PROXY")).orElse(System.getenv("https_proxy"));
-    String httpproxy = Optional.ofNullable(System.getenv("HTTP_PROXY")).orElse(System.getenv("http_proxy"));
-    String noproxy = Optional.ofNullable(System.getenv("NO_PROXY")).orElse(System.getenv("no_proxy"));
-    logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    StringBuffer mvnArgs = new StringBuffer("");
-    if (httpsproxy != null) {
-      logger.info(" httpsproxy : " + httpsproxy);
-      proxyHost = httpsproxy.substring(httpsproxy.lastIndexOf("www"), httpsproxy.lastIndexOf(":"));
-      logger.info(" proxyHost: " + proxyHost);
-      mvnArgs.append(String.format(" -Dhttps.proxyHost=%s -Dhttps.proxyPort=80 ",
-          proxyHost));
-      //extraArgs.append(String.format(" --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" "
-      extraArgs.append(String.format(" --build-arg https_proxy=%s", httpsproxy));
-    }
-    if (httpproxy != null) {
-      logger.info(" httpproxy : " + httpproxy);
-      proxyHost = httpproxy.substring(httpproxy.lastIndexOf("www"), httpproxy.lastIndexOf(":"));
-      logger.info(" proxyHost: " + proxyHost);
-      mvnArgs.append(String.format(" -Dhttp.proxyHost=%s -Dhttp.proxyPort=80 ",
-          proxyHost));
-      //extraArgs.append(String.format(" --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" "
-      extraArgs.append(String.format(" --build-arg http_proxy=%s", httpproxy));
-    }
-    if (noproxy != null) {
-      logger.info(" noproxy : " + noproxy);
-      extraArgs.append(String.format(" --build-arg no_proxy=%s",noproxy));
-    }
-    if (!mvnArgs.equals("")) {
-      extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
-    }
-    return extraArgs.toString();
   }
 
   /**

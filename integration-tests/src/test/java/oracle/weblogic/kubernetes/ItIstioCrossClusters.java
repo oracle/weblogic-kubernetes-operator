@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinit
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -107,7 +108,7 @@ public class ItIstioCrossClusters {
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
-  
+
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
@@ -157,7 +158,7 @@ public class ItIstioCrossClusters {
 
     //Start oracleDB
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, 0, domain2Namespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace);
       String.format("Failed to start Oracle DB");
     });
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
