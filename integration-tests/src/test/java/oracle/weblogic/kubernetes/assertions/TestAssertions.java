@@ -380,15 +380,15 @@ public class TestAssertions {
     LoggingFacade logger = getLogger();
     return () -> {
       if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
-        logger.info("DEBUG: domain status reason: {0}", domain.getStatus().getReason());
+        logger.info("domain status reason: {0}", domain.getStatus().getReason());
         return domain.getStatus().getReason().equalsIgnoreCase(statusReason);
       } else {
         if (domain == null) {
-          logger.info("DEBUG: domain is null");
+          logger.info("domain is null");
         } else if (domain.getStatus() == null) {
-          logger.info("DEBUG: domain status is null");
+          logger.info("domain status is null");
         } else {
-          logger.info("DEBUG: domain status reason is null");
+          logger.info("domain status reason is null");
         }
         return false;
       }
