@@ -92,6 +92,7 @@
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>
+          <argLine>--illegal-access=permit</argLine>
         </configuration>
       </plugin>
 
@@ -228,12 +229,18 @@
         <executions>
           <execution>
             <goals>
-              <goal>java</goal>
+              <goal>exec</goal>
             </goals>
             <phase>package</phase>
             <configuration>
-              <mainClass>oracle.kubernetes.operator.helpers.CrdHelper</mainClass>
+              <executable>java</executable>
               <arguments>
+                <argument>--illegal-access=permit</argument>
+                <argument>-classpath</argument>
+                <!-- automatically creates the classpath using all project dependencies,
+                     also adding the project build directory -->
+                <classpath/>
+                <argument>oracle.kubernetes.operator.helpers.CrdHelper</argument>
                 <argument>${project.basedir}/../kubernetes/crd/domain-crd.yaml</argument>
               </arguments>
             </configuration>
