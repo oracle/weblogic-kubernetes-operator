@@ -210,7 +210,6 @@ Model In Image model files, application archives, and the WDT installation files
    ```shell
    $ docker build -f /tmp/mii-sample/cm-docker-file/Dockerfile \
      --build-arg COMMON_MOUNT_PATH=/common \
-     --build-arg COMMON_MOUNT_STAGE=. \
      --tag model-in-image:WLS-CM-v1 .
    ```
 
@@ -235,20 +234,15 @@ Model In Image model files, application archives, and the WDT installation files
    #     2) 'domain.spec.configuration.model.wdtInstallHome'
    #   Default '/common'.
    #
-   # COMMON_MOUNT_STAGE arg:
-   #   Local directory containing files to be copied to the COMMON_MOUNT_PATH.
-   #   Default '.'.
-   #
 
    FROM busybox
    ARG COMMON_MOUNT_PATH=/common
-   ARG COMMON_MOUNT_STAGE=.
    ARG USER=oracle
    ARG USERID=1000
    ARG GROUP=root
    ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
    RUN adduser -D -u ${USERID} -G $GROUP $USER
-   COPY ${COMMON_MOUNT_STAGE}/ ${COMMON_MOUNT_PATH}/
+   COPY ./ ${COMMON_MOUNT_PATH}/
    RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}
    USER $USER
    ```
