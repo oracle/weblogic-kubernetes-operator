@@ -54,6 +54,7 @@ import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -89,35 +90,38 @@ public class JobHelper {
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
     WlsDomainConfig topology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    LOGGER.info("runIntrospector topology: " + topology);
-    LOGGER.info("runningServersCount: " + runningServersCount(info));
-    LOGGER.info("creatingServers: " + creatingServers(info));
-    //LOGGER.info("introspectionRequested: " + introspectionRequested(packet));
-    LOGGER.info("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
-    //LOGGER.info("isGenerationChanged: " + isGenerationChanged(packet, info));
-    boolean retVal = topology == null
+    LOGGER.fine("runIntrospector topology: " + topology);
+    LOGGER.fine("runningServersCount: " + runningServersCount(info));
+    LOGGER.fine("creatingServers: " + creatingServers(info));
+    LOGGER.fine("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
+    return topology == null
           || isBringingUpNewDomain(packet, info)
           || introspectionRequested(packet)
-          || isModelInImageUpdate(packet, info);
-    LOGGER.fine("DEBUG: runIntrospector retVal is : " + retVal);
-    return  retVal;
+          || isModelInImageUpdate(packet, info)
+          || isIntrospectVersionChanged(packet, info);
   }
 
   private static boolean isBringingUpNewDomain(Packet packet, DomainPresenceInfo info) {
-    return isGenerationChanged(packet, info) ^ (runningServersCount(info) > 0 && creatingServers(info));
+    return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
   }
 
   private static boolean introspectionRequested(Packet packet) {
     return packet.remove(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED) != null;
   }
 
+  private static boolean isIntrospectVersionChanged(Packet packet, DomainPresenceInfo info) {
+    return Optional.ofNullable(packet.get(INTROSPECTION_STATE_LABEL))
+            .map(gen -> !gen.equals(getIntrospectVersion(info))).orElse(false);
+  }
+
   private static boolean isGenerationChanged(Packet packet, DomainPresenceInfo info) {
-    LOGGER.info("DEBUG: Domain Generation is " + getGeneration(info));
-    LOGGER.info("DEBUG: Generation from packet is " + packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION));
-    boolean ret = Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
-            .map(gen -> gen.equals(getGeneration(info))).orElse(true);
-    LOGGER.info("DEBUG: isGenerationSame is " + ret);
-    return !ret;
+    return Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+            .map(gen -> !gen.equals(getGeneration(info))).orElse(true);
+  }
+
+  private static String getIntrospectVersion(DomainPresenceInfo info) {
+    return Optional.ofNullable(info.getDomain()).map(Domain::getSpec).map(s -> s.getIntrospectVersion())
+            .orElse("");
   }
 
   private static String getGeneration(DomainPresenceInfo info) {
