@@ -101,7 +101,6 @@ dryrun:
 dryrun:# see file $WORKDIR/cm-image/${MODEL_IMAGE_TAG}/Dockerfile for an explanation of each --build-arg
 dryrun:docker build -f $WORKDIR/$COMMON_MOUNT_DOCKER_FILE_SOURCEDIR/Dockerfile \\
 dryrun:             --build-arg COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH} \\
-dryrun:             --build-arg COMMON_MOUNT_STAGE=. \\
 dryrun:             --tag ${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}  .
 EOF
 else
