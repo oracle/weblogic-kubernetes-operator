@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -339,7 +340,6 @@ public class ItLiftAndShiftFromOnPremDomain {
             + "http://%s/opdemo/?dsName=testDatasource", hostAndPort);
 
     // check and wait for the application to be accessible in admin pod
-    /*
     checkAppIsRunning(
         withQuickRetryPolicy,
         domainNamespace,
@@ -347,7 +347,6 @@ public class ItLiftAndShiftFromOnPremDomain {
         "7001",
         "opdemo/index.jsp",
         "WebLogic on prem to wko App");
-    */
 
     ExecResult execResult = null;
     logger.info("curl command {0}", curlString);
