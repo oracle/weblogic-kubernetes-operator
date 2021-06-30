@@ -98,15 +98,13 @@ public class JobHelper {
     boolean retVal = topology == null
           || isBringingUpNewDomain(packet, info)
           || introspectionRequested(packet)
-          || isModelInImageUpdate(packet, info)
-          || isGenerationChanged(packet, info);
+          || isModelInImageUpdate(packet, info);
     LOGGER.fine("DEBUG: runIntrospector retVal is : " + retVal);
     return  retVal;
   }
 
   private static boolean isBringingUpNewDomain(Packet packet, DomainPresenceInfo info) {
-    return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
-    //return runningServersCount(info) == 0 && creatingServers(info);
+    return isGenerationChanged(packet, info) ^ (runningServersCount(info) > 0 && creatingServers(info));
   }
 
   private static boolean introspectionRequested(Packet packet) {
