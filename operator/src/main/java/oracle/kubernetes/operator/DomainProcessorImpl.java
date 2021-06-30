@@ -306,11 +306,11 @@ public class DomainProcessorImpl implements DomainProcessor {
           JobHelper.replaceOrCreateDomainIntrospectorJobStep(null));
   }
 
-  private static class IntrospectionRequestStep extends Step {
+  public static class IntrospectionRequestStep extends Step {
 
     private final String requestedIntrospectVersion;
 
-    IntrospectionRequestStep(DomainPresenceInfo info) {
+    public IntrospectionRequestStep(DomainPresenceInfo info) {
       this.requestedIntrospectVersion = info.getDomain().getIntrospectVersion();
     }
 

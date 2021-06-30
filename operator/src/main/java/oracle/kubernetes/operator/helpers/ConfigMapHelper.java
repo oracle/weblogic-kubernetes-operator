@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
@@ -319,8 +320,12 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
+        Domain domain = DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).orElse(null);
+        Optional.ofNullable(domain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
+        Optional.ofNullable(domain).map(Domain::getMetadata).map(V1ObjectMeta::getGeneration)
+                .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
+        LOGGER.info("DEBUG: After adding INTROSPECTION_DOMAIN_SPEC_GENERATION labels is  " + labels);
         V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
@@ -869,10 +874,24 @@ public class ConfigMapHelper {
 
       if (domainTopology != null) {
         recordTopology(packet, packet.getSpi(DomainPresenceInfo.class), domainTopology);
+        recordIntrospectVersionAndGeneration(result, packet);
         return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
       } else {
         return doNext(packet);
       }
+    }
+
+    private void recordIntrospectVersionAndGeneration(V1ConfigMap result, Packet packet) {
+      Map<String, String> labels = Optional.ofNullable(result)
+              .map(V1ConfigMap::getMetadata)
+              .map(V1ObjectMeta::getLabels).orElse(null);
+
+      Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_STATE_LABEL))
+              .ifPresentOrElse(
+                      version -> packet.put(INTROSPECTION_STATE_LABEL, version),
+                      () -> packet.remove(INTROSPECTION_STATE_LABEL));
+      Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+              .ifPresent(generation -> packet.put(INTROSPECTION_DOMAIN_SPEC_GENERATION, generation));
     }
 
     private String getTopologyYaml(Map<String, String> data) {

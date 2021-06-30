@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
@@ -52,6 +53,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -87,21 +89,42 @@ public class JobHelper {
 
   private static boolean runIntrospector(Packet packet, DomainPresenceInfo info) {
     WlsDomainConfig topology = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
-    LOGGER.fine("runIntrospector topology: " + topology);
-    LOGGER.fine("runningServersCount: " + runningServersCount(info));
-    LOGGER.fine("creatingServers: " + creatingServers(info));
-    return topology == null
-          || isBringingUpNewDomain(info)
+    LOGGER.info("runIntrospector topology: " + topology);
+    LOGGER.info("runningServersCount: " + runningServersCount(info));
+    LOGGER.info("creatingServers: " + creatingServers(info));
+    //LOGGER.info("introspectionRequested: " + introspectionRequested(packet));
+    LOGGER.info("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
+    //LOGGER.info("isGenerationChanged: " + isGenerationChanged(packet, info));
+    boolean retVal = topology == null
+          || isBringingUpNewDomain(packet, info)
           || introspectionRequested(packet)
-          || isModelInImageUpdate(packet, info);
+          || isModelInImageUpdate(packet, info)
+          || isGenerationChanged(packet, info);
+    LOGGER.fine("DEBUG: runIntrospector retVal is : " + retVal);
+    return  retVal;
   }
 
-  private static boolean isBringingUpNewDomain(DomainPresenceInfo info) {
-    return runningServersCount(info) == 0 && creatingServers(info);
+  private static boolean isBringingUpNewDomain(Packet packet, DomainPresenceInfo info) {
+    return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
+    //return runningServersCount(info) == 0 && creatingServers(info);
   }
 
   private static boolean introspectionRequested(Packet packet) {
-    return packet.containsKey(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED);
+    return packet.remove(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED) != null;
+  }
+
+  private static boolean isGenerationChanged(Packet packet, DomainPresenceInfo info) {
+    LOGGER.info("DEBUG: Domain Generation is " + getGeneration(info));
+    LOGGER.info("DEBUG: Generation from packet is " + packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION));
+    boolean ret = Optional.ofNullable(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+            .map(gen -> gen.equals(getGeneration(info))).orElse(true);
+    LOGGER.info("DEBUG: isGenerationSame is " + ret);
+    return !ret;
+  }
+
+  private static String getGeneration(DomainPresenceInfo info) {
+    return Optional.ofNullable(info.getDomain()).map(Domain::getMetadata).map(m -> m.getGeneration().toString())
+            .orElse("");
   }
 
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
@@ -435,7 +458,10 @@ public class JobHelper {
                   createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                   readDomainIntrospectorPodLogStep(null),
                   deleteDomainIntrospectorJobStep(null),
-                  ConfigMapHelper.createIntrospectorConfigMapStep(getNext())), packet);
+                  ConfigMapHelper.createIntrospectorConfigMapStep(null),
+                  ConfigMapHelper.readExistingIntrospectorConfigMap(namespace, info.getDomainUid()),
+                  new DomainProcessorImpl.IntrospectionRequestStep(info),
+                  createDomainIntrospectorJobStep(getNext())), packet);
         } else {
           packet.putIfAbsent(START_TIME, System.currentTimeMillis());
           return doNext(Step.chain(
