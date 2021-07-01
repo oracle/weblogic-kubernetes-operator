@@ -90,13 +90,9 @@ action=$1
 echo @@ "Info: action is $action"
 echo @@ "Info: https_proxy is $https_proxy"
 
-if [ "$action" = "create" ]; then
-   setup_wdt_shared_dir || exit 1
-fi
+setup_wdt_shared_dir || exit 1
 
-if [ "${action}" = "create" ]; then
-   install_wdt || exit 1
-fi
+install_wdt || exit 1
 
 if [ "${action}" = "update" ]; then
    run_wdt "update"|| exit 1

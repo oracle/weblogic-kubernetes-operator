@@ -3,9 +3,11 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -206,6 +208,8 @@ public class ItWlsSamples {
 
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
+   * In domain on pv using wdt usecase, we also run the update domain script from the samples,
+   * to add a cluster to the domain.
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
    */
@@ -450,8 +454,10 @@ public class ItWlsSamples {
     assertDoesNotThrow(() -> {
       copyFile(Paths.get(MODEL_DIR, UPDATE_MODEL_FILE).toFile(),
                Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile());
-      copyFile(Paths.get(MODEL_DIR, UPDATE_MODEL_PROPERTIES).toFile(),
-          Paths.get(sampleBase.toString(),UPDATE_MODEL_PROPERTIES).toFile());
+      // create a properties file that is needed with this model file
+      List<String> lines = Arrays.asList("clusterName2=cluster-2", "managedServerNameBaseC2=c2-managed-server");
+      Files.write(Paths.get(sampleBase.toString(), UPDATE_MODEL_PROPERTIES), lines, StandardCharsets.UTF_8,
+          StandardOpenOption.CREATE, StandardOpenOption.APPEND);
     });
   }
 
@@ -621,7 +627,7 @@ public class ItWlsSamples {
       copyFile(Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile(),
           Paths.get(sampleBase.toString(), "wdt/wdt_model_dynamic.yaml").toFile());
     });
-    // run create-domain.sh to create domain.yaml file
+    // run update-domain.sh to create domain.yaml file
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
         + Paths.get(sampleBase.toString(), "update-domain.sh").toString()
@@ -639,29 +645,6 @@ public class ItWlsSamples {
     String extraParams = " -d " + domainName + " -n " + domainNamespace;
     executeLifecycleScript("introspectDomain.sh", "INTROSPECT_DOMAIN", "", extraParams);
 
-    /*
-    // run kubectl to create the domain
-    logger.info("Run kubectl to create the domain");
-    params = new CommandParams().defaults();
-    params.command("kubectl apply -f "
-        + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
-
-    result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to create domain custom resource");
-
-    // wait for the domain to exist
-    logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
-
-     */
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
 
