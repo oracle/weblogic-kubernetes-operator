@@ -301,26 +301,26 @@ We need to set up the domain configuration for the WebLogic domain.
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
-    {{% notice note %}} This sample creates WebLogic Server pods reasonable with values for memory, CPU, and JVM heap size (as a percentage of memory). You can supply differert values. Edit `~/azure/weblogic-on-aks/domain1.yaml` and set the desired values for `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, `serverPodCpuLimit` and `javaOptions` before running `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v`.
+    {{% notice note %}} This sample creates WebLogic Server pods with reasonable values for memory, CPU, and JVM heap size (as a percentage of memory). You can supply different values. Edit `~/azure/weblogic-on-aks/domain1.yaml` and set the desired values for `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, `serverPodCpuLimit` and `javaOptions` before running `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v`.
     {{% /notice%}}
-    
-    Here is an excerpt showing reasonable values.
-    
+
+    Here is an excerpt showing reasonable values:
+
     ```yaml
     serverPodMemoryRequest: "1.5Gi"
     serverPodCpuRequest: "250m"
 
     serverPodMemoryLimit: "1.5Gi"
     serverPodCpuLimit: "250m"
-    
+
     javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
     ```
-    
-    Notice that the `Limit` and `Request` values are the same for each of `serverPodMemory` and `serverPodCpu`.  This is intentional.  To learn why, see [Create a Pod that gets assigned a QoS class of Guaranteed](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed).  You must have allocated sufficient CPU and memory resources so that the such a pod can be scheduled for running by Kubernetes.  This is an example of **capacity planning**, a very important success factor with Kubernetes. For more details on capacity planning with AKS see [Azure Kubernetes Service Cluster Capacity Planning
-](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/azure-kubernetes-service-cluster-capacity-planning/ba-p/1474990).  For more details about Java and capacity planning please see [Java heap size and memory resource considerations]({{< relref "/faq/resource-settings.md" >}}).
 
-    The complete set of values that can be configured in this way is described in [configuration parameters]({{< relref "/samples/simple/domains/domain-home-on-pv/#configuration-parameters" >}}).   If you want further advanced domain configuration, run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit `domain.yaml` and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
-    
+    Notice that the `Limit` and `Request` values are the same for each of `serverPodMemory` and `serverPodCpu`.  This is intentional.  To learn why, see [Create a Pod that gets assigned a QoS class of Guaranteed](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed).  You must have allocated sufficient CPU and memory resources so that the pod can be scheduled for running by Kubernetes.  This is an example of **capacity planning**, a very important Kubernetes success factor. For more details on capacity planning with AKS, see [Azure Kubernetes Service Cluster Capacity Planning
+](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/azure-kubernetes-service-cluster-capacity-planning/ba-p/1474990).  For more details about Java and capacity planning, see [Java heap size and memory resource considerations]({{< relref "/faq/resource-settings.md" >}}).
+
+    The complete set of values that can be configured in this way is described in [configuration parameters]({{< relref "/samples/simple/domains/domain-home-on-pv/#configuration-parameters" >}}).   If you want further advanced domain configuration, then run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit the `domain.yaml` file and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
+
 4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
    Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/admin-lb.yaml` to create a load balancer service for the Administration Server. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
