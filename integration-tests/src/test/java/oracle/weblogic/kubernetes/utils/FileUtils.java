@@ -323,16 +323,15 @@ public class FileUtils {
    */
   public static void unzipWDTInstallationFile(String unzipLocation) {
     Path wlDeployZipFile = Paths.get(DOWNLOAD_DIR, WDT_DOWNLOAD_FILENAME_DEFAULT);
-    if (Files.exists(wlDeployZipFile)) {
-      String cmdToExecute = String.format("unzip %s -d %s", wlDeployZipFile, unzipLocation);
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-              .command(cmdToExecute))
-          .execute(), String.format("Failed to unzip %s", wlDeployZipFile));
-    } else {
+    if (!Files.exists(wlDeployZipFile)) {
       assertTrue(Installer.withParams(
           defaultInstallWdtParams())
           .download(), "WDT download failed");
     }
+    String cmdToExecute = String.format("unzip %s -d %s", wlDeployZipFile, unzipLocation);
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command(cmdToExecute))
+        .execute(), String.format("Failed to unzip %s", wlDeployZipFile));
   }
 }
