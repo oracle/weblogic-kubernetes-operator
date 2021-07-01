@@ -424,7 +424,7 @@ function createFiles {
     sed -i -e "s:%SSL_ENABLED%:${sslEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%PRODUCTION_MODE_ENABLED%:${productionModeEnabled}:g" ${domainPropertiesOutput}
     sed -i -e "s:%CLUSTER_TYPE%:${clusterType}:g" ${domainPropertiesOutput}
-    sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${domainPropertiesOutput}
+    sed -i -e "s;%JAVA_OPTIONS%;${javaOptions};g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_CHANNEL_PORT%:${t3ChannelPort}:g" ${domainPropertiesOutput}
     sed -i -e "s:%T3_PUBLIC_ADDRESS%:${t3PublicAddress}:g" ${domainPropertiesOutput}
     sed -i -e "s:%EXPOSE_T3_CHANNEL%:${exposeAdminT3Channel}:g" ${domainPropertiesOutput}
@@ -584,7 +584,7 @@ function createFiles {
     sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${dcrOutput}
     sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${dcrOutput}
     sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${dcrOutput}
-    sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${dcrOutput}
+    sed -i -e "s;%JAVA_OPTIONS%;${javaOptions};g" ${dcrOutput}
     sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${dcrOutput}
     sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${dcrOutput}
 
@@ -663,7 +663,7 @@ function updateModelFile {
   sed -i -e "s:%HTTP_ACCESS_LOG_IN_LOG_HOME%:${httpAccessLogInLogHome}:g" ${modelFile}
   sed -i -e "s:%DATA_HOME%:${dataHome}:g" ${modelFile}
   sed -i -e "s:%SERVER_START_POLICY%:${serverStartPolicy}:g" ${modelFile}
-  sed -i -e "s:%JAVA_OPTIONS%:${javaOptions}:g" ${modelFile}
+  sed -i -e "s;%JAVA_OPTIONS%;${javaOptions};g" ${modelFile}
   sed -i -e "s:%DOMAIN_PVC_NAME%:${persistentVolumeClaimName}:g" ${modelFile}
   sed -i -e "s:%DOMAIN_ROOT_DIR%:${domainPVMountPath}:g" ${modelFile}
 
