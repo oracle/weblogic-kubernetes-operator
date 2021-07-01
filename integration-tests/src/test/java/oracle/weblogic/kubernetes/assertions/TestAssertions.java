@@ -31,8 +31,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Service;
 import oracle.weblogic.kubernetes.assertions.impl.Traefik;
 import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -375,12 +377,21 @@ public class TestAssertions {
    */
   public static Callable<Boolean> domainStatusReasonMatches(oracle.weblogic.domain.Domain domain,
                                                             String statusReason) {
+    LoggingFacade logger = getLogger();
     return () -> {
       if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
+        logger.info("domain status reason: {0}", domain.getStatus().getReason());
         return domain.getStatus().getReason().equalsIgnoreCase(statusReason);
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else if (domain.getStatus() == null) {
+          logger.info("domain status is null");
+        } else {
+          logger.info("domain status reason is null");
+        }
+        return false;
       }
-
-      return false;
     };
   }
 
