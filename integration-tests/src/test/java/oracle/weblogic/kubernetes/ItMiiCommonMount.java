@@ -16,7 +16,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
@@ -45,6 +44,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -97,7 +97,8 @@ public class ItMiiCommonMount {
 
 
   /**
-   * Create a domain using multiple common mounts.
+   * Create a domain using multiple common mounts. One common mount containing the domain configuration and
+   * another common mount with JMS system resource, verify the domain is running and JMS resource is added.
    */
   @Test
   @Order(1)
@@ -127,12 +128,12 @@ public class ItMiiCommonMount {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for image1
+    // create stage dir for first common mount with image1
     Path multipleCMPath1 = Paths.get(RESULTS_ROOT, "multiplecmimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath1.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath1));
 
-    // create models dir and copy model, archive files if any
+    // create models dir and copy model, archive files if any for image1
     Path modelsPath1 = Paths.get(multipleCMPath1.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
     assertDoesNotThrow(() -> Files.copy(
@@ -159,13 +160,13 @@ public class ItMiiCommonMount {
     createCommonMountImage(multipleCMPath1.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage1);
 
-    // push image to repo for multi node cluster
+    // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiCMImage1, DOMAIN_IMAGES_REPO);
       assertTrue(dockerPush(miiCMImage1), String.format("docker push failed for image %s", miiCMImage1));
     }
 
-    // create stage dir for image2
+    // create stage dir for second common mount with image2
     Path multipleCMPath2 = Paths.get(RESULTS_ROOT, "multiplecmimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath2.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath2));
@@ -182,16 +183,16 @@ public class ItMiiCommonMount {
     createCommonMountImage(multipleCMPath2.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage2);
 
-    // push image to repo for multi node cluster
+    // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiCMImage2, DOMAIN_IMAGES_REPO);
       assertTrue(dockerPush(miiCMImage2), String.format("docker push failed for image %s", miiCMImage2));
     }
 
-    // create domain custom resource
+    // create domain custom resource using 2 common mounts and images
     logger.info("Creating domain custom resource with domainUid {0} and common mount images {1} {2}",
         domainUid, miiCMImage1, miiCMImage2);
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainUid, domainNamespace,
+    Domain domainCR = createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
                     encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
                     commonMountVolumeName, miiCMImage1, miiCMImage2);
@@ -201,7 +202,7 @@ public class ItMiiCommonMount {
         domainUid, miiCMImage1, miiCMImage2, domainNamespace);
     createDomainAndVerify(domainUid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
-    // check configuration for JDBC
+    // check configuration for JMS
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
