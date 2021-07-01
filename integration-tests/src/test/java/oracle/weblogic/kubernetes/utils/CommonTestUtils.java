@@ -1348,6 +1348,7 @@ public class CommonTestUtils {
    * @param domainNamespace namespace in which the domain will be created
    * @param adminServerPodName admin server pod name
    * @param managedServerPodNamePrefix managed server pod prefix
+   * @param replicaCount replica count
    */
   public static void createDomainAndVerify(String domainUid, Domain domain,
                                            String domainNamespace, String adminServerPodName,
