@@ -268,21 +268,21 @@ public class ItOpUpgradeFmwDomainInPV {
   }
 
   /**
-   * Operator upgrade from 3.2.1 to latest with a FMW Domain.
+   * Operator upgrade from 3.2.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.1 to main")
-  public void testOperatorFmwUpgradeFrom321ToMain() {
-    installAndUpgradeOperator("3.2.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.2.4 to main")
+  public void testOperatorFmwUpgradeFrom324ToMain() {
+    installAndUpgradeOperator("3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.2.2 to latest with a FMW Domain.
+   * Operator upgrade from 3.2.5 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.2 to main")
-  public void testOperatorFmwUpgradeFrom322ToMain() {
-    installAndUpgradeOperator("3.2.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.2.5 to main")
+  public void testOperatorFmwUpgradeFrom325ToMain() {
+    installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   private void installAndUpgradeOperator(String operatorVersion,
