@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using common mount")
 @IntegrationTest
-public class ItMiiCommonMountTest {
+public class ItMiiCommonMount {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -181,6 +181,12 @@ public class ItMiiCommonMountTest {
     // create image2 with model and wdt installation files
     createCommonMountImage(multipleCMPath2.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage2);
+
+    // push image to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", miiCMImage2, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiCMImage2), String.format("docker push failed for image %s", miiCMImage2));
+    }
 
     // create domain custom resource
     logger.info("Creating domain custom resource with domainUid {0} and common mount images {1} {2}",
