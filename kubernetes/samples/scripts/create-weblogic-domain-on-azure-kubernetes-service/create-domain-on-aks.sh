@@ -212,6 +212,11 @@ function createYamlFiles {
   sed -i -e "s:imagePullSecretName.*:imagePullSecretName\: ${imagePullSecretName}:g" ${domain1Output}
   sed -i -e "s:exposeAdminNodePort.*:exposeAdminNodePort\: true:g" ${domain1Output}
   sed -i -e "s:persistentVolumeClaimName.*:persistentVolumeClaimName\: ${persistentVolumeClaimName}:g" ${domain1Output}
+  sed -i -e "s:serverPodMemoryRequest.*:serverPodMemoryRequest\: ${serverPodMemoryRequest}:g" ${domain1Output}
+  sed -i -e "s:serverPodCpuRequest.*:serverPodCpuRequest\: ${serverPodCpuRequest}:g" ${domain1Output}
+  sed -i -e "s:serverPodMemoryLimit.*:serverPodMemoryLimit\: ${serverPodMemoryLimit}:g" ${domain1Output}
+  sed -i -e "s:serverPodCpuLimit.*:serverPodCpuLimit\: ${serverPodCpuLimit}:g" ${domain1Output}
+  sed -i -e "s;^javaOptions.*;javaOptions\: \"${javaOptions}\";g" ${domain1Output}
 
   # Parse domain configuration yaml for usage in load balancer
   exportValuesFile=$(mktemp /tmp/export-values-XXXXXXXXX.sh)
