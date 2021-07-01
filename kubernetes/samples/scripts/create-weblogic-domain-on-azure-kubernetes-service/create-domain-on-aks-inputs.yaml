@@ -64,10 +64,31 @@ azureStorageClassName: azurefile
 # The suffix of azure storage file share name, the complete value is ${namePrefix}-${azureStorageShareNameSuffix}-<timestamp>, used to create file share, and mount file share. 
 azureStorageShareNameSuffix: weblogic
 
+#Java Option for WebLogic Server
+javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
+
 # The suffix of the Kubernetes secret name, the complete value is ${namePrefix}${imagePullSecretNameSuffix}. The secret name is used to access the container registry to pull the WebLogic Server image
 # Used to create Kubernetes secret for container registry account.
 # Parameter "imagePullSecretName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 imagePullSecretNameSuffix: regcred
+
+# Resource request for each server pod (Memory and CPU). This is minimum amount of compute
+# resources required for each server pod. Edit value(s) below as per pod sizing requirements.
+# These are optional 
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+# Parameter "serverPodMemoryRequest" and "serverPodCpuRequest" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+serverPodMemoryRequest: "1.5Gi"
+serverPodCpuRequest: "250m"
+
+# Uncomment and edit value(s) below to specify the maximum amount of compute resources allowed 
+# for each server pod.
+# These are optional. 
+# Please refer to the kubernetes documentation on Managing Compute
+# Resources for Containers for details.
+# Parameter "serverPodMemoryLimit" and "serverPodCpuLimit" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
+serverPodMemoryLimit: "1.5Gi"
+serverPodCpuLimit: "250m"
 
 # The suffix of the persistent volume claim name, the complete value is ${namePrefix}-${persistentVolumeClaimNameSuffix}-<timestamp>.
 # Parameter "persistentVolumeClaimName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
@@ -82,6 +103,7 @@ weblogicDockerImage: container-registry.oracle.com/middleware/weblogic:12.2.1.4
 
 # Name of weblogic user.
 weblogicUserName: weblogic
+
 
 
 
