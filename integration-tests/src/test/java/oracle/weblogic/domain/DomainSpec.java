@@ -161,6 +161,13 @@ public class DomainSpec {
       "Configuration for monitoring exporter.")
   private MonitoringExporterSpecification monitoringExporter;
 
+  @ApiModelProperty(
+      "Configure common mount volumes including their respective mount paths. Common mount volumes are in "
+      + "turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a "
+      + "Kubernetes 'emptyDir' volume.")
+  private List<CommonMountVolume> commonMountVolumes;
+
+
   public DomainSpec domainUid(String domainUid) {
     this.domainUid = domainUid;
     return this;
@@ -678,6 +685,27 @@ public class DomainSpec {
 
   public void monitoringExporter(MonitoringExporterSpecification monitoringExporter) {
     this.monitoringExporter = monitoringExporter;
+  }
+
+  /**
+   * Adds common mount volume item.
+   * @param commonMountVolumesItem CommonMountVolumeItem
+   * @return this
+   */
+  public DomainSpec addCommonMountVolumesItem(CommonMountVolume commonMountVolumesItem) {
+    if (commonMountVolumes == null) {
+      commonMountVolumes = new ArrayList<>();
+    }
+    commonMountVolumes.add(commonMountVolumesItem);
+    return this;
+  }
+
+  public List<CommonMountVolume> getCommonMountVolumes() {
+    return commonMountVolumes;
+  }
+
+  public void setCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
+    this.commonMountVolumes = commonMountVolumes;
   }
 
 
