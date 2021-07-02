@@ -15,9 +15,9 @@ with specific target environments, such as the WebLogic Kubernetes Operator. Als
 This Domain in PV sample provides the following new functionality:
 
 1. The create domain script, `create-domain.sh`, uses the Extract Domain Resource Tool to generate the domain CR YAML file (`domain.yaml`).
-1. Updates the domain configuration using the Update Domain Tool with a WDT full model and makes the equivalent change to the
+2. Updates the domain configuration using the Update Domain Tool with a WDT full model and makes the equivalent change to the
 domain CR using the Extract Domain Resource Tool.
-1. The [Create Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/create.md) and
+3. The [Create Domain Tool](https://github.com/oracle/weblogic-deploy-tooling/blob/master/site/create.md) and
 Update Domain Tool accept the following input files: a WDT model file and the WDT properties file
     (generated using the Discover Domain Tool).
 
@@ -40,7 +40,7 @@ To create a domain:
       those values it cannot generate. You must fill in the information identified by `--FIX ME--`
       in the domain resource output. Make sure that the `domain.yaml` file does not contain any `--FIX ME--` statements
       before proceeding to the next step.
-   1. `kubectl apply -f domain.yaml`
+   2. `kubectl apply -f domain.yaml`
 
 To update a domain:
 
@@ -61,10 +61,10 @@ To update a domain:
          With operator 3.0.1 and later, you need to add an `introspectVersion` field to your `domain.yaml` file so that
          the operator will roll the domain with the updates.
 
-   1. Edit the `outputdir1/weblogic-domain/domainname/domain.yaml` file and add or update the spec section as follows:
+   2. Edit the `outputdir1/weblogic-domain/domainname/domain.yaml` file and add or update the spec section as follows:
 
         `introspectVersion: "2"`
 
-   1. `kubectl apply -f domain.yaml`
+   3. `kubectl apply -f domain.yaml`
 
         The domain will be rolled and the updates will be applied. The changes will be reflected in the WebLogic configuration.
