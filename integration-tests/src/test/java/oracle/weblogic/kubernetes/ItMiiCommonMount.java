@@ -13,7 +13,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-
 import io.kubernetes.client.custom.V1Patch;
 import oracle.weblogic.domain.CommonMount;
 import oracle.weblogic.domain.Domain;
@@ -54,11 +53,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -226,7 +224,8 @@ public class ItMiiCommonMount {
     // create domain and verify its running
     logger.info("Creating domain {0} with common mount images {1} {2} in namespace {3}",
         domain1Uid, miiCMImage1, miiCMImage2, domain1Namespace);
-    createDomainAndVerify(domain1Uid, domainCR, domain1Namespace, adminServerPodName, managedServerPrefix, replicaCount);
+    createDomainAndVerify(domain1Uid, domainCR, domain1Namespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
 
     // check configuration for JMS
     int adminServiceNodePort
@@ -238,7 +237,8 @@ public class ItMiiCommonMount {
   }
 
   /**
-   * Create a domain with datasource using common mount containing the DataSource, verify the domain is running and JDBC DataSource resource is added.
+   * Create a domain with datasource using common mount containing the DataSource,
+   * verify the domain is running and JDBC DataSource resource is added.
    * Patch domain with updated JDBC URL info and verify the update.
    */
   @Test
@@ -313,9 +313,11 @@ public class ItMiiCommonMount {
 
     // create stage dir for common mount with image4
     // replace DataSource URL info in the  model file
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),"/multi-model-one-ds.20.yaml").toString(), "xxx.xxx.x.xxx:1521",
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
+        "/multi-model-one-ds.20.yaml").toString(), "xxx.xxx.x.xxx:1521",
         "localhost:7001"),"Can't replace datasource url in the model file");
-    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),"/multi-model-one-ds.20.yaml").toString(), "ORCLCDB",
+    assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
+        "/multi-model-one-ds.20.yaml").toString(), "ORCLCDB",
         "dbsvc"),"Can't replace datasource url in the model file");
 
     // create image2 with model and wdt installation files
@@ -339,24 +341,29 @@ public class ItMiiCommonMount {
     // create domain and verify its running
     logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
         domain2Uid, miiCMImage3, domain2Namespace);
-    createDomainAndVerify(domain2Uid, domainCR, domain2Namespace, adminServerPodName, managedServerPrefix, replicaCount);
-    podsWithTimeStamps = getPodsWithTimeStamps(adminServerPodName, managedServerPrefix, domain2Namespace, 2);
+    createDomainAndVerify(domain2Uid, domainCR, domain2Namespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
+    podsWithTimeStamps = getPodsWithTimeStamps(adminServerPodName,
+        managedServerPrefix, domain2Namespace, 2);
     // check configuration for DataSource
     int adminServiceNodePort
         = getServiceNodePort(domain2Namespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkDS(adminServerPodName,domain2Namespace,"TestDataSource","jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+    assertTrue(checkDS(adminServerPodName,domain2Namespace,
+        "TestDataSource","jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
         "Can't find expected URL configuration for DataSource ");
     logger.info("Found the DataResource configuration");
 
     patchDomainWithCMImageAndVerify(miiCMImage3, miiCMImage4, domain2Uid, domain2Namespace);
 
-    assertTrue(checkDS(adminServerPodName,domain2Namespace,"TestDataSource","jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"),
+    assertTrue(checkDS(adminServerPodName,domain2Namespace,
+        "TestDataSource","jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"),
         "Can't find expected URL configuration for DataSource ");
     logger.info("Found the DataResource configuration");
   }
 
-  private static void patchDomainWithCMImageAndVerify(String oldImageName, String newImageName, String domainUid, String domainNamespace) {
+  private static void patchDomainWithCMImageAndVerify(String oldImageName, String newImageName,
+                                                      String domainUid, String domainNamespace) {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -372,7 +379,7 @@ public class ItMiiCommonMount {
           .findAny()
           .orElse(null);
     assertNotNull(cmMount, "Can't find common Mount with Image name " + oldImageName
-    + "can't patch domain " + domainUid);
+        + "can't patch domain " + domainUid);
 
     index = commonMountList.indexOf(cmMount);
     searchString = "\"/spec/serverPod/commonMounts/" + index + "/image\"";
@@ -489,7 +496,6 @@ public class ItMiiCommonMount {
         .append("/id/" + dsName)
         .append(" --noproxy '*'")
         .append(" --silent --show-error ").toString();
-        //.append("| grep url | tr -d -c 0-9 ").toString();
 
     CommandParams params = Command
         .defaultCommandParams()
