@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This is a sample Dockerfile for supplying Model in Image model files
-# and a WDT install in a small separate "common mount" 
+# and a WDT installation in a small separate "common mount"
 # image. This is an alternative to supplying the files directly
 # in the domain resource `domain.spec.image` image.
 
@@ -24,5 +24,5 @@ ARG GROUP=root
 ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
 RUN adduser -D -u ${USERID} -G $GROUP $USER
 COPY ./ ${COMMON_MOUNT_PATH}/
-RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}/
+RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}
 USER $USER

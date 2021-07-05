@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -25,12 +26,15 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -45,8 +49,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-//import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -61,6 +65,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServic
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -117,6 +122,8 @@ class ItMiiMultiModel {
   private static LoggingFacade logger = null;
   private static String ingressHost = null;
 
+  private static ConditionFactory withStandardRetryPolicy = null;
+
   /**
    * Perform initialization for all the tests in this class.
    *
@@ -129,6 +136,11 @@ class ItMiiMultiModel {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
+    // create standard, reusable retry/backoff policy
+    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
+
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -222,13 +234,6 @@ class ItMiiMultiModel {
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
         configMapName);
 
-    /*
-    String serviceName = adminServerPodName + "-ext";
-    if (OKD) {
-      createRouteForOKD(serviceName, domainNamespace);
-    }
-    */
-
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
     assertEquals(expectedMaxCapacity, maxCapacityValue, 
@@ -279,13 +284,6 @@ class ItMiiMultiModel {
         managedServerPrefix, 
         miiImageMultiModel,
         null);
-
-    /*
-    String serviceName = adminServerPodName + "-ext";
-    if (OKD) {
-      createRouteForOKD(serviceName, domainNamespace);
-    }
-    */
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -357,13 +355,6 @@ class ItMiiMultiModel {
         managedServerPrefix, 
         miiImageMultiModel,
         configMapName);
-
-    /*
-    String serviceName = adminServerPodName + "-ext";
-    if (OKD) {
-      createRouteForOKD(serviceName, domainNamespace);
-    }
-    */
 
     logger.info("Check the MaxCapacity setting of DataSource {0}", dsName);
     String maxCapacityValue = getDSMaxCapacity(adminServerPodName, domainNamespace, dsName);
@@ -440,7 +431,6 @@ class ItMiiMultiModel {
 
   @AfterAll
   public void tearDownAll() {
-    /*
     // Delete domain custom resources
     logger.info("Delete domain custom resource {0} in namespace {1}", domainUid1, domainNamespace);
     assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid1, domainNamespace),
@@ -461,7 +451,6 @@ class ItMiiMultiModel {
     if (miiImageMultiModel != null) {
       deleteImage(miiImageMultiModel);
     }
-    */
   }
 
   /**
@@ -551,7 +540,15 @@ class ItMiiMultiModel {
         .saveResults(true)
         .redirect(true);
 
-    Command.withParams(params).execute();
+    withStandardRetryPolicy.conditionEvaluationListener(
+            condition -> logger.info("Get max capacity of data source"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until((Callable<Boolean>) () -> {
+              return Command.withParams(params).execute();
+            });
+    //Command.withParams(params).execute();
     return params.stdout();
   }
   
@@ -588,7 +585,16 @@ class ItMiiMultiModel {
 
     String expectedStr = String.format("'%s' was not found", dsName);
     
-    return Command.withParams(params).executeAndVerify(expectedStr);
+    withStandardRetryPolicy.conditionEvaluationListener(
+            condition -> logger.info("Get max capacity of data source"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until((Callable<Boolean>) () -> {
+              return Command.withParams(params).executeAndVerify(expectedStr);
+            });
+    return true;
+    //return Command.withParams(params).executeAndVerify(expectedStr);
   }
   
 }

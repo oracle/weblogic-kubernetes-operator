@@ -248,6 +248,56 @@ public class CommonMiiTestUtils {
   }
 
   /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII common mount
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
+   * @param commonMountPath common mount path, parent location for Model in Image model and WDT installation files
+   * @param commonMountVolumeName common mount volume name
+   * @param commonMountImageName image names including tags, image contains the domain model, application archive if any
+   *                   and WDT installation files
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      String commonMountPath,
+      String commonMountVolumeName,
+      String... commonMountImageName) {
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterName);
+    domainCR.spec().addCommonMountVolumesItem(new oracle.weblogic.domain.CommonMountVolume()
+        .mountPath(commonMountPath)
+        .name(commonMountVolumeName));
+    domainCR.spec().configuration().model()
+        .withModelHome(commonMountPath + "/models")
+        .withWdtInstallHome(commonMountPath + "/weblogic-deploy");
+    for (String cmImageName: commonMountImageName) {
+      domainCR.spec().serverPod()
+          .addCommonMountsItem(new oracle.weblogic.domain.CommonMount()
+              .image(cmImageName)
+              .volume(commonMountVolumeName)
+              .imagePullPolicy("IfNotPresent"));
+    }
+    return domainCR;
+  }
+
+  /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
    * image.
    *

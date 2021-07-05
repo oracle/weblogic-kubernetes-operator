@@ -14,7 +14,6 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-//import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
@@ -300,8 +299,6 @@ public class ItLivenessProbeCustomization {
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
-            //.podSecurityContext(new V1PodSecurityContext()
-            //.runAsUser(0L)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .clusters(clusterList)

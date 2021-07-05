@@ -1345,6 +1345,42 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, domainVersion, domainNamespace));
+
+  }
+
+  /**
+   * Create a domain in the specified namespace, wait up to five minutes until the domain exists and
+   * verify the servers are running.
+   *
+   * @param domainUid domain
+   * @param domain the oracle.weblogic.domain.Domain object to create domain custom resource
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName admin server pod name
+   * @param managedServerPodNamePrefix managed server pod prefix
+   * @param replicaCount replica count
+   */
+  public static void createDomainAndVerify(String domainUid, Domain domain,
+                                           String domainNamespace, String adminServerPodName,
+                                           String managedServerPodNamePrefix, int replicaCount) {
+    LoggingFacade logger = getLogger();
+
+    // create domain and verify
+    createDomainAndVerify(domain, domainNamespace);
+
+    // check that admin service/pod exists in the domain namespace
+    logger.info("Checking that admin service/pod {0} exists in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPodNamePrefix + i;
+
+      // check that ms service/pod exists in the domain namespace
+      logger.info("Checking that clustered ms service/pod {0} exists in namespace {1}",
+          managedServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+    }
+
   }
 
   /**
@@ -1667,11 +1703,6 @@ public class CommonTestUtils {
     String hostName = result.stdout();
     getLogger().info("route hostname = {0}", hostName);
 
-    try {
-      Thread.sleep(10 * 1000);
-    } catch (InterruptedException iex) {
-      //ignore
-    }
     return hostName;
   }
 

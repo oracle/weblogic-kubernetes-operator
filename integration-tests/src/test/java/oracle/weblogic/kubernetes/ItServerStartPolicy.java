@@ -125,14 +125,13 @@ class ItServerStartPolicy {
   private static final int replicaCount = 1;
   private static final String domainUid = "mii-start-policy";
 
-  private final String adminServerPodName = domainUid + "-admin-server";
+  private static final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
   private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
   private static String ingressHost = null; //only used for OKD
-  private static boolean ingressCreated = false; //only used for OKD
 
   /**
    * Install Operator.
@@ -200,6 +199,16 @@ class ItServerStartPolicy {
                 condition.getRemainingTimeInMS()))
         .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
 
+    logger.info("Check admin service/pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, 
+          domainUid, domainNamespace);
+
+    // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
+    if (OKD) {
+      ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    }
+
     //copy the samples directory to a temporary location
     setupSample();
   }
@@ -219,14 +228,6 @@ class ItServerStartPolicy {
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPrefix + i, 
                 domainUid, domainNamespace);
-    }
-
-    // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
-    if ((OKD) && (!ingressCreated)) {
-      ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-      if (ingressHost != null) {
-        ingressCreated = true;
-      }
     }
 
     // Check configured cluster configuration is available 

@@ -119,7 +119,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -205,6 +204,11 @@ class ItParameterizedDomain {
   private static String encryptionSecretName = "encryptionsecret";
 
   private String curlCmd = null;
+
+  private ConditionFactory withStandardRetryPolicy =
+      with().pollDelay(1, SECONDS)
+          .and().with().pollInterval(5, SECONDS)
+          .atMost(1, MINUTES).await();
 
   /**
    * Install operator and NGINX.
@@ -301,12 +305,9 @@ class ItParameterizedDomain {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-    logger.info("operator pod log: {0}", operatorPodLog);
-    assertTrue(operatorPodLog.contains(
+    waitForPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
-            + "' not found in namespace '" + miiDomainNegativeNamespace + "'"));
+        + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
   }
 
   /**
@@ -1528,11 +1529,6 @@ class ItParameterizedDomain {
    */
   private void waitForFileExistsInPod(String namespace, String podName, String fileName) {
 
-    ConditionFactory withStandardRetryPolicy =
-        with().pollDelay(1, SECONDS)
-            .and().with().pollInterval(5, SECONDS)
-            .atMost(1, MINUTES).await();
-
     logger.info("Wait for file {0} existing in pod {1} in namespace {2}", fileName, podName, namespace);
     withStandardRetryPolicy
         .conditionEvaluationListener(
@@ -1547,6 +1543,31 @@ class ItParameterizedDomain {
             "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
   }
 
+  private Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
+    return () -> {
+      logger.info("pod name: {0}", podName);
+      String podLog = getPodLog(podName, namespace);
+      logger.info("pod log: {0}", podLog);
+      return podLog.contains(expectedString);
+    };
+  }
+
+  private void waitForPodLogContainsString(String namespace, String podName, String expectedString) {
+
+    logger.info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for string {0} existing in pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                expectedString,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+  }
+
   /**
    * Negative test case for creating a model-in-image domain without encryption secret created.
    * The admin server service/pod will not be created.
@@ -1556,9 +1577,6 @@ class ItParameterizedDomain {
    * @param domainNamespace namespace in which the domain will be created
    */
   private void createMiiDomainNegative(String domainUid, String domainNamespace) {
-
-    // admin/managed server name here should match with WDT model yaml file
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -1613,10 +1631,6 @@ class ItParameterizedDomain {
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
-
-    // wait and check for the domain status reason matches the expected string
-    checkDomainStatusReasonMatches(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace)), domainNamespace, "ErrBadDomain");
   }
 
   /**

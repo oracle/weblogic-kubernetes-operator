@@ -22,6 +22,7 @@ import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.ClusterService;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
@@ -51,7 +52,9 @@ import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -81,12 +84,12 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is used for testing the affinity between a web client and a WebLogic server
- * for the duration of a HTTP session using Voyager and Traefik ingress controllers.
+ * for the duration of a HTTP session using Voyager and Traefik ingress controllers
+ * as well as cluster service.
  */
-@DisplayName("Test sticky sessions management with Voyager and Traefik")
+@DisplayName("Test sticky sessions management with Voyager, Traefik and ClusterService")
 @IntegrationTest
 @Tag("okdenv")
-@EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -300,6 +303,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessinOKD() {
     final String serviceName = domainUid + "-cluster-" + clusterName;
     //final String channelName = "web";
@@ -325,6 +329,38 @@ class ItStickySession {
         }));
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
+  }
+
+  /**
+   * Verify that using cluster service, two HTTP requests sent to WebLogic
+   * are directed to same WebLogic server.
+   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
+   * server-affinity is achieved by cluster service based on HTTP session information.
+   */
+  @Test
+  @DisplayName("Verify that two HTTP connections are sticky to the same server using cluster service")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
+  public void testSameSessionStickinessUsingClusterService() {
+    //build cluster hostname
+    String hostName = new StringBuffer()
+        .append(domainUid)
+        .append(".")
+        .append(domainNamespace)
+        .append(".")
+        .append(clusterName)
+        .append(".test").toString();
+
+    //build cluster address
+    final String clusterAddress = domainUid + "-cluster-" + clusterName;
+    //get cluster port
+    int clusterPort = assertDoesNotThrow(()
+        -> getServicePort(domainNamespace, clusterAddress, "default"),
+        "Getting admin server default port failed");
+    assertFalse(clusterPort == 0 || clusterPort < 0, "cluster Port is an invalid number");
+    logger.info("cluster port for cluster server {0} is: {1}", clusterAddress, clusterPort);
+
+    // verify that two HTTP connections are sticky to the same server
+    sendHttpRequestsToTestSessionStickinessAndVerify(hostName, clusterPort, clusterAddress);
   }
 
   private static String createAndVerifyDomainImage() {
@@ -384,6 +420,10 @@ class ItStickySession {
                                               String repoSecretName,
                                               String encryptionSecretName,
                                               String miiImage) {
+
+    ClusterService myClusterService = new ClusterService();
+    myClusterService.setSessionAffinity("ClientIP");
+
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -418,12 +458,14 @@ class ItStickySession {
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
+                .clusterService(myClusterService)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+
     setPodAntiAffinity(domain);
     // create domain using model in image
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
@@ -432,18 +474,19 @@ class ItStickySession {
   }
 
   private Map<String, String> getServerAndSessionInfoAndVerify(String hostName,
-                                                               int ingressServiceNodePort,
+                                                               int servicePort,
                                                                String curlUrlPath,
-                                                               String headerOption) {
+                                                               String headerOption,
+                                                               String... clusterAddress) {
     final String serverNameAttr = "servername";
     final String sessionIdAttr = "sessionid";
     final String countAttr = "count";
 
     // send a HTTP request
-    logger.info("Process HTTP request in host {0} and ingressServiceNodePort {1} ",
-        hostName, ingressServiceNodePort);
+    logger.info("Process HTTP request in host {0} and servicePort {1} ",
+        hostName, servicePort);
     Map<String, String> httpAttrInfo =
-        processHttpRequest(hostName, ingressServiceNodePort, curlUrlPath, headerOption);
+        processHttpRequest(hostName, servicePort, curlUrlPath, headerOption, clusterAddress);
 
     // get HTTP response data
     String serverName = httpAttrInfo.get(serverNameAttr);
@@ -467,29 +510,33 @@ class ItStickySession {
   }
 
   private static Map<String, String> processHttpRequest(String hostName,
-                                                        int ingressServiceNodePort,
+                                                        int servicePort,
                                                         String curlUrlPath,
-                                                        String headerOption) {
+                                                        String headerOption,
+                                                        String... clusterAddress) {
     String[] httpAttrArray =
         {"sessioncreatetime", "sessionid", "servername", "count"};
     Map<String, String> httpAttrInfo = new HashMap<String, String>();
 
     // build curl command
     String curlCmd =
-        buildCurlCommand(hostName, ingressServiceNodePort, curlUrlPath, headerOption);
+        buildCurlCommand(hostName, servicePort, curlUrlPath, headerOption, clusterAddress);
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlCmd);
+    ExecResult execResult = null;
 
-    // set HTTP request and get HTTP response
-    ExecResult execResult = assertDoesNotThrow(
-        () -> ExecCommand.exec(curlCmd, true));
-    assertNotNull(execResult, "curl command returns null");
+    if (clusterAddress.length == 0) {
+      // set HTTP request and get HTTP response in a local machine
+      execResult = assertDoesNotThrow(() -> ExecCommand.exec(curlCmd, true));
+    } else {
+      // set HTTP request and get HTTP response in admin pod
+      execResult = assertDoesNotThrow(() -> execCommand(domainNamespace, adminServerPodName,
+          null, true, "/bin/sh", "-c", curlCmd));
+    }
 
     if (execResult.exitValue() == 0) {
+      assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null");
+      assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty");
       logger.info("\n HTTP response is \n " + execResult.stdout());
-      assertAll("Check that primary server name is not null or empty",
-          () -> assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null"),
-          () -> assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty")
-      );
 
       for (String httpAttrKey : httpAttrArray) {
         String httpAttrValue = getHttpResponseAttribute(execResult.stdout(), httpAttrKey);
@@ -503,24 +550,48 @@ class ItStickySession {
   }
 
   private static String buildCurlCommand(String hostName,
-                                         int ingressServiceNodePort,
+                                         int servicePort,
                                          String curlUrlPath,
-                                         String headerOption) {
-    logger.info("Build a curl command with hostname {0} and ingress service NodePort {1}",
-        hostName, ingressServiceNodePort);
+                                         String headerOption,
+                                         String... clusterAddress) {
 
-    final String httpHeaderFile = LOGS_DIR + "/headers";
+    StringBuffer curlCmd = new StringBuffer("curl --show-error");
+    logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
-    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + ingressServiceNodePort;
-    StringBuffer curlCmd =
-        new StringBuffer("curl --show-error --noproxy '*' -H 'host: ");
-    curlCmd.append(hostName)
-        .append("' http://")
-        .append(hostAndPort)
-        .append("/")
-        .append(curlUrlPath)
-        .append(headerOption)
-        .append(httpHeaderFile);
+    if (clusterAddress.length == 0) {
+      //use a LBer ingress controller to build the curl command to run on local
+      final String httpHeaderFile = LOGS_DIR + "/headers";
+      logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
+
+      String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort;
+
+      curlCmd.append(" --noproxy '*' -H 'host: ")
+          .append(hostName)
+          .append("' http://")
+          .append(hostAndPort)
+          .append("/")
+          .append(curlUrlPath)
+          .append(headerOption)
+          .append(httpHeaderFile);
+    } else {
+      //use cluster service to build the curl command to run in admin pod
+      final String httpHeaderFile = "/u01/oracle/header";
+      logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
+          clusterAddress[0], curlUrlPath, headerOption);
+
+      int waittime = 5;
+      curlCmd.append(" --silent --connect-timeout ")
+          .append(waittime)
+          .append(" --max-time ").append(waittime)
+          .append(" http://")
+          .append(clusterAddress[0])
+          .append(":")
+          .append(servicePort)
+          .append("/")
+          .append(curlUrlPath)
+          .append(headerOption)
+          .append(httpHeaderFile).toString();
+    }
 
     return curlCmd.toString();
   }
@@ -594,7 +665,9 @@ class ItStickySession {
     return ingressServiceNodePort;
   }
 
-  private void sendHttpRequestsToTestSessionStickinessAndVerify(String hostname, int ingressServiceNodePort) {
+  private void sendHttpRequestsToTestSessionStickinessAndVerify(String hostname,
+                                                                int servicePort,
+                                                                String... clusterAddress) {
     final int counterNum = 4;
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + counterNum;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
@@ -603,9 +676,8 @@ class ItStickySession {
     final String countAttr = "count";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
-    Map<String, String> httpDataInfo =
-        getServerAndSessionInfoAndVerify(hostname,
-            ingressServiceNodePort, webServiceSetUrl, " -D ");
+    Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
+            servicePort, webServiceSetUrl, " -D ", clusterAddress);
     // get server and session info from web service deployed on the cluster
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
@@ -613,9 +685,8 @@ class ItStickySession {
         serverName1, sessionId1);
 
     // send a HTTP request again to get server and session info
-    httpDataInfo =
-        getServerAndSessionInfoAndVerify(hostname,
-            ingressServiceNodePort, webServiceGetUrl, " -b ");
+    httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
+        servicePort, webServiceGetUrl, " -b ", clusterAddress);
     // get server and session info from web service deployed on the cluster
     String serverName2 = httpDataInfo.get(serverNameAttr);
     String sessionId2 = httpDataInfo.get(sessionIdAttr);

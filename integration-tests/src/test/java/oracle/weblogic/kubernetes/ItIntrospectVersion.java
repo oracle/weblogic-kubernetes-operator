@@ -382,6 +382,11 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    if (OKD) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     // deploy application and verify all servers functions normally
     logger.info("Getting port for default channel");
     int defaultChannelPort = assertDoesNotThrow(()
@@ -396,26 +401,26 @@ public class ItIntrospectVersion {
     logger.info("Admin Server default node port : {0}", serviceNodePort);
     assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
 
-    if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
-    }
-
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    ExecResult result = null;
+    //ExecResult result = null;
     String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
 
     String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    result = deployUsingRest(hostAndPort,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        targets, clusterViewAppPath, null, "clusterview");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Application deploymen failed with wrong HTTP status code");
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Deploying the application using Rest"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort, 
+                       ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+                       targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        });
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -519,6 +524,8 @@ public class ItIntrospectVersion {
       clusterNameMsPortMap.put(clusterName, managedServerPort);
       logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
       createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
+    } else {
+      clusterRouteHost = createRouteForOKD(clusterServiceName, introDomainNamespace);
     }
 
     managedServerNames = new ArrayList<String>();
@@ -532,7 +539,6 @@ public class ItIntrospectVersion {
     String curlRequest = null;
 
     if (OKD) {
-      clusterRouteHost = createRouteForOKD(clusterServiceName, introDomainNamespace);
       logger.info("cluster svc host = {0}", clusterRouteHost);
       logger.info("Accessing the clusterview app through cluster route");
       curlRequest = String.format("curl --silent --show-error --noproxy '*' "
@@ -694,7 +700,6 @@ public class ItIntrospectVersion {
 
     String curlRequest = null;
     if (OKD) {
-      //clusterRouteHost = createRouteForOKD(clusterServiceName, introDomainNamespace);
       logger.info("cluster svc host = {0}", clusterRouteHost);
       logger.info("Accessing the clusterview app through cluster route");
       curlRequest = String.format("curl --silent --show-error --noproxy '*' "
